@@ -33,12 +33,9 @@ Run `make help` from this directory to see all cross-repo commands.
 | `make install` | `npm install` in all Node repos |
 | `make lint` | Lint all Node repos |
 | `make test` | Run tests across all repos |
-| `make start` | Start full stack via tests repo compose (Docker Hub images) |
-| `make start-infra` | Start shared infra only (MongoDB, Redis, LocalStack, Defra ID stub) |
 | `make start-frontend` | Start frontend dev server from source |
-| `make start-backend` | Start backend from source (needs `make start-infra` first) |
+| `make start-backend` | Start backend from source |
 | `make start-admin` | Start admin dev server from source |
-| `make stop` | Stop full stack |
 
 ## Common workflows
 

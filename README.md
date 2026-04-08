@@ -16,10 +16,7 @@ Local workspace aggregating the DEFRA trade imports animals service repos. Not a
 ```bash
 make setup    # clone all repos into repos/
 make install  # npm install in all Node repos
-make start    # start full stack (Docker Hub images)
 ```
-
-Open the app at `http://localhost:3000`.
 
 ## Common commands
 
@@ -30,12 +27,9 @@ Open the app at `http://localhost:3000`.
 | `make status` | `git status` across all repos |
 | `make install` | `npm install` in all Node repos |
 | `make test` | Run tests across all repos |
-| `make start` | Start full stack via Docker Hub images |
-| `make start-infra` | Start shared infra only (MongoDB, Redis, LocalStack, Defra ID stub) |
 | `make start-frontend` | Start frontend from source |
 | `make start-backend` | Start backend from source |
 | `make start-admin` | Start admin from source |
-| `make stop` | Stop full stack |
 
 ## Working on a single repo
 
@@ -51,7 +45,6 @@ Each repo has its own `CLAUDE.md` with repo-specific context.
 
 ```
 agents/     AI agent skills and workflows (Jira, GitHub, review, upgrade orchestration)
-docker/     Shared Docker Compose overrides for local dev
 docs/       Architecture notes, setup guides, ADRs
 scripts/    Shell scripts used by make targets
 skills/     Claude Code skill definitions

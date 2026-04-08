@@ -3,12 +3,8 @@ REPOS         := trade-imports-animals-frontend trade-imports-animals-backend tr
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin
 JAVA_REPOS    := trade-imports-animals-backend
-INFRA_SERVICES := mongodb redis localstack trade-imports-defra-id-stub
-TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
-DEV_OVERRIDE  := docker/compose.dev.yml
 
-.PHONY: setup update status install lint test test-e2e playwright-install \
-        start stop logs ps dev dev-infra start-infra \
+.PHONY: setup update status install lint test \
         start-frontend start-backend start-admin \
         scan-docs clean help
 
@@ -67,7 +63,7 @@ install: ## Install dependencies in all repos (npm ci; mvn install -DskipTests)
 	done; \
 	exit $$status
 
-clean: ## Remove node_modules in all Node repos and stop Docker stack
+clean: ## Remove node_modules in all Node repos
 	@for repo in $(NODE_REPOS); do \
 		dir=$(REPOS_DIR)/$$repo; \
 		if [ -d "$$dir/node_modules" ]; then \
@@ -75,7 +71,6 @@ clean: ## Remove node_modules in all Node repos and stop Docker stack
 			rm -rf "$$dir/node_modules"; \
 		fi; \
 	done
-	docker compose -f $(TESTS_COMPOSE) down --volumes --remove-orphans 2>/dev/null || true
 
 # --- Lint & Test ---
 
@@ -118,38 +113,7 @@ test: ## Run unit tests in all repos
 		fi; \
 	done
 
-playwright-install: ## Install Playwright browsers (run once before test-e2e)
-	npx --prefix $(REPOS_DIR)/trade-imports-animals-tests playwright install chromium
-
-test-e2e: ## Run Playwright e2e tests (starts stack, runs tests, tears down)
-	$(MAKE) start
-	npm --prefix $(REPOS_DIR)/trade-imports-animals-tests run test:local; \
-	EXIT=$$?; $(MAKE) stop; exit $$EXIT
-
-# --- Stack ---
-
-start: ## Start full stack detached, wait for health checks (Docker Hub images)
-	docker compose -f $(TESTS_COMPOSE) up --wait --detach
-
-stop: ## Stop full stack
-	docker compose -f $(TESTS_COMPOSE) down
-
-logs: ## Tail logs for the full stack
-	docker compose -f $(TESTS_COMPOSE) logs --follow
-
-ps: ## Show running stack containers and health status
-	docker compose -f $(TESTS_COMPOSE) ps
-
-dev: ## Start full stack for local dev, detached (swap any service for a local process)
-	docker compose -f $(TESTS_COMPOSE) -f $(DEV_OVERRIDE) up --wait --detach
-
-dev-infra: ## Start infra only in dev mode (MongoDB, Redis, LocalStack, Defra ID stub)
-	docker compose -f $(TESTS_COMPOSE) -f $(DEV_OVERRIDE) up --wait --detach $(INFRA_SERVICES)
-
-start-infra: ## Start shared infra only, detached (MongoDB, Redis, LocalStack, Defra ID stub)
-	docker compose -f $(TESTS_COMPOSE) up --wait --detach $(INFRA_SERVICES)
-
-# --- Individual services (run make start-infra first) ---
+# --- Individual services ---
 
 start-frontend: ## Start frontend dev server from source
 	npm --prefix $(REPOS_DIR)/trade-imports-animals-frontend run dev
@@ -158,7 +122,7 @@ start-backend: ## Start backend from source
 	SPRING_PROFILES_ACTIVE=local mvn -f $(REPOS_DIR)/trade-imports-animals-backend/pom.xml spring-boot:run
 
 start-admin: ## Start admin dev server from source
-	npm --prefix $(REPOS_DIR)/trade-imports-animals-admin run dev
+	PORT=3001 npm --prefix $(REPOS_DIR)/trade-imports-animals-admin run dev
 
 # --- Docs ---
 
