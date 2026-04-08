@@ -6,7 +6,7 @@ JAVA_REPOS    := trade-imports-animals-backend
 
 .PHONY: setup update status install lint test \
         start-frontend start-backend start-admin \
-        scan-docs clean help
+        clean help
 
 # --- Help ---
 
@@ -124,15 +124,3 @@ start-backend: ## Start backend from source
 start-admin: ## Start admin dev server from source
 	PORT=3001 npm --prefix $(REPOS_DIR)/trade-imports-animals-admin run dev
 
-# --- Docs ---
-
-scan-docs: ## Regenerate docs/<repo>.md tech overview for all repos using Claude
-	@command -v claude >/dev/null 2>&1 || { echo "claude CLI not found — run: npm i -g @anthropic-ai/claude-code"; exit 1; }
-	@skill=$$(cat skills/scan-repo-docs.md); \
-	for repo in $(REPOS); do \
-		dir=$(REPOS_DIR)/$$repo; \
-		if [ -d "$$dir" ]; then \
-			echo "  $$repo — scanning..."; \
-			claude -p "$$skill\n\nScan the repository at: $$dir\nWrite the output doc to: docs/$$repo.md"; \
-		fi; \
-	done
