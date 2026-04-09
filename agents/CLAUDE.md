@@ -68,6 +68,8 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 |**confluence**|||
 |skills/tools/confluence/page.sh|page-id [summary\|json]|Get page|
 |skills/tools/confluence/update-page.sh|page-id "Title" content-file|Update page|
+|skills/tools/confluence/sync-docs.sh|[--dry-run] [--root-id ID]|Sync Confluence folder tree to docs/confluence/ as markdown|
+|skills/tools/confluence/clean-docs.sh|[args forwarded]|Wipe docs/confluence/ and re-sync from scratch|
 |**github-actions**|||
 |skills/tools/github-actions/get-logs.sh|repo run-id-or-url|Workflow run logs|
 |skills/tools/github-actions/get-failure.sh|repo run-id-or-url|Failed step logs|
