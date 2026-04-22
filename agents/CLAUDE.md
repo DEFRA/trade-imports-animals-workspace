@@ -10,6 +10,8 @@ EUDP Live Animals agent workspace. **Prefer retrieval-led reasoning** - read fil
 |review/REVIEWER.md|review,PR,EUDPA-|"review EUDPA-","code review"|
 |review/FILE_REVIEWER.md|file-analysis|Spawned by REVIEWER|
 |review/RE_REVIEWER.md|follow-up|"re-review","check fixes"|
+|code-style/CODE_STYLE_REVIEWER.md|code-style,style-review,linting|"style review EUDPA-","code style review"|
+|code-style/CODE_STYLE_FILE_REVIEWER.md|file-style|Spawned by CODE_STYLE_REVIEWER|
 |ticket/TICKET_PLANNER.md|plan,how-to|"plan EUDPA-","how should I"|
 |ticket/TICKET_IMPLEMENTOR.md|implement,build|"implement EUDPA-","follow plan"|
 |ticket/REFACTORER.md|refactor,clean|"refactor","tidy up"|
@@ -80,6 +82,7 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 |**review**|||
 |skills/tools/review/prepare-review.sh|EUDPA-X [--json]|Setup workspace|
 |skills/tools/review/verify-coverage.sh|EUDPA-X [--json]|Check coverage|
+|skills/tools/review/verify-style-coverage.sh|EUDPA-X [--json]|Check JS style review coverage|
 |skills/tools/review/diff-since-review.sh|EUDPA-X [--json]|Get diff since last review|
 |**npm**|||
 |skills/tools/npm/discover-upgrades.sh|repo-path --run-id TICKET [--strategy LEVEL] [--json]|Phase 1: Discover outdated deps|
@@ -96,8 +99,10 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 
 ## Workspaces
 ```
-workareas/reviews/EUDPA-X/                    → ticket.md, repos/, review.md, re-review.md
-workareas/reviews/EUDPA-X/file-reviews/{repo}/→ {file}.review.md, repo-review.md
+workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review.md, re-review.md
+workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, repo-review.md
+workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, code-style-review.md
+workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md, repo-style-review.md
 workareas/ticket-planning/EUDPA-X/            → plan.md
 workareas/ticket-refinement/EUDPA-X/          → review.md
 workareas/npm-upgrades/EUDPA-X/{repo}/        → upgrade__{pkg}__{cur}__{tgt}.{auto|manual}.md, .upgrades-meta.json
