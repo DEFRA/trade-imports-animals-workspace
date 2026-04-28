@@ -56,29 +56,38 @@ cd ../repos/{repo} && npx prettier --write {file}
 
 ## Step 4: Run Tests (Post-check)
 
+Always redirect test output to a tmp file and read it once — never grep streaming output or re-run to check partial results.
+
 ### Node.js repos
 
 Unit tests:
 ```bash
-cd ../repos/{repo} && npm test
+cd ../repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
+Then read the file you just created.
 
-E2E tests:
+E2E tests (run after any change that could affect the user journey):
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local
+cd ../repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
+Then read the file you just created for the summary line only. If failures exist, do NOT grep the output — instead find and read the structured artifacts:
+```bash
+find ../repos/trade-imports-animals-tests/test-results -name "error-context.md"
+```
+Read each `error-context.md` to diagnose what actually failed.
 
 ### Java repo
 ```bash
-cd ../repos/trade-imports-animals-backend && mvn test -q
+cd ../repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
+Then read the file you just created. Surefire also writes per-class reports to `target/surefire-reports/`.
 
 **If unit tests fail:**
 - Revert: `cd ../repos/{repo} && git checkout -- {file}`
 - Return: `FAILED: #N — unit tests broke after change, reverted`
 
 **If E2E tests fail:**
-- Read `../repos/trade-imports-animals-tests/test-results/*/error-context.md`
+- Read `error-context.md` artifacts as above — do not try to diagnose from console tail
 - If failure is related to this change: revert and return `FAILED: #N — E2E tests broke after change, reverted. Failure: [summary]`
 - If failure is clearly unrelated (different feature, pre-existing flaky test): note it and continue
 

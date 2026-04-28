@@ -49,24 +49,30 @@ No input needed — running all fixes now.
 
 ## Step 3: Pre-flight Test Check
 
-Before making any changes, run tests for each repo that has queued fixes.
+Before making any changes, run tests for each repo that has queued fixes. Always redirect output to a tmp file and read it once — never grep streaming output or re-run to check partial results.
 
 ### Node.js repos (frontend, admin, tests)
 
 Unit tests:
 ```bash
-cd ../repos/{repo} && npm test
+cd ../repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
+Then read the file you just created.
 
 E2E tests:
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local
+cd ../repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+```
+Then read the file you just created for the summary. If failures exist, do NOT grep the console output — find and read the structured Playwright artifacts instead:
+```bash
+find ../repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
 
 ### Java repo (backend)
 ```bash
-cd ../repos/trade-imports-animals-backend && mvn test -q
+cd ../repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
+Then read the file you just created.
 
 **If tests fail in any repo:**
 ```
