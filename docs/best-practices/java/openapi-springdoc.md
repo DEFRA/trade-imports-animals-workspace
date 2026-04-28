@@ -228,6 +228,32 @@ Usually SpringDoc infers the request body schema from the Spring `@RequestBody` 
 
 ## 6. DTO / schema annotations
 
+### Project rules — non-negotiable defaults
+
+The OpenAPI document is part of the API contract. Apply these on every public DTO without exception.
+
+1. **Every public class, record, and enum constant carries a `@Schema(description = "...")`.** Undocumented fields are a defect, not stylistic noise — generated client SDKs and consumer-facing docs both surface the description.
+2. **`requiredMode = Schema.RequiredMode.REQUIRED` on every non-nullable field.** The default is auto-detected and varies across SpringDoc versions: a field that's "required" in one version becomes "optional" in another, breaking generated clients silently. Be explicit.
+3. **`@Schema` on a field with a Bean Validation annotation (`@NotNull`, `@Pattern`, etc.) must agree with it.** If `@NotNull` says required, `@Schema` must say `requiredMode = REQUIRED`. Mismatch == lying contract.
+
+```java
+@Schema(description = "Response from initiating a document upload")
+public record DocumentUploadResponse(
+
+    @Schema(description = "Upload session identifier",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "upload-abc-123")
+    String uploadId,
+
+    @Schema(description = "URL the client should POST the file to",
+            requiredMode = Schema.RequiredMode.REQUIRED,
+            example = "https://cdp-uploader.example/upload-and-scan/upload-abc-123")
+    String uploadUrl
+) {}
+```
+
+### Standard `@Schema` shape
+
 `@Schema` on classes and fields:
 
 ```java
@@ -239,14 +265,17 @@ public record NotificationDto(
     String id,
 
     @Schema(description = "System-assigned reference number", example = "DRAFT.IMP.2026.123",
+            requiredMode = Schema.RequiredMode.REQUIRED,
             accessMode = Schema.AccessMode.READ_ONLY)
     String referenceNumber,
 
-    @Schema(description = "Origin country details")
+    @Schema(description = "Origin country details",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull
     Origin origin,
 
-    @Schema(description = "Current status of the notification")
+    @Schema(description = "Current status of the notification",
+            requiredMode = Schema.RequiredMode.REQUIRED)
     NotificationStatus status,
 
     @Schema(hidden = true)  // Exclude from API docs

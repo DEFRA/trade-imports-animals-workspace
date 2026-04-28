@@ -105,15 +105,99 @@ Key points:
 - `@Timed` — Micrometer metric per endpoint
 - `@RequestHeader HttpHeaders` — captures all headers for audit trail
 
+### Security defaults for controllers
+
+Controllers that accept user-controlled URLs, file streams, or take `{id}`-style path variables must apply these defaults. They are not optional — each one prevents a class of vulnerability.
+
+**Validate `redirectUrl` against an allowlist (open-redirect)**
+
+A controller that takes a `redirectUrl` from a request body or query parameter and returns it (directly or via `Location` header) is an open redirect unless the URL is checked against a known origin.
+
+```java
+// Wrong — caller controls where the user lands after the upload completes
+@PostMapping("/document-uploads")
+public ResponseEntity<DocumentUploadResponse> initiate(@RequestBody DocumentUploadRequest req) {
+    return documentService.initiate(req.redirectUrl());  // attacker-controlled URL
+}
+
+// Correct — reject any URL that doesn't start with the known frontend origin
+@PostMapping("/document-uploads")
+public ResponseEntity<DocumentUploadResponse> initiate(@RequestBody DocumentUploadRequest req) {
+    String allowed = cdpConfig.frontend().baseUrl();
+    String redirectUrl = req.redirectUrl() != null ? req.redirectUrl() : allowed;
+    if (!redirectUrl.startsWith(allowed)) {
+        throw new IllegalArgumentException("redirectUrl must match " + allowed);
+    }
+    return documentService.initiate(redirectUrl);
+}
+```
+
+**`Location` header on `201 Created` must be an absolute URI (RFC 9110)**
+
+A relative URI in the `Location` header is non-conformant for `201 Created`. Build it from the current request so it survives reverse proxies and mounted context paths.
+
+```java
+// Wrong — relative URI
+return ResponseEntity.created(URI.create("/document-uploads/" + uploadId)).body(response);
+
+// Correct — absolute URI built from current request
+URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+        .path("/{uploadId}")
+        .buildAndExpand(uploadId)
+        .toUri();
+return ResponseEntity.created(location).body(response);
+```
+
+**Forwarded `Content-Type` is never trusted**
+
+When streaming a file retrieved from a third-party (CDP Uploader, S3, any external store), allow-list the MIME types you'll forward and always set `X-Content-Type-Options: nosniff`. Default to `application/octet-stream` for unknown types.
+
+```java
+private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        "application/pdf", "image/jpeg", "image/png",
+        "application/vnd.ms-excel", "application/msword",
+        "application/octet-stream"
+);
+
+@GetMapping("/document-uploads/{uploadId}/file")
+public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable String uploadId) {
+    var fileData = documentService.findFile(uploadId);
+
+    String contentType;
+    try {
+        var parsed = MediaType.parseMediaType(fileData.contentType());
+        contentType = ALLOWED_CONTENT_TYPES.contains(parsed.toString())
+                ? parsed.toString()
+                : MediaType.APPLICATION_OCTET_STREAM_VALUE;
+    } catch (InvalidMediaTypeException e) {
+        log.warn("Bad content-type from upstream for uploadId={}: {}", uploadId, fileData.contentType());
+        contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+    }
+
+    return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_TYPE, contentType)
+            .header("X-Content-Type-Options", "nosniff")           // always
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment") // never inline
+            .body(fileData.streamingBody());
+}
+```
+
+**IDOR — verify ownership before returning a resource by ID**
+
+If an endpoint accepts a resource ID from the request and the caller could plausibly have access to *some* resources but not others, the service must check ownership. "Authentication = authorisation" is only acceptable in skeleton/all-or-nothing phases and should be a recorded decision, not an implicit assumption. When in doubt, pass the parent reference (e.g. notification ref) into the lookup so the data layer enforces the join.
+
 ---
 
 ## 4. Request / response
 
 ```java
-// Path variable
-@GetMapping("/{id}")
-public ResponseEntity<NotificationDto> getById(@PathVariable String id) {
-    return ResponseEntity.ok(service.findById(id));
+// Path variable — always constrain format on @PathVariable.
+// Without @Pattern / @Size, any malformed value reaches the service layer
+// (and database queries) before being rejected. Class needs @Validated.
+@GetMapping("/{referenceNumber}")
+public ResponseEntity<NotificationDto> getByReference(
+        @PathVariable @Pattern(regexp = "^[A-Z0-9.\\-]{1,50}$") String referenceNumber) {
+    return ResponseEntity.ok(service.findByReferenceNumber(referenceNumber));
 }
 
 // Query params
@@ -342,7 +426,7 @@ logging:
 
 ```java
 @ConfigurationProperties(prefix = "app")
-@Validated
+@Validated   // ← required: without this, the @NotBlank etc. are silent decoration
 public record AppConfig(
     @NotBlank String backendUrl,
     @NotBlank String adminSecret,
@@ -350,12 +434,28 @@ public record AppConfig(
 ) {
     public record AwsConfig(
         @NotBlank String region,
+        @Pattern(regexp = "^(https?://.*)?$")  // optional but format-checked
         String endpointOverride
     ) {}
 }
 ```
 
 Register: `@EnableConfigurationProperties(AppConfig.class)` on the application class.
+
+**Why `@Validated` matters.** Without it, missing or malformed YAML produces NPEs at the first bean that calls `cdpConfig.uploader().maxFileSize()` — typically deep in a service method, with a stack trace that doesn't name the missing key. With `@Validated`, the application fails to start with a clear `ConfigurationPropertiesBindException` naming the offending field. Apply this to **every** `@ConfigurationProperties` record.
+
+Constraint annotations to use on config records:
+
+| Annotation | Use |
+|-----------|-----|
+| `@NotNull` | Required key — null is a configuration error, not a default |
+| `@NotBlank` | Required string that must be non-empty |
+| `@Pattern(regexp)` | URL formats, reference number formats, anything with structure |
+| `@Positive` / `@PositiveOrZero` | Sizes, timeouts, counts |
+| `@Min` / `@Max` | Bounded numeric ranges |
+| `@Nullable` | Document optional fields explicitly (Jakarta annotation, not Spring) |
+
+Match constraint annotation packages to your overall stack — this project uses Jakarta (`jakarta.validation.constraints.*`, `jakarta.annotation.Nullable`); don't mix in `org.springframework.lang.Nullable`.
 
 ---
 
@@ -910,3 +1010,51 @@ class NotificationServiceIT {
 | `@With` | Generates `withX()` copy methods |
 
 **Error type URI convention:** `/problems/{problem-type}` (e.g. `/problems/not-found`, `/problems/validation-error`)
+
+---
+
+## 22. Maven — coordinated dependency versions via BOMs
+
+Spring Boot's `spring-boot-starter-parent` already imports a curated BOM for Spring/Jackson/etc. For dependency families *outside* Spring (AWS SDK, Spring Cloud, Testcontainers), import their BOM in `dependencyManagement` rather than pinning each artifact's `<version>` separately. A BOM keeps every artifact in the family at a compatible version.
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <!-- AWS SDK v2 — one BOM, every aws-sdk dep stays consistent -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bom</artifactId>
+            <version>${aws.sdk.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <!-- Spring Cloud — manages spring-cloud-starter-* artifacts -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId>
+            <version>${spring.cloud.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <!-- No <version> — comes from the BOM -->
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>s3</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>sts</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-openfeign</artifactId>
+    </dependency>
+</dependencies>
+```
+
+**Why it matters.** Manual per-artifact versions drift — one upgrade leaves siblings on incompatible versions, surfacing as `NoSuchMethodError`/`LinkageError` at runtime. A single BOM property bumps all family members atomically.

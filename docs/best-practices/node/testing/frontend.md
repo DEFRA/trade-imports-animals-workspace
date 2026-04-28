@@ -303,6 +303,121 @@ Reuse the shared helpers in `src/server/common/test-helpers/` rather than duplic
 
 ---
 
+## Assertion specificity & mock lifecycle
+
+Tests that pass for the wrong reason are worse than no tests — they paint a green tick on broken behaviour. The patterns below close the most common gaps.
+
+### Assert call shape, not just call count
+
+`toHaveBeenCalled()` only proves the function ran. It tolerates renamed arguments, swapped positional arguments, dropped fields, and arguments going to the wrong place. Always assert the shape of the call.
+
+```js
+// Wrong — passes even if the wrong notificationRef is passed,
+// or if dateOfIssue / documentType are silently dropped.
+expect(documentClient.initiate).toHaveBeenCalled()
+
+// Correct — failures here pinpoint the broken field.
+expect(documentClient.initiate).toHaveBeenCalledWith(
+  notificationRef,
+  expect.objectContaining({
+    documentType: 'ITAHC',
+    documentReference: 'REF-123',
+    dateOfIssue: '2026-04-01'
+  }),
+  traceId
+)
+```
+
+### `expect.objectContaining` over `expect.any(Object)`
+
+`expect.any(Object)` matches `{}`, `[]`, `Date`, even a `Map`. It's a placeholder, not an assertion. Use `objectContaining` to pin down the fields that matter.
+
+```js
+// Wrong — passes when logger receives any object whatsoever
+expect(logger.error).toHaveBeenCalledWith('Save failed', expect.any(Object))
+
+// Correct — proves the error object had the fields the controller needs
+expect(logger.error).toHaveBeenCalledWith(
+  'Save failed',
+  expect.objectContaining({ status: 500, message: expect.stringContaining('Backend') })
+)
+```
+
+The same applies to logger argument shape: assert `expect.objectContaining({ info: expect.any(Function), error: expect.any(Function) })` rather than `expect.any(Object)`.
+
+### `vi.spyOn(obj, 'method')` over reassigning `obj.method = vi.fn()`
+
+Direct reassignment is not undone by `vi.restoreAllMocks()` — the replacement leaks into other tests in the same file (and into other files via the shared module instance). Use `vi.spyOn` so the original implementation is restored.
+
+```js
+// Wrong — leaks across tests; vi.restoreAllMocks() is a no-op for this
+notificationClient.submit = vi.fn().mockRejectedValue(new Error('Backend error'))
+
+// Correct — restorable
+vi.spyOn(notificationClient, 'submit')
+  .mockRejectedValue(Object.assign(new Error('Backend error'), { status: 500 }))
+```
+
+### Centralise mock reset
+
+Scattered `mockClear()` calls inside individual tests drift out of sync as tests are added. Use `beforeEach` for state clearing and `afterEach` (or `afterAll`) for spy restoration:
+
+```js
+// Outer describe — applies to every test in the block
+beforeEach(() => {
+  vi.clearAllMocks()       // resets call history and ".mockResolvedValueOnce" queues
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()     // restores spies to their original implementations
+})
+```
+
+`clearAllMocks()` resets call history. `restoreAllMocks()` restores `vi.spyOn` originals. `resetAllMocks()` does both plus clears implementations. Pick based on what you need; don't sprinkle them.
+
+### Restore mutated globals in `afterEach`
+
+Tests that mutate `window.location`, `process.env`, `global.fetch`, or any other shared object must restore them or the next test inherits the mutation. The leak often shows up as a flaky test in unrelated suites.
+
+```js
+let originalLocation
+
+beforeEach(() => {
+  originalLocation = window.location
+})
+
+afterEach(() => {
+  Object.defineProperty(window, 'location', { value: originalLocation, writable: true })
+})
+```
+
+### Assert error path content, not just that it errored
+
+`expect(...).rejects.toThrow()` proves the promise rejected. It does not prove *why*. For schema validation, error messages, and HTTP error shapes, assert the message and path/status so wording regressions are caught.
+
+```js
+// Wrong — passes for any rejection
+await expect(submitNotification(payload)).rejects.toThrow()
+
+// Correct — pins the error contract
+await expect(submitNotification(payload)).rejects.toMatchObject({
+  message: 'Failed to submit notification',
+  status: 500,
+  statusText: 'Internal Server Error'
+})
+
+// For Joi multi-error results, assert each detail
+expect(error.details[0].message).toBe('"issueDate-day" must be a number')
+expect(error.details[0].path).toContain('issueDate-day')
+expect(error.details[1].message).toContain('issueDate-month')
+```
+
+### Test categorisation matches behaviour
+
+Failure assertions belong inside `describe('invalid …')` blocks; success assertions in `describe('valid …')`. A "should fail when X" test in a `describe('valid payloads')` block reads as a passing positive test at a glance and gets missed in coverage reviews.
+
+---
+
 ## Component template tests
 
 Test Nunjucks macros via `renderComponent` from `component-helpers.js`:

@@ -538,7 +538,45 @@ Notification n = Notification.builder()
 
 ---
 
-## 17. Code style quick-reference
+## 17. I/O hygiene
+
+### Always close `InputStream` / `OutputStream` with try-with-resources
+
+Reading from an `InputStream` returned by an HTTP client or file API and not closing it leaks file descriptors and connections. The leak is invisible in development and shows up under load. Use try-with-resources whenever you obtain a stream.
+
+```java
+// Wrong — if readAllBytes() throws, the stream stays open
+ResponseEntity<InputStream> resp = httpClient.exchange(/* ... */);
+String body = new String(resp.getBody().readAllBytes(), StandardCharsets.UTF_8);
+
+// Correct
+ResponseEntity<InputStream> resp = httpClient.exchange(/* ... */);
+String body;
+try (InputStream is = resp.getBody()) {
+    body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+}
+```
+
+### Always specify a charset
+
+`String.getBytes()`, `new String(byte[])`, `Files.readString(Path)` overloads without a charset use the **platform default** — UTF-8 on Linux/macOS, often Cp1252 on Windows CI. Tests pass locally and fail in CI on the first non-ASCII character.
+
+```java
+// Wrong — platform-dependent
+byte[] bytes = "test content".getBytes();
+String text = new String(downloadedBytes);
+
+// Correct
+import java.nio.charset.StandardCharsets;
+byte[] bytes = "test content".getBytes(StandardCharsets.UTF_8);
+String text = new String(downloadedBytes, StandardCharsets.UTF_8);
+```
+
+The same rule applies to `Files.readString(path, StandardCharsets.UTF_8)`, `Files.writeString(...)`, and `Reader`/`Writer` constructors.
+
+---
+
+## 18. Code style quick-reference
 
 | Convention | Rule |
 |-----------|------|

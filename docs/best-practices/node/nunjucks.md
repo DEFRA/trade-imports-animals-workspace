@@ -9,36 +9,36 @@ Project baseline: Nunjucks with `@hapi/vision`, `autoescape: true`, `trimBlocks:
 Both repos share an identical config at `src/config/nunjucks/nunjucks.js`:
 
 ```js
-import nunjucks from 'nunjucks'
+import nunjucks from 'docs/best-practices/node/nunjucks'
 import path from 'path'
-import { formatDate } from '../filters/format-date.js'
-import { formatCurrency } from '../filters/format-currency.js'
-import { assign } from 'lodash'
+import {formatDate} from '../filters/format-date.js'
+import {formatCurrency} from '../filters/format-currency.js'
+import {assign} from 'lodash'
 
 export const configureNunjucks = (server) => {
-  const env = nunjucks.configure(
-    [
-      // Search paths — order matters, first match wins
-      path.join(process.cwd(), 'node_modules/govuk-frontend/dist/'),
-      path.join(process.cwd(), 'src/server/common/templates'),
-      path.join(process.cwd(), 'src/server/common/components')
-    ],
-    {
-      autoescape: true,          // HTML-escape all output by default
-      throwOnUndefined: false,   // undefined variables render as empty string (not an error)
-      trimBlocks: true,          // remove newline after block tags
-      lstripBlocks: true,        // strip leading whitespace before block tags
-      watch: false,              // don't watch files for changes (nodemon handles this)
-      noCache: process.env.NODE_ENV === 'development'
-    }
-  )
+    const env = nunjucks.configure(
+        [
+            // Search paths — order matters, first match wins
+            path.join(process.cwd(), 'node_modules/govuk-frontend/dist/'),
+            path.join(process.cwd(), 'src/server/common/templates'),
+            path.join(process.cwd(), 'src/server/common/components')
+        ],
+        {
+            autoescape: true,          // HTML-escape all output by default
+            throwOnUndefined: false,   // undefined variables render as empty string (not an error)
+            trimBlocks: true,          // remove newline after block tags
+            lstripBlocks: true,        // strip leading whitespace before block tags
+            watch: false,              // don't watch files for changes (nodemon handles this)
+            noCache: process.env.NODE_ENV === 'development'
+        }
+    )
 
-  // Custom filters
-  env.addFilter('formatDate', formatDate)            // date-fns based
-  env.addFilter('formatCurrency', formatCurrency)    // Intl.NumberFormat based
-  env.addFilter('assign', (obj, ...args) => assign({}, obj, ...args))  // lodash merge
+    // Custom filters
+    env.addFilter('formatDate', formatDate)            // date-fns based
+    env.addFilter('formatCurrency', formatCurrency)    // Intl.NumberFormat based
+    env.addFilter('assign', (obj, ...args) => assign({}, obj, ...args))  // lodash merge
 
-  return env
+    return env
 }
 ```
 
@@ -503,10 +503,10 @@ env.addFilter('fetchLabel', async (code, callback) => {
 ## 11. Control flow
 
 ```nunjucks
-{# if / elif / else #}
-{% if status === "APPROVED" %}
+{# if / elif / else — use == / != in Nunjucks, NOT === / !== (see §17 #11) #}
+{% if status == "APPROVED" %}
   <p class="govuk-body">Approved</p>
-{% elif status === "REJECTED" %}
+{% elif status == "REJECTED" %}
   <p class="govuk-body govuk-!-color-red">Rejected</p>
 {% else %}
   <p class="govuk-body">Pending</p>
@@ -819,4 +819,75 @@ Set `noCache: true` in development to see template changes without restart.
 
 {# Correct #}
 {{ govukInput({ id: "name", name: "name", label: { text: "Full name" } }) }}
+```
+
+**11. Using `===` / `!==` in `{% if %}` — undefined behaviour**
+
+Nunjucks operators are `==` / `!=` (and `eq` / `ne`). `===` / `!==` are not part of the Nunjucks expression grammar — they are silently parsed as something else and produce results that look right in some cases and fail in others. Never use them in templates.
+
+```nunjucks
+{# Wrong — silent undefined behaviour #}
+{% if status === "APPROVED" %}...{% endif %}
+{% if doc.scanStatus !== "PENDING" %}...{% endif %}
+
+{# Correct #}
+{% if status == "APPROVED" %}...{% endif %}
+{% if doc.scanStatus != "PENDING" %}...{% endif %}
+```
+
+**12. Chained property access without null guards**
+
+Nunjucks's `throwOnUndefined: false` only protects the *final* missing key. Accessing `notification.commodity.commodityComplement.length` still throws if `notification.commodity` is null, because each intermediate hop is evaluated. Guard each hop you need.
+
+```nunjucks
+{# Wrong — throws if notification.commodity is null #}
+{% if notification.commodity.commodityComplement.length %}...{% endif %}
+
+{# Correct — guard each hop #}
+{% if notification.commodity
+   and notification.commodity.commodityComplement
+   and notification.commodity.commodityComplement.length %}
+  ...
+{% endif %}
+```
+
+**13. Rendering raw enum / camelCase API values directly**
+
+Backend constants like `VETERINARY_HEALTH_CERTIFICATE`, `unweanedAnimals`, `certifiedFor` are not user-facing strings. Render via a `label` filter with an explicit override map and a generic camelCase-to-Sentence-case fallback.
+
+```js
+// nunjucks.js — register filter
+const overrides = {
+  VETERINARY_HEALTH_CERTIFICATE: 'Veterinary health certificate',
+  ITAHC: 'ITAHC',
+  unweanedAnimals: 'Unweaned animals'
+}
+env.addFilter('label', (value) =>
+  overrides[value] ?? value.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()).trim()
+)
+```
+
+```nunjucks
+{# In templates — never render the raw value #}
+{{ document.documentType | label }}        {# "Veterinary health certificate" #}
+{{ notification.reasonForImport | label }} {# "Internal market" #}
+```
+
+**14. Silent `else` branches in status mappings**
+
+A bare `else` after known status branches will quietly mis-render any status the team adds later. Make the known branches explicit and surface unexpected values rather than swallowing them.
+
+```nunjucks
+{# Wrong — every unknown status renders as "Checking" #}
+{% if doc.scanStatus == "COMPLETE" %}<strong class="govuk-tag govuk-tag--green">Clean</strong>
+{% elif doc.scanStatus == "REJECTED" %}<strong class="govuk-tag govuk-tag--red">Rejected</strong>
+{% else %}<strong class="govuk-tag govuk-tag--blue">Checking</strong>
+{% endif %}
+
+{# Correct — PENDING is explicit; truly unknown values are visible, not silent #}
+{% if doc.scanStatus == "COMPLETE" %}<strong class="govuk-tag govuk-tag--green">Clean</strong>
+{% elif doc.scanStatus == "REJECTED" %}<strong class="govuk-tag govuk-tag--red">Rejected</strong>
+{% elif doc.scanStatus == "PENDING" %}<strong class="govuk-tag govuk-tag--blue">Checking</strong>
+{% else %}<strong class="govuk-tag govuk-tag--grey">Unknown ({{ doc.scanStatus }})</strong>
+{% endif %}
 ```

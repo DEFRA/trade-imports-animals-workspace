@@ -285,6 +285,36 @@ List<NotificationRef> findRefsByStatus(NotificationStatus status);
 
 ## 6. Indexes
 
+**Match indexes to your query patterns.** A repository method that filters on two fields needs a compound index on those fields, otherwise Mongo loads matching documents into memory and filters there. The cost is invisible until production data volumes catch up — review the actual derived queries when the entity is added, not later.
+
+```java
+public interface AccompanyingDocumentRepository extends MongoRepository<AccompanyingDocument, String> {
+    // Filters on (notificationReferenceNumber, scanStatus) — needs a compound index
+    Optional<AccompanyingDocument> findFirstByNotificationReferenceNumberAndScanStatus(
+            String notificationReferenceNumber, ScanStatus scanStatus);
+}
+```
+
+```java
+@Document
+@CompoundIndex(name = "ref_status",
+               def = "{'notificationReferenceNumber': 1, 'scanStatus': 1}")
+public class AccompanyingDocument { /* ... */ }
+```
+
+**Partial unique indexes for stateful invariants.** When the unique constraint applies only to a subset of documents (e.g. "at most one PENDING document per notification ref"), use `partialFilter` so completed/rejected documents don't compete for the unique slot.
+
+```java
+@Document
+@CompoundIndex(
+    name = "one_pending_per_ref",
+    def = "{'notificationReferenceNumber': 1, 'scanStatus': 1}",
+    unique = true,
+    partialFilter = "{ 'scanStatus': 'PENDING' }"
+)
+public class AccompanyingDocument { /* ... */ }
+```
+
 **Annotation-based** (auto-created on startup — disable in production):
 
 ```java
@@ -434,6 +464,69 @@ public MongoTransactionManager transactionManager(MongoDatabaseFactory factory) 
     return new MongoTransactionManager(factory);
 }
 ```
+
+**Cascade deletes across collections must be `@Transactional`.** A common shape is "delete a notification *and* all its child documents". Without a transaction, a failure between the two deletes leaves orphaned children. Wrap the cascade in a single `@Transactional` method.
+
+```java
+// Wrong — non-atomic, leaves orphans on partial failure
+public void deleteByReferenceNumbers(List<String> refs) {
+    notificationRepository.deleteAllByReferenceNumberIn(refs);
+    documentService.deleteForNotificationRefs(refs);  // crash here = orphans
+}
+
+// Correct
+@Transactional
+public void deleteByReferenceNumbers(List<String> refs) {
+    notificationRepository.deleteAllByReferenceNumberIn(refs);
+    documentService.deleteForNotificationRefs(refs);
+}
+```
+
+---
+
+## 9a. Lombok hygiene on entities
+
+`@Data` and `@Builder` are convenient but combine in ways that bite at runtime. The defaults below prevent the most common gotchas on entities with mutable fields (lists, maps).
+
+**Keep `@AllArgsConstructor` private when using `@Builder`.**
+
+The all-args constructor bypasses `@Builder.Default`, so calling it directly silently produces an entity in an invalid state (e.g. `files` is `null` instead of an empty list). Make it private so the only public construction path is the builder.
+
+```java
+// Wrong — public AllArgsConstructor lets callers skip @Builder.Default
+@Document @Data @Builder
+@AllArgsConstructor
+public class AccompanyingDocument {
+    @Builder.Default private List<UploadedFile> files = new ArrayList<>();
+}
+new AccompanyingDocument(/*…*/, null);   // compiles, files is null
+
+// Correct — only builder() constructs valid instances
+@Document @Data @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class AccompanyingDocument {
+    @Builder.Default private List<UploadedFile> files = new ArrayList<>();
+}
+```
+
+**`@Data` + mutable list = unsafe `equals` / `hashCode`.**
+
+`@Data` generates `equals`/`hashCode` over every field, including mutable lists. An entity placed in a `Set` or used as a `Map` key changes its hash code when the list mutates — collection lookups silently break. Restrict equality to the `@Id` field on entities you store in collections.
+
+```java
+@Document @Data @Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class AccompanyingDocument {
+    @Id
+    @EqualsAndHashCode.Include
+    private String id;
+
+    private List<UploadedFile> files;  // not part of equality
+}
+```
+
+This is project policy for any `@Document` class with mutable collection fields. For pure value records with all-immutable fields, the default `@Data` equality is fine.
 
 **Constraints:**
 - Transactions require MongoDB 4.0+ replica set

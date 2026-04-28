@@ -347,6 +347,33 @@ verify(notificationRepository, never()).deleteAll(anyList());
 verify(notificationRepository).deleteAll(List.of(n1, n2));
 ```
 
+### `InOrder` — when call order matters
+
+For cascade operations where the *order* of collaborator calls is part of the contract (delete children before parent, persist before publish, etc.), bare `verify` calls pass even when the order is swapped. Use `InOrder` so a swap fails the test.
+
+```java
+// Wrong — both verifies pass even if production swapped the calls
+@Test
+void deleteByReferenceNumbers_shouldCascade() {
+    notificationService.deleteByReferenceNumbers(List.of("REF-1"));
+
+    verify(notificationRepository).deleteAllByReferenceNumberIn(List.of("REF-1"));
+    verify(documentService).deleteForNotificationRefs(List.of("REF-1"));
+}
+
+// Correct — fails if children are deleted after parent (orphan-window bug)
+@Test
+void deleteByReferenceNumbers_shouldDeleteDocumentsBeforeNotifications() {
+    notificationService.deleteByReferenceNumbers(List.of("REF-1"));
+
+    InOrder inOrder = inOrder(documentService, notificationRepository);
+    inOrder.verify(documentService).deleteForNotificationRefs(List.of("REF-1"));
+    inOrder.verify(notificationRepository).deleteAllByReferenceNumberIn(List.of("REF-1"));
+}
+```
+
+Use this whenever a service composes two or more collaborator calls whose ordering is load-bearing. Without `InOrder`, the test green-lights any permutation.
+
 ---
 
 ## Helper methods

@@ -142,6 +142,35 @@ import Joi from 'joi'
 }
 ```
 
+**Every path parameter needs a format constraint.** A handler that does its own `if (!UPLOAD_ID_PATTERN.test(uploadId))` check is one accidental rename away from a 500. Push the format into `validate.params` on the route definition so Hapi rejects malformed input at the routing layer, before the handler runs.
+
+```js
+// Wrong — handler-level guard, easy to drop or get wrong
+{
+  method: 'GET',
+  path: '/document-uploads/{uploadId}',
+  handler: async (request, h) => {
+    const { uploadId } = request.params
+    if (!/^[a-zA-Z0-9-]+$/.test(uploadId)) throw Boom.badRequest()
+    // ...
+  }
+}
+
+// Correct — route-level validation
+{
+  method: 'GET',
+  path: '/document-uploads/{uploadId}',
+  options: {
+    validate: {
+      params: Joi.object({
+        uploadId: Joi.string().pattern(/^[a-zA-Z0-9-]+$/).min(1).max(50).required()
+      })
+    }
+  },
+  handler: async (request, h) => { /* uploadId is guaranteed valid */ }
+}
+```
+
 **Manual validation in handler** — for GOV.UK-style form validation with field-level errors:
 
 ```js
@@ -496,6 +525,52 @@ request.cookieAuth.set({ userId: user.id, token: accessToken })
 request.cookieAuth.clear()
 ```
 
+### Encoding values into outbound URLs
+
+When an HTTP client interpolates user-supplied data (a reference number, an upload ID) into a URL path, always wrap the value with `encodeURIComponent`. Without it, a value containing `/`, `?`, `#`, or whitespace silently rewrites the request URL — at best you get a 404 from the wrong endpoint, at worst you have a request-smuggling vector.
+
+```js
+// Wrong — referenceNumber containing "/" or "?" rewrites the path
+const response = await fetch(`${baseUrl}/notifications/${referenceNumber}/documents`)
+
+// Correct
+const response = await fetch(
+  `${baseUrl}/notifications/${encodeURIComponent(referenceNumber)}/documents`
+)
+```
+
+The same rule applies to query string values (`?ref=${encodeURIComponent(ref)}`). Schema validation on inbound params is not a substitute — clients calling other services need their own encoding layer.
+
+### Error logging shape for fetch clients
+
+When a fetch client throws on a non-OK response, the log line must include the status code. A bare error message string is not enough to triage in production — `Failed to submit notification` could be a 4xx (client bug) or a 5xx (backend down), and the response decision differs.
+
+```js
+// Wrong — status invisible in the log line
+} catch (error) {
+  logger.error(`Failed to fetch document: ${error.message}`)
+  throw error
+}
+
+// Correct — status surfaced
+} catch (error) {
+  logger.error(`Failed to fetch document: ${error.status} ${error.message}`)
+  throw error
+}
+```
+
+When constructing the error itself, attach `status` and `statusText` so callers and tests can match on them:
+
+```js
+if (!response.ok) {
+  const error = new Error(`Failed to fetch document: ${response.status} ${response.statusText}`)
+  error.status = response.status
+  error.statusText = response.statusText
+  logger.error(error.message)
+  throw error
+}
+```
+
 ---
 
 ## 9. Boom errors
@@ -648,43 +723,43 @@ describe('#originController', () => {
 
 ```js
 import Vision from '@hapi/vision'
-import nunjucks from 'nunjucks'
+import nunjucks from 'docs/best-practices/node/nunjucks'
 import path from 'path'
 
 await server.register(Vision)
 
 await server.views({
-  engines: {
-    njk: {
-      compile: (src, options) => {
-        const template = nunjucks.compile(src, options.environment)
-        return (context) => template.render(context)
-      },
-      prepare: (options, next) => {
-        options.compileOptions.environment = nunjucks.configure(
-          options.path,
-          { autoescape: true, trimBlocks: true, lstripBlocks: true }
-        )
-        return next()
-      }
-    }
-  },
-  // Template search paths
-  relativeTo: process.cwd(),
-  path: [
-    'node_modules/govuk-frontend/dist/',
-    'src/server/common/templates',
-    'src/server/common/components'
-  ],
-  // Global context — merged with every h.view() call
-  context: async (request) => ({
-    serviceName: config.get('serviceName'),
-    userSession: request.auth?.credentials,
-    navigation: buildNavigation(request),
-    csrfToken: request.app.csrfToken,
-    assetPath: '/public',
-    getAssetPath: (file) => `/public/${file}`
-  })
+    engines: {
+        njk: {
+            compile: (src, options) => {
+                const template = nunjucks.compile(src, options.environment)
+                return (context) => template.render(context)
+            },
+            prepare: (options, next) => {
+                options.compileOptions.environment = nunjucks.configure(
+                    options.path,
+                    {autoescape: true, trimBlocks: true, lstripBlocks: true}
+                )
+                return next()
+            }
+        }
+    },
+    // Template search paths
+    relativeTo: process.cwd(),
+    path: [
+        'node_modules/govuk-frontend/dist/',
+        'src/server/common/templates',
+        'src/server/common/components'
+    ],
+    // Global context — merged with every h.view() call
+    context: async (request) => ({
+        serviceName: config.get('serviceName'),
+        userSession: request.auth?.credentials,
+        navigation: buildNavigation(request),
+        csrfToken: request.app.csrfToken,
+        assetPath: '/public',
+        getAssetPath: (file) => `/public/${file}`
+    })
 })
 ```
 
@@ -822,3 +897,54 @@ src/
 5. `{feature}.njk` — Nunjucks template extending `layouts/page.njk`
 6. `{feature}.test.js` — Vitest test with `beforeAll`/`afterAll` server setup
 7. Add routes to `router.js`
+
+---
+
+## 14. Configuration with convict
+
+Config keys validate at `config.get()` time. Catch malformed values at startup, not on first use.
+
+### Validate URL-typed keys with `format: 'url'`
+
+A URL stored as a plain string fails late: `new URL(value)` throws `TypeError: Invalid URL` deep inside whichever helper happens to construct it first. With `format: 'url'`, convict rejects the value when the config is loaded and produces a readable error.
+
+```js
+// Wrong — value validated lazily, errors cryptically
+cdpUploaderUrl: {
+  doc: 'CDP Uploader base URL',
+  format: String,
+  default: 'http://localhost:7337',
+  env: 'CDP_UPLOADER_URL'
+}
+
+// Correct — fails fast at startup with a clear message
+cdpUploaderUrl: {
+  doc: 'CDP Uploader base URL',
+  format: 'url',
+  default: 'http://localhost:7337',
+  env: 'CDP_UPLOADER_URL'
+}
+```
+
+Apply this to every URL-typed key — `frontendBaseUrl`, `backendBaseUrl`, OIDC endpoints, etc.
+
+### Module-level `readFileSync` / `JSON.parse` must be wrapped
+
+Loading a file at module top-level crashes the server on import if the file is missing or the JSON is malformed. The stack trace points at Node internals, not at the offending file. Wrap and rethrow with a message that names the file.
+
+```js
+// Wrong — server fails to start with a cryptic ENOENT or SyntaxError
+import { readFileSync } from 'node:fs'
+const mockData = JSON.parse(readFileSync(new URL('./mock-data.json', import.meta.url), 'utf8'))
+
+// Correct — readable startup failure
+const dataPath = new URL('./mock-data.json', import.meta.url)
+let mockData
+try {
+  mockData = JSON.parse(readFileSync(dataPath, 'utf8'))
+} catch (error) {
+  throw new Error(`Failed to load ${dataPath.pathname}: ${error.message}`, { cause: error })
+}
+```
+
+Better still: load lazily inside the handler so a corrupt file affects only the request that needs it, not service startup.

@@ -12,13 +12,13 @@ Project baseline: `govuk-frontend ^6.1.0`, Nunjucks templating, Hapi.js + Vision
 
 ```js
 import {
-  createAll,
-  Button,
-  Checkboxes,
-  ErrorSummary,
-  Radios,
-  SkipLink
-} from 'govuk-frontend'
+    createAll,
+    Button,
+    Checkboxes,
+    ErrorSummary,
+    Radios,
+    SkipLink
+} from 'docs/best-practices/node/govuk-frontend'
 
 // Initialise all required components
 createAll(Button)
@@ -906,3 +906,89 @@ actions: { items: [{ href: "/edit", text: "Change", visuallyHiddenText: "country
 {# Correct #}
 {{ govukInput({ id: "email", name: "email", autocomplete: "email", label: { text: "Email" } }) }}
 ```
+
+**15. Duplicate `<h1>` from `appHeading` + `isPageHeading: true`**
+
+A page either uses the project `appHeading` macro **or** sets `isPageHeading: true` on the main form macro — never both. Both produce an `<h1>`, and two h1s on a page is a WCAG 1.3.1 violation.
+
+```nunjucks
+{# Wrong — two h1s on the page #}
+{{ appHeading({ text: "Choose commodity" }) }}
+{{ govukSelect({
+  label: { text: "Choose commodity", isPageHeading: true, classes: "govuk-label--l" },
+  ...
+}) }}
+
+{# Correct — pick one. For form-led pages, the macro's label is the page heading. #}
+{{ govukSelect({
+  label: { text: "Choose commodity", isPageHeading: true, classes: "govuk-label--l" },
+  ...
+}) }}
+```
+
+**16. Tables without a `<caption>`**
+
+A `<table>` rendered next to a heading is not programmatically associated with it. Screen readers announce the table cold, with no context. Add a `<caption>` — visually hidden if the table sits under a visible heading.
+
+```nunjucks
+{# Wrong — no association between heading and table #}
+<h2 class="govuk-heading-m">Documents added</h2>
+<table class="govuk-table">
+  <thead>...</thead>
+</table>
+
+{# Correct — caption is the table's accessible name #}
+<table class="govuk-table">
+  <caption class="govuk-visually-hidden">Documents added</caption>
+  <thead>...</thead>
+</table>
+
+{# Or visible caption (use govuk-table__caption--m, not govuk-body) #}
+<table class="govuk-table">
+  <caption class="govuk-table__caption govuk-table__caption--m">Documents added</caption>
+  <thead>...</thead>
+</table>
+```
+
+**17. Inputs inside table rows without per-row labels**
+
+The column header alone is not sufficient for a per-row input. A screen reader user navigating the inputs hears "5" without knowing which species or row it belongs to. Give each input an `aria-label` that includes the row context.
+
+```nunjucks
+{# Wrong — input has no row context for screen readers #}
+<td class="govuk-table__cell">
+  <input class="govuk-input govuk-input--width-3" name="count-{{ species.id }}" type="number">
+</td>
+
+{# Correct — aria-label binds the input to its row #}
+<td class="govuk-table__cell">
+  <input class="govuk-input govuk-input--width-3"
+         name="count-{{ species.id }}"
+         type="number"
+         aria-label="Number of animals for {{ species.name }}">
+</td>
+```
+
+**18. `disabled` on non-form buttons that should remain perceivable**
+
+The HTML `disabled` attribute removes a button from the keyboard tab order and the accessibility tree. For a "Continue" button that's blocked because some upstream condition isn't met (documents still scanning, no items added), use `aria-disabled="true"` paired with `aria-describedby` so screen reader users can still find the button and hear *why* it's blocked.
+
+```nunjucks
+{# Wrong — button vanishes from keyboard navigation, no explanation #}
+{{ govukButton({ text: "Continue", disabled: true, href: "/next" }) }}
+
+{# Correct — button stays focusable; screen reader hears the reason #}
+<p id="cannot-continue-reason" class="govuk-visually-hidden">
+  You cannot continue until all documents have been scanned.
+</p>
+{{ govukButton({
+  text: "Continue",
+  href: "/next",
+  attributes: {
+    'aria-disabled': 'true',
+    'aria-describedby': 'cannot-continue-reason'
+  }
+}) }}
+```
+
+The handler / client-side code is responsible for actually preventing the action — `aria-disabled` is purely for assistive tech.
