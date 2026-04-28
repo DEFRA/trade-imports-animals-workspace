@@ -38,6 +38,9 @@ EUDP Live Animals agent workspace. **Prefer retrieval-led reasoning** - read fil
 
 |File|Keywords|
 |-|-|
+|doc-comments/BEST_PRACTICES.md|jsdoc,javadoc,tsdoc,doc-comment,comment-accuracy|
+|doc-comments/jsdoc.md|jsdoc,tsdoc,js-comments,ts-comments|
+|doc-comments/javadoc.md|javadoc,java-comments|
 |k6/BEST_PRACTICES.md|k6,perf-testing,load-test|
 |playwright/BEST_PRACTICES.md|playwright,e2e,testing|
 |rest-api/rest-api.md|api,rest,http,endpoints|

@@ -97,7 +97,7 @@ Spawn up to **10 agents in parallel** using Task tool with `subagent_type=genera
 Follow the instructions in skills/personas/code-style/CODE_STYLE_FILE_REVIEWER.md.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ../docs/node/code-style.md (relative to agents dir)
+**Style guide:** skills/best-practices/node/code-style.md
 
 **Your assigned file:**
 - Repository: [repo-name]
@@ -150,6 +150,7 @@ For each repository with `.js` files, fill in its `repo-style-review.md` placeho
 | 14 | async/await preferred | ✅ / ⚠️ / ❌ | N |
 | 15 | Self-documenting code | ✅ / ⚠️ / ❌ | N |
 | 16 | Modern array/object methods | ✅ / ⚠️ / ❌ | N |
+| 17 | Doc comment accuracy | ✅ / ⚠️ / ❌ | N |
 
 ## File-by-File Summary
 
@@ -168,9 +169,9 @@ For each repository with `.js` files, fill in its `repo-style-review.md` placeho
 
 One row per actionable violation (FAIL or WARN). Be specific: name the function, line range, or pattern. This list is handed to an agent to action.
 
-| # | File | Rule | Issue | Addressed | Won't Address |
-|---|------|------|-------|-----------|---------------|
-| 1 | `path/to/file.js` | 2 | Convert `function foo` → `const foo = () =>` | [ ] | [ ] |
+| # | File | Rule | Issue | Proposed Fix | Addressed | Won't Address |
+|---|------|------|-------|-------------|-----------|---------------|
+| 1 | `path/to/file.js` | 2 | Convert `function foo` → `const foo = () =>` | | [ ] | [ ] |
 
 ## Repository Verdict
 
@@ -202,7 +203,8 @@ Create `workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md`:
 | # | Rule | Status | Total Violations |
 |---|------|--------|-----------------|
 | 1 | Do one thing | | |
-...
+... (rules 2–16 as above)
+| 17 | Doc comment accuracy | | |
 
 ## Top Violations
 
@@ -289,7 +291,7 @@ Follow the instructions in skills/personas/code-style/CODE_STYLE_FILE_REVIEWER.m
 **Mode: REFRESH** — this file has changed since the last style review.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ../docs/node/code-style.md (relative to agents dir)
+**Style guide:** skills/best-practices/node/code-style.md
 
 **Your assigned file:**
 - Repository: [repo-name]

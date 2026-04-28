@@ -8,20 +8,28 @@ Spawned by `CODE_STYLE_REVIEWER`. Your prompt specifies the file, the PR, the ou
 
 ```
 agents/
-├── ../docs/node/code-style.md         # <-- READ: the 16 style rules
+├── skills/best-practices/node/code-style.md      # <-- READ: the 16 JS style rules
+├── skills/best-practices/doc-comments/           # <-- READ: doc comment accuracy rules
+│   ├── BEST_PRACTICES.md                         #     language-agnostic accuracy rules
+│   ├── jsdoc.md                                  #     JS/TS format and tag conventions
+│   └── javadoc.md                                #     Java format and tag conventions
 └── workareas/
     ├── reviews/EUDPA-XXXXX/
-    │   └── repos/{repo}/{file-path}   # <-- READ: the actual file
+    │   └── repos/{repo}/{file-path}              # <-- READ: the actual file
     └── code-style-reviews/EUDPA-XXXXX/
         └── file-reviews/{repo}/
-            └── {safe_path}.style.md   # <-- WRITE: your review here
+            └── {safe_path}.style.md              # <-- WRITE: your review here
 ```
 
 ## Workflow
 
-### 1. Read the style guide
+### 1. Read the style guides
 
-Read `../docs/node/code-style.md` in full before reviewing anything. Know all 16 rules.
+Read `skills/best-practices/node/code-style.md` in full before reviewing anything. Know all 16 rules.
+
+Also read `skills/best-practices/doc-comments/BEST_PRACTICES.md` and the language-specific addendum for the file you are reviewing:
+- `.js` or `.ts` files → `skills/best-practices/doc-comments/jsdoc.md`
+- `.java` files → `skills/best-practices/doc-comments/javadoc.md`
 
 ### 2. Determine mode from your prompt
 
@@ -60,7 +68,7 @@ Fill (or overwrite) the file at the path specified in your prompt.
 
 ---
 
-## The 16 Rules
+## The 17 Rules
 
 | # | Rule | What to look for |
 |---|------|-----------------|
@@ -80,6 +88,7 @@ Fill (or overwrite) the file at the path specified in your prompt.
 | 14 | **async/await preferred** | `.then()` chains with more than one step (short single-expression transforms are fine) |
 | 15 | **Self-documenting code** | Comments describing *what* the code does rather than *why*; comments compensating for a poor name |
 | 16 | **Modern array/object methods** | Manual index lookups where `.at(-1)` fits; loops where `.findLast()`, `.every()`, `.some()`, `Object.groupBy()` apply |
+| 17 | **Doc comment accuracy** | `/** */` blocks where `@param` name/type doesn't match the signature; `@returns` type wrong or present on a void function; `@throws` for a removed exception; summary describes old behaviour. Absence is not a violation — only present-but-wrong comments. See `skills/best-practices/doc-comments/` for the full accuracy guide. |
 
 ---
 
@@ -127,6 +136,7 @@ Use the **Fresh** template for a first review, or the **Refresh** template when 
 | 14 | async/await preferred | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
 | 15 | Self-documenting code | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
 | 16 | Modern array/object methods | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
+| 17 | Doc comment accuracy | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
 
 ## Violations
 
@@ -164,7 +174,7 @@ Use the **Fresh** template for a first review, or the **Refresh** template when 
 
 | # | Rule | Status | Notes |
 |---|------|--------|-------|
-[same 16-rule table as fresh template]
+[same 17-rule table as fresh template]
 
 ## New Violations
 

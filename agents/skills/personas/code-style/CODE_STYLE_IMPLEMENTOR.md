@@ -63,7 +63,7 @@ For E2E failures, read `../repos/trade-imports-animals-tests/test-results/*/erro
 
 Make the **minimal** change required to address the violation. Do not fix anything else in the file. Do not reformat unrelated code.
 
-Common patterns (refer to `../docs/node/code-style.md` for the relevant rule if unsure):
+Common patterns (refer to `skills/best-practices/node/code-style.md` for the relevant rule if unsure):
 
 | Rule | Typical change |
 |------|---------------|
