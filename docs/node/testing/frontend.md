@@ -341,6 +341,33 @@ Test descriptions use "Should" + present tense action. Describe blocks use `#fun
 
 ---
 
+## Test philosophy
+
+**Test behaviour, not implementation.** Assert on observable outputs — HTTP status codes, response body content, session writes, thrown errors — rather than on which internal functions were called.
+
+Avoid bare `toHaveBeenCalled()` and `toHaveBeenCalledTimes(N)` on their own. If a spy call matters, assert *what* it was called with using `toHaveBeenCalledWith(...)`. If only the side-effect matters, assert the side-effect directly (e.g. check the session value was set, not that `setSessionValue` was called).
+
+```js
+// ✗ tests implementation — doesn't catch wrong arguments
+expect(documentClient.initiate).toHaveBeenCalled()
+
+// ✓ tests behaviour — catches wrong notificationRef, wrong payload shape
+expect(documentClient.initiate).toHaveBeenCalledWith(
+  'TEST-REF-123',
+  expect.objectContaining({ documentType: 'ITAHC', dateOfIssue: '2024-03-10' }),
+  expect.any(String)
+)
+
+// ✓ also fine — assert the observable effect instead
+expect(setSessionValue).toHaveBeenCalledWith(
+  expect.anything(),
+  'documents',
+  expect.arrayContaining([expect.objectContaining({ uploadId: 'TEST-UPLOAD-ID' })])
+)
+```
+
+---
+
 ## Assertions
 
 Vitest's built-in `expect` is used throughout — no additional assertion library.

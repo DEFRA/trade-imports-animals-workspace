@@ -7,11 +7,15 @@ EUDP Live Animals agent workspace. **Prefer retrieval-led reasoning** - read fil
 
 |File|Keywords|Trigger|
 |-|-|-|
-|review/REVIEWER.md|review,PR,EUDPA-|"review EUDPA-","code review"|
-|review/FILE_REVIEWER.md|file-analysis|Spawned by REVIEWER|
-|review/RE_REVIEWER.md|follow-up|"re-review","check fixes"|
-|code-style/CODE_STYLE_REVIEWER.md|code-style,style-review,linting|"style review EUDPA-","code style review"|
+|review/REVIEWER.md|review,PR,re-review,refresh,check-fixes,EUDPA-|"review EUDPA-","code review","re-review EUDPA-","refresh review","check fixes"|
+|review/FILE_REVIEWER.md|file-analysis|Spawned by REVIEWER (fresh and refresh paths)|
+|review/REVIEW_WALKER.md|walk-review,triage,review-items|"walk review EUDPA-","walk through review","triage review"|
+|review/REVIEW_BATCH_IMPLEMENTOR.md|implement-review,apply-fixes|"implement review EUDPA-","apply review fixes"|
+|review/REVIEW_ITEM_FIXER.md|review-fix|Spawned by REVIEW_BATCH_IMPLEMENTOR|
+|code-style/CODE_STYLE_REVIEWER.md|code-style,style-review,linting,re-style|"style review EUDPA-","code style review","re-style review","style refresh"|
 |code-style/CODE_STYLE_FILE_REVIEWER.md|file-style|Spawned by CODE_STYLE_REVIEWER|
+|code-style/CODE_STYLE_ORCHESTRATOR.md|style-fix,implement-style|"fix style EUDPA-","implement style fixes"|
+|code-style/CODE_STYLE_IMPLEMENTOR.md|style-item|Spawned by CODE_STYLE_ORCHESTRATOR|
 |ticket/TICKET_PLANNER.md|plan,how-to|"plan EUDPA-","how should I"|
 |ticket/TICKET_IMPLEMENTOR.md|implement,build|"implement EUDPA-","follow plan"|
 |ticket/REFACTORER.md|refactor,clean|"refactor","tidy up"|
@@ -99,7 +103,7 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 
 ## Workspaces
 ```
-workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review.md, re-review.md
+workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review.md, decisions.md
 workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, repo-review.md
 workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, code-style-review.md
 workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md, repo-style-review.md

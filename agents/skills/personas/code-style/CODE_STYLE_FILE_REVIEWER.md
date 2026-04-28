@@ -2,7 +2,7 @@
 
 Review **one JavaScript file** for compliance with the project code style guide.
 
-Spawned by `CODE_STYLE_REVIEWER`. Your prompt specifies the file, the PR, and the output path.
+Spawned by `CODE_STYLE_REVIEWER`. Your prompt specifies the file, the PR, the output path, and whether this is a **fresh review** or a **refresh** of a previously reviewed file.
 
 ## Workspace
 
@@ -23,7 +23,15 @@ agents/
 
 Read `../docs/node/code-style.md` in full before reviewing anything. Know all 16 rules.
 
-### 2. Get the diff for this file
+### 2. Determine mode from your prompt
+
+**Fresh review** (no "Previously reported violations" section in your prompt):
+- Get the PR diff and review changed lines only (Step 3a below).
+
+**Refresh review** ("Mode: REFRESH" and a list of previously reported violations in your prompt):
+- Get the diff since last review and focus on what changed (Step 3b below).
+
+### 3a. Fresh review — get the diff
 
 ```bash
 ./skills/tools/github/diff.sh {repo-name} {pr-number}
@@ -31,13 +39,24 @@ Read `../docs/node/code-style.md` in full before reviewing anything. Know all 16
 
 Extract only the hunks that touch your assigned file. This scopes your review to **changed lines only** — do not flag pre-existing violations unless they are in functions substantially rewritten by this PR.
 
-### 3. Read the full file
+### 3b. Refresh review — check old violations and new changes
+
+You have been given a list of previously reported violations for this file. For each one:
+- Read the current file and determine if the violation is **still present** or **resolved**.
+
+Then get the diff since the last review to scope new-violation checks:
+```bash
+./skills/tools/review/diff-since-review.sh EUDPA-XXXXX
+```
+Extract hunks for your file. Check those changed lines for any **new violations** not previously reported.
+
+### 4. Read the full file
 
 Read the file from `workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}` for context. Changed lines are the primary target, but surrounding code helps assess rule 1 (single responsibility) and rule 5 (composition).
 
-### 4. Write your review
+### 5. Write your review
 
-Fill the zero-byte placeholder at the path specified in your prompt.
+Fill (or overwrite) the file at the path specified in your prompt.
 
 ---
 
@@ -76,6 +95,10 @@ Fill the zero-byte placeholder at the path specified in your prompt.
 ---
 
 ## Review Template
+
+Use the **Fresh** template for a first review, or the **Refresh** template when re-reviewing a changed file.
+
+### Fresh Review Template
 
 ```markdown
 # Code Style Review: [path/to/file.js]
@@ -122,10 +145,48 @@ Fill the zero-byte placeholder at the path specified in your prompt.
 | X | X | X |
 ```
 
+### Refresh Review Template
+
+```markdown
+# Code Style Review: [path/to/file.js] (Refreshed [date])
+
+**Repository:** [repo-name]
+**PR:** #[pr-number]
+**Refreshed:** [date]
+
+## Previously Reported Violations — Status Check
+
+| # | Rule | Issue | Status |
+|---|------|-------|--------|
+| 1 | 2 | [original violation description] | ✅ Resolved / ❌ Still present |
+
+## Rule Compliance (Current State)
+
+| # | Rule | Status | Notes |
+|---|------|--------|-------|
+[same 16-rule table as fresh template]
+
+## New Violations
+
+| Severity | Line | Rule # | Actual Code | Expected Pattern |
+|----------|------|--------|-------------|-----------------|
+
+*None found.* (if applicable)
+
+## Verdict
+
+**Status:** COMPLIANT / MINOR ISSUES / NEEDS WORK
+**Summary:** [One sentence — note if status improved, regressed, or unchanged vs last review]
+
+| FAIL | WARN | PASS | Resolved | New |
+|------|------|------|----------|-----|
+| X | X | X | X | X |
+```
+
 ---
 
 ## Output
 
-Write to the placeholder file specified in your prompt. Use the exact path given — do not invent a different location.
+Write to the file path specified in your prompt. Use the exact path given — do not invent a different location. In refresh mode, overwrite the existing `.style.md` file.
 
 Parent agent runs `verify-style-coverage.sh` — empty = pending, non-empty = reviewed.

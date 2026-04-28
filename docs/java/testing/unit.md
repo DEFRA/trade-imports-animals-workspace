@@ -100,7 +100,50 @@ void setUp() throws IOException {
 }
 ```
 
+### What to assert — behaviour, not mock interactions
+
+Tests must assert **observable behaviour**: the return value of the method under test, or the state it produces. Do not write tests whose primary assertion is that a mock was called.
+
+**Bad — testing that the mock works as configured:**
+```java
+// This test would pass even if the production code did nothing useful.
+// It just proves that when(repo.save(...)).thenReturn(x) works.
+when(repository.save(any())).thenReturn(savedDoc);
+service.initiate(ref, request);
+ArgumentCaptor<MyDocument> captor = ArgumentCaptor.forClass(MyDocument.class);
+verify(repository).save(captor.capture());
+assertThat(captor.getValue().getStatus()).isEqualTo(Status.PENDING); // ← mock input, not behaviour
+```
+
+**Good — asserting on what the caller receives:**
+```java
+DocumentUploadResponse response = service.initiate(ref, request);
+assertThat(response.uploadId()).isEqualTo("expected-id");
+assertThat(response.uploadUrl()).isEqualTo("https://expected-url");
+```
+
+**The rule:** if deleting the production code (or making it return a hardcoded wrong value) would still let the test pass, the test is not testing behaviour.
+
+**When `verify()` is acceptable:**
+
+- As a *secondary* check after a meaningful result assertion: fine
+- To assert something was *never* called (guards against unwanted side effects): fine
+- As the *sole* assertion — only if the method is `void` **and** the side-effect genuinely cannot be observed any other way. In practice this is rare: prefer integration tests with a real database over unit tests that capture mock inputs.
+
+```java
+// Fine — secondary verify after a meaningful assertion
+assertThat(response.uploadId()).isEqualTo("existing-upload-id");
+verify(cdpUploaderClient, never()).initiate(any()); // idempotency guard
+
+// Fine — void method, guarding against unwanted save
+verify(repository, never()).save(any());
+```
+
+**`void` methods that persist to a database**: if the only way to verify correctness is to inspect what was passed to `repository.save()`, that is a signal to write an integration test instead — not to add an ArgumentCaptor. The IT tests in this project use a real MongoDB container precisely for this reason.
+
 ### ArgumentCaptor
+
+Use `ArgumentCaptor` when you need to make assertions on a complex object passed to a collaborator, **and** you have already established that the method produces a correct observable result. Never use it as a substitute for a result assertion.
 
 Prefer `ArgumentCaptor.forClass()` declared inline for one-off captures. For tests that capture repeatedly, declare `@Captor` fields:
 

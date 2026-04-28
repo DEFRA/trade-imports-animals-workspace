@@ -7,9 +7,8 @@ EUDP Live Animals agent workspace. **Prefer retrieval-led reasoning** - read fil
 
 |File|Keywords|Trigger|
 |-|-|-|
-|review/REVIEWER.md|review,PR,EUDPA-|"review EUDPA-","code review"|
-|review/FILE_REVIEWER.md|file-analysis|Spawned by REVIEWER|
-|review/RE_REVIEWER.md|follow-up|"re-review","check fixes"|
+|review/REVIEWER.md|review,PR,re-review,refresh,check-fixes,EUDPA-|"review EUDPA-","code review","re-review EUDPA-","refresh review","check fixes"|
+|review/FILE_REVIEWER.md|file-analysis|Spawned by REVIEWER (fresh and refresh paths)|
 |ticket/TICKET_PLANNER.md|plan,how-to|"plan EUDPA-","how should I"|
 |ticket/TICKET_IMPLEMENTOR.md|implement,build|"implement EUDPA-","follow plan"|
 |ticket/REFACTORER.md|refactor,clean|"refactor","tidy up"|
@@ -84,7 +83,7 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 
 ## Workspaces
 ```
-workareas/reviews/EUDPA-X/                    → ticket.md, repos/, review.md, re-review.md
+workareas/reviews/EUDPA-X/                    → ticket.md, repos/, review.md
 workareas/reviews/EUDPA-X/file-reviews/{repo}/→ {file}.review.md, repo-review.md
 workareas/ticket-planning/EUDPA-X/            → plan.md
 workareas/ticket-refinement/EUDPA-X/          → review.md

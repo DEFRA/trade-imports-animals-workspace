@@ -44,17 +44,24 @@ HealthCheckConfigIT extends IntegrationBase
 EcsLoggingIT extends IntegrationBase
 ProxyConfigIT extends IntegrationBase
 TrustStoreConfigurationIT extends IntegrationBase
+DocumentIT extends IntegrationBase  (also owns its own LocalStack container)
 ```
 
 ### Containers
 
-Three containers start once, shared across all IT classes via static fields and `Startables.deepStart()`:
+Three containers start once in `IntegrationBase`, shared across all IT classes via static fields and `Startables.deepStart()`:
 
 | Container | Image | Purpose |
 |-----------|-------|---------|
 | `MONGO_CONTAINER` | `mongo:7.0` | Primary data store |
 | `OAUTH_CONTAINER` | `ghcr.io/navikt/mock-oauth2-server:2.1.10` | JWT token generation |
-| `MOCK_SERVER_CONTAINER` | `mockserver/mockserver` | Stub external HTTP services |
+| `MOCK_SERVER_CONTAINER` | `mockserver/mockserver` | Stub external HTTP services (cdp-uploader etc.) |
+
+IT classes that need additional infrastructure start their own containers as static fields and register their URLs via a second `@DynamicPropertySource` on the subclass. Example: `DocumentIT` adds a LocalStack S3 container:
+
+| Container | Image | Purpose | Owner |
+|-----------|-------|---------|-------|
+| `LOCAL_STACK_CONTAINER` | `localstack/localstack:3` | Real S3 for file upload/download | `DocumentIT` |
 
 Containers are started in parallel:
 ```java
@@ -64,6 +71,8 @@ static {
 ```
 
 Their URLs are wired into the Spring context via `@DynamicPropertySource` before the context starts — this is how Testcontainers integrates with Spring Boot's property system.
+
+**Docker API version:** Docker Desktop 4.52+ requires API v1.44. The `maven-failsafe-plugin` is configured with `<api.version>1.44</api.version>` as a system property to match. If you see `IllegalStateException: Could not find a valid Docker environment`, check your `~/.testcontainers.properties` has `docker.host=unix:///var/run/docker.sock`.
 
 ### Spring profile
 
@@ -298,7 +307,8 @@ JaCoCo enforces **65% line coverage** at the `verify` phase. Build fails if cove
 
 | Class | Tests | What it covers |
 |-------|-------|---------------|
-| `NotificationIT` | 15 | Full CRUD, upsert semantics, reference number generation, audit trail, admin auth, atomic delete, input validation |
+| `NotificationIT` | 18 | Full CRUD, upsert semantics, reference number generation, audit trail, admin auth, atomic delete, input validation |
+| `DocumentIT` | 15 | Initiate → PENDING record, scan callback (complete/rejected/mixed/null numberOfRejectedFiles), list, get, file download from real S3, 404 paths, S3 error path, rejected file guard, dateOfIssue persistence |
 | `MongoConfigIT` | 5 | MongoDB connection, read preference, write concern, basic document operations |
 | `HealthCheckConfigIT` | 8 | Actuator endpoint exposure, security (no details, no env/metrics/info), CDP path requirements, response time |
 | `EcsLoggingIT` | 3 | ECS JSON log format, required CDP fields, trace ID propagation, health endpoint log filtering |
