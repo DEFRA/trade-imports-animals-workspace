@@ -3,10 +3,13 @@ REPOS         := trade-imports-animals-frontend trade-imports-animals-backend tr
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin
 JAVA_REPOS    := trade-imports-animals-backend
+TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
+LOCAL_COMPOSE := docker/local.compose.yml
+LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
 
-.PHONY: setup update status install lint test \
+.PHONY: setup update reset status install lint test \
         start-frontend start-backend start-admin \
-        clean help
+        docker-local-branches docker-compose-up docker-compose-dev docker-logs docker-restart-backend clean help
 
 # --- Help ---
 
@@ -20,6 +23,22 @@ setup: ## Clone all repos into repos/
 
 update: ## Pull --rebase all repos
 	@bash scripts/update.sh $(REPOS)
+
+reset: ## Hard-reset all repos to origin/main (DISCARDS local changes — prompts first)
+	@echo "WARNING: This will discard all local changes and uncommitted work in every repo."; \
+	read -r -p "Are you sure? [y/N] " confirm; \
+	[ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ] || { echo "Aborted."; exit 1; }; \
+	for repo in $(REPOS); do \
+		dir=$(REPOS_DIR)/$$repo; \
+		if [ -d "$$dir/.git" ]; then \
+			echo "\n=== $$repo ==="; \
+			git -C "$$dir" fetch origin; \
+			git -C "$$dir" checkout main; \
+			git -C "$$dir" reset --hard origin/main; \
+		else \
+			echo "\n=== $$repo === (not cloned, skipping)"; \
+		fi; \
+	done
 
 status: ## Show git status for all repos
 	@for repo in $(REPOS); do \
@@ -112,6 +131,38 @@ test: ## Run unit tests in all repos
 			mvn -f "$$dir/pom.xml" verify; \
 		fi; \
 	done
+
+# --- Build ---
+
+docker-compose-up: ## Start stack (edit docker/local.compose.yml to override image tags)
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) up --wait --detach
+
+docker-compose-dev: ## Start stack with frontend+admin built from source (hot-reload + docker logs)
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) up --wait --detach
+
+docker-logs: ## Follow logs for frontend, admin, and backend (Ctrl-C to stop)
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) logs -f trade-imports-animals-frontend trade-imports-animals-admin trade-imports-animals-backend
+
+docker-restart-backend: ## Restart backend container (recompiles Java source via mvn spring-boot:run)
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) restart trade-imports-animals-backend
+
+docker-local-branches: ## Build local/* Docker images for repos not on the default branch
+	@built=0; \
+	for repo in $(REPOS); do \
+		dir=$(REPOS_DIR)/$$repo; \
+		[ -d "$$dir/.git" ] || continue; \
+		branch=$$(git -C "$$dir" symbolic-ref --short HEAD 2>/dev/null); \
+		default=$$(git -C "$$dir" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|origin/||'); \
+		[ -z "$$default" ] && default=main; \
+		if [ "$$branch" != "$$default" ]; then \
+			echo "  $$repo — building local/$$repo ($$branch)"; \
+			docker build --platform linux/amd64 -t local/$$repo "$$dir"; \
+			built=$$((built + 1)); \
+		else \
+			echo "  $$repo — on default branch ($$default), skipping"; \
+		fi; \
+	done; \
+	[ "$$built" -eq 0 ] && echo "  nothing to build — all repos on default branch" || true
 
 # --- Individual services ---
 

@@ -1,0 +1,51 @@
+# Development override — builds frontend/admin/backend from source.
+#
+# Frontend + admin: nodemon + webpack --watch (hot-reload on src/ changes)
+# Backend: mvn spring-boot:run (restart container to pick up Java changes)
+#
+# Usage:
+#   make docker-compose-dev          # start stack
+#   make docker-logs                 # follow frontend + admin + backend logs
+#   docker compose restart trade-imports-animals-backend   # reload after Java changes
+#
+# The frontend/admin dev-stage images run CMD ["npm", "run", "docker:dev"].
+# The backend dev-run stage runs mvn spring-boot:run with profile=local.
+
+services:
+  trade-imports-animals-frontend:
+    build:
+      context: ../trade-imports-animals-frontend
+      target: development
+    volumes:
+      - ../trade-imports-animals-frontend/src:/home/node/src
+    image: ''
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3000/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+
+  trade-imports-animals-admin:
+    build:
+      context: ../trade-imports-animals-admin
+      target: development
+    volumes:
+      - ../trade-imports-animals-admin/src:/home/node/src
+    image: ''
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+
+  trade-imports-animals-backend:
+    build:
+      context: ../trade-imports-animals-backend
+      target: dev-run
+    volumes:
+      - ../trade-imports-animals-backend/src:/app/src
+    image: ''
+
+  cdp-uploader:
+    environment:
+      APP_BASE_URL: http://cdp-uploader:7337
