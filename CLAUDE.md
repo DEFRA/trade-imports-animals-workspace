@@ -33,9 +33,13 @@ Run `make help` from this directory to see all cross-repo commands.
 | `make install` | `npm install` in all Node repos |
 | `make lint` | Lint all Node repos |
 | `make test` | Run tests across all repos |
-| `make start-frontend` | Start frontend dev server from source |
-| `make start-backend` | Start backend from source |
-| `make start-admin` | Start admin dev server from source |
+| `make docker-compose-up` | Start full stack from published Docker Hub images |
+| `make docker-compose-dev` | Start full stack built from local source (hot-reload for Node, volume mount for Java) |
+| `make docker-logs` | Tail frontend + admin + backend logs (`Ctrl-C` to stop) |
+| `make docker-restart-backend` | Restart backend container after Java source changes |
+| `make start-frontend` | Start frontend dev server from source (outside Docker) |
+| `make start-backend` | Start backend from source (outside Docker) |
+| `make start-admin` | Start admin dev server from source (outside Docker) |
 
 ## Common workflows
 
@@ -43,7 +47,6 @@ Run `make help` from this directory to see all cross-repo commands.
 ```bash
 make setup    # clone all repos
 make install  # npm install in Node repos
-make start    # start all services
 ```
 
 **Daily update:**
@@ -52,7 +55,21 @@ make update   # pull latest on all repos
 make status   # check for anything uncommitted
 ```
 
-**Run the full test suite:**
+**Run the full stack from source (cross-service development):**
+```bash
+make docker-compose-dev   # build + start all services from local source
+make docker-logs          # tail logs (Ctrl-C to stop)
+# After changing Java source:
+make docker-restart-backend
+```
+
+**Run the E2E tests:**
+```bash
+cd repos/trade-imports-animals-tests
+npm run test:local
+```
+
+**Run unit tests:**
 ```bash
 make test
 ```
@@ -60,9 +77,8 @@ make test
 **Work on a single repo:**
 ```bash
 cd repos/trade-imports-animals-frontend
-# make changes, commit, push as normal
 git checkout -b my-feature
-# ...
+# make changes, commit, push as normal
 git push origin my-feature
 ```
 

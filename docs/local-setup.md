@@ -110,6 +110,42 @@ Runs on port **3000** (direct) or **3001** (in compose alongside frontend).
 
 ---
 
+## Option 4 — Full stack from source via Docker (recommended for cross-service development)
+
+Builds frontend, admin and backend from their local source directories and starts the full stack in Docker with volume mounts. Node services get webpack `--watch` (hot-reload on `src/` changes); the backend runs `mvn spring-boot:run`.
+
+```bash
+make docker-compose-dev   # build images + start stack (takes a few minutes first time)
+make docker-logs          # tail frontend + admin + backend logs (Ctrl-C to stop)
+```
+
+After the stack is up, the services are available at the same ports as Option 1. Run the E2E tests against it:
+
+```bash
+cd repos/trade-imports-animals-tests
+npm run test:local
+```
+
+### Frontend / admin changes
+
+Node source changes are picked up automatically via webpack `--watch`. No action needed.
+
+### Backend changes (Java)
+
+The backend does **not** hot-reload — you must restart the container after changing Java source:
+
+```bash
+make docker-restart-backend
+```
+
+This restarts the container, which re-runs `mvn spring-boot:run` and picks up changes in `repos/trade-imports-animals-backend/src/`.
+
+### Switching between source and image builds
+
+`make docker-compose-dev` adds the `docker/local.dev.compose.yml` override on top of `docker/local.compose.yml`. To revert to published images for a service, just run `make docker-compose-up` instead (no dev override).
+
+---
+
 ## Option 3 — Mixed: infra from tests compose, services from source
 
 Run the shared infra from the tests repo compose, then start each service directly.
