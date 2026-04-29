@@ -368,9 +368,9 @@ for ((i=0; i<pr_count; i++)); do
     done <<< "$files"
 done
 
-# Create consistency check stubs (one per unique repo)
+# Create per-repo review and decisions stubs + consistency check stubs
 log ""
-log "Creating consistency check stubs..."
+log "Creating per-repo stubs..."
 consistency_repos=()
 for ((i=0; i<pr_count; i++)); do
     repo=$(echo "$prs_json" | jq -r ".[$i].repository.name")
@@ -385,6 +385,25 @@ for ((i=0; i<pr_count; i++)); do
     consistency_repos+=("$repo")
     repo_review_dir="$REVIEW_DIR/file-reviews/$repo"
     mkdir -p "$repo_review_dir"
+
+    # Per-repo review stub at ticket root (empty — agent fills it in Step 5)
+    review_stub="$REVIEW_DIR/review.${repo}.md"
+    if [[ ! -f "$review_stub" ]] || [[ ! -s "$review_stub" ]]; then
+        touch "$review_stub"
+        log "  Created: review.${repo}.md"
+    fi
+
+    # Per-repo decisions stub at ticket root (with header so walker can append)
+    decisions_stub="$REVIEW_DIR/decisions.${repo}.md"
+    if [[ ! -f "$decisions_stub" ]]; then
+        cat > "$decisions_stub" << EOF
+# Decisions — $REVIEW_ID ($repo)
+<!-- Walker appends rows here. Each pipe-delimited row is one decision. -->
+<!-- Decision | Item# | Repo | File | Line | Issue | Notes/Fix -->
+
+EOF
+        log "  Created: decisions.${repo}.md"
+    fi
 
     stub="$repo_review_dir/_consistency-check.md"
     if [[ ! -f "$stub" ]] || [[ ! -s "$stub" ]]; then
@@ -417,6 +436,8 @@ else
         done
     fi
     echo "  ✓ file-reviews/ ($created_files files)"
+    echo "  ✓ review.{repo}.md stubs (${#consistency_repos[@]} repos)"
+    echo "  ✓ decisions.{repo}.md stubs (${#consistency_repos[@]} repos)"
     echo "  ✓ _consistency-check.md stubs (${#consistency_repos[@]} repos)"
     echo ""
     echo "Next: Review each file, then run ./verify-coverage.sh $REVIEW_ID"

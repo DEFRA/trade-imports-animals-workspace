@@ -203,6 +203,6 @@ else
 
     if [[ "$is_complete" == "true" ]]; then
         echo ""
-        echo "Ready to write review.md summary."
+        echo "Ready to write review-index.md and review.{repo}.md summaries."
     fi
 fi

@@ -12,8 +12,11 @@ eudp-live-animals-utils/agents/
 └── workareas/reviews/EUDPA-XXXXX/
     ├── ticket.md              # <-- READ: ticket details and AC
     ├── .review-meta.json      # <-- READ: detected tech & best_practices paths
+    ├── review-index.md        # Thin navigation index
+    ├── review.{repo}.md       # Per-repo summary (authoritative todo list)
+    ├── decisions.{repo}.md    # <-- READ (REFRESH): per-repo walker decisions
     ├── repos/<repo>/          # Code to review
-    └── file-reviews/<repo>/   # Write reviews here
+    └── file-reviews/<repo>/   # Write per-file reviews here
 ```
 
 ## Workflow
@@ -34,6 +37,10 @@ eudp-live-animals-utils/agents/
 1. **Read `.review-meta.json`** → get `best_practices` array (paths relative to `agents/`)
 2. **Read listed best practice files** → apply these standards during review
 3. **Read `ticket.md`** → understand requirements and AC
+4. **REFRESH mode only — read decisions file:**
+   - `workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md`
+   
+   Items marked `WONT_FIX` or `AUTO_RESOLVED` in decisions.{repo}.md **must not** be re-reported as open violations, even if the pattern is still present in the code. The user deliberately chose not to fix them. Carry their Won't Fix `[x]` marking forward in your updated todo list without comment.
 
 ### 3a. Fresh review — get the diff
 
@@ -45,8 +52,14 @@ Extract only the hunks that touch your assigned file. Review **changed lines onl
 
 ### 3b. Refresh review — check old violations and new changes
 
-You have been given a list of previously reported violations for this file. For each one:
-- Read the current file and determine if the violation is **still present** or **resolved**.
+Read your per-file review from the workspace (do not rely solely on any inline list your prompt may have given you — the file is authoritative):
+```
+workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md
+```
+
+For each violation in that file:
+- If its `Won't Fix` column is `[x]`, or it appears as `WONT_FIX`/`AUTO_RESOLVED` in decisions.{repo}.md → carry it forward unchanged; do not re-check it
+- Otherwise: read the current file and determine if the violation is **still present** or **resolved**
 
 Then get the diff since the last review to scope new-violation checks:
 ```bash

@@ -106,8 +106,8 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 
 ## Workspaces
 ```
-workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review.md, decisions.md
-workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, repo-review.md
+workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md, decisions.{repo}.md
+workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
 workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, code-style-review.md
 workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md, repo-style-review.md
 workareas/ticket-planning/EUDPA-X/            → plan.md

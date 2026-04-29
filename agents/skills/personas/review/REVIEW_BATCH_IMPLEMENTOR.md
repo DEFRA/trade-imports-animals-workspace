@@ -1,6 +1,6 @@
 # REVIEW_BATCH_IMPLEMENTOR
 
-Role: Apply all queued `FIX` decisions from a completed walker session. Reads `decisions.md`, spawns a fixer agent per item, and updates `review.md` with results — no user input required during the run.
+Role: Apply all queued `FIX` decisions from a completed walker session. Reads `decisions.{repo}.md` files, spawns a fixer agent per item, and updates `review.{repo}.md` with results — no user input required during the run.
 
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review EUDPA-XXXXX {repo}"` (optional repo filter).
 
@@ -10,21 +10,21 @@ See `CLAUDE.md` for helper scripts.
 
 ## Step 1: Load Decisions
 
-Read:
+Read all per-repo decisions files:
 ```
-workareas/reviews/EUDPA-XXXXX/decisions.md
+workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md   (one per repo, e.g. decisions.trade-imports-animals-frontend.md)
 ```
 
-If the file does not exist or contains no `FIX` rows:
+If no decisions files exist or none contain `FIX` rows:
 ```
 No fix decisions found for EUDPA-XXXXX. Run `walk review EUDPA-XXXXX` first.
 ```
 And stop.
 
-Build the fix list: every row where the first field is `FIX`.
+Build the fix list: every row where the first field is `FIX`, across all decisions files.
 
 Apply any filters from the trigger:
-- `{repo}` — only rows matching that repo
+- `{repo}` — only read `decisions.{repo}.md` for that specific repo
 
 If the fix list is empty after filtering:
 ```
@@ -110,11 +110,11 @@ Wait for the agent to return before spawning the next one (fixes within the same
 
 | Result | Action |
 |--------|--------|
-| `DONE` | Mark Fixed `[x]` in `review.md` (item's row). Mark Fixed `[x]` in the per-file `.review.md` at `workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md`. Update the row in `decisions.md` from `FIX` to `DONE`. Log success. |
-| `SKIPPED` | Auto-mark Fixed `[x]` (already resolved). Update row to `AUTO_RESOLVED`. Log as auto-resolved. |
-| `FAILED` | Log failure with reason. Update row to `FAILED`. Leave `review.md` row unchanged. Continue to next item. |
+| `DONE` | Mark Fixed `[x]` in `review.{repo}.md` (item's row). Mark Fixed `[x]` in the per-file `.review.md` at `workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md`. Update the row in `decisions.{repo}.md` from `FIX` to `DONE`. Log success. |
+| `SKIPPED` | Auto-mark Fixed `[x]` (already resolved). Update row in `decisions.{repo}.md` to `AUTO_RESOLVED`. Log as auto-resolved. |
+| `FAILED` | Log failure with reason. Update row in `decisions.{repo}.md` to `FAILED`. Leave `review.{repo}.md` row unchanged. Continue to next item. |
 | `CANNOT START` | **Stop immediately.** Report pre-existing failures. Ask user to resolve before re-running. |
-| `WON'T FIX` | Mark Won't Fix `[x]` in both docs. Update row to `WONT_FIX`. Log the fixer's reason. Continue. |
+| `WON'T FIX` | Mark Won't Fix `[x]` in `review.{repo}.md` and in the per-file `.review.md`. Update row in `decisions.{repo}.md` to `WONT_FIX`. Log the fixer's reason. Continue. |
 
 ---
 
@@ -133,7 +133,7 @@ Fixed:
   #{N} [{repo}] — {description} ({short-sha})
   ...
 
-Failed (not committed — still in decisions.md as FAILED):
+Failed (not committed — still in decisions.{repo}.md as FAILED):
   #{N} [{repo}] — {reason}
   ...
 
