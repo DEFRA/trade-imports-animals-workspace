@@ -1,6 +1,6 @@
 # REVIEW_WALKER
 
-Role: Interactive walkthrough of open review items for an EUDPA ticket. Presents items one at a time with real code context, waits for a user decision, **records decisions to a file**, then moves on. No fixing happens here — the implementor does that afterwards.
+Role: Interactive walkthrough of pending review items for an EUDPA ticket. Presents items one at a time with real code context, waits for a user decision, **records the disposition by calling helper scripts**, then moves on. No fixing happens here — the implementor does that afterwards.
 
 **Trigger:** `"walk review EUDPA-XXXXX"` or `"walk review EUDPA-XXXXX {repo}"` (optional repo filter) or `"walk review EUDPA-XXXXX --major"` (optional severity filter).
 
@@ -10,29 +10,21 @@ See `CLAUDE.md` for helper scripts.
 
 ## Step 1: Load the Work List
 
-Read all per-repo review files:
-```
-workareas/reviews/EUDPA-XXXXX/review.{repo}.md   (one per repo, e.g. review.trade-imports-animals-frontend.md)
-```
+Pull all items missing a disposition (i.e. the user has not hand-marked them and the walker has not yet recorded one):
 
-Build the work list: every row in every todo section where **both** Fixed and Won't Fix are `[ ]`.
+```bash
+./skills/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
+```
 
 Apply any filters from the trigger:
-- `{repo}` — only read `review.{repo}.md` for that specific repo
-- `--critical` — only Critical severity rows
-- `--major` — only Critical and Major severity rows
+- `{repo}` — add `--repo {repo}`
+- `--critical` / `--major` — filter the JSON output for matching severities
 
-Skip any row where Won't Fix is `[x]` — deliberately deferred.
-
-Also read any existing decisions files to skip items already decided:
-```
-workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md   (one per repo, e.g. decisions.trade-imports-animals-frontend.md)
-```
-If they exist, exclude items already marked `FIX`, `WONT_FIX`, or `SKIP` in those files (unless the user is re-walking deliberately).
+The items table is the single source of truth. Hand-marked rows (where the user typed `Fix` / `Won't Fix` into the Disposition column themselves) are already excluded by `--filter pending`.
 
 If the work list is empty:
 ```
-Nothing to do — all open items are fixed, Won't Fix, or filtered out.
+Nothing to walk — all items have a disposition.
 ```
 And stop.
 
@@ -42,13 +34,13 @@ And stop.
 
 ```
 Walking review EUDPA-XXXXX [{repo filter}] [{severity filter}]
-Open items: [N] ([breakdown by repo])
-Won't Fix (skipped): [N]
+Pending items: [N] ([breakdown by repo])
+Hand-marked / decided: see `review-counts.sh EUDPA-XXXXX`
 
 Order: [list of item numbers]
 
-Decisions will be saved to: workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md (one per repo)
-Run `implement review EUDPA-XXXXX` afterwards to apply fixes.
+Decisions are written directly to: workareas/reviews/EUDPA-XXXXX/review.{repo}.md
+Run `implement review EUDPA-XXXXX` afterwards to apply Fix-disposition items.
 ```
 
 ---
@@ -70,7 +62,11 @@ workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
 
 Extract ~10 lines of context centred on the reported line number. Scan those lines for the specific pattern named in the Issue column (function name, variable name, operator, attribute, etc.).
 
-**If NOT found:** the violation has already been resolved. Auto-record as `AUTO_RESOLVED` in `decisions.{repo}.md`, report it, and move on — no user input needed.
+**If NOT found:** the violation has already been resolved. Auto-record:
+```bash
+./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found instead}"
+```
+Report it, and move on — no user input needed.
 
 ### 3b. Present the item
 
@@ -82,7 +78,7 @@ Issue: {issue description}
 
 {code snippet — ~10 lines, with the offending line highlighted}
 
-Fix: {fix description from todo list}
+Fix: {fix description from the items table}
 ──────────────────────────────────────────────────────────────────
 Options: [F]ix  [W]on't Fix  [S]kip  [D]iscuss
 ```
@@ -93,41 +89,35 @@ Do not proceed until the user responds. Handle responses:
 
 | Response | Action |
 |----------|--------|
-| `F` / `fix` / `yes` / `fix it` | → Step 4: Record Fix decision |
-| `W` / `won't fix` / `wont fix` / `no` | → Step 5: Record Won't Fix decision |
-| `S` / `skip` | Leave undecided, move to next item |
-| `D` / `discuss` / any question | Answer conversationally, then re-present the item for a decision. If the discussion concludes with a fix approach, record any clarifications in the decision notes. |
+| `F` / `fix` / `yes` / `fix it` | → Step 4: Record `Fix` |
+| `W` / `won't fix` / `wont fix` / `no` | → Step 5: Record `Won't Fix` |
+| `D` / `discuss` | → Step 6: Discuss inline, then record `Discuss` (or `Fix` / `Won't Fix` if the discussion concludes) |
+| `S` / `skip` | Leave the row's disposition blank, move to next item |
 
 ---
 
-## Step 4: Record Fix Decision
+## Step 4: Record `Fix`
 
-Append to `workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md`:
-
-```
-FIX | #{N} | {repo} | {path/to/file} | {NN} | {issue text} | {fix text}
+```bash
+./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix" [--note "{refined fix or context}"]
 ```
 
-Log:
+The script auto-sets Status to `Not Done`. Log:
 ```
-✅ Item #N — queued for fixing
+✅ Item #N — queued as Fix
 ```
 
 Move to next item. **Do not spawn a fixer agent.**
 
 ---
 
-## Step 5: Record Won't Fix Decision
+## Step 5: Record `Won't Fix`
 
-If the user provides a reason, include it.
+If the user provides a reason, pass it as `--note`.
 
-Append to `workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md`:
-
+```bash
+./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
 ```
-WONT_FIX | #{N} | {repo} | {path/to/file} | {NN} | {issue text} | {reason if given}
-```
-
-Also mark Won't Fix `[x]` in `review.{repo}.md` (this item's row) and in the per-file `.review.md` at `workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md`.
 
 Log:
 ```
@@ -138,26 +128,23 @@ Move to next item.
 
 ---
 
-## Step 6: Initialise / Update Decisions Files
+## Step 6: Discuss
 
-Decisions files live at the ticket root, one per repo:
+Answer the user's question(s) inline using whatever context is available (read code, follow up on related items, etc.). When the discussion settles:
+
+- If the conclusion is **fix it** → call Step 4 with a `--note` summarising the agreed approach.
+- If the conclusion is **leave it** → call Step 5 with the reason.
+- If the user wants to **defer to a wider conversation** (e.g. PR thread, standup) →
+  ```bash
+  ./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{summary of open question / who to ask}"
+  ```
+
+Log:
 ```
-workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md   (e.g. decisions.trade-imports-animals-frontend.md)
-```
-
-Format:
-```markdown
-# Decisions — EUDPA-XXXXX ({repo})
-<!-- Walker appends rows here. Each pipe-delimited row is one decision. -->
-<!-- Decision | Item# | Repo | File | Line | Issue | Notes/Fix -->
-
-AUTO_RESOLVED | #2 | frontend | src/foo.js | 14 | use of == | already uses ===
-FIX | #5 | frontend | src/bar.js | 42 | missing error handler | add try/catch around fetchData call
-WONT_FIX | #9 | frontend | src/qux.js | 12 | unused import | third-party type augmentation, must stay
-SKIP | #11 | frontend | test/foo.test.js | 33 | test description vague | —
+💬 Item #N — Discuss queued: {note}
 ```
 
-If a file does not exist for the current repo, create it with the header before appending the first row.
+Move to next item.
 
 ---
 
@@ -168,16 +155,17 @@ After all items are processed:
 ```
 Walk complete for EUDPA-XXXXX [{filters}].
 
-Decisions recorded:
+Dispositions recorded this run:
   ✅ Fix:            N items  (queued for implementor)
   🔍 Auto-resolved:  N items  (already fixed in code)
-  ❌ Won't Fix:      N items  (marked in review.{repo}.md)
-  ⏭️  Skipped:       N items  (left undecided)
+  ❌ Won't Fix:      N items
+  💬 Discuss:        N items  (left flagged for human follow-up)
+  ⏭️  Skipped:       N items  (still pending — re-walk to revisit)
 
-Decisions saved to: workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md (per repo)
+Items table updated in: workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
 
-To apply the queued fixes, run:
+To apply the Fix items, run:
   implement review EUDPA-XXXXX
 ```
 
-If there are no Fix decisions, omit the last line.
+If there are no Fix dispositions added in this run, omit the last line.

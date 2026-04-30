@@ -393,18 +393,6 @@ for ((i=0; i<pr_count; i++)); do
         log "  Created: review.${repo}.md"
     fi
 
-    # Per-repo decisions stub at ticket root (with header so walker can append)
-    decisions_stub="$REVIEW_DIR/decisions.${repo}.md"
-    if [[ ! -f "$decisions_stub" ]]; then
-        cat > "$decisions_stub" << EOF
-# Decisions — $REVIEW_ID ($repo)
-<!-- Walker appends rows here. Each pipe-delimited row is one decision. -->
-<!-- Decision | Item# | Repo | File | Line | Issue | Notes/Fix -->
-
-EOF
-        log "  Created: decisions.${repo}.md"
-    fi
-
     stub="$repo_review_dir/_consistency-check.md"
     if [[ ! -f "$stub" ]] || [[ ! -s "$stub" ]]; then
         touch "$stub"
@@ -437,7 +425,6 @@ else
     fi
     echo "  ✓ file-reviews/ ($created_files files)"
     echo "  ✓ review.{repo}.md stubs (${#consistency_repos[@]} repos)"
-    echo "  ✓ decisions.{repo}.md stubs (${#consistency_repos[@]} repos)"
     echo "  ✓ _consistency-check.md stubs (${#consistency_repos[@]} repos)"
     echo ""
     echo "Next: Review each file, then run ./verify-coverage.sh $REVIEW_ID"

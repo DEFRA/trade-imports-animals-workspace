@@ -157,12 +157,20 @@ done
 # Build output JSON
 results_json=$(printf '%s\n' "${results[@]}" | jq -s '.')
 
-# Update meta file with re-review info
-jq --argjson rereview "{
+# Append a snapshot to .re_reviews[] (preserves prior snapshots so the next refresh
+# can diff "since prior refresh"). Also keeps .re_review pointing at the latest
+# entry for backwards compatibility with anything that still reads it.
+snapshot="{
     \"re_review_started\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
     \"original_review\": \"$review_date\",
     \"changes\": $results_json
-}" '. + {re_review: $rereview}' "$META_FILE" > "$META_FILE.tmp" && mv "$META_FILE.tmp" "$META_FILE"
+}"
+jq --argjson snap "$snapshot" '
+    . + {
+        re_review: $snap,
+        re_reviews: (((.re_reviews // []) + [$snap]))
+    }
+' "$META_FILE" > "$META_FILE.tmp" && mv "$META_FILE.tmp" "$META_FILE"
 
 # Output
 if [[ "$JSON_OUTPUT" == "true" ]]; then

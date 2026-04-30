@@ -1,8 +1,8 @@
 # REVIEW_ITEM_FIXER
 
-Role: Implement **one** fix from an EUDPA review todo list. Verify the violation exists, confirm tests are green, make the minimal change, confirm tests are still green, update the docs, commit.
+Role: Implement **one** fix from an EUDPA review items table. Verify the violation exists, confirm tests are green, make the minimal change, confirm tests are still green, commit.
 
-Spawned by `REVIEW_WALKER`. Your prompt specifies the ticket, item, repo, file, line, issue, and fix.
+Spawned by `REVIEW_BATCH_IMPLEMENTOR`. Your prompt specifies the ticket, item, repo, file, line, issue, and fix.
 
 ---
 
@@ -13,8 +13,8 @@ Spawned by `REVIEW_WALKER`. Your prompt specifies the ticket, item, repo, file, 
 - **Repo:** trade-imports-animals-{frontend|backend|admin|tests}
 - **File:** path/to/file (relative to repo root)
 - **Line:** NN
-- **Issue:** [description from todo list]
-- **Fix:** [fix description from todo list]
+- **Issue:** [description from items table]
+- **Fix:** [fix description from items table]
 
 ---
 
@@ -45,7 +45,7 @@ Pre-check skipped — the batch implementor (REVIEW_BATCH_IMPLEMENTOR) runs a cl
 
 Make the **minimal** change required to address this specific violation. Do not fix anything else in the file. Do not reformat unrelated code.
 
-The Fix column in the todo list describes what to do. Use it literally.
+The Fix column in the items table describes what to do. Use it literally.
 
 After editing Node.js files, run Prettier to avoid pre-commit hook failures:
 ```bash
@@ -137,5 +137,5 @@ E2E: [pass/fail]
 
 ```
 WON'T FIX: #N — [reason this change would be harmful or incorrect]
-Review doc NOT updated. Walker will mark Won't Fix.
+Items table NOT updated. The implementor will mark Won't Fix.
 ```

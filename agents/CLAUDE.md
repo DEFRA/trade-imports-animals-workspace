@@ -91,6 +91,12 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 |skills/tools/review/verify-coverage.sh|EUDPA-X [--json]|Check coverage|
 |skills/tools/review/verify-style-coverage.sh|EUDPA-X [--json]|Check JS style review coverage|
 |skills/tools/review/diff-since-review.sh|EUDPA-X [--json]|Get diff since last review|
+|skills/tools/review/review-items.sh|EUDPA-X [--repo R] [--filter pending\|fix\|wont-fix\|discuss\|auto-resolved] [--status not-done\|done\|failed] [--json]|List items from `## Items` table|
+|skills/tools/review/review-mark.sh|EUDPA-X --repo R --item N --disposition VALUE [--note "..."]|Set Disposition (auto-sets Status)|
+|skills/tools/review/review-set-status.sh|EUDPA-X --repo R --item N --status VALUE [--note "..."]|Set Status only|
+|skills/tools/review/review-add-item.sh|EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..."|Append new item; prints new ID|
+|skills/tools/review/review-counts.sh|EUDPA-X [--repo R] [--json]|Summary by Disposition+Status|
+|skills/tools/review/review-migrate-decisions.sh|EUDPA-X [--dry-run]|One-shot legacy decisions → consolidated table migration|
 |**npm**|||
 |skills/tools/npm/discover-upgrades.sh|repo-path --run-id TICKET [--strategy LEVEL] [--json]|Phase 1: Discover outdated deps|
 |skills/tools/npm/analyze-migration-plans.sh|--run-id TICKET [--json]|Phase 1: View planning status|
@@ -106,7 +112,7 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 
 ## Workspaces
 ```
-workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md, decisions.{repo}.md
+workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md (consolidated `## Items` table)
 workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
 workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, code-style-review.md
 workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md, repo-style-review.md

@@ -83,7 +83,7 @@ Wait for the agent to complete. Verify `_consistency-check.md` exists for each r
 
 ## Step 5: Create Repository Summaries
 
-For **each repository** in the review, create `workareas/reviews/EUDPA-XXXXX/review.{repo}.md` at the ticket root (sibling of `decisions.{repo}.md`) by reading all `*.review.md` files for that repo and synthesising:
+For **each repository** in the review, create `workareas/reviews/EUDPA-XXXXX/review.{repo}.md` at the ticket root by reading all `*.review.md` files for that repo and synthesising:
 
 ```markdown
 # Repository Review: {repo-name}
@@ -110,16 +110,18 @@ For **each repository** in the review, create `workareas/reviews/EUDPA-XXXXX/rev
 **Overall Risk:** Low / Medium / High
 **Rationale:** [One sentence]
 
-## Todo List
+## Items
 
-Concatenation of all file todo lists for this repo. Re-number rows sequentially (1, 2, 3...) across all files.
+Concatenation of all file todo lists for this repo. Re-number rows sequentially (1, 2, 3...) across all files. Disposition and Status start blank — the walker / implementor / hand-marking will fill them in. Escape any literal `|` in cell content as `\|`.
 
-| # | File | Line | Severity | Category | Issue | Fix | Fixed | Won't Fix |
-|---|------|------|----------|----------|-------|-----|-------|-----------|
+| # | File | Line | Severity | Category | Issue | Fix | Disposition | Status | Notes |
+|---|------|------|----------|----------|-------|-----|-------------|--------|-------|
 
 ## Repository Verdict
 **Status:** SAFE / NEEDS ATTENTION / RISKY
 ```
+
+The `Disposition` column takes one of `Fix`, `Won't Fix`, `Discuss`, `Auto-Resolved`, or blank (pending). The `Status` column takes `Not Done`, `Done`, `Failed`, `—`, or blank. Together they replace the old `Fixed [ ]` / `Won't Fix [ ]` columns and the separate `decisions.{repo}.md` file. Hand-edit the Disposition column to manually mark items before running the walker.
 
 **Note:** Skip this step if only one repository is involved.
 
@@ -195,6 +197,8 @@ Index: workareas/reviews/EUDPA-XXXXX/review-index.md
 Repo reviews: workareas/reviews/EUDPA-XXXXX/review.{repo}.md   (e.g. review.trade-imports-animals-frontend.md) (one per repo)
 ```
 
+**Hand-marking shortcut:** open the items table in `review.{repo}.md` and type `Fix` or `Won't Fix` directly into the Disposition column for items you have a clear answer on. Then run `walk review EUDPA-XXXXX` — the walker will skip those and only present items still pending a disposition.
+
 ---
 
 # REFRESH REVIEW
@@ -215,50 +219,108 @@ Repeat for every repo listed in `.review-meta.json`.
 ./skills/tools/review/diff-since-review.sh EUDPA-XXXXX --json
 ```
 
+The script appends a snapshot to `re_reviews[]` in `.review-meta.json`; the prior snapshot is preserved so the next refresh can diff "since prior refresh" rather than "since original review".
+
 If **no changes detected across all repos**: report that the branch is unchanged since the last review and stop.
 
 ## Step R2.5: Load Full Item Inventory
 
 **This step is mandatory.** `review-index.md` is a thin navigation index — item details live in per-repo files.
 
-Read the decisions file for each repo:
-```
-workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md   (one per repo, e.g. decisions.trade-imports-animals-frontend.md)
-```
-
-Each `decisions.{repo}.md` is written by the REVIEW_WALKER as the user walks through items for that repo. Together they record the decision for **every** review item: `DONE`, `WONT_FIX`, `AUTO_RESOLVED`, or `SKIP`.
-
-For each repo, also read the per-repo review to get the full item list:
-```
-workareas/reviews/EUDPA-XXXXX/review.{repo}.md   (e.g. review.trade-imports-animals-frontend.md)
+Pull the full inventory directly from each repo's items table:
+```bash
+./skills/tools/review/review-items.sh EUDPA-XXXXX --json
 ```
 
-Build an **item inventory**: a map of `item-key → status` where item-key is `{repo}#{N}` and status is one of: `open`, `done`, `wont-fix`, `auto-resolved`.
+Each row carries `disposition` (`Fix`, `Won't Fix`, `Discuss`, `Auto-Resolved`, or blank=pending) and `status` (`Not Done`, `Done`, `Failed`, `—`, or blank). Use these as the source of truth.
 
-- Items with `DONE` in decisions.{repo}.md → status `done` (should be verified by agent)
-- Items with `WONT_FIX` in decisions.{repo}.md → status `wont-fix` (exclude from all work lists; do NOT re-report)
-- Items with `AUTO_RESOLVED` in decisions.{repo}.md → status `auto-resolved` (treat as fixed)
-- Items absent from decisions.{repo}.md with `Won't Fix [x]` in their review file → status `wont-fix`
-- All remaining items → status `open`
+- `Won't Fix` / `Auto-Resolved` → carry forward; do NOT re-report even if the pattern is still in the code.
+- `Fix` + `Done` → already implemented; verify the agent confirms the violation is gone.
+- `Fix` + `Not Done` (and `Discuss`) → still open work.
+- Blank disposition → pending (walker will pick up).
+
+## Step R2.6: Identify Merge-Resolved Files
+
+**This step is mandatory.** A hand-resolved merge conflict is logically *new code* — the resolution exists in neither parent, so the prior review of either parent does not cover it. Skip this step and you will miss real bugs introduced at the integration point.
+
+For every repo, enumerate merge commits in the refresh window and parse their `# Conflicts:` blocks:
+
+```bash
+prior_sha=$(jq -r '.prs[] | select(.repo=="<repo>") | .commit' workareas/reviews/EUDPA-XXXXX/.review-meta.json)
+head_sha=$(git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> rev-parse HEAD)
+git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> log --merges --format='%H' "$prior_sha..$head_sha" |
+  while read sha; do
+    git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> log --format='%B' -1 "$sha" |
+      awk -v s="$sha" '/^# Conflicts:/{p=1;next} p && /^#\t/{sub(/^#\t/,""); print s "\t" $0}'
+  done
+```
+
+Each output line gives `<merge_sha>\t<file_path>`. These files form **List C — Merge-resolved files**. Spawn each as REFRESH but with the `MERGE_RESOLVED` agent prompt variant in Step R4.
+
+**Trivial-resolution exception:** If `git diff <prior_sha>..HEAD -- <file>` is empty for a conflict-listed file (the resolution adopted one side verbatim and that side matches the prior reviewed state), it can be skipped. Otherwise, treat as List C.
+
+## Step R2.7: Coverage-Gap Audit
+
+**This step is mandatory.** REFRESH-by-diff misses files already in PR scope that never received a per-file review (drift, prior-run failures, persistence errors). Reconcile against the PR file list:
+
+```bash
+pr_num=$(jq -r '.prs[] | select(.repo=="<repo>") | .pr' workareas/reviews/EUDPA-XXXXX/.review-meta.json)
+gh pr view "$pr_num" --repo "DEFRA/<repo>" --json files --jq '.files[].path' | sort > /tmp/pr-files.txt
+
+for f in $(cat /tmp/pr-files.txt); do
+  base=$(echo "$f" | sed 's|/|_|g')
+  if [[ ! -f "workareas/reviews/EUDPA-XXXXX/file-reviews/<repo>/${base}.review.md" ]]; then
+    echo "GAP: $f"
+  fi
+done
+```
+
+Each `GAP:` line is added to **List D — Coverage gaps**. Spawn each as FRESH in Step R4.
 
 ## Step R3: Determine Work Scope
 
-From the diff output and the item inventory built in R2.5, build two work lists:
+From R2 (diff), R2.5 (item inventory), R2.6 (merge-resolved files), and R2.7 (coverage gaps), build four work lists:
 
-**List A — Files to re-review** (spawn file reviewer agents):
-- Any file that changed since the last review (modified or added)
+**List A — Files to re-review** (spawn FILE_REVIEWER, Mode: REFRESH):
+- Any file that changed since the last review (modified or added) AND was not produced by a hand-resolved merge conflict (those go to List C).
 
-**List B — Unchanged files with open todo items** (check inline, no agent needed):
-- Files NOT in the diff that have any `open` items in the inventory (Fixed `[ ]` AND Won't Fix `[ ]`, AND not `WONT_FIX`/`AUTO_RESOLVED` in decisions.{repo}.md)
-- For each remaining item: read the current file and check whether the specific violation is still present
+**List B — Unchanged files with open items** (check inline, no agent needed):
+- Files NOT in the diff that have any pending items, or `Fix`/`Discuss` items with Status=`Not Done`
+- Use `review-items.sh EUDPA-XXXXX --filter pending` and `review-items.sh EUDPA-XXXXX --filter fix --status not-done` to enumerate
+- For each item: read the current file and check whether the specific violation is still present
 
-Deleted files: mark their todo items as Fixed.
+**List C — Merge-resolved files** (spawn FILE_REVIEWER, Mode: MERGE_RESOLVED):
+- Files identified in Step R2.6.
+- Treated separately because the resolution diff is the *integration* of two parents — the agent prompt asks for explicit checks that prior items survive the merge and that no behaviour is smuggled in from the source branch.
 
-## Step R4: Re-review Changed Files
+**List D — Coverage gaps** (spawn FILE_REVIEWER, Mode: FRESH):
+- Files identified in Step R2.7 — present in PR diff vs main but lacking a per-file review.
 
-For every file in List A, spawn a FILE_REVIEWER agent (up to 10 parallel).
+Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 
-**IMPORTANT:** Do NOT paste violation lists from `review-index.md` — it is a navigation index only. Instead, tell the agent to read the per-file review and decisions files directly. The per-file `.review.md` contains the accurate Won't Fix markings written by the WALKER.
+### Pre-flight checklist
+
+Before proceeding to Step R4, confirm:
+
+- [ ] List A built (changed files, ex-merge-resolved)
+- [ ] List B built (unchanged files with open items)
+- [ ] List C built (merge-resolved files from R2.6)
+- [ ] List D built (coverage gaps from R2.7)
+- [ ] Every entry in `gh pr view --json files` for each repo appears in exactly one of A/B/C/D **or** has an existing up-to-date `.review.md` corresponding to the current commit
+
+If a PR file does not appear anywhere, treat it as List D.
+
+## Step R4: Re-review Files
+
+Spawn FILE_REVIEWER agents for List A, List C, and List D (up to 10 parallel). The mode for each list is fixed:
+
+- **List A → Mode: REFRESH**
+- **List C → Mode: MERGE_RESOLVED**
+- **List D → Mode: FRESH**
+
+**IMPORTANT:** Do NOT paste violation lists from `review-index.md` — it is a navigation index only. Tell the agent to read the per-file `.review.md` directly and to consult the consolidated items table for prior dispositions.
+
+### Prompt template — REFRESH (List A)
 
 ```markdown
 Follow the instructions in personas/review/FILE_REVIEWER.md.
@@ -277,62 +339,86 @@ Follow the instructions in personas/review/FILE_REVIEWER.md.
 **Previously reported violations:** Read them from:
 workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 
-**Decisions context:** Read decisions from:
-workareas/reviews/EUDPA-XXXXX/decisions.[repo].md
-Items marked WONT_FIX or AUTO_RESOLVED there must NOT be re-reported as open.
+**Prior dispositions:** Pull existing items for this file from the consolidated items table:
+./skills/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'
+Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
 
 **Write your updated review to (overwrite existing):**
 workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 ```
 
+### Prompt template — MERGE_RESOLVED (List C)
+
+```markdown
+Follow the instructions in personas/review/FILE_REVIEWER.md.
+
+**Mode: MERGE_RESOLVED** — this file's current state is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.
+
+**Ticket:** EUDPA-XXXXX - [Ticket Summary]
+**Review workspace:** workareas/reviews/EUDPA-XXXXX/
+
+**Your assigned file:**
+- Repository: [repo-name]
+- Path: [file-path]
+- Previous reviewed commit: [old-sha]
+- Current commit: [new-sha]
+- Merge commit: [merge-sha]
+
+**Focus your review on:**
+1. The resolution diff: `git -C workareas/reviews/EUDPA-XXXXX/repos/[repo-name] diff [old-sha]..[new-sha] -- [file-path]` — read it; this is the unreviewed delta.
+2. **Prior items survive the merge?** For every Fix+Done item on this file, verify the fix is still present at HEAD. If a prior fix has been undone by the merge, log as a regression in your review.
+3. **Smuggled behaviour?** Did the resolution import code from the source branch (sibling tickets) that contradicts decisions made for the current ticket — e.g. dependency version changes, constants now diverging, error-handling style reverted?
+4. **Integration points.** Where the two sides meet (new imports, new fixtures, shared helpers, route ordering, schema additions) — those are the most likely defect sites.
+
+**Previously reported violations:** Read them from:
+workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+
+**Prior dispositions:** `./skills/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'`. Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
+
+**Write your updated review to (overwrite existing):**
+workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+```
+
+### Prompt template — FRESH (List D, coverage gap)
+
+Use the FRESH-mode prompt from Step 2 of the Fresh Review section above. Note in the prompt that the file is in PR diff but had no prior per-file review — this is a coverage gap, not a fresh PR.
+
 ## Step R5: Check List B Items Inline
 
-For each item in List B: read the current file from the workspace. Determine if the specific violation is still present (unchanged file may still have had a quiet fix in a prior commit). Cross-reference `decisions.{repo}.md` — if the item is `WONT_FIX` or `AUTO_RESOLVED` there, skip it regardless of what `review.{repo}.md` says.
+For each item in List B: read the current file from the workspace. Determine if the specific violation is still present (unchanged file may still have had a quiet fix in a prior commit). If the item is `Won't Fix` or `Auto-Resolved` in the consolidated table, skip it.
 
-## Step R6: Update review-index.md and review.{repo}.md In Place
+## Step R6: Update review.{repo}.md In Place
 
-Once all agents complete and List B is checked:
+Once all agents complete and List B is checked, apply changes via the helper scripts. Do NOT hand-edit the items table — the scripts keep escaping consistent.
 
-**Build a change summary using decisions.{repo}.md + agent results as the source of truth:**
-- Items where decisions.{repo}.md = `DONE` and agent confirms fixed → mark `[x]` in Fixed column in `review.{repo}.md`
-- Items where decisions.{repo}.md = `DONE` but agent finds still present → list as ⚠️ Still open
-- Items where decisions.{repo}.md = `WONT_FIX` or `AUTO_RESOLVED` → do NOT include in the summary table at all; ensure Won't Fix `[x]` is set in `review.{repo}.md` if not already
-- Items remaining open (neither DONE nor WONT_FIX in decisions.{repo}.md, and not fixed by agent) → list as ⚠️ Still open
-- New violations from refresh agents → append as new rows
+**Map agent / inline-check results to script calls:**
+- Item already `Auto-Resolved` or `Won't Fix` → leave alone (the script enforces no re-reporting).
+- Item `Fix` + `Done` and agent confirms fix is in place → leave alone.
+- Item `Fix` + `Done` and agent finds the pattern back → log as a regression in the Refresh Summary; do NOT change disposition (the user can re-walk it).
+- Item `Fix` + `Not Done` confirmed still present → leave alone (still open work).
+- Item with no disposition that the inline check determines is no longer present → `review-mark.sh --disposition "Auto-Resolved" --note "..."`.
+- New violation found by a refresh agent → `review-add-item.sh --repo R --file F --line L --severity S --category C --issue ... --fix ...`. Returns the new ID.
 
-**Important:** Use the `review.{repo}.md` files at the ticket root for the full item count — `review-index.md` is a thin navigation index only. Your "N of M open items" counts must reflect the full inventory from decisions.{repo}.md and review.{repo}.md.
+**Update `review.{repo}.md` cosmetics:**
 
-**Update each `workareas/reviews/EUDPA-XXXXX/review.{repo}.md` in place:**
-
-1. Add a "Refreshed" line near the top:
-   ```
-   **Refreshed:** [today]
-   ```
-
-2. Update the todo list:
-   - Mark resolved items: `[ ]` → `[x]` in Fixed column
-   - Append new violations as new rows at the bottom
-   - Do NOT remove rows — keep full history visible
-
-3. Add a "Refresh Summary" section before the Verdict (multiple refresh summaries accumulate):
-
+1. Add a "Refreshed" line near the top: `**Refreshed:** [today]`.
+2. Add a "Refresh Summary" section before the Verdict (multiple summaries accumulate):
    ```markdown
    ## Refresh Summary ([date])
 
    **Changes since last review:** [X] files modified, [Y] files added
-   **Todo items resolved:** [N] of [M] open items
-   **New issues found:** [N]
+   **Items resolved this round:** [N]
+   **New issues found:** [M]
 
    | Change | File | Detail |
    |--------|------|--------|
    | ✅ Resolved | `path/to/file` | Item #N: [description] |
-   | ➕ New | `path/to/file` | [Severity]: [description] |
-   | ⚠️ Still open | `path/to/file` | Item #N: [description] |
+   | ➕ New | `path/to/file` | Item #N: [Severity]: [description] |
+   | ⚠️ Regressed | `path/to/file` | Item #N: was Done, pattern back |
 
-   Do NOT include Won't Fix items (`[x]` in Won't Fix column) in this table.
+   Do NOT include `Won't Fix` items in this table.
    ```
-
-4. Update the Repository Verdict if warranted.
+3. Update the Repository Verdict if warranted.
 
 **Also update `workareas/reviews/EUDPA-XXXXX/review-index.md`:**
 

@@ -1,6 +1,6 @@
 # REVIEW_BATCH_IMPLEMENTOR
 
-Role: Apply all queued `FIX` decisions from a completed walker session. Reads `decisions.{repo}.md` files, spawns a fixer agent per item, and updates `review.{repo}.md` with results — no user input required during the run.
+Role: Apply all queued `Fix`-disposition items from a completed walker session. Reads the consolidated items table, spawns a fixer agent per item, and updates the table with results — no user input required during the run.
 
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review EUDPA-XXXXX {repo}"` (optional repo filter).
 
@@ -8,27 +8,20 @@ See `CLAUDE.md` for helper scripts.
 
 ---
 
-## Step 1: Load Decisions
+## Step 1: Load the Fix List
 
-Read all per-repo decisions files:
-```
-workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md   (one per repo, e.g. decisions.trade-imports-animals-frontend.md)
-```
+Pull every item with Disposition=`Fix` and Status=`Not Done` (or `Failed` from a prior run that should be retried):
 
-If no decisions files exist or none contain `FIX` rows:
+```bash
+./skills/tools/review/review-items.sh EUDPA-XXXXX --filter fix --status not-done --json
 ```
-No fix decisions found for EUDPA-XXXXX. Run `walk review EUDPA-XXXXX` first.
-```
-And stop.
-
-Build the fix list: every row where the first field is `FIX`, across all decisions files.
 
 Apply any filters from the trigger:
-- `{repo}` — only read `decisions.{repo}.md` for that specific repo
+- `{repo}` — add `--repo {repo}`
 
-If the fix list is empty after filtering:
+If the fix list is empty:
 ```
-No queued fixes for EUDPA-XXXXX [{repo filter}].
+No Fix-disposition items pending for EUDPA-XXXXX [{repo filter}]. Run `walk review EUDPA-XXXXX` first or hand-mark items.
 ```
 And stop.
 
@@ -90,7 +83,7 @@ And stop. Do not attempt any fixes.
 
 Process fixes in item-number order within each repo.
 
-For each `FIX` row, spawn a `general-purpose` agent via the Task tool:
+For each item, spawn a `general-purpose` agent via the Task tool:
 
 ```
 Follow the instructions in skills/personas/review/REVIEW_ITEM_FIXER.md.
@@ -100,8 +93,8 @@ Follow the instructions in skills/personas/review/REVIEW_ITEM_FIXER.md.
 **Repo:** {repo-name}
 **File:** {path/to/file}
 **Line:** {NN}
-**Issue:** {issue text from decisions.md}
-**Fix:** {fix text from decisions.md}
+**Issue:** {issue text from the items table}
+**Fix:** {fix text from the items table}
 ```
 
 Wait for the agent to return before spawning the next one (fixes within the same repo may affect shared files or tests).
@@ -110,11 +103,11 @@ Wait for the agent to return before spawning the next one (fixes within the same
 
 | Result | Action |
 |--------|--------|
-| `DONE` | Mark Fixed `[x]` in `review.{repo}.md` (item's row). Mark Fixed `[x]` in the per-file `.review.md` at `workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md`. Update the row in `decisions.{repo}.md` from `FIX` to `DONE`. Log success. |
-| `SKIPPED` | Auto-mark Fixed `[x]` (already resolved). Update row in `decisions.{repo}.md` to `AUTO_RESOLVED`. Log as auto-resolved. |
-| `FAILED` | Log failure with reason. Update row in `decisions.{repo}.md` to `FAILED`. Leave `review.{repo}.md` row unchanged. Continue to next item. |
+| `DONE` | `review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
+| `SKIPPED` | `review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
+| `FAILED` | `review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
 | `CANNOT START` | **Stop immediately.** Report pre-existing failures. Ask user to resolve before re-running. |
-| `WON'T FIX` | Mark Won't Fix `[x]` in `review.{repo}.md` and in the per-file `.review.md`. Update row in `decisions.{repo}.md` to `WONT_FIX`. Log the fixer's reason. Continue. |
+| `WON'T FIX` | `review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" --note "{reason}"` |
 
 ---
 
@@ -133,11 +126,9 @@ Fixed:
   #{N} [{repo}] — {description} ({short-sha})
   ...
 
-Failed (not committed — still in decisions.{repo}.md as FAILED):
+Failed (Status=Failed in the items table — re-run to retry):
   #{N} [{repo}] — {reason}
   ...
 
-Remaining queued: N items (run `implement review EUDPA-XXXXX` to retry)
+Run `review-counts.sh EUDPA-XXXXX` for the updated breakdown.
 ```
-
-If all items succeeded, the decisions file retains the history with `DONE`/`AUTO_RESOLVED` statuses.

@@ -13,8 +13,7 @@ eudp-live-animals-utils/agents/
     ├── ticket.md              # <-- READ: ticket details and AC
     ├── .review-meta.json      # <-- READ: detected tech & best_practices paths
     ├── review-index.md        # Thin navigation index
-    ├── review.{repo}.md       # Per-repo summary (authoritative todo list)
-    ├── decisions.{repo}.md    # <-- READ (REFRESH): per-repo walker decisions
+    ├── review.{repo}.md       # Per-repo summary with consolidated `## Items` table
     ├── repos/<repo>/          # Code to review
     └── file-reviews/<repo>/   # Write per-file reviews here
 ```
@@ -37,10 +36,13 @@ eudp-live-animals-utils/agents/
 1. **Read `.review-meta.json`** → get `best_practices` array (paths relative to `agents/`)
 2. **Read listed best practice files** → apply these standards during review
 3. **Read `ticket.md`** → understand requirements and AC
-4. **REFRESH mode only — read decisions file:**
-   - `workareas/reviews/EUDPA-XXXXX/decisions.{repo}.md`
-   
-   Items marked `WONT_FIX` or `AUTO_RESOLVED` in decisions.{repo}.md **must not** be re-reported as open violations, even if the pattern is still present in the code. The user deliberately chose not to fix them. Carry their Won't Fix `[x]` marking forward in your updated todo list without comment.
+4. **REFRESH mode only — load prior dispositions for this file:**
+   ```bash
+   ./skills/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} | awk -F'\t' '$3 == "{file-path}"'
+   ```
+   The columns are: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
+
+   Items with Disposition=`Won't Fix` or `Auto-Resolved` **must not** be re-reported as open violations, even if the pattern is still present in the code. The user deliberately chose not to fix them. Carry them forward unchanged in your updated todo list without comment.
 
 ### 3a. Fresh review — get the diff
 
@@ -58,7 +60,7 @@ workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md
 ```
 
 For each violation in that file:
-- If its `Won't Fix` column is `[x]`, or it appears as `WONT_FIX`/`AUTO_RESOLVED` in decisions.{repo}.md → carry it forward unchanged; do not re-check it
+- If its Disposition is `Won't Fix` or `Auto-Resolved` in the consolidated items table → carry it forward unchanged; do not re-check it
 - Otherwise: read the current file and determine if the violation is **still present** or **resolved**
 
 Then get the diff since the last review to scope new-violation checks:
@@ -181,7 +183,9 @@ One row per issue. Be specific: name the function, line, or pattern.
 
 ## Updated Todo List
 
-Carry forward all original rows. Update Fixed column for resolved items. Append new issues as new rows. Do NOT delete rows. Preserve Won't Fix `[x]` markings from previously reported violations.
+Carry forward all original rows. Update the Fixed column for resolved items. Append new issues as new rows. Do NOT delete rows. Preserve Won't Fix `[x]` markings from previously reported violations.
+
+This per-file todo list is a paper trail of what you found; the parent REVIEWER will materialise any new rows into the consolidated `## Items` table in `review.{repo}.md` via `review-add-item.sh`.
 
 | # | Line | Severity | Category | Issue | Fix | Fixed | Won't Fix |
 |---|------|----------|----------|-------|-----|-------|-----------|
