@@ -35,6 +35,7 @@ Run `make help` from this directory to see all cross-repo commands.
 | `make test` | Run tests across all repos |
 | `make docker-compose-up` | Start full stack from published Docker Hub images |
 | `make docker-compose-dev` | Start full stack built from local source (hot-reload for Node, volume mount for Java) |
+| `make docker-compose-down` | Stop the stack and wipe all volumes (mongo data, localstack state) for a clean slate |
 | `make docker-logs` | Tail frontend + admin + backend logs (`Ctrl-C` to stop) |
 | `make docker-restart-backend` | Restart backend container after Java source changes |
 | `make start-frontend` | Start frontend dev server from source (outside Docker) |

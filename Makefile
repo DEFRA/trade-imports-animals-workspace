@@ -9,7 +9,7 @@ LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
 
 .PHONY: setup update reset status install lint test \
         start-frontend start-backend start-admin \
-        docker-local-branches docker-compose-up docker-compose-dev docker-logs docker-restart-backend clean help
+        docker-local-branches docker-compose-up docker-compose-dev docker-compose-down docker-logs docker-restart-backend clean help
 
 # --- Help ---
 
@@ -139,6 +139,9 @@ docker-compose-up: ## Start stack (edit docker/local.compose.yml to override ima
 
 docker-compose-dev: ## Start stack with frontend+admin built from source (hot-reload + docker logs)
 	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) up --wait --detach
+
+docker-compose-down: ## Stop stack and wipe volumes (mongo data, localstack state) for a clean slate
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) down --volumes --remove-orphans
 
 docker-logs: ## Follow logs for frontend, admin, and backend (Ctrl-C to stop)
 	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) logs -f trade-imports-animals-frontend trade-imports-animals-admin trade-imports-animals-backend
