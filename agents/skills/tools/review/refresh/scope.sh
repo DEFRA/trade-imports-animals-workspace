@@ -12,9 +12,9 @@
 # and D (coverage gaps).
 #
 # `prior_sha` per repo is the current_commit of the most recent re_review snapshot
-# whose current_commit ≠ today's HEAD. Falls back to `.prs[].commit` (the original
-# review SHA) if there is no prior refresh window. This gives "since last refresh"
-# semantics: re-running scope on a stable branch produces empty lists.
+# (the last time scope recorded HEAD for this repo). Falls back to `.prs[].commit`
+# on the first refresh. If prior_sha == today's HEAD, the repo has not changed
+# since the last refresh and its lists will be empty.
 #
 # With --write-snapshot, after computing the lists, append a snapshot to
 # `.review-meta.json#re_reviews[]` recording (reviewed=prior_sha, current=HEAD).
@@ -98,15 +98,14 @@ for repo in "${repos[@]}"; do
     original_sha=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .commit' "$META_FILE")
     current_sha=$(git -C "$repo_dir" rev-parse HEAD)
 
-    # prior_sha = most recent re_review snapshot's current_commit where current != HEAD;
-    # else original_sha.
-    prior_sha=$(jq -r --arg r "$repo" --arg head "$current_sha" '
+    # prior_sha = the most recent re_review snapshot's current_commit for this repo
+    # (i.e. where the last refresh saw HEAD). Falls back to prs[].commit on first
+    # refresh. If prior_sha == today's HEAD, the diff is empty — no changes.
+    prior_sha=$(jq -r --arg r "$repo" '
         ((.re_reviews // [])
             | map(.changes[]? | select(.repo == $r))
-            | map(.current_commit)
-            | reverse
-            | map(select(. != $head))
-            | first) // empty
+            | last
+            | .current_commit) // empty
     ' "$META_FILE")
     [[ -z "$prior_sha" ]] && prior_sha="$original_sha"
 
