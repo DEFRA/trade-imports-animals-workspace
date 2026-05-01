@@ -205,183 +205,71 @@ Repo reviews: workareas/reviews/EUDPA-XXXXX/review.{repo}.md   (e.g. review.trad
 
 Used when `review-index.md` already exists. Updates the existing doc in place. Use this to verify review feedback has been addressed, or to catch new issues after further work on a branch.
 
-## Step R1: Pull Latest Code
+## Step R1–R3: Build Refresh Scope
+
+One command pulls every repo, computes the diff window per repo, identifies merge-resolved files and coverage gaps, then assembles the four work lists.
 
 ```bash
-git -C workareas/reviews/EUDPA-XXXXX/repos/{repo} pull --rebase --quiet
+./skills/tools/review/refresh/scope.sh EUDPA-XXXXX --emit-prompts --write-snapshot
 ```
 
-Repeat for every repo listed in `.review-meta.json`.
+Output (JSON to stdout):
 
-## Step R2: Get Changes Since Last Review
-
-```bash
-./skills/tools/review/diff-since-review.sh EUDPA-XXXXX --json
+```json
+{
+  "ticket": "EUDPA-XXXXX",
+  "totals": { "list_a": N, "list_b": N, "list_c": N, "list_d": N },
+  "repos": [
+    {
+      "repo": "trade-imports-animals-frontend",
+      "pr": 65,
+      "prior_sha": "...", "current_sha": "...", "no_changes": false,
+      "lists": {
+        "A": [{ "file": "...", "old_sha": "...", "new_sha": "...", "prompt": "..." }],
+        "B": [{ "id": 5, "file": "...", "line": "14", "issue": "...", "fix": "...", ... }],
+        "C": [{ "file": "...", "merge_sha": "...", "old_sha": "...", "new_sha": "...", "prompt": "..." }],
+        "D": [{ "file": "...", "prompt": "..." }]
+      }
+    }
+  ]
+}
 ```
 
-The script appends a snapshot to `re_reviews[]` in `.review-meta.json`; the prior snapshot is preserved so the next refresh can diff "since prior refresh" rather than "since original review".
+What each list means:
 
-If **no changes detected across all repos**: report that the branch is unchanged since the last review and stop.
+- **List A — Changed files** (Mode: REFRESH). File changed in the refresh window and is *not* a merge-resolved file. Spawn a FILE_REVIEWER agent per item; the rendered `prompt` field is ready to paste.
+- **List B — Pending items in unchanged files** (no agent needed). Items with blank Disposition or `Fix`/`Discuss`+`Not Done` whose file did *not* change. Read the file inline and decide whether the violation is still present.
+- **List C — Merge-resolved files** (Mode: MERGE_RESOLVED). Files mentioned in a merge commit's `# Conflicts:` block whose resolution diff is non-empty. The integration point is unreviewed — spawn the MERGE_RESOLVED prompt.
+- **List D — Coverage gaps** (Mode: FRESH). Files in the PR diff that never received a `.review.md`. Spawn the FRESH prompt.
 
-## Step R2.5: Load Full Item Inventory
+`prior_sha` is the most recent re_review snapshot's `current_commit` that differs from today's HEAD (i.e. "since the last refresh"); falls back to `prs[].commit` (the original review SHA) on the first refresh.
 
-**This step is mandatory.** `review-index.md` is a thin navigation index — item details live in per-repo files.
+If `--no-pull` is needed (offline / pre-pulled), pass it. Without `--write-snapshot` the script is idempotent and won't update `.review-meta.json`.
 
-Pull the full inventory directly from each repo's items table:
+If **all four lists are empty** across all repos: report that the branch is unchanged since the last refresh and stop.
+
+## Step R3.5: Load Full Item Inventory (for context)
+
 ```bash
 ./skills/tools/review/review-items.sh EUDPA-XXXXX --json
 ```
 
-Each row carries `disposition` (`Fix`, `Won't Fix`, `Discuss`, `Auto-Resolved`, or blank=pending) and `status` (`Not Done`, `Done`, `Failed`, `—`, or blank). Use these as the source of truth.
+Each row carries `disposition` (`Fix`, `Won't Fix`, `Discuss`, `Auto-Resolved`, or blank=pending) and `status` (`Not Done`, `Done`, `Failed`, `—`, or blank). Use these as the source of truth when reconciling agent results.
 
 - `Won't Fix` / `Auto-Resolved` → carry forward; do NOT re-report even if the pattern is still in the code.
 - `Fix` + `Done` → already implemented; verify the agent confirms the violation is gone.
 - `Fix` + `Not Done` (and `Discuss`) → still open work.
-- Blank disposition → pending (walker will pick up).
-
-## Step R2.6: Identify Merge-Resolved Files
-
-**This step is mandatory.** A hand-resolved merge conflict is logically *new code* — the resolution exists in neither parent, so the prior review of either parent does not cover it. Skip this step and you will miss real bugs introduced at the integration point.
-
-For every repo, enumerate merge commits in the refresh window and parse their `# Conflicts:` blocks:
-
-```bash
-prior_sha=$(jq -r '.prs[] | select(.repo=="<repo>") | .commit' workareas/reviews/EUDPA-XXXXX/.review-meta.json)
-head_sha=$(git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> rev-parse HEAD)
-git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> log --merges --format='%H' "$prior_sha..$head_sha" |
-  while read sha; do
-    git -C workareas/reviews/EUDPA-XXXXX/repos/<repo> log --format='%B' -1 "$sha" |
-      awk -v s="$sha" '/^# Conflicts:/{p=1;next} p && /^#\t/{sub(/^#\t/,""); print s "\t" $0}'
-  done
-```
-
-Each output line gives `<merge_sha>\t<file_path>`. These files form **List C — Merge-resolved files**. Spawn each as REFRESH but with the `MERGE_RESOLVED` agent prompt variant in Step R4.
-
-**Trivial-resolution exception:** If `git diff <prior_sha>..HEAD -- <file>` is empty for a conflict-listed file (the resolution adopted one side verbatim and that side matches the prior reviewed state), it can be skipped. Otherwise, treat as List C.
-
-## Step R2.7: Coverage-Gap Audit
-
-**This step is mandatory.** REFRESH-by-diff misses files already in PR scope that never received a per-file review (drift, prior-run failures, persistence errors). Reconcile against the PR file list:
-
-```bash
-pr_num=$(jq -r '.prs[] | select(.repo=="<repo>") | .pr' workareas/reviews/EUDPA-XXXXX/.review-meta.json)
-gh pr view "$pr_num" --repo "DEFRA/<repo>" --json files --jq '.files[].path' | sort > /tmp/pr-files.txt
-
-for f in $(cat /tmp/pr-files.txt); do
-  base=$(echo "$f" | sed 's|/|_|g')
-  if [[ ! -f "workareas/reviews/EUDPA-XXXXX/file-reviews/<repo>/${base}.review.md" ]]; then
-    echo "GAP: $f"
-  fi
-done
-```
-
-Each `GAP:` line is added to **List D — Coverage gaps**. Spawn each as FRESH in Step R4.
-
-## Step R3: Determine Work Scope
-
-From R2 (diff), R2.5 (item inventory), R2.6 (merge-resolved files), and R2.7 (coverage gaps), build four work lists:
-
-**List A — Files to re-review** (spawn FILE_REVIEWER, Mode: REFRESH):
-- Any file that changed since the last review (modified or added) AND was not produced by a hand-resolved merge conflict (those go to List C).
-
-**List B — Unchanged files with open items** (check inline, no agent needed):
-- Files NOT in the diff that have any pending items, or `Fix`/`Discuss` items with Status=`Not Done`
-- Use `review-items.sh EUDPA-XXXXX --filter pending` and `review-items.sh EUDPA-XXXXX --filter fix --status not-done` to enumerate
-- For each item: read the current file and check whether the specific violation is still present
-
-**List C — Merge-resolved files** (spawn FILE_REVIEWER, Mode: MERGE_RESOLVED):
-- Files identified in Step R2.6.
-- Treated separately because the resolution diff is the *integration* of two parents — the agent prompt asks for explicit checks that prior items survive the merge and that no behaviour is smuggled in from the source branch.
-
-**List D — Coverage gaps** (spawn FILE_REVIEWER, Mode: FRESH):
-- Files identified in Step R2.7 — present in PR diff vs main but lacking a per-file review.
+- Blank disposition → pending (walker will pick up; should be present in List B).
 
 Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 
-### Pre-flight checklist
-
-Before proceeding to Step R4, confirm:
-
-- [ ] List A built (changed files, ex-merge-resolved)
-- [ ] List B built (unchanged files with open items)
-- [ ] List C built (merge-resolved files from R2.6)
-- [ ] List D built (coverage gaps from R2.7)
-- [ ] Every entry in `gh pr view --json files` for each repo appears in exactly one of A/B/C/D **or** has an existing up-to-date `.review.md` corresponding to the current commit
-
-If a PR file does not appear anywhere, treat it as List D.
-
 ## Step R4: Re-review Files
 
-Spawn FILE_REVIEWER agents for List A, List C, and List D (up to 10 parallel). The mode for each list is fixed:
+Spawn FILE_REVIEWER agents for List A (REFRESH), List C (MERGE_RESOLVED), and List D (FRESH) — up to 10 parallel.
 
-- **List A → Mode: REFRESH**
-- **List C → Mode: MERGE_RESOLVED**
-- **List D → Mode: FRESH**
+When `scope.sh --emit-prompts` was used in R1–R3, every entry in lists A/C/D already carries a fully-rendered `prompt` field. Pass that string verbatim as the agent's task. No manual templating needed.
 
-**IMPORTANT:** Do NOT paste violation lists from `review-index.md` — it is a navigation index only. Tell the agent to read the per-file `.review.md` directly and to consult the consolidated items table for prior dispositions.
-
-### Prompt template — REFRESH (List A)
-
-```markdown
-Follow the instructions in personas/review/FILE_REVIEWER.md.
-
-**Mode: REFRESH** — this file has changed since the last review.
-
-**Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** workareas/reviews/EUDPA-XXXXX/
-
-**Your assigned file:**
-- Repository: [repo-name]
-- Path: [file-path]
-- Previous commit: [old-sha]
-- Current commit: [new-sha]
-
-**Previously reported violations:** Read them from:
-workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-
-**Prior dispositions:** Pull existing items for this file from the consolidated items table:
-./skills/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'
-Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
-
-**Write your updated review to (overwrite existing):**
-workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-```
-
-### Prompt template — MERGE_RESOLVED (List C)
-
-```markdown
-Follow the instructions in personas/review/FILE_REVIEWER.md.
-
-**Mode: MERGE_RESOLVED** — this file's current state is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.
-
-**Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** workareas/reviews/EUDPA-XXXXX/
-
-**Your assigned file:**
-- Repository: [repo-name]
-- Path: [file-path]
-- Previous reviewed commit: [old-sha]
-- Current commit: [new-sha]
-- Merge commit: [merge-sha]
-
-**Focus your review on:**
-1. The resolution diff: `git -C workareas/reviews/EUDPA-XXXXX/repos/[repo-name] diff [old-sha]..[new-sha] -- [file-path]` — read it; this is the unreviewed delta.
-2. **Prior items survive the merge?** For every Fix+Done item on this file, verify the fix is still present at HEAD. If a prior fix has been undone by the merge, log as a regression in your review.
-3. **Smuggled behaviour?** Did the resolution import code from the source branch (sibling tickets) that contradicts decisions made for the current ticket — e.g. dependency version changes, constants now diverging, error-handling style reverted?
-4. **Integration points.** Where the two sides meet (new imports, new fixtures, shared helpers, route ordering, schema additions) — those are the most likely defect sites.
-
-**Previously reported violations:** Read them from:
-workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-
-**Prior dispositions:** `./skills/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'`. Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
-
-**Write your updated review to (overwrite existing):**
-workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-```
-
-### Prompt template — FRESH (List D, coverage gap)
-
-Use the FRESH-mode prompt from Step 2 of the Fresh Review section above. Note in the prompt that the file is in PR diff but had no prior per-file review — this is a coverage gap, not a fresh PR.
+If you need to fall back to manual prompts, the templates live in [FILE_REVIEWER.md](FILE_REVIEWER.md) — same shape `scope.sh` uses internally.
 
 ## Step R5: Check List B Items Inline
 
