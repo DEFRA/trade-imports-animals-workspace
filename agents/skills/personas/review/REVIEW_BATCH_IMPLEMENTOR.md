@@ -62,15 +62,17 @@ find ../repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
 
 ### Java repo (backend)
+Runs surefire (unit `*Test`) and failsafe (integration `*IT`, Testcontainers-backed) in one pass:
 ```bash
-cd ../repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ../repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
-Then read the file you just created.
+Then read the file you just created. Confirm both `Tests run:` totals (surefire and failsafe) and `BUILD SUCCESS`.
 
 **If tests fail in any repo:**
 ```
 CANNOT START: pre-existing test failures in {repo}
 Unit: [pass/fail summary]
+Integration: [pass/fail summary, backend only]
 E2E: [pass/fail summary]
 
 Resolve failures before running the implementor.
