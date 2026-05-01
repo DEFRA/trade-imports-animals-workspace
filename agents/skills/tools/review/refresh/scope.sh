@@ -4,11 +4,12 @@
 # agent to reconstruct on the fly for R1, R2.6, R2.7, and R3.
 #
 # Usage:
-#   scope.sh EUDPA-XXXXX [--repo R] [--no-pull] [--emit-prompts] [--write-snapshot] [--human]
+#   scope.sh EUDPA-XXXXX [--repo R] [--no-pull] [--write-snapshot] [--human]
 #
 # By default outputs JSON to stdout. With --human, prints a readable summary.
-# With --emit-prompts, embeds ready-to-paste FILE_REVIEWER prompts in the JSON
-# (or prints them as separate blocks in --human mode).
+# The persona owns prompt rendering; this script just classifies files into
+# Lists A (changed), B (open items in unchanged files), C (merge-resolved),
+# and D (coverage gaps).
 #
 # `prior_sha` per repo is the current_commit of the most recent re_review snapshot
 # whose current_commit ≠ today's HEAD. Falls back to `.prs[].commit` (the original
@@ -34,17 +35,15 @@ ITEMS_SH="$REVIEW_TOOLS_DIR/review-items.sh"
 TICKET=""
 REPO_FILTER=""
 DO_PULL=true
-EMIT_PROMPTS=false
 WRITE_SNAPSHOT=false
 HUMAN=false
 
 usage() {
     cat <<EOF >&2
-Usage: $0 EUDPA-XXXXX [--repo REPO] [--no-pull] [--emit-prompts] [--write-snapshot] [--human]
+Usage: $0 EUDPA-XXXXX [--repo REPO] [--no-pull] [--write-snapshot] [--human]
 
   --repo R           Limit to one repo
   --no-pull          Skip the git pull step
-  --emit-prompts     Include rendered FILE_REVIEWER prompts in the output
   --write-snapshot   Append a re_review snapshot to .review-meta.json after computing
   --human            Print a human-readable summary instead of JSON
 EOF
@@ -55,7 +54,6 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --repo) REPO_FILTER="$2"; shift 2 ;;
         --no-pull) DO_PULL=false; shift ;;
-        --emit-prompts) EMIT_PROMPTS=true; shift ;;
         --write-snapshot) WRITE_SNAPSHOT=true; shift ;;
         --human) HUMAN=true; shift ;;
         -h|--help) usage ;;
@@ -197,18 +195,7 @@ for repo in "${repos[@]}"; do
     repos_json=$(jq --argjson r "$repo_obj" '. + [$r]' <<<"$repos_json")
 done
 
-# ---- Step 3: render prompts (optional) ---------------------------------
-
-if [[ "$EMIT_PROMPTS" == "true" ]]; then
-    repos_json=$(jq --arg ticket "$TICKET" '
-        map(. as $r |
-            .lists.A = (.lists.A | map(. + {prompt: ("Follow the instructions in personas/review/FILE_REVIEWER.md.\n\n**Mode: REFRESH** — this file has changed since the last review.\n\n**Ticket:** " + $ticket + "\n**Review workspace:** workareas/reviews/" + $ticket + "/\n\n**Your assigned file:**\n- Repository: " + $r.repo + "\n- Path: " + .file + "\n- Previous commit: " + .old_sha + "\n- Current commit: " + .new_sha + "\n\n**Previously reported violations:** Read them from:\nworkareas/reviews/" + $ticket + "/file-reviews/" + $r.repo + "/" + (.file | gsub("/"; "_")) + ".review.md\n\n**Prior dispositions:** Pull existing items for this file:\n./skills/tools/review/review-items.sh " + $ticket + " --repo " + $r.repo + " | awk -F\"\\t\" \"\\$3 == \\\"" + .file + "\\\"\"\nItems with Disposition=`Won'"'"'t Fix` or `Auto-Resolved` must NOT be re-reported as open.\n\n**Write your updated review to (overwrite existing):**\nworkareas/reviews/" + $ticket + "/file-reviews/" + $r.repo + "/" + (.file | gsub("/"; "_")) + ".review.md")})) |
-            .lists.C = (.lists.C | map(. + {prompt: ("Follow the instructions in personas/review/FILE_REVIEWER.md.\n\n**Mode: MERGE_RESOLVED** — this file is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.\n\n**Ticket:** " + $ticket + "\n**Review workspace:** workareas/reviews/" + $ticket + "/\n\n**Your assigned file:**\n- Repository: " + $r.repo + "\n- Path: " + .file + "\n- Previous reviewed commit: " + .old_sha + "\n- Current commit: " + .new_sha + "\n- Merge commit: " + .merge_sha + "\n\n**Focus your review on:**\n1. The resolution diff: `git -C workareas/reviews/" + $ticket + "/repos/" + $r.repo + " diff " + .old_sha + ".." + .new_sha + " -- " + .file + "` — read it; this is the unreviewed delta.\n2. **Prior items survive the merge?** For every Fix+Done item on this file, verify the fix is still present at HEAD. If a prior fix has been undone by the merge, log as a regression in your review.\n3. **Smuggled behaviour?** Did the resolution import code from the source branch (sibling tickets) that contradicts decisions made for the current ticket?\n4. **Integration points.** Where the two sides meet — those are the most likely defect sites.\n\n**Previously reported violations:** Read them from:\nworkareas/reviews/" + $ticket + "/file-reviews/" + $r.repo + "/" + (.file | gsub("/"; "_")) + ".review.md\n\n**Prior dispositions:** `./skills/tools/review/review-items.sh " + $ticket + " --repo " + $r.repo + " | awk -F\"\\t\" \"\\$3 == \\\"" + .file + "\\\"\"`. Items with Disposition=`Won'"'"'t Fix` or `Auto-Resolved` must NOT be re-reported as open.\n\n**Write your updated review to (overwrite existing):**\nworkareas/reviews/" + $ticket + "/file-reviews/" + $r.repo + "/" + (.file | gsub("/"; "_")) + ".review.md")})) |
-            .lists.D = (.lists.D | map(. + {prompt: ("Follow the instructions in personas/review/FILE_REVIEWER.md.\n\n**Mode: FRESH** — this file is in PR diff but had no prior per-file review (coverage gap).\n\n**Ticket:** " + $ticket + "\n**Review workspace:** workareas/reviews/" + $ticket + "/\n\n**Your assigned file:**\n- Repository: " + $r.repo + "\n- Path: " + .file + "\n\n**Write your review to (create the file):**\nworkareas/reviews/" + $ticket + "/file-reviews/" + $r.repo + "/" + (.file | gsub("/"; "_")) + ".review.md")}))
-        )' <<<"$repos_json")
-fi
-
-# ---- Step 4: assemble output -------------------------------------------
+# ---- Step 3: assemble output -------------------------------------------
 
 generated=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 output=$(jq -n \
@@ -218,7 +205,7 @@ output=$(jq -n \
     --argjson totals "$(jq -n --argjson a "$total_a" --argjson b "$total_b" --argjson c "$total_c" --argjson d "$total_d" '{list_a: $a, list_b: $b, list_c: $c, list_d: $d}')" '
     {ticket: $ticket, generated: $generated, totals: $totals, repos: $repos}')
 
-# ---- Step 5: optionally write snapshot ----------------------------------
+# ---- Step 4: optionally write snapshot ----------------------------------
 
 if [[ "$WRITE_SNAPSHOT" == "true" ]]; then
     snap=$(jq -n \
@@ -239,7 +226,7 @@ if [[ "$WRITE_SNAPSHOT" == "true" ]]; then
     mv "$tmp" "$META_FILE"
 fi
 
-# ---- Step 6: emit -------------------------------------------------------
+# ---- Step 5: emit -------------------------------------------------------
 
 if [[ "$HUMAN" == "true" ]]; then
     echo "Refresh scope for $TICKET (generated $generated)"

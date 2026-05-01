@@ -97,7 +97,7 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 |skills/tools/review/review-add-item.sh|EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..."|Append new item; prints new ID|
 |skills/tools/review/review-counts.sh|EUDPA-X [--repo R] [--json]|Summary by Disposition+Status|
 |skills/tools/review/review-migrate-decisions.sh|EUDPA-X [--dry-run]|One-shot legacy decisions → consolidated table migration|
-|skills/tools/review/refresh/scope.sh|EUDPA-X [--repo R] [--no-pull] [--emit-prompts] [--write-snapshot] [--human]|Refresh: pull + diff + lists A/B/C/D + (optional) rendered prompts|
+|skills/tools/review/refresh/scope.sh|EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human]|Refresh: pull + diff + lists A/B/C/D|
 |skills/tools/review/refresh/pull-repos.sh|EUDPA-X [--repo R] [--json]|Refresh helper: git pull --rebase per repo|
 |skills/tools/review/refresh/list-merge-resolved.sh|REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json]|Refresh helper: hand-resolved merge files in window|
 |skills/tools/review/refresh/list-coverage-gaps.sh|REVIEW_DIR REPO PR_NUM [--tsv\|--json]|Refresh helper: PR files lacking a `.review.md`|
