@@ -101,6 +101,14 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 |skills/tools/review/refresh/pull-repos.sh|EUDPA-X [--repo R] [--json]|Refresh helper: git pull --rebase per repo|
 |skills/tools/review/refresh/list-merge-resolved.sh|REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json]|Refresh helper: hand-resolved merge files in window|
 |skills/tools/review/refresh/list-coverage-gaps.sh|REVIEW_DIR REPO PR_NUM [--tsv\|--json]|Refresh helper: PR files lacking a `.review.md`|
+|**style**|||
+|skills/tools/style/style-items.sh|EUDPA-X [--repo R] [--filter pending\|fix\|wont-fix\|discuss\|auto-resolved] [--status not-done\|done\|failed] [--by-file] [--json]|List items from `## Items` table; `--by-file` groups by (repo, file)|
+|skills/tools/style/style-mark.sh|EUDPA-X --repo R --item N --disposition VALUE [--note "..."]|Set Disposition (auto-sets Status)|
+|skills/tools/style/style-set-status.sh|EUDPA-X --repo R --item N --status VALUE [--note "..."]|Set Status only|
+|skills/tools/style/style-add-item.sh|EUDPA-X --repo R --file F --line L --rule R --severity S --issue "..." --fix "..."|Append new item; prints new ID|
+|skills/tools/style/style-counts.sh|EUDPA-X [--repo R] [--json]|Summary by Disposition+Status|
+|skills/tools/style/style-migrate.sh|EUDPA-X [--dry-run]|One-shot legacy code-style-review.md → per-repo style-review.{repo}.md|
+|skills/tools/style/refresh/scope.sh|EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human]|Refresh: pull + diff + lists A/B/C/D filtered to `.js`|
 |**npm**|||
 |skills/tools/npm/discover-upgrades.sh|repo-path --run-id TICKET [--strategy LEVEL] [--json]|Phase 1: Discover outdated deps|
 |skills/tools/npm/analyze-migration-plans.sh|--run-id TICKET [--json]|Phase 1: View planning status|
@@ -118,8 +126,8 @@ Env: `JIRA_USER` `JIRA_TOKEN`
 ```
 workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md (consolidated `## Items` table)
 workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
-workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, code-style-review.md
-workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md, repo-style-review.md
+workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, style-review.{repo}.md (consolidated `## Items` table)
+workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md (per-file paper trail)
 workareas/ticket-planning/EUDPA-X/            → plan.md
 workareas/ticket-refinement/EUDPA-X/          → review.md
 workareas/npm-upgrades/EUDPA-X/{repo}/        → upgrade__{pkg}__{cur}__{tgt}.{auto|manual}.md, .upgrades-meta.json

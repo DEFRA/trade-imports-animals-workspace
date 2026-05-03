@@ -1,69 +1,75 @@
 # CODE_STYLE_IMPLEMENTOR
 
-Role: Implement **one** code style fix from a EUDPA-XXXXX style review todo list. Verify the violation exists, confirm tests are green, make the minimal change, confirm tests are still green, update the doc, commit.
+Role: Implement **all open Fix items for a single file** in one batch. Read the file once, verify each violation, run pre-tests once, apply every applicable fix in a single editing pass, run post-tests once, mark each item's outcome, commit once.
 
-Spawned by `CODE_STYLE_ORCHESTRATOR`. Your prompt specifies the ticket, item, repo, file, and issue.
+Spawned by `CODE_STYLE_ORCHESTRATOR`. Your prompt specifies the ticket, repo, file, and a JSON array of items.
 
 ---
 
 ## Inputs (from orchestrator prompt)
 
 - **Ticket:** EUDPA-XXXXX
-- **Item:** #N (row number in the repo's todo section)
 - **Repo:** trade-imports-animals-{frontend|admin|...}
 - **File:** path/to/file.js (relative to repo root)
-- **Rule:** N
-- **Issue:** [description from todo list]
+- **Items:** JSON array of `{id, rule, severity, issue, fix, line, notes}` objects.
 
 ---
 
-## Step 1: Verify the Violation Exists
+## Step 1: Verify Each Violation
 
-Read the file at:
-```
-../repos/{repo}/{file}
-```
+Read the file at `../repos/{repo}/{file}` once.
 
-Check whether the specific violation described in the issue is actually present in the current file. Look for the exact pattern named (function name, variable name, literal value, etc.).
+For each item in the input array, decide whether the violation is **still present** in the current file:
 
-**If the violation is NOT present** (already fixed by earlier work or inapplicable):
-- Return immediately: `SKIPPED: #N — violation not found in current file`
-- Do NOT update the doc or commit
+- Search for the specific pattern named in the issue (function name, variable name, literal value, `function` declaration, `||` operator, etc.).
+- Build two lists:
+  - `applicable_items` — violations that are present and you intend to fix
+  - `skipped_items` — violations that are no longer present (already fixed by earlier work, or inapplicable now)
 
-**If the violation IS present**: continue to Step 2.
+If `applicable_items` is empty (every item is already fixed):
+- For each item in `skipped_items`:
+  ```bash
+  ./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+    --disposition Auto-Resolved --note "violation not found"
+  ```
+- Return: `{repo}/{file}: 0 done, {N} auto-resolved, 0 failed` and stop.
 
 ---
 
-## Step 2: Run Tests (Pre-check)
+## Step 2: Pre-Check Tests
 
 Run unit tests in the relevant repo:
 
 ```bash
-cd ../repos/{repo} && npm test
+cd ../repos/{repo} && npm test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local
+cd ../repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
 ```
+
+Read each log file once.
 
 **If any tests fail:** do NOT proceed. Return:
 ```
-CANNOT START: #N — pre-existing test failures
+CANNOT START: {repo}/{file} — pre-existing test failures
 Unit: [pass/fail]
 E2E: [pass/fail]
 ```
 
-For E2E failures, read `../repos/trade-imports-animals-tests/test-results/*/error-context.md` to understand what failed before returning.
+For E2E failures, also read `../repos/trade-imports-animals-tests/test-results/*/error-context.md` to confirm the failure isn't related to the file you're about to touch.
 
 ---
 
-## Step 3: Make the Change
+## Step 3: Apply All Fixes in One Pass
 
-Make the **minimal** change required to address the violation. Do not fix anything else in the file. Do not reformat unrelated code.
+Make the **minimal** change for each item in `applicable_items`. Don't fix anything not in the input list. Don't reformat unrelated code.
 
-Common patterns (refer to `skills/best-practices/node/code-style.md` for the relevant rule if unsure):
+Order matters: apply fixes that change shape (Rule 2 fat-arrow conversion, Rule 5 helper extraction) BEFORE fixes that depend on names (Rule 6 renames) so you don't fight your own diff.
+
+Common patterns (consult `skills/best-practices/node/code-style.md` for the full rule):
 
 | Rule | Typical change |
 |------|---------------|
@@ -73,7 +79,7 @@ Common patterns (refer to `skills/best-practices/node/code-style.md` for the rel
 | 12 | `\|\|` → `??` for nullish defaults; remove redundant `?? null` when value is already nullable |
 | 13 | Replace bare literal with named `const` |
 
-After editing, run Prettier to avoid pre-commit hook failures:
+After all edits, run Prettier to avoid pre-commit hook failures:
 
 ```bash
 cd ../repos/{repo} && npx prettier --write {file}
@@ -81,87 +87,107 @@ cd ../repos/{repo} && npx prettier --write {file}
 
 ---
 
-## Step 4: Run Tests (Post-check)
+## Step 4: Post-Check Tests
 
 Run unit tests:
 
 ```bash
-cd ../repos/{repo} && npm test
+cd ../repos/{repo} && npm test 2>&1 > /tmp/style-post-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local
+cd ../repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
 ```
 
 **If unit tests fail:**
 - Revert the file: `cd ../repos/{repo} && git checkout -- {file}`
-- Return: `FAILED: #N — unit tests broke after change, reverted`
+- For each item in `applicable_items`:
+  ```bash
+  ./skills/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
+    --status Failed --note "unit tests broke after change, reverted"
+  ```
+- Return: `{repo}/{file}: 0 done, 0 auto-resolved, {N} failed`
 
 **If E2E tests fail:**
-- Read `../repos/trade-imports-animals-tests/test-results/*/error-context.md` to determine if the failure is related to this change
-- If related: revert and return `FAILED: #N — E2E tests broke after change, reverted. Failure: [summary]`
-- If unrelated (pre-existing flaky test or different feature): note it and continue
+- Read `../repos/trade-imports-animals-tests/test-results/*/error-context.md` to determine if the failure is related to your change.
+- If related: revert as above and mark all `applicable_items` Failed.
+- If unrelated (pre-existing flaky test or different feature): note it and continue.
 
 ---
 
-## Step 5: Update the Review Doc
+## Step 5: Commit
 
-In `workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md`, find the row for this item and mark it addressed:
-
-Change:
-```
-| N | `path/to/file.js` | Rule | Issue | [ ] | [ ] |
-```
-To:
-```
-| N | `path/to/file.js` | Rule | Issue | [x] | [ ] |
-```
-
----
-
-## Step 6: Commit
+One commit per file. Use the Item IDs in the message:
 
 ```bash
 cd ../repos/{repo}
 git add {file}
-git commit -m "style(EUDPA-XXXXX): [concise description of what was fixed]
+git commit -m "style(EUDPA-XXXXX): {file} — {N} items
 
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+Items: #{id1}, #{id2}, #{id3}
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-If the pre-commit hook fails due to Prettier, run:
+If the pre-commit hook fails due to Prettier:
 ```bash
 npx prettier --write {file}
 git add {file}
 ```
-Then retry the commit.
+Then create a NEW commit (do NOT amend).
+
+Capture the short SHA: `git rev-parse --short HEAD`.
+
+---
+
+## Step 6: Mark Each Item's Outcome
+
+For each item in `applicable_items`:
+
+```bash
+./skills/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  --status Done --note "{short-sha}"
+```
+
+For each item in `skipped_items`:
+
+```bash
+./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  --disposition Auto-Resolved --note "violation not found"
+```
+
+If during Step 1 you decided an item is a **per-item judgement won't-fix** (e.g. the suggested fix would harm correctness or contradicts a deliberate codebase choice):
+
+```bash
+./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  --disposition "Won't Fix" --note "<one-line reason>"
+```
 
 ---
 
 ## Output
 
-Return one of:
+Return a per-item summary:
 
 ```
-DONE: #N — [brief description of change]
-Repo: {repo} | File: {file} | Commit: {short-sha}
+{repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
+  #117 → Done (commit abc123)
+  #121 → Done (commit abc123)
+  #92  → Auto-Resolved (already fixed)
+  #58  → Won't Fix (deliberate codebase choice — type augmentation)
 ```
 
+Or on pre-existing failure:
 ```
-SKIPPED: #N — violation not found in current file
-```
-
-```
-FAILED: #N — [reason]. Change reverted.
+CANNOT START: {repo}/{file} — pre-existing test failures
 ```
 
+Or on broken-by-fix:
 ```
-CANNOT START: #N — pre-existing test failures. Stopping.
-```
-
-```
-WON'T FIX: #N — [reason this change would be harmful or incorrect]
-Review doc NOT updated. Orchestrator should mark Won't Address.
+{repo}/{file}: 0 done, 0 auto-resolved, {N} failed
+Reason: unit tests broke after change, all items reverted
+  #117 → Failed (reverted)
+  #121 → Failed (reverted)
 ```

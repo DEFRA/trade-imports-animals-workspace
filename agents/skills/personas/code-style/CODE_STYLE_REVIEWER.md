@@ -2,20 +2,20 @@
 
 Role: Code style review for EUDP Live Animals tickets. **JavaScript canary** — checks `.js` files against the project code style guide. Handles first reviews and subsequent re-reviews from a single entry point.
 
+State lives in **per-repo `style-review.{repo}.md`** files, each with a `## Items` table. All reads/writes go through `skills/tools/style/*.sh` — never edit the table by hand.
+
 See `CLAUDE.md` for helper scripts.
 
 ---
 
 ## Step 0: Detect Mode
 
-Check whether a style review already exists for this ticket:
-
 ```bash
-ls workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md 2>/dev/null
+ls workareas/code-style-reviews/EUDPA-XXXXX/style-review.*.md 2>/dev/null
 ```
 
-- **File not found → Fresh Review**: proceed to Step 1.
-- **File found → Refresh Review**: jump to Step R1.
+- **No matches → Fresh Review**: proceed to Step 1.
+- **One or more matches → Refresh Review**: jump to Step R1.
 
 ---
 
@@ -38,13 +38,7 @@ mkdir -p workareas/code-style-reviews/EUDPA-XXXXX/file-reviews
 
 ## Step 2: Discover JavaScript Files
 
-Read `.review-meta.json` to get repos and PR numbers:
-
-```bash
-cat workareas/reviews/EUDPA-XXXXX/.review-meta.json
-```
-
-For each repo/PR pair, list changed files and filter for `.js`:
+Read `.review-meta.json` to get repos and PR numbers. For each repo/PR pair:
 
 ```bash
 ./skills/tools/github/pr-details.sh {repo} {pr-number} files
@@ -58,20 +52,13 @@ No JavaScript files found in this PR. No JavaScript code style review needed.
 
 And stop — no further steps required.
 
-## Step 3: Create Zero-Byte Placeholders
+## Step 3: Create Workspace Files
 
 For each `.js` file found:
+1. Create `workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/`
+2. Create a zero-byte placeholder `{safe_path}.style.md` (path separators → `_`)
 
-1. Create the repo subdirectory under the code-style workspace:
-   `workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/`
-
-2. Create a zero-byte placeholder (path separators replaced with `_`):
-   `workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`
-
-Also create one zero-byte per-repo placeholder:
-`workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/repo-style-review.md`
-
-Write `.style-meta.json` to the workspace root:
+Write `.style-meta.json`:
 
 ```json
 {
@@ -83,19 +70,34 @@ Write `.style-meta.json` to the workspace root:
 }
 ```
 
+For **each repo** with `.js` files, create an empty `style-review.{repo}.md`:
+
+```markdown
+# Code Style Review: {repo-name}
+
+**Ticket:** EUDPA-XXXXX
+**PR:** #{pr-number}
+**JS Files Reviewed:** {count}
+**Verdict:** _pending_
+
+## Items
+
+| # | File | Line | Rule | Severity | Issue | Fix | Disposition | Status | Notes |
+|---|------|------|------|----------|-------|-----|-------------|--------|-------|
+```
+
+The items table starts empty. File reviewers append rows via `style-add-item.sh`.
+
 ## Step 4: Review Each File
 
-**MANDATORY:** Review EVERY `.js` file. No exceptions.
+**MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to **10 agents in parallel** using the Task tool with `subagent_type=general-purpose`.
 
-### Parallel Execution
-
-Spawn up to **10 agents in parallel** using Task tool with `subagent_type=general-purpose`.
-
-#### Agent Prompt Template
+### Agent prompt template
 
 ```markdown
 Follow the instructions in skills/personas/code-style/CODE_STYLE_FILE_REVIEWER.md.
 
+**Mode: FRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
 **Style guide:** skills/best-practices/node/code-style.md
 
@@ -105,10 +107,13 @@ Follow the instructions in skills/personas/code-style/CODE_STYLE_FILE_REVIEWER.m
 - PR: #[pr-number]
 - Full path in workspace: workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
 
-**Write your review to the placeholder file:**
+**Write your per-file paper trail to:**
 workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[safe_path].style.md
 
-Note: Nested paths use underscores (e.g., `src/utils/helper.js` → `src_utils_helper.js.style.md`)
+**Append each finding via:**
+./skills/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo-name] \
+  --file [file-path] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
+  --issue "[description]" --fix "[suggested fix]"
 ```
 
 ## Step 5: Verify Coverage
@@ -117,238 +122,134 @@ Note: Nested paths use underscores (e.g., `src/utils/helper.js` → `src_utils_h
 ./skills/tools/review/verify-style-coverage.sh EUDPA-XXXXX
 ```
 
-**You may NOT proceed to Step 6 until 100% coverage.**
+**Do not proceed until 100% coverage.**
 
-## Step 6: Create Per-Repo Style Summaries
+## Step 6: Set Per-Repo Verdicts
 
-For each repository with `.js` files, fill in its `repo-style-review.md` placeholder by reading all `*.style.md` files for that repo and synthesising:
+For each `style-review.{repo}.md`:
 
-```markdown
-# Code Style Review: {repo-name}
-
-**Ticket:** EUDPA-XXXXX
-**PR:** #{pr-number}
-**JS Files Reviewed:** {count}
-
-## Rule Compliance
-
-| # | Rule | Status | Violations |
-|---|------|--------|------------|
-| 1 | Do one thing | ✅ / ⚠️ / ❌ | N |
-| 2 | Fat-arrow functions | ✅ / ⚠️ / ❌ | N |
-| 3 | No unnecessary braces/returns | ✅ / ⚠️ / ❌ | N |
-| 4 | Functional style | ✅ / ⚠️ / ❌ | N |
-| 5 | Small composed functions | ✅ / ⚠️ / ❌ | N |
-| 6 | Naming | ✅ / ⚠️ / ❌ | N |
-| 7 | Destructuring and defaults | ✅ / ⚠️ / ❌ | N |
-| 8 | Early returns | ✅ / ⚠️ / ❌ | N |
-| 9 | No clever one-liners | ✅ / ⚠️ / ❌ | N |
-| 10 | Named exports | ✅ / ⚠️ / ❌ | N |
-| 11 | const > let, never var | ✅ / ⚠️ / ❌ | N |
-| 12 | Optional chaining / nullish | ✅ / ⚠️ / ❌ | N |
-| 13 | No magic numbers/strings | ✅ / ⚠️ / ❌ | N |
-| 14 | async/await preferred | ✅ / ⚠️ / ❌ | N |
-| 15 | Self-documenting code | ✅ / ⚠️ / ❌ | N |
-| 16 | Modern array/object methods | ✅ / ⚠️ / ❌ | N |
-| 17 | Doc comment accuracy | ✅ / ⚠️ / ❌ | N |
-
-## File-by-File Summary
-
-| File | Status | Top Violations |
-|------|--------|----------------|
-
-## Violations
-
-### Must Fix
-[Violations that clearly contradict the style guide — `var`, mutation where functional is expected, `.then()` chains where `async/await` is the rule, etc.]
-
-### Should Fix
-[Style deviations worth addressing but not blocking]
-
-## Todo List
-
-One row per actionable violation (FAIL or WARN). Be specific: name the function, line range, or pattern. This list is handed to an agent to action.
-
-| # | File | Rule | Issue | Proposed Fix | Addressed | Won't Address |
-|---|------|------|-------|-------------|-----------|---------------|
-| 1 | `path/to/file.js` | 2 | Convert `function foo` → `const foo = () =>` | | [ ] | [ ] |
-
-## Repository Verdict
-
-**Status:** COMPLIANT / MINOR ISSUES / NEEDS WORK
-**Summary:** [One sentence]
+```bash
+./skills/tools/style/style-counts.sh EUDPA-XXXXX --repo {repo} --json
 ```
 
-**Note:** Skip this step if only one repository has `.js` files — the overall review in Step 7 serves the same purpose.
+Use the breakdown to set the verdict line in the file header:
 
-## Step 7: Write Overall Code Style Review
+| Counts (Fix items, FAIL severity) | Verdict |
+|---|---|
+| 0 | COMPLIANT |
+| 1–3 | MINOR ISSUES |
+| ≥4, or any FAIL items | NEEDS WORK |
 
-Create `workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md`:
+Edit the `**Verdict:** _pending_` line in the per-repo header. Nothing else in the file changes.
 
-```markdown
-# Code Style Review: EUDPA-XXXXX
+## Step 7: Done
 
-**Ticket:** [Summary]
-**Reviewer:** Claude Code Agent
-**Date:** [Date]
-**Verdict:** COMPLIANT / MINOR ISSUES / NEEDS WORK
-
-## Scope
-
-| Repository | PR | JS Files Reviewed | Verdict |
-|------------|-----|-------------------|---------|
-
-## Rule Compliance Across All Repos
-
-| # | Rule | Status | Total Violations |
-|---|------|--------|-----------------|
-| 1 | Do one thing | | |
-... (rules 2–16 as above)
-| 17 | Doc comment accuracy | | |
-
-## Top Violations
-
-| Repository | File | Line | Rule | Issue | Recommendation |
-|------------|------|------|------|-------|----------------|
-
-## Patterns of Note
-
-[Recurring violations that suggest a team habit to address, or consistent good practice to call out]
-
-## Recommendations
-
-### Must Fix
-### Should Fix
-
-## Todo List
-
-Concatenation of all per-repo todo lists. Each row is one actionable item. An agent can work through this list top to bottom.
-
-### {repo-name-1}
-
-| # | File | Rule | Issue | Addressed | Won't Address |
-|---|------|------|-------|-----------|---------------|
-
-### {repo-name-2}
-
-| # | File | Rule | Issue | Addressed | Won't Address |
-|---|------|------|-------|-----------|---------------|
-
-## Conclusion
-[2-3 sentences]
-```
+Output the completion summary (see "Completion Output" below).
 
 ---
 
 # REFRESH REVIEW
 
-Used when a style review already exists and you want to: check whether reported issues have been addressed, catch any new violations introduced since the last review, and update the doc in place.
+## Step R1: Compute Refresh Scope
 
-## Step R1: Update Workspace Repos
-
-Pull the latest code into each cloned repo so file checks reflect current branch state:
+One call captures both the human summary and the machine-readable lists:
 
 ```bash
-git -C workareas/reviews/EUDPA-XXXXX/repos/{repo} pull --rebase --quiet
+./skills/tools/style/refresh/scope.sh EUDPA-XXXXX \
+  --write-snapshot --human --json-out /tmp/scope-EUDPA-XXXXX.json
 ```
 
-Repeat for every repo listed in `.review-meta.json`.
+This:
+1. Pulls each repo (`pull-repos.sh` under the hood).
+2. Computes `prior_sha` per repo — last `re_review` snapshot's `current_commit` (falling back to the regular review's snapshot history, then the original PR commit).
+3. Filters everything to `.js` files.
+4. Builds Lists A/B/C/D.
+5. Appends a snapshot to `.style-meta.json#re_reviews[]`.
+6. Prints the human summary to stdout.
+7. Dumps the full JSON to `/tmp/scope-EUDPA-XXXXX.json` for use in Steps R2–R5.
 
-## Step R2: Get Changes Since Last Review
+**Critical:** always pass `--json-out` in the same call as `--write-snapshot`. Re-running scope.sh after a snapshot was written would compute `prior_sha == current_sha` and return empty lists — the file paths you need to dispatch agents would be lost.
+
+If totals are all zero — repo HEAD matches the last snapshot — output "No changes since last refresh" and stop.
+
+The JSON shape per repo is `{repo, pr, prior_sha, current_sha, no_changes, lists: {A, B, C, D}}`. Use `jq` against `/tmp/scope-EUDPA-XXXXX.json` in subsequent steps:
 
 ```bash
-./skills/tools/review/diff-since-review.sh EUDPA-XXXXX --json
+# Iterate List A across all repos:
+jq -r '.repos[] | .repo as $r | .pr as $pr | .lists.A[] | "\($r)\t\($pr)\t\(.file)\t\(.old_sha)\t\(.new_sha)"' /tmp/scope-EUDPA-XXXXX.json
 ```
 
-This compares the commit at last review time against the current PR head. Note which `.js` files changed and which repos had no changes.
+## Step R2: Re-review List A — Changed `.js` Files
 
-If **no changes detected across all repos**: report that the branch is unchanged since the last style review and stop.
+Each List A entry from `scope.sh` is `{file, old_sha, new_sha, prior_items}` — `prior_items` is the items table filtered to that file (already a JSON array, no follow-up `style-items.sh` call needed).
 
-## Step R3: Determine Work Scope
-
-From the diff output and the existing `code-style-review.md`, build two work lists:
-
-**List A — Files to re-review** (spawn file reviewer agents):
-- Any `.js` file that changed since the last review (`change_type: modified`)
-- Any new `.js` file added since the last review (`change_type: added`)
-
-**List B — Unchanged files with open todo items** (check inline, no agent needed):
-- `.js` files that did NOT appear in the diff but still have unchecked `[ ]` items in the Addressed column AND `[ ]` in the Won't Address column
-- Skip any item where Won't Address is `[x]` — those are deliberately deferred and should not be re-reported
-- For each remaining item: read the current file in the workspace and check whether the specific violation is still present
-
-Deleted `.js` files can be ignored — mark their todo items as addressed.
-
-## Step R4: Re-review Changed Files
-
-For every file in List A, spawn a `CODE_STYLE_FILE_REVIEWER` agent (up to 10 parallel).
-
-Pass existing violations for that file so the reviewer knows what was previously flagged:
+For every entry across all repos, spawn `CODE_STYLE_FILE_REVIEWER` agents (parallel, up to 10 at once). Substitute the entry's fields verbatim into the prompt:
 
 ```markdown
 Follow the instructions in skills/personas/code-style/CODE_STYLE_FILE_REVIEWER.md.
 
-**Mode: REFRESH** — this file has changed since the last style review.
-
+**Mode: REFRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
 **Style guide:** skills/best-practices/node/code-style.md
 
 **Your assigned file:**
-- Repository: [repo-name]
-- Path: [file-path]
-- PR: #[pr-number]
-- Full path in workspace: workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
+- Repository: [repo]
+- Path: [entry.file]
+- PR: #[pr]
+- Diff window: [entry.old_sha]..[entry.new_sha]
+- Full path in workspace: workareas/reviews/EUDPA-XXXXX/repos/[repo]/[entry.file]
 
-**Previously reported violations for this file (from last review):**
-[Paste the relevant rows from the todo list for this file, or "None" if it's a new file]
+**Prior items reported for this file (JSON):**
+[entry.prior_items]
 
-**Write your updated review to (overwrite existing):**
-workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[safe_path].style.md
+**For each prior item:**
+- If the violation is resolved in the new code:
+  ./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo [repo] --item [id] \
+    --disposition Auto-Resolved --note "resolved [date]"
+- If still present: leave as-is.
+
+**For each NEW violation:**
+./skills/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo] \
+  --file [entry.file] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
+  --issue "[description]" --fix "[suggested fix]"
+
+**Write paper trail to:**
+workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo]/[safe_path].style.md
 ```
 
-The file reviewer will note which old violations are resolved and identify any new ones.
+To slice the JSON for dispatch:
 
-## Step R5: Update the Review Doc
+```bash
+jq -c '.repos[] | .repo as $r | .pr as $pr | .lists.A[] | {repo: $r, pr: $pr, entry: .}' /tmp/scope-EUDPA-XXXXX.json
+```
 
-Once all agents complete and you have checked List B items inline:
+## Step R3: List C — Merge-Resolved `.js` Files
 
-**Build a change summary:**
-- Which todo items are now resolved (mark `[x]` in Addressed)
-- Which todo items remain genuinely open (Addressed `[ ]` AND Won't Address `[ ]`)
-- Items with Won't Address `[x]` — omit from the summary entirely, they are already decided
-- Which new violations were found (append as new rows)
+Each List C entry is `{file, merge_sha, old_sha, new_sha, prior_items}`. Same envelope as R2 with one extra header line and a different mode:
 
-**Update `code-style-review.md` in place:**
+```markdown
+[same envelope as R2, but with]
 
-1. Add an "Updated" line near the top (keep original date, add update date):
-   ```
-   **Date:** [original date]
-   **Last Updated:** [today]
-   ```
+**Mode: REFRESH (merge-resolved)**
+**Merge commit:** [entry.merge_sha]
 
-2. Update the todo list:
-   - Mark resolved items: change `[ ]` → `[x]` in the Addressed column
-   - Append new violations as new rows at the bottom of the relevant repo section
-   - Do NOT remove rows — keep the full history visible
+This file was hand-resolved during the merge above. The resolution may differ
+from a clean rebase. Pay extra attention to:
+- Code that may have been dropped or duplicated during conflict resolution
+- Style drift introduced by the merge
+```
 
-3. Add a "Refresh Summary" section before the Conclusion:
-   ```markdown
-   ## Refresh Summary ([date])
+## Step R4: List D — Coverage Gaps
 
-   **Changes since last review:** [X] files modified, [Y] files added
-   **Todo items resolved:** [N] of [M] open items
-   **New violations found:** [N]
+Each List D entry is `{file}` only (no prior items by definition — these files were never reviewed). Spawn FRESH-mode file reviewers using the FRESH prompt template from Step 4 of FRESH REVIEW.
 
-   | Change | File | Detail |
-   |--------|------|--------|
-   | ✅ Resolved | `path/to/file.js` | Item #N: [brief description] |
-   | ➕ New | `path/to/file.js` | Rule [N]: [brief description] |
-   | ⚠️ Still open | `path/to/file.js` | Item #N: [brief description] |
+## Step R5: List B — Items in Unchanged Files
 
-   Do NOT include Won't Address items (`[x]` in Won't Address column) in this table.
-   ```
+`lists.B` contains open items (Disposition blank OR Fix/Discuss + Not Done) whose file did NOT change in the window. No action — these carry forward unchanged. Mention the count in the completion summary.
 
-4. Update the top-level **Verdict** if warranted (e.g. was NEEDS WORK, now MINOR ISSUES).
+## Step R6: Update Per-Repo Verdicts
+
+After all agents complete, recompute verdicts as in Step 6 of FRESH REVIEW.
 
 ---
 
@@ -356,9 +257,9 @@ Once all agents complete and you have checked List B items inline:
 
 | Verdict | Criteria |
 |---------|----------|
-| **COMPLIANT** | All reviewed JS follows the style guide, or only trivial deviations |
-| **MINOR ISSUES** | Some deviations but nothing systemic; 1-3 isolated violations |
-| **NEEDS WORK** | Multiple or systematic violations of the style guide |
+| **COMPLIANT** | No open Fix items |
+| **MINOR ISSUES** | 1–3 open Fix items, no FAIL severity |
+| **NEEDS WORK** | ≥4 open Fix items, or any FAIL severity |
 
 ---
 
@@ -369,12 +270,12 @@ Once all agents complete and you have checked List B items inline:
 Code style review complete for EUDPA-XXXXX.
 
 Summary:
-- Verdict: [VERDICT]
-- JS files reviewed: [X] (verified 100% coverage)
-- Repositories: [list]
-- Total violations: [X]
+- Per-repo verdicts:
+  - {repo}: [VERDICT] ({N} items)
+- Total items: [X]
+- Files reviewed: [X] (verified 100% coverage)
 
-Overall review: workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md
+Per-repo files: workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
 ```
 
 **Refresh review:**
@@ -382,10 +283,12 @@ Overall review: workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md
 Code style refresh complete for EUDPA-XXXXX.
 
 Summary:
-- Previous verdict: [VERDICT] → New verdict: [VERDICT]
-- Files re-reviewed: [X]
-- Todo items resolved: [N] / [M]
-- New violations found: [N]
+- Lists processed: A={N} (changed) C={N} (merge) D={N} (gaps)
+- List B carry-forward: {N} open items in unchanged files
+- New violations added: {N}
+- Auto-resolved: {N}
+- Per-repo verdicts:
+  - {repo}: [VERDICT] ({N} items)
 
-Updated review: workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md
+Per-repo files: workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
 ```

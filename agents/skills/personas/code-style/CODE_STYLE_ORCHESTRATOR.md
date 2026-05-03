@@ -1,25 +1,24 @@
 # CODE_STYLE_ORCHESTRATOR
 
-Role: Work through all open code style violations for a ticket, one at a time, by spawning `CODE_STYLE_IMPLEMENTOR` agents sequentially.
+Role: Work through all open code style violations for a ticket by spawning `CODE_STYLE_IMPLEMENTOR` agents — **one agent per file, not per item**. All open Fix items for a single file are handed to one agent so that file is read once, edited once, tested once, and committed once.
 
 **Prerequisite:** Services must be running (frontend, backend, admin) for E2E tests to pass.
 
 ---
 
-## Step 1: Load the Review Doc
+## Step 1: Build the Work Plan
 
-Read:
+Group all open Fix items by `(repo, file)`:
+
+```bash
+./skills/tools/style/style-items.sh EUDPA-XXXXX --filter fix --status not-done --by-file --json
 ```
-workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md
+
+Output is `[{repo, file, items: [...]}, ...]`. Each group is one work unit for one implementor agent.
+
+If the array is empty, output:
 ```
-
-Build the work list: every row where **both** Addressed and Won't Address are `[ ]`. Group by repo section.
-
-Skip any row where Won't Address is `[x]` — those are deliberately deferred, do not attempt them.
-
-If the work list is empty, output:
-```
-Nothing to do — all open items are either addressed or marked Won't Address.
+Nothing to do — no open Fix items.
 ```
 And stop.
 
@@ -29,19 +28,21 @@ And stop.
 
 ```
 Starting code style implementation for EUDPA-XXXXX.
-Open items: [N] across [repos]
-Won't Address (skipped): [N]
 
-Items to implement:
-  frontend: #1, #5, #12, ...
-  admin: #2, #4, ...
+Open files: [N]  Items across them: [M]
+By repo:
+  {repo}: {file_count} file(s), {item_count} item(s)
+
+First few groups:
+  {repo}/{file}: items #N, #M, #K
+  ...
 ```
 
 ---
 
-## Step 3: Implement Items Sequentially
+## Step 3: Implement Groups Sequentially
 
-For each item in the work list, in order (frontend items first, then other repos):
+For each group in the work list, in order (frontend before other repos, then alphabetical by file):
 
 Spawn a `general-purpose` agent via the Task tool using this prompt template:
 
@@ -49,49 +50,74 @@ Spawn a `general-purpose` agent via the Task tool using this prompt template:
 Follow the instructions in skills/personas/code-style/CODE_STYLE_IMPLEMENTOR.md.
 
 **Ticket:** EUDPA-XXXXX
-**Item:** #[N]
-**Repo:** [repo-name]
-**File:** [path/to/file.js]
-**Rule:** [rule number]
-**Issue:** [exact text from the Issue column]
+**Repo:** {repo}
+**File:** {file}
+**Items (JSON):**
+{indented JSON array of items from --by-file output, e.g.}
+[
+  {"id": 117, "rule": "2", "severity": "FAIL",
+   "issue": "function getPendingRows() ...", "fix": "const getPendingRows = () => ...",
+   "line": "14", "notes": ""},
+  {"id": 121, "rule": "13", "severity": "WARN",
+   "issue": "bare 'PENDING' literal", "fix": "extract to SCAN_STATUS_PENDING",
+   "line": "23", "notes": ""}
+]
 ```
 
-**Wait for the agent to return before starting the next item.**
+**Wait for the agent to return before starting the next group.**
 
 ### Handling Results
 
-| Result | Action |
-|--------|--------|
-| `DONE` | Log success, continue to next item |
-| `SKIPPED` | Log as already fixed, continue |
-| `FAILED` | Log failure with reason, continue to next item (don't stop the run) |
-| `CANNOT START` | **Stop immediately** — pre-existing failures must be resolved before continuing |
-| `WON'T FIX` | Log reason, update the review doc to mark Won't Address `[x]` for this item, continue |
+The implementor itself updates each item's Status (or Disposition) via `style-set-status.sh` / `style-mark.sh`. The orchestrator only logs the per-group outcome.
+
+Each agent returns a summary like:
+
+```
+{repo}/{file}: 3 done, 1 auto-resolved, 0 failed
+  #117 → Done (commit abc123)
+  #121 → Done (commit abc123)
+  #145 → Done (commit abc123)
+  #92  → Auto-Resolved (already fixed by earlier work)
+```
+
+Or on failure:
+```
+{repo}/{file}: 0 done, 0 auto-resolved, 3 failed
+Reason: unit tests broke after change, all items reverted
+```
+
+Or on pre-existing-failures:
+```
+CANNOT START: {repo}/{file} — pre-existing test failures
+```
+**Stop immediately on `CANNOT START`** — pre-existing failures must be resolved before continuing.
 
 ---
 
 ## Step 4: Final Report
 
-After all items are processed (or stopped early):
+After all groups are processed (or stopped early):
 
 ```
 Code style implementation complete for EUDPA-XXXXX.
 
 Results:
-  ✅ Done:     [N] items
-  ⏭️  Skipped:  [N] items (already fixed)
-  ❌ Failed:   [N] items
-  🚫 Stopped:  [yes/no — pre-existing failures]
+  ✅ Done:          {N} items across {F} files
+  ⏭️  Auto-Resolved: {N} items (already fixed)
+  ❌ Failed:        {N} items
+  🚫 Stopped:       [yes/no — pre-existing failures]
 
 Done:
-  #N [repo] — [description]
+  {repo}/{file} → items #...,#... (commit {sha})
   ...
 
-Failed (not committed):
-  #N [repo] — [reason]
+Auto-Resolved:
+  {repo}/{file} → items #..., reason: ...
   ...
 
-Review doc updated: workareas/code-style-reviews/EUDPA-XXXXX/code-style-review.md
+Failed (reverted, marked Status=Failed):
+  {repo}/{file} → items #..., reason: ...
+  ...
 ```
 
-If any items failed, list them clearly so the user can address them manually.
+If any items failed, list them so the user can address them manually. The Status=Failed marker is already in the items table; users can re-run the orchestrator after fixes to retry.

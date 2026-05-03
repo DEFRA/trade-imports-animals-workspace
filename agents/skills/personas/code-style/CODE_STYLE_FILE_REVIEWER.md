@@ -1,202 +1,160 @@
 # CODE_STYLE_FILE_REVIEWER
 
-Review **one JavaScript file** for compliance with the project code style guide.
+Review **one JavaScript file** for compliance with the project code style guide. Spawned by `CODE_STYLE_REVIEWER`.
 
-Spawned by `CODE_STYLE_REVIEWER`. Your prompt specifies the file, the PR, the output path, and whether this is a **fresh review** or a **refresh** of a previously reviewed file.
+Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in REFRESH) the prior items reported for this file. Findings are persisted by calling **`style-add-item.sh`** per violation — never edit `style-review.{repo}.md` by hand. The per-file `.style.md` is a thin paper trail listing what you reported.
 
 ## Workspace
 
 ```
 agents/
-├── skills/best-practices/node/code-style.md      # <-- READ: the 16 JS style rules
-├── skills/best-practices/doc-comments/           # <-- READ: doc comment accuracy rules
-│   ├── BEST_PRACTICES.md                         #     language-agnostic accuracy rules
-│   ├── jsdoc.md                                  #     JS/TS format and tag conventions
-│   └── javadoc.md                                #     Java format and tag conventions
+├── skills/best-practices/node/code-style.md      # READ: 17 JS style rules
+├── skills/best-practices/doc-comments/           # READ: doc comment accuracy rules
+│   ├── BEST_PRACTICES.md
+│   └── jsdoc.md
+├── skills/tools/style/                           # CALL: style-add-item.sh, style-mark.sh
 └── workareas/
-    ├── reviews/EUDPA-XXXXX/
-    │   └── repos/{repo}/{file-path}              # <-- READ: the actual file
+    ├── reviews/EUDPA-XXXXX/repos/{repo}/{file}   # READ: the actual source file
     └── code-style-reviews/EUDPA-XXXXX/
         └── file-reviews/{repo}/
-            └── {safe_path}.style.md              # <-- WRITE: your review here
+            └── {safe_path}.style.md              # WRITE: thin paper trail
 ```
 
 ## Workflow
 
 ### 1. Read the style guides
 
-Read `skills/best-practices/node/code-style.md` in full before reviewing anything. Know all 16 rules.
+Read `skills/best-practices/node/code-style.md` in full. Know all 17 rules.
 
-Also read `skills/best-practices/doc-comments/BEST_PRACTICES.md` and the language-specific addendum for the file you are reviewing:
-- `.js` or `.ts` files → `skills/best-practices/doc-comments/jsdoc.md`
-- `.java` files → `skills/best-practices/doc-comments/javadoc.md`
+For doc-comment accuracy (Rule 17), read `skills/best-practices/doc-comments/BEST_PRACTICES.md` and `skills/best-practices/doc-comments/jsdoc.md`.
 
-### 2. Determine mode from your prompt
+### 2. Determine mode
 
-**Fresh review** (no "Previously reported violations" section in your prompt):
-- Get the PR diff and review changed lines only (Step 3a below).
+**FRESH** — your prompt has no `Prior items` block.
 
-**Refresh review** ("Mode: REFRESH" and a list of previously reported violations in your prompt):
-- Get the diff since last review and focus on what changed (Step 3b below).
+**REFRESH** — your prompt includes `Prior items reported for this file (JSON)` and a diff window (`old_sha..new_sha`).
 
-### 3a. Fresh review — get the diff
+### 3a. FRESH mode — get the diff
 
 ```bash
-./skills/tools/github/diff.sh {repo-name} {pr-number}
+./skills/tools/github/diff.sh {repo} {pr-number}
 ```
 
-Extract only the hunks that touch your assigned file. This scopes your review to **changed lines only** — do not flag pre-existing violations unless they are in functions substantially rewritten by this PR.
+Extract hunks for your file. Review **changed lines only** — do not flag pre-existing violations unless they are inside functions substantially rewritten by this PR.
 
-### 3b. Refresh review — check old violations and new changes
+### 3b. REFRESH mode — check old violations and new changes
 
-You have been given a list of previously reported violations for this file. For each one:
-- Read the current file and determine if the violation is **still present** or **resolved**.
-
-Then get the diff since the last review to scope new-violation checks:
 ```bash
-./skills/tools/review/diff-since-review.sh EUDPA-XXXXX
+git -C workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
 ```
-Extract hunks for your file. Check those changed lines for any **new violations** not previously reported.
+
+For **each prior item** in the JSON block of your prompt:
+- Read the current file and decide whether the violation is **still present** or **resolved**.
+- If resolved, call:
+  ```bash
+  ./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+    --disposition Auto-Resolved --note "resolved <today>"
+  ```
+- If still present, leave as-is (don't re-add).
+
+For **new violations** in changed lines (since `old_sha`), call `style-add-item.sh` (see Step 5).
+
+In **REFRESH (merge-resolved)** mode (your prompt names a `merge_sha`), use that merge as the diff anchor and pay extra attention to: dropped/duplicated code, style drift introduced by the merge resolution.
 
 ### 4. Read the full file
 
-Read the file from `workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}` for context. Changed lines are the primary target, but surrounding code helps assess rule 1 (single responsibility) and rule 5 (composition).
+Read the file from `workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}` for context. Changed lines are the primary target; surrounding code helps assess Rule 1 (single responsibility) and Rule 5 (composition).
 
-### 5. Write your review
+### 5. Persist each finding via `style-add-item.sh`
 
-Fill (or overwrite) the file at the path specified in your prompt.
+For every violation you decide to flag (FRESH or REFRESH):
 
----
+```bash
+./skills/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
+  --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} \
+  --issue "describe the violation, anchored to the specific function/symbol/literal" \
+  --fix  "concrete suggested fix"
+```
+
+The script appends a row at the next available ID and prints the new ID. Capture the IDs you reported for the paper trail.
+
+### 6. Write the paper trail
+
+Overwrite the file path specified in your prompt (e.g. `workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
+
+```markdown
+# Style review: {file}
+
+**Repository:** {repo}
+**PR:** #{pr-number}
+**Mode:** FRESH | REFRESH | REFRESH (merge-resolved)
+**Reviewed:** {date}
+
+## Items reported
+
+{list of new IDs returned by style-add-item.sh, one per line, e.g.}
+- #117 (Rule 2, FAIL): function declaration `getRows()` should be fat-arrow
+- #118 (Rule 13, WARN): bare `'PENDING'` literal — extract to `SCAN_STATUS_PENDING`
+
+## Resolved (REFRESH only)
+
+{list of prior item IDs you marked Auto-Resolved, e.g.}
+- #45 (Rule 6): `t` parameter renamed to `type` — verified at line 25
+
+## Notes
+
+{optional — surprising patterns, suggested team-level conventions, sibling files
+that share the same problem and might warrant a sweep}
+```
+
+If you reported nothing and resolved nothing, write a one-line file:
+
+```markdown
+# Style review: {file}
+
+**Repository:** {repo}
+**PR:** #{pr-number}
+**Mode:** FRESH | REFRESH
+**Reviewed:** {date}
+
+No items reported. File is compliant.
+```
 
 ## The 17 Rules
 
 | # | Rule | What to look for |
 |---|------|-----------------|
-| 1 | **Do one thing** | Functions doing multiple unrelated things — "fetches AND transforms AND validates" |
+| 1 | **Do one thing** | Functions doing multiple unrelated things |
 | 2 | **Fat-arrow functions** | `function foo()` declarations where `const foo = () =>` is appropriate |
 | 3 | **Drop unnecessary braces/returns** | `=> { return x }` where `=> x` would do |
-| 4 | **Functional style** | `for` loops with `.push()` where `.map()`/`.filter()` fits; direct mutation of objects/arrays |
-| 5 | **Small composed functions** | Large functions doing everything inline; missing opportunities to extract named helpers |
-| 6 | **Naming** | Single-char vars (`a`, `b`, `e`); generic names (`data`, `info`, `obj`, `temp`, `res`); non-predicate booleans |
-| 7 | **Destructuring and defaults** | Repeated `obj.prop.sub` access; `const x = arg ?? default` guards that should be default params |
+| 4 | **Functional style** | `for` loops with `.push()` where `.map()`/`.filter()` fits; direct mutation |
+| 5 | **Small composed functions** | Large inline functions; missing helper extractions |
+| 6 | **Naming** | Single-char vars; generic names (`data`, `info`, `obj`, `temp`, `res`); non-predicate booleans |
+| 7 | **Destructuring and defaults** | Repeated `obj.prop.sub` access; null guards that should be default params |
 | 8 | **Early returns** | Nested `if` pyramids; happy path buried in else branches |
 | 9 | **No clever one-liners** | Pipelines that require a second reading to parse |
 | 10 | **Named exports** | `export default` where `export const` is possible |
 | 11 | **const > let, never var** | `var` anywhere; `let` for values that are never reassigned |
 | 12 | **Optional chaining / nullish** | `&&`-chain null guards where `?.` fits; `\|\|` for defaults that should use `??` |
-| 13 | **No magic numbers/strings** | Bare numeric literals or string literals with domain meaning; hardcoded role values, timeouts, limits |
-| 14 | **async/await preferred** | `.then()` chains with more than one step (short single-expression transforms are fine) |
-| 15 | **Self-documenting code** | Comments describing *what* the code does rather than *why*; comments compensating for a poor name |
-| 16 | **Modern array/object methods** | Manual index lookups where `.at(-1)` fits; loops where `.findLast()`, `.every()`, `.some()`, `Object.groupBy()` apply |
-| 17 | **Doc comment accuracy** | `/** */` blocks where `@param` name/type doesn't match the signature; `@returns` type wrong or present on a void function; `@throws` for a removed exception; summary describes old behaviour. Absence is not a violation — only present-but-wrong comments. See `skills/best-practices/doc-comments/` for the full accuracy guide. |
-
----
+| 13 | **No magic numbers/strings** | Bare numeric/string literals with domain meaning |
+| 14 | **async/await preferred** | `.then()` chains with more than one step |
+| 15 | **Self-documenting code** | "What" comments; comments compensating for poor names |
+| 16 | **Modern array/object methods** | Manual lookups where `.at(-1)`/`.findLast()` fits |
+| 17 | **Doc comment accuracy** | `/** */` blocks where `@param`/`@returns` don't match the signature |
 
 ## Severity
 
 | Severity | Definition |
 |----------|-----------|
-| **FAIL** | Clear, unambiguous violation — `var`, mutation in a hot path, `.then()` chain where `async/await` is the stated preference |
-| **WARN** | Violation exists but there is a plausible contextual reason; or a borderline case |
-| **PASS** | No issues found for this rule in changed lines |
-| **N/A** | Rule not applicable to this file (e.g. rule 10 for a non-module file) |
+| **FAIL** | Clear, unambiguous violation of a stated rule (`var`, mutation in a hot path, `.then()` chain where `async/await` is the rule) |
+| **WARN** | Violation exists but with a plausible contextual reason; or a borderline case |
 
----
-
-## Review Template
-
-Use the **Fresh** template for a first review, or the **Refresh** template when re-reviewing a changed file.
-
-### Fresh Review Template
-
-```markdown
-# Code Style Review: [path/to/file.js]
-
-**Repository:** [repo-name]
-**PR:** #[pr-number]
-**Lines Changed:** +XX / -YY
-
-## Rule Compliance
-
-| # | Rule | Status | Notes |
-|---|------|--------|-------|
-| 1 | Do one thing | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 2 | Fat-arrow functions | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 3 | No unnecessary braces/returns | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 4 | Functional style | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 5 | Small composed functions | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 6 | Naming | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 7 | Destructuring and defaults | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 8 | Early returns | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 9 | No clever one-liners | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 10 | Named exports | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 11 | const > let, never var | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 12 | Optional chaining / nullish | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 13 | No magic numbers/strings | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 14 | async/await preferred | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 15 | Self-documenting code | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 16 | Modern array/object methods | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-| 17 | Doc comment accuracy | ✅ PASS / ⚠️ WARN / ❌ FAIL / N/A | |
-
-## Violations
-
-| Severity | Line | Rule # | Actual Code | Expected Pattern |
-|----------|------|--------|-------------|-----------------|
-
-*None found.* (if applicable)
-
-## Verdict
-
-**Status:** COMPLIANT / MINOR ISSUES / NEEDS WORK
-**Summary:** [One sentence describing overall style compliance for this file]
-
-| FAIL | WARN | PASS |
-|------|------|------|
-| X | X | X |
-```
-
-### Refresh Review Template
-
-```markdown
-# Code Style Review: [path/to/file.js] (Refreshed [date])
-
-**Repository:** [repo-name]
-**PR:** #[pr-number]
-**Refreshed:** [date]
-
-## Previously Reported Violations — Status Check
-
-| # | Rule | Issue | Status |
-|---|------|-------|--------|
-| 1 | 2 | [original violation description] | ✅ Resolved / ❌ Still present |
-
-## Rule Compliance (Current State)
-
-| # | Rule | Status | Notes |
-|---|------|--------|-------|
-[same 17-rule table as fresh template]
-
-## New Violations
-
-| Severity | Line | Rule # | Actual Code | Expected Pattern |
-|----------|------|--------|-------------|-----------------|
-
-*None found.* (if applicable)
-
-## Verdict
-
-**Status:** COMPLIANT / MINOR ISSUES / NEEDS WORK
-**Summary:** [One sentence — note if status improved, regressed, or unchanged vs last review]
-
-| FAIL | WARN | PASS | Resolved | New |
-|------|------|------|----------|-----|
-| X | X | X | X | X |
-```
-
----
+If a finding is `PASS` or `N/A` — do nothing. Don't add a row.
 
 ## Output
 
-Write to the file path specified in your prompt. Use the exact path given — do not invent a different location. In refresh mode, overwrite the existing `.style.md` file.
+Return one line summarising what you did:
 
-Parent agent runs `verify-style-coverage.sh` — empty = pending, non-empty = reviewed.
+```
+Reviewed {file}: {N} added, {M} resolved, paper trail at {path}
+```
