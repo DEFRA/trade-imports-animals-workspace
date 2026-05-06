@@ -11,6 +11,7 @@ Local workspace aggregating the DEFRA trade imports animals service repos. Not a
 | `repos/trade-imports-animals-tests` | [DEFRA/trade-imports-animals-tests](https://github.com/DEFRA/trade-imports-animals-tests) | End-to-end / integration tests | Node.js / Playwright |
 | `repos/trade-imports-animals-admin` | [DEFRA/trade-imports-animals-admin](https://github.com/DEFRA/trade-imports-animals-admin) | Internal admin interface | Node.js |
 | `repos/trade-imports-stub` | [DEFRA/trade-imports-stub](https://github.com/DEFRA/trade-imports-stub) | Stub of upstream trade-imports services | Java / Spring Boot |
+| `repos/trade-imports-reference-data` | [DEFRA/trade-imports-reference-data](https://github.com/DEFRA/trade-imports-reference-data) | Reference data service | Java / Spring Boot |
 
 ## Quickstart
 
