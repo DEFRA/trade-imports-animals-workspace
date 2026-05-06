@@ -138,7 +138,7 @@ docker-compose-up: ## Start stack (edit docker/local.compose.yml to override ima
 	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) up --wait --detach
 
 docker-compose-dev: ## Start stack with frontend+admin built from source (hot-reload + docker logs)
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) up --wait --detach
+	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) up --wait --detach --build
 
 docker-compose-down: ## Stop stack and wipe volumes (mongo data, localstack state) for a clean slate
 	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) down --volumes --remove-orphans
