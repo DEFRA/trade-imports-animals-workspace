@@ -22,4 +22,5 @@ clone_if_missing trade-imports-animals-frontend  git@github.com:DEFRA/trade-impo
 clone_if_missing trade-imports-animals-backend   git@github.com:DEFRA/trade-imports-animals-backend.git
 clone_if_missing trade-imports-animals-tests     git@github.com:DEFRA/trade-imports-animals-tests.git
 clone_if_missing trade-imports-animals-admin     git@github.com:DEFRA/trade-imports-animals-admin.git
+clone_if_missing trade-imports-stub              git@github.com:DEFRA/trade-imports-stub.git
 echo "Done."

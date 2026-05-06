@@ -1,15 +1,16 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 4 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 5 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 ## Repo map
 
 | Folder | GitHub repo | Role | Stack |
 |--------|------------|------|-------|
 | `repos/trade-imports-animals-frontend` | DEFRA/trade-imports-animals-frontend | User-facing web application | Node.js |
-| `repos/trade-imports-animals-backend` | DEFRA/trade-imports-animals-backend | API / business logic service | TBD |
+| `repos/trade-imports-animals-backend` | DEFRA/trade-imports-animals-backend | API / business logic service | Java / Spring Boot |
 | `repos/trade-imports-animals-tests` | DEFRA/trade-imports-animals-tests | End-to-end / integration test suite | Node.js |
 | `repos/trade-imports-animals-admin` | DEFRA/trade-imports-animals-admin | Internal admin interface | Node.js |
+| `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 
 ## How to navigate
 

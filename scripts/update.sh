@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$SCRIPT_DIR/../repos"
 
 # Accepts repo names as arguments, falls back to hardcoded list
-REPOS=("${@:-trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin}")
+REPOS=("${@:-trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub}")
 
 echo "Updating trade-imports-animals workspace..."
 for repo in "${REPOS[@]}"; do

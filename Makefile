@@ -1,8 +1,8 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin
-JAVA_REPOS    := trade-imports-animals-backend
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub
 TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
 LOCAL_COMPOSE := docker/local.compose.yml
 LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
