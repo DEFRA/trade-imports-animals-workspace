@@ -13,9 +13,11 @@ Role: Help create well-structured, actionable JIRA tickets.
 
 1. Gather information
 2. Determine type and fields
-3. Draft ticket
-4. Present for approval
-5. Create ticket
+3. Draft ticket to `workareas/ticket-creation/<slug>/draft.md`
+4. Iterate on draft with user
+5. Create ticket from final draft
+
+`<slug>` is a short kebab-case identifier derived from the summary (e.g. `commodity-code-validation`). If the ticket is in response to an existing parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 
 ## DevOps Instant Tickets
 
@@ -146,25 +148,35 @@ Env: [TST/SND/PRD/vNet]
 {panel}
 ```
 
-## Step 4: Present for Approval
+## Step 4: Iterate on Draft
 
-**Always show draft before creating:**
+Write the draft to `workareas/ticket-creation/<slug>/draft.md`:
 
-```
-## Draft Ticket
+```markdown
+# Ticket Draft: <slug>
 
 **Type:** [Bug/Story/Task]
 **Summary:** [Summary]
 **Priority:** [Priority]
 **Parent:** [Epic or None]
 **Labels:** [labels or None]
+**Assignee:** [Self or None]
 
-### Description
-[Wiki markup]
+## Description
+[Wiki markup body — see Step 3 templates]
 
----
-Create this ticket?
+## Open Questions
+- [Anything still missing or ambiguous]
+
+## Status
+DRAFT — awaiting user approval
 ```
+
+Show the draft path to the user, summarise what is in it, and ask:
+
+> Draft at `workareas/ticket-creation/<slug>/draft.md`. Review and tell me what to change, or say "create it" to proceed.
+
+Edit the file in place as the user gives feedback. Only move to Step 5 once the user explicitly approves. Update the **Status** line to `APPROVED` before creating.
 
 ## Step 5: Create Ticket
 
@@ -182,9 +194,12 @@ Create this ticket?
 
 ### After Creation
 
+Append the new key and link to the bottom of `draft.md` and update **Status** to `CREATED: EUDPA-XXXXX`.
+
 ```
 Ticket created: EUDPA-XXXXX
 Link: ${JIRA_BASE_URL}/browse/EUDPA-XXXXX
+Draft retained at: workareas/ticket-creation/<slug>/draft.md
 ```
 
 ## Good Acceptance Criteria
