@@ -8,21 +8,13 @@ AI-assisted development workspace for EUDP Live Animals tickets. Provides integr
 
 - `curl`, `jq`, `gh` (GitHub CLI)
 
-```bash
-brew install curl jq gh
-```
-
-### 1. Check Authentication
-
-Run the auth script to verify all services are configured:
+Install any that aren't already on your `PATH`:
 
 ```bash
-./skills/tools/auth.sh
+for cmd in curl jq gh; do command -v "$cmd" >/dev/null || brew install "$cmd"; done
 ```
 
-This checks Jira, Confluence, and GitHub authentication.
-
-### 2. Get Your Credentials
+### 1. Get Your Credentials
 
 #### Jira & Confluence (same credentials)
 
@@ -54,6 +46,16 @@ Authenticate via GitHub CLI:
 ```bash
 gh auth login
 ```
+
+### 2. Check Authentication
+
+Run the auth script to verify all services are configured:
+
+```bash
+./skills/tools/auth.sh
+```
+
+This checks Jira, Confluence, and GitHub authentication.
 
 
 
