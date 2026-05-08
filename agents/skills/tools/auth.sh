@@ -12,7 +12,6 @@ failed=0
 "$SCRIPT_DIR/jira/auth.sh" || failed=1
 "$SCRIPT_DIR/confluence/auth.sh" || failed=1
 "$SCRIPT_DIR/github/auth.sh" || failed=1
-"$SCRIPT_DIR/jenkins/auth.sh" || failed=1
 
 echo ""
 if [[ $failed -eq 0 ]]; then
