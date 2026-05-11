@@ -14,12 +14,12 @@ Hardcoded URLs and hosts in `compose.yml` mean a developer can't point one servi
 # Wrong — single-host hardcoded
 environment:
   CDP_UPLOADER_URL: http://cdp-uploader:7337
-  FRONTEND_BASE_URL: http://localhost:3000
+  TRADE_IMPORTS_ANIMALS_BACKEND_BASE_URL: http://host.docker.internal:8085
 
 # Correct — defaults plus override hook
 environment:
   CDP_UPLOADER_URL: ${CDP_UPLOADER_URL:-http://cdp-uploader:7337}
-  FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
+  TRADE_IMPORTS_ANIMALS_BACKEND_BASE_URL: ${TRADE_IMPORTS_ANIMALS_BACKEND_BASE_URL:-http://host.docker.internal:8085}
 ```
 
 Apply this to **every** URL and host. Apply it to credentials too, with empty defaults rather than baked-in test values: `AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}` (empty string disables, real value enables).

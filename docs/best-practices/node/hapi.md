@@ -910,23 +910,23 @@ A URL stored as a plain string fails late: `new URL(value)` throws `TypeError: I
 
 ```js
 // Wrong — value validated lazily, errors cryptically
-cdpUploaderUrl: {
-  doc: 'CDP Uploader base URL',
+backendApiUrl: {
+  doc: 'Trade Imports Animals Backend base URL',
   format: String,
-  default: 'http://localhost:7337',
-  env: 'CDP_UPLOADER_URL'
+  default: 'http://localhost:8085',
+  env: 'TRADE_IMPORTS_ANIMALS_BACKEND_URL'
 }
 
 // Correct — fails fast at startup with a clear message
-cdpUploaderUrl: {
-  doc: 'CDP Uploader base URL',
+backendApiUrl: {
+  doc: 'Trade Imports Animals Backend base URL',
   format: 'url',
-  default: 'http://localhost:7337',
-  env: 'CDP_UPLOADER_URL'
+  default: 'http://localhost:8085',
+  env: 'TRADE_IMPORTS_ANIMALS_BACKEND_URL'
 }
 ```
 
-Apply this to every URL-typed key — `frontendBaseUrl`, `backendBaseUrl`, OIDC endpoints, etc.
+Apply this to every URL-typed key — backend/reference-data API URLs, OIDC endpoints, etc.
 
 ### Module-level `readFileSync` / `JSON.parse` must be wrapped
 

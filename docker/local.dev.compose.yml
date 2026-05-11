@@ -10,6 +10,10 @@
 #
 # The frontend/admin dev-stage images run CMD ["npm", "run", "docker:dev"].
 # The backend dev-run stage runs mvn spring-boot:run with profile=local.
+#
+# Frontend/admin point at backend via host.docker.internal:8085 rather than the
+# in-network service name, so they reach the backend whether it's running in
+# the compose stack (port published to host) or natively via `make start-backend`.
 
 services:
   trade-imports-animals-frontend:
@@ -19,6 +23,8 @@ services:
     volumes:
       - ../trade-imports-animals-frontend/src:/home/node/src
     image: ''
+    environment:
+      TRADE_IMPORTS_ANIMALS_BACKEND_URL: http://host.docker.internal:8085
     healthcheck:
       test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3000/health']
       interval: 5s
@@ -32,6 +38,8 @@ services:
     volumes:
       - ../trade-imports-animals-admin/src:/home/node/src
     image: ''
+    environment:
+      TRADE_IMPORTS_ANIMALS_BACKEND_URL: http://host.docker.internal:8085
     healthcheck:
       test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
       interval: 5s
@@ -57,7 +65,3 @@ services:
       context: ../trade-imports-reference-data
       target: development
     image: ''
-
-  cdp-uploader:
-    environment:
-      APP_BASE_URL: http://cdp-uploader:7337
