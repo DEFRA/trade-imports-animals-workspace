@@ -33,6 +33,45 @@ make install  # npm install in all Node repos
 | `make start-backend` | Start backend from source |
 | `make start-admin` | Start admin from source |
 
+## Branch-aware stack (alpha)
+
+`./scripts/run-stack.sh` brings up the full stack from Dockerhub, optionally
+mixing in branch-tagged images for any service whose repo has published one
+(see EUDPA-175):
+
+```bash
+./scripts/run-stack.sh                             # all services on :latest
+./scripts/run-stack.sh --branch feat/EUDPA-123     # branch where published, latest elsewhere
+```
+
+The wrapper probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
+repo-backed service and prints a per-service `branch / latest` summary.
+Branch-name sanitisation matches the per-repo `publish-branch.yml` workflows.
+
+Sibling scripts manage the same stack:
+
+```bash
+./scripts/stop-stack.sh       # docker compose down --volumes --remove-orphans
+./scripts/restart-stack.sh    # stop then run-stack.sh (forwards --branch etc.)
+```
+
+### Swap a service into IntelliJ
+
+The stack routes all inter-service URLs through `host.docker.internal`, and
+every service publishes its port to the host. To swap any one service from
+docker to IntelliJ:
+
+```bash
+./scripts/run-stack.sh                                                    # bring the stack up
+docker compose -p trade-imports-animals stop trade-imports-animals-backend
+# now run trade-imports-animals-backend in IntelliJ on port 8085
+# the frontend / admin containers keep working — they reach the IntelliJ
+# instance via host.docker.internal:8085
+```
+
+This sits alongside (not in place of) the existing `make docker-compose-*`
+flow while we evaluate the approach. EUDPA-178 will consolidate.
+
 ## Working on a single repo
 
 ```bash
