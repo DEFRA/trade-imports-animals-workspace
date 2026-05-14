@@ -40,33 +40,39 @@ mixing in branch-tagged images for any service whose repo has published one
 (see EUDPA-175):
 
 ```bash
-./scripts/run-stack.sh                             # all services on :latest
-./scripts/run-stack.sh --branch feat/EUDPA-123     # branch where published, latest elsewhere
+./scripts/run-stack.sh                                              # all services on :latest
+./scripts/run-stack.sh --branch feat/EUDPA-123                      # branch where published, latest elsewhere
+./scripts/run-stack.sh --exclude backend                            # skip backend; run it locally
+./scripts/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
 ```
 
-The wrapper probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
-repo-backed service and prints a per-service `branch / latest` summary.
-Branch-name sanitisation matches the per-repo `publish-branch.yml` workflows.
+`--branch` probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
+repo-backed service and prints a per-service `branch / latest / excluded`
+summary. Branch-name sanitisation matches the per-repo `publish-branch.yml`
+workflows.
+
+`--exclude` is repeatable. Valid labels: `frontend`, `backend`, `admin`,
+`stub`, `reference-data`. Excluded services skip the probe and stay out of
+the stack — start them yourself in IntelliJ / `npm` and the rest of the
+stack reaches them via `host.docker.internal`.
 
 Sibling scripts manage the same stack:
 
 ```bash
 ./scripts/stop-stack.sh       # docker compose down --volumes --remove-orphans
-./scripts/restart-stack.sh    # stop then run-stack.sh (forwards --branch etc.)
+./scripts/restart-stack.sh    # stop then run-stack.sh (forwards --branch and --exclude)
 ```
 
 ### Swap a service into IntelliJ
 
 The stack routes all inter-service URLs through `host.docker.internal`, and
-every service publishes its port to the host. To swap any one service from
-docker to IntelliJ:
+every service publishes its port to the host. To run one repo-backed service
+from source instead of from Docker:
 
 ```bash
-./scripts/run-stack.sh                                                    # bring the stack up
-docker compose -p trade-imports-animals stop trade-imports-animals-backend
+./scripts/run-stack.sh --exclude backend
 # now run trade-imports-animals-backend in IntelliJ on port 8085
-# the frontend / admin containers keep working — they reach the IntelliJ
-# instance via host.docker.internal:8085
+# frontend / admin reach the IntelliJ instance via host.docker.internal:8085
 ```
 
 This sits alongside (not in place of) the existing `make docker-compose-*`
