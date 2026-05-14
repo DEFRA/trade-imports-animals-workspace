@@ -1,0 +1,57 @@
+# Development overlay — built from local source under repos/ instead of pulled
+# from Dockerhub. Sourced into the run-stack.sh -f list when --dev is passed.
+#
+# Node services (frontend, admin) hot-reload via nodemon on the bind-mounted
+# src/. Java services rebuild on container start (mvn spring-boot:run) — use
+# scripts/stack/bounce-backend.sh after editing backend Java sources.
+#
+# Stub / reference-data have only an `AS development` target (pre-built JAR,
+# no source mount). --dev rebuilds their image but does NOT hot-reload; a
+# `dev-run` stage in those repos would unlock that (separate per-repo PR).
+
+services:
+  trade-imports-animals-frontend:
+    build:
+      context: ../../repos/trade-imports-animals-frontend
+      target: development
+    image: ''
+    volumes:
+      - ../../repos/trade-imports-animals-frontend/src:/home/node/src
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3000/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+
+  trade-imports-animals-admin:
+    build:
+      context: ../../repos/trade-imports-animals-admin
+      target: development
+    image: ''
+    volumes:
+      - ../../repos/trade-imports-animals-admin/src:/home/node/src
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+
+  trade-imports-animals-backend:
+    build:
+      context: ../../repos/trade-imports-animals-backend
+      target: dev-run
+    image: ''
+    volumes:
+      - ../../repos/trade-imports-animals-backend/src:/app/src
+
+  trade-imports-stub:
+    build:
+      context: ../../repos/trade-imports-stub
+      target: development
+    image: ''
+
+  trade-imports-reference-data:
+    build:
+      context: ../../repos/trade-imports-reference-data
+      target: development
+    image: ''

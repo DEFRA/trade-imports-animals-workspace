@@ -26,6 +26,11 @@ Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [--profil
                          Strict — passing only a subset may leave \`depends_on\`
                          unmet; use this when intentionally running a
                          dependency natively (e.g. backend in IntelliJ).
+  -d, --dev              Build the 5 repo-backed services from local source
+                         under repos/ and mount source volumes. Node services
+                         hot-reload via nodemon; Java services need
+                         scripts/stack/bounce-backend.sh after source changes.
+                         Mutually exclusive with --branch.
   -h, --help             Show this help.
 
 Anything after \`--\` is forwarded verbatim to \`docker compose ... up\`.
@@ -52,6 +57,7 @@ parse_run_stack_flags() {
   extra=()
   excluded_labels=()
   selected_profiles=()
+  dev=0
 
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -82,6 +88,10 @@ parse_run_stack_flags() {
         selected_profiles+=("${1#--profile=}")
         shift
         ;;
+      -d|--dev)
+        dev=1
+        shift
+        ;;
       -h|--help)
         usage
         exit 0
@@ -98,6 +108,11 @@ parse_run_stack_flags() {
         ;;
     esac
   done
+
+  if [ -n "$branch" ] && [ "$dev" -eq 1 ]; then
+    print_error "error: --branch and --dev are mutually exclusive"
+    exit 2
+  fi
 
   if [ ${#excluded_labels[@]} -gt 0 ]; then
     local valid_csv

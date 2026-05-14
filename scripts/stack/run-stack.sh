@@ -48,6 +48,10 @@ parse_run_stack_flags "$@"
 # Default profile set: everything.
 [ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
 
+# Dev mode: append the dev overlay so the 5 repo-backed services build from
+# repos/ source instead of pulling Dockerhub images.
+[ "$dev" -eq 1 ] && compose_files_add_dev
+
 # Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.
 sanitise_branch() {
   local raw="$1"
@@ -141,7 +145,10 @@ for entry in "${services[@]}"; do
     [ "$s" = "$image" ] && { in_active=1; break; }
   done
   [ "$in_active" -eq 0 ] && continue
-  if [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
+  if [ "$dev" -eq 1 ]; then
+    unset "$env_var" 2>/dev/null || true
+    printf '  %-16s %sbuilt (source)%s\n' "$label:" "$COLOUR_GREEN" "$COLOUR_RESET"
+  elif [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
     export "$env_var=$sanitised"
     printf '  %-16s %sbranch  (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
   else
@@ -152,4 +159,7 @@ done
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
-exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+up_args=(up --wait --detach --pull always)
+[ "$dev" -eq 1 ] && up_args+=(--build)
+
+exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
