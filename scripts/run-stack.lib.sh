@@ -1,0 +1,94 @@
+# Sourced by scripts/run-stack.sh. Defines `usage` and
+# `parse_run_stack_flags`. The parser writes to globals `branch`, `extra`,
+# `excluded_labels` (which it also initialises) and reads `valid_labels` from
+# the caller's scope. No shebang and no executable bit — this file is for
+# sourcing, not running.
+
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [-- <extra docker compose up args>]
+
+  -b, --branch <name>    Branch ref to probe per service. Sanitised to match
+                         the per-repo publish-branch.yml workflows. A service
+                         whose Dockerhub tag exists at
+                         \`defradigital/<svc>:<sanitised>\` runs that image;
+                         otherwise falls back to \`:latest\`.
+  -e, --exclude <label>  Omit a repo-backed service from the stack. Repeatable.
+                         Valid labels: frontend, backend, admin, stub, reference-data.
+                         Excluded services skip the Dockerhub probe and show
+                         'excluded' in the summary. Useful when running that
+                         service from source (IntelliJ / npm) — other services
+                         reach it via host.docker.internal.
+  -h, --help             Show this help.
+
+Anything after \`--\` is forwarded verbatim to \`docker compose ... up\`.
+
+If \`docker manifest inspect\` starts failing after many invocations, run
+\`docker login\` — anonymous Dockerhub manifest pulls are rate-limited.
+EOF
+}
+
+parse_run_stack_flags() {
+  [ "${valid_labels+x}" = x ] || {
+    echo "internal error: run-stack.lib.sh requires valid_labels to be defined before sourcing" >&2
+    exit 70
+  }
+
+  branch=""
+  extra=()
+  excluded_labels=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -b|--branch)
+        [ $# -ge 2 ] || { echo "error: --branch requires a value" >&2; exit 2; }
+        branch="$2"
+        shift 2
+        ;;
+      --branch=*)
+        branch="${1#--branch=}"
+        shift
+        ;;
+      -e|--exclude)
+        [ $# -ge 2 ] || { echo "error: --exclude requires a value" >&2; exit 2; }
+        excluded_labels+=("$2")
+        shift 2
+        ;;
+      --exclude=*)
+        excluded_labels+=("${1#--exclude=}")
+        shift
+        ;;
+      -h|--help)
+        usage
+        exit 0
+        ;;
+      --)
+        shift
+        extra=("$@")
+        break
+        ;;
+      *)
+        echo "error: unexpected argument: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+    esac
+  done
+
+  if [ ${#excluded_labels[@]} -gt 0 ]; then
+    local valid_csv
+    valid_csv="$(IFS=,; echo "${valid_labels[*]}")"
+    valid_csv="${valid_csv//,/, }"
+    local label valid found
+    for label in "${excluded_labels[@]}"; do
+      found=0
+      for valid in "${valid_labels[@]}"; do
+        [ "$label" = "$valid" ] && { found=1; break; }
+      done
+      if [ "$found" -eq 0 ]; then
+        echo "error: unknown --exclude label '$label'; valid: $valid_csv" >&2
+        exit 2
+      fi
+    done
+  fi
+}

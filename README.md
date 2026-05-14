@@ -46,6 +46,9 @@ mixing in branch-tagged images for any service whose repo has published one
 ./scripts/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
 ```
 
+Short forms: `-b` for `--branch`, `-e` for `--exclude`. E.g.
+`./scripts/run-stack.sh -b feat/EUDPA-123 -e backend`.
+
 `--branch` probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
 repo-backed service and prints a per-service `branch / latest / excluded`
 summary. Branch-name sanitisation matches the per-repo `publish-branch.yml`

@@ -7,90 +7,14 @@
 # repos/trade-imports-stub/.github/workflows/publish-branch.yml lines 35-46).
 # Drift surfaces as "branch image not found → falls back to latest" in the
 # per-service summary below.
+#
+# Flag parsing, usage text, and --exclude label validation live in the sibling
+# run-stack.lib.sh — see its top-of-file comment for the contract.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 COMPOSE_FILE="$WORKSPACE_ROOT/docker/stack/compose.yml"
-
-usage() {
-  cat <<EOF
-Usage: $(basename "$0") [--branch <name>] [--exclude <label>]... [-- <extra docker compose up args>]
-
-  --branch <name>    Branch ref to probe per service. Sanitised to match the
-                     per-repo publish-branch.yml workflows. A service whose
-                     Dockerhub tag exists at \`defradigital/<svc>:<sanitised>\`
-                     runs that image; otherwise falls back to \`:latest\`.
-  --exclude <label>  Omit a repo-backed service from the stack. Repeatable.
-                     Valid labels: frontend, backend, admin, stub, reference-data.
-                     Excluded services skip the Dockerhub probe and show
-                     'excluded' in the summary. Useful when running that
-                     service from source (IntelliJ / npm) — other services
-                     reach it via host.docker.internal.
-  -h, --help         Show this help.
-
-Anything after \`--\` is forwarded verbatim to \`docker compose ... up\`.
-
-If \`docker manifest inspect\` starts failing after many invocations, run
-\`docker login\` — anonymous Dockerhub manifest pulls are rate-limited.
-EOF
-}
-
-branch=""
-extra=()
-excluded_labels=()
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --branch)
-      [ $# -ge 2 ] || { echo "error: --branch requires a value" >&2; exit 2; }
-      branch="$2"
-      shift 2
-      ;;
-    --branch=*)
-      branch="${1#--branch=}"
-      shift
-      ;;
-    --exclude)
-      [ $# -ge 2 ] || { echo "error: --exclude requires a value" >&2; exit 2; }
-      excluded_labels+=("$2")
-      shift 2
-      ;;
-    --exclude=*)
-      excluded_labels+=("${1#--exclude=}")
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    --)
-      shift
-      extra=("$@")
-      break
-      ;;
-    *)
-      echo "error: unexpected argument: $1" >&2
-      usage >&2
-      exit 2
-      ;;
-  esac
-done
-
-# Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.
-sanitise_branch() {
-  local raw="$1"
-  local t="${raw//\//-}"
-  t="$(printf '%s' "$t" | tr -cd 'a-zA-Z0-9_.-')"
-  t="$(printf '%s' "$t" | tr '[:upper:]' '[:lower:]')"
-  while [[ "$t" == [.-]* ]]; do t="${t:1}"; done
-  t="${t:0:128}"
-  printf '%s' "$t"
-}
-
-probe() {
-  local image="$1" tag="$2"
-  docker manifest inspect "defradigital/${image}:${tag}" >/dev/null 2>&1
-}
 
 # label | compose service name | tag-override env var. Single source of truth
 # for everything per-service the wrapper does (probe, summary, exclude
@@ -112,20 +36,25 @@ for entry in "${services[@]}"; do
   valid_labels+=("${entry%%|*}")
 done
 
-if [ ${#excluded_labels[@]} -gt 0 ]; then
-  valid_csv="$(IFS=,; echo "${valid_labels[*]}")"
-  valid_csv="${valid_csv//,/, }"
-  for label in "${excluded_labels[@]}"; do
-    found=0
-    for valid in "${valid_labels[@]}"; do
-      [ "$label" = "$valid" ] && { found=1; break; }
-    done
-    if [ "$found" -eq 0 ]; then
-      echo "error: unknown --exclude label '$label'; valid: $valid_csv" >&2
-      exit 2
-    fi
-  done
-fi
+# shellcheck source=run-stack.lib.sh
+source "$SCRIPT_DIR/run-stack.lib.sh"
+parse_run_stack_flags "$@"
+
+# Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.
+sanitise_branch() {
+  local raw="$1"
+  local t="${raw//\//-}"
+  t="$(printf '%s' "$t" | tr -cd 'a-zA-Z0-9_.-')"
+  t="$(printf '%s' "$t" | tr '[:upper:]' '[:lower:]')"
+  while [[ "$t" == [.-]* ]]; do t="${t:1}"; done
+  t="${t:0:128}"
+  printf '%s' "$t"
+}
+
+probe() {
+  local image="$1" tag="$2"
+  docker manifest inspect "defradigital/${image}:${tag}" >/dev/null 2>&1
+}
 
 is_excluded() {
   local label="$1" e
