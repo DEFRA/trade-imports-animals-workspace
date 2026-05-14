@@ -8,13 +8,14 @@
 # Drift surfaces as "branch image not found → falls back to latest" in the
 # per-service summary below.
 #
-# Flag parsing, usage text, and --exclude label validation live in the sibling
-# run-stack.lib.sh — see its top-of-file comment for the contract.
+# Flag parsing, usage text, and --exclude label validation live in lib/flags.sh
+# — see its top-of-file comment for the contract.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 COMPOSE_FILE="$WORKSPACE_ROOT/docker/stack/compose.yml"
+LIB_DIR="$SCRIPT_DIR/lib"
 
 # label | compose service name | tag-override env var. Single source of truth
 # for everything per-service the wrapper does (probe, summary, exclude
@@ -36,8 +37,8 @@ for entry in "${services[@]}"; do
   valid_labels+=("${entry%%|*}")
 done
 
-# shellcheck source=run-stack.lib.sh
-source "$SCRIPT_DIR/run-stack.lib.sh"
+# shellcheck source=lib/flags.sh
+source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
 
 # Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.

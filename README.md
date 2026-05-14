@@ -35,19 +35,19 @@ make install  # npm install in all Node repos
 
 ## Branch-aware stack (alpha)
 
-`./scripts/run-stack.sh` brings up the full stack from Dockerhub, optionally
+`./scripts/stack/run-stack.sh` brings up the full stack from Dockerhub, optionally
 mixing in branch-tagged images for any service whose repo has published one
 (see EUDPA-175):
 
 ```bash
-./scripts/run-stack.sh                                              # all services on :latest
-./scripts/run-stack.sh --branch feat/EUDPA-123                      # branch where published, latest elsewhere
-./scripts/run-stack.sh --exclude backend                            # skip backend; run it locally
-./scripts/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
+./scripts/stack/run-stack.sh                                              # all services on :latest
+./scripts/stack/run-stack.sh --branch feat/EUDPA-123                      # branch where published, latest elsewhere
+./scripts/stack/run-stack.sh --exclude backend                            # skip backend; run it locally
+./scripts/stack/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
 ```
 
 Short forms: `-b` for `--branch`, `-e` for `--exclude`. E.g.
-`./scripts/run-stack.sh -b feat/EUDPA-123 -e backend`.
+`./scripts/stack/run-stack.sh -b feat/EUDPA-123 -e backend`.
 
 `--branch` probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
 repo-backed service and prints a per-service `branch / latest / excluded`
@@ -62,8 +62,8 @@ stack reaches them via `host.docker.internal`.
 Sibling scripts manage the same stack:
 
 ```bash
-./scripts/stop-stack.sh       # docker compose down --volumes --remove-orphans
-./scripts/restart-stack.sh    # stop then run-stack.sh (forwards --branch and --exclude)
+./scripts/stack/stop-stack.sh       # docker compose down --volumes --remove-orphans
+./scripts/stack/restart-stack.sh    # stop then run-stack.sh (forwards --branch and --exclude)
 ```
 
 ### Swap a service into IntelliJ
@@ -73,7 +73,7 @@ every service publishes its port to the host. To run one repo-backed service
 from source instead of from Docker:
 
 ```bash
-./scripts/run-stack.sh --exclude backend
+./scripts/stack/run-stack.sh --exclude backend
 # now run trade-imports-animals-backend in IntelliJ on port 8085
 # frontend / admin reach the IntelliJ instance via host.docker.internal:8085
 ```

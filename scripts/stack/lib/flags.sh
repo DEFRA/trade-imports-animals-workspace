@@ -1,4 +1,4 @@
-# Sourced by scripts/run-stack.sh. Defines `usage` and
+# Sourced by scripts/stack/run-stack.sh. Defines `usage` and
 # `parse_run_stack_flags`. The parser writes to globals `branch`, `extra`,
 # `excluded_labels` (which it also initialises) and reads `valid_labels` from
 # the caller's scope. No shebang and no executable bit — this file is for
