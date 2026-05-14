@@ -1,0 +1,16 @@
+services:
+  mongodb:
+    healthcheck:
+      interval: 5s
+      retries: 3
+      start_period: 5s
+      test:
+        - CMD
+        - mongosh
+        - '--eval'
+        - db.hello().ok
+    image: mongo:7.0
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./scripts/mongodb:/docker-entrypoint-initdb.d

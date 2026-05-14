@@ -1,0 +1,60 @@
+services:
+  trade-imports-animals-admin:
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - SESSION_CACHE_ENGINE=redis
+      - TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://host.docker.internal:8085
+      - DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
+      - DEFRA_ID_REDIRECT_URL=http://host.docker.internal:3001/auth/sign-in-oidc
+      - DEFRA_ID_SIGN_OUT_REDIRECT_URL=http://host.docker.internal:3001/auth/sign-out-oidc
+      - DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED=false
+    healthcheck:
+      interval: 3s
+      retries: 3
+      start_period: 2s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:3001/health
+    image: defradigital/trade-imports-animals-admin:${TRADE_IMPORTS_ANIMALS_ADMIN:-latest}
+    platform: linux/amd64
+    ports:
+      - '3001:3001'
+  trade-imports-animals-frontend:
+    depends_on:
+      cdp-uploader:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - SESSION_CACHE_ENGINE=redis
+      - TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://host.docker.internal:8085
+      - TRADE_IMPORTS_REFERENCE_DATA_URL=http://host.docker.internal:8086
+      - DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
+      - DEFRA_ID_REDIRECT_URL=http://host.docker.internal:3000/auth/sign-in-oidc
+      - DEFRA_ID_SIGN_OUT_REDIRECT_URL=http://host.docker.internal:3000/auth/sign-out-oidc
+      - DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED=false
+    healthcheck:
+      interval: 3s
+      retries: 3
+      start_period: 2s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:3000/health
+    image: defradigital/trade-imports-animals-frontend:${TRADE_IMPORTS_ANIMALS_FRONTEND:-latest}
+    platform: linux/amd64
+    ports:
+      - '3000:3000'

@@ -14,7 +14,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-COMPOSE_FILE="$WORKSPACE_ROOT/docker/stack/compose.yml"
+STACK_DIR="$WORKSPACE_ROOT/docker/stack"
 LIB_DIR="$SCRIPT_DIR/lib"
 
 # label | compose service name | tag-override env var. Single source of truth
@@ -39,6 +39,8 @@ done
 
 # shellcheck source=lib/colour.sh
 source "$LIB_DIR/colour.sh"
+# shellcheck source=lib/compose.sh
+source "$LIB_DIR/compose.sh"
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
@@ -99,4 +101,4 @@ up_services+=("${infra_services[@]}")
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
-exec docker compose -f "$COMPOSE_FILE" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+exec docker compose "${COMPOSE_FILES[@]}" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"
