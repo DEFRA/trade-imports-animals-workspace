@@ -86,6 +86,16 @@ git checkout -b my-feature
 git push origin my-feature
 ```
 
+## Workspace stack (alongside `make docker-compose-*`)
+
+`scripts/stack/run-stack.sh` brings up the full stack with branch-tagged
+images where published. Supports `-b <branch>` and `-e <service>` (exclude a
+repo-backed service so you can run it locally in IntelliJ / npm).
+
+See `docker/stack/AGENTS.md` for the full index — stand up / bounce / exclude
+flags, env knobs that must use `host.docker.internal`, and the running-E2E
+recipe.
+
 ## Docs
 
 `docs/` — project documentation. Add architecture notes, ADRs, runbooks etc. here as the project develops.
