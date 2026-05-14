@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Tear down the workspace docker stack and wipe its volumes + orphan containers.
+# Passes every profile so profile-tagged services are visible to `down`.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,5 +13,13 @@ source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
 
+profile_args=(
+  --profile database
+  --profile infrastructure
+  --profile stubs
+  --profile backend
+  --profile frontend
+)
+
 printf '%sTearing down stack...%s\n' "$COLOUR_BOLD" "$COLOUR_RESET"
-exec docker compose "${COMPOSE_FILES[@]}" down --volumes --remove-orphans "$@"
+exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" down --volumes --remove-orphans "$@"

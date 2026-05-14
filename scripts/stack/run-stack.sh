@@ -8,8 +8,8 @@
 # Drift surfaces as "branch image not found → falls back to latest" in the
 # per-service summary below.
 #
-# Flag parsing, usage text, and --exclude label validation live in lib/flags.sh
-# — see its top-of-file comment for the contract.
+# Flag parsing, usage text, and --exclude / --profile validation live in
+# lib/flags.sh — see its top-of-file comment for the contract.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +19,7 @@ LIB_DIR="$SCRIPT_DIR/lib"
 
 # label | compose service name | tag-override env var. Single source of truth
 # for everything per-service the wrapper does (probe, summary, exclude
-# translation, positional service list).
+# translation).
 services=(
   "frontend|trade-imports-animals-frontend|TRADE_IMPORTS_ANIMALS_FRONTEND"
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
@@ -28,14 +28,14 @@ services=(
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
 )
 
-# Infra services — always in the stack, never excludable, no probe / env var.
-# Disjoint from `services` above so the two can't drift.
-infra_services=(mongodb localstack localstack-init redis trade-imports-defra-id-stub cdp-uploader)
-
 valid_labels=()
 for entry in "${services[@]}"; do
   valid_labels+=("${entry%%|*}")
 done
+
+# Compose profiles — one per overlay file. Default (no --profile) brings up
+# every profile, which is the same set as before profiles existed.
+valid_profiles=(database infrastructure stubs backend frontend)
 
 # shellcheck source=lib/colour.sh
 source "$LIB_DIR/colour.sh"
@@ -44,6 +44,9 @@ source "$LIB_DIR/compose.sh"
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
+
+# Default profile set: everything.
+[ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
 
 # Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.
 sanitise_branch() {
@@ -70,6 +73,50 @@ is_excluded() {
   return 1
 }
 
+# Build --profile X args for docker compose.
+profile_args=()
+for profile in "${selected_profiles[@]}"; do
+  profile_args+=(--profile "$profile")
+done
+
+# Ask compose which services are active given the selected profiles. This is
+# the source of truth — no separate hardcoded mapping to drift from the YAML.
+# Use a `while read` loop instead of `mapfile` for bash 3.2 compatibility.
+active_services=()
+while IFS= read -r svc; do
+  [ -n "$svc" ] && active_services+=("$svc")
+done < <(docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" config --services 2>/dev/null | sort)
+
+# Translate excluded labels → compose service names.
+excluded_compose_names=()
+for label in ${excluded_labels[@]+"${excluded_labels[@]}"}; do
+  for entry in "${services[@]}"; do
+    IFS='|' read -r l image _ <<< "$entry"
+    if [ "$l" = "$label" ]; then
+      excluded_compose_names+=("$image")
+      break
+    fi
+  done
+done
+
+# up_services = active_services - excluded.
+up_services=()
+for svc in ${active_services[@]+"${active_services[@]}"}; do
+  skip=0
+  for excl in ${excluded_compose_names[@]+"${excluded_compose_names[@]}"}; do
+    if [ "$svc" = "$excl" ]; then
+      skip=1
+      break
+    fi
+  done
+  [ "$skip" -eq 1 ] && continue
+  up_services+=("$svc")
+done
+
+# Profile summary.
+printf '%sProfiles:%s %s\n' "$COLOUR_BOLD" "$COLOUR_RESET" "${selected_profiles[*]}"
+
+# Branch probe (only if --branch passed).
 sanitised=""
 if [ -n "$branch" ]; then
   sanitised="$(sanitise_branch "$branch")"
@@ -80,7 +127,7 @@ if [ -n "$branch" ]; then
   printf '%sProbing Dockerhub for branch tag: %s%s\n' "$COLOUR_CYAN" "$sanitised" "$COLOUR_RESET"
 fi
 
-up_services=()
+# Per-service summary for repo-backed services.
 for entry in "${services[@]}"; do
   IFS='|' read -r label image env_var <<< "$entry"
   if is_excluded "$label"; then
@@ -88,6 +135,12 @@ for entry in "${services[@]}"; do
     printf '  %-16s %sexcluded%s\n' "$label:" "$COLOUR_GREY" "$COLOUR_RESET"
     continue
   fi
+  # Skip services not in the active profile set (no summary row).
+  in_active=0
+  for s in ${active_services[@]+"${active_services[@]}"}; do
+    [ "$s" = "$image" ] && { in_active=1; break; }
+  done
+  [ "$in_active" -eq 0 ] && continue
   if [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
     export "$env_var=$sanitised"
     printf '  %-16s %sbranch  (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
@@ -95,10 +148,8 @@ for entry in "${services[@]}"; do
     unset "$env_var" 2>/dev/null || true
     printf '  %-16s latest\n' "$label:"
   fi
-  up_services+=("$image")
 done
-up_services+=("${infra_services[@]}")
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
-exec docker compose "${COMPOSE_FILES[@]}" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"

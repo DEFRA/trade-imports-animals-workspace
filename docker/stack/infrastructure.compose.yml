@@ -1,5 +1,6 @@
 services:
   cdp-uploader:
+    profiles: [infrastructure]
     depends_on:
       localstack-init:
         condition: service_completed_successfully
@@ -24,6 +25,7 @@ services:
     ports:
       - '7337:7337'
   localstack:
+    profiles: [infrastructure]
     env_file:
       - ./shared.env
     environment:
@@ -45,6 +47,7 @@ services:
       - '4566:4566'
       - 4510-4559:4510-4559
   localstack-init:
+    profiles: [infrastructure]
     depends_on:
       localstack:
         condition: service_healthy
@@ -55,6 +58,7 @@ services:
     volumes:
       - ./scripts/localstack:/scripts
   redis:
+    profiles: [infrastructure]
     healthcheck:
       interval: 5s
       retries: 5

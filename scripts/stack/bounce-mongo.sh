@@ -15,4 +15,4 @@ source "$LIB_DIR/colour.sh"
 source "$LIB_DIR/compose.sh"
 
 printf '%sBouncing mongo (wipes volume, re-runs init scripts)...%s\n' "$COLOUR_BOLD" "$COLOUR_RESET"
-exec docker compose "${COMPOSE_FILES[@]}" up --force-recreate --renew-anon-volumes --wait mongodb
+exec docker compose "${COMPOSE_FILES[@]}" --profile database up --force-recreate --renew-anon-volumes --wait mongodb
