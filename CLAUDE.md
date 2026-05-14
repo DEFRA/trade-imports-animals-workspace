@@ -88,13 +88,16 @@ git push origin my-feature
 
 ## Workspace stack (alongside `make docker-compose-*`)
 
-`scripts/stack/run-stack.sh` brings up the full stack with branch-tagged
-images where published. Supports `-b <branch>` and `-e <service>` (exclude a
-repo-backed service so you can run it locally in IntelliJ / npm).
+`scripts/stack/run-stack.sh` brings up the full stack from Dockerhub.
+Supports `-b <branch>` (probe for branch-tagged images), `-d/--dev` (build
+the 5 repo-backed services from local source under `repos/`),
+`-e <service>` (exclude one so you can run it natively), and
+`--profile <name>` (run only a subset of tiers). `bounce-backend.sh` picks
+up edited Java source in `--dev` mode.
 
-See `docker/stack/AGENTS.md` for the full index — stand up / bounce / exclude
-flags, env knobs that must use `host.docker.internal`, and the running-E2E
-recipe.
+See `docker/stack/AGENTS.md` for the full index — flag reference, file
+layout (5 role overlays + dev overlay), env knobs that must use
+`host.docker.internal`, and the running-E2E recipe.
 
 ## Docs
 
