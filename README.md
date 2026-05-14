@@ -64,6 +64,17 @@ Sibling scripts manage the same stack:
 ```bash
 ./scripts/stack/stop-stack.sh       # docker compose down --volumes --remove-orphans
 ./scripts/stack/restart-stack.sh    # stop then run-stack.sh (forwards --branch and --exclude)
+./scripts/stack/bounce-mongo.sh     # wipe mongo's volume + re-run init scripts (reseed)
+```
+
+Run the tests-repo E2E specs against this stack with one shell: bounce mongo
+for a fresh DB, then run playwright directly (skip `npm run test:local`
+because the tests-repo's `database:reseed` step would clash on port 27017):
+
+```bash
+./scripts/stack/bounce-mongo.sh
+cd repos/trade-imports-animals-tests
+npm run clean && npx playwright test --config=playwright.local.fast.config.ts --grep-invert "@agent|@a11y"
 ```
 
 ### Swap a service into IntelliJ
