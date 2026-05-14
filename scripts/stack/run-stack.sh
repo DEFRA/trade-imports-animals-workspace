@@ -99,4 +99,4 @@ up_services+=("${infra_services[@]}")
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
-exec docker compose -f "$COMPOSE_FILE" up --wait --detach ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+exec docker compose -f "$COMPOSE_FILE" up --wait --detach --pull always ${extra[@]+"${extra[@]}"} "${up_services[@]}"

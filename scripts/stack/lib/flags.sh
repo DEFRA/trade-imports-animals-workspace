@@ -23,6 +23,9 @@ Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [-- <extr
 
 Anything after \`--\` is forwarded verbatim to \`docker compose ... up\`.
 
+Images are pulled fresh on every run (\`--pull always\`) so stale \`:latest\`
+or stale branch tags can't silently lag behind Dockerhub.
+
 If \`docker manifest inspect\` starts failing after many invocations, run
 \`docker login\` — anonymous Dockerhub manifest pulls are rate-limited.
 EOF
