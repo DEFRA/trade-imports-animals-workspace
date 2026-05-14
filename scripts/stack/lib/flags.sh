@@ -1,8 +1,8 @@
 # Sourced by scripts/stack/run-stack.sh. Defines `usage` and
 # `parse_run_stack_flags`. The parser writes to globals `branch`, `extra`,
 # `excluded_labels` (which it also initialises) and reads `valid_labels` from
-# the caller's scope. No shebang and no executable bit — this file is for
-# sourcing, not running.
+# the caller's scope. Requires lib/colour.sh sourced first for `print_error`.
+# No shebang and no executable bit — this file is for sourcing, not running.
 
 usage() {
   cat <<EOF
@@ -30,7 +30,7 @@ EOF
 
 parse_run_stack_flags() {
   [ "${valid_labels+x}" = x ] || {
-    echo "internal error: run-stack.lib.sh requires valid_labels to be defined before sourcing" >&2
+    print_error "internal error: lib/flags.sh requires valid_labels to be defined before sourcing"
     exit 70
   }
 
@@ -41,7 +41,7 @@ parse_run_stack_flags() {
   while [ $# -gt 0 ]; do
     case "$1" in
       -b|--branch)
-        [ $# -ge 2 ] || { echo "error: --branch requires a value" >&2; exit 2; }
+        [ $# -ge 2 ] || { print_error "error: --branch requires a value"; exit 2; }
         branch="$2"
         shift 2
         ;;
@@ -50,7 +50,7 @@ parse_run_stack_flags() {
         shift
         ;;
       -e|--exclude)
-        [ $# -ge 2 ] || { echo "error: --exclude requires a value" >&2; exit 2; }
+        [ $# -ge 2 ] || { print_error "error: --exclude requires a value"; exit 2; }
         excluded_labels+=("$2")
         shift 2
         ;;
@@ -68,7 +68,7 @@ parse_run_stack_flags() {
         break
         ;;
       *)
-        echo "error: unexpected argument: $1" >&2
+        print_error "error: unexpected argument: $1"
         usage >&2
         exit 2
         ;;
@@ -86,7 +86,7 @@ parse_run_stack_flags() {
         [ "$label" = "$valid" ] && { found=1; break; }
       done
       if [ "$found" -eq 0 ]; then
-        echo "error: unknown --exclude label '$label'; valid: $valid_csv" >&2
+        print_error "error: unknown --exclude label '$label'; valid: $valid_csv"
         exit 2
       fi
     done

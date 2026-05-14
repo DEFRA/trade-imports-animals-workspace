@@ -37,6 +37,8 @@ for entry in "${services[@]}"; do
   valid_labels+=("${entry%%|*}")
 done
 
+# shellcheck source=lib/colour.sh
+source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
@@ -70,10 +72,10 @@ sanitised=""
 if [ -n "$branch" ]; then
   sanitised="$(sanitise_branch "$branch")"
   if [ -z "$sanitised" ]; then
-    echo "error: branch '$branch' is empty after sanitisation" >&2
+    print_error "error: branch '$branch' is empty after sanitisation"
     exit 1
   fi
-  echo "Probing Dockerhub for branch tag: $sanitised"
+  printf '%sProbing Dockerhub for branch tag: %s%s\n' "$COLOUR_CYAN" "$sanitised" "$COLOUR_RESET"
 fi
 
 up_services=()
@@ -81,12 +83,12 @@ for entry in "${services[@]}"; do
   IFS='|' read -r label image env_var <<< "$entry"
   if is_excluded "$label"; then
     unset "$env_var" 2>/dev/null || true
-    printf '  %-16s excluded\n' "$label:"
+    printf '  %-16s %sexcluded%s\n' "$label:" "$COLOUR_GREY" "$COLOUR_RESET"
     continue
   fi
   if [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
     export "$env_var=$sanitised"
-    printf '  %-16s branch  (%s)\n' "$label:" "$sanitised"
+    printf '  %-16s %sbranch  (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
   else
     unset "$env_var" 2>/dev/null || true
     printf '  %-16s latest\n' "$label:"
@@ -95,6 +97,6 @@ for entry in "${services[@]}"; do
 done
 up_services+=("${infra_services[@]}")
 
-[ ${#up_services[@]} -gt 0 ] || { echo "error: would start no services" >&2; exit 1; }
+[ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
 exec docker compose -f "$COMPOSE_FILE" up --wait --detach ${extra[@]+"${extra[@]}"} "${up_services[@]}"
