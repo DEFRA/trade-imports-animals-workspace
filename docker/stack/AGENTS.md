@@ -107,19 +107,39 @@ the right one. Errors out if neither is up.
   stage (pre-built JAR, no source mount). `--dev` rebuilds the image but does
   not hot-reload. A `dev-run` stage in those repos would unlock that.
 
-## Single-hostname rule
+## Hostname rules — no `/etc/hosts` edits required
 
-Every browser-visible URL — playwright base, OIDC redirect, stub well-known —
-must use `host.docker.internal`. Mixing localhost and h.d.i. produces
-`net::ERR_TOO_MANY_REDIRECTS` and intermittent Bell auth 500s under parallel
-load. The relevant env knobs:
+Two hostnames, used for different audiences:
+
+- **Browser-visible URLs** use `localhost`. Playwright base URLs,
+  `DEFRA_ID_REDIRECT_URL`, `DEFRA_ID_SIGN_OUT_REDIRECT_URL`, and the
+  stub's `WELL_KNOWN_HOST_OVERRIDE`. The dev machine resolves these
+  natively.
+- **Inter-container URLs** use `host.docker.internal` (auto-injected
+  inside containers by Docker Desktop). Mongo, redis, localstack, the
+  cdp-uploader, the frontend's server-side `DEFRA_ID_OIDC_CONFIGURATION_URL`
+  fetch.
+
+The OIDC token endpoint sits across both audiences. The
+`trade-imports-defra-id-stub` handles this itself: when
+`WELL_KNOWN_HOST_OVERRIDE=http://localhost:3007`, the discovery doc it
+returns has `authorization_endpoint`/`end_session_endpoint` on `localhost`
+(browser-friendly) AND `token_endpoint`/`jwks_uri`/`issuer` automatically
+rewritten to `host.docker.internal` (server-friendly). See
+`repos/trade-imports-defra-id-stub/src/open-id/host.js`.
+
+The frontend's `signOutHostnameRewrite` is `enabled: true` so the
+sign-out URL (built from `DEFRA_ID_OIDC_CONFIGURATION_URL`, which uses
+`host.docker.internal` for the server-side fetch) gets flipped back to
+`localhost` before being handed to the browser.
 
 | Service | Env | Value |
 |---|---|---|
-| frontend / admin | `DEFRA_ID_REDIRECT_URL` | `http://host.docker.internal:{3000,3001}/auth/sign-in-oidc` |
-| frontend / admin | `DEFRA_ID_SIGN_OUT_REDIRECT_URL` | `…/auth/sign-out-oidc` |
-| frontend / admin | `DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED` | `false` (otherwise frontend rewrites h.d.i. → localhost on sign-out) |
-| defra-id-stub | `WELL_KNOWN_HOST_OVERRIDE` | `http://host.docker.internal:3007` |
+| frontend / admin | `DEFRA_ID_OIDC_CONFIGURATION_URL` | `http://host.docker.internal:3007/…` (server-side) |
+| frontend / admin | `DEFRA_ID_REDIRECT_URL` | `http://localhost:{3000,3001}/auth/sign-in-oidc` (browser) |
+| frontend / admin | `DEFRA_ID_SIGN_OUT_REDIRECT_URL` | `…/auth/sign-out-oidc` (browser) |
+| frontend / admin | `DEFRA_ID_SIGN_OUT_HOSTNAME_REWRITE_ENABLED` | `true` (flips h.d.i. → localhost for browser-visible sign-out URL) |
+| defra-id-stub | `WELL_KNOWN_HOST_OVERRIDE` | `http://localhost:3007` (browser endpoints; token endpoint auto-rewrites to h.d.i.) |
 
 ## Files in this folder
 
