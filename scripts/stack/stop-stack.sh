@@ -13,13 +13,10 @@ source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
 
-profile_args=(
-  --profile database
-  --profile infrastructure
-  --profile stubs
-  --profile backend
-  --profile frontend
-)
+profile_args=()
+for profile in "${ALL_PROFILES[@]}"; do
+  profile_args+=(--profile "$profile")
+done
 
 printf '%sTearing down stack...%s\n' "$COLOUR_BOLD" "$COLOUR_RESET"
 exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" down --volumes --remove-orphans "$@"

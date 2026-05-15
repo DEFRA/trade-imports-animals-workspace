@@ -16,9 +16,9 @@ aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --q
 aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name mock-clamav || true
 aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-uploader-scan-results-callback.fifo \
   --attributes FifoQueue=true,ContentBasedDeduplication=true || true
-  # || true makes creation idempotent on restart. Assumes queue attributes haven't changed between
-  # runs — if they have (e.g. after a local config change), the existing queue will be silently
-  # reused with its stale attributes. Recreate the container to force a clean queue in that case.
+# || true makes creation idempotent on restart. Assumes queue attributes haven't changed between
+# runs — if they have (e.g. after a local config change), the existing queue will be silently
+# reused with its stale attributes. Recreate the container to force a clean queue in that case.
 
 # S3 event notifications — trigger mock virus scanner when files land in quarantine
 MOCK_CLAMAV_ARN="arn:aws:sqs:${AWS_REGION}:000000000000:mock-clamav"

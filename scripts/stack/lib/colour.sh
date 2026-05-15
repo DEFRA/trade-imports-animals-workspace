@@ -12,6 +12,7 @@ _colour_base_enabled=1
 
 if [ "$_colour_base_enabled" = 1 ] && [ -t 1 ]; then COLOUR_OUT=1; else COLOUR_OUT=0; fi
 if [ "$_colour_base_enabled" = 1 ] && [ -t 2 ]; then COLOUR_ERR=1; else COLOUR_ERR=0; fi
+unset _colour_base_enabled
 
 if [ "$COLOUR_OUT" = 1 ]; then
   COLOUR_RESET=$'\033[0m'

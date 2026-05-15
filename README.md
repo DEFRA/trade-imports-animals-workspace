@@ -46,35 +46,16 @@ mixing in branch-tagged images for any service whose repo has published one
 ./scripts/stack/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
 ```
 
-Short forms: `-b` for `--branch`, `-e` for `--exclude`. E.g.
-`./scripts/stack/run-stack.sh -b feat/EUDPA-123 -e backend`.
+Short forms: `-b` for `--branch`, `-e` for `--exclude`, `-d` for `--dev`.
+Run `./scripts/stack/run-stack.sh --help` for the full flag reference
+including `--dev` (build from local source) and `--profile` (run a subset of
+tiers). See also the other scripts in `scripts/stack/`.
 
-`--branch` probes Dockerhub for `defradigital/<svc>:<sanitised-branch>` per
-repo-backed service and prints a per-service `branch / latest / excluded`
-summary. Branch-name sanitisation matches the per-repo `publish-branch.yml`
-workflows.
-
-`--exclude` is repeatable. Valid labels: `frontend`, `backend`, `admin`,
-`stub`, `reference-data`. Excluded services skip the probe and stay out of
-the stack — start them yourself in IntelliJ / `npm` and the rest of the
-stack reaches them via `host.docker.internal`.
-
-Sibling scripts manage the same stack:
+Run the tests-repo E2E specs against this stack:
 
 ```bash
-./scripts/stack/stop-stack.sh       # docker compose down --volumes --remove-orphans
-./scripts/stack/restart-stack.sh    # stop then run-stack.sh (forwards --branch and --exclude)
-./scripts/stack/bounce-mongo.sh     # wipe mongo's volume + re-run init scripts (reseed)
-```
-
-Run the tests-repo E2E specs against this stack with one shell: bounce mongo
-for a fresh DB, then run playwright directly (skip `npm run test:local`
-because the tests-repo's `database:reseed` step would clash on port 27017):
-
-```bash
-./scripts/stack/bounce-mongo.sh
 cd repos/trade-imports-animals-tests
-npm run clean && npx playwright test --config=playwright.local.fast.config.ts --grep-invert "@agent|@a11y"
+npm run test:local
 ```
 
 ### Swap a service into IntelliJ

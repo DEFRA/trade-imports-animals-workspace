@@ -53,6 +53,8 @@ parse_run_stack_flags() {
     exit 70
   }
 
+  local valid_csv label profile valid found
+
   branch=""
   extra=()
   excluded_labels=()
@@ -115,10 +117,8 @@ parse_run_stack_flags() {
   fi
 
   if [ ${#excluded_labels[@]} -gt 0 ]; then
-    local valid_csv
     valid_csv="$(IFS=,; echo "${valid_labels[*]}")"
     valid_csv="${valid_csv//,/, }"
-    local label valid found
     for label in "${excluded_labels[@]}"; do
       found=0
       for valid in "${valid_labels[@]}"; do
@@ -132,7 +132,6 @@ parse_run_stack_flags() {
   fi
 
   if [ ${#selected_profiles[@]} -gt 0 ]; then
-    local valid_csv profile valid found
     valid_csv="$(IFS=,; echo "${valid_profiles[*]}")"
     valid_csv="${valid_csv//,/, }"
     for profile in "${selected_profiles[@]}"; do

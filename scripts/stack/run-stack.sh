@@ -33,14 +33,14 @@ for entry in "${services[@]}"; do
   valid_labels+=("${entry%%|*}")
 done
 
-# Compose profiles — one per overlay file. Default (no --profile) brings up
-# every profile, which is the same set as before profiles existed.
-valid_profiles=(database infrastructure stubs backend frontend)
-
 # shellcheck source=lib/colour.sh
 source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
+
+# Compose profiles — sourced from lib/compose.sh's ALL_PROFILES.
+valid_profiles=("${ALL_PROFILES[@]}")
+
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
@@ -87,9 +87,17 @@ done
 # the source of truth — no separate hardcoded mapping to drift from the YAML.
 # Use a `while read` loop instead of `mapfile` for bash 3.2 compatibility.
 active_services=()
+compose_config_err="$(mktemp)"
 while IFS= read -r svc; do
   [ -n "$svc" ] && active_services+=("$svc")
-done < <(docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" config --services 2>/dev/null | sort)
+done < <(docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" config --services 2>"$compose_config_err" | sort)
+if [ ${#active_services[@]} -eq 0 ]; then
+  print_error "error: no services resolved from compose config — the compose files may be invalid"
+  [ -s "$compose_config_err" ] && print_error "$(cat "$compose_config_err")"
+  rm -f "$compose_config_err"
+  exit 1
+fi
+rm -f "$compose_config_err"
 
 # Translate excluded labels → compose service names.
 excluded_compose_names=()
@@ -135,7 +143,7 @@ fi
 for entry in "${services[@]}"; do
   IFS='|' read -r label image env_var <<< "$entry"
   if is_excluded "$label"; then
-    unset "$env_var" 2>/dev/null || true
+    unset "$env_var" 2>/dev/null
     printf '  %-16s %sexcluded%s\n' "$label:" "$COLOUR_GREY" "$COLOUR_RESET"
     continue
   fi
@@ -146,13 +154,13 @@ for entry in "${services[@]}"; do
   done
   [ "$in_active" -eq 0 ] && continue
   if [ "$dev" -eq 1 ]; then
-    unset "$env_var" 2>/dev/null || true
+    unset "$env_var" 2>/dev/null
     printf '  %-16s %sbuilt (source)%s\n' "$label:" "$COLOUR_GREEN" "$COLOUR_RESET"
   elif [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
     export "$env_var=$sanitised"
     printf '  %-16s %sbranch  (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
   else
-    unset "$env_var" 2>/dev/null || true
+    unset "$env_var" 2>/dev/null
     printf '  %-16s latest\n' "$label:"
   fi
 done

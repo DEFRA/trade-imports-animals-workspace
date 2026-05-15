@@ -24,7 +24,7 @@ Images are pulled fresh on every run (`--pull always`).
 
 ## Compose file layout
 
-The 10 services live in five overlay files; `compose.yml` is just the project
+Services live in overlay files; `compose.yml` is just the project
 name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 
 | File | Services | Profile |

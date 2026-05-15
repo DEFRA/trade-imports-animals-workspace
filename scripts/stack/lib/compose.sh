@@ -7,7 +7,7 @@
 # docker/stack/ directory).
 
 [ -n "${STACK_DIR:-}" ] || {
-  echo "internal error: lib/compose.sh requires STACK_DIR to be set" >&2
+  print_error "internal error: lib/compose.sh requires STACK_DIR to be set"
   exit 70
 }
 
@@ -19,6 +19,10 @@ COMPOSE_FILES=(
   -f "$STACK_DIR/backend.compose.yml"
   -f "$STACK_DIR/frontend.compose.yml"
 )
+
+# Canonical profile list — one per overlay file. Shared by run-stack.sh
+# (validation + defaults) and stop-stack.sh (tear-down).
+ALL_PROFILES=(database infrastructure stubs backend frontend)
 
 # Appends `dev.compose.yml` to the file list. Call from run-stack.sh when
 # the --dev flag is set, before invoking docker compose.
