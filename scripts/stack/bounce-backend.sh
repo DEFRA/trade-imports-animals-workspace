@@ -12,13 +12,10 @@ source "$LIB_DIR/colour.sh"
 source "$LIB_DIR/compose.sh"
 
 [ -f "$STACK_DIR/dev.compose.yml" ] && compose_files_add_dev
-profile_args=(
-  --profile database
-  --profile infrastructure
-  --profile stubs
-  --profile backend
-  --profile frontend
-)
+profile_args=()
+for profile in "${ALL_PROFILES[@]}"; do
+  profile_args+=(--profile "$profile")
+done
 
 printf '%sBouncing backend (force-recreate, no-deps)...%s\n' "$COLOUR_BOLD" "$COLOUR_RESET"
 exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" up --force-recreate --no-deps --wait trade-imports-animals-backend
