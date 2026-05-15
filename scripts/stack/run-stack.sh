@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# Bring up the workspace docker stack with branch-tagged images where they
-# exist and `:latest` elsewhere.
-#
-# Branch-name sanitisation MUST stay byte-for-byte identical to the per-repo
-# publish-branch.yml workflows (canonical reference:
-# repos/trade-imports-stub/.github/workflows/publish-branch.yml lines 35-46).
-# Drift surfaces as "branch image not found → falls back to latest" in the
-# per-service summary below.
-#
-# Flag parsing, usage text, and --exclude / --profile validation live in
-# lib/flags.sh — see its top-of-file comment for the contract.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,9 +6,6 @@ WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 STACK_DIR="$WORKSPACE_ROOT/docker/stack"
 LIB_DIR="$SCRIPT_DIR/lib"
 
-# label | compose service name | tag-override env var. Single source of truth
-# for everything per-service the wrapper does (probe, summary, exclude
-# translation).
 services=(
   "frontend|trade-imports-animals-frontend|TRADE_IMPORTS_ANIMALS_FRONTEND"
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
@@ -38,21 +24,16 @@ source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
 
-# Compose profiles — sourced from lib/compose.sh's ALL_PROFILES.
 valid_profiles=("${ALL_PROFILES[@]}")
 
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
 
-# Default profile set: everything.
 [ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
-
-# Dev mode: append the dev overlay so the 5 repo-backed services build from
-# repos/ source instead of pulling Dockerhub images.
 [ "$dev" -eq 1 ] && compose_files_add_dev
 
-# Mirror repos/trade-imports-stub/.github/workflows/publish-branch.yml:35-46.
+# Sanitisation must match the per-repo publish-branch.yml workflows.
 sanitise_branch() {
   local raw="$1"
   local t="${raw//\//-}"
@@ -77,15 +58,11 @@ is_excluded() {
   return 1
 }
 
-# Build --profile X args for docker compose.
 profile_args=()
 for profile in "${selected_profiles[@]}"; do
   profile_args+=(--profile "$profile")
 done
 
-# Ask compose which services are active given the selected profiles. This is
-# the source of truth — no separate hardcoded mapping to drift from the YAML.
-# Use a `while read` loop instead of `mapfile` for bash 3.2 compatibility.
 active_services=()
 compose_config_err="$(mktemp)"
 while IFS= read -r svc; do
@@ -99,7 +76,6 @@ if [ ${#active_services[@]} -eq 0 ]; then
 fi
 rm -f "$compose_config_err"
 
-# Translate excluded labels → compose service names.
 excluded_compose_names=()
 for label in ${excluded_labels[@]+"${excluded_labels[@]}"}; do
   for entry in "${services[@]}"; do
@@ -111,7 +87,6 @@ for label in ${excluded_labels[@]+"${excluded_labels[@]}"}; do
   done
 done
 
-# up_services = active_services - excluded.
 up_services=()
 for svc in ${active_services[@]+"${active_services[@]}"}; do
   skip=0
@@ -125,10 +100,7 @@ for svc in ${active_services[@]+"${active_services[@]}"}; do
   up_services+=("$svc")
 done
 
-# Profile summary.
 printf '%sProfiles:%s %s\n' "$COLOUR_BOLD" "$COLOUR_RESET" "${selected_profiles[*]}"
-
-# Branch probe (only if --branch passed).
 sanitised=""
 if [ -n "$branch" ]; then
   sanitised="$(sanitise_branch "$branch")"
@@ -139,7 +111,6 @@ if [ -n "$branch" ]; then
   printf '%sProbing Dockerhub for branch tag: %s%s\n' "$COLOUR_CYAN" "$sanitised" "$COLOUR_RESET"
 fi
 
-# Per-service summary for repo-backed services.
 for entry in "${services[@]}"; do
   IFS='|' read -r label image env_var <<< "$entry"
   if is_excluded "$label"; then
@@ -147,7 +118,6 @@ for entry in "${services[@]}"; do
     printf '  %-16s %sexcluded%s\n' "$label:" "$COLOUR_GREY" "$COLOUR_RESET"
     continue
   fi
-  # Skip services not in the active profile set (no summary row).
   in_active=0
   for s in ${active_services[@]+"${active_services[@]}"}; do
     [ "$s" = "$image" ] && { in_active=1; break; }

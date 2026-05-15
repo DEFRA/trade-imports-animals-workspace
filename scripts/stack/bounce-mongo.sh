@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Wipe the workspace mongo's anonymous volume and recreate the container —
-# re-runs the init scripts under docker/stack/scripts/mongodb/ on a fresh DB.
-# Useful as a reseed step before E2E test runs.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

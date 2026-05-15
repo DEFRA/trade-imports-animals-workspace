@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Tear down the workspace docker stack and wipe its volumes + orphan containers.
-# Passes every profile so profile-tagged services are visible to `down`.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

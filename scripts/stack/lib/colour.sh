@@ -1,11 +1,3 @@
-# Sourced by scripts/stack/*.sh. Exports COLOUR_* ANSI constants for stdout
-# consumers and a `print_error` helper for stderr. No shebang and no
-# executable bit — this file is for sourcing, not running.
-#
-# Per-stream tty detection (stdout vs stderr) — a user can redirect one and
-# leave the other on the terminal. CI and NO_COLOR (per no-color.org) disable
-# colour outright on both streams.
-
 _colour_base_enabled=1
 [ -n "${CI:-}" ] && _colour_base_enabled=0
 [ -n "${NO_COLOR:-}" ] && _colour_base_enabled=0
@@ -32,8 +24,6 @@ else
   COLOUR_BOLD=""
 fi
 
-# Emit a message to stderr in red if stderr is a terminal (and colour isn't
-# otherwise disabled). Used by lib/flags.sh and the stack scripts.
 print_error() {
   if [ "$COLOUR_ERR" = 1 ]; then
     printf '\033[31m%s\033[0m\n' "$*" >&2

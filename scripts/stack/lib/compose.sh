@@ -1,11 +1,3 @@
-# Sourced by scripts/stack/*.sh. Exports `COMPOSE_FILES` — an array of
-# `-f <path>` pairs ready to splat into a `docker compose` invocation. One
-# source of truth for the file list so adding a new overlay (or the
-# `dev.compose.yml` overlay) only touches this file.
-#
-# Requires `STACK_DIR` to be set by the caller (workspace's
-# docker/stack/ directory).
-
 [ -n "${STACK_DIR:-}" ] || {
   print_error "internal error: lib/compose.sh requires STACK_DIR to be set"
   exit 70
@@ -20,12 +12,8 @@ COMPOSE_FILES=(
   -f "$STACK_DIR/frontend.compose.yml"
 )
 
-# Canonical profile list — one per overlay file. Shared by run-stack.sh
-# (validation + defaults) and stop-stack.sh (tear-down).
 ALL_PROFILES=(database infrastructure stubs backend frontend)
 
-# Appends `dev.compose.yml` to the file list. Call from run-stack.sh when
-# the --dev flag is set, before invoking docker compose.
 compose_files_add_dev() {
   COMPOSE_FILES+=(-f "$STACK_DIR/dev.compose.yml")
 }

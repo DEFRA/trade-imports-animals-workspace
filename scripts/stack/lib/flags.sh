@@ -1,10 +1,3 @@
-# Sourced by scripts/stack/run-stack.sh. Defines `usage` and
-# `parse_run_stack_flags`. The parser writes to globals `branch`, `extra`,
-# `excluded_labels`, `selected_profiles` (which it also initialises) and reads
-# `valid_labels` + `valid_profiles` from the caller's scope. Requires
-# lib/colour.sh sourced first for `print_error`. No shebang and no executable
-# bit — this file is for sourcing, not running.
-
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [--profile <name>]... [-- <extra docker compose up args>]
