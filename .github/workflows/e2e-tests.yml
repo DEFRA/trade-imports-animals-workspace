@@ -15,6 +15,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Resolve branch tag
+        id: branch-tag
+        run: |
+          raw="${{ github.head_ref || github.ref_name }}"
+          tag="${raw//\//-}"
+          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+          tag="${tag:0:128}"
+          echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
+
+          if docker manifest inspect "defradigital/trade-imports-animals-tests:${tag}" >/dev/null 2>&1; then
+            echo "tests-tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "Tests image: branch ($tag)"
+          else
+            echo "tests-tag=latest" >> "$GITHUB_OUTPUT"
+            echo "Tests image: latest (no branch tag)"
+          fi
+
       - name: Start stack
         run: ./scripts/stack/run-stack.sh --branch "${{ github.head_ref || github.ref_name }}"
 
@@ -27,7 +46,7 @@ jobs:
             -v ${{ github.workspace }}/artifacts/playwright-report:/app/playwright-report \
             -v ${{ github.workspace }}/artifacts/allure-results:/app/allure-results \
             --entrypoint npx \
-            defradigital/trade-imports-animals-tests:latest \
+            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
             playwright test \
               --config=playwright.local.fast.config.ts \
               --grep-invert "@agent|@a11y"
