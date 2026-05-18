@@ -1,15 +1,18 @@
 services:
   mongodb:
     profiles: [database]
+    command: ['--replSet', 'rs0', '--bind_ip_all']
     healthcheck:
       interval: 5s
-      retries: 3
-      start_period: 5s
+      retries: 5
+      start_period: 15s
       test:
         - CMD
         - mongosh
         - '--eval'
-        - db.hello().ok
+        - >
+          try { rs.status().ok } catch(e) {
+          rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}).ok }
     image: mongo:7.0
     ports:
       - '27017:27017'
