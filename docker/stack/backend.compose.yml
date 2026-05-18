@@ -1,0 +1,63 @@
+services:
+  trade-imports-animals-backend:
+    profiles: [backend]
+    depends_on:
+      localstack-init:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=8085
+      - SPRING_PROFILES_ACTIVE=local
+      - AWS_EMF_AGENT_ENDPOINT=http://host.docker.internal:4566
+      - APP_AWS_ENDPOINT_OVERRIDE=http://host.docker.internal:4566
+      - CDP_UPLOADER_BASE_URL=http://host.docker.internal:7337
+      - TRADE_IMPORTS_ANIMALS_BACKEND_BASE_URL=http://host.docker.internal:8085
+      - CDP_DOCUMENTS_BUCKET=trade-imports-animals-documents
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 60s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8085/health
+    image: defradigital/trade-imports-animals-backend:${TRADE_IMPORTS_ANIMALS_BACKEND:-latest}
+    platform: linux/amd64
+    ports:
+      - '8085:8085'
+  trade-imports-reference-data:
+    profiles: [backend]
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=8086
+      - SPRING_PROFILES_ACTIVE=local
+      - MONGO_DATABASE=trade-imports-reference-data
+      - AWS_EMF_AGENT_ENDPOINT=http://host.docker.internal:4566
+      - MDM_SERVICE_URL=http://host.docker.internal:8087
+      - TRADE_PLATFORM_AUTH_URL=http://host.docker.internal:8087/tenant/oauth2/v2.0/token
+      - TRADE_PLATFORM_CLIENT_ID=local-dev
+      - TRADE_PLATFORM_CLIENT_SECRET=local-dev
+      - TRADE_PLATFORM_SCOPE=local
+      - TRADE_PLATFORM_SUBSCRIPTION_KEY=local-dev
+      - LOG_LEVEL=INFO
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 30s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8086/health
+    image: defradigital/trade-imports-reference-data:${TRADE_IMPORTS_REFERENCE_DATA:-latest}
+    platform: linux/amd64
+    ports:
+      - '8086:8086'

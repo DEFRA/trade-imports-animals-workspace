@@ -19,27 +19,6 @@ Role: Help create well-structured, actionable JIRA tickets.
 
 `<slug>` is a short kebab-case identifier derived from the summary (e.g. `commodity-code-validation`). If the ticket is in response to an existing parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 
-## DevOps Instant Tickets
-
-For quick operational tasks. Trigger: "Raise a DevOps ticket for: <context>"
-
-### Fixed Defaults
-| Field | Value |
-|-------|-------|
-| Type | Task |
-| Parent | EUDPA-9888 |
-| Labels | DevOps, Team-5 |
-| Priority | Lowest |
-| Status | In Progress |
-| Assignee | Self |
-
-### Create Commands
-
-```bash
-./skills/tools/jira/create-ticket.sh -t Task -p EUDPA-9888 -l DevOps -l Team-5 -P Lowest -a "Summary" "Description"
-./skills/tools/jira/transition-ticket.sh EUDPA-XXXXX "In Progress"
-```
-
 ## Step 1: Gather Information
 
 ### Required Questions

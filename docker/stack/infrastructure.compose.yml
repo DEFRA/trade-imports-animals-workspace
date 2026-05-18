@@ -1,0 +1,73 @@
+services:
+  cdp-uploader:
+    profiles: [infrastructure]
+    depends_on:
+      localstack-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_REGION: eu-west-2
+      AWS_SECRET_ACCESS_KEY: test
+      CONSUMER_BUCKETS: cdp-uploader-quarantine,trade-imports-animals-documents
+      MOCK_VIRUS_RESULT_DELAY: 3
+      MOCK_VIRUS_SCAN_ENABLED: 'true'
+      NODE_ENV: development
+      PORT: 7337
+      REDIS_HOST: host.docker.internal
+      S3_ENDPOINT: http://host.docker.internal:4566
+      SQS_ENDPOINT: http://host.docker.internal:4566
+      SQS_SCAN_RESULTS_CALLBACK: http://host.docker.internal:4566/000000000000/cdp-uploader-scan-results-callback.fifo
+      USE_SINGLE_INSTANCE_CACHE: 'true'
+    image: defradigital/cdp-uploader:latest
+    platform: linux/amd64
+    ports:
+      - '7337:7337'
+  localstack:
+    profiles: [infrastructure]
+    env_file:
+      - ./shared.env
+    environment:
+      - LS_LOG=WARN
+      - SERVICES=s3,sqs,sns,dynamodb
+      - LOCALSTACK_HOST=localstack
+      - SQS_ENDPOINT_STRATEGY=off
+    healthcheck:
+      interval: 5s
+      retries: 6
+      start_period: 10s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:4566/_localstack/health
+    image: localstack/localstack:3.0.2
+    ports:
+      - '4566:4566'
+      - '4510-4559:4510-4559'
+  localstack-init:
+    profiles: [infrastructure]
+    depends_on:
+      localstack:
+        condition: service_healthy
+    entrypoint: bash /scripts/10-setup-buckets.sh
+    env_file:
+      - ./shared.env
+    image: localstack/localstack:3.0.2
+    volumes:
+      - ./scripts/localstack:/scripts
+  redis:
+    profiles: [infrastructure]
+    healthcheck:
+      interval: 5s
+      retries: 5
+      start_period: 2s
+      test:
+        - CMD
+        - redis-cli
+        - PING
+    image: redis:7.2.3-alpine3.18
+    ports:
+      - '6379:6379'
+    restart: always

@@ -33,6 +33,46 @@ make install  # npm install in all Node repos
 | `make start-backend` | Start backend from source |
 | `make start-admin` | Start admin from source |
 
+## Branch-aware stack (alpha)
+
+`./scripts/stack/run-stack.sh` brings up the full stack from Dockerhub, optionally
+mixing in branch-tagged images for any service whose repo has published one
+(see EUDPA-175):
+
+```bash
+./scripts/stack/run-stack.sh                                              # all services on :latest
+./scripts/stack/run-stack.sh --branch feat/EUDPA-123                      # branch where published, latest elsewhere
+./scripts/stack/run-stack.sh --exclude backend                            # skip backend; run it locally
+./scripts/stack/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
+```
+
+Short forms: `-b` for `--branch`, `-e` for `--exclude`, `-d` for `--dev`.
+Run `./scripts/stack/run-stack.sh --help` for the full flag reference
+including `--dev` (build from local source) and `--profile` (run a subset of
+tiers). See also the other scripts in `scripts/stack/`.
+
+Run the tests-repo E2E specs against this stack:
+
+```bash
+cd repos/trade-imports-animals-tests
+npm run test:local
+```
+
+### Swap a service into IntelliJ
+
+The stack routes all inter-service URLs through `host.docker.internal`, and
+every service publishes its port to the host. To run one repo-backed service
+from source instead of from Docker:
+
+```bash
+./scripts/stack/run-stack.sh --exclude backend
+# now run trade-imports-animals-backend in IntelliJ on port 8085
+# frontend / admin reach the IntelliJ instance via host.docker.internal:8085
+```
+
+This sits alongside (not in place of) the existing `make docker-compose-*`
+flow while we evaluate the approach. EUDPA-178 will consolidate.
+
 ## Working on a single repo
 
 ```bash
