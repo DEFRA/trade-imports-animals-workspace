@@ -1,0 +1,112 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3]
+        shardTotal: [3]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve branch tag
+        id: branch-tag
+        run: |
+          raw="${{ github.head_ref || github.ref_name }}"
+          tag="${raw//\//-}"
+          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+          tag="${tag:0:128}"
+          echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
+
+          if docker manifest inspect "defradigital/trade-imports-animals-tests:${tag}" >/dev/null 2>&1; then
+            echo "tests-tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "Tests image: branch ($tag)"
+          else
+            echo "tests-tag=latest" >> "$GITHUB_OUTPUT"
+            echo "Tests image: latest (no branch tag)"
+          fi
+
+      - name: Start stack
+        run: ./scripts/stack/run-stack.sh --branch "${{ github.head_ref || github.ref_name }}"
+
+      - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        run: |
+          docker run --rm \
+            --network host \
+            --user root \
+            -v ${{ github.workspace }}/artifacts/blob-report:/app/blob-report \
+            -v ${{ github.workspace }}/artifacts/test-results:/app/test-results \
+            -v ${{ github.workspace }}/artifacts/allure-results:/app/allure-results \
+            --entrypoint npx \
+            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
+            playwright test \
+              --config=playwright.local.fast.config.ts \
+              --grep-invert "@agent|@a11y" \
+              --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} \
+              --reporter=blob,list,allure-playwright
+
+      - name: Upload shard artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shard-${{ matrix.shardIndex }}
+          path: |
+            artifacts/blob-report/
+            artifacts/test-results/
+            artifacts/allure-results/
+          retention-days: 14
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -p trade-imports-animals down
+
+  merge-reports:
+    if: always()
+    needs: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: shard-*
+          path: all-shards/
+
+      - name: Merge Playwright reports
+        run: |
+          npm install -D @playwright/test
+          mkdir -p all-blob-reports
+          find all-shards -path '*/blob-report/*' -exec cp {} all-blob-reports/ \;
+          npx playwright merge-reports --reporter=html ./all-blob-reports
+
+      - name: Combine allure and test results
+        run: |
+          mkdir -p combined-allure-results combined-test-results
+          for dir in all-shards/*/artifacts/allure-results; do
+            [ -d "$dir" ] && cp -r "$dir"/* combined-allure-results/ 2>/dev/null || true
+          done
+          for dir in all-shards/*/artifacts/test-results; do
+            [ -d "$dir" ] && cp -r "$dir"/* combined-test-results/ 2>/dev/null || true
+          done
+
+      - name: Upload merged reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            playwright-report/
+            combined-allure-results/
+            combined-test-results/
+          retention-days: 14
