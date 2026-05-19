@@ -4,10 +4,19 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      branch:
+        description: 'Branch name to probe for service images'
+        required: true
+        type: string
 
 jobs:
   e2e:
-    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call' ||
+      !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -19,11 +28,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          repository: DEFRA/trade-imports-animals-workspace
 
       - name: Resolve branch tag
         id: branch-tag
         run: |
-          raw="${{ github.head_ref || github.ref_name }}"
+          raw="${{ inputs.branch || github.head_ref || github.ref_name }}"
           tag="${raw//\//-}"
           tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
           tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
@@ -40,7 +51,7 @@ jobs:
           fi
 
       - name: Start stack
-        run: ./scripts/stack/run-stack.sh --branch "${{ github.head_ref || github.ref_name }}"
+        run: ./scripts/stack/run-stack.sh --branch "${{ inputs.branch || github.head_ref || github.ref_name }}"
 
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: |
