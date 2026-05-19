@@ -30,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DEFRA/trade-imports-animals-workspace
+          ref: main
 
       - name: Resolve branch tag
         id: branch-tag
@@ -85,7 +86,7 @@ jobs:
         run: docker compose -p trade-imports-animals down
 
   merge-reports:
-    if: always()
+    if: always() && needs.e2e.result != 'skipped'
     needs: e2e
     runs-on: ubuntu-latest
     steps:
