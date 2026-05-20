@@ -1,0 +1,44 @@
+name: Report E2E Status
+description: Creates a GitHub check run on PRs with the E2E test result and Playwright report link
+
+inputs:
+  e2e-result:
+    description: 'The E2E job result (success, failure, skipped)'
+    required: true
+  report-url:
+    description: 'URL to the deployed Playwright HTML report (may be empty)'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Report check run on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const e2eResult = '${{ inputs.e2e-result }}';
+          const conclusion = e2eResult === 'success' ? 'success'
+                           : e2eResult === 'skipped' ? 'skipped'
+                           : 'failure';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const reportUrl = '${{ inputs.report-url }}';
+          const summary = reportUrl
+            ? `[View Playwright report](${reportUrl}) | [View workflow run](${runUrl})`
+            : `[View workflow run](${runUrl})`;
+          const prs = context.payload.workflow_run.pull_requests;
+          for (const pr of prs) {
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: pr.head.sha,
+              name: 'E2E Tests',
+              status: 'completed',
+              conclusion,
+              details_url: reportUrl || runUrl,
+              output: {
+                title: `Workspace E2E: ${e2eResult}`,
+                summary
+              }
+            });
+          }
