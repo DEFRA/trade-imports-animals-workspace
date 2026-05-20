@@ -3,12 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOS_DIR="$SCRIPT_DIR/../repos"
+GITHUB_ORG="DEFRA"
 
 mkdir -p "$REPOS_DIR"
 
 clone_if_missing() {
   local name=$1
-  local url=$2
+  local url="https://github.com/${GITHUB_ORG}/${name}.git"
   if [ -d "$REPOS_DIR/$name" ]; then
     echo "  $name — already exists, skipping"
   else
@@ -18,10 +19,10 @@ clone_if_missing() {
 }
 
 echo "Setting up trade-imports-animals workspace..."
-clone_if_missing trade-imports-animals-frontend  git@github.com:DEFRA/trade-imports-animals-frontend.git
-clone_if_missing trade-imports-animals-backend   git@github.com:DEFRA/trade-imports-animals-backend.git
-clone_if_missing trade-imports-animals-tests     git@github.com:DEFRA/trade-imports-animals-tests.git
-clone_if_missing trade-imports-animals-admin     git@github.com:DEFRA/trade-imports-animals-admin.git
-clone_if_missing trade-imports-stub              git@github.com:DEFRA/trade-imports-stub.git
-clone_if_missing trade-imports-reference-data    git@github.com:DEFRA/trade-imports-reference-data.git
+clone_if_missing trade-imports-animals-frontend
+clone_if_missing trade-imports-animals-backend
+clone_if_missing trade-imports-animals-tests
+clone_if_missing trade-imports-animals-admin
+clone_if_missing trade-imports-stub
+clone_if_missing trade-imports-reference-data
 echo "Done."
