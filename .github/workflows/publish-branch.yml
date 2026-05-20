@@ -1,0 +1,85 @@
+name: Publish Branch Image
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: 'Docker image name (e.g. trade-imports-animals-frontend)'
+        required: true
+        type: string
+      run-mode:
+        description: 'CDP run mode label: "service" (default) or "job" (test suites)'
+        required: false
+        type: string
+        default: 'service'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+env:
+  AWS_REGION: eu-west-2
+  AWS_ACCOUNT_ID: "094954420758"
+
+jobs:
+  publish-branch:
+    name: Publish branch-tagged image
+    runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute sanitised branch tag
+        id: tag
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          raw="${HEAD_REF:-$REF_NAME}"
+          t="${raw//\//-}"
+          t="$(printf '%s' "$t" | tr -cd 'a-zA-Z0-9_.-')"
+          t="$(printf '%s' "$t" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$t" == [.-]* ]]; do t="${t:1}"; done
+          t="${t:0:128}"
+          [ -n "$t" ] || { echo "Empty tag after sanitisation: '$raw'"; exit 1; }
+          echo "tag=$t" >> "$GITHUB_OUTPUT"
+          echo "Sanitised '$raw' -> '$t'"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/github-${{ inputs.image-name }}-build-role
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Login to Docker Hub
+        uses: DEFRA/cdp-build-action/docker-login@main
+
+      - name: Build and push branch-tagged image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: false
+          sbom: false
+          no-cache: true
+          tags: |
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ inputs.image-name }}:${{ steps.tag.outputs.tag }}
+            defradigital/${{ inputs.image-name }}:${{ steps.tag.outputs.tag }}
+          labels: |
+            defra.cdp.git.repo.url=${{ github.server_url }}/${{ github.repository }}
+            defra.cdp.git.repo.name=${{ github.repository }}
+            defra.cdp.${{ inputs.run-mode == 'job' && 'testsuite' || 'service' }}.name=${{ inputs.image-name }}
+            defra.cdp.build.run_id=${{ github.run_id }}
+            defra.cdp.run_mode=${{ inputs.run-mode }}
+            git.hash=${{ github.sha }}
