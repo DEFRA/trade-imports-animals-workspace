@@ -1,9 +1,9 @@
 name: Report E2E Status
-description: Creates a GitHub check run on PRs with the E2E test result and Playwright report link
+description: Creates or updates a GitHub check run and PR comment with E2E test status
 
 inputs:
   e2e-result:
-    description: 'The E2E job result (success, failure, skipped)'
+    description: 'The E2E job result (pending, success, failure, skipped)'
     required: true
   report-url:
     description: 'URL to the deployed Playwright HTML report (may be empty)'
@@ -13,48 +13,94 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Report check run on PR
+    - name: Create or update check run on PR
       uses: actions/github-script@v7
       with:
         script: |
           const e2eResult = '${{ inputs.e2e-result }}';
-          const conclusion = e2eResult === 'success' ? 'success'
-                           : e2eResult === 'skipped' ? 'skipped'
-                           : 'failure';
           const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
           const reportUrl = '${{ inputs.report-url }}';
-          const summary = reportUrl
-            ? `[View Playwright report](${reportUrl}) | [View workflow run](${runUrl})`
-            : `[View workflow run](${runUrl})`;
           const prs = context.payload.workflow_run.pull_requests;
-          for (const pr of prs) {
-            await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head_sha: pr.head.sha,
-              name: 'E2E Tests',
-              status: 'completed',
-              conclusion,
-              details_url: reportUrl || runUrl,
-              output: {
-                title: `Workspace E2E: ${e2eResult}`,
-                summary
+          const checkName = 'E2E Tests';
+
+          if (e2eResult === 'pending') {
+            for (const pr of prs) {
+              await github.rest.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head_sha: pr.head.sha,
+                name: checkName,
+                status: 'in_progress',
+                details_url: runUrl,
+                output: {
+                  title: 'Workspace E2E: in progress',
+                  summary: `[View workflow run](${runUrl})`
+                }
+              });
+            }
+          } else {
+            const conclusion = e2eResult === 'success' ? 'success'
+                             : e2eResult === 'skipped' ? 'skipped'
+                             : 'failure';
+            const summary = reportUrl
+              ? `[View Playwright report](${reportUrl}) | [View workflow run](${runUrl})`
+              : `[View workflow run](${runUrl})`;
+
+            for (const pr of prs) {
+              const { data: { check_runs } } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha,
+                check_name: checkName,
+                filter: 'latest'
+              });
+              const pending = check_runs.find(c => c.status === 'in_progress');
+              if (pending) {
+                await github.rest.checks.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  check_run_id: pending.id,
+                  status: 'completed',
+                  conclusion,
+                  details_url: reportUrl || runUrl,
+                  output: {
+                    title: `Workspace E2E: ${e2eResult}`,
+                    summary
+                  }
+                });
+              } else {
+                await github.rest.checks.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head_sha: pr.head.sha,
+                  name: checkName,
+                  status: 'completed',
+                  conclusion,
+                  details_url: reportUrl || runUrl,
+                  output: {
+                    title: `Workspace E2E: ${e2eResult}`,
+                    summary
+                  }
+                });
               }
-            });
+            }
           }
 
-    - name: Post PR comment
+    - name: Post or update PR comment
       uses: actions/github-script@v7
       with:
         script: |
           const e2eResult = '${{ inputs.e2e-result }}';
           const reportUrl = '${{ inputs.report-url }}';
           const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-          const icon = e2eResult === 'success' ? '✅' : e2eResult === 'skipped' ? '⏭️' : '❌';
           const marker = '<!-- e2e-status -->';
+          const icons = { pending: '⏳', success: '✅', skipped: '⏭️' };
+          const icon = icons[e2eResult] || '❌';
+          const status = e2eResult === 'pending' ? 'in progress' : e2eResult;
+
           const body = [
             marker,
-            `### ${icon} Workspace E2E Tests: ${e2eResult}`,
+            `### ${icon} Workspace E2E Tests: ${status}`,
             '',
             reportUrl ? `📊 [Playwright Report](${reportUrl})` : '',
             `🔗 [Workflow Run](${runUrl})`,
