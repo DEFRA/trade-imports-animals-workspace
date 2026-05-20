@@ -10,6 +10,10 @@ on:
         description: 'Branch name to probe for service images'
         required: true
         type: string
+    outputs:
+      report-url:
+        description: 'URL to the deployed Playwright HTML report'
+        value: ${{ jobs.deploy-report.outputs.report-url }}
 
 jobs:
   e2e:
@@ -122,3 +126,49 @@ jobs:
             combined-allure-results/
             combined-test-results/
           retention-days: 14
+
+  deploy-report:
+    needs: [e2e, merge-reports]
+    if: always() && needs.merge-reports.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
+    outputs:
+      report-url: ${{ steps.url.outputs.report-url }}
+    steps:
+      - name: Download merged report
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-report
+          path: report/
+
+      - name: Resolve branch tag
+        id: branch-tag
+        run: |
+          raw="${{ inputs.branch || github.head_ref || github.ref_name }}"
+          tag="${raw//\//-}"
+          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+          tag="${tag:0:128}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./report/playwright-report
+          destination_dir: e2e/${{ steps.branch-tag.outputs.tag }}
+          keep_files: true
+
+      - name: Output report URL
+        id: url
+        run: |
+          repo="${{ github.repository }}"
+          owner="${repo%%/*}"
+          name="${repo##*/}"
+          owner_lc="$(echo "$owner" | tr '[:upper:]' '[:lower:]')"
+          echo "report-url=https://${owner_lc}.github.io/${name}/e2e/${{ steps.branch-tag.outputs.tag }}/" >> "$GITHUB_OUTPUT"
