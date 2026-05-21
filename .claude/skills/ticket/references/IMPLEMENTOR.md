@@ -1,15 +1,18 @@
-# TICKET_IMPLEMENTOR
+# Implementor — apply the plan
 
 Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 **Critical:** Plan is a **starting point**. Verify assumptions, adapt as needed, document deviations.
 
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
+
 ## Before You Start
 
-1. Read plan at `workareas/ticket-planning/EUDPA-XXXXX/plan.md`
-2. Read ticket: `./skills/tools/jira/ticket.sh EUDPA-XXXXX`
-3. Check tech stack in plan, or run: `./skills/tools/review/detect-tech.sh ~/git/defra/trade-imports-animals/repos/<repo-name>`
-4. Read listed best-practices at `./skills/best-practices/`
+1. Read plan at `${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+2. Read ticket: `${WORKSPACE_ROOT}/tools/jira/ticket.sh EUDPA-XXXXX`
+3. Check tech stack in plan, or run: `${WORKSPACE_ROOT}/tools/review/detect-tech.sh ${WORKSPACE_ROOT}/repos/<repo-name>`
+4. Read listed best-practices at `${WORKSPACE_ROOT}/docs/best-practices/`
 5. Verify `[ASSUMPTION]` and `[NEEDS VERIFICATION]` items
 6. **Run all tests** - do NOT proceed if failing
 
@@ -23,7 +26,7 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 ### Branch Setup
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/<repo-name>
+cd ${WORKSPACE_ROOT}/repos/<repo-name>
 git fetch origin && git checkout <base-branch> && git pull
 git checkout -b feature/EUDPA-XXXXX-<description>
 ```
@@ -61,8 +64,8 @@ git checkout -b feature/EUDPA-XXXXX-<description>
 ## GitHub Actions Verification
 
 ```bash
-./skills/tools/github-actions/trigger-workflow.sh <repo-name> ci.yml <branch-name>
-./skills/tools/github-actions/wait-for-run.sh <repo-name> <run-id> 1800
+${WORKSPACE_ROOT}/tools/github-actions/trigger-workflow.sh <repo-name> ci.yml <branch-name>
+${WORKSPACE_ROOT}/tools/github-actions/wait-for-run.sh <repo-name> <run-id> 1800
 ```
 
 ## Completion Checklist

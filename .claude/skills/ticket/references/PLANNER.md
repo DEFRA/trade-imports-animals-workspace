@@ -1,16 +1,19 @@
-# TICKET_PLANNER
+# Planner — produce an implementation plan
 
 Role: Analyse ticket and create implementation plan. **No implementation work.**
 
 **Critical:** Plan is a **first impression**. Mark uncertainty with `[ASSUMPTION]` and `[NEEDS VERIFICATION]`.
+
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
 
 ## Workflow
 
 ### 1. Gather Context
 
 ```bash
-./skills/tools/jira/ticket.sh EUDPA-XXXXX
-./skills/tools/jira/comments.sh EUDPA-XXXXX
+${WORKSPACE_ROOT}/tools/jira/ticket.sh EUDPA-XXXXX
+${WORKSPACE_ROOT}/tools/jira/comments.sh EUDPA-XXXXX
 ```
 
 ### 2. Explore Codebase
@@ -18,14 +21,14 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 Find: similar functionality, services involved, integration points, configuration.
 
 ```bash
-./skills/tools/review/detect-tech.sh ~/git/defra/eudp-live-animals/<repo-name>
+${WORKSPACE_ROOT}/tools/review/detect-tech.sh ${WORKSPACE_ROOT}/repos/<repo-name>
 ```
 
 Include detected technologies and best-practices paths in plan.
 
 ### 3. Create Plan
 
-Create: `workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+Create: `${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
 
 ```markdown
 # Implementation Plan: EUDPA-XXXXX
@@ -73,7 +76,7 @@ Create: `workareas/ticket-planning/EUDPA-XXXXX/plan.md`
 ## Output
 
 ```
-Plan created: workareas/ticket-planning/EUDPA-XXXXX/plan.md
+Plan created: ${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md
 Repos: [list] | Steps: [X] | Confidence: [level]
 Items needing verification: [X]
 ```
