@@ -1,57 +1,53 @@
 # Phase 1 Manager — Discovery and Planning
 
-**Spawned by:** ORCHESTRATOR
-**Job:** Discover outdated packages across all repos, spawn PLANNER agents, verify all stubs are classified.
+**Job:** Discover outdated packages across all repos, delegate per-package
+research to the `npm-package-planner` subagent, verify all stubs are
+classified.
 
----
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
 
 ## Boundaries
 
-Discover and spawn only. Do not read or evaluate plan content, modify classifications, or touch repos.
-
----
+Discover and delegate only. Do not read or evaluate plan content, modify
+classifications, or touch repos.
 
 ## Inputs
 
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
-Repos are always all 7. Strategy is always `latest`.
-
----
+Repos are all 4 EUDP Live Animals Node repos under
+`${WORKSPACE_ROOT}/repos/`. Strategy is `latest`.
 
 ## Step 1: Discover packages
 
-Run for each of the 7 repos:
+Run for each repo:
 
 ```bash
-cd ~/git/defra/eudp-live-animals/eudp-live-animals-utils/agents
-
-./skills/tools/npm/discover-upgrades.sh \
-  ~/git/defra/eudp-live-animals/{repo-name}/service \
+${WORKSPACE_ROOT}/tools/npm/discover-upgrades.sh \
+  ${WORKSPACE_ROOT}/repos/{repo-name} \
   --run-id {run-id} \
   --strategy latest
 ```
 
 Record stub counts per repo.
 
----
-
-## Step 2: Spawn PLANNER agents
+## Step 2: Delegate to npm-package-planner subagents
 
 List all stubs across all repos:
 
 ```bash
-ls workareas/npm-upgrades/{run-id}/*/upgrade__*.md 2>/dev/null
+ls ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/*/upgrade__*.md 2>/dev/null
 ```
 
-Spawn one PLANNER per stub, all concurrently. Parse package/version/type from `.upgrades-meta.json`.
+For each stub, delegate to the `npm-package-planner` subagent (Task tool
+with `subagent_type: npm-package-planner`), spawned concurrently. Parse
+package/version/type from `.upgrades-meta.json`. Spawn prompt:
 
 ```
-Follow personas/npm-upgrade/PLANNER.md.
-
 Run ID: {run-id}
 Repository: {repo-name}
-Stub file: workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md
+Stub file: ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md
 Package: {pkg}
 Current: {cur}
 Target: {tgt}
@@ -59,24 +55,21 @@ Type: {major|minor|patch}
 Dependency: {dependencies|devDependencies}
 ```
 
----
-
 ## Step 3: Verify coverage
 
-Wait for all agents. Check for unclassified stubs:
+Wait for all subagents. Check for unclassified stubs:
 
 ```bash
-find workareas/npm-upgrades/{run-id} -name "upgrade__*.md" ! -name "*.auto.md" ! -name "*.manual.md"
+find ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id} -name "upgrade__*.md" ! -name "*.auto.md" ! -name "*.manual.md"
 ```
 
-If any remain, respawn PLANNER agents for them once. Still remaining after retry → list as INCOMPLETE in report.
-
----
+If any remain, re-delegate to `npm-package-planner` for them once. Still
+remaining after retry → list as INCOMPLETE in report.
 
 ## Step 4: Report
 
 ```bash
-./skills/tools/npm/upgrade-status.sh --run-id {run-id}
+${WORKSPACE_ROOT}/tools/npm/upgrade-status.sh --run-id {run-id}
 ```
 
 ```

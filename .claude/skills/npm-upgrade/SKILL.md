@@ -1,31 +1,71 @@
-# NPM Upgrade Orchestrator
-
-**Entry point** for npm dependency upgrades across EUDP Live Animals repositories.
-
-**Triggers:** "upgrade npm dependencies", "run npm upgrades"
-
 ---
+name: npm-upgrade
+description: 'Upgrade (non-govuk-frontend) npm package upgrades across the EUDP Live Animals repos via a three-phase workflow — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, and produce a handoff report for the remaining manual work. Orchestrates 1 subagent (`npm-package-planner`, fanned out per outdated package during Phase 1). Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
+---
+
+Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
+1 discovers + plans, Phase 2 applies the no-code-change upgrades, Phase
+3 reports what still needs human work.
+
+## Path conventions
+
+Resolve the workspace root once per session using the `find_workspace_root`
+helper defined in `${WORKSPACE_ROOT}/docs/agent-skills.md` (marker:
+co-presence of `.claude/skills/` and `docs/`):
+
+```bash
+WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
+```
+
+Cross-workspace references use absolute paths:
+
+- Scripts: `${WORKSPACE_ROOT}/tools/npm/<script>`
+- Workareas: `${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo}/`
+                  + `${WORKSPACE_ROOT}/workareas/npm-implementations/{run-id}/{repo}/`
+- Repos: `${WORKSPACE_ROOT}/repos/<service>/`
+
+Skill-internal references stay relative: `references/<NAME>.md`.
+Subagents are addressed by name through the Task/Agent tool.
+
+## Subagents owned
+
+| Subagent | Used in | Tools |
+|---|---|---|
+| `npm-package-planner` | `references/PHASE_1_MANAGER.md` Step 2 — one per outdated package, parallel fan-out | `Read, Bash, WebFetch` |
+
+Spawn idiom inside Phase 1: `Delegate to the npm-package-planner
+subagent` — Task tool with `subagent_type: npm-package-planner`.
+
+## Overview
+
+See `references/COMMON.md` for prerequisites, failure types, file
+extension conventions, and global rules shared by all phases.
+
+## Safety features
+
+- Sequential processing — one package at a time per repo (no parallel upgrades within a repo).
+- Test before commit — baseline test run before each upgrade attempt.
+- Automatic rollback — failed upgrades are reverted and marked `.failed`.
+- Cascade detection — stops immediately if rollback itself fails.
+- No auto-push — all commits stay local until human review.
 
 ## Repos
 
-All 4 EUDP Live Animals repos at `~/git/defra/trade-imports-animals/repos/{repo-name}`:
+All EUDP Live Animals Node repos under `${WORKSPACE_ROOT}/repos/`:
 
 - trade-imports-animals-frontend
 - trade-imports-animals-backend
 - trade-imports-animals-tests
 - trade-imports-animals-admin
 
----
-
 ## Step 1: Establish Run ID
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend branch --show-current
+git -C ${WORKSPACE_ROOT}/repos/trade-imports-animals-frontend branch --show-current
 ```
 
-Parse `EUDPA-XXXXX` from the branch name (e.g. `feature/EUDPA-20578-...` → `EUDPA-20578`). If not found, ask the user.
-
----
+Parse `EUDPA-XXXXX` from the branch name (e.g.
+`feature/EUDPA-20578-...` → `EUDPA-20578`). If not found, ask the user.
 
 ## Step 2: Branch Setup
 
@@ -33,63 +73,83 @@ For each repo, ensure it's on `feature/{run-id}-npm-dependency-upgrades`:
 
 ```bash
 # Check
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} branch -a | grep "feature/{run-id}-npm-dependency-upgrades"
+git -C ${WORKSPACE_ROOT}/repos/{repo-name} branch -a | grep "feature/{run-id}-npm-dependency-upgrades"
 
 # Create if missing
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
+git -C ${WORKSPACE_ROOT}/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
 
 # Switch if exists
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
+git -C ${WORKSPACE_ROOT}/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
 ```
 
-All 4 repos must be on the feature branch before continuing.
-
----
+All repos must be on the feature branch before continuing.
 
 ## Phase 1: Planning
 
-Spawn a single **PHASE_1_MANAGER** agent:
-
 ```
-Follow personas/npm-upgrade/PHASE_1_MANAGER.md.
-
-Run ID: {run-id}
+Follow references/PHASE_1_MANAGER.md. Run ID: {run-id}
 ```
 
-Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to Phase 2?"
+Phase 1 delegates per-package research to the `npm-package-planner`
+subagent — one instance per outdated package, parallel fan-out.
 
----
+Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
+Phase 2?"
 
 ## Phase 2: Automated Upgrades
 
-Spawn a single **PHASE_2_MANAGER** agent:
-
 ```
-Follow personas/npm-upgrade/PHASE_2_MANAGER.md.
-
-Run ID: {run-id}
+Follow references/PHASE_2_MANAGER.md. Run ID: {run-id}
 ```
 
-Present its report verbatim. **Gate:** "Phase 2 complete. Proceed to Phase 3 handoff?"
+Present its report verbatim. **Gate:** "Phase 2 complete. Proceed to
+Phase 3 handoff?"
 
-If cascade failures are reported, flag them and ask how to handle before proceeding.
-
----
+If cascade failures are reported, flag them and ask how to handle before
+proceeding.
 
 ## Phase 3: Handoff Report
 
-Spawn a single **PHASE_3_MANAGER** agent:
-
 ```
-Follow personas/npm-upgrade/PHASE_3_MANAGER.md.
-
-Run ID: {run-id}
+Follow references/PHASE_3_MANAGER.md. Run ID: {run-id}
 ```
 
-Present its report verbatim. This is the end of automated work.
-
----
+Present its report verbatim. End of automated work.
 
 ## Failures
 
-Surface any error to the user with the raw output. Do not retry or problem-solve. Wait for instruction.
+Surface any error to the user with the raw output. Do not retry or
+problem-solve. Wait for instruction.
+
+## Scope guidance
+
+The workflow works best when scoped tightly. Running across many repos
+and many packages simultaneously generates too much concurrent work for
+an agent to coordinate without human guidance.
+
+Recommended scope per run:
+
+- Single repo for initial exploration or high-risk packages.
+- All repos, single package (e.g. upgrade lodash everywhere) — works well automated.
+- All repos, full audit — use for planning only; implement in smaller batches.
+
+## References
+
+- `references/COMMON.md` — prerequisites, failure types, file extensions, global rules.
+- `references/PHASE_1_MANAGER.md` — discovery + fan-out to `npm-package-planner` subagent.
+- `references/PHASE_2_MANAGER.md` — automated upgrades.
+- `references/PHASE_3_MANAGER.md` — manual handoff report.
+
+Scripts (`${WORKSPACE_ROOT}/tools/npm/`):
+
+- `discover-upgrades.sh` — Phase 1 stub creation.
+- `analyze-migration-plans.sh` — Phase 1 status snapshot.
+- `discover-implementations.sh` — Phase 2 todo marker creation.
+- `run-automated-upgrades.sh` — Phase 2 per-repo runner.
+- `upgrade-one-package.sh` — Phase 2 helper (install + test + commit + rollback).
+- `discover-manual-upgrades.sh` — Phase 3 manual list.
+- `upgrade-status.sh` — combined status across phases.
+
+Delegated subagents (`.claude/agents/`):
+
+- `npm-package-planner` — single-package research + auto/manual classification.
