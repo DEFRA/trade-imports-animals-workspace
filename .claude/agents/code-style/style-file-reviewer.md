@@ -13,9 +13,8 @@ by calling **`style-add-item.sh`** per violation — never edit
 `style-review.{repo}.md` by hand. The per-file `.style.md` is a thin
 paper trail listing what you reported.
 
-All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
-workspace root, resolved by the `find_workspace_root` helper defined
-in `${WORKSPACE_ROOT}/docs/agent-skills.md`).
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ## Workspace
 

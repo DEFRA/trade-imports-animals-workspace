@@ -4,9 +4,6 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 **Critical:** Plan is a **starting point**. Verify assumptions, adapt as needed, document deviations.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Before You Start
 
 1. Read plan at `${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`

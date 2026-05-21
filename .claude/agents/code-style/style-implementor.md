@@ -11,9 +11,8 @@ item's outcome, commit once.
 
 Your prompt specifies the ticket, repo, file, and a JSON array of items.
 
-All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
-workspace root, resolved by the `find_workspace_root` helper defined
-in `${WORKSPACE_ROOT}/docs/agent-skills.md`).
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ---
 

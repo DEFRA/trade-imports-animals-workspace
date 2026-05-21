@@ -87,7 +87,10 @@ Spawn idiom inside `SKILL.md`:
 
 ## Subagent shape
 
-`.claude/agents/<name>.md` at the workspace root. Frontmatter:
+`.claude/agents/<owner-skill>/<name>.md` (or flat `.claude/agents/<name>.md` if
+preferred — Claude Code walks `.claude/agents/` recursively at project
+scope; the subdirectory path is purely organisational and does not
+affect identity). Frontmatter:
 
 ```yaml
 ---
@@ -101,6 +104,8 @@ tools: Read, Grep, Glob
   the sub-role provably needs it.
 - **No `model:` field.** Subagents inherit the parent session's model.
   Pinning a named model would rot the config across model bumps.
+- `name:` values must be unique tree-wide — Claude Code will silently
+  drop duplicates when two files declare the same name.
 - The body is the persona prose. Drop "spawned by X" preambles — the
   invocation context is now the subagent contract itself.
 

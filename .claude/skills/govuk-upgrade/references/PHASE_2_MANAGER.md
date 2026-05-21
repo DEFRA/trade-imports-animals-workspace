@@ -4,9 +4,6 @@
 zero-byte stubs. Verify all versions are classified as `.todo` or
 `.noop`.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Delegate and verify coverage only. Do not read changelog content,

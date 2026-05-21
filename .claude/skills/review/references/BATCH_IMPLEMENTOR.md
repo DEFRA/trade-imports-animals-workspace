@@ -8,9 +8,6 @@ user input required during the run.
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review
 EUDPA-XXXXX {repo}"` (optional repo filter).
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ---
 
 ## Step 1: Load the Fix List

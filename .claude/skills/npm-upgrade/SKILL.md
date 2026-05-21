@@ -9,23 +9,12 @@ Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
 
 ## Path conventions
 
-Resolve the workspace root once per session using the `find_workspace_root`
-helper defined in `${WORKSPACE_ROOT}/docs/agent-skills.md` (marker:
-co-presence of `.claude/skills/` and `docs/`):
-
-```bash
-WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
-```
-
-Cross-workspace references use absolute paths:
-
-- Scripts: `${WORKSPACE_ROOT}/tools/npm/<script>`
-- Workareas: `${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo}/`
-                  + `${WORKSPACE_ROOT}/workareas/npm-implementations/{run-id}/{repo}/`
-- Repos: `${WORKSPACE_ROOT}/repos/<service>/`
-
-Skill-internal references stay relative: `references/<NAME>.md`.
-Subagents are addressed by name through the Task/Agent tool.
+Compute `WORKSPACE_ROOT` once per session via `find_workspace_root`
+(defined in `docs/agent-skills.md`). Cross-workspace paths use
+`${WORKSPACE_ROOT}/...`: scripts under `tools/<domain>/`, best-practices
+under `docs/best-practices/`, workareas under `workareas/`. Skill-internal
+references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
+subagents are addressed by name via the Task tool.
 
 ## Subagents owned
 

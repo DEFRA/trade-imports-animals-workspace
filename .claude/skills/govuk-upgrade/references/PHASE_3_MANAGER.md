@@ -3,9 +3,6 @@
 **Job:** Implement all `.todo` version plans in strict semver ascending
 order. Stop on first failure per repo.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Implement code changes, run tests, commit. Do not skip versions,

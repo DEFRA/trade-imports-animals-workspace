@@ -3,9 +3,6 @@
 **Job:** Run automated upgrades (`.auto.md` packages) across all repos.
 Report what succeeded and what was demoted.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Trigger scripts and report output only. Do not investigate failures,

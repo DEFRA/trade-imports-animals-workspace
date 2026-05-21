@@ -8,10 +8,10 @@ Implement **one** fix from an EUDPA review items table. Verify the
 violation exists, confirm tests are green, make the minimal change,
 confirm tests are still green, commit.
 
-Your prompt specifies the ticket, item, repo, file, line, issue, and
-fix. All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
-workspace root, resolved by the `find_workspace_root` helper defined in
-`${WORKSPACE_ROOT}/docs/agent-skills.md`).
+Your prompt specifies the ticket, item, repo, file, line, issue, and fix.
+
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ---
 

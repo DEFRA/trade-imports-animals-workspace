@@ -4,9 +4,6 @@
 research to the `npm-package-planner` subagent, verify all stubs are
 classified.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Discover and delegate only. Do not read or evaluate plan content, modify

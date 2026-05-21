@@ -131,21 +131,24 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans. |
 
-### Subagents (`.claude/agents/<name>.md`)
+### Subagents (`.claude/agents/<owner-skill>/<name>.md`)
 
 Claude Code-specific. Spawned by parent skills through the Task/Agent
 tool by name; restricted tool allowlists; inherit parent session model
-(no `model:` field).
+(no `model:` field). Claude Code walks `.claude/agents/` recursively at
+project scope, so the per-skill subfolder is organisational only — the
+subagent identity comes from the `name:` frontmatter field, not the
+path.
 
-| Subagent | Owning skill | Tools |
+| Subagent | Path | Tools |
 |---|---|---|
-| `file-reviewer` | `review` | `Read, Grep, Glob` |
-| `review-item-fixer` | `review` | `Read, Edit, Bash` |
-| `consistency-reviewer` | `review` | `Read, Grep, Bash` |
-| `style-file-reviewer` | `code-style` | `Read, Grep, Glob` |
-| `style-implementor` | `code-style` | `Read, Edit, Bash` |
-| `npm-package-planner` | `npm-upgrade` | `Read, Bash, WebFetch` |
-| `govuk-version-planner` | `govuk-upgrade` | `Read, Bash, WebFetch` |
+| `file-reviewer` | `.claude/agents/review/file-reviewer.md` | `Read, Grep, Glob` |
+| `review-item-fixer` | `.claude/agents/review/review-item-fixer.md` | `Read, Edit, Bash` |
+| `consistency-reviewer` | `.claude/agents/review/consistency-reviewer.md` | `Read, Grep, Bash` |
+| `style-file-reviewer` | `.claude/agents/code-style/style-file-reviewer.md` | `Read, Grep, Glob` |
+| `style-implementor` | `.claude/agents/code-style/style-implementor.md` | `Read, Edit, Bash` |
+| `npm-package-planner` | `.claude/agents/npm-upgrade/npm-package-planner.md` | `Read, Bash, WebFetch` |
+| `govuk-version-planner` | `.claude/agents/govuk-upgrade/govuk-version-planner.md` | `Read, Bash, WebFetch` |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>) but does not have a parallel

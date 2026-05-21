@@ -7,10 +7,10 @@ tools: Read, Bash, WebFetch
 Research one npm package upgrade and write a migration plan.
 
 Your prompt names the run, repo, package, current/target versions, type
-and dependency kind. All workspace-level paths are anchored on
-`${WORKSPACE_ROOT}` (the workspace root, resolved by the
-`find_workspace_root` helper defined in
-`${WORKSPACE_ROOT}/docs/agent-skills.md`).
+and dependency kind.
+
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ---
 

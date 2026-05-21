@@ -7,22 +7,12 @@ Role: Help create well-structured, actionable Jira tickets.
 
 ## Path conventions
 
-This skill assumes nothing about the agent's cwd. Resolve the workspace root
-once per session using the `find_workspace_root` helper defined in
-`${WORKSPACE_ROOT}/docs/agent-skills.md` (marker: co-presence of
-`.claude/skills/` and `docs/`):
-
-```bash
-WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
-```
-
-Then reference workspace-shared resources by absolute path:
-
-- Scripts: `${WORKSPACE_ROOT}/tools/<domain>/<script>`
-- Workareas: `${WORKSPACE_ROOT}/workareas/...`
-- Best-practices: `${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>`
-
-Skill-internal references stay relative: `assets/templates/<type>.md`.
+Compute `WORKSPACE_ROOT` once per session via `find_workspace_root`
+(defined in `docs/agent-skills.md`). Cross-workspace paths use
+`${WORKSPACE_ROOT}/...`: scripts under `tools/<domain>/`, best-practices
+under `docs/best-practices/`, workareas under `workareas/`. Skill-internal
+references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
+subagents are addressed by name via the Task tool.
 
 ## Writing Style (GDS)
 

@@ -3,9 +3,6 @@
 **Job:** Report all remaining `.manual.md` plans so a human can plan the
 work. Does not implement anything.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Read plan files and write a report. Do not run commands on repos,

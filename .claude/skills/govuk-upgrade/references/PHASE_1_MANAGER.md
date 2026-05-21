@@ -3,9 +3,6 @@
 **Job:** Discover all govuk-frontend versions between current and target.
 Create upgrade workspace with zero-byte stubs and cache the CHANGELOG.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Boundaries
 
 Discovery only. Do not read changelog content, evaluate what changes

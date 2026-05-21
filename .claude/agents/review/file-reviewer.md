@@ -10,9 +10,8 @@ Your prompt specifies the file, the commit(s), the output path, and
 whether this is a **fresh review** or a **refresh** of a previously
 reviewed file.
 
-All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
-workspace root, resolved by the `find_workspace_root` helper defined in
-`${WORKSPACE_ROOT}/docs/agent-skills.md`).
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ## Workspace
 

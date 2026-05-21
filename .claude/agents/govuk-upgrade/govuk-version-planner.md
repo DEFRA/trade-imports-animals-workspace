@@ -7,10 +7,10 @@ tools: Read, Bash, WebFetch
 Research one govuk-frontend version's changelog entry and write a plan
 for what (if anything) needs changing in the repo.
 
-Your prompt names the run, repo, version, and stub file path. All
-workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the workspace
-root, resolved by the `find_workspace_root` helper defined in
-`${WORKSPACE_ROOT}/docs/agent-skills.md`).
+Your prompt names the run, repo, version, and stub file path.
+
+Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+helper in `docs/agent-skills.md`.
 
 ---
 

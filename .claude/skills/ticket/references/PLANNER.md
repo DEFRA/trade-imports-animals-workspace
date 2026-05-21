@@ -4,9 +4,6 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 
 **Critical:** Plan is a **first impression**. Mark uncertainty with `[ASSUMPTION]` and `[NEEDS VERIFICATION]`.
 
-All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
-SKILL.md's path-conventions preamble.
-
 ## Workflow
 
 ### 1. Gather Context
