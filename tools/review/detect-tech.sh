@@ -3,7 +3,7 @@
 # Usage: ./detect-tech.sh <repo-path>
 #
 # Outputs JSON with detected technologies and relevant best practices paths
-# Example: {"technologies":["springboot","k6"],"best_practices":["skills/best-practices/k6/BEST_PRACTICES.md"]}
+# Example: {"technologies":["springboot","k6"],"best_practices":["docs/best-practices/k6/BEST_PRACTICES.md"]}
 
 set -e
 
@@ -206,12 +206,12 @@ detect_gds() {
 
 if detect_k6; then
     technologies+=("k6")
-    best_practices+=("skills/best-practices/k6/BEST_PRACTICES.md")
+    best_practices+=("docs/best-practices/k6/BEST_PRACTICES.md")
 fi
 
 if detect_playwright; then
     technologies+=("playwright")
-    best_practices+=("skills/best-practices/playwright/BEST_PRACTICES.md")
+    best_practices+=("docs/best-practices/playwright/BEST_PRACTICES.md")
 fi
 
 if detect_springboot; then
@@ -226,16 +226,16 @@ fi
 
 if detect_rest_api; then
     technologies+=("rest-api")
-    best_practices+=("skills/best-practices/rest-api/rest-api.md")
+    best_practices+=("docs/best-practices/rest-api/rest-api.md")
 fi
 
 if detect_gds; then
     technologies+=("gds")
-    best_practices+=("skills/best-practices/gds/language.md")
-    best_practices+=("skills/best-practices/gds/styles.md")
-    best_practices+=("skills/best-practices/gds/components.md")
-    best_practices+=("skills/best-practices/gds/patterns.md")
-    best_practices+=("skills/best-practices/gds/accessibility.md")
+    best_practices+=("docs/best-practices/gds/language.md")
+    best_practices+=("docs/best-practices/gds/styles.md")
+    best_practices+=("docs/best-practices/gds/components.md")
+    best_practices+=("docs/best-practices/gds/patterns.md")
+    best_practices+=("docs/best-practices/gds/accessibility.md")
 fi
 
 # ============================================
