@@ -1,6 +1,51 @@
-# TICKET_REFINER
+---
+name: ticket-refiner
+description: 'Assess whether a Jira ticket is READY for team refinement and estimation, producing a READY / NEEDS WORK / SPIKE REQUIRED verdict in ${WORKSPACE_ROOT}/workareas/ticket-refinement/EUDPA-X/review.md. Use when the user asks to validate a ticket''s description, AC, repos, dependencies and sizing BEFORE refinement (triggers: "is ticket EUDPA-X ready", "pre-refinement", "refine EUDPA-X", "refinement check"). NOT for authoring brand-new tickets (use the ticket-creator skill: "assess existing ticket readiness" vs "create new"). NOT for planning or implementing an already-refined ticket (use the ticket skill: "assess readiness" vs "plan/implement").'
+---
 
-Role: Review tickets before refinement to assess readiness for team estimation.
+Role: Review tickets before refinement to assess readiness for team
+estimation. Verdict is one of `READY`, `NEEDS WORK`, or `SPIKE REQUIRED`.
+
+## Path conventions
+
+Resolve the workspace root once per session using the `find_workspace_root`
+helper defined in `${WORKSPACE_ROOT}/docs/agent-skills.md` (marker:
+co-presence of `.claude/skills/` and `docs/`):
+
+```bash
+WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
+```
+
+Cross-workspace references use absolute paths:
+
+- Scripts: `${WORKSPACE_ROOT}/tools/<domain>/<script>`
+- Workareas: `${WORKSPACE_ROOT}/workareas/...`
+- Repos: `${WORKSPACE_ROOT}/repos/<service>/`
+
+Skill-internal references stay relative: `assets/review-template.md`.
+
+## When to use
+
+Triggers: "is ticket EUDPA-X ready", "pre-refinement", "refine EUDPA-X",
+"refinement check". NOT for authoring brand-new tickets — use the
+`ticket-creator` skill. NOT for planning/implementing an already-refined
+ticket — use the `ticket` skill.
+
+## Subagents
+
+This skill spawns no subagents and has no `references/`. The full flow is
+in this file.
+
+## Prerequisites
+
+Authenticate to Jira before fetching tickets:
+
+```bash
+${WORKSPACE_ROOT}/tools/jira/auth.sh
+```
+
+(Or the umbrella `${WORKSPACE_ROOT}/tools/auth.sh` covering Jira +
+Confluence + GitHub.)
 
 ## Ready When Team Can
 
@@ -19,8 +64,8 @@ Role: Review tickets before refinement to assess readiness for team estimation.
 ## Step 1: Fetch Ticket
 
 ```bash
-./skills/tools/jira/ticket.sh EUDPA-XXXXX full
-./skills/tools/jira/comments.sh EUDPA-XXXXX
+${WORKSPACE_ROOT}/tools/jira/ticket.sh EUDPA-XXXXX full
+${WORKSPACE_ROOT}/tools/jira/comments.sh EUDPA-XXXXX
 ```
 
 Extract: summary, description, AC, linked tickets/pages, comments.
@@ -30,8 +75,8 @@ Extract: summary, description, AC, linked tickets/pages, comments.
 Clone relevant repos:
 
 ```bash
-mkdir -p workareas/ticket-refinement/EUDPA-XXXXX/repos
-cd workareas/ticket-refinement/EUDPA-XXXXX/repos
+mkdir -p ${WORKSPACE_ROOT}/workareas/ticket-refinement/EUDPA-XXXXX/repos
+cd ${WORKSPACE_ROOT}/workareas/ticket-refinement/EUDPA-XXXXX/repos
 gh repo clone DEFRA/<repo-name> -- --depth 1
 ```
 
@@ -42,6 +87,11 @@ gh repo clone DEFRA/<repo-name> -- --depth 1
 | eudp-live-animals-frontend-notification | Notification UI |
 | eudp-live-animals-notification-microservice | Notification service |
 | .github/workflows | GitHub Actions workflow definitions |
+
+The repo names above are legacy; the live workspace under
+`${WORKSPACE_ROOT}/repos/` uses the current `trade-imports-animals-*`
+naming. Refer to the workspace-root `CLAUDE.md` repo map for the
+authoritative list.
 
 ### Investigate
 **Features:** Where does it fit? Patterns to follow? Similar features?
@@ -82,72 +132,10 @@ gh repo clone DEFRA/<repo-name> -- --depth 1
 
 ## Step 4: Write Review
 
-Create `workareas/ticket-refinement/EUDPA-XXXXX/review.md`:
-
-```markdown
-# Refinement Review: EUDPA-XXXXX
-
-**Summary:** [Ticket summary]
-**Reviewer:** Claude Code Agent
-**Date:** [Date]
-**Verdict:** READY / NEEDS WORK / SPIKE REQUIRED
-
-## Ticket Overview
-**Type:** [Story/Bug/Task]
-**Priority:** [Priority]
-
-### Description Summary
-### Acceptance Criteria
-
-## Codebase Investigation
-
-### Repositories Affected
-| Repository | Reason |
-|------------|--------|
-
-### Relevant Code Locations
-| File/Component | Purpose | Notes |
-|----------------|---------|-------|
-
-### Existing Patterns
-
-## Readiness Assessment
-
-### Description Clarity
-- [ ] Context explained
-- [ ] Scope defined
-- [ ] Specific details
-
-### Acceptance Criteria
-- [ ] Criteria present
-- [ ] Each testable
-- [ ] Cover full scope
-- [ ] No ambiguity
-
-### Technical Clarity
-- [ ] Repos identified
-- [ ] Approach understood
-- [ ] Dependencies identified
-- [ ] Risks called out
-
-### Estimability
-- [ ] Sprint-sized
-- [ ] No major unknowns
-- [ ] No spike required
-
-## Questions for Refinement
-1. [Question]
-
-## Suggested Improvements
-### Must Have
-### Should Have
-
-## Technical Notes for Team
-
-## Verdict
-**[READY / NEEDS WORK / SPIKE REQUIRED]**
-**Reason:**
-```
+Read the canonical review skeleton from `assets/review-template.md` and
+write the populated review to
+`${WORKSPACE_ROOT}/workareas/ticket-refinement/EUDPA-XXXXX/review.md`,
+filling each section from Steps 1-3.
 
 ## Verdict Guidelines
 
@@ -170,5 +158,5 @@ Key findings:
 Questions for refinement:
 - [Question]
 
-Review available at: workareas/ticket-refinement/EUDPA-XXXXX/review.md
+Review available at: ${WORKSPACE_ROOT}/workareas/ticket-refinement/EUDPA-XXXXX/review.md
 ```
