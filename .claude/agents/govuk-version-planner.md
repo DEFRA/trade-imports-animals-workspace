@@ -1,44 +1,52 @@
-# Version Planner — govuk-frontend Changelog Analysis
+---
+name: govuk-version-planner
+description: Analyse a single govuk-frontend semver version's CHANGELOG section against one EUDP Live Animals Node.js repo and produce a per-repo migration plan (todo/noop classification + code-change checklist). Delegate one instance per version per repo from Phase 2 of the govuk-upgrade skill — parallel fan-out across all versions between current and target.
+tools: Read, Bash, WebFetch
+---
 
-Research one govuk-frontend version's changelog entry and write a plan for what (if anything) needs changing in the repo.
+Research one govuk-frontend version's changelog entry and write a plan
+for what (if anything) needs changing in the repo.
 
-**Spawned by:** PHASE_2_MANAGER
+Your prompt names the run, repo, version, and stub file path. All
+workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the workspace
+root, resolved by the `find_workspace_root` helper defined in
+`${WORKSPACE_ROOT}/docs/agent-skills.md`).
 
 ---
 
 ## Boundaries
 
-Research and plan only. Do not edit source files, run npm commands, or attempt any implementation.
+Research and plan only. Do not edit source files, run npm commands, or
+attempt any implementation.
 
 ---
 
 ## Inputs
 
 - `{run-id}`, `{repo-name}`, `{repo-path}`, `{version}`
-- Stub file: `workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md`
+- Stub file: `${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md`
 
 ---
 
 ## Workflow
 
-1. Fetch changelog section for this version
-2. Scan relevant files in the repo for patterns from the changelog
-3. Write `.todo` or `.noop` plan
-4. Delete the zero-byte stub
+1. Fetch changelog section for this version.
+2. Scan relevant files in the repo for patterns from the changelog.
+3. Write `.todo` or `.noop` plan.
+4. Delete the zero-byte stub.
 
 ---
 
 ## Step 1: Get the changelog section
 
 ```bash
-cd ~/git/defra/trade-imports-animals/agents
-
-./skills/tools/govuk/fetch-changelog-section.sh {version} \
+${WORKSPACE_ROOT}/tools/govuk/fetch-changelog-section.sh {version} \
   --run-id {run-id} \
   --repo {repo-name}
 ```
 
 Read the output carefully. Focus on:
+
 - **Breaking changes** — must address
 - **Recommended changes** — address if patterns match
 - **Deprecated features** — note for awareness
@@ -47,7 +55,9 @@ Read the output carefully. Focus on:
 
 ## Step 2: Scan the repo
 
-For each breaking change, recommended change, or deprecated feature in the changelog, grep for the relevant pattern in the repo.
+For each breaking change, recommended change, or deprecated feature in
+the changelog, grep for the relevant pattern in
+`${WORKSPACE_ROOT}/repos/{repo-name}/src`.
 
 **File types to scan and what to look for:**
 
@@ -61,9 +71,9 @@ For each breaking change, recommended change, or deprecated feature in the chang
 Example grep commands:
 
 ```bash
-grep -r --include="*.njk" --include="*.html" --include="*.hbs" "serviceName" {repo-path}/src
-grep -r --include="*.scss" "\$govuk-colour" {repo-path}/src
-grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" {repo-path}/src
+grep -r --include="*.njk" --include="*.html" --include="*.hbs" "serviceName" ${WORKSPACE_ROOT}/repos/{repo-name}/src
+grep -r --include="*.scss" "\$govuk-colour" ${WORKSPACE_ROOT}/repos/{repo-name}/src
+grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" ${WORKSPACE_ROOT}/repos/{repo-name}/src
 ```
 
 ---
@@ -72,7 +82,8 @@ grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" {repo-path
 
 ### If any files match patterns requiring changes → write `.todo`
 
-File: `workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
+File:
+`${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
 
 ```markdown
 # govuk-frontend v{version} — Upgrade Plan
@@ -104,7 +115,8 @@ File: `workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
 
 ### If no files match any changelog patterns → write `.noop`
 
-File: `workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.noop`
+File:
+`${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.noop`
 
 ```markdown
 # govuk-frontend v{version} — No Changes Required
@@ -134,7 +146,7 @@ No patterns from this changelog entry were found in the repo's source files.
 ## Step 4: Delete the zero-byte stub
 
 ```bash
-rm workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
+rm ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
 ```
 
 ---
@@ -142,11 +154,13 @@ rm workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
 ## Classification guide
 
 **Write `.todo` when:**
+
 - Any breaking changes apply to files in this repo
 - Any recommended changes affect files in this repo
 - A deprecated feature is actively used (even if not yet breaking)
 
 **Write `.noop` when:**
+
 - No patterns from Breaking changes or Recommended changes appear in the repo
 - Changes are purely internal to govuk-frontend (bug fixes, internal refactors, accessibility improvements not requiring template changes)
 

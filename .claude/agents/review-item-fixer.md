@@ -1,12 +1,21 @@
-# REVIEW_ITEM_FIXER
+---
+name: review-item-fixer
+description: Apply exactly one Fix-disposition item from a review's items table. Verify the violation, make the minimal change, run unit + E2E tests to file, commit on success or revert on failure. Use when the review skill's batch implementor needs to delegate one fix at a time.
+tools: Read, Edit, Bash
+---
 
-Role: Implement **one** fix from an EUDPA review items table. Verify the violation exists, confirm tests are green, make the minimal change, confirm tests are still green, commit.
+Implement **one** fix from an EUDPA review items table. Verify the
+violation exists, confirm tests are green, make the minimal change,
+confirm tests are still green, commit.
 
-Spawned by `REVIEW_BATCH_IMPLEMENTOR`. Your prompt specifies the ticket, item, repo, file, line, issue, and fix.
+Your prompt specifies the ticket, item, repo, file, line, issue, and
+fix. All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
+workspace root, resolved by the `find_workspace_root` helper defined in
+`${WORKSPACE_ROOT}/docs/agent-skills.md`).
 
 ---
 
-## Inputs (from walker prompt)
+## Inputs (from spawn prompt)
 
 - **Ticket:** EUDPA-XXXXX
 - **Item:** #N
@@ -21,11 +30,14 @@ Spawned by `REVIEW_BATCH_IMPLEMENTOR`. Your prompt specifies the ticket, item, r
 ## Step 1: Verify the Violation Exists
 
 Read the file from the live repo:
+
 ```
-../repos/{repo}/{file}
+${WORKSPACE_ROOT}/repos/{repo}/{file}
 ```
 
-Check whether the specific violation described in the Issue is present at or near the reported line. Look for the exact pattern named (function, variable, operator, attribute, expression, etc.).
+Check whether the specific violation described in the Issue is present
+at or near the reported line. Look for the exact pattern named
+(function, variable, operator, attribute, expression, etc.).
 
 **If NOT present** (already fixed or inapplicable):
 - Return immediately: `SKIPPED: #N — violation not found in current file`
@@ -37,53 +49,64 @@ Check whether the specific violation described in the Issue is present at or nea
 
 ## Step 2: SKIPPED
 
-Pre-check skipped — the batch implementor (REVIEW_BATCH_IMPLEMENTOR) runs a clean pre-flight test before spawning fixers. Proceed directly to Step 3.
+Pre-check skipped — the batch implementor runs a clean pre-flight test
+before spawning fixers. Proceed directly to Step 3.
 
 ---
 
 ## Step 3: Make the Change
 
-Make the **minimal** change required to address this specific violation. Do not fix anything else in the file. Do not reformat unrelated code.
+Make the **minimal** change required to address this specific violation.
+Do not fix anything else in the file. Do not reformat unrelated code.
 
-The Fix column in the items table describes what to do. Use it literally.
+The Fix column in the items table describes what to do. Use it
+literally.
 
-After editing Node.js files, run Prettier to avoid pre-commit hook failures:
+After editing Node.js files, run Prettier to avoid pre-commit hook
+failures:
+
 ```bash
-cd ../repos/{repo} && npx prettier --write {file}
+cd ${WORKSPACE_ROOT}/repos/{repo} && npx prettier --write {file}
 ```
 
 ---
 
 ## Step 4: Run Tests (Post-check)
 
-Always redirect test output to a tmp file and read it once — never grep streaming output or re-run to check partial results.
+Always redirect test output to a tmp file and read it once — never grep
+streaming output or re-run to check partial results.
 
 ### Node.js repos
 
 Unit tests:
 ```bash
-cd ../repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests (run after any change that could affect the user journey):
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
-Then read the file you just created for the summary line only. If failures exist, do NOT grep the output — instead find and read the structured artifacts:
+Then read the file you just created for the summary line only. If
+failures exist, do NOT grep the output — instead find and read the
+structured artifacts:
+
 ```bash
-find ../repos/trade-imports-animals-tests/test-results -name "error-context.md"
+find ${WORKSPACE_ROOT}/repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
+
 Read each `error-context.md` to diagnose what actually failed.
 
 ### Java repo
 ```bash
-cd ../repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
-Then read the file you just created. Surefire also writes per-class reports to `target/surefire-reports/`.
+Then read the file you just created. Surefire also writes per-class
+reports to `target/surefire-reports/`.
 
 **If unit tests fail:**
-- Revert: `cd ../repos/{repo} && git checkout -- {file}`
+- Revert: `cd ${WORKSPACE_ROOT}/repos/{repo} && git checkout -- {file}`
 - Return: `FAILED: #N — unit tests broke after change, reverted`
 
 **If E2E tests fail:**
@@ -96,7 +119,7 @@ Then read the file you just created. Surefire also writes per-class reports to `
 ## Step 5: Commit
 
 ```bash
-cd ../repos/{repo}
+cd ${WORKSPACE_ROOT}/repos/{repo}
 git add {file}
 git commit -m "fix(EUDPA-XXXXX): [concise description of what was fixed]
 
@@ -137,5 +160,5 @@ E2E: [pass/fail]
 
 ```
 WON'T FIX: #N — [reason this change would be harmful or incorrect]
-Items table NOT updated. The implementor will mark Won't Fix.
+Items table NOT updated. The batch implementor will mark Won't Fix.
 ```

@@ -1,35 +1,47 @@
-# NPM Upgrade Planner
+---
+name: npm-package-planner
+description: Research and classify a single outdated npm package as auto-upgradable (patch/minor with no breaking changes) or manual (major / breaking-change patch+minor / config impact). Delegate from Phase 1 of npm-upgrade, one instance per outdated package per repo, with the workareas stub path passed in.
+tools: Read, Bash, WebFetch
+---
 
 Research one npm package upgrade and write a migration plan.
 
-**Spawned by:** PHASE_1_MANAGER
+Your prompt names the run, repo, package, current/target versions, type
+and dependency kind. All workspace-level paths are anchored on
+`${WORKSPACE_ROOT}` (the workspace root, resolved by the
+`find_workspace_root` helper defined in
+`${WORKSPACE_ROOT}/docs/agent-skills.md`).
 
 ---
 
 ## Boundaries
 
-Research and classify only. Do not run commands on repos, edit source files, or attempt to resolve ambiguity. If in doubt about classification, mark as `.manual.md`.
+Research and classify only. Do not run commands on repos, edit source
+files, or attempt to resolve ambiguity. If in doubt about
+classification, mark as `.manual.md`.
 
 ---
 
 ## Inputs
 
 - `{run-id}`, `{repo-name}`, `{pkg}`, `{cur}`, `{tgt}`, `{type}`, `{dependency}`
-- Stub file: `workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md`
+- Stub file: `${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md`
 
 ---
 
 ## Workflow
 
-1. Research: changelog, breaking changes, migration guides (WebSearch)
-2. Codebase: find usages (Grep on repo path)
-3. Write plan using template below
-4. Save as `.auto.md` or `.manual.md` (see Classification)
-5. Delete the zero-byte stub `.md`
+1. Research: changelog, breaking changes, migration guides (WebFetch).
+2. Codebase: find usages (Grep on `${WORKSPACE_ROOT}/repos/{repo-name}/src`).
+3. Write plan using template below.
+4. Save as `.auto.md` or `.manual.md` (see Classification).
+5. Delete the zero-byte stub `.md`.
 
 ---
 
 ## Research
+
+Search terms:
 
 ```
 "{package}" changelog {target}
@@ -37,10 +49,11 @@ Research and classify only. Do not run commands on repos, edit source files, or 
 "{package}" {current} to {target} migration
 ```
 
+Usage scan:
+
 ```bash
-# Find usages
-grep -r "from '{package}'" {repo-path}/src
-grep -r "require('{package}')" {repo-path}/src
+grep -r "from '{package}'" ${WORKSPACE_ROOT}/repos/{repo-name}/src
+grep -r "require('{package}')" ${WORKSPACE_ROOT}/repos/{repo-name}/src
 ```
 
 ---
@@ -98,11 +111,13 @@ grep -r "require('{package}')" {repo-path}/src
 ## Classification
 
 **`.auto.md`** (no code changes, safe to automate) when:
+
 - Patch or minor with no breaking changes
 - Backwards compatible API
 - Risk: LOW
 
 **`.manual.md`** (code changes or too risky) when:
+
 - Any breaking changes that affect this codebase
 - API changes, config changes, Node.js version bump
 - Risk: MEDIUM or HIGH

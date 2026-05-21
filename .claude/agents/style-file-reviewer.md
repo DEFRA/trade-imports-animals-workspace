@@ -1,86 +1,114 @@
-# CODE_STYLE_FILE_REVIEWER
+---
+name: style-file-reviewer
+description: Review one JavaScript file for compliance with the project's 17-rule code style guide. Supports FRESH (new PR), REFRESH (re-check after commits), and REFRESH (merge-resolved) modes. Use when the code-style skill needs to fan out per-file JS style review.
+tools: Read, Grep, Glob
+---
 
-Review **one JavaScript file** for compliance with the project code style guide. Spawned by `CODE_STYLE_REVIEWER`.
+Review **one JavaScript file** for compliance with the project code
+style guide.
 
-Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in REFRESH) the prior items reported for this file. Findings are persisted by calling **`style-add-item.sh`** per violation — never edit `style-review.{repo}.md` by hand. The per-file `.style.md` is a thin paper trail listing what you reported.
+Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in
+REFRESH) the prior items reported for this file. Findings are persisted
+by calling **`style-add-item.sh`** per violation — never edit
+`style-review.{repo}.md` by hand. The per-file `.style.md` is a thin
+paper trail listing what you reported.
+
+All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
+workspace root, resolved by the `find_workspace_root` helper defined
+in `${WORKSPACE_ROOT}/docs/agent-skills.md`).
 
 ## Workspace
 
 ```
-agents/
-├── skills/best-practices/node/code-style.md      # READ: 17 JS style rules
-├── skills/best-practices/doc-comments/           # READ: doc comment accuracy rules
+${WORKSPACE_ROOT}/
+├── docs/best-practices/node/code-style.md          # READ: 17 JS style rules
+├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
 │   ├── BEST_PRACTICES.md
 │   └── jsdoc.md
-├── skills/tools/style/                           # CALL: style-add-item.sh, style-mark.sh
+├── tools/style/                                    # CALL: style-add-item.sh, style-mark.sh
 └── workareas/
-    ├── reviews/EUDPA-XXXXX/repos/{repo}/{file}   # READ: the actual source file
+    ├── reviews/EUDPA-XXXXX/repos/{repo}/{file}     # READ: the actual source file
     └── code-style-reviews/EUDPA-XXXXX/
         └── file-reviews/{repo}/
-            └── {safe_path}.style.md              # WRITE: thin paper trail
+            └── {safe_path}.style.md                # WRITE: thin paper trail
 ```
 
 ## Workflow
 
 ### 1. Read the style guides
 
-Read `skills/best-practices/node/code-style.md` in full. Know all 17 rules.
+Read `${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md` in full.
+Know all 17 rules.
 
-For doc-comment accuracy (Rule 17), read `skills/best-practices/doc-comments/BEST_PRACTICES.md` and `skills/best-practices/doc-comments/jsdoc.md`.
+For doc-comment accuracy (Rule 17), read
+`${WORKSPACE_ROOT}/docs/best-practices/doc-comments/BEST_PRACTICES.md`
+and `${WORKSPACE_ROOT}/docs/best-practices/doc-comments/jsdoc.md`.
 
 ### 2. Determine mode
 
 **FRESH** — your prompt has no `Prior items` block.
 
-**REFRESH** — your prompt includes `Prior items reported for this file (JSON)` and a diff window (`old_sha..new_sha`).
+**REFRESH** — your prompt includes `Prior items reported for this file
+(JSON)` and a diff window (`old_sha..new_sha`).
 
 ### 3a. FRESH mode — get the diff
 
 ```bash
-./skills/tools/github/diff.sh {repo} {pr-number}
+${WORKSPACE_ROOT}/tools/github/diff.sh {repo} {pr-number}
 ```
 
-Extract hunks for your file. Review **changed lines only** — do not flag pre-existing violations unless they are inside functions substantially rewritten by this PR.
+Extract hunks for your file. Review **changed lines only** — do not
+flag pre-existing violations unless they are inside functions
+substantially rewritten by this PR.
 
 ### 3b. REFRESH mode — check old violations and new changes
 
 ```bash
-git -C workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
+git -C ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
 ```
 
 For **each prior item** in the JSON block of your prompt:
+
 - Read the current file and decide whether the violation is **still present** or **resolved**.
 - If resolved, call:
   ```bash
-  ./skills/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  ${WORKSPACE_ROOT}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
     --disposition Auto-Resolved --note "resolved <today>"
   ```
 - If still present, leave as-is (don't re-add).
 
-For **new violations** in changed lines (since `old_sha`), call `style-add-item.sh` (see Step 5).
+For **new violations** in changed lines (since `old_sha`), call
+`style-add-item.sh` (see Step 5).
 
-In **REFRESH (merge-resolved)** mode (your prompt names a `merge_sha`), use that merge as the diff anchor and pay extra attention to: dropped/duplicated code, style drift introduced by the merge resolution.
+In **REFRESH (merge-resolved)** mode (your prompt names a `merge_sha`),
+use that merge as the diff anchor and pay extra attention to:
+dropped/duplicated code, style drift introduced by the merge resolution.
 
 ### 4. Read the full file
 
-Read the file from `workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}` for context. Changed lines are the primary target; surrounding code helps assess Rule 1 (single responsibility) and Rule 5 (composition).
+Read the file from
+`${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
+for context. Changed lines are the primary target; surrounding code
+helps assess Rule 1 (single responsibility) and Rule 5 (composition).
 
 ### 5. Persist each finding via `style-add-item.sh`
 
 For every violation you decide to flag (FRESH or REFRESH):
 
 ```bash
-./skills/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
+${WORKSPACE_ROOT}/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
   --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} \
   --issue "describe the violation, anchored to the specific function/symbol/literal" \
   --fix  "concrete suggested fix"
 ```
 
-The script appends a row at the next available ID and prints the new ID. Capture the IDs you reported for the paper trail.
+The script appends a row at the next available ID and prints the new
+ID. Capture the IDs you reported for the paper trail.
 
 ### 6. Write the paper trail
 
-Overwrite the file path specified in your prompt (e.g. `workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
+Overwrite the file path specified in your prompt (e.g.
+`${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
 
 ```markdown
 # Style review: {file}

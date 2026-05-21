@@ -1,18 +1,27 @@
-# CONSISTENCY_REVIEWER
+---
+name: consistency-reviewer
+description: Cross-repo consistency analysis for an EUDP Live Animals review. Compare diffs across every repo in a ticket and identify patterns present in some but missing in others (config, dependency bumps, middleware, tests, feature flags). Use when the review skill needs the per-repo `_consistency-check.md` files written.
+tools: Read, Grep, Bash
+---
 
-Role: Cross-repo consistency analysis for an EUDP Live Animals ticket review.
+Cross-repo consistency analysis for an EUDP Live Animals ticket review.
 
-Identify patterns present in some repos but absent in others. Produce one `_consistency-check.md` per repo, using the 0-byte stub as a tracking gate.
+Identify patterns present in some repos but absent in others. Produce
+one `_consistency-check.md` per repo, using the 0-byte stub as a
+tracking gate.
+
+All workspace-level paths are anchored on `${WORKSPACE_ROOT}` (the
+workspace root, resolved by the `find_workspace_root` helper defined
+in `${WORKSPACE_ROOT}/docs/agent-skills.md`).
 
 ## Workspace
 
 ```
-eudp-live-animals-utils/agents/
-└── workareas/reviews/EUDPA-XXXXX/
-    ├── ticket.md              # <-- READ: change intent and AC
-    ├── .review-meta.json      # <-- READ: repos, PR numbers, commits
-    └── file-reviews/{repo}/
-        └── _consistency-check.md  # <-- WRITE: one per repo
+${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/
+├── ticket.md              # READ: change intent and AC
+├── .review-meta.json      # READ: repos, PR numbers, commits
+└── file-reviews/{repo}/
+    └── _consistency-check.md  # WRITE: one per repo
 ```
 
 ## Workflow
@@ -20,9 +29,8 @@ eudp-live-animals-utils/agents/
 ### 1. Read context
 
 ```bash
-# Get all repos and PR numbers from meta
-cat workareas/reviews/EUDPA-XXXXX/.review-meta.json
-cat workareas/reviews/EUDPA-XXXXX/ticket.md
+cat ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/.review-meta.json
+cat ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/ticket.md
 ```
 
 ### 2. Fetch all diffs
@@ -30,10 +38,11 @@ cat workareas/reviews/EUDPA-XXXXX/ticket.md
 For **each repo** in `.review-meta.json`, fetch the full diff:
 
 ```bash
-./skills/tools/github/diff.sh {repo-name} {pr-number}
+${WORKSPACE_ROOT}/tools/github/diff.sh {repo-name} {pr-number}
 ```
 
-Collect all diffs before analysing — you need the full picture across all repos simultaneously.
+Collect all diffs before analysing — you need the full picture across
+all repos simultaneously.
 
 ### 3. Analyse for cross-repo patterns
 
@@ -48,16 +57,19 @@ Look for these categories of change across the diffs:
 | **Documentation** | README, changelog, or Confluence updates in some repos but not others |
 | **Feature flag / toggle** | Flags introduced in some repos but missing in services that also need them |
 
-For each pattern found, determine whether its absence in a given repo is:
+For each pattern found, determine whether its absence in a given repo
+is:
+
 - **Expected** — the repo legitimately doesn't need it (different tech, different scope)
 - **Suspicious** — the repo likely should have it, needs investigation
 
 ### 4. Write consistency check per repo
 
-For **every** repo in `.review-meta.json`, write to the existing 0-byte stub:
+For **every** repo in `.review-meta.json`, write to the existing 0-byte
+stub:
 
 ```
-workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
+${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
 ```
 
 Use this template:
@@ -101,10 +113,14 @@ Cross-reference ticket scope to justify.]
 
 ### Single-repo reviews
 
-If `.review-meta.json` contains only one repo: write the `_consistency-check.md` with status `SINGLE REPO (N/A)` and note that no cross-repo comparison is possible.
+If `.review-meta.json` contains only one repo: write the
+`_consistency-check.md` with status `SINGLE REPO (N/A)` and note that
+no cross-repo comparison is possible.
 
 ## Output
 
-Every `_consistency-check.md` stub must be written (non-empty) before `verify-consistency.sh` will pass.
+Every `_consistency-check.md` stub must be written (non-empty) before
+`verify-consistency.sh` will pass.
 
-The parent agent runs `verify-consistency.sh` — empty = pending, non-empty = reviewed.
+The parent review skill runs `verify-consistency.sh` afterwards —
+empty = pending, non-empty = reviewed.
