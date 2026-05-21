@@ -1,26 +1,37 @@
-# REVIEW_WALKER
+# Walker — interactive triage
 
-Role: Interactive walkthrough of pending review items for an EUDPA ticket. Presents items one at a time with real code context, waits for a user decision, **records the disposition by calling helper scripts**, then moves on. No fixing happens here — the implementor does that afterwards.
+Interactive walkthrough of pending review items for an EUDPA ticket.
+Presents items one at a time with real code context, waits for a user
+decision, **records the disposition by calling helper scripts**, then
+moves on. No fixing happens here — the batch implementor does that
+afterwards.
 
-**Trigger:** `"walk review EUDPA-XXXXX"` or `"walk review EUDPA-XXXXX {repo}"` (optional repo filter) or `"walk review EUDPA-XXXXX --major"` (optional severity filter).
+**Trigger:** `"walk review EUDPA-XXXXX"`, `"walk review EUDPA-XXXXX
+{repo}"` (optional repo filter), or `"walk review EUDPA-XXXXX --major"`
+(optional severity filter).
 
-See `CLAUDE.md` for helper scripts.
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble. The items table schema lives in
+`assets/items-table.md`.
 
 ---
 
 ## Step 1: Load the Work List
 
-Pull all items missing a disposition (i.e. the user has not hand-marked them and the walker has not yet recorded one):
+Pull all items missing a disposition (i.e. the user has not hand-marked
+them and the walker has not yet recorded one):
 
 ```bash
-./skills/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
+${WORKSPACE_ROOT}/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
 ```
 
 Apply any filters from the trigger:
 - `{repo}` — add `--repo {repo}`
 - `--critical` / `--major` — filter the JSON output for matching severities
 
-The items table is the single source of truth. Hand-marked rows (where the user typed `Fix` / `Won't Fix` into the Disposition column themselves) are already excluded by `--filter pending`.
+The items table is the single source of truth. Hand-marked rows (where
+the user typed `Fix` / `Won't Fix` into the Disposition column
+themselves) are already excluded by `--filter pending`.
 
 If the work list is empty:
 ```
@@ -39,7 +50,7 @@ Hand-marked / decided: see `review-counts.sh EUDPA-XXXXX`
 
 Order: [list of item numbers]
 
-Decisions are written directly to: workareas/reviews/EUDPA-XXXXX/review.{repo}.md
+Decisions are written directly to: ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/review.{repo}.md
 Run `implement review EUDPA-XXXXX` afterwards to apply Fix-disposition items.
 ```
 
@@ -53,18 +64,20 @@ For each item in work list order:
 
 Try to read the file from the live repo first:
 ```
-../repos/{repo}/{file-path}
+${WORKSPACE_ROOT}/repos/{repo}/{file-path}
 ```
 Fall back to the workspace copy if the live repo is not available:
 ```
-workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
+${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
 ```
 
-Extract ~10 lines of context centred on the reported line number. Scan those lines for the specific pattern named in the Issue column (function name, variable name, operator, attribute, etc.).
+Extract ~10 lines of context centred on the reported line number. Scan
+those lines for the specific pattern named in the Issue column (function
+name, variable name, operator, attribute, etc.).
 
 **If NOT found:** the violation has already been resolved. Auto-record:
 ```bash
-./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found instead}"
+${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found instead}"
 ```
 Report it, and move on — no user input needed.
 
@@ -99,7 +112,7 @@ Do not proceed until the user responds. Handle responses:
 ## Step 4: Record `Fix`
 
 ```bash
-./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix" [--note "{refined fix or context}"]
+${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix" [--note "{refined fix or context}"]
 ```
 
 The script auto-sets Status to `Not Done`. Log:
@@ -116,7 +129,7 @@ Move to next item. **Do not spawn a fixer agent.**
 If the user provides a reason, pass it as `--note`.
 
 ```bash
-./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
+${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
 ```
 
 Log:
@@ -130,13 +143,15 @@ Move to next item.
 
 ## Step 6: Discuss
 
-Answer the user's question(s) inline using whatever context is available (read code, follow up on related items, etc.). When the discussion settles:
+Answer the user's question(s) inline using whatever context is available
+(read code, follow up on related items, etc.). When the discussion
+settles:
 
 - If the conclusion is **fix it** → call Step 4 with a `--note` summarising the agreed approach.
 - If the conclusion is **leave it** → call Step 5 with the reason.
 - If the user wants to **defer to a wider conversation** (e.g. PR thread, standup) →
   ```bash
-  ./skills/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{summary of open question / who to ask}"
+  ${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{summary of open question / who to ask}"
   ```
 
 Log:
@@ -162,7 +177,7 @@ Dispositions recorded this run:
   💬 Discuss:        N items  (left flagged for human follow-up)
   ⏭️  Skipped:       N items  (still pending — re-walk to revisit)
 
-Items table updated in: workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
+Items table updated in: ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
 
 To apply the Fix items, run:
   implement review EUDPA-XXXXX

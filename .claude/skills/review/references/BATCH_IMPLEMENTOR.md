@@ -1,19 +1,25 @@
-# REVIEW_BATCH_IMPLEMENTOR
+# Batch implementor — apply queued fixes
 
-Role: Apply all queued `Fix`-disposition items from a completed walker session. Reads the consolidated items table, spawns a fixer agent per item, and updates the table with results — no user input required during the run.
+Apply all queued `Fix`-disposition items from a completed walker session.
+Reads the consolidated items table, delegates to the `review-item-fixer`
+subagent one item at a time, and updates the table with results — no
+user input required during the run.
 
-**Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review EUDPA-XXXXX {repo}"` (optional repo filter).
+**Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review
+EUDPA-XXXXX {repo}"` (optional repo filter).
 
-See `CLAUDE.md` for helper scripts.
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
 
 ---
 
 ## Step 1: Load the Fix List
 
-Pull every item with Disposition=`Fix` and Status=`Not Done` (or `Failed` from a prior run that should be retried):
+Pull every item with Disposition=`Fix` and Status=`Not Done` (or
+`Failed` from a prior run that should be retried):
 
 ```bash
-./skills/tools/review/review-items.sh EUDPA-XXXXX --filter fix --status not-done --json
+${WORKSPACE_ROOT}/tools/review/review-items.sh EUDPA-XXXXX --filter fix --status not-done --json
 ```
 
 Apply any filters from the trigger:
@@ -42,31 +48,37 @@ No input needed — running all fixes now.
 
 ## Step 3: Pre-flight Test Check
 
-Before making any changes, run tests for each repo that has queued fixes. Always redirect output to a tmp file and read it once — never grep streaming output or re-run to check partial results.
+Before making any changes, run tests for each repo that has queued
+fixes. Always redirect output to a tmp file and read it once — never
+grep streaming output or re-run to check partial results.
 
 ### Node.js repos (frontend, admin, tests)
 
 Unit tests:
 ```bash
-cd ../repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests:
 ```bash
-cd ../repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
-Then read the file you just created for the summary. If failures exist, do NOT grep the console output — find and read the structured Playwright artifacts instead:
+Then read the file you just created for the summary. If failures exist,
+do NOT grep the console output — find and read the structured Playwright
+artifacts instead:
 ```bash
-find ../repos/trade-imports-animals-tests/test-results -name "error-context.md"
+find ${WORKSPACE_ROOT}/repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
 
 ### Java repo (backend)
-Runs surefire (unit `*Test`) and failsafe (integration `*IT`, Testcontainers-backed) in one pass:
+Runs surefire (unit `*Test`) and failsafe (integration `*IT`,
+Testcontainers-backed) in one pass:
 ```bash
-cd ../repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ${WORKSPACE_ROOT}/repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
-Then read the file you just created. Confirm both `Tests run:` totals (surefire and failsafe) and `BUILD SUCCESS`.
+Then read the file you just created. Confirm both `Tests run:` totals
+(surefire and failsafe) and `BUILD SUCCESS`.
 
 **If tests fail in any repo:**
 ```
@@ -85,11 +97,10 @@ And stop. Do not attempt any fixes.
 
 Process fixes in item-number order within each repo.
 
-For each item, spawn a `general-purpose` agent via the Task tool:
+For each item, delegate to the `review-item-fixer` subagent via the Task
+tool with `subagent_type: review-item-fixer`. Spawn prompt:
 
 ```
-Follow the instructions in skills/personas/review/REVIEW_ITEM_FIXER.md.
-
 **Ticket:** EUDPA-XXXXX
 **Item:** #{N}
 **Repo:** {repo-name}
@@ -99,17 +110,18 @@ Follow the instructions in skills/personas/review/REVIEW_ITEM_FIXER.md.
 **Fix:** {fix text from the items table}
 ```
 
-Wait for the agent to return before spawning the next one (fixes within the same repo may affect shared files or tests).
+Wait for the subagent to return before spawning the next one (fixes
+within the same repo may affect shared files or tests).
 
 ### Handling fixer results
 
 | Result | Action |
 |--------|--------|
-| `DONE` | `review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
-| `SKIPPED` | `review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
-| `FAILED` | `review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
+| `DONE` | `${WORKSPACE_ROOT}/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
+| `SKIPPED` | `${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
+| `FAILED` | `${WORKSPACE_ROOT}/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
 | `CANNOT START` | **Stop immediately.** Report pre-existing failures. Ask user to resolve before re-running. |
-| `WON'T FIX` | `review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" --note "{reason}"` |
+| `WON'T FIX` | `${WORKSPACE_ROOT}/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" --note "{reason}"` |
 
 ---
 
@@ -132,5 +144,5 @@ Failed (Status=Failed in the items table — re-run to retry):
   #{N} [{repo}] — {reason}
   ...
 
-Run `review-counts.sh EUDPA-XXXXX` for the updated breakdown.
+Run `${WORKSPACE_ROOT}/tools/review/review-counts.sh EUDPA-XXXXX` for the updated breakdown.
 ```
