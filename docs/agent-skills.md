@@ -28,20 +28,25 @@ The marker is the **co-presence of `.claude/skills/` AND `docs/`** at the
 same directory. Sub-repos under `repos/` carry neither, so the walk-up skips
 past them cleanly.
 
+Two ways to compute it:
+
+**Inline walk-up (use in `SKILL.md` bash blocks — no path bootstrap needed):**
+
 ```bash
-find_workspace_root() {
-  local d="${CLAUDE_PROJECT_DIR:-$PWD}"
-  while [ "$d" != "/" ]; do
-    [ -d "$d/.claude/skills" ] && [ -d "$d/docs" ] && { printf '%s\n' "$d"; return 0; }
-    d=$(dirname "$d")
-  done
-  echo "workspace root not found (need .claude/skills/ + docs/ co-located)" >&2
-  return 1
-}
-WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
+WORKSPACE_ROOT=$PWD; while [ "$WORKSPACE_ROOT" != / ] && ! { [ -d "$WORKSPACE_ROOT/.claude/skills" ] && [ -d "$WORKSPACE_ROOT/docs" ]; }; do WORKSPACE_ROOT=$(dirname "$WORKSPACE_ROOT"); done
 ```
 
-Compute `WORKSPACE_ROOT` once per session inside `SKILL.md` bash blocks.
+**Canonical script (use from other `tools/` scripts that know their own location):**
+
+```bash
+WORKSPACE_ROOT="$("$(dirname "${BASH_SOURCE[0]}")/../find-workspace-root.sh")"
+```
+
+The script lives at [`tools/find-workspace-root.sh`](../tools/find-workspace-root.sh).
+It self-locates via `${BASH_SOURCE[0]}` (fast path) and falls back to the
+same cwd walk-up if invoked piped or symlinked.
+
+Compute `WORKSPACE_ROOT` once per session.
 
 ## Path conventions
 

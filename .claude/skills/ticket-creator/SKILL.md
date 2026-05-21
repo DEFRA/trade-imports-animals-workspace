@@ -7,8 +7,15 @@ Role: Help create well-structured, actionable Jira tickets.
 
 ## Path conventions
 
-Compute `WORKSPACE_ROOT` once per session via `find_workspace_root`
-(defined in `docs/agent-skills.md`). Cross-workspace paths use
+Resolve `WORKSPACE_ROOT` once per session — walk up from `$PWD` to the
+first ancestor with both `.claude/skills/` and `docs/`:
+
+```bash
+WORKSPACE_ROOT=$PWD; while [ "$WORKSPACE_ROOT" != / ] && ! { [ -d "$WORKSPACE_ROOT/.claude/skills" ] && [ -d "$WORKSPACE_ROOT/docs" ]; }; do WORKSPACE_ROOT=$(dirname "$WORKSPACE_ROOT"); done
+```
+
+(Or invoke `tools/find-workspace-root.sh` if you already know an
+absolute path into the workspace.) Cross-workspace paths use
 `${WORKSPACE_ROOT}/...`: scripts under `tools/<domain>/`, best-practices
 under `docs/best-practices/`, workareas under `workareas/`. Skill-internal
 references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
