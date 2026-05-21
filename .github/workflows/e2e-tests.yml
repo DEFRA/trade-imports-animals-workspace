@@ -243,12 +243,11 @@ jobs:
           node -e "
             const fs = require('fs');
             const path = require('path');
+            const cats = ['performance', 'accessibility', 'best-practices'];
             const manifest = JSON.parse(fs.readFileSync('./frontend/lighthouse-report/manifest.json', 'utf8'));
             const rows = manifest.filter(e => e.isRepresentativeRun).map(e => {
               const file = path.basename(e.htmlPath);
-              const scores = Object.entries(e.summary)
-                .map(([k, v]) => \`<td>\${Math.round(v * 100)}</td>\`)
-                .join('');
+              const scores = cats.map(k => \`<td>\${Math.round(e.summary[k] * 100)}</td>\`).join('');
               return \`<tr><td><a href=\"\${file}\">\${new URL(e.url).pathname}</a></td>\${scores}</tr>\`;
             }).join('');
             const html = \`<!DOCTYPE html>
