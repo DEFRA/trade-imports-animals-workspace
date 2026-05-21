@@ -101,15 +101,152 @@ layout (5 role overlays + dev overlay), env knobs that must use
 
 ## Docs
 
-`docs/` — project documentation. Add architecture notes, ADRs, runbooks etc. here as the project develops.
+- `docs/` — project documentation. Architecture notes, ADRs, runbooks.
+- [`docs/agent-skills.md`](docs/agent-skills.md) — agentskills.io
+  conventions used in this workspace (path conventions,
+  `find_workspace_root` helper, subagent format, cross-host notes).
+- [`docs/agent-onboarding.md`](docs/agent-onboarding.md) — auth /
+  credential setup for the agent skills.
+- `docs/best-practices/` — tech-specific practice guides
+  (gds/, java/, node/, playwright/, k6/, rest-api/, doc-comments/,
+  docker-compose.md). Cited by SKILL.md files via
+  `${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>`.
 
-## Skills
+## Skills and Subagents
 
-`skills/` — agentic skill definitions for use with Claude Code across this workspace.
+Agent capabilities live as
+[agentskills.io](https://agentskills.io/specification)-format folders at
+the workspace root, auto-discovered by Claude Code (and Cursor). See
+[`docs/agent-skills.md`](docs/agent-skills.md) for the format.
+
+### Skills (`.claude/skills/<name>/SKILL.md`)
+
+| Skill | Triggers | Purpose |
+|---|---|---|
+| `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
+| `ticket-refiner` | "is ticket ready", "pre-refinement", "refinement check" | Assess whether a ticket is READY / NEEDS WORK / SPIKE REQUIRED. |
+| `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
+| `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
+| `code-style` | "style review EUDPA-", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
+| `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
+| `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans. |
+
+### Subagents (`.claude/agents/<name>.md`)
+
+Claude Code-specific. Spawned by parent skills through the Task/Agent
+tool by name; restricted tool allowlists; inherit parent session model
+(no `model:` field).
+
+| Subagent | Owning skill | Tools |
+|---|---|---|
+| `file-reviewer` | `review` | `Read, Grep, Glob` |
+| `review-item-fixer` | `review` | `Read, Edit, Bash` |
+| `consistency-reviewer` | `review` | `Read, Grep, Bash` |
+| `style-file-reviewer` | `code-style` | `Read, Grep, Glob` |
+| `style-implementor` | `code-style` | `Read, Edit, Bash` |
+| `npm-package-planner` | `npm-upgrade` | `Read, Bash, WebFetch` |
+| `govuk-version-planner` | `govuk-upgrade` | `Read, Bash, WebFetch` |
+
+Cursor reads `.claude/skills/` natively (per
+<https://cursor.com/docs/context/skills>) but does not have a parallel
+subagent model; the skill prose still works, just without parallel
+fan-out / context isolation.
+
+## Tools (`tools/`)
+
+Shared shell scripts called by skills via
+`${WORKSPACE_ROOT}/tools/<domain>/<script>`. Environment:
+`JIRA_USER`, `JIRA_TOKEN`, `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`.
+
+| Script | Args | Purpose |
+|---|---|---|
+| **auth** | | |
+| `tools/auth.sh` | | All services umbrella |
+| `tools/jira/auth.sh` | | Jira |
+| `tools/github/auth.sh` | | GitHub |
+| `tools/confluence/auth.sh` | | Confluence |
+| **jira** | | |
+| `tools/jira/ticket.sh` | EUDPA-X [full\|summary\|json] | Get ticket |
+| `tools/jira/comments.sh` | EUDPA-X | Get comments |
+| `tools/jira/create-ticket.sh` | [-t Type][-p Parent][-P Priority][-l Label][-a] "Summary" | Create ticket |
+| `tools/jira/add-subtask.sh` | EUDPA-X "Summary" ["Desc"] | Add subtask |
+| `tools/jira/add-comment.sh` | EUDPA-X "Comment" | Add comment |
+| `tools/jira/update-ticket.sh` | EUDPA-X field=value | Update fields |
+| `tools/jira/transition-ticket.sh` | EUDPA-X "Status"\|--list | Change status |
+| `tools/jira/get-issues-for-board.sh` | board-id [list\|summary\|json] | Board issues |
+| **github** | | |
+| `tools/github/prs.sh` | EUDPA-X [list\|json\|urls] | Find PRs |
+| `tools/github/pr-details.sh` | repo pr-num [full\|files\|json] | PR details |
+| `tools/github/diff.sh` | repo pr-num | PR diff |
+| **confluence** | | |
+| `tools/confluence/page.sh` | page-id [summary\|json] | Get page |
+| `tools/confluence/update-page.sh` | page-id "Title" content-file | Update page |
+| `tools/confluence/sync-docs.sh` | [--dry-run] [--root-id ID] | Sync Confluence tree to docs/confluence/ |
+| `tools/confluence/clean-docs.sh` | [args forwarded] | Wipe + re-sync docs/confluence/ |
+| **github-actions** | | |
+| `tools/github-actions/get-logs.sh` | repo run-id-or-url | Workflow run logs |
+| `tools/github-actions/get-failure.sh` | repo run-id-or-url | Failed step logs |
+| `tools/github-actions/run-status.sh` | repo run-id-or-url | Run status |
+| `tools/github-actions/wait-for-run.sh` | repo run-id-or-url [timeout] | Wait for run |
+| `tools/github-actions/trigger-workflow.sh` | repo workflow-file [branch] [key=value...] | Trigger workflow |
+| `tools/github-actions/list-runs.sh` | repo [branch] [workflow] | List recent runs |
+| **review** | | |
+| `tools/review/prepare-review.sh` | EUDPA-X [--json] | Setup workspace |
+| `tools/review/verify-coverage.sh` | EUDPA-X [--json] | Check coverage |
+| `tools/review/verify-consistency.sh` | EUDPA-X [--json] | Check consistency |
+| `tools/review/verify-style-coverage.sh` | EUDPA-X [--json] | Check JS style review coverage |
+| `tools/review/diff-since-review.sh` | EUDPA-X [--json] | Diff since last review |
+| `tools/review/review-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--json] | List items from `## Items` table |
+| `tools/review/review-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition (auto-sets Status) |
+| `tools/review/review-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |
+| `tools/review/review-add-item.sh` | EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..." | Append new item; prints new ID |
+| `tools/review/review-counts.sh` | EUDPA-X [--repo R] [--json] | Summary by Disposition+Status |
+| `tools/review/review-migrate-decisions.sh` | EUDPA-X [--dry-run] | One-shot legacy migration |
+| `tools/review/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh: pull + diff + lists A/B/C/D |
+| `tools/review/refresh/pull-repos.sh` | EUDPA-X [--repo R] [--json] | Refresh helper |
+| `tools/review/refresh/list-merge-resolved.sh` | REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json] | Refresh helper |
+| `tools/review/refresh/list-coverage-gaps.sh` | REVIEW_DIR REPO PR_NUM [--tsv\|--json] | Refresh helper |
+| **style** | | |
+| `tools/style/style-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--by-file] [--json] | List items |
+| `tools/style/style-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition |
+| `tools/style/style-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |
+| `tools/style/style-add-item.sh` | EUDPA-X --repo R --file F --line L --rule R --severity S --issue "..." --fix "..." | Append new item |
+| `tools/style/style-counts.sh` | EUDPA-X [--repo R] [--json] | Summary by Disposition+Status |
+| `tools/style/style-migrate.sh` | EUDPA-X [--dry-run] | One-shot legacy migration |
+| `tools/style/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh, filtered to `.js` |
+| **npm** | | |
+| `tools/npm/discover-upgrades.sh` | repo-path --run-id TICKET [--strategy LEVEL] [--json] | Phase 1: discover outdated deps |
+| `tools/npm/analyze-migration-plans.sh` | --run-id TICKET [--json] | Phase 1: planning status |
+| `tools/npm/discover-implementations.sh` | --run-id TICKET [--repo NAME] [--json] | Phase 2: find no-code-change upgrades |
+| `tools/npm/run-automated-upgrades.sh` | repo-name --run-id TICKET [--no-discover] | Phase 2: run automated upgrades |
+| `tools/npm/discover-manual-upgrades.sh` | --run-id TICKET [--repo NAME] [--json] | Phase 3: find code-change upgrades |
+| `tools/npm/upgrade-status.sh` | --run-id TICKET [--repo NAME] [--json] | Combined status |
+| **govuk** | | |
+| `tools/govuk/discover-versions.sh` | repo-path --run-id TICKET [--target VERSION] [--json] | Phase 1: discover versions + cache changelog |
+| `tools/govuk/fetch-changelog-section.sh` | VERSION --run-id TICKET --repo NAME [--json] | Phase 2: extract a version's CHANGELOG section |
+| `tools/govuk/list-plans.sh` | --run-id TICKET [--repo NAME] [--json] | Phase 2: planning status |
+| `tools/govuk/upgrade-status.sh` | --run-id TICKET [--repo NAME] [--json] | Combined status |
+
+## Workareas (runtime cache, gitignored)
+
+`workareas/` holds per-ticket state generated by the skills as they
+run. It is **gitignored** — never checked into the repo.
+
+```
+workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md
+workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
+workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, style-review.{repo}.md
+workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md
+workareas/ticket-creation/<slug>/                  → draft.md
+workareas/ticket-planning/EUDPA-X/                 → plan.md
+workareas/ticket-refinement/EUDPA-X/               → review.md, repos/
+workareas/npm-upgrades/EUDPA-X/{repo}/             → upgrade__{pkg}__{cur}__{tgt}.{auto|manual}.md, .upgrades-meta.json
+workareas/npm-implementations/EUDPA-X/{repo}/      → implement__{pkg}__{current}.{todo|done|failed}
+workareas/govuk-upgrades/EUDPA-X/{repo}/           → version__{v}.{md|todo|noop|done|failed}, CHANGELOG.md, .upgrade-meta.json
+```
 
 ## Conventions
 
-<!-- TODO: fill in once established -->
 - Branch naming: `feat/`, `fix/`, `chore/` prefixes
 - PRs: raise against `main` in the relevant repo
 - Cross-repo changes: coordinate via the tests repo
