@@ -1,6 +1,9 @@
-# EUDP Live Animals Agents
+# Agent skills onboarding
 
-AI-assisted development workspace for EUDP Live Animals tickets. Provides integration scripts, structured workflows, and best practices for code reviews, ticket planning, and implementation.
+Onboarding for the AI-assisted skills in this workspace. The skills live
+under `.claude/skills/` and `.claude/agents/` at the workspace root; the
+shared shell tools they call live at `tools/`; the format itself is
+documented in [`agent-skills.md`](agent-skills.md).
 
 ## Getting Started
 
@@ -49,10 +52,11 @@ gh auth login
 
 ### 2. Check Authentication
 
-Run the auth script to verify all services are configured:
+Run the auth script (from the workspace root) to verify all services
+are configured:
 
 ```bash
-./skills/tools/auth.sh
+./tools/auth.sh
 ```
 
 This checks Jira, Confluence, and GitHub authentication.
