@@ -1,6 +1,28 @@
-# TICKET_CREATOR
+---
+name: ticket-creator
+description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
+---
 
-Role: Help create well-structured, actionable JIRA tickets.
+Role: Help create well-structured, actionable Jira tickets.
+
+## Path conventions
+
+This skill assumes nothing about the agent's cwd. Resolve the workspace root
+once per session using the `find_workspace_root` helper defined in
+`${WORKSPACE_ROOT}/docs/agent-skills.md` (marker: co-presence of
+`.claude/skills/` and `docs/`):
+
+```bash
+WORKSPACE_ROOT="$(find_workspace_root)" || exit 1
+```
+
+Then reference workspace-shared resources by absolute path:
+
+- Scripts: `${WORKSPACE_ROOT}/tools/<domain>/<script>`
+- Workareas: `${WORKSPACE_ROOT}/workareas/...`
+- Best-practices: `${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>`
+
+Skill-internal references stay relative: `assets/templates/<type>.md`.
 
 ## Writing Style (GDS)
 
@@ -13,11 +35,13 @@ Role: Help create well-structured, actionable JIRA tickets.
 
 1. Gather information
 2. Determine type and fields
-3. Draft ticket to `workareas/ticket-creation/<slug>/draft.md`
+3. Draft ticket to `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`
 4. Iterate on draft with user
 5. Create ticket from final draft
 
-`<slug>` is a short kebab-case identifier derived from the summary (e.g. `commodity-code-validation`). If the ticket is in response to an existing parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
+`<slug>` is a short kebab-case identifier derived from the summary (e.g.
+`commodity-code-validation`). If the ticket is in response to an existing
+parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 
 ## Step 1: Gather Information
 
@@ -62,74 +86,26 @@ Role: Help create well-structured, actionable JIRA tickets.
 
 ## Step 3: Write Description
 
-JIRA wiki syntax: `*bold*`, `+*underlined bold*+`, `{{monospace}}`, `* bullet`, `# numbered`
+Jira wiki syntax: `*bold*`, `+*underlined bold*+`, `{{monospace}}`,
+`* bullet`, `# numbered`.
 
-### Bug Template
+Pick the template that matches the chosen Type and read its body from
+`assets/templates/<type>.md`:
 
-```
-[Brief description]
+| Type | Template file |
+|------|---------------|
+| Bug | `assets/templates/bug.md` |
+| Story | `assets/templates/story.md` |
+| Task | `assets/templates/task.md` |
 
-Env: [TST/SND/PRD/vNet]
-
-*Steps to reproduce:*
-# [Step 1]
-# [Step 2]
-
-{color:#36b37e}*Expected:*{color} [Should happen]
-{color:#ff5630}*Actual:*{color} [Actually happens]
-
-+*Acceptance Criteria*+
-*Given* [precondition]
-*When* [action]
-*Then* [expected result]
-```
-
-### Story Template
-
-```
-*As* [user role],
-*I want* [capability],
-*So that* [benefit]
-
-*Description*
-[Context]
-
-+*Acceptance Criteria*+
-*Given* [precondition]
-*And* {{FEATURE_FLAG}} is enabled
-*When* [action]
-*Then* [expected behaviour]
-
-{panel:bgColor=#deebff}
-*Tech Notes*
-[Implementation hints]
-{panel}
-```
-
-### Task Template
-
-```
-*We need to* [what]
-*So that* [why]
-
-*Background*
-[Context]
-
-*Scope*
-* {{component-name}} - [changes]
-
-+*Acceptance Criteria*+
-* [Criterion 1]
-
-{panel:bgColor=#eae6ff}
-*Tech notes*
-* [Hint]
-{panel}
-```
+Substitute the bracketed placeholders with the answers from Step 1. Keep
+the section ordering as the template defines it — convention across the
+team. Wiki-colour blocks (`{color:...}`, `{panel:...}`) render natively in
+Jira; preserve them verbatim.
 
 ## Step 4: Iterate on Draft
 
-Write the draft to `workareas/ticket-creation/<slug>/draft.md`:
+Write the draft to `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`:
 
 ```markdown
 # Ticket Draft: <slug>
@@ -142,7 +118,7 @@ Write the draft to `workareas/ticket-creation/<slug>/draft.md`:
 **Assignee:** [Self or None]
 
 ## Description
-[Wiki markup body — see Step 3 templates]
+[Wiki markup body — see assets/templates/<type>.md]
 
 ## Open Questions
 - [Anything still missing or ambiguous]
@@ -153,14 +129,17 @@ DRAFT — awaiting user approval
 
 Show the draft path to the user, summarise what is in it, and ask:
 
-> Draft at `workareas/ticket-creation/<slug>/draft.md`. Review and tell me what to change, or say "create it" to proceed.
+> Draft at `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`.
+> Review and tell me what to change, or say "create it" to proceed.
 
-Edit the file in place as the user gives feedback. Only move to Step 5 once the user explicitly approves. Update the **Status** line to `APPROVED` before creating.
+Edit the file in place as the user gives feedback. Only move to Step 5 once
+the user explicitly approves. Update the **Status** line to `APPROVED`
+before creating.
 
 ## Step 5: Create Ticket
 
 ```bash
-./skills/tools/jira/create-ticket.sh [options] "Summary" "Description"
+${WORKSPACE_ROOT}/tools/jira/create-ticket.sh [options] "Summary" "Description"
 ```
 
 | Flag | Description | Default |
@@ -173,12 +152,13 @@ Edit the file in place as the user gives feedback. Only move to Step 5 once the 
 
 ### After Creation
 
-Append the new key and link to the bottom of `draft.md` and update **Status** to `CREATED: EUDPA-XXXXX`.
+Append the new key and link to the bottom of `draft.md` and update
+**Status** to `CREATED: EUDPA-XXXXX`.
 
 ```
 Ticket created: EUDPA-XXXXX
 Link: ${JIRA_BASE_URL}/browse/EUDPA-XXXXX
-Draft retained at: workareas/ticket-creation/<slug>/draft.md
+Draft retained at: ${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md
 ```
 
 ## Good Acceptance Criteria
