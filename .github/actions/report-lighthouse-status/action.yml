@@ -1,0 +1,132 @@
+name: Report Lighthouse Status
+description: Creates or updates a GitHub check run and PR comment with Lighthouse CI status
+
+inputs:
+  lighthouse-result:
+    description: 'The Lighthouse job result (pending, success, failure, skipped)'
+    required: true
+  report-url:
+    description: 'URL to the deployed Lighthouse report (may be empty)'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Create or update check run on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const result = '${{ inputs.lighthouse-result }}';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const reportUrl = '${{ inputs.report-url }}';
+          const prs = context.payload.workflow_run.pull_requests;
+          const checkName = 'Lighthouse CI';
+
+          if (result === 'pending') {
+            for (const pr of prs) {
+              await github.rest.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head_sha: pr.head.sha,
+                name: checkName,
+                status: 'in_progress',
+                details_url: runUrl,
+                output: {
+                  title: 'Lighthouse CI: in progress',
+                  summary: `[View workflow run](${runUrl})`
+                }
+              });
+            }
+          } else {
+            const conclusion = result === 'success' ? 'success'
+                             : result === 'skipped' ? 'skipped'
+                             : 'failure';
+            const summary = reportUrl
+              ? `[View Lighthouse report](${reportUrl}) | [View workflow run](${runUrl})`
+              : `[View workflow run](${runUrl})`;
+
+            for (const pr of prs) {
+              const { data: { check_runs } } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: pr.head.sha,
+                check_name: checkName,
+                filter: 'latest'
+              });
+              const pending = check_runs.find(c => c.status === 'in_progress');
+              if (pending) {
+                await github.rest.checks.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  check_run_id: pending.id,
+                  status: 'completed',
+                  conclusion,
+                  details_url: reportUrl || runUrl,
+                  output: {
+                    title: `Lighthouse CI: ${result}`,
+                    summary
+                  }
+                });
+              } else {
+                await github.rest.checks.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head_sha: pr.head.sha,
+                  name: checkName,
+                  status: 'completed',
+                  conclusion,
+                  details_url: reportUrl || runUrl,
+                  output: {
+                    title: `Lighthouse CI: ${result}`,
+                    summary
+                  }
+                });
+              }
+            }
+          }
+
+    - name: Post or update PR comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const result = '${{ inputs.lighthouse-result }}';
+          const reportUrl = '${{ inputs.report-url }}';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const marker = '<!-- lighthouse-status -->';
+          const icons = { pending: '⏳', success: '✅', skipped: '⏭️' };
+          const icon = icons[result] || '❌';
+          const status = result === 'pending' ? 'in progress' : result;
+
+          const body = [
+            marker,
+            `### ${icon} Lighthouse CI: ${status}`,
+            '',
+            reportUrl ? `📊 [Lighthouse Report](${reportUrl})` : '',
+            `🔗 [Workflow Run](${runUrl})`,
+          ].filter(Boolean).join('\n');
+
+          const prs = context.payload.workflow_run.pull_requests;
+          for (const pr of prs) {
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+          }
