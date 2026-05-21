@@ -1,69 +1,71 @@
 # Phase 3 Manager — Implementation
 
-**Spawned by:** ORCHESTRATOR
-**Job:** Implement all .todo version plans in strict semver ascending order. Stop on first failure per repo.
+**Job:** Implement all `.todo` version plans in strict semver ascending
+order. Stop on first failure per repo.
 
----
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
 
 ## Boundaries
 
-Implement code changes, run tests, commit. Do not skip versions, reorder them, or modify .noop files.
-
----
+Implement code changes, run tests, commit. Do not skip versions,
+reorder them, or modify `.noop` files.
 
 ## Inputs
 
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
----
-
 ## Step 1: Check for work
 
 ```bash
-cd ~/git/defra/trade-imports-animals/agents
-./skills/tools/govuk/upgrade-status.sh --run-id {run-id}
+${WORKSPACE_ROOT}/tools/govuk/upgrade-status.sh --run-id {run-id}
 ```
 
-If no .todo files exist: report "No code changes required. Phase 3 complete (nothing to do)."
-
----
+If no `.todo` files exist: report "No code changes required. Phase 3
+complete (nothing to do)."
 
 ## Step 2: Process each repo
 
-Process repos independently. Within each repo, process versions in **strict semver ascending order**.
+Process repos independently. Within each repo, process versions in
+**strict semver ascending order**.
 
-List .todo files for a repo (sorted):
+List `.todo` files for a repo (sorted):
 
 ```bash
-find workareas/govuk-upgrades/{run-id}/{repo-name} -name "version__*.todo" | sort -V
+find ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name} -name "version__*.todo" | sort -V
 ```
 
-For each .todo file:
+For each `.todo` file:
 
 ### 2a. Read the plan
 
-Read `workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo` and understand:
+Read `${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
+and understand:
+
 - Which files need changing
 - What specific changes are required
 
 ### 2b. Make code changes
 
-Edit the files listed in the plan. Do not modify files not listed in the plan.
+Edit the files listed in the plan. Do not modify files not listed in
+the plan.
 
 ### 2c. Update package.json
 
-For intermediate versions (not the final target), set an exact version constraint:
+For intermediate versions (not the final target), set an exact version
+constraint:
 
 ```json
 "govuk-frontend": "{version}"
 ```
 
-For the final target version, restore the original constraint style (e.g. `"^{version}"`).
+For the final target version, restore the original constraint style
+(e.g. `"^{version}"`).
 
 ### 2d. Install and test
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo-name}
+cd ${WORKSPACE_ROOT}/repos/{repo-name}
 npm install
 npm test
 ```
@@ -73,8 +75,8 @@ npm test
 Commit all changes:
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} add package.json package-lock.json src/
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} commit -m "Upgrade govuk-frontend to {version}
+git -C ${WORKSPACE_ROOT}/repos/{repo-name} add package.json package-lock.json src/
+git -C ${WORKSPACE_ROOT}/repos/{repo-name} commit -m "Upgrade govuk-frontend to {version}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```
@@ -82,27 +84,26 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 Rename marker to indicate completion:
 
 ```bash
-mv workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.done
+mv ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
+   ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.done
 ```
 
 ### 2f. On failure
 
-Record failure and stop this repo immediately. Do not proceed to the next version.
+Record failure and stop this repo immediately. Do not proceed to the
+next version.
 
 ```bash
-mv workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.failed
+mv ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
+   ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.failed
 ```
 
 Report the test output verbatim.
 
----
-
 ## Step 3: Report
 
 ```bash
-./skills/tools/govuk/upgrade-status.sh --run-id {run-id}
+${WORKSPACE_ROOT}/tools/govuk/upgrade-status.sh --run-id {run-id}
 ```
 
 ```

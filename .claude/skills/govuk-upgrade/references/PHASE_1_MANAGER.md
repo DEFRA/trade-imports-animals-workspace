@@ -1,15 +1,15 @@
 # Phase 1 Manager — Version Discovery
 
-**Spawned by:** ORCHESTRATOR
-**Job:** Discover all govuk-frontend versions between current and target. Create upgrade workspace with zero-byte stubs and cache the CHANGELOG.
+**Job:** Discover all govuk-frontend versions between current and target.
+Create upgrade workspace with zero-byte stubs and cache the CHANGELOG.
 
----
+All script paths are anchored on `${WORKSPACE_ROOT}` per the parent
+SKILL.md's path-conventions preamble.
 
 ## Boundaries
 
-Discovery only. Do not read changelog content, evaluate what changes are needed, or modify source files.
-
----
+Discovery only. Do not read changelog content, evaluate what changes
+are needed, or modify source files.
 
 ## Inputs
 
@@ -17,32 +17,27 @@ Discovery only. Do not read changelog content, evaluate what changes are needed,
 
 Repos are always frontend and admin. Target is always latest stable.
 
----
-
 ## Step 1: Discover versions
 
 Run for each of the 2 repos:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/agents
-
-./skills/tools/govuk/discover-versions.sh \
-  ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend \
+${WORKSPACE_ROOT}/tools/govuk/discover-versions.sh \
+  ${WORKSPACE_ROOT}/repos/trade-imports-animals-frontend \
   --run-id {run-id}
 
-./skills/tools/govuk/discover-versions.sh \
-  ~/git/defra/trade-imports-animals/repos/trade-imports-animals-admin \
+${WORKSPACE_ROOT}/tools/govuk/discover-versions.sh \
+  ${WORKSPACE_ROOT}/repos/trade-imports-animals-admin \
   --run-id {run-id}
 ```
 
-Record the current version, target version, and stub count for each repo.
-
----
+Record the current version, target version, and stub count for each
+repo.
 
 ## Step 2: Report
 
 ```bash
-./skills/tools/govuk/list-plans.sh --run-id {run-id}
+${WORKSPACE_ROOT}/tools/govuk/list-plans.sh --run-id {run-id}
 ```
 
 ```
@@ -52,7 +47,7 @@ trade-imports-animals-frontend:  {current} → {target}  |  {N} versions to plan
 trade-imports-animals-admin:     {current} → {target}  |  {N} versions to plan
 
 Total: {N} versions across 2 repos
-CHANGELOG.md cached to: workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
+CHANGELOG.md cached to: ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
 
-Next: Phase 2 will spawn VERSION_PLANNER agents to analyse each version's changelog entry.
+Next: Phase 2 will delegate to the govuk-version-planner subagent for each version's changelog entry.
 ```
