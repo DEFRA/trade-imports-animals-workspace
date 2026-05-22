@@ -4,13 +4,13 @@ Identify patterns present in some repos but absent in others. Produce
 one `_consistency-check.md` per repo, using the 0-byte stub as a
 tracking gate.
 
-Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+Paths anchored on `${TRADE_IMPORTS_WORKSPACE}` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ## Workspace
 
 ```
-${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/
+${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
 ├── ticket.md              # READ: change intent and AC
 ├── .review-meta.json      # READ: repos, PR numbers, commits
 └── file-reviews/{repo}/
@@ -22,8 +22,8 @@ ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/
 ### 1. Read context
 
 ```bash
-cat ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/.review-meta.json
-cat ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/ticket.md
+cat ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/.review-meta.json
+cat ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/ticket.md
 ```
 
 ### 2. Fetch all diffs
@@ -31,7 +31,7 @@ cat ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/ticket.md
 For **each repo** in `.review-meta.json`, fetch the full diff:
 
 ```bash
-${WORKSPACE_ROOT}/tools/github/diff.sh {repo-name} {pr-number}
+${TRADE_IMPORTS_WORKSPACE}/tools/github/diff.sh {repo-name} {pr-number}
 ```
 
 Collect all diffs before analysing — you need the full picture across
@@ -62,7 +62,7 @@ For **every** repo in `.review-meta.json`, write to the existing 0-byte
 stub:
 
 ```
-${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
+${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
 ```
 
 Use this template:

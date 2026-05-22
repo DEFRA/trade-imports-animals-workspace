@@ -14,7 +14,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 UPDATER="$SCRIPT_DIR/lib/update-item.awk"
 
 TICKET=""
@@ -65,7 +65,7 @@ case "$DISPOSITION" in
     "") STATUS="" ;;
 esac
 
-REVIEW_FILE="$WORKSPACE_ROOT/workareas/reviews/$TICKET/review.${REPO}.md"
+REVIEW_FILE="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/review.${REPO}.md"
 [[ -f "$REVIEW_FILE" ]] || { echo "Review file not found: $REVIEW_FILE" >&2; exit 1; }
 
 # Build awk args

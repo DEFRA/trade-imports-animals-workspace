@@ -10,20 +10,14 @@ them in strict order with a commit per version.
 
 ## Path conventions
 
-Resolve `WORKSPACE_ROOT` once per session from the `TRADE_IMPORTS_WORKSPACE`
-env var, falling back to the canonical clone path under `$HOME`:
-
-```bash
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
-```
-
-Set `TRADE_IMPORTS_WORKSPACE` in your shell profile if your local
-checkout lives elsewhere. See `docs/agent-onboarding.md` for the full
-env-var setup. Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts
-under `tools/<domain>/`, best-practices under `docs/best-practices/`,
-workareas under `workareas/`. Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed by
-name via the Task tool.
+Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
+directly — `${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/`,
+`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`,
+`${TRADE_IMPORTS_WORKSPACE}/workareas/`. The env var must be set in
+your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
+for setup. Scripts bail with a clear error if it's unset. Skill-internal
+references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
+subagents are addressed by name via the Task tool.
 
 ## When to use
 
@@ -38,8 +32,8 @@ upgrade", "bump govuk-frontend".
 
 govuk-frontend is consumed by 2 of the 4 EUDP Live Animals Node repos:
 
-- `${WORKSPACE_ROOT}/repos/trade-imports-animals-frontend`
-- `${WORKSPACE_ROOT}/repos/trade-imports-animals-admin`
+- `${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-frontend`
+- `${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-admin`
 
 (Not backend / stub / reference-data / tests.)
 
@@ -50,14 +44,14 @@ govuk-frontend is consumed by 2 of the 4 EUDP Live Animals Node repos:
 | `references/VERSION_PLANNER.md` | `references/PHASE_2_MANAGER.md` Step 2 — one per version stub, parallel fan-out | per-version `version__*.{todo|noop}` |
 
 Spawn idiom inside Phase 2: Task tool with `subagent_type: general-purpose`
-and a prompt beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.`
+and a prompt beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.`
 `general-purpose` carries `Tools: *` so the worker can fetch the
 changelog, grep the repo and write its plan file.
 
 ## Step 1: Establish Run ID
 
 ```bash
-git -C ${WORKSPACE_ROOT}/repos/trade-imports-animals-frontend branch --show-current
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-frontend branch --show-current
 ```
 
 Parse `EUDPA-XXXXX` from the branch name. If not found, ask the user.
@@ -68,13 +62,13 @@ For each repo, ensure it's on `feature/{run-id}-govuk-frontend-upgrade`:
 
 ```bash
 # Check
-git -C ${WORKSPACE_ROOT}/repos/{repo-name} branch -a | grep "feature/{run-id}-govuk-frontend-upgrade"
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} branch -a | grep "feature/{run-id}-govuk-frontend-upgrade"
 
 # Create if missing
-git -C ${WORKSPACE_ROOT}/repos/{repo-name} checkout -b "feature/{run-id}-govuk-frontend-upgrade"
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} checkout -b "feature/{run-id}-govuk-frontend-upgrade"
 
 # Switch if exists
-git -C ${WORKSPACE_ROOT}/repos/{repo-name} checkout "feature/{run-id}-govuk-frontend-upgrade"
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} checkout "feature/{run-id}-govuk-frontend-upgrade"
 ```
 
 Both repos must be on the feature branch before continuing.
@@ -126,13 +120,13 @@ problem-solve. Wait for instruction.
 
 Best-practices (load when the changelog warrants):
 
-- `${WORKSPACE_ROOT}/docs/best-practices/node/govuk-frontend.md` — primary technical reference.
-- `${WORKSPACE_ROOT}/docs/best-practices/gds/components.md` — GDS component rules.
-- `${WORKSPACE_ROOT}/docs/best-practices/gds/patterns.md` — question-page / task-list patterns.
-- `${WORKSPACE_ROOT}/docs/best-practices/gds/accessibility.md` — WCAG / a11y.
-- `${WORKSPACE_ROOT}/docs/best-practices/gds/styles.md` — typography + colour utilities.
+- `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/node/govuk-frontend.md` — primary technical reference.
+- `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/gds/components.md` — GDS component rules.
+- `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/gds/patterns.md` — question-page / task-list patterns.
+- `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/gds/accessibility.md` — WCAG / a11y.
+- `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/gds/styles.md` — typography + colour utilities.
 
-Scripts (`${WORKSPACE_ROOT}/tools/govuk/`):
+Scripts (`${TRADE_IMPORTS_WORKSPACE}/tools/govuk/`):
 
 - `discover-versions.sh` — Phase 1 stub creation + CHANGELOG cache.
 - `fetch-changelog-section.sh` — Phase 2 helper (per-version section extraction; consumed by the subagent).

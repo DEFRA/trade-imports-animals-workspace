@@ -13,7 +13,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
@@ -51,7 +51,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-STYLE_DIR="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET"
+STYLE_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET"
 [[ -d "$STYLE_DIR" ]] || { echo "Style review workspace not found: $STYLE_DIR" >&2; exit 1; }
 
 disposition_label() {

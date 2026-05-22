@@ -9,7 +9,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
@@ -61,7 +61,7 @@ for var in REPO FILE RULE SEVERITY ISSUE FIX; do
     fi
 done
 
-REVIEW_FILE="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET/style-review.${REPO}.md"
+REVIEW_FILE="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/style-review.${REPO}.md"
 [[ -f "$REVIEW_FILE" ]] || { echo "Style review file not found: $REVIEW_FILE" >&2; exit 1; }
 
 # Compute next ID

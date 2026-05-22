@@ -4,14 +4,14 @@ Your prompt specifies the file, the commit(s), the output path, and
 whether this is a **fresh review** or a **refresh** of a previously
 reviewed file.
 
-Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+Paths anchored on `${TRADE_IMPORTS_WORKSPACE}` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ## Workspace
 
 ```
-${WORKSPACE_ROOT}/docs/best-practices/        # Tech-specific standards (k6, playwright, rest-api, gds)
-${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/
+${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/        # Tech-specific standards (k6, playwright, rest-api, gds)
+${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
 ├── ticket.md              # READ: ticket details and AC
 ├── .review-meta.json      # READ: detected tech & best_practices paths
 ├── review-index.md        # Thin navigation index
@@ -43,7 +43,7 @@ violations):
 3. **Read `ticket.md`** → understand requirements and AC.
 4. **REFRESH mode only — load prior dispositions for this file:**
    ```bash
-   ${WORKSPACE_ROOT}/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} | awk -F'\t' '$3 == "{file-path}"'
+   ${TRADE_IMPORTS_WORKSPACE}/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} | awk -F'\t' '$3 == "{file-path}"'
    ```
    The columns are: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
 
@@ -55,7 +55,7 @@ violations):
 ### 3a. Fresh review — get the diff
 
 ```bash
-${WORKSPACE_ROOT}/tools/github/diff.sh {repo-name} {pr-number}
+${TRADE_IMPORTS_WORKSPACE}/tools/github/diff.sh {repo-name} {pr-number}
 ```
 
 Extract only the hunks that touch your assigned file. Review **changed
@@ -68,7 +68,7 @@ Read your per-file review from the workspace (do not rely solely on any
 inline list your prompt may have given you — the file is authoritative):
 
 ```
-${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md
+${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md
 ```
 
 For each violation in that file:
@@ -78,7 +78,7 @@ For each violation in that file:
 Then get the diff since the last review to scope new-violation checks:
 
 ```bash
-${WORKSPACE_ROOT}/tools/review/diff-since-review.sh EUDPA-XXXXX
+${TRADE_IMPORTS_WORKSPACE}/tools/review/diff-since-review.sh EUDPA-XXXXX
 ```
 
 Extract hunks for your file. Check those changed lines for any **new
@@ -87,7 +87,7 @@ violations** not previously reported.
 ### 4. Read the full file
 
 Read from
-`${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}`
+`${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}`
 for context.
 
 ## Review Criteria

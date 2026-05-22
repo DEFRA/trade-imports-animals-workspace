@@ -20,42 +20,38 @@ themselves git repositories, so `git rev-parse --show-toplevel` returns
 the sub-repo root when called from inside one — silently breaking any
 path that should be workspace-relative.
 
-The workspace root is resolved from the `TRADE_IMPORTS_WORKSPACE` env
-var, with a hardcoded fallback to the canonical clone path under
-`$HOME`:
+Every reference to the workspace root uses the `TRADE_IMPORTS_WORKSPACE`
+env var directly. No local alias, no fallback. Contributors set
+`export TRADE_IMPORTS_WORKSPACE=/path/to/checkout` in their shell profile
+alongside the JIRA / GitHub env vars — see
+[`agent-onboarding.md`](agent-onboarding.md).
+
+`tools/<domain>/<script>.sh` files bail loudly at startup if the env
+var is unset:
 
 ```bash
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 ```
 
-That one line is used verbatim in every `SKILL.md` bash preamble and in
-every `tools/<domain>/<script>.sh`. No walk-up. No subshell. Same value
-everywhere.
-
-- Contributors who clone to the canonical path (`$HOME/git/defra/trade-imports-animals-workspace`)
-  need no setup.
-- Contributors who clone elsewhere set `export TRADE_IMPORTS_WORKSPACE=/your/path`
-  in their shell profile alongside the JIRA / GitHub env vars — see
-  [`agent-onboarding.md`](agent-onboarding.md).
-
-Earlier iterations used a walk-up helper that derived `WORKSPACE_ROOT`
-from `${BASH_SOURCE[0]}` or `$PWD`. That had two failure modes:
-off-by-one when scripts moved between directory depths, and false
-matches when a parent of the workspace happened to contain a stray
-`.claude/` directory. The env-var + fallback design kills both.
-
-Compute `WORKSPACE_ROOT` once per session.
+Earlier iterations used a walk-up helper that derived the root from
+`${BASH_SOURCE[0]}` or `$PWD`. That had two failure modes: off-by-one
+when scripts moved between directory depths, and false matches when a
+parent of the workspace happened to contain a stray `.claude/` directory.
+Earlier still used a `${TRADE_IMPORTS_WORKSPACE:-fallback}` form, but the
+Claude Code permission allowlist treats every command containing `${...}`
+as "Contains expansion" and prompts; a single direct `$TRADE_IMPORTS_WORKSPACE`
+reference is the cleanest form that allowlists once and runs everywhere.
 
 ## Path conventions
 
 Cross-workspace references in `SKILL.md` use absolute paths anchored on
-`${WORKSPACE_ROOT}`:
+`$TRADE_IMPORTS_WORKSPACE`:
 
 ```
-Scripts:        ${WORKSPACE_ROOT}/tools/<domain>/<script>
-Best-practices: ${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>
-Workareas:      ${WORKSPACE_ROOT}/workareas/...
-Other skills:   ${WORKSPACE_ROOT}/.claude/skills/<name>/...
+Scripts:        ${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/<script>
+Best-practices: ${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/<topic>/<file>
+Workareas:      ${TRADE_IMPORTS_WORKSPACE}/workareas/...
+Other skills:   ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/<name>/...
 ```
 
 Skill-internal references stay relative from `SKILL.md`:

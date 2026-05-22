@@ -10,20 +10,14 @@ edit the table by hand.
 
 ## Path conventions
 
-Resolve `WORKSPACE_ROOT` once per session from the `TRADE_IMPORTS_WORKSPACE`
-env var, falling back to the canonical clone path under `$HOME`:
-
-```bash
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
-```
-
-Set `TRADE_IMPORTS_WORKSPACE` in your shell profile if your local
-checkout lives elsewhere. See `docs/agent-onboarding.md` for the full
-env-var setup. Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts
-under `tools/<domain>/`, best-practices under `docs/best-practices/`,
-workareas under `workareas/`. Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed by
-name via the Task tool.
+Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
+directly — `${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/`,
+`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`,
+`${TRADE_IMPORTS_WORKSPACE}/workareas/`. The env var must be set in
+your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
+for setup. Scripts bail with a clear error if it's unset. Skill-internal
+references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
+subagents are addressed by name via the Task tool.
 
 ## Workflow modes
 
@@ -48,12 +42,12 @@ write the per-file paper trail, run the helper scripts and commit.
 | `references/STYLE_IMPLEMENTOR.md` | IMPLEMENTATION Step I3 (sequential, one group at a time) | source edits + commit |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
-beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/<NAME>.md.`
+beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/code-style/references/<NAME>.md.`
 
 ## Step 0: Detect Mode
 
 ```bash
-ls ${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.*.md 2>/dev/null
+ls ${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.*.md 2>/dev/null
 ```
 
 - No matches → FRESH REVIEW (Step 1).
@@ -70,14 +64,14 @@ The code-style review piggybacks on the standard review workspace for
 cloned repos. Ensure it exists:
 
 ```bash
-ls ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/.review-meta.json 2>/dev/null \
-  || ${WORKSPACE_ROOT}/tools/review/prepare-review.sh EUDPA-XXXXX
+ls ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/.review-meta.json 2>/dev/null \
+  || ${TRADE_IMPORTS_WORKSPACE}/tools/review/prepare-review.sh EUDPA-XXXXX
 ```
 
 Then create the code-style workspace:
 
 ```bash
-mkdir -p ${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews
+mkdir -p ${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews
 ```
 
 ## Step 2: Discover JavaScript Files
@@ -86,7 +80,7 @@ Read `.review-meta.json` to get repos and PR numbers. For each repo/PR
 pair:
 
 ```bash
-${WORKSPACE_ROOT}/tools/github/pr-details.sh {repo} {pr-number} files
+${TRADE_IMPORTS_WORKSPACE}/tools/github/pr-details.sh {repo} {pr-number} files
 ```
 
 Keep only files ending in `.js`. If no `.js` files are found across any
@@ -101,7 +95,7 @@ And stop.
 ## Step 3: Create Workspace Files
 
 For each `.js` file found:
-1. Create `${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/`
+1. Create `${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/`
 2. Create a zero-byte placeholder `{safe_path}.style.md` (path separators → `_`)
 
 Write `.style-meta.json`:
@@ -142,23 +136,23 @@ parallel via the Task tool with `subagent_type: general-purpose`.
 ### Spawn prompt template
 
 ```markdown
-Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
+Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
 
 **Mode: FRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md
+**Style guide:** ${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/node/code-style.md
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
 - PR: #[pr-number]
-- Full path in workspace: ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
+- Full path in workspace: ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
 
 **Write your per-file paper trail to:**
-${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[safe_path].style.md
+${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[safe_path].style.md
 
 **Append each finding via:**
-${WORKSPACE_ROOT}/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo-name] \
+${TRADE_IMPORTS_WORKSPACE}/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo-name] \
   --file [file-path] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
   --issue "[description]" --fix "[suggested fix]"
 ```
@@ -166,7 +160,7 @@ ${WORKSPACE_ROOT}/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo-name] \
 ## Step 5: Verify Coverage
 
 ```bash
-${WORKSPACE_ROOT}/tools/review/verify-style-coverage.sh EUDPA-XXXXX
+${TRADE_IMPORTS_WORKSPACE}/tools/review/verify-style-coverage.sh EUDPA-XXXXX
 ```
 
 The script's name reflects what it verifies; its location is shared
@@ -178,7 +172,7 @@ coverage.**
 For each `style-review.{repo}.md`:
 
 ```bash
-${WORKSPACE_ROOT}/tools/style/style-counts.sh EUDPA-XXXXX --repo {repo} --json
+${TRADE_IMPORTS_WORKSPACE}/tools/style/style-counts.sh EUDPA-XXXXX --repo {repo} --json
 ```
 
 Use the breakdown to set the verdict line in the file header:
@@ -205,7 +199,7 @@ Output the completion summary (see "Completion Output" below).
 One call captures both the human summary and the machine-readable lists:
 
 ```bash
-${WORKSPACE_ROOT}/tools/style/refresh/scope.sh EUDPA-XXXXX \
+${TRADE_IMPORTS_WORKSPACE}/tools/style/refresh/scope.sh EUDPA-XXXXX \
   --write-snapshot --human --json-out /tmp/scope-EUDPA-XXXXX.json
 ```
 
@@ -242,35 +236,35 @@ call needed.
 Spawn `general-purpose` Task subagents (parallel, up to 10). Spawn prompt:
 
 ```markdown
-Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
+Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
 
 **Mode: REFRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md
+**Style guide:** ${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/node/code-style.md
 
 **Your assigned file:**
 - Repository: [repo]
 - Path: [entry.file]
 - PR: #[pr]
 - Diff window: [entry.old_sha]..[entry.new_sha]
-- Full path in workspace: ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/[repo]/[entry.file]
+- Full path in workspace: ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/[repo]/[entry.file]
 
 **Prior items reported for this file (JSON):**
 [entry.prior_items]
 
 **For each prior item:**
 - If the violation is resolved in the new code:
-  ${WORKSPACE_ROOT}/tools/style/style-mark.sh EUDPA-XXXXX --repo [repo] --item [id] \
+  ${TRADE_IMPORTS_WORKSPACE}/tools/style/style-mark.sh EUDPA-XXXXX --repo [repo] --item [id] \
     --disposition Auto-Resolved --note "resolved [date]"
 - If still present: leave as-is.
 
 **For each NEW violation:**
-${WORKSPACE_ROOT}/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo] \
+${TRADE_IMPORTS_WORKSPACE}/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo] \
   --file [entry.file] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
   --issue "[description]" --fix "[suggested fix]"
 
 **Write paper trail to:**
-${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo]/[safe_path].style.md
+${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo]/[safe_path].style.md
 ```
 
 To slice the JSON for dispatch:
@@ -330,7 +324,7 @@ for E2E tests to pass.
 Group all open Fix items by `(repo, file)`:
 
 ```bash
-${WORKSPACE_ROOT}/tools/style/style-items.sh EUDPA-XXXXX --filter fix --status not-done --by-file --json
+${TRADE_IMPORTS_WORKSPACE}/tools/style/style-items.sh EUDPA-XXXXX --filter fix --status not-done --by-file --json
 ```
 
 Output is `[{repo, file, items: [...]}, ...]`. Each group is one work
@@ -364,7 +358,7 @@ then alphabetical by file):
 Spawn a `general-purpose` Task subagent. Spawn prompt:
 
 ```
-Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_IMPLEMENTOR.md.
+Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/code-style/references/STYLE_IMPLEMENTOR.md.
 
 **Ticket:** EUDPA-XXXXX
 **Repo:** {repo}
@@ -461,7 +455,7 @@ Summary:
 - Total items: [X]
 - Files reviewed: [X] (verified 100% coverage)
 
-Per-repo files: ${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
+Per-repo files: ${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
 ```
 
 **Refresh review:**
@@ -476,5 +470,5 @@ Summary:
 - Per-repo verdicts:
   - {repo}: [VERDICT] ({N} items)
 
-Per-repo files: ${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
+Per-repo files: ${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
 ```

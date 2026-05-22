@@ -12,8 +12,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
-OUTPUT_DIR="$WORKSPACE_ROOT/docs/confluence"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
+OUTPUT_DIR="$TRADE_IMPORTS_WORKSPACE/docs/confluence"
 
 if [[ -d "$OUTPUT_DIR" ]]; then
   echo "Removing $OUTPUT_DIR..."

@@ -7,13 +7,13 @@ by calling **`style-add-item.sh`** per violation — never edit
 `style-review.{repo}.md` by hand. The per-file `.style.md` is a thin
 paper trail listing what you reported.
 
-Paths anchored on `${WORKSPACE_ROOT}` — compute via the `find_workspace_root`
+Paths anchored on `${TRADE_IMPORTS_WORKSPACE}` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ## Workspace
 
 ```
-${WORKSPACE_ROOT}/
+${TRADE_IMPORTS_WORKSPACE}/
 ├── docs/best-practices/node/code-style.md          # READ: 17 JS style rules
 ├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
 │   ├── BEST_PRACTICES.md
@@ -30,12 +30,12 @@ ${WORKSPACE_ROOT}/
 
 ### 1. Read the style guides
 
-Read `${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md` in full.
+Read `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/node/code-style.md` in full.
 Know all 17 rules.
 
 For doc-comment accuracy (Rule 17), read
-`${WORKSPACE_ROOT}/docs/best-practices/doc-comments/BEST_PRACTICES.md`
-and `${WORKSPACE_ROOT}/docs/best-practices/doc-comments/jsdoc.md`.
+`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/doc-comments/BEST_PRACTICES.md`
+and `${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/doc-comments/jsdoc.md`.
 
 ### 2. Determine mode
 
@@ -47,7 +47,7 @@ and `${WORKSPACE_ROOT}/docs/best-practices/doc-comments/jsdoc.md`.
 ### 3a. FRESH mode — get the diff
 
 ```bash
-${WORKSPACE_ROOT}/tools/github/diff.sh {repo} {pr-number}
+${TRADE_IMPORTS_WORKSPACE}/tools/github/diff.sh {repo} {pr-number}
 ```
 
 Extract hunks for your file. Review **changed lines only** — do not
@@ -57,7 +57,7 @@ substantially rewritten by this PR.
 ### 3b. REFRESH mode — check old violations and new changes
 
 ```bash
-git -C ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
+git -C ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
 ```
 
 For **each prior item** in the JSON block of your prompt:
@@ -65,7 +65,7 @@ For **each prior item** in the JSON block of your prompt:
 - Read the current file and decide whether the violation is **still present** or **resolved**.
 - If resolved, call:
   ```bash
-  ${WORKSPACE_ROOT}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  ${TRADE_IMPORTS_WORKSPACE}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
     --disposition Auto-Resolved --note "resolved <today>"
   ```
 - If still present, leave as-is (don't re-add).
@@ -80,7 +80,7 @@ dropped/duplicated code, style drift introduced by the merge resolution.
 ### 4. Read the full file
 
 Read the file from
-`${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
+`${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
 for context. Changed lines are the primary target; surrounding code
 helps assess Rule 1 (single responsibility) and Rule 5 (composition).
 
@@ -89,7 +89,7 @@ helps assess Rule 1 (single responsibility) and Rule 5 (composition).
 For every violation you decide to flag (FRESH or REFRESH):
 
 ```bash
-${WORKSPACE_ROOT}/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
+${TRADE_IMPORTS_WORKSPACE}/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
   --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} \
   --issue "describe the violation, anchored to the specific function/symbol/literal" \
   --fix  "concrete suggested fix"
@@ -101,7 +101,7 @@ ID. Capture the IDs you reported for the paper trail.
 ### 6. Write the paper trail
 
 Overwrite the file path specified in your prompt (e.g.
-`${WORKSPACE_ROOT}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
+`${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
 
 ```markdown
 # Style review: {file}

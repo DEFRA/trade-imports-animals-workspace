@@ -9,8 +9,8 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 ### 1. Gather Context
 
 ```bash
-${WORKSPACE_ROOT}/tools/jira/ticket.sh EUDPA-XXXXX
-${WORKSPACE_ROOT}/tools/jira/comments.sh EUDPA-XXXXX
+${TRADE_IMPORTS_WORKSPACE}/tools/jira/ticket.sh EUDPA-XXXXX
+${TRADE_IMPORTS_WORKSPACE}/tools/jira/comments.sh EUDPA-XXXXX
 ```
 
 ### 2. Explore Codebase
@@ -18,14 +18,14 @@ ${WORKSPACE_ROOT}/tools/jira/comments.sh EUDPA-XXXXX
 Find: similar functionality, services involved, integration points, configuration.
 
 ```bash
-${WORKSPACE_ROOT}/tools/review/detect-tech.sh ${WORKSPACE_ROOT}/repos/<repo-name>
+${TRADE_IMPORTS_WORKSPACE}/tools/review/detect-tech.sh ${TRADE_IMPORTS_WORKSPACE}/repos/<repo-name>
 ```
 
 Include detected technologies and best-practices paths in plan.
 
 ### 3. Create Plan
 
-Create: `${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+Create: `${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
 
 ```markdown
 # Implementation Plan: EUDPA-XXXXX
@@ -73,7 +73,7 @@ Create: `${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
 ## Output
 
 ```
-Plan created: ${WORKSPACE_ROOT}/workareas/ticket-planning/EUDPA-XXXXX/plan.md
+Plan created: ${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-planning/EUDPA-XXXXX/plan.md
 Repos: [list] | Steps: [X] | Confidence: [level]
 Items needing verification: [X]
 ```

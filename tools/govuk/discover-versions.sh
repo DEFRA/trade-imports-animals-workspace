@@ -15,13 +15,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 REPO_PATH=""
 RUN_ID=""
 TARGET_VERSION=""
 JSON_OUTPUT=false
-WORKSPACE_BASE="$WORKSPACE_ROOT/workareas/govuk-upgrades"
+WORKSPACE_BASE="$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades"
 FORCE=false
 
 CHANGELOG_URL="https://raw.githubusercontent.com/alphagov/govuk-frontend/main/CHANGELOG.md"

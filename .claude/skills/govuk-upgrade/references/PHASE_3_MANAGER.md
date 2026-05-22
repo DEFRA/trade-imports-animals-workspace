@@ -15,7 +15,7 @@ reorder them, or modify `.noop` files.
 ## Step 1: Check for work
 
 ```bash
-${WORKSPACE_ROOT}/tools/govuk/upgrade-status.sh --run-id {run-id}
+${TRADE_IMPORTS_WORKSPACE}/tools/govuk/upgrade-status.sh --run-id {run-id}
 ```
 
 If no `.todo` files exist: report "No code changes required. Phase 3
@@ -29,14 +29,14 @@ Process repos independently. Within each repo, process versions in
 List `.todo` files for a repo (sorted):
 
 ```bash
-find ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name} -name "version__*.todo" | sort -V
+find ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name} -name "version__*.todo" | sort -V
 ```
 
 For each `.todo` file:
 
 ### 2a. Read the plan
 
-Read `${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
+Read `${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
 and understand:
 
 - Which files need changing
@@ -62,7 +62,7 @@ For the final target version, restore the original constraint style
 ### 2d. Install and test
 
 ```bash
-cd ${WORKSPACE_ROOT}/repos/{repo-name}
+cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name}
 npm install
 npm test
 ```
@@ -72,8 +72,8 @@ npm test
 Commit all changes:
 
 ```bash
-git -C ${WORKSPACE_ROOT}/repos/{repo-name} add package.json package-lock.json src/
-git -C ${WORKSPACE_ROOT}/repos/{repo-name} commit -m "Upgrade govuk-frontend to {version}
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} add package.json package-lock.json src/
+git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} commit -m "Upgrade govuk-frontend to {version}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```
@@ -81,8 +81,8 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 Rename marker to indicate completion:
 
 ```bash
-mv ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.done
+mv ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
+   ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.done
 ```
 
 ### 2f. On failure
@@ -91,8 +91,8 @@ Record failure and stop this repo immediately. Do not proceed to the
 next version.
 
 ```bash
-mv ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.failed
+mv ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
+   ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.failed
 ```
 
 Report the test output verbatim.
@@ -100,7 +100,7 @@ Report the test output verbatim.
 ## Step 3: Report
 
 ```bash
-${WORKSPACE_ROOT}/tools/govuk/upgrade-status.sh --run-id {run-id}
+${TRADE_IMPORTS_WORKSPACE}/tools/govuk/upgrade-status.sh --run-id {run-id}
 ```
 
 ```

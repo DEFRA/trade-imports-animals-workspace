@@ -1,26 +1,20 @@
 ---
 name: ticket-creator
-description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
+description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
 ---
 
 Role: Help create well-structured, actionable Jira tickets.
 
 ## Path conventions
 
-Resolve `WORKSPACE_ROOT` once per session from the `TRADE_IMPORTS_WORKSPACE`
-env var, falling back to the canonical clone path under `$HOME`:
-
-```bash
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
-```
-
-Set `TRADE_IMPORTS_WORKSPACE` in your shell profile if your local
-checkout lives elsewhere. See `docs/agent-onboarding.md` for the full
-env-var setup. Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts
-under `tools/<domain>/`, best-practices under `docs/best-practices/`,
-workareas under `workareas/`. Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed by
-name via the Task tool.
+Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
+directly — `${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/`,
+`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`,
+`${TRADE_IMPORTS_WORKSPACE}/workareas/`. The env var must be set in
+your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
+for setup. Scripts bail with a clear error if it's unset. Skill-internal
+references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
+subagents are addressed by name via the Task tool.
 
 ## Writing Style (GDS)
 
@@ -33,7 +27,7 @@ name via the Task tool.
 
 1. Gather information
 2. Determine type and fields
-3. Draft ticket to `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`
+3. Draft ticket to `${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-creation/<slug>/draft.md`
 4. Iterate on draft with user
 5. Create ticket from final draft
 
@@ -103,7 +97,7 @@ Jira; preserve them verbatim.
 
 ## Step 4: Iterate on Draft
 
-Write the draft to `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`:
+Write the draft to `${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-creation/<slug>/draft.md`:
 
 ```markdown
 # Ticket Draft: <slug>
@@ -127,7 +121,7 @@ DRAFT — awaiting user approval
 
 Show the draft path to the user, summarise what is in it, and ask:
 
-> Draft at `${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md`.
+> Draft at `${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-creation/<slug>/draft.md`.
 > Review and tell me what to change, or say "create it" to proceed.
 
 Edit the file in place as the user gives feedback. Only move to Step 5 once
@@ -137,7 +131,7 @@ before creating.
 ## Step 5: Create Ticket
 
 ```bash
-${WORKSPACE_ROOT}/tools/jira/create-ticket.sh [options] "Summary" "Description"
+${TRADE_IMPORTS_WORKSPACE}/tools/jira/create-ticket.sh [options] "Summary" "Description"
 ```
 
 | Flag | Description | Default |
@@ -156,7 +150,7 @@ Append the new key and link to the bottom of `draft.md` and update
 ```
 Ticket created: EUDPA-XXXXX
 Link: ${JIRA_BASE_URL}/browse/EUDPA-XXXXX
-Draft retained at: ${WORKSPACE_ROOT}/workareas/ticket-creation/<slug>/draft.md
+Draft retained at: ${TRADE_IMPORTS_WORKSPACE}/workareas/ticket-creation/<slug>/draft.md
 ```
 
 ## Good Acceptance Criteria

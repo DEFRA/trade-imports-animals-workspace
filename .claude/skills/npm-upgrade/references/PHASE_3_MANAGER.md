@@ -15,7 +15,7 @@ attempt any implementation, suggest workarounds, or modify plan files.
 ## Step 1: Discover manual plans
 
 ```bash
-${WORKSPACE_ROOT}/tools/npm/discover-manual-upgrades.sh --run-id {run-id} --json
+${TRADE_IMPORTS_WORKSPACE}/tools/npm/discover-manual-upgrades.sh --run-id {run-id} --json
 ```
 
 If none found: return "No manual upgrades required. All packages were
@@ -40,7 +40,7 @@ Automated upgrades are complete. The following packages require manual code chan
 
 {repo-name}:
   {package} {current} → {target}  [risk: HIGH/MEDIUM/LOW]
-  Plan: ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}.manual.md
+  Plan: ${TRADE_IMPORTS_WORKSPACE}/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}.manual.md
   Required: {one-line summary of what needs doing}
 
 ---

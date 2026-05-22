@@ -8,7 +8,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET="${1:-}"
 JSON_OUTPUT=false
@@ -26,7 +26,7 @@ if [[ -z "$TICKET" ]]; then
     exit 1
 fi
 
-REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
+REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
 META_FILE="$REVIEW_DIR/.review-meta.json"
 
 # Helper for output

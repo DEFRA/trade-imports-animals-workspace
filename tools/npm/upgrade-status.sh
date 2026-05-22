@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 RUN_ID=""
 REPO_FILTER=""
@@ -73,8 +73,8 @@ if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
 fi
 
-PLANS_DIR="$WORKSPACE_ROOT/workareas/npm-upgrades/$RUN_ID"
-IMPL_DIR="$WORKSPACE_ROOT/workareas/npm-implementations/$RUN_ID"
+PLANS_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/$RUN_ID"
+IMPL_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/npm-implementations/$RUN_ID"
 
 # Check if plans directory exists
 if [ ! -d "$PLANS_DIR" ]; then

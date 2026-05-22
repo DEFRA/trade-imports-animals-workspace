@@ -22,12 +22,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 PULL_SH="$SCRIPT_DIR/pull-repos.sh"
 MERGE_SH="$SCRIPT_DIR/list-merge-resolved.sh"
 GAPS_SH="$SCRIPT_DIR/list-coverage-gaps.sh"
-ITEMS_SH="$WORKSPACE_ROOT/tools/review/review-items.sh"
+ITEMS_SH="$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh"
 
 TICKET=""
 REPO_FILTER=""
@@ -61,7 +61,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
+REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
 META_FILE="$REVIEW_DIR/.review-meta.json"
 [[ -f "$META_FILE" ]] || { echo "Meta file not found: $META_FILE" >&2; exit 1; }
 

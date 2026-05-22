@@ -7,7 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET="${1:-}"
 JSON_OUTPUT=false
@@ -24,7 +24,7 @@ if [[ -z "$TICKET" ]]; then
     exit 1
 fi
 
-REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
+REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
 META_FILE="$REVIEW_DIR/.review-meta.json"
 FILE_REVIEWS_DIR="$REVIEW_DIR/file-reviews"
 
@@ -66,7 +66,7 @@ for ((i=0; i<pr_count; i++)); do
     pr_number=$(echo "$prs_json" | jq -r ".[$i].pr")
 
     # Get file list from PR
-    files=$("$WORKSPACE_ROOT/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
+    files=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
 
     while IFS= read -r filepath; do
         [[ -z "$filepath" ]] && continue

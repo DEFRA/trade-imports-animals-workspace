@@ -19,12 +19,12 @@ Repos are always frontend and admin. Target is always latest stable.
 Run for each of the 2 repos:
 
 ```bash
-${WORKSPACE_ROOT}/tools/govuk/discover-versions.sh \
-  ${WORKSPACE_ROOT}/repos/trade-imports-animals-frontend \
+${TRADE_IMPORTS_WORKSPACE}/tools/govuk/discover-versions.sh \
+  ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-frontend \
   --run-id {run-id}
 
-${WORKSPACE_ROOT}/tools/govuk/discover-versions.sh \
-  ${WORKSPACE_ROOT}/repos/trade-imports-animals-admin \
+${TRADE_IMPORTS_WORKSPACE}/tools/govuk/discover-versions.sh \
+  ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-admin \
   --run-id {run-id}
 ```
 
@@ -34,7 +34,7 @@ repo.
 ## Step 2: Report
 
 ```bash
-${WORKSPACE_ROOT}/tools/govuk/list-plans.sh --run-id {run-id}
+${TRADE_IMPORTS_WORKSPACE}/tools/govuk/list-plans.sh --run-id {run-id}
 ```
 
 ```
@@ -44,7 +44,7 @@ trade-imports-animals-frontend:  {current} → {target}  |  {N} versions to plan
 trade-imports-animals-admin:     {current} → {target}  |  {N} versions to plan
 
 Total: {N} versions across 2 repos
-CHANGELOG.md cached to: ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
+CHANGELOG.md cached to: ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
 
 Next: Phase 2 will spawn one `general-purpose` Task subagent per version (following `references/VERSION_PLANNER.md`) for each version's changelog entry.
 ```
