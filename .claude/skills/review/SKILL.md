@@ -54,7 +54,7 @@ subagents receive — so workers can write their on-disk artifacts.
 
 | Persona | Used in | Artifact |
 |---|---|---|
-| `references/FILE_REVIEWER.md` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 100) | per-file `.review.md` |
+| `references/FILE_REVIEWER.md` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 100) | per-file `.review.json` (schema in `assets/file-review-schema.md`) |
 | `references/CONSISTENCY_REVIEWER.md` | Fresh Step 4 (one per repo) | per-repo `_consistency-check.md` |
 | `references/REVIEW_ITEM_FIXER.md` | `BATCH_IMPLEMENTOR.md` Step 4 (one per Fix-disposition item, sequential) | source edits + commit |
 
@@ -110,20 +110,18 @@ Spawn up to **100 in parallel** via the Task tool with
 Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode:** FRESH
-
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
+- PR: [pr-number]
 - Commit: [sha]
-
-**Write your review to the existing placeholder file:**
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-
-Note: Nested paths use underscores (e.g., `src/main/Service.java` → `src_main_Service.java.review.md`).
 ```
+
+The reviewer writes findings to the per-file JSON placeholder via the
+`file-review-add-item.sh` / `file-review-set-verdict.sh` helpers — no
+markdown, no placeholder path needed in the spawn prompt.
 
 ## Step 3: Verify Coverage
 
@@ -152,9 +150,23 @@ before proceeding.
 
 ## Step 5: Create Repository Summaries
 
-For each repository, create
-`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md` by
-synthesising the per-file reviews:
+For each repository, write
+`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md`.
+Two sections are generated deterministically from the per-file JSONs
+via the aggregator; the rest is your synthesis from reading the
+per-file JSONs and the diff.
+
+**Generate the deterministic sections:**
+
+```bash
+# File Analysis Summary table
+$TRADE_IMPORTS_WORKSPACE/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --section file-summary
+
+# Consolidated Items table (globally renumbered IDs, escaped pipes)
+$TRADE_IMPORTS_WORKSPACE/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --section items
+```
+
+**Skeleton:**
 
 ```markdown
 # Repository Review: {repo-name}
@@ -166,9 +178,7 @@ synthesising the per-file reviews:
 ## Summary
 [2-3 sentences about changes in this repository]
 
-## File Analysis Summary
-| File | Verdict | Critical | Major | Minor |
-|------|---------|----------|-------|-------|
+<!-- paste output of `aggregate-file-reviews.sh ... --section file-summary` here -->
 
 ## Positive Observations
 [What was done well]
@@ -181,15 +191,9 @@ synthesising the per-file reviews:
 **Overall Risk:** Low / Medium / High
 **Rationale:** [One sentence]
 
-## Items
-
-(Concatenation of all per-file todo lists for this repo, re-numbered
-sequentially. Disposition and Status start blank — the walker /
-implementor / hand-marking fills them in. Full schema, allowed values
-and the `|` escape rule are in `assets/items-table.md`.)
-
-| # | File | Line | Severity | Category | Issue | Fix | Disposition | Status | Notes |
-|---|------|------|----------|----------|-------|-----|-------------|--------|-------|
+<!-- paste output of `aggregate-file-reviews.sh ... --section items` here.
+     Full schema and `|` escape rules: assets/items-table.md.
+     Disposition / Status / Notes start blank — walker fills them. -->
 
 ## Repository Verdict
 **Status:** SAFE / NEEDS ATTENTION / RISKY
@@ -331,26 +335,15 @@ entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 ```markdown
 Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
-**Mode: REFRESH** — this file has changed since the last review.
-
+**Mode:** REFRESH
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
+- PR: [pr-number]
 - Previous commit: [old-sha]
 - Current commit: [new-sha]
-
-**Previously reported violations:** Read them from:
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-
-**Prior dispositions:** Pull existing items for this file from the consolidated items table:
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'
-Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
-
-**Write your updated review to (overwrite existing):**
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 ```
 
 ### Spawn prompt — MERGE_RESOLVED (List C)
@@ -358,31 +351,16 @@ $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/
 ```markdown
 Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
-**Mode: MERGE_RESOLVED** — this file is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.
-
+**Mode:** MERGE_RESOLVED
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
+- PR: [pr-number]
 - Previous reviewed commit: [old-sha]
 - Current commit: [new-sha]
 - Merge commit: [merge-sha]
-
-**Focus your review on:**
-1. The resolution diff: `git -C $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/[repo-name] diff [old-sha]..[new-sha] -- [file-path]` — read it; this is the unreviewed delta.
-2. **Prior items survive the merge?** For every Fix+Done item on this file, verify the fix is still present at HEAD. If a prior fix has been undone by the merge, log as a regression in your review.
-3. **Smuggled behaviour?** Did the resolution import code from the source branch (sibling tickets) that contradicts decisions made for the current ticket?
-4. **Integration points.** Where the two sides meet — those are the most likely defect sites.
-
-**Previously reported violations:** Read them from:
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
-
-**Prior dispositions:** `$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'`. Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
-
-**Write your updated review to (overwrite existing):**
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 ```
 
 ### Spawn prompt — FRESH (List D, coverage gap)

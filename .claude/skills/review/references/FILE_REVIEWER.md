@@ -1,7 +1,39 @@
 Review **one file** as part of a larger ticket review.
 
 Your prompt specifies the repo, the file path, the commit(s), the mode
-(FRESH / REFRESH / MERGE_RESOLVED), and the output placeholder path.
+(FRESH / REFRESH / MERGE_RESOLVED), and the ticket ID.
+
+## Output — JSON via helper scripts
+
+The per-file review artifact is a JSON file written by helper scripts —
+never by hand. Schema:
+`$TRADE_IMPORTS_WORKSPACE/.claude/skills/review/assets/file-review-schema.md`.
+
+You will **not** write markdown. You will call three commands:
+
+```bash
+# For each finding (run as many times as you have findings):
+$TRADE_IMPORTS_WORKSPACE/tools/review/file-review-add-item.sh EUDPA-XXXXX \
+    --repo <repo> --file <file-path> \
+    --line <line> --severity <Critical|Major|Minor> \
+    --category <short-tag> \
+    --issue "<one-line description>" \
+    --fix "<one-line fix>" \
+    [--best-practice <relative/path.md>]
+
+# Exactly once, at the end:
+$TRADE_IMPORTS_WORKSPACE/tools/review/file-review-set-verdict.sh EUDPA-XXXXX \
+    --repo <repo> --file <file-path> \
+    --verdict <SAFE|NEEDS_ATTENTION|RISKY> \
+    --reason "<one sentence>"
+```
+
+The placeholder JSON file is already initialised — don't run
+`file-review-init.sh`. Setting the verdict is what marks the file as
+reviewed for the coverage gate.
+
+If you have **no findings**, skip the add-item calls and go straight to
+`set-verdict --verdict SAFE --reason "..."`.
 
 ## Scope discipline
 
@@ -40,20 +72,25 @@ In every mode:
    Load every file listed under `prs[].tech.best_practices` — those
    are the standards that apply to *your* repo. Don't load the
    top-level `best_practices` union (it mixes in standards for the
-   other repos in the ticket). Cite the ones you applied in findings
-   (see Output below).
+   other repos in the ticket). Cite the ones you applied with
+   `--best-practice <path>` on `file-review-add-item.sh`.
 2. **Ticket.** Read `ticket.md` for AC and intent.
 
-In REFRESH only, additionally:
+In REFRESH / MERGE_RESOLVED only, additionally:
 
-3. **Prior dispositions for this file:**
+3. **Prior findings for this file.** Read the existing JSON at
+   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`
+   to see what was reported last time.
+4. **Prior dispositions** (whether the user has decided `Won't Fix` /
+   `Auto-Resolved` on any item):
    ```bash
    $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
      | awk -F'\t' '$3 == "{file-path}"'
    ```
    Columns: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
    Items with Disposition `Won't Fix` or `Auto-Resolved` must NOT be
-   re-reported — carry them forward unchanged.
+   re-reported — leave them out of your add-item calls. The
+   orchestrator carries them forward separately.
 
 ### 3. Get the file-scoped diff
 
@@ -97,11 +134,12 @@ applicable, don't read transitively forever:
 If the file is a leaf with no obvious related context, that's fine —
 move on. Use `Grep` to find callers/usages when it's not obvious.
 
-### 5. Apply review criteria to the diff
+### 5. Apply review criteria
 
 Only the changed lines are in scope for findings. Weigh them against:
 
-- The applicable best-practices files loaded in step 2 (cite them).
+- The applicable best-practices files loaded in step 2 (cite them via
+  `--best-practice`).
 - Correctness vs the AC in `ticket.md`.
 - Bugs, null safety, error paths, security, performance.
 - Test coverage — but only ask whether *this change* is tested, not
@@ -109,9 +147,10 @@ Only the changed lines are in scope for findings. Weigh them against:
 
 In MERGE_RESOLVED mode, additionally:
 
-- For every prior `Fix + Done` item on this file: verify the fix is
-  still in the resolved code. If undone by the merge, flag as a
-  regression.
+- For every prior `Fix + Done` item on this file (from step 2.4):
+  verify the fix is still in the resolved code. If undone by the
+  merge, file as a regression (`--severity Critical`,
+  `--category regression`).
 - Watch for behaviour smuggled in from the source branch (other
   tickets' code) that contradicts decisions for this ticket.
 - Pay extra attention to the integration points where the two sides
@@ -125,12 +164,27 @@ In MERGE_RESOLVED mode, additionally:
 - Cites a rule, a best-practice, or a concrete failure mode.
 - Has a fix in mind (not just "consider improving").
 
-**Don't write up:**
+**Don't add an item for:**
 - Pre-existing patterns in untouched code.
 - "Could be more SOLID/DRY/clean" without a concrete fix.
 - Stylistic preferences not in a best-practices file.
 - Missing test coverage for code not in this PR.
 - The same finding restated multiple times across different lines.
+
+### 7. Write findings + verdict
+
+For each finding that survives filtering, run `file-review-add-item.sh`
+with the appropriate flags.
+
+Then run `file-review-set-verdict.sh` once:
+
+| Verdict | When |
+|---|---|
+| `SAFE` | No Critical or Major findings |
+| `NEEDS_ATTENTION` | Major findings, no Criticals |
+| `RISKY` | At least one Critical |
+
+`--reason` is one sentence summarising why.
 
 ## Severity
 
@@ -150,109 +204,16 @@ In MERGE_RESOLVED mode, additionally:
 | Config (`.yml`, `.json`, `pom.xml`, `package.json`) | New keys correct, no secrets, dep versions; do not flag missing comments |
 | Lockfile (`package-lock.json`) | Only flag if a transitive dep has a known CVE; do not flag drift |
 
-## Output
+## Completion check
 
-Write to the placeholder file specified in your prompt. Overwrite the
-existing file in REFRESH and MERGE_RESOLVED modes.
+When you're done, your placeholder JSON file should have:
 
-**Citing best-practices:** when a finding maps to a loaded
-best-practices file, reference it inline in the Issue field with the
-relative path — e.g.
-`Logger emits raw error object instead of structured fields (per node/pino-logging.md)`.
-Don't cite a file you didn't load.
+- `verdict` set (SAFE / NEEDS_ATTENTION / RISKY), not `null`.
+- `reviewed_at` populated (`set-verdict` stamps it).
+- `todos` populated for every finding (each with `id`, `line`,
+  `severity`, `category`, `issue`, `fix`, and optionally
+  `best_practice`).
 
-The per-file Todo columns mirror the consolidated `## Items` table
-in `review.{repo}.md` (minus the `File` column, which the parent
-fills in when consolidating). Disposition and Status start blank —
-the walker fills them.
-
-### FRESH / MERGE_RESOLVED template
-
-```markdown
-# File Review: {path}
-
-**Repository:** {repo}
-**Commit:** {sha}
-**Mode:** FRESH | MERGE_RESOLVED
-**Change Type:** Added / Modified / Deleted
-
-## Summary
-
-What changed (1-2 sentences). Why, per the ticket (1 sentence).
-
-## Analysis
-
-For each meaningful change in the diff, name the symbol and give a
-sentence of analysis. No fixed sub-headers — write only what's
-worth saying.
-
-## Test Coverage
-
-Only fill in if there's something to say. Is the new behaviour
-covered? By which test? If not, that's a finding.
-
-## Todo List
-
-| # | Line | Severity | Category | Issue | Fix |
-|---|------|----------|----------|-------|-----|
-| 1 | 42 | Critical | Security | {description, cite best-practice} | {fix} |
-
-## Verdict
-
-**Status:** SAFE | NEEDS ATTENTION | RISKY
-**Reason:** {one sentence}
-
-| Critical | Major | Minor |
-|----------|-------|-------|
-| 0 | 0 | 0 |
-```
-
-Verdict scale:
-- **SAFE** — no Critical or Major findings.
-- **NEEDS ATTENTION** — Major findings, no Criticals; merge after addressing.
-- **RISKY** — at least one Critical; do not merge as-is.
-
-### REFRESH template
-
-```markdown
-# File Review: {path} (Refreshed {date})
-
-**Repository:** {repo}
-**Commit:** {sha}
-**Refreshed:** {date}
-
-## Previously Reported Violations — Status Check
-
-| # | Line | Severity | Issue | Status |
-|---|------|----------|-------|--------|
-| 1 | 42 | Critical | {original} | Resolved | Still present |
-
-(Skip items with Disposition `Won't Fix` / `Auto-Resolved` — they're
-not yours to re-check.)
-
-## New Issues Found
-
-Only issues introduced by changes since the last review. If none,
-write *None found.*
-
-## Updated Todo List
-
-Carry forward every prior row except `Won't Fix` / `Auto-Resolved`.
-Append new findings. The parent skill materialises new rows into the
-consolidated `## Items` table.
-
-| # | Line | Severity | Category | Issue | Fix |
-|---|------|----------|----------|-------|-----|
-
-## Verdict
-
-**Status:** SAFE | NEEDS ATTENTION | RISKY
-**Summary:** {improved / regressed / unchanged vs last review}
-
-| Critical | Major | Minor | Resolved | New |
-|----------|-------|-------|----------|-----|
-| 0 | 0 | 0 | 0 | 0 |
-```
-
-The parent skill runs `verify-coverage.sh` afterwards — empty
-`.review.md` is pending, non-empty is reviewed.
+The parent skill runs `verify-coverage.sh` afterwards — it checks
+`.verdict != null`. If your file still has `verdict: null`, coverage
+fails and you'll be re-spawned.

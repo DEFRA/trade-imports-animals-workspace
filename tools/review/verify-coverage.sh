@@ -72,23 +72,20 @@ for ((i=0; i<pr_count; i++)); do
         [[ -z "$filepath" ]] && continue
         ((total_files++))
 
-        # Check for review file
+        # Check for review file (JSON-canonical; reviewed iff verdict set)
         safe_path=$(echo "$filepath" | tr '/' '_')
-        review_file="$FILE_REVIEWS_DIR/$repo/${safe_path}.review.md"
+        review_file="$FILE_REVIEWS_DIR/$repo/${safe_path}.review.json"
 
         all_repos+=("$repo")
         all_files+=("$filepath")
 
-        if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
-            # File exists and has content = reviewed
+        if [[ -f "$review_file" ]] && jq -e '.verdict != null' "$review_file" > /dev/null 2>&1; then
             all_statuses+=("reviewed")
             ((reviewed_count++))
         elif [[ -f "$review_file" ]]; then
-            # File exists but empty = pending
             all_statuses+=("pending")
             pending_list+=("$repo|$filepath")
         else
-            # File doesn't exist
             all_statuses+=("missing")
             pending_list+=("$repo|$filepath")
         fi
@@ -183,7 +180,7 @@ else
     echo ""
     echo "=== Coverage Verification ==="
     echo "Ticket: $TICKET"
-    echo "Coverage: $reviewed_count / $total_files ($coverage_status)"
+    echo "Coverage: $reviewed_count / $total_files files ($coverage_status)"
     echo ""
 
     if [[ "$is_complete" == "true" ]]; then

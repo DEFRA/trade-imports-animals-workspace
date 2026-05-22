@@ -169,7 +169,7 @@ else
     echo ""
     echo "=== Style Coverage Verification ==="
     echo "Ticket: $TICKET"
-    echo "Coverage: $reviewed_count / $total_files ($coverage_status)"
+    echo "Coverage: $reviewed_count / $total_files files ($coverage_status)"
     echo ""
 
     if [[ "$is_complete" == "true" ]]; then

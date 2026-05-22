@@ -206,6 +206,10 @@ Shared shell scripts called by skills via
 | `tools/review/verify-consistency.sh` | EUDPA-X [--json] | Check consistency |
 | `tools/review/verify-style-coverage.sh` | EUDPA-X [--json] | Check JS style review coverage |
 | `tools/review/diff-since-review.sh` | EUDPA-X [--json] | Diff since last review |
+| `tools/review/file-review-init.sh` | EUDPA-X --repo R --file F --commit SHA --pr N --mode M | Initialise per-file `.review.json` placeholder |
+| `tools/review/file-review-add-item.sh` | EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..." [--best-practice PATH] | Append a finding to a per-file JSON |
+| `tools/review/file-review-set-verdict.sh` | EUDPA-X --repo R --file F --verdict V [--reason "..."] | Set verdict (marks file as reviewed) |
+| `tools/review/aggregate-file-reviews.sh` | EUDPA-X --repo R [--section file-summary\|items\|both] [--json] | Aggregate per-file JSONs into pasteable markdown |
 | `tools/review/review-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--json] | List items from `## Items` table |
 | `tools/review/review-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition (auto-sets Status) |
 | `tools/review/review-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |

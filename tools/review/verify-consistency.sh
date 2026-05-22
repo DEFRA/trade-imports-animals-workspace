@@ -187,7 +187,7 @@ else
     echo ""
     echo "=== Consistency Coverage Verification ==="
     echo "Ticket: $TICKET"
-    echo "Coverage: $reviewed_count / $total_repos ($coverage_status)"
+    echo "Coverage: $reviewed_count / $total_repos repos ($coverage_status)"
     echo ""
 
     if [[ "$is_complete" == "true" ]]; then

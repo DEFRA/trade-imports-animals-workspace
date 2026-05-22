@@ -375,20 +375,24 @@ cat > "$REVIEW_DIR/.review-meta.json" << EOF
 }
 EOF
 
-# Create file review placeholders
+# Create file review placeholders (JSON-canonical, schema in
+# .claude/skills/review/assets/file-review-schema.md). Each placeholder
+# starts with verdict=null and an empty todos array; the file-reviewer
+# fills it via file-review-add-item.sh + file-review-set-verdict.sh.
 log ""
 log "Creating file review placeholders..."
 total_files=0
 created_files=0
 
-for ((i=0; i<pr_count; i++)); do
-    repo=$(echo "$prs_json" | jq -r ".[$i].repository.name")
-    pr_number=$(echo "$prs_json" | jq -r ".[$i].number")
+prs_meta=$(jq -c '.prs[]' "$REVIEW_DIR/.review-meta.json")
+while IFS= read -r pr_meta; do
+    [[ -z "$pr_meta" ]] && continue
+    repo=$(echo "$pr_meta" | jq -r '.repo')
+    pr_number=$(echo "$pr_meta" | jq -r '.pr')
+    commit=$(echo "$pr_meta" | jq -r '.commit')
 
-    # Get file list from PR
     files=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
 
-    # Create repo subdirectory
     repo_review_dir="$REVIEW_DIR/file-reviews/$repo"
     mkdir -p "$repo_review_dir"
 
@@ -396,21 +400,21 @@ for ((i=0; i<pr_count; i++)); do
         [[ -z "$filepath" ]] && continue
         ((total_files++))
 
-        # Replace / with _ for nested paths in the review filename
         safe_path=$(echo "$filepath" | tr '/' '_')
-        review_file="$repo_review_dir/${safe_path}.review.md"
+        review_file="$repo_review_dir/${safe_path}.review.json"
 
-        # Skip if already exists and has content (already reviewed)
-        if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
+        # Skip if already reviewed (verdict set).
+        if [[ -f "$review_file" ]] && [[ "$(jq -r '.verdict // "null"' "$review_file" 2>/dev/null)" != "null" ]]; then
             continue
         fi
 
-        # Create empty file (0 bytes) - agent will fill it in
-        touch "$review_file"
+        "$SCRIPT_DIR/file-review-init.sh" "$REVIEW_ID" \
+            --repo "$repo" --file "$filepath" --commit "$commit" \
+            --pr "$pr_number" --mode FRESH > /dev/null
         ((created_files++))
         log "  Created: $repo/$filepath"
     done <<< "$files"
-done
+done <<< "$prs_meta"
 
 # Create per-repo review and decisions stubs + consistency check stubs
 log ""
