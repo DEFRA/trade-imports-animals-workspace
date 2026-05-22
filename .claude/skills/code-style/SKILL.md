@@ -73,6 +73,11 @@ ls $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/.review-meta.json 2>/d
   || $TRADE_IMPORTS_WORKSPACE/tools/review/prepare-review.sh EUDPA-XXXXX
 ```
 
+**On Claude Code auto-backgrounding:** `prepare-review.sh` shallow-clones
+in parallel but can still take 30–90s. If the Bash tool auto-backgrounds
+it, **wait for the harness's `task-notification` (status: completed) —
+do NOT poll the PID file or `tail` the output**.
+
 Then create the code-style workspace:
 
 ```bash
