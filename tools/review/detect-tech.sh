@@ -47,12 +47,7 @@ file_exists() {
 any_file_contains() {
     local glob="$1"
     local pattern="$2"
-    find "$REPO_PATH" -type f -name "$glob" 2>/dev/null | head -20 | while read -r f; do
-        if grep -qE "$pattern" "$f" 2>/dev/null; then
-            echo "found"
-            return
-        fi
-    done | grep -q "found"
+    grep -rqE --include="$glob" "$pattern" "$REPO_PATH" 2>/dev/null
 }
 
 # ============================================
@@ -216,12 +211,40 @@ fi
 
 if detect_springboot; then
     technologies+=("springboot")
-    # No specific springboot best practices yet, but could add
+    best_practices+=("docs/best-practices/java/spring-boot.md")
+    best_practices+=("docs/best-practices/java/modern-java.md")
+    best_practices+=("docs/best-practices/java/testing/unit.md")
+    best_practices+=("docs/best-practices/java/testing/integration.md")
+
+    if file_contains "pom.xml" "spring-boot-starter-data-mongodb|spring-data-mongodb" || file_contains "build.gradle" "spring-boot-starter-data-mongodb|spring-data-mongodb"; then
+        technologies+=("spring-data-mongodb")
+        best_practices+=("docs/best-practices/java/spring-data-mongodb.md")
+    fi
+
+    if file_contains "pom.xml" "springdoc-openapi" || file_contains "build.gradle" "springdoc-openapi"; then
+        technologies+=("openapi-springdoc")
+        best_practices+=("docs/best-practices/java/openapi-springdoc.md")
+    fi
+
+    if file_contains "pom.xml" "software\.amazon\.awssdk" || file_contains "build.gradle" "software\.amazon\.awssdk"; then
+        technologies+=("aws-sdk-v2")
+        best_practices+=("docs/best-practices/java/aws-sdk-v2.md")
+    fi
 fi
 
 if detect_hapi; then
     technologies+=("hapi")
-    # No specific hapi best practices yet, but could add
+    best_practices+=("docs/best-practices/node/hapi.md")
+fi
+
+if file_contains "package.json" '"pino"|"hapi-pino"'; then
+    technologies+=("pino")
+    best_practices+=("docs/best-practices/node/pino-logging.md")
+fi
+
+if file_contains "package.json" '"nunjucks"'; then
+    technologies+=("nunjucks")
+    best_practices+=("docs/best-practices/node/nunjucks.md")
 fi
 
 if detect_rest_api; then
@@ -236,6 +259,9 @@ if detect_gds; then
     best_practices+=("docs/best-practices/gds/components.md")
     best_practices+=("docs/best-practices/gds/patterns.md")
     best_practices+=("docs/best-practices/gds/accessibility.md")
+    best_practices+=("docs/best-practices/node/govuk-frontend.md")
+    best_practices+=("docs/best-practices/node/code-style.md")
+    best_practices+=("docs/best-practices/node/testing/frontend.md")
 fi
 
 # ============================================
