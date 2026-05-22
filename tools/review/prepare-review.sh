@@ -131,7 +131,7 @@ EOF
 else
     # Standard mode: fetch from JIRA
     log "Fetching ticket details..."
-    ticket_json=$("$TOOLS_DIR/jira/ticket.sh" "$TICKET" json 2>/dev/null) || error "Failed to fetch ticket $TICKET"
+    ticket_json=$("$WORKSPACE_ROOT/tools/jira/ticket.sh" "$TICKET" json 2>/dev/null) || error "Failed to fetch ticket $TICKET"
 
     # Extract ticket metadata
     ticket_key=$(echo "$ticket_json" | jq -r '.key')
@@ -146,7 +146,7 @@ else
 
     # Fetch comments
     log "Fetching comments..."
-    comments_json=$("$TOOLS_DIR/jira/comments.sh" "$TICKET" json 2>/dev/null) || comments_json="[]"
+    comments_json=$("$WORKSPACE_ROOT/tools/jira/comments.sh" "$TICKET" json 2>/dev/null) || comments_json="[]"
     comments_count=$(echo "$comments_json" | jq 'length')
 
     # Extract Confluence links from description
@@ -159,7 +159,7 @@ else
         while IFS= read -r link; do
             [[ -z "$link" ]] && continue
             log "  Fetching: $link"
-            page_content=$("$TOOLS_DIR/confluence/page.sh" "$link" 2>/dev/null) || continue
+            page_content=$("$WORKSPACE_ROOT/tools/confluence/page.sh" "$link" 2>/dev/null) || continue
             confluence_content+="### $(echo "$page_content" | head -2 | tail -1 | sed 's/Title: //')"$'\n\n'
             confluence_content+="$page_content"$'\n\n'
         done <<< "$confluence_links"
@@ -231,7 +231,7 @@ if [[ "$NO_TICKET" == "true" ]]; then
     fi
 else
     # Search by ticket ID
-    prs_json=$("$TOOLS_DIR/github/prs.sh" "$TICKET" json 2>/dev/null) || prs_json="[]"
+    prs_json=$("$WORKSPACE_ROOT/tools/github/prs.sh" "$TICKET" json 2>/dev/null) || prs_json="[]"
 fi
 
 if [[ "$prs_json" == "[]" ]] || [[ -z "$prs_json" ]]; then
@@ -253,7 +253,7 @@ for ((i=0; i<pr_count; i++)); do
     log "Processing $repo_name#$pr_number ($pr_state)..."
 
     # Get PR details
-    pr_details=$("$TOOLS_DIR/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || continue
+    pr_details=$("$WORKSPACE_ROOT/tools/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || continue
 
     # Get changed files count
     files_changed=$(echo "$pr_details" | jq -r '.files[].path' | wc -l | tr -d ' ')
@@ -340,7 +340,7 @@ for ((i=0; i<pr_count; i++)); do
     pr_number=$(echo "$prs_json" | jq -r ".[$i].number")
 
     # Get file list from PR
-    files=$("$TOOLS_DIR/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
+    files=$("$WORKSPACE_ROOT/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
 
     # Create repo subdirectory
     repo_review_dir="$REVIEW_DIR/file-reviews/$repo"

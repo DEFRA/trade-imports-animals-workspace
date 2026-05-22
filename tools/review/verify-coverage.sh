@@ -66,7 +66,7 @@ for ((i=0; i<pr_count; i++)); do
     pr_number=$(echo "$prs_json" | jq -r ".[$i].pr")
 
     # Get file list from PR
-    files=$("$TOOLS_DIR/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
+    files=$("$WORKSPACE_ROOT/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
 
     while IFS= read -r filepath; do
         [[ -z "$filepath" ]] && continue
