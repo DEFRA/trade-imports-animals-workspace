@@ -14,7 +14,7 @@ if [[ -z "$TICKET" ]]; then
     exit 1
 fi
 
-response=$(gh search prs "$TICKET" --owner DEFRA --json number,title,repository,url,state 2>/dev/null)
+response=$(gh search prs "$TICKET" --owner DEFRA --json number,title,repository,url,state,createdAt 2>/dev/null)
 
 if [[ -z "$response" ]] || [[ "$response" == "[]" ]]; then
     echo "No PRs found for $TICKET"

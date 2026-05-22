@@ -239,6 +239,24 @@ if [[ "$prs_json" == "[]" ]] || [[ -z "$prs_json" ]]; then
     prs_json="[]"
 fi
 
+# Collapse multiple PRs per repo down to one:
+#   1. If any are OPEN, drop the rest.
+#   2. If still multiple, keep the most recently opened (createdAt desc).
+# Pre-merge review intent is "review the current open delta"; merged
+# siblings have already been through review.
+prs_json=$(echo "$prs_json" | jq '
+    group_by(.repository.name)
+    | map(
+        (map(select(.state == "OPEN"))) as $open
+        | (if ($open | length) > 0 then $open else . end)
+        | sort_by(.createdAt) | reverse | .[0:1]
+      )
+    | flatten
+')
+
+# Log the collapse decision so the operator sees what was filtered.
+echo "$prs_json" | jq -r '.[] | "  Selected \(.repository.name)#\(.number) (\(.state), opened \(.createdAt))"' | while read -r line; do log "$line"; done
+
 # Process all PRs (open or merged) for pre-merge review context
 pr_count=$(echo "$prs_json" | jq 'length')
 cloned_repos=()
