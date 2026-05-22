@@ -1,16 +1,12 @@
 #!/bin/bash
-# Set the Status column on a review item.
+# Set the Status field on a review item. Disposition is left unchanged.
 # Usage:
 #   review-set-status.sh EUDPA-XXXXX --repo REPO --item N --status "Not Done"|"Done"|"Failed" [--note "..."]
 #
-# Used by REVIEW_BATCH_IMPLEMENTOR after a fixer agent returns. Disposition is left unchanged.
 # --note overwrites the Notes column when provided.
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
-UPDATER="$SCRIPT_DIR/lib/update-item.awk"
 
 TICKET=""
 REPO=""
@@ -23,10 +19,7 @@ usage() {
     cat <<EOF
 Usage: $0 EUDPA-XXXXX --repo REPO --item N --status VALUE [--note "..."]
 
-  --repo R       Target repo (matches review.<R>.md)
-  --item N       Item ID
   --status V     One of: "Not Done", "Done", "Failed", "—", "" (clear)
-  --note "..."   Optional notes text (overwrites Notes column)
 EOF
     exit 1
 }
@@ -52,26 +45,29 @@ case "$STATUS" in
     *) echo "Invalid --status: $STATUS" >&2; exit 1 ;;
 esac
 
-REVIEW_FILE="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/review.${REPO}.md"
-[[ -f "$REVIEW_FILE" ]] || { echo "Review file not found: $REVIEW_FILE" >&2; exit 1; }
+target="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/items.${REPO}.json"
+[[ -f "$target" ]] || { echo "Items file not found: $target" >&2; exit 1; }
 
-AWK_ARGS=(
-    -v "ITEM_ID=$ITEM"
-    -v "SET_STAT=1" -v "VAL_STAT=$STATUS"
-)
+exists=$(jq --argjson id "$ITEM" '[.items[] | select(.id == $id)] | length' "$target")
+[[ "$exists" -eq 0 ]] && { echo "Item #$ITEM not found in $target" >&2; exit 1; }
+
+stat_json='null'
+[[ -n "$STATUS" ]] && stat_json=$(jq -nc --arg v "$STATUS" '$v')
+
 if [[ "$SET_NOTE" == "1" ]]; then
-    AWK_ARGS+=( -v "SET_NOTE=1" -v "VAL_NOTE=$NOTE" )
+    note_json=$(jq -nc --arg v "$NOTE" 'if $v == "" then null else $v end')
+    jq \
+        --argjson id "$ITEM" \
+        --argjson stat "$stat_json" \
+        --argjson note "$note_json" \
+        '.items |= map(if .id == $id then .status = $stat | .notes = $note else . end)' \
+        "$target" > "$target.tmp" && mv "$target.tmp" "$target"
+else
+    jq \
+        --argjson id "$ITEM" \
+        --argjson stat "$stat_json" \
+        '.items |= map(if .id == $id then .status = $stat else . end)' \
+        "$target" > "$target.tmp" && mv "$target.tmp" "$target"
 fi
 
-tmp_out=$(mktemp)
-trap 'rm -f "$tmp_out"' EXIT
-
-if ! awk "${AWK_ARGS[@]}" -f "$UPDATER" "$REVIEW_FILE" > "$tmp_out"; then
-    echo "Failed to update item #$ITEM in $REVIEW_FILE" >&2
-    exit 2
-fi
-
-mv "$tmp_out" "$REVIEW_FILE"
-trap - EXIT
-
-echo "Updated #$ITEM in $REPO: Status=${STATUS:-<blank>}${SET_NOTE:+, Notes set}"
+echo "Updated #$ITEM in $REPO: Status=${STATUS:-<null>}${SET_NOTE:+, Notes set}"
