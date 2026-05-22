@@ -54,7 +54,7 @@ subagents receive — so workers can write their on-disk artifacts.
 
 | Persona | Used in | Artifact |
 |---|---|---|
-| `references/FILE_REVIEWER.md` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 10) | per-file `.review.md` |
+| `references/FILE_REVIEWER.md` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 100) | per-file `.review.md` |
 | `references/CONSISTENCY_REVIEWER.md` | Fresh Step 4 (one per repo) | per-repo `_consistency-check.md` |
 | `references/REVIEW_ITEM_FIXER.md` | `BATCH_IMPLEMENTOR.md` Step 4 (one per Fix-disposition item, sequential) | source edits + commit |
 
@@ -101,7 +101,7 @@ unstable internal harness state.
 
 ### Parallel Execution
 
-Spawn up to **10 in parallel** via the Task tool with
+Spawn up to **100 in parallel** via the Task tool with
 `subagent_type: general-purpose`.
 
 #### Spawn prompt template
@@ -321,7 +321,7 @@ Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 
 ## Step R4: Re-review Files
 
-Spawn `general-purpose` Task subagents in parallel (up to 10), one per
+Spawn `general-purpose` Task subagents in parallel (up to 100), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
 `Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.`

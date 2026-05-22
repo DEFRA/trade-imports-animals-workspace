@@ -38,7 +38,7 @@ write the per-file paper trail, run the helper scripts and commit.
 
 | Persona | Used in | Artifact |
 |---|---|---|
-| `references/STYLE_FILE_REVIEWER.md` | FRESH Step 4 (parallel, up to 10); REFRESH Steps R2/R3/R4 | per-file `.style.md` |
+| `references/STYLE_FILE_REVIEWER.md` | FRESH Step 4 (parallel, up to 100); REFRESH Steps R2/R3/R4 | per-file `.style.md` |
 | `references/STYLE_IMPLEMENTOR.md` | IMPLEMENTATION Step I3 (sequential, one group at a time) | source edits + commit |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
@@ -140,7 +140,7 @@ File reviewers append rows via `style-add-item.sh`.
 
 ## Step 4: Review Each File
 
-**MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 10 in
+**MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 100 in
 parallel via the Task tool with `subagent_type: general-purpose`.
 
 ### Spawn prompt template
@@ -243,7 +243,7 @@ Each List A entry is `{file, old_sha, new_sha, prior_items}` —
 `prior_items` is already a JSON array, no follow-up `style-items.sh`
 call needed.
 
-Spawn `general-purpose` Task subagents (parallel, up to 10). Spawn prompt:
+Spawn `general-purpose` Task subagents (parallel, up to 100). Spawn prompt:
 
 ```markdown
 Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
