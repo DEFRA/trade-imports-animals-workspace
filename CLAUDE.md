@@ -199,6 +199,7 @@ Shared shell scripts called by skills via
 | `tools/github-actions/trigger-workflow.sh` | repo workflow-file [branch] [key=value...] | Trigger workflow |
 | `tools/github-actions/list-runs.sh` | repo [branch] [workflow] | List recent runs |
 | **review** | | |
+| `tools/review/detect-mode.sh` | EUDPA-X | Print `FRESH` or `REFRESH` (Step 0) |
 | `tools/review/prepare-review.sh` | EUDPA-X [--json] | Setup workspace |
 | `tools/review/verify-coverage.sh` | EUDPA-X [--json] | Check coverage |
 | `tools/review/verify-consistency.sh` | EUDPA-X [--json] | Check consistency |
@@ -215,6 +216,7 @@ Shared shell scripts called by skills via
 | `tools/review/refresh/list-merge-resolved.sh` | REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json] | Refresh helper |
 | `tools/review/refresh/list-coverage-gaps.sh` | REVIEW_DIR REPO PR_NUM [--tsv\|--json] | Refresh helper |
 | **style** | | |
+| `tools/style/detect-mode.sh` | EUDPA-X | Print `FRESH` or `EXISTS` (Step 0) |
 | `tools/style/style-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--by-file] [--json] | List items |
 | `tools/style/style-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition |
 | `tools/style/style-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |

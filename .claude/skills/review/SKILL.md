@@ -64,11 +64,14 @@ beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/
 ## Step 0: Detect Mode
 
 ```bash
-ls ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review-index.md 2>/dev/null
+${TRADE_IMPORTS_WORKSPACE}/tools/review/detect-mode.sh EUDPA-XXXXX
 ```
 
-- File not found → Fresh Review, Step 1.
-- File found → Refresh Review, Step R1.
+Prints `FRESH` (no prior review) or `REFRESH` (workspace exists with a
+`review-index.md`). Branch on the value:
+
+- `FRESH` → Fresh Review, Step 1.
+- `REFRESH` → Refresh Review, Step R1.
 
 ---
 

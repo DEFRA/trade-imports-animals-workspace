@@ -47,12 +47,17 @@ beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/
 ## Step 0: Detect Mode
 
 ```bash
-ls ${TRADE_IMPORTS_WORKSPACE}/workareas/code-style-reviews/EUDPA-XXXXX/style-review.*.md 2>/dev/null
+${TRADE_IMPORTS_WORKSPACE}/tools/style/detect-mode.sh EUDPA-XXXXX
 ```
 
-- No matches → FRESH REVIEW (Step 1).
-- One or more matches AND user wants a re-review → REFRESH REVIEW (Step R1).
-- User asks to "fix style" / "implement style fixes" → IMPLEMENTATION (Step I1).
+Prints `FRESH` (no prior style review) or `EXISTS` (at least one
+`style-review.{repo}.md` is present). Combine with the user's trigger
+phrase:
+
+- `FRESH` → FRESH REVIEW (Step 1).
+- `EXISTS` AND user wants a re-review → REFRESH REVIEW (Step R1).
+- `EXISTS` AND user asks to "fix style" / "implement style fixes" → IMPLEMENTATION (Step I1).
+- `FRESH` AND user asks to implement → error: no review to implement against. Run a FRESH review first.
 
 ---
 
