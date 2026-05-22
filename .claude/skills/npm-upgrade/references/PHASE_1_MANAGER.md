@@ -1,8 +1,8 @@
 # Phase 1 Manager — Discovery and Planning
 
 **Job:** Discover outdated packages across all repos, delegate per-package
-research to the `npm-package-planner` subagent, verify all stubs are
-classified.
+research to `general-purpose` Task subagents following
+`references/PACKAGE_PLANNER.md`, verify all stubs are classified.
 
 ## Boundaries
 
@@ -29,7 +29,7 @@ ${WORKSPACE_ROOT}/tools/npm/discover-upgrades.sh \
 
 Record stub counts per repo.
 
-## Step 2: Delegate to npm-package-planner subagents
+## Step 2: Spawn PACKAGE_PLANNER workers
 
 List all stubs across all repos:
 
@@ -37,11 +37,12 @@ List all stubs across all repos:
 ls ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/*/upgrade__*.md 2>/dev/null
 ```
 
-For each stub, delegate to the `npm-package-planner` subagent (Task tool
-with `subagent_type: npm-package-planner`), spawned concurrently. Parse
+For each stub, spawn a `general-purpose` Task subagent concurrently. Parse
 package/version/type from `.upgrades-meta.json`. Spawn prompt:
 
 ```
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.
+
 Run ID: {run-id}
 Repository: {repo-name}
 Stub file: ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md
@@ -60,7 +61,7 @@ Wait for all subagents. Check for unclassified stubs:
 find ${WORKSPACE_ROOT}/workareas/npm-upgrades/{run-id} -name "upgrade__*.md" ! -name "*.auto.md" ! -name "*.manual.md"
 ```
 
-If any remain, re-delegate to `npm-package-planner` for them once. Still
+If any remain, re-spawn `PACKAGE_PLANNER` workers for them once. Still
 remaining after retry → list as INCOMPLETE in report.
 
 ## Step 4: Report

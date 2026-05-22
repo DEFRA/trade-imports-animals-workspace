@@ -112,7 +112,7 @@ layout (5 role overlays + dev overlay), env knobs that must use
   docker-compose.md). Cited by SKILL.md files via
   `${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>`.
 
-## Skills and Subagents
+## Skills
 
 Agent capabilities live as
 [agentskills.io](https://agentskills.io/specification)-format folders at
@@ -131,29 +131,28 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans. |
 
-### Subagents (`.claude/agents/<owner-skill>/<name>.md`)
+### Worker references (per-skill fan-out personas)
 
-Claude Code-specific. Spawned by parent skills through the Task/Agent
-tool by name; restricted tool allowlists; inherit parent session model
-(no `model:` field). Claude Code walks `.claude/agents/` recursively at
-project scope, so the per-skill subfolder is organisational only — the
-subagent identity comes from the `name:` frontmatter field, not the
-path.
+Long-running fan-out workers live as `references/<NAME>.md` prose inside
+the owning skill and are spawned as `general-purpose` Task subagents
+(`Follow ${WORKSPACE_ROOT}/.claude/skills/<owner>/references/<NAME>.md.`).
+`general-purpose` carries `Tools: *` so workers can write the on-disk
+artifacts that downstream `tools/` scripts consume.
 
-| Subagent | Path | Tools |
+| Owner skill | Worker reference | Used for |
 |---|---|---|
-| `file-reviewer` | `.claude/agents/review/file-reviewer.md` | `Read, Grep, Glob` |
-| `review-item-fixer` | `.claude/agents/review/review-item-fixer.md` | `Read, Edit, Bash` |
-| `consistency-reviewer` | `.claude/agents/review/consistency-reviewer.md` | `Read, Grep, Bash` |
-| `style-file-reviewer` | `.claude/agents/code-style/style-file-reviewer.md` | `Read, Grep, Glob` |
-| `style-implementor` | `.claude/agents/code-style/style-implementor.md` | `Read, Edit, Bash` |
-| `npm-package-planner` | `.claude/agents/npm-upgrade/npm-package-planner.md` | `Read, Bash, WebFetch` |
-| `govuk-version-planner` | `.claude/agents/govuk-upgrade/govuk-version-planner.md` | `Read, Bash, WebFetch` |
+| `review` | `references/FILE_REVIEWER.md` | Per-file review (parallel, up to 10) |
+| `review` | `references/CONSISTENCY_REVIEWER.md` | Per-repo consistency check |
+| `review` | `references/REVIEW_ITEM_FIXER.md` | One Fix-disposition item at a time |
+| `code-style` | `references/STYLE_FILE_REVIEWER.md` | Per-`.js` file style review |
+| `code-style` | `references/STYLE_IMPLEMENTOR.md` | Per-file batched style fixes |
+| `npm-upgrade` | `references/PACKAGE_PLANNER.md` | Per-package research + auto/manual classification |
+| `govuk-upgrade` | `references/VERSION_PLANNER.md` | Per-version CHANGELOG analysis + per-repo plan |
 
 Cursor reads `.claude/skills/` natively (per
-<https://cursor.com/docs/context/skills>) but does not have a parallel
-subagent model; the skill prose still works, just without parallel
-fan-out / context isolation.
+<https://cursor.com/docs/context/skills>). It has no parallel subagent
+primitive, so worker prose still works but runs serially in the active
+session rather than fanning out.
 
 ## Tools (`tools/`)
 

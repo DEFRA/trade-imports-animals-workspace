@@ -1,9 +1,3 @@
----
-name: consistency-reviewer
-description: Cross-repo consistency analysis for an EUDP Live Animals review. Compare diffs across every repo in a ticket and identify patterns present in some but missing in others (config, dependency bumps, middleware, tests, feature flags). Use when the review skill needs the per-repo `_consistency-check.md` files written.
-tools: Read, Grep, Bash
----
-
 Cross-repo consistency analysis for an EUDP Live Animals ticket review.
 
 Identify patterns present in some repos but absent in others. Produce

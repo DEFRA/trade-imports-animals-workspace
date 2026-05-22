@@ -1,9 +1,10 @@
 # Batch implementor — apply queued fixes
 
 Apply all queued `Fix`-disposition items from a completed walker session.
-Reads the consolidated items table, delegates to the `review-item-fixer`
-subagent one item at a time, and updates the table with results — no
-user input required during the run.
+Reads the consolidated items table, delegates to a `general-purpose` Task
+subagent following `references/REVIEW_ITEM_FIXER.md` one item at a time,
+and updates the table with results — no user input required during the
+run.
 
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review
 EUDPA-XXXXX {repo}"` (optional repo filter).
@@ -94,10 +95,11 @@ And stop. Do not attempt any fixes.
 
 Process fixes in item-number order within each repo.
 
-For each item, delegate to the `review-item-fixer` subagent via the Task
-tool with `subagent_type: review-item-fixer`. Spawn prompt:
+For each item, spawn a `general-purpose` Task subagent. Spawn prompt:
 
 ```
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/REVIEW_ITEM_FIXER.md.
+
 **Ticket:** EUDPA-XXXXX
 **Item:** #{N}
 **Repo:** {repo-name}

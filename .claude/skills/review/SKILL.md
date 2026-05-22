@@ -1,6 +1,6 @@
 ---
 name: review
-description: 'Code review for correctness, security, error handling, performance, best-practices and test coverage across all languages and repos (Java, Node.js, frontend, tests) for EUDP Live Animals tickets. Handles fresh first-pass review, refresh (re-review after further work, merge conflicts or coverage gaps), interactive walker that triages findings one item at a time, and batched implementor that applies queued fixes. Orchestrates three subagents (file-reviewer, consistency-reviewer, review-item-fixer) for parallel fan-out with restricted toolsets. Use when the user says "review EUDPA-XXX", "code review", "re-review EUDPA-XXX", "refresh review", "check fixes", "walk review EUDPA-XXX", "triage review", "implement review EUDPA-XXX", or "apply review fixes". NOT for JS lint/format/style findings — use the code-style skill for those.'
+description: 'Code review for correctness, security, error handling, performance, best-practices and test coverage across all languages and repos (Java, Node.js, frontend, tests) for EUDP Live Animals tickets. Handles fresh first-pass review, refresh (re-review after further work, merge conflicts or coverage gaps), interactive walker that triages findings one item at a time, and batched implementor that applies queued fixes. Fans out per-file reviews, per-repo consistency analysis and per-item fixes to `general-purpose` Task subagents that follow worker personas under `references/`. Use when the user says "review EUDPA-XXX", "code review", "re-review EUDPA-XXX", "refresh review", "check fixes", "walk review EUDPA-XXX", "triage review", "implement review EUDPA-XXX", or "apply review fixes". NOT for JS lint/format/style findings — use the code-style skill for those.'
 ---
 
 Pre-merge code review for EUDP Live Animals tickets across all repos and
@@ -48,19 +48,23 @@ schema, allowed Disposition/Status values, and the `|` escape rule.
 NOT for JavaScript lint/format/style findings — use the `code-style`
 skill.
 
-## Subagents owned
+## Worker references
 
 The parent SKILL.md (and `references/BATCH_IMPLEMENTOR.md`) delegate to
-three subagents at `.claude/agents/`:
+three worker personas defined as `references/*.md` prose. Each is spawned
+as a `general-purpose` Task subagent with a `Follow …` reference to the
+persona file. `general-purpose` carries `Tools: *` (it has Write/Edit/Bash)
+and is not subject to the no-write guardrail that restricted custom
+subagents receive — so workers can write their on-disk artifacts.
 
-| Subagent | Used in | Tools |
+| Persona | Used in | Artifact |
 |---|---|---|
-| `file-reviewer` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 10) | `Read, Grep, Glob` |
-| `consistency-reviewer` | Fresh Step 4 (one per repo) | `Read, Grep, Bash` |
-| `review-item-fixer` | BATCH_IMPLEMENTOR Step 4 (one per Fix-disposition item, sequential) | `Read, Edit, Bash` |
+| `references/FILE_REVIEWER.md` | Fresh Step 2, Refresh Step R4 (one per file, parallel up to 10) | per-file `.review.md` |
+| `references/CONSISTENCY_REVIEWER.md` | Fresh Step 4 (one per repo) | per-repo `_consistency-check.md` |
+| `references/REVIEW_ITEM_FIXER.md` | `BATCH_IMPLEMENTOR.md` Step 4 (one per Fix-disposition item, sequential) | source edits + commit |
 
-Spawn idiom: `Delegate to the <name> subagent` — the parent session
-invokes the Task/Agent tool with `subagent_type: <name>`.
+Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
+beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/<NAME>.md.`
 
 ## Step 0: Detect Mode
 
@@ -92,12 +96,14 @@ includes detected tech + best-practices paths under
 
 ### Parallel Execution
 
-Delegate to the `file-reviewer` subagent — spawn up to **10 in parallel**
-via the Task tool with `subagent_type: file-reviewer`.
+Spawn up to **10 in parallel** via the Task tool with
+`subagent_type: general-purpose`.
 
 #### Spawn prompt template
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/FILE_REVIEWER.md.
+
 **Mode:** FRESH
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
@@ -124,10 +130,11 @@ ${WORKSPACE_ROOT}/tools/review/verify-coverage.sh EUDPA-XXXXX
 
 ## Step 4: Consistency Review
 
-Delegate to the `consistency-reviewer` subagent (one per repo) via the
-Task tool with `subagent_type: consistency-reviewer`. Spawn prompt:
+Spawn one Task subagent with `subagent_type: general-purpose`. Spawn prompt:
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/CONSISTENCY_REVIEWER.md.
+
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
 **Review workspace:** ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/
 
@@ -309,13 +316,16 @@ Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 
 ## Step R4: Re-review Files
 
-Delegate to the `file-reviewer` subagent in parallel (up to 10) — one per
+Spawn `general-purpose` Task subagents in parallel (up to 10), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
-(Mode=FRESH; coverage gap).
+(Mode=FRESH; coverage gap). Each spawn prompt begins with
+`Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/FILE_REVIEWER.md.`
 
 ### Spawn prompt — REFRESH (List A)
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/FILE_REVIEWER.md.
+
 **Mode: REFRESH** — this file has changed since the last review.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
@@ -341,6 +351,8 @@ ${WORKSPACE_ROOT}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_w
 ### Spawn prompt — MERGE_RESOLVED (List C)
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/review/references/FILE_REVIEWER.md.
+
 **Mode: MERGE_RESOLVED** — this file is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]

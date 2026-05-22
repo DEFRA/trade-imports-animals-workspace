@@ -1,9 +1,3 @@
----
-name: review-item-fixer
-description: Apply exactly one Fix-disposition item from a review's items table. Verify the violation, make the minimal change, run unit + E2E tests to file, commit on success or revert on failure. Use when the review skill's batch implementor needs to delegate one fix at a time.
-tools: Read, Edit, Bash
----
-
 Implement **one** fix from an EUDPA review items table. Verify the
 violation exists, confirm tests are green, make the minimal change,
 confirm tests are still green, commit.

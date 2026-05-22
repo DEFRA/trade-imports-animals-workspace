@@ -1,6 +1,6 @@
 ---
 name: govuk-upgrade
-description: 'Upgrade the govuk-frontend package across the EUDP Live Animals Node.js repos (frontend, admin) using a three-phase workflow — discover all intermediate semver versions between current and latest stable, fetch each version''s CHANGELOG section and plan per-repo changes (one govuk-version-planner subagent per version, parallel fan-out), then apply changes in strict semver order with npm install, tests and a per-version commit. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Use when the user wants to bump or upgrade govuk-frontend specifically (triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend"). NOT for (non-govuk-frontend) npm package upgrades — for that, use the npm-upgrade skill. Orchestrates 1 subagent: govuk-version-planner.'
+description: 'Upgrade the govuk-frontend package across the EUDP Live Animals Node.js repos (frontend, admin) using a three-phase workflow — discover all intermediate semver versions between current and latest stable, fetch each version''s CHANGELOG section and plan per-repo changes (Phase 2 fans out one `general-purpose` Task subagent per version following `references/VERSION_PLANNER.md`), then apply changes in strict semver order with npm install, tests and a per-version commit. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Use when the user wants to bump or upgrade govuk-frontend specifically (triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend"). NOT for (non-govuk-frontend) npm package upgrades — for that, use the npm-upgrade skill.'
 ---
 
 Upgrade `govuk-frontend` across the Node.js repos that consume it. The
@@ -42,14 +42,16 @@ govuk-frontend is consumed by 2 of the 4 EUDP Live Animals Node repos:
 
 (Not backend / stub / reference-data / tests.)
 
-## Subagents owned
+## Worker references
 
-| Subagent | Used in | Tools |
+| Persona | Used in | Artifact |
 |---|---|---|
-| `govuk-version-planner` | `references/PHASE_2_MANAGER.md` Step 2 — one per version stub, parallel fan-out | `Read, Bash, WebFetch` |
+| `references/VERSION_PLANNER.md` | `references/PHASE_2_MANAGER.md` Step 2 — one per version stub, parallel fan-out | per-version `version__*.{todo|noop}` |
 
-Spawn idiom inside Phase 2: `Delegate to the govuk-version-planner
-subagent` — Task tool with `subagent_type: govuk-version-planner`.
+Spawn idiom inside Phase 2: Task tool with `subagent_type: general-purpose`
+and a prompt beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.`
+`general-purpose` carries `Tools: *` so the worker can fetch the
+changelog, grep the repo and write its plan file.
 
 ## Step 1: Establish Run ID
 
@@ -91,8 +93,9 @@ Phase 2 (changelog analysis)?"
 Follow references/PHASE_2_MANAGER.md. Run ID: {run-id}
 ```
 
-Phase 2 delegates per-version analysis to the `govuk-version-planner`
-subagent — one instance per version stub, parallel fan-out.
+Phase 2 delegates per-version analysis to `general-purpose` Task
+subagents following `references/VERSION_PLANNER.md` — one instance per
+version stub, parallel fan-out.
 
 Present its report verbatim. **Gate:** "Phase 2 complete. Proceed to
 Phase 3 (implementation)?"
@@ -116,8 +119,9 @@ problem-solve. Wait for instruction.
 ## References
 
 - `references/PHASE_1_MANAGER.md` — version discovery + CHANGELOG cache.
-- `references/PHASE_2_MANAGER.md` — fan-out to `govuk-version-planner` subagent.
+- `references/PHASE_2_MANAGER.md` — fan-out to `VERSION_PLANNER.md` workers.
 - `references/PHASE_3_MANAGER.md` — implementation in strict semver order.
+- `references/VERSION_PLANNER.md` — single-version CHANGELOG analysis + per-repo plan classification (spawned per version as `general-purpose`).
 
 Best-practices (load when the changelog warrants):
 
@@ -133,7 +137,3 @@ Scripts (`${WORKSPACE_ROOT}/tools/govuk/`):
 - `fetch-changelog-section.sh` — Phase 2 helper (per-version section extraction; consumed by the subagent).
 - `list-plans.sh` — Phase 1 + 2 status snapshot.
 - `upgrade-status.sh` — combined status across phases.
-
-Delegated subagents (`.claude/agents/`):
-
-- `govuk-version-planner` — single-version CHANGELOG analysis + per-repo plan classification.

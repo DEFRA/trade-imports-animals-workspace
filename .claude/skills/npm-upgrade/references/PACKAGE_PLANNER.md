@@ -1,9 +1,3 @@
----
-name: npm-package-planner
-description: Research and classify a single outdated npm package as auto-upgradable (patch/minor with no breaking changes) or manual (major / breaking-change patch+minor / config impact). Delegate from Phase 1 of npm-upgrade, one instance per outdated package per repo, with the workareas stub path passed in.
-tools: Read, Bash, WebFetch
----
-
 Research one npm package upgrade and write a migration plan.
 
 Your prompt names the run, repo, package, current/target versions, type

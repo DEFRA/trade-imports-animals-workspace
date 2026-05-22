@@ -1,9 +1,9 @@
 # Agent skills onboarding
 
 Onboarding for the AI-assisted skills in this workspace. The skills live
-under `.claude/skills/` and `.claude/agents/` at the workspace root; the
-shared shell tools they call live at `tools/`; the format itself is
-documented in [`agent-skills.md`](agent-skills.md).
+under `.claude/skills/` at the workspace root; the shared shell tools
+they call live at `tools/`; the format itself is documented in
+[`agent-skills.md`](agent-skills.md).
 
 ## Getting Started
 

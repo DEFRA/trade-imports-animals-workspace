@@ -1,6 +1,6 @@
 ---
 name: code-style
-description: 'JS code-style/lint review (formatting, conventions, style rules) and remediation for EUDP Live Animals PRs (EUDPA-*). Lints `.js` files against the project''s 17-rule style guide and JSDoc accuracy rules; supports fresh review, refresh review (re-review after new commits), and batch implementation of agreed style fixes. Orchestrates two subagents (`style-file-reviewer`, `style-implementor`). Use when the user asks for JavaScript style/lint review or to apply agreed style fixes (triggers: "style review EUDPA-", "code style review", "re-style review", "style refresh", "fix style EUDPA-", "implement style fixes", "lint review"). NOT for correctness/design review across languages or for Java/test-quality review — use the `review` skill for those.'
+description: 'JS code-style/lint review (formatting, conventions, style rules) and remediation for EUDP Live Animals PRs (EUDPA-*). Lints `.js` files against the project''s 17-rule style guide and JSDoc accuracy rules; supports fresh review, refresh review (re-review after new commits), and batch implementation of agreed style fixes. Fans out per-file review and per-file implementation to `general-purpose` Task subagents that follow worker personas under `references/`. Use when the user asks for JavaScript style/lint review or to apply agreed style fixes (triggers: "style review EUDPA-", "code style review", "re-style review", "style refresh", "fix style EUDPA-", "implement style fixes", "lint review"). NOT for correctness/design review across languages or for Java/test-quality review — use the `review` skill for those.'
 ---
 
 JS code-style review and remediation for EUDP Live Animals tickets.
@@ -32,17 +32,22 @@ subagents are addressed by name via the Task tool.
 | "re-style review" / "refresh" | REFRESH REVIEW (Steps R1-R6) |
 | "fix style EUDPA-X" / "implement style fixes" | IMPLEMENTATION (Steps I1-I4) |
 
-## Subagents owned
+## Worker references
 
-The skill delegates to two subagents at `.claude/agents/`:
+The skill delegates to two worker personas defined as `references/*.md`
+prose. Each is spawned as a `general-purpose` Task subagent with a
+`Follow …` reference to the persona file. `general-purpose` carries
+`Tools: *` (Write/Edit/Bash) and is not subject to the no-write
+guardrail that restricted custom subagents receive — so workers can
+write the per-file paper trail, run the helper scripts and commit.
 
-| Subagent | Used in | Tools |
+| Persona | Used in | Artifact |
 |---|---|---|
-| `style-file-reviewer` | FRESH Step 4 (parallel, up to 10); REFRESH Steps R2/R3/R4 | `Read, Grep, Glob` |
-| `style-implementor` | IMPLEMENTATION Step I3 (sequential, one group at a time) | `Read, Edit` |
+| `references/STYLE_FILE_REVIEWER.md` | FRESH Step 4 (parallel, up to 10); REFRESH Steps R2/R3/R4 | per-file `.style.md` |
+| `references/STYLE_IMPLEMENTOR.md` | IMPLEMENTATION Step I3 (sequential, one group at a time) | source edits + commit |
 
-Spawn idiom: `Delegate to the <name> subagent` — Task tool with
-`subagent_type: <name>`.
+Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
+beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/<NAME>.md.`
 
 ## Step 0: Detect Mode
 
@@ -130,13 +135,14 @@ File reviewers append rows via `style-add-item.sh`.
 
 ## Step 4: Review Each File
 
-**MANDATORY:** Review EVERY `.js` file. No exceptions. Delegate to the
-`style-file-reviewer` subagent — up to 10 in parallel via the Task tool
-with `subagent_type: style-file-reviewer`.
+**MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 10 in
+parallel via the Task tool with `subagent_type: general-purpose`.
 
 ### Spawn prompt template
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
+
 **Mode: FRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
 **Style guide:** ${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md
@@ -232,10 +238,11 @@ Each List A entry is `{file, old_sha, new_sha, prior_items}` —
 `prior_items` is already a JSON array, no follow-up `style-items.sh`
 call needed.
 
-Delegate to the `style-file-reviewer` subagent (parallel, up to 10) via
-the Task tool with `subagent_type: style-file-reviewer`. Spawn prompt:
+Spawn `general-purpose` Task subagents (parallel, up to 10). Spawn prompt:
 
 ```markdown
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
+
 **Mode: REFRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
 **Style guide:** ${WORKSPACE_ROOT}/docs/best-practices/node/code-style.md
@@ -308,10 +315,11 @@ REVIEW.
 
 # IMPLEMENTATION
 
-Apply all open Fix items for a ticket by delegating to the
-`style-implementor` subagent — **one delegation per file, not per item**.
-All open Fix items for a single file are handed to one subagent so that
-file is read once, edited once, tested once, and committed once.
+Apply all open Fix items for a ticket by delegating one
+`STYLE_IMPLEMENTOR.md`-following `general-purpose` Task subagent per
+file (not per item). All open Fix items for a single file are handed to
+one subagent so that file is read once, edited once, tested once, and
+committed once.
 
 **Prerequisite:** Services must be running (frontend, backend, admin)
 for E2E tests to pass.
@@ -352,10 +360,11 @@ First few groups:
 For each group in the work list, in order (frontend before other repos,
 then alphabetical by file):
 
-Delegate to the `style-implementor` subagent via the Task tool with
-`subagent_type: style-implementor`. Spawn prompt:
+Spawn a `general-purpose` Task subagent. Spawn prompt:
 
 ```
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/code-style/references/STYLE_IMPLEMENTOR.md.
+
 **Ticket:** EUDPA-XXXXX
 **Repo:** {repo}
 **File:** {file}

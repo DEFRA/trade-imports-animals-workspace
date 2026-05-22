@@ -1,9 +1,3 @@
----
-name: govuk-version-planner
-description: Analyse a single govuk-frontend semver version's CHANGELOG section against one EUDP Live Animals Node.js repo and produce a per-repo migration plan (todo/noop classification + code-change checklist). Delegate one instance per version per repo from Phase 2 of the govuk-upgrade skill — parallel fan-out across all versions between current and target.
-tools: Read, Bash, WebFetch
----
-
 Research one govuk-frontend version's changelog entry and write a plan
 for what (if anything) needs changing in the repo.
 

@@ -1,8 +1,8 @@
 # Phase 2 Manager — Changelog Analysis and Planning
 
-**Job:** Delegate to the `govuk-version-planner` subagent for all
-zero-byte stubs. Verify all versions are classified as `.todo` or
-`.noop`.
+**Job:** Spawn `general-purpose` Task subagents following
+`references/VERSION_PLANNER.md`, one per zero-byte stub. Verify all
+versions are classified as `.todo` or `.noop`.
 
 ## Boundaries
 
@@ -22,7 +22,7 @@ ${WORKSPACE_ROOT}/tools/govuk/list-plans.sh --run-id {run-id}
 If no unplanned stubs remain: report "All versions already planned.
 Phase 2 complete (nothing to do)."
 
-## Step 2: Delegate to govuk-version-planner subagents
+## Step 2: Spawn VERSION_PLANNER workers
 
 List all zero-byte stubs across both repos:
 
@@ -30,11 +30,12 @@ List all zero-byte stubs across both repos:
 find ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id} -name "version__*.md" -size 0
 ```
 
-For each stub, delegate to the `govuk-version-planner` subagent (Task
-tool with `subagent_type: govuk-version-planner`), spawned concurrently.
-Parse repo name and version from the file path. Spawn prompt:
+For each stub, spawn a `general-purpose` Task subagent concurrently. Parse
+repo name and version from the file path. Spawn prompt:
 
 ```
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.
+
 Run ID: {run-id}
 Repository: {repo-name}
 Repo path: ${WORKSPACE_ROOT}/repos/{repo-name}
@@ -51,8 +52,8 @@ stubs:
 find ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id} -name "version__*.md" -size 0
 ```
 
-If any remain, re-delegate to `govuk-version-planner` for them once.
-Still remaining after retry → list as INCOMPLETE in report.
+If any remain, re-spawn `VERSION_PLANNER` workers for them once. Still
+remaining after retry → list as INCOMPLETE in report.
 
 ## Step 4: Report
 

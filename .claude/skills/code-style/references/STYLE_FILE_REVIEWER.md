@@ -1,9 +1,3 @@
----
-name: style-file-reviewer
-description: Review one JavaScript file for compliance with the project's 17-rule code style guide. Supports FRESH (new PR), REFRESH (re-check after commits), and REFRESH (merge-resolved) modes. Use when the code-style skill needs to fan out per-file JS style review.
-tools: Read, Grep, Glob
----
-
 Review **one JavaScript file** for compliance with the project code
 style guide.
 

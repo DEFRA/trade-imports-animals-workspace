@@ -3,12 +3,13 @@
 This workspace uses the [agentskills.io](https://agentskills.io/specification)
 standard for Claude Code skills. Each skill lives at the workspace root under
 `.claude/skills/<name>/`, with a `SKILL.md` entry point and optional
-`references/` and `assets/` subdirectories. Claude Code-specific subagents
-live alongside skills at `.claude/agents/<name>.md`.
+`references/` and `assets/` subdirectories. Long-running fan-out workers
+live as `references/<NAME>.md` prose inside the owning skill and are
+spawned as `general-purpose` Task subagents.
 
 This document is the canonical reference for the workspace-level conventions
-that every `SKILL.md` and subagent cite. It exists once here so individual
-skills don't duplicate the prose.
+that every `SKILL.md` cites. It exists once here so individual skills don't
+duplicate the prose.
 
 ## Workspace root resolution
 
@@ -67,8 +68,8 @@ references/<NAME>.md
 assets/<NAME>.md
 ```
 
-Subagents are addressed by name through the Task/Agent tool — no path
-needed. Claude Code resolves them from `.claude/agents/`.
+Worker personas are addressed by an absolute `references/<NAME>.md` path
+inside the spawn prompt — see "Worker references" below.
 
 ## Skill folder shape
 
@@ -87,40 +88,41 @@ description: ...          # 1-1024 chars; WHAT + WHEN + trigger keywords
 
 Spawn idiom inside `SKILL.md`:
 
-- For a reference: `Follow references/<NAME>.md`.
-- For a subagent: `Delegate to the <name> subagent`.
+- For a reference loaded by the parent session: `Follow references/<NAME>.md`.
+- For a worker spawned as a Task subagent: see "Worker references" below.
 
-## Subagent shape
+## Worker references
 
-`.claude/agents/<owner-skill>/<name>.md` (or flat `.claude/agents/<name>.md` if
-preferred — Claude Code walks `.claude/agents/` recursively at project
-scope; the subdirectory path is purely organisational and does not
-affect identity). Frontmatter:
+Long-running fan-out workers (per-file reviewers, per-package planners,
+per-version planners, per-item fixers) live as `references/<NAME>.md`
+prose inside the owning skill. They are spawned via the Task tool with
+`subagent_type: general-purpose` and a prompt that begins:
 
-```yaml
----
-name: subagent-name
-description: When the parent should delegate to this subagent.
-tools: Read, Grep, Glob
----
+```
+Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/<owner>/references/<NAME>.md.
+
+<per-spawn context: file/path/commit/output-path>
 ```
 
-- `tools:` is a **restricted allowlist** — least privilege. Widen only when
-  the sub-role provably needs it.
-- **No `model:` field.** Subagents inherit the parent session's model.
-  Pinning a named model would rot the config across model bumps.
-- `name:` values must be unique tree-wide — Claude Code will silently
-  drop duplicates when two files declare the same name.
-- The body is the persona prose. Drop "spawned by X" preambles — the
-  invocation context is now the subagent contract itself.
+Rationale:
+- The agentskills.io specification defines `references/` for "additional
+  documentation that agents can read when needed" and is silent on
+  subagents — this is the spec-blessed home for worker prose.
+- `general-purpose` carries `Tools: *` (Write, Edit, Bash, WebFetch all
+  available) and is not subject to the no-write guardrail injected into
+  custom-named restricted subagents — workers can therefore reliably
+  write the per-file artifacts that downstream `tools/` scripts consume.
+- The path is absolute so the spawned subagent doesn't need to inherit
+  the parent's working directory.
 
 ## Cross-host discovery
 
 - **Skills** — `.claude/skills/` works for both Claude Code (native) and
   Cursor (per <https://cursor.com/docs/context/skills>).
-- **Subagents** — Claude Code-specific. Cursor ignores `.claude/agents/`;
-  the underlying sub-personas still work through skill prose without
-  parallel fan-out / context isolation.
+- **Worker fan-out** — Claude Code spawns `general-purpose` Task
+  subagents in parallel. Cursor has no parallel subagent primitive; it
+  will execute the worker prose serially in the active session, which
+  is acceptable (just slower).
 - **Subdirectory launches** — Claude Code's `.claude/skills/` does NOT walk
   up parent directories (#26489). The workspace ships `docs/.claude → ../.claude`
   so a session launched from `docs/` still discovers the skills.

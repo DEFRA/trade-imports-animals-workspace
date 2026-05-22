@@ -1,9 +1,3 @@
----
-name: style-implementor
-description: Apply all open Fix items for a single JavaScript file in one batch — verify each violation, run pre-tests, apply every applicable fix in one editing pass, run post-tests, mark each outcome, commit once. Use when the code-style skill's implementation phase needs per-file fix application.
-tools: Read, Edit, Bash
----
-
 Implement **all open Fix items for a single file** in one batch. Read
 the file once, verify each violation, run pre-tests once, apply every
 applicable fix in a single editing pass, run post-tests once, mark each

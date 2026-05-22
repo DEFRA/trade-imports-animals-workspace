@@ -1,6 +1,6 @@
 ---
 name: npm-upgrade
-description: 'Upgrade (non-govuk-frontend) npm package upgrades across the EUDP Live Animals repos via a three-phase workflow — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, and produce a handoff report for the remaining manual work. Orchestrates 1 subagent (`npm-package-planner`, fanned out per outdated package during Phase 1). Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
+description: 'Upgrade (non-govuk-frontend) npm package upgrades across the EUDP Live Animals repos via a three-phase workflow — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, and produce a handoff report for the remaining manual work. Fans out per-package research in Phase 1 to `general-purpose` Task subagents that follow the `references/PACKAGE_PLANNER.md` worker persona. Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
 ---
 
 Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
@@ -23,14 +23,16 @@ under `docs/best-practices/`, workareas under `workareas/`. Skill-internal
 references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
 subagents are addressed by name via the Task tool.
 
-## Subagents owned
+## Worker references
 
-| Subagent | Used in | Tools |
+| Persona | Used in | Artifact |
 |---|---|---|
-| `npm-package-planner` | `references/PHASE_1_MANAGER.md` Step 2 — one per outdated package, parallel fan-out | `Read, Bash, WebFetch` |
+| `references/PACKAGE_PLANNER.md` | `references/PHASE_1_MANAGER.md` Step 2 — one per outdated package, parallel fan-out | per-package `upgrade__*.{auto|manual}.md` |
 
-Spawn idiom inside Phase 1: `Delegate to the npm-package-planner
-subagent` — Task tool with `subagent_type: npm-package-planner`.
+Spawn idiom inside Phase 1: Task tool with `subagent_type: general-purpose`
+and a prompt beginning `Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.`
+`general-purpose` carries `Tools: *` so the worker can WebFetch
+changelogs, grep the codebase and write its plan file.
 
 ## Overview
 
@@ -86,8 +88,9 @@ All repos must be on the feature branch before continuing.
 Follow references/PHASE_1_MANAGER.md. Run ID: {run-id}
 ```
 
-Phase 1 delegates per-package research to the `npm-package-planner`
-subagent — one instance per outdated package, parallel fan-out.
+Phase 1 delegates per-package research to `general-purpose` Task
+subagents following `references/PACKAGE_PLANNER.md` — one instance per
+outdated package, parallel fan-out.
 
 Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
 Phase 2?"
@@ -132,9 +135,10 @@ Recommended scope per run:
 ## References
 
 - `references/COMMON.md` — prerequisites, failure types, file extensions, global rules.
-- `references/PHASE_1_MANAGER.md` — discovery + fan-out to `npm-package-planner` subagent.
+- `references/PHASE_1_MANAGER.md` — discovery + fan-out to `PACKAGE_PLANNER.md` workers.
 - `references/PHASE_2_MANAGER.md` — automated upgrades.
 - `references/PHASE_3_MANAGER.md` — manual handoff report.
+- `references/PACKAGE_PLANNER.md` — single-package research + auto/manual classification (spawned per package as `general-purpose`).
 
 Scripts (`${WORKSPACE_ROOT}/tools/npm/`):
 
@@ -145,7 +149,3 @@ Scripts (`${WORKSPACE_ROOT}/tools/npm/`):
 - `upgrade-one-package.sh` — Phase 2 helper (install + test + commit + rollback).
 - `discover-manual-upgrades.sh` — Phase 3 manual list.
 - `upgrade-status.sh` — combined status across phases.
-
-Delegated subagents (`.claude/agents/`):
-
-- `npm-package-planner` — single-package research + auto/manual classification.

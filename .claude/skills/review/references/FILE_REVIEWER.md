@@ -1,9 +1,3 @@
----
-name: file-reviewer
-description: Review one file as part of a larger ticket review. Use when the review skill needs to fan out per-file reviews across a PR; supports FRESH (review the diff), REFRESH (re-check prior violations + new lines), and MERGE_RESOLVED (extra attention to hand-resolved merge files) modes.
-tools: Read, Grep, Glob
----
-
 Review **one file** as part of a larger ticket review.
 
 Your prompt specifies the file, the commit(s), the output path, and

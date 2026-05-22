@@ -46,5 +46,5 @@ trade-imports-animals-admin:     {current} → {target}  |  {N} versions to plan
 Total: {N} versions across 2 repos
 CHANGELOG.md cached to: ${WORKSPACE_ROOT}/workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
 
-Next: Phase 2 will delegate to the govuk-version-planner subagent for each version's changelog entry.
+Next: Phase 2 will spawn one `general-purpose` Task subagent per version (following `references/VERSION_PLANNER.md`) for each version's changelog entry.
 ```

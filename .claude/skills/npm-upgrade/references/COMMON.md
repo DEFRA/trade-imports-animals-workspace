@@ -23,7 +23,7 @@ invoke them by absolute path.
 
 ## File Extensions (Classification Signal)
 
-- `upgrade__{pkg}.md` — unclassified stub (zero-byte, pending the `npm-package-planner` subagent)
+- `upgrade__{pkg}.md` — unclassified stub (zero-byte, pending a `PACKAGE_PLANNER.md`-following worker)
 - `upgrade__{pkg}.auto.md` — no code changes required, safe to automate
 - `upgrade__{pkg}.manual.md` — code changes required, human must implement
 
