@@ -24,7 +24,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="$("$SCRIPT_DIR/../../find-workspace-root.sh")"
+WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
 
 REVIEW_REFRESH_DIR="$WORKSPACE_ROOT/tools/review/refresh"
 PULL_SH="$REVIEW_REFRESH_DIR/pull-repos.sh"

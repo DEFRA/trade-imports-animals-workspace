@@ -21,17 +21,17 @@ reviewing someone's PR — use `review` (correctness across languages) or
 
 ## Path conventions
 
-Resolve `WORKSPACE_ROOT` once per session via the workspace helper —
-walk up from `$PWD` until `tools/find-workspace-root.sh` is in scope,
-then execute it (the helper centralises the markers check —
-co-presence of `.claude/skills/` AND `docs/`):
+Resolve `WORKSPACE_ROOT` once per session from the `TRADE_IMPORTS_WORKSPACE`
+env var, falling back to the canonical clone path under `$HOME`:
 
 ```bash
-WORKSPACE_ROOT="$(d=$PWD; while [ ! -x "$d/tools/find-workspace-root.sh" ] && [ "$d" != / ]; do d=$(dirname "$d"); done; "$d/tools/find-workspace-root.sh")"
+WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
 ```
 
-Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts under
-`tools/<domain>/`, best-practices under `docs/best-practices/`,
+Set `TRADE_IMPORTS_WORKSPACE` in your shell profile if your local
+checkout lives elsewhere. See `docs/agent-onboarding.md` for the full
+env-var setup. Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts
+under `tools/<domain>/`, best-practices under `docs/best-practices/`,
 workareas under `workareas/`. Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed by
 name via the Task tool.

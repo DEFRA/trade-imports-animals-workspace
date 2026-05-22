@@ -17,7 +17,22 @@ Install any that aren't already on your `PATH`:
 for cmd in curl jq gh; do command -v "$cmd" >/dev/null || brew install "$cmd"; done
 ```
 
-### 1. Get Your Credentials
+### 1. Workspace location
+
+The skills and `tools/` scripts find the workspace root via the
+`TRADE_IMPORTS_WORKSPACE` env var, falling back to
+`$HOME/git/defra/trade-imports-animals-workspace`.
+
+- If your local checkout lives at the canonical path
+  (`$HOME/git/defra/trade-imports-animals-workspace`), you can skip
+  this — the fallback covers you.
+- Otherwise add to `~/.zshrc` or `~/.bashrc`:
+
+```bash
+export TRADE_IMPORTS_WORKSPACE="$HOME/wherever/you/cloned/it"
+```
+
+### 2. Get Your Credentials
 
 #### Jira & Confluence (same credentials)
 
@@ -50,7 +65,7 @@ Authenticate via GitHub CLI:
 gh auth login
 ```
 
-### 2. Check Authentication
+### 3. Check Authentication
 
 Run the auth script (from the workspace root) to verify all services
 are configured:

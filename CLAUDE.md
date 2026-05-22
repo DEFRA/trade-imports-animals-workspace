@@ -53,6 +53,13 @@ make setup    # clone all repos
 make install  # npm install in Node repos
 ```
 
+If your local checkout lives outside the canonical path
+`$HOME/git/defra/trade-imports-animals-workspace`, set
+`export TRADE_IMPORTS_WORKSPACE=/your/path` in your shell profile so the
+agent skills and `tools/` scripts can locate the workspace. See
+[`docs/agent-onboarding.md`](docs/agent-onboarding.md) for the full env-var
+setup.
+
 **Daily update:**
 ```bash
 make update   # pull latest on all repos

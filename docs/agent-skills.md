@@ -13,49 +13,36 @@ duplicate the prose.
 
 ## Workspace root resolution
 
-Skills must NOT assume the agent's current working directory. Claude Code can
-invoke a skill from anywhere — workspace root, `docs/`, or wherever the
-process happens to land. Sub-repos under `repos/<service>/` are themselves
-git repositories, so `git rev-parse --show-toplevel` returns the sub-repo
-root when called from inside one — silently breaking any path that should be
-workspace-relative.
+Skills must NOT assume the agent's current working directory. Claude Code
+can invoke a skill from anywhere — workspace root, `docs/`, or wherever
+the process happens to land. Sub-repos under `repos/<service>/` are
+themselves git repositories, so `git rev-parse --show-toplevel` returns
+the sub-repo root when called from inside one — silently breaking any
+path that should be workspace-relative.
 
-`CLAUDE_PROJECT_DIR` and `CLAUDE_SKILL_DIR` are unset inside skill bash
-blocks (hook-only at the time of writing). Use the walk-up helper below; the
-seed is a free fast-path if a future Claude Code release exposes the
-variable to skills.
-
-The marker is the **co-presence of `.claude/skills/` AND `docs/`** at the
-same directory. Sub-repos under `repos/` carry neither, so the walk-up skips
-past them cleanly. The marker check is centralised in
-[`tools/find-workspace-root.sh`](../tools/find-workspace-root.sh) — never
-re-implement it inline.
-
-Two ways to invoke it:
-
-**From `SKILL.md` bash blocks (walk up to find the helper, then exec):**
+The workspace root is resolved from the `TRADE_IMPORTS_WORKSPACE` env
+var, with a hardcoded fallback to the canonical clone path under
+`$HOME`:
 
 ```bash
-WORKSPACE_ROOT="$(d=$PWD; while [ ! -x "$d/tools/find-workspace-root.sh" ] && [ "$d" != / ]; do d=$(dirname "$d"); done; "$d/tools/find-workspace-root.sh")"
+WORKSPACE_ROOT="${TRADE_IMPORTS_WORKSPACE:-$HOME/git/defra/trade-imports-animals-workspace}"
 ```
 
-**From `tools/<domain>/<script>.sh` (known relative path via `BASH_SOURCE`):**
+That one line is used verbatim in every `SKILL.md` bash preamble and in
+every `tools/<domain>/<script>.sh`. No walk-up. No subshell. Same value
+everywhere.
 
-```bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
-```
+- Contributors who clone to the canonical path (`$HOME/git/defra/trade-imports-animals-workspace`)
+  need no setup.
+- Contributors who clone elsewhere set `export TRADE_IMPORTS_WORKSPACE=/your/path`
+  in their shell profile alongside the JIRA / GitHub env vars — see
+  [`agent-onboarding.md`](agent-onboarding.md).
 
-For nested helpers under `tools/<domain>/<sub>/<script>.sh` use
-`$SCRIPT_DIR/../../find-workspace-root.sh`.
-
-The helper self-locates via `${BASH_SOURCE[0]}` (fast path) and falls
-back to a cwd walk-up if invoked piped or symlinked. Earlier versions of
-these scripts counted `dirname`'s from `BASH_SOURCE` to climb to the
-workspace root, which was brittle (off-by-one when a script moved
-between depths) and inconsistent (each script independently
-re-implemented the markers). Anchoring on the helper kills both classes
-of bug.
+Earlier iterations used a walk-up helper that derived `WORKSPACE_ROOT`
+from `${BASH_SOURCE[0]}` or `$PWD`. That had two failure modes:
+off-by-one when scripts moved between directory depths, and false
+matches when a parent of the workspace happened to contain a stray
+`.claude/` directory. The env-var + fallback design kills both.
 
 Compute `WORKSPACE_ROOT` once per session.
 
