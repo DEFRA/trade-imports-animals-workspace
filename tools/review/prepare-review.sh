@@ -257,76 +257,104 @@ prs_json=$(echo "$prs_json" | jq '
 # Log the collapse decision so the operator sees what was filtered.
 echo "$prs_json" | jq -r '.[] | "  Selected \(.repository.name)#\(.number) (\(.state), opened \(.createdAt))"' | while read -r line; do log "$line"; done
 
-# Process all PRs (open or merged) for pre-merge review context
+# Process all PRs (open or merged) for pre-merge review context.
+# Clones run in parallel — one subshell per PR — and fetch only the
+# target commit (--depth=1 of the specific SHA) to avoid pulling
+# unrelated branches like gh-pages. Results land in per-task tmp files
+# and are collated in PR-index order after wait so the log reads
+# serially.
 pr_count=$(echo "$prs_json" | jq 'length')
-cloned_repos=()
-meta_prs=()
+prep_tmpdir=$(mktemp -d)
+trap 'rm -rf "$prep_tmpdir"' EXIT
+prep_pids=()
 
 for ((i=0; i<pr_count; i++)); do
-    pr_url=$(echo "$prs_json" | jq -r ".[$i].url")
-    pr_number=$(echo "$prs_json" | jq -r ".[$i].number")
-    pr_state=$(echo "$prs_json" | jq -r ".[$i].state")
-    repo_name=$(echo "$prs_json" | jq -r ".[$i].repository.name")
+    (
+        pr_url=$(echo "$prs_json" | jq -r ".[$i].url")
+        pr_number=$(echo "$prs_json" | jq -r ".[$i].number")
+        pr_state=$(echo "$prs_json" | jq -r ".[$i].state")
+        repo_name=$(echo "$prs_json" | jq -r ".[$i].repository.name")
 
-    log "Processing $repo_name#$pr_number ($pr_state)..."
+        log "Processing $repo_name#$pr_number ($pr_state)..."
 
-    # Get PR details
-    pr_details=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || continue
+        pr_details=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || exit 0
+        files_changed=$(echo "$pr_details" | jq -r '.files[].path' | wc -l | tr -d ' ')
+        pr_merged_at=$(echo "$pr_details" | jq -r '.mergedAt // empty')
 
-    # Get changed files count
-    files_changed=$(echo "$pr_details" | jq -r '.files[].path' | wc -l | tr -d ' ')
+        if [[ -n "$pr_merged_at" ]] && [[ "$pr_merged_at" != "null" ]]; then
+            target_commit=$(gh pr view "$pr_number" --repo "DEFRA/$repo_name" --json mergeCommit --jq '.mergeCommit.oid' 2>/dev/null)
+            commit_type="merge"
+        else
+            target_commit=$(gh pr view "$pr_number" --repo "DEFRA/$repo_name" --json headRefOid --jq '.headRefOid' 2>/dev/null)
+            commit_type="head"
+        fi
 
-    # Determine which commit to checkout
-    pr_merged_at=$(echo "$pr_details" | jq -r '.mergedAt // empty')
+        if [[ -z "$target_commit" ]] || [[ "$target_commit" == "null" ]]; then
+            log "  Could not get target commit for $repo_name#$pr_number"
+            exit 0
+        fi
 
-    if [[ -n "$pr_merged_at" ]] && [[ "$pr_merged_at" != "null" ]]; then
-        # Merged PR: use merge commit
-        target_commit=$(gh pr view "$pr_number" --repo "DEFRA/$repo_name" --json mergeCommit --jq '.mergeCommit.oid' 2>/dev/null)
-        commit_type="merge"
-    else
-        # Open PR: use head commit (latest on PR branch)
-        target_commit=$(gh pr view "$pr_number" --repo "DEFRA/$repo_name" --json headRefOid --jq '.headRefOid' 2>/dev/null)
-        commit_type="head"
-    fi
+        # Shallow-fetch only the target SHA. `git init + remote add +
+        # fetch --depth=1 <sha>` pulls a single commit with its trees +
+        # blobs — no other branches, no history. GitHub serves this
+        # because uploadpack.allowReachableSHA1InWant defaults on.
+        repo_dir="$REVIEW_DIR/repos/$repo_name"
+        if [[ -d "$repo_dir" ]]; then
+            log "  $repo_name: repo already present, fetching $target_commit..."
+            (cd "$repo_dir" && \
+                ( git cat-file -e "$target_commit^{commit}" 2>/dev/null \
+                    || git fetch --quiet --depth=1 origin "$target_commit" ) && \
+                git checkout --quiet "$target_commit") || {
+                log "  Failed to checkout $target_commit in $repo_name"
+                exit 0
+            }
+        else
+            log "  $repo_name: shallow-cloning $target_commit ($commit_type)..."
+            mkdir -p "$repo_dir"
+            (cd "$repo_dir" && \
+                git init --quiet && \
+                git remote add origin "https://github.com/DEFRA/$repo_name.git" && \
+                git fetch --quiet --depth=1 origin "$target_commit" && \
+                git checkout --quiet "$target_commit") || {
+                log "  Failed to shallow-clone $repo_name at $target_commit"
+                rm -rf "$repo_dir"
+                exit 0
+            }
+        fi
 
-    if [[ -z "$target_commit" ]] || [[ "$target_commit" == "null" ]]; then
-        log "  Could not get target commit"
-        continue
-    fi
+        tech_json=$("$SCRIPT_DIR/detect-tech.sh" "$repo_dir" 2>/dev/null) || tech_json='{"technologies":[],"best_practices":[]}'
+        tech_list=$(echo "$tech_json" | jq -r '.technologies | join(", ")')
 
-    # Clone repo if not already cloned
-    repo_dir="$REVIEW_DIR/repos/$repo_name"
-    if [[ -d "$repo_dir" ]]; then
-        log "  Repo already cloned, fetching and checking out $target_commit..."
-        (cd "$repo_dir" && git fetch --quiet origin && git checkout --quiet "$target_commit") || {
-            log "  Failed to checkout commit"
-            continue
-        }
-    else
-        log "  Cloning and checking out $target_commit ($commit_type)..."
-        git clone --quiet "https://github.com/DEFRA/$repo_name.git" "$repo_dir" 2>/dev/null || {
-            log "  Failed to clone repo"
-            continue
-        }
-        (cd "$repo_dir" && git checkout --quiet "$target_commit") || {
-            log "  Failed to checkout commit"
-            continue
-        }
-    fi
+        printf '%s' "{\"repo\": \"$repo_name\", \"pr\": $pr_number, \"commit\": \"$target_commit\", \"state\": \"$pr_state\", \"files\": $files_changed, \"tech\": $tech_json}" > "$prep_tmpdir/$i.meta"
+        echo "$repo_name" > "$prep_tmpdir/$i.cloned"
 
-    cloned_repos+=("$repo_name")
+        if [[ -n "$tech_list" ]] && [[ "$tech_list" != "" ]]; then
+            log "  ✓ $repo_name#$pr_number at ${target_commit:0:7} ($commit_type, $files_changed files) [$tech_list]"
+        else
+            log "  ✓ $repo_name#$pr_number at ${target_commit:0:7} ($commit_type, $files_changed files)"
+        fi
+    ) > "$prep_tmpdir/$i.log" 2>&1 &
+    prep_pids+=($!)
+done
 
-    # Detect technologies used in this repo
-    tech_json=$("$SCRIPT_DIR/detect-tech.sh" "$repo_dir" 2>/dev/null) || tech_json='{"technologies":[],"best_practices":[]}'
-    tech_list=$(echo "$tech_json" | jq -r '.technologies | join(", ")')
+# Wait for all PR tasks. Don't let set -e propagate a non-zero from any
+# individual wait — failures are already reflected by missing $i.meta
+# files, which we treat the same as `continue` did in the serial loop.
+for pid in "${prep_pids[@]}"; do
+    wait "$pid" 2>/dev/null || true
+done
 
-    meta_prs+=("{\"repo\": \"$repo_name\", \"pr\": $pr_number, \"commit\": \"$target_commit\", \"state\": \"$pr_state\", \"files\": $files_changed, \"tech\": $tech_json}")
+# Replay logs in PR-index order so the operator sees a stable sequence.
+for ((i=0; i<pr_count; i++)); do
+    [[ -f "$prep_tmpdir/$i.log" ]] && cat "$prep_tmpdir/$i.log"
+done
 
-    if [[ -n "$tech_list" ]] && [[ "$tech_list" != "" ]]; then
-        log "  ✓ $repo_name#$pr_number at ${target_commit:0:7} ($commit_type, $files_changed files) [$tech_list]"
-    else
-        log "  ✓ $repo_name#$pr_number at ${target_commit:0:7} ($commit_type, $files_changed files)"
-    fi
+# Collect results.
+cloned_repos=()
+meta_prs=()
+for ((i=0; i<pr_count; i++)); do
+    [[ -s "$prep_tmpdir/$i.meta" ]] && meta_prs+=("$(cat "$prep_tmpdir/$i.meta")")
+    [[ -s "$prep_tmpdir/$i.cloned" ]] && cloned_repos+=("$(cat "$prep_tmpdir/$i.cloned")")
 done
 
 # Write meta file

@@ -88,6 +88,13 @@ repos/, file-reviews/ placeholders, and `.review-meta.json` (the latter
 includes detected tech + best-practices paths under
 `$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`).
 
+**On Claude Code auto-backgrounding:** this script clones repos in
+parallel but can still take 30–90s. If the Bash tool auto-backgrounds
+it, **wait for the harness's `task-notification` (status: completed) —
+do NOT poll the PID file or `tail` the output**. The notification
+arrives automatically; manual polling is wasteful and operates on
+unstable internal harness state.
+
 ## Step 2: Review Each File
 
 **MANDATORY:** create a review for EVERY changed file. No exceptions.
