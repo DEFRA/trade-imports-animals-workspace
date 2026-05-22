@@ -1,234 +1,258 @@
 Review **one file** as part of a larger ticket review.
 
-Your prompt specifies the file, the commit(s), the output path, and
-whether this is a **fresh review** or a **refresh** of a previously
-reviewed file.
+Your prompt specifies the repo, the file path, the commit(s), the mode
+(FRESH / REFRESH / MERGE_RESOLVED), and the output placeholder path.
 
-Paths anchored on `$TRADE_IMPORTS_WORKSPACE` — compute via the `find_workspace_root`
-helper in `docs/agent-skills.md`.
+## Scope discipline
 
-## Workspace
+Two scopes — don't conflate them:
 
-```
-$TRADE_IMPORTS_WORKSPACE/docs/best-practices/        # Tech-specific standards (k6, playwright, rest-api, gds)
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
-├── ticket.md              # READ: ticket details and AC
-├── .review-meta.json      # READ: detected tech & best_practices paths
-├── review-index.md        # Thin navigation index
-├── review.{repo}.md       # Per-repo summary with consolidated `## Items` table
-├── repos/<repo>/          # Code to review
-└── file-reviews/<repo>/   # Write per-file reviews here
-```
+- **Findings scope = the diff.** Only flag issues introduced or
+  touched by this PR. A pre-existing nit in untouched code is not a
+  finding. Exception: if a function is substantially rewritten by the
+  PR, the rewritten body is fair game.
+- **Context scope = broader.** Read the whole file, the related
+  files (test ↔ source, controller ↔ service, mapper ↔ DTO, sibling
+  enums/types in the same package), and the ticket AC. You can't
+  judge whether a change is correct without seeing what it talks to.
+
+A reviewer who reads only the hunk produces shallow findings. A
+reviewer who flags pre-existing violations produces noise. Aim for
+neither.
 
 ## Workflow
 
-### 1. Determine Mode (from your prompt)
+### 1. Determine mode
 
-**Fresh** (prompt contains no "Mode: REFRESH" and no "Previously
-reported violations"):
-- Review changed lines per the PR diff
-- Produce the Fresh Review Template
+| Mode | Trigger in prompt | Meaning |
+|---|---|---|
+| FRESH | default | First-pass review of this file in this PR |
+| REFRESH | `Mode: REFRESH` | Re-check prior findings + scan new lines since last review |
+| MERGE_RESOLVED | `Mode: MERGE_RESOLVED` | File came out of a hand-resolved merge; the resolution exists in neither parent |
 
-**Refresh** (prompt contains "Mode: REFRESH" and previously reported
-violations):
-- Check each old violation (still present or resolved)
-- Get new diff for new issues
-- Produce the Refresh Review Template
+### 2. Load supporting context
 
-### 2. Read supporting files
+In every mode:
 
-1. **Read `.review-meta.json`** → get `best_practices` array (paths
-   relative to the workspace root: `docs/best-practices/...`).
-2. **Read listed best practice files** → apply these standards during review.
-3. **Read `ticket.md`** → understand requirements and AC.
-4. **REFRESH mode only — load prior dispositions for this file:**
+1. **Per-PR best practices.** Read
+   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/.review-meta.json`
+   and find the entry where `prs[].repo` matches your assigned repo.
+   Load every file listed under `prs[].tech.best_practices` — those
+   are the standards that apply to *your* repo. Don't load the
+   top-level `best_practices` union (it mixes in standards for the
+   other repos in the ticket). Cite the ones you applied in findings
+   (see Output below).
+2. **Ticket.** Read `ticket.md` for AC and intent.
+
+In REFRESH only, additionally:
+
+3. **Prior dispositions for this file:**
    ```bash
-   $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} | awk -F'\t' '$3 == "{file-path}"'
+   $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
+     | awk -F'\t' '$3 == "{file-path}"'
    ```
-   The columns are: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
+   Columns: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
+   Items with Disposition `Won't Fix` or `Auto-Resolved` must NOT be
+   re-reported — carry them forward unchanged.
 
-   Items with Disposition=`Won't Fix` or `Auto-Resolved` **must not**
-   be re-reported as open violations, even if the pattern is still
-   present in the code. Carry them forward unchanged in your updated
-   todo list without comment.
-
-### 3a. Fresh review — get the diff
+### 3. Get the file-scoped diff
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/github/diff.sh {repo-name} {pr-number}
+$TRADE_IMPORTS_WORKSPACE/tools/github/file-diff.sh {repo} {pr-number} {file-path}
 ```
 
-Extract only the hunks that touch your assigned file. Review **changed
-lines only** — do not flag pre-existing violations unless they are in
-functions substantially rewritten by this PR.
+Returns only the hunks for your file — don't fetch the whole PR diff.
 
-### 3b. Refresh review — check old violations and new changes
-
-Read your per-file review from the workspace (do not rely solely on any
-inline list your prompt may have given you — the file is authoritative):
-
-```
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{filename}.review.md
-```
-
-For each violation in that file:
-- If its Disposition is `Won't Fix` or `Auto-Resolved` in the consolidated items table → carry it forward unchanged; do not re-check it.
-- Otherwise: read the current file and determine if the violation is **still present** or **resolved**.
-
-Then get the diff since the last review to scope new-violation checks:
+In MERGE_RESOLVED mode the prompt also gives you `old_sha` / `new_sha`;
+the resolution delta is:
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/diff-since-review.sh EUDPA-XXXXX
+git -C $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo} \
+    diff {old_sha}..{new_sha} -- {file-path}
 ```
 
-Extract hunks for your file. Check those changed lines for any **new
-violations** not previously reported.
+### 4. Read the file and its related context
 
-### 4. Read the full file
+The file itself:
 
-Read from
-`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}`
-for context.
-
-## Review Criteria
-
-| Category | What to Check |
-|----------|---------------|
-| Correctness | Meets AC? Bugs? |
-| Code Quality | Style, readability, naming |
-| Best Practices | SOLID, DRY, patterns |
-| Error Handling | Edge cases, null safety, exceptions |
-| Security | Injection, auth, data exposure |
-| Performance | Efficiency, N+1, resources |
-| Test Coverage | Is this change tested? |
-
-**Severity:** Critical (bugs, security) → Major (quality/maintainability)
-→ Minor (style, nitpicks)
-
-## File Type Guidance
-
-| Type | Check For |
-|------|-----------|
-| Tests (`*.spec.ts`, `*Test.java`) | Coverage, edge cases, isolation, meaningful assertions |
-| Config (`*.json`, `*.yml`) | Correct values, no secrets, env consistency |
-| Package (`package.json`, `pom.xml`) | Versions, dev vs prod deps, security advisories |
-| Lock files | Consistency with manifest, concerning transitive deps |
-
----
-
-## Fresh Review Template
-
-```markdown
-# File Review: [path/to/file.ext]
-
-**Repository:** [repo-name]
-**Commit:** [sha]
-**Change Type:** Added / Modified / Deleted
-**Lines Changed:** +XX / -YY
-
-## Summary
-
-### What Changed
-[Describe changes]
-
-### Why
-[Purpose based on ticket]
-
-## Analysis
-
-### Key Changes
-
-#### `functionOrMethodName()`
-[Analysis, concerns, positives]
-
-### Issues Found
-
-| Severity | Line | Category | Issue | Recommendation |
-|----------|------|----------|-------|----------------|
-
-## Risk Assessment
-
-- **Edge Cases:**
-- **Error Handling:**
-- **Security:**
-
-## Test Coverage
-
-| Test File | Covers This? | Notes |
-|-----------|--------------|-------|
-
-## Todo List
-
-One row per issue. Be specific: name the function, line, or pattern.
-
-| # | Line | Severity | Category | Issue | Fix | Fixed | Won't Fix |
-|---|------|----------|----------|-------|-----|-------|-----------|
-| 1 | 42 | Critical | Security | [description] | [fix] | [ ] | [ ] |
-
-## Verdict
-
-**Status:** SAFE / NEEDS ATTENTION / RISKY
-**Reason:** [One sentence]
-
-| Critical | Major | Minor |
-|----------|-------|-------|
-| X | X | X |
+```
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
 ```
 
----
+Then follow the relationships worth looking at — pick what's
+applicable, don't read transitively forever:
 
-## Refresh Review Template
+| If reviewing… | Also read |
+|---|---|
+| Source (`Foo.java`, `foo.js`) | The matching test file, if any |
+| Test (`FooTest.java`, `foo.test.js`) | The source under test |
+| Controller | The service(s) it calls + the schema/DTO it accepts |
+| Service | Its repository + the controllers that call it |
+| Mapper | Both source and target types |
+| DTO / Record | Sibling DTOs in the same package + the mapper |
+| Enum | The mapper or controller consuming its values |
+| `.njk` template | The controller / view-helper supplying its context |
+| Config (`pom.xml`, `package.json`) | Usage sites of any newly added dependency |
 
-```markdown
-# File Review: [path/to/file.ext] (Refreshed [date])
+If the file is a leaf with no obvious related context, that's fine —
+move on. Use `Grep` to find callers/usages when it's not obvious.
 
-**Repository:** [repo-name]
-**Commit:** [sha]
-**Refreshed:** [date]
+### 5. Apply review criteria to the diff
 
-## Previously Reported Violations — Status Check
+Only the changed lines are in scope for findings. Weigh them against:
 
-| # | Line | Severity | Category | Issue | Status |
-|---|------|----------|----------|-------|--------|
-| 1 | 42 | Critical | Security | [original description] | ✅ Resolved / ❌ Still present |
+- The applicable best-practices files loaded in step 2 (cite them).
+- Correctness vs the AC in `ticket.md`.
+- Bugs, null safety, error paths, security, performance.
+- Test coverage — but only ask whether *this change* is tested, not
+  whether the file's overall coverage is good.
 
-## New Issues Found
+In MERGE_RESOLVED mode, additionally:
 
-| Severity | Line | Category | Issue | Recommendation |
-|----------|------|----------|-------|----------------|
+- For every prior `Fix + Done` item on this file: verify the fix is
+  still in the resolved code. If undone by the merge, flag as a
+  regression.
+- Watch for behaviour smuggled in from the source branch (other
+  tickets' code) that contradicts decisions for this ticket.
+- Pay extra attention to the integration points where the two sides
+  of the merge meet — most likely defect sites.
 
-*None found.* (if applicable)
+### 6. Filter your findings
 
-## Updated Todo List
+**A good finding is:**
+- Specific — names the function/line/pattern.
+- Diff-attributable — introduced or touched by this PR.
+- Cites a rule, a best-practice, or a concrete failure mode.
+- Has a fix in mind (not just "consider improving").
 
-Carry forward all original rows. Update the Fixed column for resolved
-items. Append new issues as new rows. Do NOT delete rows. Preserve
-Won't Fix `[x]` markings from previously reported violations.
+**Don't write up:**
+- Pre-existing patterns in untouched code.
+- "Could be more SOLID/DRY/clean" without a concrete fix.
+- Stylistic preferences not in a best-practices file.
+- Missing test coverage for code not in this PR.
+- The same finding restated multiple times across different lines.
 
-This per-file todo list is a paper trail of what you found; the parent
-review skill materialises any new rows into the consolidated `## Items`
-table in `review.{repo}.md` via `review-add-item.sh`.
+## Severity
 
-| # | Line | Severity | Category | Issue | Fix | Fixed | Won't Fix |
-|---|------|----------|----------|-------|-----|-------|-----------|
+| Severity | What |
+|---|---|
+| Critical | Bug, security issue, broken AC |
+| Major | Quality / maintainability / missing test for new behaviour |
+| Minor | Nitpick — only worth flagging if a best-practice explicitly bans it |
 
-## Verdict
+## File type guidance
 
-**Status:** SAFE / NEEDS ATTENTION / RISKY
-**Summary:** [Note if improved, regressed, or unchanged vs last review]
-
-| Critical | Major | Minor | Resolved | New |
-|----------|-------|-------|----------|-----|
-| X | X | X | X | X |
-```
-
----
+| Type | Specific scope |
+|---|---|
+| Source (`.java`, `.js`, `.ts`) | New/changed behaviour + tests for it |
+| Test (`*Test.java`, `*.test.js`) | New tests assert behaviour not implementation; isolation; meaningful assertions |
+| Template (`.njk`) | govuk-frontend usage, accessibility, content style |
+| Config (`.yml`, `.json`, `pom.xml`, `package.json`) | New keys correct, no secrets, dep versions; do not flag missing comments |
+| Lockfile (`package-lock.json`) | Only flag if a transitive dep has a known CVE; do not flag drift |
 
 ## Output
 
-Write to the placeholder file specified in your prompt. Filename uses
-underscores for paths (e.g., `src_utils_helper.js.review.md`). In
-Refresh mode, overwrite the existing `.review.md` file.
+Write to the placeholder file specified in your prompt. Overwrite the
+existing file in REFRESH and MERGE_RESOLVED modes.
 
-The parent review skill runs `verify-coverage.sh` afterwards — empty =
-pending, non-empty = reviewed.
+**Citing best-practices:** when a finding maps to a loaded
+best-practices file, reference it inline in the Issue field with the
+relative path — e.g.
+`Logger emits raw error object instead of structured fields (per node/pino-logging.md)`.
+Don't cite a file you didn't load.
+
+The per-file Todo columns mirror the consolidated `## Items` table
+in `review.{repo}.md` (minus the `File` column, which the parent
+fills in when consolidating). Disposition and Status start blank —
+the walker fills them.
+
+### FRESH / MERGE_RESOLVED template
+
+```markdown
+# File Review: {path}
+
+**Repository:** {repo}
+**Commit:** {sha}
+**Mode:** FRESH | MERGE_RESOLVED
+**Change Type:** Added / Modified / Deleted
+
+## Summary
+
+What changed (1-2 sentences). Why, per the ticket (1 sentence).
+
+## Analysis
+
+For each meaningful change in the diff, name the symbol and give a
+sentence of analysis. No fixed sub-headers — write only what's
+worth saying.
+
+## Test Coverage
+
+Only fill in if there's something to say. Is the new behaviour
+covered? By which test? If not, that's a finding.
+
+## Todo List
+
+| # | Line | Severity | Category | Issue | Fix |
+|---|------|----------|----------|-------|-----|
+| 1 | 42 | Critical | Security | {description, cite best-practice} | {fix} |
+
+## Verdict
+
+**Status:** SAFE | NEEDS ATTENTION | RISKY
+**Reason:** {one sentence}
+
+| Critical | Major | Minor |
+|----------|-------|-------|
+| 0 | 0 | 0 |
+```
+
+Verdict scale:
+- **SAFE** — no Critical or Major findings.
+- **NEEDS ATTENTION** — Major findings, no Criticals; merge after addressing.
+- **RISKY** — at least one Critical; do not merge as-is.
+
+### REFRESH template
+
+```markdown
+# File Review: {path} (Refreshed {date})
+
+**Repository:** {repo}
+**Commit:** {sha}
+**Refreshed:** {date}
+
+## Previously Reported Violations — Status Check
+
+| # | Line | Severity | Issue | Status |
+|---|------|----------|-------|--------|
+| 1 | 42 | Critical | {original} | Resolved | Still present |
+
+(Skip items with Disposition `Won't Fix` / `Auto-Resolved` — they're
+not yours to re-check.)
+
+## New Issues Found
+
+Only issues introduced by changes since the last review. If none,
+write *None found.*
+
+## Updated Todo List
+
+Carry forward every prior row except `Won't Fix` / `Auto-Resolved`.
+Append new findings. The parent skill materialises new rows into the
+consolidated `## Items` table.
+
+| # | Line | Severity | Category | Issue | Fix |
+|---|------|----------|----------|-------|-----|
+
+## Verdict
+
+**Status:** SAFE | NEEDS ATTENTION | RISKY
+**Summary:** {improved / regressed / unchanged vs last review}
+
+| Critical | Major | Minor | Resolved | New |
+|----------|-------|-------|----------|-----|
+| 0 | 0 | 0 | 0 | 0 |
+```
+
+The parent skill runs `verify-coverage.sh` afterwards — empty
+`.review.md` is pending, non-empty is reviewed.

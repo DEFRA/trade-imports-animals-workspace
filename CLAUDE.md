@@ -186,6 +186,7 @@ Shared shell scripts called by skills via
 | `tools/github/prs.sh` | EUDPA-X [list\|json\|urls] | Find PRs |
 | `tools/github/pr-details.sh` | repo pr-num [full\|files\|json] | PR details |
 | `tools/github/diff.sh` | repo pr-num | PR diff |
+| `tools/github/file-diff.sh` | repo pr-num file-path | PR diff filtered to one file |
 | **confluence** | | |
 | `tools/confluence/page.sh` | page-id [summary\|json] | Get page |
 | `tools/confluence/update-page.sh` | page-id "Title" content-file | Update page |
