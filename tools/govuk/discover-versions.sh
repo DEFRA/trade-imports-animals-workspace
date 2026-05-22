@@ -15,15 +15,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 REPO_PATH=""
 RUN_ID=""
 TARGET_VERSION=""
 JSON_OUTPUT=false
-WORKSPACE_BASE="$AGENTS_DIR/workareas/govuk-upgrades"
+WORKSPACE_BASE="$WORKSPACE_ROOT/workareas/govuk-upgrades"
 FORCE=false
 
 CHANGELOG_URL="https://raw.githubusercontent.com/alphagov/govuk-frontend/main/CHANGELOG.md"

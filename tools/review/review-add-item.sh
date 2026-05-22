@@ -9,9 +9,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
@@ -62,7 +60,7 @@ for var in REPO FILE LINE SEVERITY CATEGORY ISSUE FIX; do
     fi
 done
 
-REVIEW_FILE="$AGENTS_DIR/workareas/reviews/$TICKET/review.${REPO}.md"
+REVIEW_FILE="$WORKSPACE_ROOT/workareas/reviews/$TICKET/review.${REPO}.md"
 [[ -f "$REVIEW_FILE" ]] || { echo "Review file not found: $REVIEW_FILE" >&2; exit 1; }
 
 # Compute next ID

@@ -13,9 +13,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
@@ -53,7 +51,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-STYLE_DIR="$AGENTS_DIR/workareas/code-style-reviews/$TICKET"
+STYLE_DIR="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET"
 [[ -d "$STYLE_DIR" ]] || { echo "Style review workspace not found: $STYLE_DIR" >&2; exit 1; }
 
 disposition_label() {

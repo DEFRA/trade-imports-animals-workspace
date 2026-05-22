@@ -22,15 +22,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REVIEW_TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-TOOLS_DIR="$(dirname "$REVIEW_TOOLS_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../../find-workspace-root.sh")"
 
 PULL_SH="$SCRIPT_DIR/pull-repos.sh"
 MERGE_SH="$SCRIPT_DIR/list-merge-resolved.sh"
 GAPS_SH="$SCRIPT_DIR/list-coverage-gaps.sh"
-ITEMS_SH="$REVIEW_TOOLS_DIR/review-items.sh"
+ITEMS_SH="$WORKSPACE_ROOT/tools/review/review-items.sh"
 
 TICKET=""
 REPO_FILTER=""
@@ -64,7 +61,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$AGENTS_DIR/workareas/reviews/$TICKET"
+REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
 META_FILE="$REVIEW_DIR/.review-meta.json"
 [[ -f "$META_FILE" ]] || { echo "Meta file not found: $META_FILE" >&2; exit 1; }
 

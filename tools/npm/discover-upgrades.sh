@@ -16,16 +16,14 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 # Defaults
 REPO_PATH=""
 RUN_ID=""
 STRATEGY="latest"
 JSON_OUTPUT=false
-WORKSPACE_BASE="$AGENTS_DIR/workareas/npm-upgrades"
+WORKSPACE_BASE="$WORKSPACE_ROOT/workareas/npm-upgrades"
 FORCE=false
 
 show_help() {

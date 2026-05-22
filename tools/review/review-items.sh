@@ -12,9 +12,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
@@ -49,7 +47,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$AGENTS_DIR/workareas/reviews/$TICKET"
+REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
 [[ -d "$REVIEW_DIR" ]] || { echo "Review workspace not found: $REVIEW_DIR" >&2; exit 1; }
 
 # Map filter labels to canonical Disposition / Status values

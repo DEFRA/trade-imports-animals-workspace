@@ -14,9 +14,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 UPDATER="$SCRIPT_DIR/lib/update-item.awk"
 
 TICKET=""
@@ -65,7 +63,7 @@ case "$DISPOSITION" in
     "") STATUS="" ;;
 esac
 
-REVIEW_FILE="$AGENTS_DIR/workareas/code-style-reviews/$TICKET/style-review.${REPO}.md"
+REVIEW_FILE="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET/style-review.${REPO}.md"
 [[ -f "$REVIEW_FILE" ]] || { echo "Style review file not found: $REVIEW_FILE" >&2; exit 1; }
 
 AWK_ARGS=(

@@ -7,9 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 TICKET="${1:-}"
 JSON_OUTPUT=false
@@ -26,7 +24,7 @@ if [[ -z "$TICKET" ]]; then
     exit 1
 fi
 
-REVIEW_DIR="$AGENTS_DIR/workareas/reviews/$TICKET"
+REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
 META_FILE="$REVIEW_DIR/.review-meta.json"
 FILE_REVIEWS_DIR="$REVIEW_DIR/file-reviews"
 

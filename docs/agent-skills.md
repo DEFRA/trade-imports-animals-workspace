@@ -27,25 +27,35 @@ variable to skills.
 
 The marker is the **co-presence of `.claude/skills/` AND `docs/`** at the
 same directory. Sub-repos under `repos/` carry neither, so the walk-up skips
-past them cleanly.
+past them cleanly. The marker check is centralised in
+[`tools/find-workspace-root.sh`](../tools/find-workspace-root.sh) — never
+re-implement it inline.
 
-Two ways to compute it:
+Two ways to invoke it:
 
-**Inline walk-up (use in `SKILL.md` bash blocks — no path bootstrap needed):**
-
-```bash
-WORKSPACE_ROOT=$PWD; while [ "$WORKSPACE_ROOT" != / ] && ! { [ -d "$WORKSPACE_ROOT/.claude/skills" ] && [ -d "$WORKSPACE_ROOT/docs" ]; }; do WORKSPACE_ROOT=$(dirname "$WORKSPACE_ROOT"); done
-```
-
-**Canonical script (use from other `tools/` scripts that know their own location):**
+**From `SKILL.md` bash blocks (walk up to find the helper, then exec):**
 
 ```bash
-WORKSPACE_ROOT="$("$(dirname "${BASH_SOURCE[0]}")/../find-workspace-root.sh")"
+WORKSPACE_ROOT="$(d=$PWD; while [ ! -x "$d/tools/find-workspace-root.sh" ] && [ "$d" != / ]; do d=$(dirname "$d"); done; "$d/tools/find-workspace-root.sh")"
 ```
 
-The script lives at [`tools/find-workspace-root.sh`](../tools/find-workspace-root.sh).
-It self-locates via `${BASH_SOURCE[0]}` (fast path) and falls back to the
-same cwd walk-up if invoked piped or symlinked.
+**From `tools/<domain>/<script>.sh` (known relative path via `BASH_SOURCE`):**
+
+```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
+```
+
+For nested helpers under `tools/<domain>/<sub>/<script>.sh` use
+`$SCRIPT_DIR/../../find-workspace-root.sh`.
+
+The helper self-locates via `${BASH_SOURCE[0]}` (fast path) and falls
+back to a cwd walk-up if invoked piped or symlinked. Earlier versions of
+these scripts counted `dirname`'s from `BASH_SOURCE` to climb to the
+workspace root, which was brittle (off-by-one when a script moved
+between depths) and inconsistent (each script independently
+re-implemented the markers). Anchoring on the helper kills both classes
+of bug.
 
 Compute `WORKSPACE_ROOT` once per session.
 

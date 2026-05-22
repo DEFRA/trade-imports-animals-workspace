@@ -11,9 +11,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 # Parse arguments
 TICKET=""
@@ -78,7 +76,7 @@ else
     REVIEW_ID="$TICKET"
 fi
 
-REVIEW_DIR="$AGENTS_DIR/workareas/reviews/$REVIEW_ID"
+REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$REVIEW_ID"
 
 # Helper for output
 log() {

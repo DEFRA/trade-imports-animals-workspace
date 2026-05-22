@@ -24,15 +24,12 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-STYLE_TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-TOOLS_DIR="$(dirname "$STYLE_TOOLS_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../../find-workspace-root.sh")"
 
-REVIEW_REFRESH_DIR="$TOOLS_DIR/review/refresh"
+REVIEW_REFRESH_DIR="$WORKSPACE_ROOT/tools/review/refresh"
 PULL_SH="$REVIEW_REFRESH_DIR/pull-repos.sh"
 MERGE_SH="$REVIEW_REFRESH_DIR/list-merge-resolved.sh"
-ITEMS_SH="$STYLE_TOOLS_DIR/style-items.sh"
+ITEMS_SH="$WORKSPACE_ROOT/tools/style/style-items.sh"
 
 TICKET=""
 REPO_FILTER=""
@@ -71,8 +68,8 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$AGENTS_DIR/workareas/reviews/$TICKET"
-STYLE_DIR="$AGENTS_DIR/workareas/code-style-reviews/$TICKET"
+REVIEW_DIR="$WORKSPACE_ROOT/workareas/reviews/$TICKET"
+STYLE_DIR="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET"
 REVIEW_META="$REVIEW_DIR/.review-meta.json"
 STYLE_META="$STYLE_DIR/.style-meta.json"
 [[ -f "$STYLE_META" ]] || { echo "Style meta not found: $STYLE_META" >&2; exit 1; }

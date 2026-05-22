@@ -7,19 +7,20 @@ Role: Help create well-structured, actionable Jira tickets.
 
 ## Path conventions
 
-Resolve `WORKSPACE_ROOT` once per session — walk up from `$PWD` to the
-first ancestor with both `.claude/skills/` and `docs/`:
+Resolve `WORKSPACE_ROOT` once per session via the workspace helper —
+walk up from `$PWD` until `tools/find-workspace-root.sh` is in scope,
+then execute it (the helper centralises the markers check —
+co-presence of `.claude/skills/` AND `docs/`):
 
 ```bash
-WORKSPACE_ROOT=$PWD; while [ "$WORKSPACE_ROOT" != / ] && ! { [ -d "$WORKSPACE_ROOT/.claude/skills" ] && [ -d "$WORKSPACE_ROOT/docs" ]; }; do WORKSPACE_ROOT=$(dirname "$WORKSPACE_ROOT"); done
+WORKSPACE_ROOT="$(d=$PWD; while [ ! -x "$d/tools/find-workspace-root.sh" ] && [ "$d" != / ]; do d=$(dirname "$d"); done; "$d/tools/find-workspace-root.sh")"
 ```
 
-(Or invoke `tools/find-workspace-root.sh` if you already know an
-absolute path into the workspace.) Cross-workspace paths use
-`${WORKSPACE_ROOT}/...`: scripts under `tools/<domain>/`, best-practices
-under `docs/best-practices/`, workareas under `workareas/`. Skill-internal
-references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
-subagents are addressed by name via the Task tool.
+Cross-workspace paths use `${WORKSPACE_ROOT}/...`: scripts under
+`tools/<domain>/`, best-practices under `docs/best-practices/`,
+workareas under `workareas/`. Skill-internal references stay relative
+(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed by
+name via the Task tool.
 
 ## Writing Style (GDS)
 

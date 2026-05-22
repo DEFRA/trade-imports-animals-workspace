@@ -16,9 +16,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 MIGRATOR="$SCRIPT_DIR/lib/migrate-legacy-to-items.awk"
 
 TICKET=""
@@ -40,7 +38,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-STYLE_DIR="$AGENTS_DIR/workareas/code-style-reviews/$TICKET"
+STYLE_DIR="$WORKSPACE_ROOT/workareas/code-style-reviews/$TICKET"
 LEGACY_FILE="$STYLE_DIR/code-style-review.md"
 META_FILE="$STYLE_DIR/.style-meta.json"
 

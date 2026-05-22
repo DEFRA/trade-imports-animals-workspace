@@ -8,9 +8,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 VERSION=""
 RUN_ID=""
@@ -88,7 +86,7 @@ error() {
 # Strip v prefix if present
 VERSION=$(echo "$VERSION" | sed 's/^v//')
 
-CHANGELOG_FILE="$AGENTS_DIR/workareas/govuk-upgrades/$RUN_ID/$REPO_NAME/CHANGELOG.md"
+CHANGELOG_FILE="$WORKSPACE_ROOT/workareas/govuk-upgrades/$RUN_ID/$REPO_NAME/CHANGELOG.md"
 
 if [[ ! -f "$CHANGELOG_FILE" ]]; then
     error "Cached CHANGELOG.md not found at: $CHANGELOG_FILE. Run discover-versions.sh first."

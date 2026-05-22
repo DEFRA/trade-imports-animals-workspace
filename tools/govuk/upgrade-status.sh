@@ -7,9 +7,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 RUN_ID=""
 REPO_FILTER=""
@@ -73,7 +71,7 @@ error() {
 
 [[ -z "$RUN_ID" ]] && error "--run-id TICKET is required"
 
-WORKSPACE_BASE="$AGENTS_DIR/workareas/govuk-upgrades/$RUN_ID"
+WORKSPACE_BASE="$WORKSPACE_ROOT/workareas/govuk-upgrades/$RUN_ID"
 
 if [[ ! -d "$WORKSPACE_BASE" ]]; then
     error "Workspace not found: $WORKSPACE_BASE. Run discover-versions.sh first."

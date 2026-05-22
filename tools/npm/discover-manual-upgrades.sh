@@ -5,9 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOLS_DIR="$(dirname "$SCRIPT_DIR")"
-SKILLS_DIR="$(dirname "$TOOLS_DIR")"
-AGENTS_DIR="$(dirname "$SKILLS_DIR")"
+WORKSPACE_ROOT="$("$SCRIPT_DIR/../find-workspace-root.sh")"
 
 RUN_ID=""
 REPO_FILTER=""
@@ -86,7 +84,7 @@ if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
 fi
 
-PLANS_DIR="$AGENTS_DIR/workareas/npm-upgrades/$RUN_ID"
+PLANS_DIR="$WORKSPACE_ROOT/workareas/npm-upgrades/$RUN_ID"
 
 # Check if migration plans exist
 if [ ! -d "$PLANS_DIR" ]; then
