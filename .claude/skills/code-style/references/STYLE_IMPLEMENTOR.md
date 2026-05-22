@@ -5,7 +5,7 @@ item's outcome, commit once.
 
 Your prompt specifies the ticket, repo, file, and a JSON array of items.
 
-Paths anchored on `${TRADE_IMPORTS_WORKSPACE}` — compute via the `find_workspace_root`
+Paths anchored on `$TRADE_IMPORTS_WORKSPACE` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ---
@@ -21,7 +21,7 @@ helper in `docs/agent-skills.md`.
 
 ## Step 1: Verify Each Violation
 
-Read the file at `${TRADE_IMPORTS_WORKSPACE}/repos/{repo}/{file}` once.
+Read the file at `$TRADE_IMPORTS_WORKSPACE/repos/{repo}/{file}` once.
 
 For each item in the input array, decide whether the violation is
 **still present** in the current file:
@@ -35,7 +35,7 @@ If `applicable_items` is empty (every item is already fixed):
 
 - For each item in `skipped_items`:
   ```bash
-  ${TRADE_IMPORTS_WORKSPACE}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  $TRADE_IMPORTS_WORKSPACE/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
     --disposition Auto-Resolved --note "violation not found"
   ```
 - Return: `{repo}/{file}: 0 done, {N} auto-resolved, 0 failed` and stop.
@@ -47,13 +47,13 @@ If `applicable_items` is empty (every item is already fixed):
 Run unit tests in the relevant repo:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo} && npm test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
+cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npm test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
+cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
 ```
 
 Read each log file once.
@@ -66,7 +66,7 @@ E2E: [pass/fail]
 ```
 
 For E2E failures, also read
-`${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-tests/test-results/*/error-context.md`
+`$TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests/test-results/*/error-context.md`
 to confirm the failure isn't related to the file you're about to touch.
 
 ---
@@ -81,7 +81,7 @@ conversion, Rule 5 helper extraction) BEFORE fixes that depend on names
 (Rule 6 renames) so you don't fight your own diff.
 
 Common patterns (consult
-`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/node/code-style.md` for the full
+`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/node/code-style.md` for the full
 rule):
 
 | Rule | Typical change |
@@ -95,7 +95,7 @@ rule):
 After all edits, run Prettier to avoid pre-commit hook failures:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo} && npx prettier --write {file}
+cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npx prettier --write {file}
 ```
 
 ---
@@ -105,28 +105,28 @@ cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo} && npx prettier --write {file}
 Run unit tests:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo} && npm test 2>&1 > /tmp/style-post-{repo}.log; echo $?
+cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npm test 2>&1 > /tmp/style-post-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
+cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
 ```
 
 **If unit tests fail:**
 
-- Revert the file: `cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo} && git checkout -- {file}`
+- Revert the file: `cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && git checkout -- {file}`
 - For each item in `applicable_items`:
   ```bash
-  ${TRADE_IMPORTS_WORKSPACE}/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
+  $TRADE_IMPORTS_WORKSPACE/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
     --status Failed --note "unit tests broke after change, reverted"
   ```
 - Return: `{repo}/{file}: 0 done, 0 auto-resolved, {N} failed`
 
 **If E2E tests fail:**
 
-- Read `${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-tests/test-results/*/error-context.md` to determine if the failure is related to your change.
+- Read `$TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests/test-results/*/error-context.md` to determine if the failure is related to your change.
 - If related: revert as above and mark all `applicable_items` Failed.
 - If unrelated (pre-existing flaky test or different feature): note it and continue.
 
@@ -137,7 +137,7 @@ cd ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-tests && npm run test:
 One commit per file. Use the Item IDs in the message:
 
 ```bash
-cd ${TRADE_IMPORTS_WORKSPACE}/repos/{repo}
+cd $TRADE_IMPORTS_WORKSPACE/repos/{repo}
 git add {file}
 git commit -m "style(EUDPA-XXXXX): {file} — {N} items
 
@@ -162,14 +162,14 @@ Capture the short SHA: `git rev-parse --short HEAD`.
 For each item in `applicable_items`:
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
+$TRADE_IMPORTS_WORKSPACE/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
   --status Done --note "{short-sha}"
 ```
 
 For each item in `skipped_items`:
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+$TRADE_IMPORTS_WORKSPACE/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
   --disposition Auto-Resolved --note "violation not found"
 ```
 
@@ -178,7 +178,7 @@ If during Step 1 you decided an item is a **per-item judgement won't-fix**
 deliberate codebase choice):
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
+$TRADE_IMPORTS_WORKSPACE/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
   --disposition "Won't Fix" --note "<one-line reason>"
 ```
 

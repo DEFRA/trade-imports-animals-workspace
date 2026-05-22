@@ -1,10 +1,10 @@
 # `## Items` table schema
 
 The consolidated per-repo state lives in
-`${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXX/review.{repo}.md` under a
+`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXX/review.{repo}.md` under a
 single `## Items` table. The walker, batch implementor, and refresh
 flows all read and mutate it via helper scripts under
-`${TRADE_IMPORTS_WORKSPACE}/tools/review/`. Never hand-edit the table body —
+`$TRADE_IMPORTS_WORKSPACE/tools/review/`. Never hand-edit the table body —
 the scripts keep escaping consistent.
 
 ## Columns

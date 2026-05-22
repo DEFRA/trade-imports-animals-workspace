@@ -48,10 +48,10 @@ Cross-workspace references in `SKILL.md` use absolute paths anchored on
 `$TRADE_IMPORTS_WORKSPACE`:
 
 ```
-Scripts:        ${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/<script>
-Best-practices: ${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/<topic>/<file>
-Workareas:      ${TRADE_IMPORTS_WORKSPACE}/workareas/...
-Other skills:   ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/<name>/...
+Scripts:        $TRADE_IMPORTS_WORKSPACE/tools/<domain>/<script>
+Best-practices: $TRADE_IMPORTS_WORKSPACE/docs/best-practices/<topic>/<file>
+Workareas:      $TRADE_IMPORTS_WORKSPACE/workareas/...
+Other skills:   $TRADE_IMPORTS_WORKSPACE/.claude/skills/<name>/...
 ```
 
 Skill-internal references stay relative from `SKILL.md`:
@@ -77,7 +77,7 @@ description: ...          # 1-1024 chars; WHAT + WHEN + trigger keywords
 - `references/<NAME>.md` — additional docs loaded on demand.
 - `assets/<NAME>.md` — templates, schemas, static resources.
 - Skills do NOT carry private `scripts/` folders in this workspace: shared
-  shell scripts live at `${WORKSPACE_ROOT}/tools/`.
+  shell scripts live at `$TRADE_IMPORTS_WORKSPACE/tools/`.
 
 Spawn idiom inside `SKILL.md`:
 
@@ -92,7 +92,7 @@ prose inside the owning skill. They are spawned via the Task tool with
 `subagent_type: general-purpose` and a prompt that begins:
 
 ```
-Follow the instructions in ${WORKSPACE_ROOT}/.claude/skills/<owner>/references/<NAME>.md.
+Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/<owner>/references/<NAME>.md.
 
 <per-spawn context: file/path/commit/output-path>
 ```
@@ -125,6 +125,6 @@ Rationale:
 
 ## Runtime workareas
 
-`${WORKSPACE_ROOT}/workareas/` is runtime cache and is gitignored. Skills
+`$TRADE_IMPORTS_WORKSPACE/workareas/` is runtime cache and is gitignored. Skills
 populate it (reviews, code-style reviews, ticket plans, upgrades) as they
 run; nothing under `workareas/` is part of the checked-in audit trail.

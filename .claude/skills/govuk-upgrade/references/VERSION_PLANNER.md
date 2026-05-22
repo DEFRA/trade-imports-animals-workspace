@@ -3,7 +3,7 @@ for what (if anything) needs changing in the repo.
 
 Your prompt names the run, repo, version, and stub file path.
 
-Paths anchored on `${TRADE_IMPORTS_WORKSPACE}` — compute via the `find_workspace_root`
+Paths anchored on `$TRADE_IMPORTS_WORKSPACE` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ---
@@ -18,7 +18,7 @@ attempt any implementation.
 ## Inputs
 
 - `{run-id}`, `{repo-name}`, `{repo-path}`, `{version}`
-- Stub file: `${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md`
+- Stub file: `$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md`
 
 ---
 
@@ -34,7 +34,7 @@ attempt any implementation.
 ## Step 1: Get the changelog section
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/govuk/fetch-changelog-section.sh {version} \
+$TRADE_IMPORTS_WORKSPACE/tools/govuk/fetch-changelog-section.sh {version} \
   --run-id {run-id} \
   --repo {repo-name}
 ```
@@ -51,7 +51,7 @@ Read the output carefully. Focus on:
 
 For each breaking change, recommended change, or deprecated feature in
 the changelog, grep for the relevant pattern in
-`${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name}/src`.
+`$TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src`.
 
 **File types to scan and what to look for:**
 
@@ -65,9 +65,9 @@ the changelog, grep for the relevant pattern in
 Example grep commands:
 
 ```bash
-grep -r --include="*.njk" --include="*.html" --include="*.hbs" "serviceName" ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name}/src
-grep -r --include="*.scss" "\$govuk-colour" ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name}/src
-grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name}/src
+grep -r --include="*.njk" --include="*.html" --include="*.hbs" "serviceName" $TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src
+grep -r --include="*.scss" "\$govuk-colour" $TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src
+grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" $TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src
 ```
 
 ---
@@ -77,7 +77,7 @@ grep -r --include="*.js" --include="*.ts" --include="*.mjs" "initAll" ${TRADE_IM
 ### If any files match patterns requiring changes → write `.todo`
 
 File:
-`${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
+`$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
 
 ```markdown
 # govuk-frontend v{version} — Upgrade Plan
@@ -110,7 +110,7 @@ File:
 ### If no files match any changelog patterns → write `.noop`
 
 File:
-`${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.noop`
+`$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.noop`
 
 ```markdown
 # govuk-frontend v{version} — No Changes Required
@@ -140,7 +140,7 @@ No patterns from this changelog entry were found in the repo's source files.
 ## Step 4: Delete the zero-byte stub
 
 ```bash
-rm ${TRADE_IMPORTS_WORKSPACE}/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
+rm $TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
 ```
 
 ---

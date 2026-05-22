@@ -116,7 +116,7 @@ layout (5 role overlays + dev overlay), env knobs that must use
 - `docs/best-practices/` — tech-specific practice guides
   (gds/, java/, node/, playwright/, k6/, rest-api/, doc-comments/,
   docker-compose.md). Cited by SKILL.md files via
-  `${WORKSPACE_ROOT}/docs/best-practices/<topic>/<file>`.
+  `$TRADE_IMPORTS_WORKSPACE/docs/best-practices/<topic>/<file>`.
 
 ## Skills
 
@@ -141,7 +141,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 
 Long-running fan-out workers live as `references/<NAME>.md` prose inside
 the owning skill and are spawned as `general-purpose` Task subagents
-(`Follow ${WORKSPACE_ROOT}/.claude/skills/<owner>/references/<NAME>.md.`).
+(`Follow $TRADE_IMPORTS_WORKSPACE/.claude/skills/<owner>/references/<NAME>.md.`).
 `general-purpose` carries `Tools: *` so workers can write the on-disk
 artifacts that downstream `tools/` scripts consume.
 
@@ -163,7 +163,7 @@ session rather than fanning out.
 ## Tools (`tools/`)
 
 Shared shell scripts called by skills via
-`${WORKSPACE_ROOT}/tools/<domain>/<script>`. Environment:
+`$TRADE_IMPORTS_WORKSPACE/tools/<domain>/<script>`. Environment:
 `JIRA_USER`, `JIRA_TOKEN`, `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`.
 
 | Script | Args | Purpose |

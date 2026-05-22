@@ -10,9 +10,9 @@ Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
 ## Path conventions
 
 Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
-directly — `${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/`,
-`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`,
-`${TRADE_IMPORTS_WORKSPACE}/workareas/`. The env var must be set in
+directly — `$TRADE_IMPORTS_WORKSPACE/tools/<domain>/`,
+`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`,
+`$TRADE_IMPORTS_WORKSPACE/workareas/`. The env var must be set in
 your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
 for setup. Scripts bail with a clear error if it's unset. Skill-internal
 references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
@@ -25,7 +25,7 @@ subagents are addressed by name via the Task tool.
 | `references/PACKAGE_PLANNER.md` | `references/PHASE_1_MANAGER.md` Step 2 — one per outdated package, parallel fan-out | per-package `upgrade__*.{auto|manual}.md` |
 
 Spawn idiom inside Phase 1: Task tool with `subagent_type: general-purpose`
-and a prompt beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.`
+and a prompt beginning `Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.`
 `general-purpose` carries `Tools: *` so the worker can WebFetch
 changelogs, grep the codebase and write its plan file.
 
@@ -44,7 +44,7 @@ extension conventions, and global rules shared by all phases.
 
 ## Repos
 
-All EUDP Live Animals Node repos under `${TRADE_IMPORTS_WORKSPACE}/repos/`:
+All EUDP Live Animals Node repos under `$TRADE_IMPORTS_WORKSPACE/repos/`:
 
 - trade-imports-animals-frontend
 - trade-imports-animals-backend
@@ -54,7 +54,7 @@ All EUDP Live Animals Node repos under `${TRADE_IMPORTS_WORKSPACE}/repos/`:
 ## Step 1: Establish Run ID
 
 ```bash
-git -C ${TRADE_IMPORTS_WORKSPACE}/repos/trade-imports-animals-frontend branch --show-current
+git -C $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-frontend branch --show-current
 ```
 
 Parse `EUDPA-XXXXX` from the branch name (e.g.
@@ -66,13 +66,13 @@ For each repo, ensure it's on `feature/{run-id}-npm-dependency-upgrades`:
 
 ```bash
 # Check
-git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} branch -a | grep "feature/{run-id}-npm-dependency-upgrades"
+git -C $TRADE_IMPORTS_WORKSPACE/repos/{repo-name} branch -a | grep "feature/{run-id}-npm-dependency-upgrades"
 
 # Create if missing
-git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
+git -C $TRADE_IMPORTS_WORKSPACE/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
 
 # Switch if exists
-git -C ${TRADE_IMPORTS_WORKSPACE}/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
+git -C $TRADE_IMPORTS_WORKSPACE/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 All repos must be on the feature branch before continuing.
@@ -135,7 +135,7 @@ Recommended scope per run:
 - `references/PHASE_3_MANAGER.md` — manual handoff report.
 - `references/PACKAGE_PLANNER.md` — single-package research + auto/manual classification (spawned per package as `general-purpose`).
 
-Scripts (`${TRADE_IMPORTS_WORKSPACE}/tools/npm/`):
+Scripts (`$TRADE_IMPORTS_WORKSPACE/tools/npm/`):
 
 - `discover-upgrades.sh` — Phase 1 stub creation.
 - `analyze-migration-plans.sh` — Phase 1 status snapshot.

@@ -9,9 +9,9 @@ languages.
 ## Path conventions
 
 Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
-directly — `${TRADE_IMPORTS_WORKSPACE}/tools/<domain>/`,
-`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`,
-`${TRADE_IMPORTS_WORKSPACE}/workareas/`. The env var must be set in
+directly — `$TRADE_IMPORTS_WORKSPACE/tools/<domain>/`,
+`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`,
+`$TRADE_IMPORTS_WORKSPACE/workareas/`. The env var must be set in
 your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
 for setup. Scripts bail with a clear error if it's unset. Skill-internal
 references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
@@ -28,7 +28,7 @@ subagents are addressed by name via the Task tool.
   (`Follow references/BATCH_IMPLEMENTOR.md`).
 
 Per-repo state lives in
-`${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXX/review.{repo}.md` with a
+`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXX/review.{repo}.md` with a
 consolidated `## Items` table — see `assets/items-table.md` for the
 schema, allowed Disposition/Status values, and the `|` escape rule.
 
@@ -59,12 +59,12 @@ subagents receive — so workers can write their on-disk artifacts.
 | `references/REVIEW_ITEM_FIXER.md` | `BATCH_IMPLEMENTOR.md` Step 4 (one per Fix-disposition item, sequential) | source edits + commit |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
-beginning `Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/<NAME>.md.`
+beginning `Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/<NAME>.md.`
 
 ## Step 0: Detect Mode
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/review/detect-mode.sh EUDPA-XXXXX
+$TRADE_IMPORTS_WORKSPACE/tools/review/detect-mode.sh EUDPA-XXXXX
 ```
 
 Prints `FRESH` (no prior review) or `REFRESH` (workspace exists with a
@@ -80,13 +80,13 @@ Prints `FRESH` (no prior review) or `REFRESH` (workspace exists with a
 ## Step 1: Prepare Workspace
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/review/prepare-review.sh EUDPA-XXXXX
+$TRADE_IMPORTS_WORKSPACE/tools/review/prepare-review.sh EUDPA-XXXXX
 ```
 
-Creates `${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/` with ticket.md,
+Creates `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/` with ticket.md,
 repos/, file-reviews/ placeholders, and `.review-meta.json` (the latter
 includes detected tech + best-practices paths under
-`${TRADE_IMPORTS_WORKSPACE}/docs/best-practices/`).
+`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`).
 
 ## Step 2: Review Each File
 
@@ -100,12 +100,12 @@ Spawn up to **10 in parallel** via the Task tool with
 #### Spawn prompt template
 
 ```markdown
-Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode:** FRESH
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
+**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
@@ -113,7 +113,7 @@ Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/refe
 - Commit: [sha]
 
 **Write your review to the existing placeholder file:**
-${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 
 Note: Nested paths use underscores (e.g., `src/main/Service.java` → `src_main_Service.java.review.md`).
 ```
@@ -121,7 +121,7 @@ Note: Nested paths use underscores (e.g., `src/main/Service.java` → `src_main_
 ## Step 3: Verify Coverage
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/review/verify-coverage.sh EUDPA-XXXXX
+$TRADE_IMPORTS_WORKSPACE/tools/review/verify-coverage.sh EUDPA-XXXXX
 ```
 
 **Do NOT proceed to Step 4 until 100% coverage.**
@@ -131,10 +131,10 @@ ${TRADE_IMPORTS_WORKSPACE}/tools/review/verify-coverage.sh EUDPA-XXXXX
 Spawn one Task subagent with `subagent_type: general-purpose`. Spawn prompt:
 
 ```markdown
-Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/CONSISTENCY_REVIEWER.md.
+Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/CONSISTENCY_REVIEWER.md.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
+**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 Read .review-meta.json for all repos and PR numbers.
 Write _consistency-check.md for every repo listed.
@@ -146,7 +146,7 @@ before proceeding.
 ## Step 5: Create Repository Summaries
 
 For each repository, create
-`${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review.{repo}.md` by
+`$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md` by
 synthesising the per-file reviews:
 
 ```markdown
@@ -192,7 +192,7 @@ Skip this step if only one repository is involved.
 
 ## Step 6: Write Index
 
-Create `${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review-index.md` —
+Create `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review-index.md` —
 a thin navigation index only, no item rows:
 
 ```markdown
@@ -259,8 +259,8 @@ Summary:
 - Critical findings: [X]
 - Total todo items: [X]
 
-Index: ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review-index.md
-Repo reviews: ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
+Index: $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review-index.md
+Repo reviews: $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
 ```
 
 **Hand-marking shortcut:** open the items table in `review.{repo}.md`
@@ -279,7 +279,7 @@ after further work or merge conflicts.
 ## Step R1-R3: Build Refresh Scope
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/review/refresh/scope.sh EUDPA-XXXXX --write-snapshot
+$TRADE_IMPORTS_WORKSPACE/tools/review/refresh/scope.sh EUDPA-XXXXX --write-snapshot
 ```
 
 Output is a JSON object on stdout. Each `repos[]` entry has `prior_sha`,
@@ -300,7 +300,7 @@ unchanged since the last refresh and stop.
 ## Step R3.5: Load Full Item Inventory
 
 ```bash
-${TRADE_IMPORTS_WORKSPACE}/tools/review/review-items.sh EUDPA-XXXXX --json
+$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --json
 ```
 
 Use this when reconciling agent results in R6:
@@ -317,17 +317,17 @@ Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 Spawn `general-purpose` Task subagents in parallel (up to 10), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
-`Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/FILE_REVIEWER.md.`
+`Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.`
 
 ### Spawn prompt — REFRESH (List A)
 
 ```markdown
-Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode: REFRESH** — this file has changed since the last review.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
+**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
@@ -336,25 +336,25 @@ Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/refe
 - Current commit: [new-sha]
 
 **Previously reported violations:** Read them from:
-${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 
 **Prior dispositions:** Pull existing items for this file from the consolidated items table:
-${TRADE_IMPORTS_WORKSPACE}/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'
+$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'
 Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
 
 **Write your updated review to (overwrite existing):**
-${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 ```
 
 ### Spawn prompt — MERGE_RESOLVED (List C)
 
 ```markdown
-Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode: MERGE_RESOLVED** — this file is the product of a hand-resolved merge conflict. The prior review covered one parent only; the resolution exists in *neither* parent and is unreviewed.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/
+**Review workspace:** $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/
 
 **Your assigned file:**
 - Repository: [repo-name]
@@ -364,18 +364,18 @@ Follow the instructions in ${TRADE_IMPORTS_WORKSPACE}/.claude/skills/review/refe
 - Merge commit: [merge-sha]
 
 **Focus your review on:**
-1. The resolution diff: `git -C ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/repos/[repo-name] diff [old-sha]..[new-sha] -- [file-path]` — read it; this is the unreviewed delta.
+1. The resolution diff: `git -C $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/[repo-name] diff [old-sha]..[new-sha] -- [file-path]` — read it; this is the unreviewed delta.
 2. **Prior items survive the merge?** For every Fix+Done item on this file, verify the fix is still present at HEAD. If a prior fix has been undone by the merge, log as a regression in your review.
 3. **Smuggled behaviour?** Did the resolution import code from the source branch (sibling tickets) that contradicts decisions made for the current ticket?
 4. **Integration points.** Where the two sides meet — those are the most likely defect sites.
 
 **Previously reported violations:** Read them from:
-${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 
-**Prior dispositions:** `${TRADE_IMPORTS_WORKSPACE}/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'`. Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
+**Prior dispositions:** `$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo [repo-name] | awk -F'\t' '$3 == "[file-path]"'`. Items with Disposition=`Won't Fix` or `Auto-Resolved` must NOT be re-reported as open.
 
 **Write your updated review to (overwrite existing):**
-${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[path_with_underscores].review.md
 ```
 
 ### Spawn prompt — FRESH (List D, coverage gap)
@@ -403,8 +403,8 @@ escaping consistent.
 - Item `Fix` + `Done` and agent confirms fix is in place → leave alone.
 - Item `Fix` + `Done` and agent finds the pattern back → log as a regression in the Refresh Summary; do NOT change disposition (the user can re-walk it).
 - Item `Fix` + `Not Done` confirmed still present → leave alone.
-- Item with no disposition that the inline check determines is no longer present → `${TRADE_IMPORTS_WORKSPACE}/tools/review/review-mark.sh --disposition "Auto-Resolved" --note "..."`.
-- New violation found by a refresh agent → `${TRADE_IMPORTS_WORKSPACE}/tools/review/review-add-item.sh --repo R --file F --line L --severity S --category C --issue ... --fix ...`. Returns the new ID.
+- Item with no disposition that the inline check determines is no longer present → `$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh --disposition "Auto-Resolved" --note "..."`.
+- New violation found by a refresh agent → `$TRADE_IMPORTS_WORKSPACE/tools/review/review-add-item.sh --repo R --file F --line L --severity S --category C --issue ... --fix ...`. Returns the new ID.
 
 **Update `review.{repo}.md` cosmetics:**
 
@@ -427,7 +427,7 @@ escaping consistent.
    ```
 3. Update the Repository Verdict if warranted.
 
-**Also update `${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review-index.md`:**
+**Also update `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review-index.md`:**
 
 1. Add `**Last Updated:** [today]` line.
 2. Update the Repositories table verdicts.
@@ -453,12 +453,12 @@ Summary:
 - Todo items resolved: [N] / [M]
 - New issues found: [N]
 
-Updated: ${TRADE_IMPORTS_WORKSPACE}/workareas/reviews/EUDPA-XXXXX/review-index.md + review.{repo}.md files
+Updated: $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review-index.md + review.{repo}.md files
 ```
 
 ## Scripts cheat-sheet
 
-All under `${TRADE_IMPORTS_WORKSPACE}/tools/review/`:
+All under `$TRADE_IMPORTS_WORKSPACE/tools/review/`:
 
 | Script | Purpose |
 |---|---|
