@@ -1,5 +1,7 @@
 # Phase 3 Manager — Implementation
 
+**Bash hygiene:** one command per Bash call. Full rules in `SKILL.md` → "Bash call hygiene".
+
 **Job:** Apply every `todo`-classified version per repo in strict semver
 ascending order. Stop a repo on first failure.
 

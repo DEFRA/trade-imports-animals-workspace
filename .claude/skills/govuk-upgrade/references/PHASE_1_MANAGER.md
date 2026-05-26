@@ -1,5 +1,7 @@
 # Phase 1 Manager — Version Discovery
 
+**Bash hygiene:** one command per Bash call. Full rules in `SKILL.md` → "Bash call hygiene".
+
 **Job:** Verify Phase 1 ran (via `start-upgrade.sh`) and present its
 output. Phase 1 itself is fully scripted — this manager exists for the
 "Phase 1 complete?" gate.
