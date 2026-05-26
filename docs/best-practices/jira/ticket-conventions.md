@@ -47,20 +47,47 @@ Type-specific templates (`assets/templates/{bug,story,task}.md`) may
 suggest a shape (e.g. *Given / When / Then* for some Stories) but do
 not enforce one. Bullets are fine across all Types.
 
-## Named conventions (opt-in)
+## EUDPA project shape
 
-These are bundles the user can opt into during a `ticket-creator`
-interview. They are never auto-applied — the skill asks first.
+EUDPA is a feature/capability project. Every ticket — Bug, Story, or
+Task — sits under one of ~20 active feature epics on the EUDPA board
+(board 13780). There is no dedicated tech-debt board or tech-debt
+epic; tech-debt work is parented under whichever feature epic owns
+the area, with a `technicalImprovement` label as the discriminator.
 
-### EUDPA Tech Debt Board (board 862)
+The set of active epics drifts as the project progresses. Do not
+hard-code epic keys in skill prose — discover them at interview time
+via the recipe in [Listing active epics](#listing-active-epics).
 
-| Field | Value |
-|-------|-------|
-| Type | Task |
-| Label | `technicalImprovement` |
-| Priority | `Lowest` |
-| Suggested parent epic | `EUDPA-17736` (Accessibility) or `EUDPA-20628` (QA Automation), or another Tech Debt Board epic |
+### Listing active epics
 
-The skill asks "Is this an EUDPA Tech Debt Board ticket?" after Type
-is set to Task. If yes, the bundle above is applied without re-asking
-each field; parent epic is still confirmed with the user.
+When the user needs help picking a parent epic, list the open epics
+on the EUDPA board via `tools/jira/list-board-epics.sh`:
+
+```bash
+~/git/defra/trade-imports-animals/tools/jira/list-board-epics.sh 13780
+```
+
+That prints `KEY — summary` lines for each open epic. Pass `json`
+as a second arg for `[{key, summary, done}]`, or `--include-done`
+to include closed epics.
+
+Pair with `tools/jira/ticket.sh EUDPA-X summary` for verification
+(Step 1.5 of the skill does this automatically).
+
+## Field-default modifiers (opt-in)
+
+When the user describes their Task as tech-debt, the skill defaults
+two fields without re-asking:
+
+| Field | Default | Why |
+|-------|---------|-----|
+| Label | `technicalImprovement` | Canonical EUDPA tech-debt label (8 backlog issues on 2026-05-26 used it). |
+| Priority | `Lowest` | EUDPA convention for tech-debt — tracked but not urgent. |
+
+Parent epic is still asked for normally — the modifier does not
+suggest a specific key. The user picks the feature epic that owns
+the area. Step 1.5 then verifies it.
+
+The modifier is **opt-in only** — never auto-apply it. Confirm with
+the user before applying.

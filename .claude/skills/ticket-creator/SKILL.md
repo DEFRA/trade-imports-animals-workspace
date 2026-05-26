@@ -62,29 +62,38 @@ question.
 | Context - why needed? | Description |
 | Acceptance criteria? | AC section |
 
-### Named-convention offer (opt-in)
+### Parent epic — always asked
 
-After Type is answered, if **Type == Task**, ask once:
+EUDPA is a feature/capability project: every ticket sits under one
+of ~20 active feature epics on the EUDPA board (board 13780). Ask
+the user which epic this work belongs to. If they don't know, offer
+to list the open epics:
 
-> Is this an EUDPA Tech Debt Board ticket? (y/N)
+```bash
+~/git/defra/trade-imports-animals/tools/jira/list-board-epics.sh 13780
+```
 
-If the user answers **yes**, apply the Tech Debt Board bundle defined
-in `docs/best-practices/jira/ticket-conventions.md` without re-asking
-each field:
+The user picks one; Step 1.5 then verifies the key.
 
-- Label: `technicalImprovement`
-- Priority: `Lowest`
-- Suggest parent epic: `EUDPA-17736` (Accessibility) or `EUDPA-20628`
-  (QA Automation) — still confirm the choice with the user.
+### Tech-debt modifier (opt-in)
 
-If the user answers **no** (or anything other than yes), proceed
-through the rest of the interview asking each field individually.
+If **Type == Task** and the user describes the work as tech debt,
+ask once:
 
-Named conventions are **opt-in only** — never auto-apply the bundle.
-Do not introduce other named conventions in this skill.
+> Default this as tech debt — label `technicalImprovement`, priority `Lowest`? (Y/n)
+
+If yes, apply both defaults without re-asking. Parent epic is still
+the user's choice (no specific key is suggested — tech-debt work in
+EUDPA lands under whichever feature epic owns the area).
+
+If no, proceed through the rest of the interview asking each field
+individually.
+
+The modifier is **opt-in only** — never auto-apply it. Do not
+introduce other named conventions in this skill.
 
 ### For Bugs
-- Environment (TST/SND/PRD/vNet)?
+- Environment (Dev/Test/Performance/Pre-prod/Prod)?
 - Steps to reproduce?
 - Expected vs actual?
 - Screenshots/logs?

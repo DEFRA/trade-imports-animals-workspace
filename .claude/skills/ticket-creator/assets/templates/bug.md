@@ -1,6 +1,6 @@
 [Brief description]
 
-Env: [TST/SND/PRD/vNet]
+Env: [Dev/Test/Performance/Pre-prod/Prod]
 
 *Steps to reproduce:*
 # [Step 1]

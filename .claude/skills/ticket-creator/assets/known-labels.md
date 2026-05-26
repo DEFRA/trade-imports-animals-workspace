@@ -1,43 +1,67 @@
-# EUDPA-project Jira labels — known catalogue
+# EUDPA-project Jira labels — observed catalogue
 
-Static catalogue of labels accepted on tickets in the EUDPA Jira
-project. Read this at session start so the LLM has visibility into
-the full set and stops inventing new labels.
+Snapshot of labels in use on the EUDPA board (board 13780). Read this
+at session start so the LLM has visibility into the established
+patterns and stops inventing new labels.
 
 **Snapshot date:** 2026-05-26
-**Source:** observed on EUDPA-* tickets via `tools/jira/ticket.sh`
-(EUDPA-50/80/90/100/110/120/130/170/179/180 sample).
+**Source:** backlog sample via
+`~/git/defra/trade-imports-animals/tools/jira/list-board-labels.sh 13780`
+(129 issues).
 
 Casing rule: **camelCase canonical** (e.g. `technicalImprovement`,
-not `tech-improvement` or `technical_improvement`). Legacy
-hyphenated forms exist on older tickets but should not be used on
-new work.
+not `tech-improvement` or `technical_improvement`). Legacy hyphenated
+forms exist on older tickets but should not be used on new work.
 
-## Active labels
+## Active labels (observed counts)
 
-| Label | Use when |
-|-------|----------|
-| `technicalImprovement` | Tech debt — refactor, dependency upgrade, code-quality clean-up. Pairs with the Tech Debt Board named convention (priority `Lowest`). |
-| `Skeleton` | Initial scaffolding story for a new capability slice — usually placed on Stories that put a feature in the codebase before behaviour is wired up. |
-| `LiveIncidents` | Issue raised in response to a production incident; tracks remediation. |
-| `CAP-<area>.<sub>` | Capability-tracking label tying a Story to a CAP work-stream (e.g. `CAP-01.1`, `CAP-02.5`, `CAP-04.3`, `CAP-06.3`). Use the existing capability index — don't invent new CAP codes. |
+| Label | Count | Use when |
+|-------|-------|----------|
+| `Skeleton` | 27 | Initial scaffolding story for a new capability slice — puts a feature in the codebase before behaviour is wired up. |
+| `technicalImprovement` | 8 | Tech debt — refactor, dependency upgrade, code-quality clean-up. Pairs with the tech-debt modifier (priority `Lowest`). |
+| `UCD` | 1 | User-centred design work — research, design artefact, prototype. |
+
+### Capability-tracking family — `CAP-*` and `CORE-CAP-*`
+
+Stories that belong to a Capability (CAP) work-stream carry a label
+of the form `CAP-<area>.<sub>` or `CORE-CAP-<area>.<sub>`. The set
+observed in the 2026-05-26 sample:
+
+```
+CAP-0.1   CAP-0.1.1   CAP-0.2   CAP-0.3   CAP-0.4
+CAP-01.1  CAP-01.2    CAP-01.3
+CAP-02.1  CAP-02.2    CAP-02.3  CAP-02.4  CAP-02.5
+CAP-04.2  CAP-04.3
+CAP-05.1  CAP-05.2    CAP-05.3  CAP-05.5
+CAP-06.1  CAP-06.3    CAP-06.4  CAP-06.5
+CAP-07.1  CAP-07.2    CAP-07.3
+CAP-H.1   CAP-H.2     CAP-H.3   CAP-H.4
+CORE-CAP-03.1  CORE-CAP-04.1
+```
+
+This is a **live family** — new sub-codes appear as new capability
+slices are scoped. When a Story relates to an existing CAP slice,
+re-use the matching code. Don't coin new CAP codes from this skill
+— that decision lives with the team.
 
 ## Legacy / deprecated labels (do not use on new tickets)
 
 | Label | Notes |
 |-------|-------|
 | `tech-improvement` | Legacy hyphenated form of `technicalImprovement`. Replaced. |
-| `DevOps` | Previously paired with EUDPA-144 for DevOps work; the convention has been removed. Use a specific descriptive label or the appropriate parent epic instead. |
-| `Team-5` | Team-tagging convention removed alongside `DevOps`. |
+| `DevOps` | Previously paired with a "DevOps quick ticket" convention; the convention has been removed. |
 
 ## Refreshing this catalogue
 
-When labels diverge from this list (a new ticket uses a label not
-catalogued, or an existing label falls out of use), refresh by
-sampling recent EUDPA tickets:
+When the snapshot drifts from reality, re-run the aggregator and
+update this file:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/ticket.sh EUDPA-<n> summary | jq '.labels'
+~/git/defra/trade-imports-animals/tools/jira/list-board-labels.sh 13780
 ```
 
-Update the snapshot date in the header when refreshed.
+Update the **Snapshot date** in the header, refresh the counts in
+the active-labels table, and refresh the CAP family list. If a new
+label appears repeatedly (>1 occurrence) that isn't yet catalogued,
+add it. If a label drops out of use entirely, move it to the
+Legacy/deprecated section with a note about when it was retired.

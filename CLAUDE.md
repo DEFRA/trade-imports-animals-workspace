@@ -186,6 +186,8 @@ Shared shell scripts called by skills via
 | `tools/jira/update-ticket.sh` | EUDPA-X field=value | Update fields |
 | `tools/jira/transition-ticket.sh` | EUDPA-X "Status"\|--list | Change status |
 | `tools/jira/get-issues-for-board.sh` | board-id [list\|summary\|json] | Board issues |
+| `tools/jira/list-board-epics.sh` | board-id [list\|json] [--include-done] | List epics on a board |
+| `tools/jira/list-board-labels.sh` | board-id [list\|json] | Aggregate label frequencies from a board's backlog |
 | **github** | | |
 | `tools/github/prs.sh` | EUDPA-X [list\|json\|urls] | Find PRs |
 | `tools/github/pr-details.sh` | repo pr-num [full\|files\|json] | PR details |
