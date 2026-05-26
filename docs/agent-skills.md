@@ -85,6 +85,10 @@ each piece would individually. Symptoms:
   check ([GH#51001](https://github.com/anthropics/claude-code/issues/51001))
   trips before the allowlist matcher sees it. Use literal
   `~/git/defra/trade-imports-animals/...` paths.
+- `/Users/<you>/git/...` resolved-tilde form — the matcher compares
+  literal strings, so `~/git/...` and `/Users/<you>/git/...` are
+  *different* prefixes. Always type the `~/` form, never resolve it
+  to your home path.
 - Ad-hoc text utilities (`awk`, `sed`, `find`) on files outside the
   workspace — scoped to workspace paths in the allowlist; system
   paths still prompt.
@@ -104,6 +108,7 @@ each piece would individually. Symptoms:
 | `tools/x.sh` (relative) | full `~/git/...` form |
 | `tools/x.sh && tools/y.sh` | two separate Bash calls |
 | `$TRADE_IMPORTS_WORKSPACE/tools/x.sh` | literal `~/git/...` form |
+| `/Users/<you>/git/.../tools/x.sh` (resolved tilde) | literal `~/git/...` form |
 | `cd <dir> && git ...` | `git -C <dir> ...` |
 | `awk '...' file` (workspace inspection) | Read tool with offset+limit |
 | `find <dir> -name X -exec cat {} \;` | Glob + Read |
