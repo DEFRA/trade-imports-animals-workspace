@@ -135,7 +135,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
 | `code-style` | "style review EUDPA-", "walk style EUDPA-", "triage style", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
-| `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans. |
+| `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
 
 ### Worker references (per-skill fan-out personas)
 
@@ -155,6 +155,7 @@ artifacts that downstream `tools/` scripts consume.
 | `code-style` | `references/STYLE_IMPLEMENTOR.md` | Per-file batched style fixes |
 | `npm-upgrade` | `references/PACKAGE_PLANNER.md` | Per-package research + auto/manual classification |
 | `govuk-upgrade` | `references/VERSION_PLANNER.md` | Per-version CHANGELOG analysis + per-repo plan |
+| `govuk-upgrade` | `references/PLAN_WALKER.md` | Batch triage of pending version plans before Phase 3 |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>). It has no parallel subagent

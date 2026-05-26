@@ -1,6 +1,6 @@
 ---
 name: govuk-upgrade
-description: 'Upgrade the govuk-frontend package across the EUDP Live Animals Node.js repos (frontend, admin) using a three-phase workflow — discover all intermediate semver versions between current and latest stable, fetch each version''s CHANGELOG section and plan per-repo changes (Phase 2 fans out one `general-purpose` Task subagent per version following `references/VERSION_PLANNER.md`), then apply changes in strict semver order with npm install, tests and a per-version commit. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Use when the user wants to bump or upgrade govuk-frontend specifically (triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend"). NOT for (non-govuk-frontend) npm package upgrades — for that, use the npm-upgrade skill.'
+description: 'Upgrade the govuk-frontend package across every EUDP Live Animals Node.js repo that consumes it. A four-stage workflow driven by canonical per-repo JSON state (`versions.{repo}.json`): Phase 1 = `start-upgrade.sh` (ticket → branch → discover repos → seed state + pre-bake CHANGELOG sections + best-practices bundle), Phase 2 = fan-out one `general-purpose` Task subagent per pending version following `references/VERSION_PLANNER.md` (uses `version-classify.sh` + `version-add-change.sh`), optional Walker = batch triage of pending plans following `references/PLAN_WALKER.md`, Phase 3 = strict-semver-order `apply-version.sh` per `todo` version (package.json + npm install + npm test + commit + state transition), then E2E once at the end. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend", "walk govuk EUDPA-XXX", "start-upgrade.sh". NOT for non-govuk-frontend npm bumps — use `npm-upgrade`.'
 ---
 
 Upgrade `govuk-frontend` across the Node.js repos that consume it. The
@@ -45,8 +45,13 @@ This is for `govuk-frontend` specifically (Nunjucks macros + GDS
 components + the SCSS utility classes). For non-govuk-frontend npm bumps,
 use the `npm-upgrade` skill.
 
-Triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend
-upgrade", "bump govuk-frontend".
+| Trigger | Stage | Entry point |
+|---|---|---|
+| "upgrade govuk-frontend" / "govuk upgrade" / "bump govuk-frontend" | Start a fresh run | Step 1 below → `tools/govuk/start-upgrade.sh` |
+| "continue govuk EUDPA-XXX" | Resume mid-run | Re-enter at the next gate (Phase 2 / walker / Phase 3) |
+| "walk govuk EUDPA-XXX" | Batch-triage pending plans | `references/PLAN_WALKER.md` |
+| "implement govuk EUDPA-XXX" / "apply govuk EUDPA-XXX" | Run Phase 3 | `references/PHASE_3_MANAGER.md` |
+| "govuk status EUDPA-XXX" | Status snapshot | `tools/govuk/upgrade-status.sh --run-id EUDPA-XXX` |
 
 ## Repos in scope
 
