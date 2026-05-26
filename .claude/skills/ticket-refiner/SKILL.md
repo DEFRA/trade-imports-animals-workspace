@@ -6,6 +6,16 @@ description: 'Assess whether a Jira ticket is READY for team refinement and esti
 Role: Review tickets before refinement to assess readiness for team
 estimation. Verdict is one of `READY`, `NEEDS WORK`, or `SPIKE REQUIRED`.
 
+Works in complement with the `ticket-creator` skill — tickets created
+there flow into refinement here. Both skills share a single source of
+truth for "what makes a good EUDPA ticket":
+
+- `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md` — EUDPA ticket conventions (description structure, AC quality, parent/epic, labels).
+- `~/git/defra/trade-imports-animals/docs/best-practices/gds/writing.md` — GDS plain-English writing standard.
+
+Read both at session start; assess against the same standards
+`ticket-creator` authors to.
+
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
@@ -77,6 +87,14 @@ Confluence + GitHub.)
 
 ## Step 1: Prepare Workspace
 
+Read the shared conventions docs once at session start — they are the
+standards you assess against:
+
+- Read `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md` — these are the standards you assess against.
+- Read `~/git/defra/trade-imports-animals/docs/best-practices/gds/writing.md` — GDS plain-English writing rules.
+
+Then prepare the workarea:
+
 ```bash
 ~/git/defra/trade-imports-animals/tools/refine/prepare-refinement.sh EUDPA-XXXXX
 ```
@@ -104,6 +122,10 @@ See the workspace `CLAUDE.md` repo map for the authoritative repo list
 **Technical:** Current state? What changes? Dependencies?
 
 ## Step 3: Assess Readiness
+
+Judge each check below against the conventions read in Step 1:
+description structure, AC quality, parent/epic, label conformance
+(`ticket-conventions.md`) and GDS writing style (`gds/writing.md`).
 
 ### Description Clarity
 | Check | Question |
@@ -164,6 +186,19 @@ recommended.
 | **READY** | Clear description, testable AC, team can estimate |
 | **NEEDS WORK** | Missing info needed before refinement |
 | **SPIKE REQUIRED** | Too many unknowns - needs investigation first |
+
+**Next-step prose by verdict:**
+
+- `READY` — completion output should explicitly state
+  "next: `plan EUDPA-XXXXX` via the `ticket` skill" so the user
+  knows where to take the now-refined ticket.
+- `NEEDS WORK` — if the ticket was freshly created via
+  `ticket-creator`, point the user back at the relevant section of
+  `docs/best-practices/jira/ticket-conventions.md` (or `gds/writing.md`)
+  that explains what's missing. Treat the conventions doc as the
+  single source of truth — don't invent ad-hoc rules.
+- `SPIKE REQUIRED` — name the specific unknowns the spike should
+  investigate; do not just say "unknowns".
 
 ## Completion Output
 
