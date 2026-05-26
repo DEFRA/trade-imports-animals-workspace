@@ -163,15 +163,8 @@ problem-solve. Wait for instruction.
 
 ## Scope guidance
 
-The workflow works best when scoped tightly. Running across many repos
-and many packages simultaneously generates too much concurrent work for
-an agent to coordinate without human guidance.
-
-Recommended scope per run:
-
-- Single repo for initial exploration or high-risk packages.
-- All repos, single package (e.g. upgrade lodash everywhere) — works well automated.
-- All repos, full audit — use for planning only; implement in smaller batches.
+See `references/COMMON.md` for the recommended-scope rules — single
+repo / single package / planning-only batches.
 
 ## References
 
