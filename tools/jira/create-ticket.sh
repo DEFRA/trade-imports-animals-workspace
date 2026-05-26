@@ -3,18 +3,20 @@
 # Usage: ./create-ticket.sh [options] "Summary" ["Description"]
 #
 # Options:
-#   -t, --type TYPE       Issue type: Bug, Story, Task, Epic (default: Task)
-#   -p, --parent KEY      Parent epic key (e.g., EUDPA-20628)
-#   -P, --priority LEVEL  Priority: Lowest, Low, Medium, High, Highest (default: Medium)
-#   -l, --label LABEL     Add label (can be used multiple times)
-#   -a, --assign-self     Assign ticket to yourself
-#   -h, --help            Show this help message
+#   -t, --type TYPE                Issue type: Bug, Story, Task, Epic (default: Task)
+#   -p, --parent KEY               Parent epic key (e.g., EUDPA-20628)
+#   -P, --priority LEVEL           Priority: Lowest, Low, Medium, High, Highest (default: Medium)
+#   -l, --label LABEL              Add label (can be used multiple times)
+#   -D, --description-file FILE    Read description from FILE (use - for stdin)
+#   -a, --assign-self              Assign ticket to yourself
+#   -h, --help                     Show this help message
 #
 # Examples:
 #   ./create-ticket.sh "Fix login bug"
 #   ./create-ticket.sh -t Bug -P High "Fix login timeout" "Users cannot login after 5 minutes"
 #   ./create-ticket.sh -t Story -p EUDPA-12345 -l frontend -l urgent "Add dark mode"
-#   ./create-ticket.sh -a -p EUDPA-9888 -l DevOps "Deploy hotfix"
+#   ./create-ticket.sh -t Task -p EUDPA-17736 -l technicalImprovement -P Lowest -D draft.md "Tidy validators"
+#   cat draft.md | ./create-ticket.sh -D - "Fix login bug"
 
 set -e
 
@@ -25,6 +27,7 @@ PRIORITY="Medium"
 LABELS=()
 SUMMARY=""
 DESCRIPTION=""
+DESCRIPTION_FILE=""
 ASSIGN_SELF=false
 
 show_help() {
@@ -34,19 +37,21 @@ Create a JIRA ticket (project set via JIRA_PROJECT_KEY env var)
 Usage: ./create-ticket.sh [options] "Summary" ["Description"]
 
 Options:
-  -t, --type TYPE       Issue type: Bug, Story, Task, Epic (default: Task)
-  -p, --parent KEY      Parent epic key (e.g., EUDPA-20628)
-  -P, --priority LEVEL  Priority: Lowest, Low, Medium, High, Highest (default: Medium)
-  -l, --label LABEL     Add label (can be used multiple times)
-  -a, --assign-self     Assign ticket to yourself
-  -h, --help            Show this help message
+  -t, --type TYPE                Issue type: Bug, Story, Task, Epic (default: Task)
+  -p, --parent KEY               Parent epic key (e.g., EUDPA-20628)
+  -P, --priority LEVEL           Priority: Lowest, Low, Medium, High, Highest (default: Medium)
+  -l, --label LABEL              Add label (can be used multiple times)
+  -D, --description-file FILE    Read description from FILE (use - for stdin).
+                                 Mutually exclusive with the positional Description arg.
+  -a, --assign-self              Assign ticket to yourself
+  -h, --help                     Show this help message
 
 Examples:
   ./create-ticket.sh "Fix login bug"
   ./create-ticket.sh -t Bug -P High "Fix login timeout" "Users cannot login"
   ./create-ticket.sh -t Story -p EUDPA-12345 -l frontend "Add dark mode"
-  ./create-ticket.sh -t Task -p EUDPA-20628 -l qa_automation_work -P Lowest "QA task"
-  ./create-ticket.sh -a -p EUDPA-9888 -l DevOps -l Team-5 "Deploy hotfix"
+  ./create-ticket.sh -t Task -p EUDPA-17736 -l technicalImprovement -P Lowest -D draft.md "Tidy validators"
+  cat draft.md | ./create-ticket.sh -D - "Fix login bug"
 
 Environment Variables:
   JIRA_USER   Your Atlassian email address
@@ -72,6 +77,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -l|--label)
             LABELS+=("$2")
+            shift 2
+            ;;
+        -D|--description-file)
+            DESCRIPTION_FILE="$2"
             shift 2
             ;;
         -a|--assign-self)
@@ -100,6 +109,23 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Resolve description from --description-file if supplied
+if [[ -n "$DESCRIPTION_FILE" ]]; then
+    if [[ -n "$DESCRIPTION" ]]; then
+        echo "Error: --description-file cannot be combined with a positional Description argument"
+        exit 1
+    fi
+    if [[ "$DESCRIPTION_FILE" == "-" ]]; then
+        DESCRIPTION=$(cat)
+    else
+        if [[ ! -r "$DESCRIPTION_FILE" ]]; then
+            echo "Error: cannot read description file: $DESCRIPTION_FILE"
+            exit 1
+        fi
+        DESCRIPTION=$(cat "$DESCRIPTION_FILE")
+    fi
+fi
 
 # Validate required fields
 if [[ -z "$SUMMARY" ]]; then
