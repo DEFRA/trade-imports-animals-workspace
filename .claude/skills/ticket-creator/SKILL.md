@@ -63,6 +63,10 @@ parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 
 ## Step 1: Gather Information
 
+Ask each question on its own turn — the interview is intentionally
+serial, not a single batched form. Each answer informs the next
+question.
+
 ### Required Questions
 | Question | Purpose |
 |----------|---------|
@@ -70,6 +74,27 @@ parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 | One-line summary? | Summary field |
 | Context - why needed? | Description |
 | Acceptance criteria? | AC section |
+
+### Named-convention offer (opt-in)
+
+After Type is answered, if **Type == Task**, ask once:
+
+> Is this an EUDPA Tech Debt Board ticket? (y/N)
+
+If the user answers **yes**, apply the Tech Debt Board bundle defined
+in `docs/best-practices/jira/ticket-conventions.md` without re-asking
+each field:
+
+- Label: `technicalImprovement`
+- Priority: `Lowest`
+- Suggest parent epic: `EUDPA-17736` (Accessibility) or `EUDPA-20628`
+  (QA Automation) — still confirm the choice with the user.
+
+If the user answers **no** (or anything other than yes), proceed
+through the rest of the interview asking each field individually.
+
+Named conventions are **opt-in only** — never auto-apply the bundle.
+Do not introduce other named conventions in this skill.
 
 ### For Bugs
 - Environment (TST/SND/PRD/vNet)?
