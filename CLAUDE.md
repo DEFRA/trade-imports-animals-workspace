@@ -240,12 +240,17 @@ Shared shell scripts called by skills via
 | `tools/style/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh, filtered to `.js` |
 | `tools/style/refresh/reconcile.sh` | EUDPA-X --repo R [--dry-run] [--json] [--force] | Refresh Step R5 — fold `.style.json` findings into items.json + emit Fix+Done spot-check advisory |
 | **npm** | | |
-| `tools/npm/discover-upgrades.sh` | repo-path --run-id TICKET [--strategy LEVEL] [--json] | Phase 1: discover outdated deps |
-| `tools/npm/analyze-migration-plans.sh` | --run-id TICKET [--json] | Phase 1: planning status |
-| `tools/npm/discover-implementations.sh` | --run-id TICKET [--repo NAME] [--json] | Phase 2: find no-code-change upgrades |
-| `tools/npm/run-automated-upgrades.sh` | repo-name --run-id TICKET [--no-discover] | Phase 2: run automated upgrades |
-| `tools/npm/discover-manual-upgrades.sh` | --run-id TICKET [--repo NAME] [--json] | Phase 3: find code-change upgrades |
-| `tools/npm/upgrade-status.sh` | --run-id TICKET [--repo NAME] [--json] | Combined status |
+| `tools/npm/discover-upgrades.sh` | repo-path --run-id TICKET [--strategy LEVEL] [--json] | Discover outdated deps + seed `packages.{repo}.json` |
+| `tools/npm/packages-init.sh` | --run-id TICKET --repo R --repo-path PATH --strategy LEVEL --ncu-version VER (--ncu-json JSON \| --ncu-file PATH) | Seed `packages.{repo}.json` from ncu output |
+| `tools/npm/packages-list.sh` | --run-id TICKET [--repo R] [--package PKG] [--classification ...] [--risk ...] [--status ...] [--json] | List packages with filters |
+| `tools/npm/packages-counts.sh` | --run-id TICKET [--repo R] [--json] | Counts by classification × status × risk |
+| `tools/npm/packages-set-classification.sh` | --run-id TICKET --repo R --package PKG --classification auto\|manual --risk LOW\|MEDIUM\|HIGH --safe-for-automation true\|false --rationale "..." [--files-affected CSV] [--changes-required "..."] [--changelog-url URL] [--migration-guide-url URL] [--demoted-from-auto true\|false] | Set PACKAGE_PLANNER fields on one package |
+| `tools/npm/packages-set-status.sh` | --run-id TICKET --repo R --package PKG --status todo\|inprogress\|done\|failed [--failure-reason "..."] [--commit-sha SHA] | Set implementation_status (+ commit_sha / failure_reason) |
+| `tools/npm/run-automated-upgrades.sh` | repo-name --run-id TICKET [--no-discover] | Phase 2 per-repo runner |
+| `tools/npm/upgrade-status.sh` | --run-id TICKET [--repo NAME] [--json] | Combined status (legacy — prefer `packages-counts.sh`) |
+| `tools/npm/analyze-migration-plans.sh` | --run-id TICKET [--json] | Legacy planning status (will be removed) |
+| `tools/npm/discover-implementations.sh` | --run-id TICKET [--repo NAME] [--json] | Legacy: marker-file population (replaced by JSON state) |
+| `tools/npm/discover-manual-upgrades.sh` | --run-id TICKET [--repo NAME] [--json] | Legacy manual list (use `packages-list.sh --classification manual`) |
 | **govuk** | | |
 | `tools/govuk/start-upgrade.sh` | --ticket EUDPA-X \| --branch B [--target V] | Phase 1 dispatcher: `.run-meta.json` + branch setup + version discovery |
 | `tools/govuk/discover-repos.sh` | --run-id TICKET [--branch B] [--target V] [--json] | Phase 1: write run-level `.run-meta.json` (in-scope repos) |
