@@ -158,12 +158,9 @@ jq -n \
 mv "$meta_tmp" "$REFINE_DIR/.refinement-meta.json"
 
 log "Stubbing review.md..."
-template="$SKILL_ASSETS/review-template.md"
+template="$SKILL_ASSETS/refinement-template.md"
 if [[ ! -f "$template" ]]; then
-    template="$SKILL_ASSETS/refinement-template.md"
-fi
-if [[ ! -f "$template" ]]; then
-    error "Refinement template not found under $SKILL_ASSETS"
+    error "Refinement template not found at $template"
 fi
 
 ac_rows=""

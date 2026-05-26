@@ -85,7 +85,7 @@ This produces, under `~/git/defra/trade-imports-animals/workareas/ticket-refinem
 
 - `ticket.md` — summary, description, AC, comments, Confluence references (from Jira JSON)
 - `.refinement-meta.json` — ticket fields + `verdict: null` (finalised in Step 5)
-- `review.md` — pre-populated stub from `assets/review-template.md`
+- `review.md` — pre-populated stub from `assets/refinement-template.md`
 
 Read `ticket.md` to internalise the summary, AC and comments. The helper has already substituted `[Date]`, `[Ticket summary]`, type and priority into the review stub.
 
@@ -139,7 +139,7 @@ See the workspace `CLAUDE.md` repo map for the authoritative repo list
 
 `prepare-refinement.sh` already stubbed
 `~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/review.md`
-from `assets/review-template.md`. Fill each section in place from
+from `assets/refinement-template.md`. Fill each section in place from
 Steps 1-3 — `## Description Summary`, `## Acceptance Criteria`,
 `## Codebase Investigation`, `## Readiness Assessment`,
 `## Questions for Refinement`, `## Suggested Improvements`, and the
