@@ -134,7 +134,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
 | `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
 | `code-style` | "style review EUDPA-", "walk style EUDPA-", "triage style", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
-| `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
+| `npm-upgrade` | "upgrade npm deps", "upgrade dependencies", "walk upgrade EUDPA-X", "implement upgrade EUDPA-X" | Three-phase non-govuk-frontend npm upgrade workflow + interactive manual-side walker. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
 
 ### Worker references (per-skill fan-out personas)
@@ -154,6 +154,8 @@ artifacts that downstream `tools/` scripts consume.
 | `code-style` | `references/STYLE_WALKER.md` | Batch triage walker for pending items |
 | `code-style` | `references/STYLE_IMPLEMENTOR.md` | Per-file batched style fixes |
 | `npm-upgrade` | `references/PACKAGE_PLANNER.md` | Per-package research + auto/manual classification |
+| `npm-upgrade` | `references/WALKER.md` | Batch triage walker over manual + failed-auto packages |
+| `npm-upgrade` | `references/MANUAL_UPGRADE_IMPLEMENTOR.md` | One manual package upgrade at a time (edit + test + commit + rollback) |
 | `govuk-upgrade` | `references/VERSION_PLANNER.md` | Per-version CHANGELOG analysis + per-repo plan |
 | `govuk-upgrade` | `references/PLAN_WALKER.md` | Batch triage of pending version plans before Phase 3 |
 

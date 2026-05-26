@@ -16,50 +16,31 @@ invoke them by absolute path.
 
 | Script | Phase | Purpose |
 |--------|-------|---------|
-| `discover-upgrades.sh` | 1 | Find outdated packages, create stubs |
-| `upgrade-status.sh` | All | Combined status across phases |
-| `run-automated-upgrades.sh` | 2 | Run automated upgrades for one repo |
-| `discover-manual-upgrades.sh` | 3 | List `.manual.md` plans |
+| `start-upgrade.sh` | All | Single dispatcher (`--phase 1\|2\|3`) |
+| `discover-upgrades.sh` | 1 | Find outdated packages + seed `packages.{repo}.json` |
+| `prebake-context.sh` | 1 | Per-package context bundle (best-effort) |
+| `bake-best-practices.sh` | 1 | Per-repo best-practices bundle |
+| `packages-init.sh` / `packages-set-classification.sh` / `packages-set-status.sh` | All | JSON state writers (atomic) |
+| `packages-list.sh` / `packages-counts.sh` | All | JSON state queries |
+| `verify-classification-coverage.sh` | 1 | Phase 1 gate |
+| `run-automated-upgrades.sh` | 2 | Per-repo automated runner |
+| `upgrade-one-package.sh` | 2 | Internal: install + test + commit + rollback, JSON-aware |
+| `run-manual-upgrade.sh` | 3 | Per-package manual runner (spawned by WALKER) |
 
-## File Extensions (Classification Signal)
+## State model
 
-- `upgrade__{pkg}.md` — unclassified stub (zero-byte, pending a `PACKAGE_PLANNER.md`-following worker)
-- `upgrade__{pkg}.auto.md` — no code changes required, safe to automate
-- `upgrade__{pkg}.manual.md` — code changes required, human must implement
+All per-package state is in `packages.{repo}.json` under
+`~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/`.
+Schema: `assets/packages-table.md`.
 
-Phase 2 implementation markers (in
-`~/git/defra/trade-imports-animals/workareas/npm-implementations/{run-id}/{repo}/`):
+There are no `.auto.md` / `.manual.md` plan files on disk — the
+classification, risk, rationale, files_affected and change summary
+all live in the JSON. `packages-list.sh --classification manual --json`
+is the canonical query for "what needs manual work".
 
-- `.todo` → `.inprogress` → `.done` / `.failed`
-
-## Migration plan format
-
-Plans must include an **Automation Classification** section for the
-scripts to categorise them:
-
-```markdown
-## Automation Classification
-
-**Code Changes Required:** YES / NO
-**Risk Level:** LOW / MEDIUM / HIGH
-**Safe for Automated Implementation:** YES / NO
-
-**Rationale:** One sentence.
-```
-
-And the code changes section must start with `**None**` or `**Required**`:
-
-```markdown
-### Code Changes Required
-
-**None** — backwards compatible, no modifications needed.
-```
-
-```markdown
-### Code Changes Required
-
-**Required** — the following changes must be made: ...
-```
+There are no `.todo` / `.inprogress` / `.done` / `.failed` marker
+files either — implementation status lives on `implementation_status`
+in the same JSON row.
 
 ## Failure Types
 
@@ -67,24 +48,25 @@ And the code changes section must start with `**None**` or `**Required**`:
 |------|-------|--------|
 | Connectivity | VPN/Artifactory down | Stop, report to user |
 | Baseline failure | Repo tests already broken | Stop, report — not an upgrade issue |
-| Install failure | Peer conflict etc. | Auto-demote to `.manual.md` |
-| Test failure after upgrade | Breaking change | Rollback, auto-demote to `.manual.md` |
-| Cascade failure | Rollback itself fails | Stop immediately, report |
+| Install failure | Peer conflict etc. | Auto-demote: classification → manual, `demoted_from_auto: true`, failure_reason populated |
+| Test failure after upgrade | Breaking change | Rollback, auto-demote (same as above) |
+| Cascade failure | Rollback itself fails | Stop immediately, report — repo is in an inconsistent state |
 
 ## Workspace Layout
 
 ```
 ~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/
-  .upgrades-meta.json               — discovery metadata
-  upgrade__{pkg}__{cur}__{tgt}.md   — migration plan per package
-
-~/git/defra/trade-imports-animals/workareas/npm-implementations/{run-id}/{repo}/
-  implement__{pkg}__{cur}.todo      — queued for automation
-  implement__{pkg}__{cur}.done      — completed
-  implement__{pkg}__{cur}.failed    — failed (with error details)
+  packages.{repo}.json              — canonical per-repo state (schema in assets/packages-table.md)
+  .upgrades-meta.json               — thin discovery header
+  best-practices.md                 — per-repo dependency-relevant best practices
+  .context/{normalized-pkg}/
+    package-meta.json
+    usages.txt
+    changelog.md                    — present iff prebake found one
+    migration.md                    — rare; worker normally hydrates
 ```
 
-Both directories are ephemeral runtime cache (gitignored).
+Ephemeral runtime cache (gitignored).
 
 ## Scope guidance
 

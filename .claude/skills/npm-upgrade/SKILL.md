@@ -1,6 +1,6 @@
 ---
 name: npm-upgrade
-description: 'Upgrade (non-govuk-frontend) npm package upgrades across the EUDP Live Animals repos via a three-phase workflow — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, and produce a handoff report for the remaining manual work. Fans out per-package research in Phase 1 to `general-purpose` Task subagents that follow the `references/PACKAGE_PLANNER.md` worker persona. Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
+description: 'Upgrade (non-govuk-frontend) npm packages across the EUDP Live Animals repos via a three-phase workflow plus interactive walker — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, produce a handoff manifest for the remaining manual work, then walk the manual list keystroke-by-keystroke and spawn a per-package implementor worker on demand. Per-package classification and implementation state lives in canonical JSON (`packages.{repo}.json`) — no markdown plan files on disk. Fans out per-package research in Phase 1 to `general-purpose` Task subagents following `references/PACKAGE_PLANNER.md`, and per-package implementation from the walker to subagents following `references/MANUAL_UPGRADE_IMPLEMENTOR.md`. Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades", "walk upgrade EUDPA-XXX", "triage upgrade EUDPA-XXX", "implement upgrade EUDPA-XXX"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
 ---
 
 Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
@@ -42,12 +42,14 @@ Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Ba
 
 | Persona | Used in | Artifact |
 |---|---|---|
-| `references/PACKAGE_PLANNER.md` | `references/PHASE_1_MANAGER.md` Step 2 — one per outdated package, parallel fan-out | per-package `upgrade__*.{auto|manual}.md` |
+| `references/PACKAGE_PLANNER.md` | `references/DISCOVERY_AND_PLANNING.md` Step 2 — one per outdated package, parallel fan-out | classification row in `packages.{repo}.json` (via `packages-set-classification.sh`) |
+| `references/MANUAL_UPGRADE_IMPLEMENTOR.md` | `references/WALKER.md` `I` keystroke — one per package the operator chooses to implement | source edits + commit + JSON status row update |
 
-Spawn idiom inside Phase 1: Task tool with `subagent_type: general-purpose`
-and a prompt beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.`
-`general-purpose` carries `Tools: *` so the worker can WebFetch
-changelogs, grep the codebase and write its plan file.
+Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
+beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/npm-upgrade/references/<NAME>.md.`
+`general-purpose` carries `Tools: *` so workers can WebFetch
+changelogs, Grep the codebase, and (for the implementor) edit source
+files and run tests.
 
 ## Overview
 
@@ -101,24 +103,31 @@ git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout "feature/{ru
 
 All repos must be on the feature branch before continuing.
 
-## Phase 1: Planning
+## Phase 1: Discovery and Planning
 
 ```
-Follow references/PHASE_1_MANAGER.md. Run ID: {run-id}
+Follow references/DISCOVERY_AND_PLANNING.md. Run ID: {run-id}
 ```
 
-Phase 1 delegates per-package research to `general-purpose` Task
-subagents following `references/PACKAGE_PLANNER.md` — one instance per
-outdated package, parallel fan-out.
+Phase 1 calls the dispatcher (`start-upgrade.sh --phase 1`) which
+runs discovery, pre-bakes per-package context, and emits a JSON spawn
+manifest. The persona fans out one PACKAGE_PLANNER subagent per
+manifest entry, then runs `verify-classification-coverage.sh` as the
+gate.
 
 Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
 Phase 2?"
 
-## Phase 2: Automated Upgrades
+## Phase 2: Automated Execution
 
 ```
-Follow references/PHASE_2_MANAGER.md. Run ID: {run-id}
+Follow references/AUTOMATED_EXECUTION.md. Run ID: {run-id}
 ```
+
+Phase 2 calls the dispatcher (`start-upgrade.sh --phase 2`) which
+fans out `run-automated-upgrades.sh` per repo in parallel and
+aggregates JSON status. Per-package demotions to manual happen
+automatically.
 
 Present its report verbatim. **Gate:** "Phase 2 complete. Proceed to
 Phase 3 handoff?"
@@ -126,13 +135,26 @@ Phase 3 handoff?"
 If cascade failures are reported, flag them and ask how to handle before
 proceeding.
 
-## Phase 3: Handoff Report
+## Phase 3: Manual Handoff
 
 ```
-Follow references/PHASE_3_MANAGER.md. Run ID: {run-id}
+Follow references/MANUAL_HANDOFF.md. Run ID: {run-id}
 ```
 
-Present its report verbatim. End of automated work.
+Phase 3 calls the dispatcher (`start-upgrade.sh --phase 3`) which
+emits a JSON manifest of every manual (and failed-auto) package. The
+persona renders the operator report and hands off to the WALKER.
+
+## Walker (manual triage)
+
+```
+Follow references/WALKER.md. Run ID: {run-id}
+```
+
+The walker presents every manual package in one batch table and
+takes I/D/S keystrokes — `I` spawns the
+`MANUAL_UPGRADE_IMPLEMENTOR` worker for that package, `D` defers
+(file a follow-up ticket), `S` leaves pending.
 
 ## Failures
 
@@ -153,18 +175,24 @@ Recommended scope per run:
 
 ## References
 
-- `references/COMMON.md` — prerequisites, failure types, file extensions, global rules.
-- `references/PHASE_1_MANAGER.md` — discovery + fan-out to `PACKAGE_PLANNER.md` workers.
-- `references/PHASE_2_MANAGER.md` — automated upgrades.
-- `references/PHASE_3_MANAGER.md` — manual handoff report.
-- `references/PACKAGE_PLANNER.md` — single-package research + auto/manual classification (spawned per package as `general-purpose`).
+- `references/COMMON.md` — prerequisites, failure types, global rules.
+- `references/DISCOVERY_AND_PLANNING.md` — Phase 1 manager (discovery + fan-out to `PACKAGE_PLANNER.md` workers).
+- `references/AUTOMATED_EXECUTION.md` — Phase 2 manager (auto upgrades).
+- `references/MANUAL_HANDOFF.md` — Phase 3 manager (manual handoff report).
+- `references/WALKER.md` — interactive batch-triage walker over manual + failed-auto packages.
+- `references/PACKAGE_PLANNER.md` — per-package research + auto/manual classification (spawned per package as `general-purpose`).
+- `references/MANUAL_UPGRADE_IMPLEMENTOR.md` — per-package atomic edit-test-commit-rollback worker (spawned by the WALKER on `I`).
+- `assets/packages-table.md` — canonical JSON schema for `packages.{repo}.json`.
 
 Scripts (`~/git/defra/trade-imports-animals/tools/npm/`):
 
-- `discover-upgrades.sh` — Phase 1 stub creation.
-- `analyze-migration-plans.sh` — Phase 1 status snapshot.
-- `discover-implementations.sh` — Phase 2 todo marker creation.
+- `start-upgrade.sh` — single dispatcher (phase 1 / 2 / 3).
+- `discover-upgrades.sh` — discovery + seed `packages.{repo}.json`.
+- `prebake-context.sh` — per-package context pre-bake (best-effort).
+- `bake-best-practices.sh` — per-repo best-practices bundle.
+- `packages-init.sh` / `packages-set-classification.sh` / `packages-set-status.sh` — JSON state writers.
+- `packages-list.sh` / `packages-counts.sh` — JSON state queries.
+- `verify-classification-coverage.sh` — Phase 1 gate.
 - `run-automated-upgrades.sh` — Phase 2 per-repo runner.
-- `upgrade-one-package.sh` — Phase 2 helper (install + test + commit + rollback).
-- `discover-manual-upgrades.sh` — Phase 3 manual list.
-- `upgrade-status.sh` — combined status across phases.
+- `upgrade-one-package.sh` — Phase 2 helper (install + test + commit + rollback; JSON-aware).
+- `run-manual-upgrade.sh` — Phase 3 per-package runner (spawned by WALKER on `I`).
