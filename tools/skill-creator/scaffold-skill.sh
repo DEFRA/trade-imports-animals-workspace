@@ -46,18 +46,22 @@ DECISIONS="$WS/workareas/skill-creator/$RUN_ID/decisions.json"
 [[ -f "$DECISIONS" ]] || { echo "No decisions.json at $DECISIONS" >&2; exit 1; }
 
 # Validate all 8 answers present.
+# jq's // operator treats `false` as null, so use explicit
+# `has(key)` checks for booleans (dispatcher, prebake, walker,
+# fanout.enabled). String / array answers fall back to // null
+# safely because their absence is genuinely null.
 missing=$(jq -r '
     .answers as $a |
     [
-        ($a.purpose // null | if . == null then "purpose" else empty end),
-        ($a.state_shape // null | if . == null then "state_shape" else empty end),
-        ($a.dispatcher // null | if . == null then "dispatcher" else empty end),
-        ($a.prebake // null | if . == null then "prebake" else empty end),
-        ($a.fanout.enabled // null | if . == null then "fanout.enabled" else empty end),
-        ($a.walker // null | if . == null then "walker" else empty end),
-        ($a.helpers // null | if . == null or (. == []) then "helpers" else empty end),
-        ($a.triggers.phrases // null | if . == null or (. == []) then "triggers.phrases" else empty end),
-        ($a.triggers.disambiguation // "" | if . == "" then "triggers.disambiguation" else empty end)
+        (if ($a | has("purpose")) and $a.purpose != "" then empty else "purpose" end),
+        (if ($a | has("state_shape")) and $a.state_shape != "" then empty else "state_shape" end),
+        (if ($a | has("dispatcher")) then empty else "dispatcher" end),
+        (if ($a | has("prebake")) then empty else "prebake" end),
+        (if ($a.fanout | type) == "object" and ($a.fanout | has("enabled")) then empty else "fanout.enabled" end),
+        (if ($a | has("walker")) then empty else "walker" end),
+        (if (($a.helpers // []) | length) > 0 then empty else "helpers" end),
+        (if (($a.triggers.phrases // []) | length) > 0 then empty else "triggers.phrases" end),
+        (if ($a.triggers.disambiguation // "") != "" then empty else "triggers.disambiguation" end)
     ] | join(",")
 ' "$DECISIONS")
 
@@ -357,14 +361,18 @@ mv "$SKILL_DIR/decisions.md.tmp" "$SKILL_DIR/decisions.md"
 entry1="Bash(~/git/defra/trade-imports-animals-workspace/tools/$NAME/*)"
 entry2="Bash(~/git/defra/trade-imports-animals-workspace/tools/$NAME/*:*)"
 
+# Append entries only if not already present. Preserves existing
+# ordering — `unique_by` would sort as a side effect.
 jq \
     --arg e1 "$entry1" \
     --arg e2 "$entry2" \
     '.permissions.allow as $cur
      | .permissions.allow = (
-         ($cur + [$e1, $e2])
-         | unique_by(.)
-       )' "$SETTINGS" > "$SETTINGS.tmp"
+        $cur + (
+            [$e1, $e2]
+            | map(select(. as $x | ($cur | index($x)) == null))
+        )
+     )' "$SETTINGS" > "$SETTINGS.tmp"
 mv "$SETTINGS.tmp" "$SETTINGS"
 
 # Stamp scaffolded_at.

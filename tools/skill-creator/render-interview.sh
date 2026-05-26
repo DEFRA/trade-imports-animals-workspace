@@ -27,18 +27,20 @@ target="$HOME/git/defra/trade-imports-animals-workspace/workareas/skill-creator/
 [[ -f "$target" ]] || { echo "No decisions.json at $target" >&2; exit 1; }
 
 name=$(jq -r '.name' "$target")
-purpose=$(jq -r '.answers.purpose // "(not answered)"' "$target")
-state_shape=$(jq -r '.answers.state_shape // "(not answered)"' "$target")
-dispatcher=$(jq -r '.answers.dispatcher // "(not answered)"' "$target")
-prebake=$(jq -r '.answers.prebake // "(not answered)"' "$target")
-fanout_enabled=$(jq -r '.answers.fanout.enabled // "(not answered)"' "$target")
+jq_pretty='def show: if . == null then "(not answered)" else tostring end;'
+
+purpose=$(jq -r "$jq_pretty"' .answers.purpose | show' "$target")
+state_shape=$(jq -r "$jq_pretty"' .answers.state_shape | show' "$target")
+dispatcher=$(jq -r "$jq_pretty"' .answers.dispatcher | show' "$target")
+prebake=$(jq -r "$jq_pretty"' .answers.prebake | show' "$target")
+fanout_enabled=$(jq -r "$jq_pretty"' .answers.fanout.enabled | show' "$target")
 fanout_workers=$(jq -r '.answers.fanout.workers // [] | join(", ")' "$target")
-walker=$(jq -r '.answers.walker // "(not answered)"' "$target")
+walker=$(jq -r "$jq_pretty"' .answers.walker | show' "$target")
 helpers=$(jq -r '.answers.helpers // [] | map("- " + .) | join("\n")' "$target")
 [[ -z "$helpers" ]] && helpers="(not answered)"
 triggers=$(jq -r '.answers.triggers.phrases // [] | map("- \"" + . + "\"") | join("\n")' "$target")
 [[ -z "$triggers" ]] && triggers="(not answered)"
-disambig=$(jq -r '.answers.triggers.disambiguation // "(not answered)"' "$target")
+disambig=$(jq -r "$jq_pretty"' .answers.triggers.disambiguation | show' "$target")
 
 cat <<EOF
 # $name skill — decisions
