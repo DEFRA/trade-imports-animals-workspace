@@ -84,6 +84,16 @@ if [[ "$WRITE_ITEMS" == "1" ]]; then
                   })
             )
         }' > "$items_file.tmp" && mv "$items_file.tmp" "$items_file"
+
+    # Stamp reconciled_at on every reviewed .review.json — refresh
+    # reconcile uses (reviewed_at > reconciled_at) to detect work
+    # done since this FRESH-time accounting.
+    now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    for f in "${files[@]}"; do
+        reviewed_at=$(jq -r '.reviewed_at // ""' "$f")
+        [[ -z "$reviewed_at" ]] && continue
+        jq --arg t "$now" '. + {reconciled_at: $t}' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done
 fi
 
 if [[ "$JSON" == "1" ]]; then
