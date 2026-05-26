@@ -21,14 +21,16 @@ reviewing someone's PR — use `review` (correctness across languages) or
 
 ## Path conventions
 
-Cross-workspace paths reference the `TRADE_IMPORTS_WORKSPACE` env var
-directly — `$TRADE_IMPORTS_WORKSPACE/tools/<domain>/`,
-`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`,
-`$TRADE_IMPORTS_WORKSPACE/workareas/`. The env var must be set in
-your shell profile; see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md)
-for setup. Scripts bail with a clear error if it's unset. Skill-internal
-references stay relative (`references/<NAME>.md`, `assets/<NAME>.md`);
-subagents are addressed by name via the Task tool.
+Cross-workspace paths use the literal home-relative form —
+`~/git/defra/trade-imports-animals/tools/<domain>/`,
+`~/git/defra/trade-imports-animals/docs/best-practices/`,
+`~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
+your home directory automatically. Scripts under `tools/` still use
+the `$TRADE_IMPORTS_WORKSPACE` env var internally — set it in your
+shell profile, see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md).
+Skill-internal references stay relative
+(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
+by name via the Task tool.
 
 ## Phases
 
@@ -36,7 +38,7 @@ subagents are addressed by name via the Task tool.
 
 If the user asks to plan / scope / "how should I" an EUDPA ticket,
 follow `references/PLANNER.md`. Produces
-`$TRADE_IMPORTS_WORKSPACE/workareas/ticket-planning/EUDPA-X/plan.md`. No
+`~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/plan.md`. No
 implementation.
 
 ### Implement
@@ -52,7 +54,7 @@ follow `references/REFACTORER.md`. Tests must stay green throughout.
 
 ## Shared tooling
 
-All under `$TRADE_IMPORTS_WORKSPACE/tools/` per CC-3:
+All under `~/git/defra/trade-imports-animals/tools/` per CC-3:
 
 | Domain | Used by | Purpose |
 |---|---|---|
@@ -62,12 +64,12 @@ All under `$TRADE_IMPORTS_WORKSPACE/tools/` per CC-3:
 | `tools/review/detect-tech.sh` | PLANNER, IMPLEMENTOR | Detect repo tech stack + emit best-practices paths under `docs/best-practices/` |
 
 Authenticate to Jira/GitHub before fetching (or run the umbrella
-`$TRADE_IMPORTS_WORKSPACE/tools/auth.sh`).
+`~/git/defra/trade-imports-animals/tools/auth.sh`).
 
 ## Best practices
 
 PLANNER and IMPLEMENTOR cite a subset of
-`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/` based on detected tech. The
+`~/git/defra/trade-imports-animals/docs/best-practices/` based on detected tech. The
 universe spans `gds/`, `java/`, `node/`, `playwright/`, `k6/`,
 `rest-api/`, `doc-comments/`, and `docker-compose.md`. Load only what
 applies to the repo being worked on.
@@ -76,7 +78,7 @@ applies to the repo being worked on.
 
 | Path | Purpose |
 |---|---|
-| `$TRADE_IMPORTS_WORKSPACE/workareas/ticket-planning/EUDPA-X/plan.md` | PLANNER writes; IMPLEMENTOR reads; both may amend with deviations |
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/plan.md` | PLANNER writes; IMPLEMENTOR reads; both may amend with deviations |
 
 ## Skill-level don'ts
 

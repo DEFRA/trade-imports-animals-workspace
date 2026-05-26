@@ -20,38 +20,43 @@ themselves git repositories, so `git rev-parse --show-toplevel` returns
 the sub-repo root when called from inside one — silently breaking any
 path that should be workspace-relative.
 
-Every reference to the workspace root uses the `TRADE_IMPORTS_WORKSPACE`
-env var directly. No local alias, no fallback. Contributors set
-`export TRADE_IMPORTS_WORKSPACE=/path/to/checkout` in their shell profile
-alongside the JIRA / GitHub env vars — see
-[`agent-onboarding.md`](agent-onboarding.md).
+Two layers:
 
-`tools/<domain>/<script>.sh` files bail loudly at startup if the env
-var is unset:
+- **In LLM-typed commands** (SKILL.md, references/*.md, spawn prompts):
+  use the literal home-relative path `~/git/defra/trade-imports-animals/...`.
+  Bash expands `~` to `$HOME` automatically. Contributors must clone
+  to this canonical location for the LLM-typed allowlist to match.
+- **Inside `tools/<domain>/<script>.sh`**: scripts use the
+  `$TRADE_IMPORTS_WORKSPACE` env var internally and bail loudly if
+  it's unset. Set it in your shell profile —
+  see [`agent-onboarding.md`](agent-onboarding.md).
 
 ```bash
 : "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 ```
 
+The split exists because Claude Code's permission system flags
+parameter expansion (`$VAR`) in LLM-typed Bash commands as "Contains
+simple_expansion" — even when the variable is explicitly allowlisted
+([GH#51001](https://github.com/anthropics/claude-code/issues/51001)).
+Literal `~` paths don't trip the check. Script internals never reach
+the permission system, so the env var convention works fine there.
+
 Earlier iterations used a walk-up helper that derived the root from
 `${BASH_SOURCE[0]}` or `$PWD`. That had two failure modes: off-by-one
 when scripts moved between directory depths, and false matches when a
 parent of the workspace happened to contain a stray `.claude/` directory.
-Earlier still used a `${TRADE_IMPORTS_WORKSPACE:-fallback}` form, but the
-Claude Code permission allowlist treats every command containing `${...}`
-as "Contains expansion" and prompts; a single direct `$TRADE_IMPORTS_WORKSPACE`
-reference is the cleanest form that allowlists once and runs everywhere.
 
 ## Path conventions
 
 Cross-workspace references in `SKILL.md` use absolute paths anchored on
-`$TRADE_IMPORTS_WORKSPACE`:
+`~/git/defra/trade-imports-animals`:
 
 ```
-Scripts:        $TRADE_IMPORTS_WORKSPACE/tools/<domain>/<script>
-Best-practices: $TRADE_IMPORTS_WORKSPACE/docs/best-practices/<topic>/<file>
-Workareas:      $TRADE_IMPORTS_WORKSPACE/workareas/...
-Other skills:   $TRADE_IMPORTS_WORKSPACE/.claude/skills/<name>/...
+Scripts:        ~/git/defra/trade-imports-animals/tools/<domain>/<script>
+Best-practices: ~/git/defra/trade-imports-animals/docs/best-practices/<topic>/<file>
+Workareas:      ~/git/defra/trade-imports-animals/workareas/...
+Other skills:   ~/git/defra/trade-imports-animals/.claude/skills/<name>/...
 ```
 
 Skill-internal references stay relative from `SKILL.md`:
@@ -77,7 +82,7 @@ description: ...          # 1-1024 chars; WHAT + WHEN + trigger keywords
 - `references/<NAME>.md` — additional docs loaded on demand.
 - `assets/<NAME>.md` — templates, schemas, static resources.
 - Skills do NOT carry private `scripts/` folders in this workspace: shared
-  shell scripts live at `$TRADE_IMPORTS_WORKSPACE/tools/`.
+  shell scripts live at `~/git/defra/trade-imports-animals/tools/`.
 
 Spawn idiom inside `SKILL.md`:
 
@@ -92,7 +97,7 @@ prose inside the owning skill. They are spawned via the Task tool with
 `subagent_type: general-purpose` and a prompt that begins:
 
 ```
-Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/<owner>/references/<NAME>.md.
+Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/<owner>/references/<NAME>.md.
 
 <per-spawn context: file/path/commit/output-path>
 ```
@@ -125,6 +130,6 @@ Rationale:
 
 ## Runtime workareas
 
-`$TRADE_IMPORTS_WORKSPACE/workareas/` is runtime cache and is gitignored. Skills
+`~/git/defra/trade-imports-animals/workareas/` is runtime cache and is gitignored. Skills
 populate it (reviews, code-style reviews, ticket plans, upgrades) as they
 run; nothing under `workareas/` is part of the checked-in audit trail.

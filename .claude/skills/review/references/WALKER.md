@@ -19,7 +19,7 @@ The items table schema lives in `assets/items-table.md`.
 ## Step 1: Load the work list
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
+~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
 ```
 
 Apply trigger filters:
@@ -81,7 +81,7 @@ them in order to the current and next two items.
 ## Step 4: Record Fix
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix"
+~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix"
 ```
 
 Auto-sets Status to `Not Done`.
@@ -100,7 +100,7 @@ If the user provided a reason inline (e.g. `W: not in scope`), pass it
 as `--note "{reason}"`.
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
+~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
 ```
 
 ```
@@ -118,7 +118,7 @@ item only:
 
 1. **Read the file** from the workspace copy:
    ```
-   $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
+   ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
    ```
 2. **Show ~10 lines around the reported line.** Highlight the
    reported line.
@@ -130,7 +130,7 @@ item only:
    - "leave it" → Step 5 with `--note "{reason}"`
    - "defer to PR thread / standup / wider conversation":
      ```bash
-     $TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{open question / who to ask}"
+     ~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{open question / who to ask}"
      ```
      ```
      💬 #{N} Discuss — {note}

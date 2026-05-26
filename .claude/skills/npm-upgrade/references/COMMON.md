@@ -2,7 +2,7 @@
 
 Shared reference for all npm-upgrade phases.
 
-All scripts referenced below live at `$TRADE_IMPORTS_WORKSPACE/tools/npm/` per
+All scripts referenced below live at `~/git/defra/trade-imports-animals/tools/npm/` per
 the parent SKILL.md's path-conventions preamble. The phase managers
 invoke them by absolute path.
 
@@ -28,7 +28,7 @@ invoke them by absolute path.
 - `upgrade__{pkg}.manual.md` — code changes required, human must implement
 
 Phase 2 implementation markers (in
-`$TRADE_IMPORTS_WORKSPACE/workareas/npm-implementations/{run-id}/{repo}/`):
+`~/git/defra/trade-imports-animals/workareas/npm-implementations/{run-id}/{repo}/`):
 
 - `.todo` → `.inprogress` → `.done` / `.failed`
 
@@ -74,11 +74,11 @@ And the code changes section must start with `**None**` or `**Required**`:
 ## Workspace Layout
 
 ```
-$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/{run-id}/{repo}/
+~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/
   .upgrades-meta.json               — discovery metadata
   upgrade__{pkg}__{cur}__{tgt}.md   — migration plan per package
 
-$TRADE_IMPORTS_WORKSPACE/workareas/npm-implementations/{run-id}/{repo}/
+~/git/defra/trade-imports-animals/workareas/npm-implementations/{run-id}/{repo}/
   implement__{pkg}__{cur}.todo      — queued for automation
   implement__{pkg}__{cur}.done      — completed
   implement__{pkg}__{cur}.failed    — failed (with error details)

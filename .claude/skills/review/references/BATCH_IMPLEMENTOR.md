@@ -17,7 +17,7 @@ Pull every item with Disposition=`Fix` and Status=`Not Done` (or
 `Failed` from a prior run that should be retried):
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --filter fix --status not-done --json
+~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --filter fix --status not-done --json
 ```
 
 Apply any filters from the trigger:
@@ -54,26 +54,26 @@ grep streaming output or re-run to check partial results.
 
 Unit tests:
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests:
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created for the summary. If failures exist,
 do NOT grep the console output — find and read the structured Playwright
 artifacts instead:
 ```bash
-find $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests/test-results -name "error-context.md"
+find ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
 
 ### Java repo (backend)
 Runs surefire (unit `*Test`) and failsafe (integration `*IT`,
 Testcontainers-backed) in one pass:
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created. Confirm both `Tests run:` totals
 (surefire and failsafe) and `BUILD SUCCESS`.
@@ -98,7 +98,7 @@ Process fixes in item-number order within each repo.
 For each item, spawn a `general-purpose` Task subagent. Spawn prompt:
 
 ```
-Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/REVIEW_ITEM_FIXER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/REVIEW_ITEM_FIXER.md.
 
 **Ticket:** EUDPA-XXXXX
 **Item:** #{N}
@@ -116,11 +116,11 @@ within the same repo may affect shared files or tests).
 
 | Result | Action |
 |--------|--------|
-| `DONE` | `$TRADE_IMPORTS_WORKSPACE/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
-| `SKIPPED` | `$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
-| `FAILED` | `$TRADE_IMPORTS_WORKSPACE/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
+| `DONE` | `~/git/defra/trade-imports-animals/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
+| `SKIPPED` | `~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
+| `FAILED` | `~/git/defra/trade-imports-animals/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
 | `CANNOT START` | **Stop immediately.** Report pre-existing failures. Ask user to resolve before re-running. |
-| `WON'T FIX` | `$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" --note "{reason}"` |
+| `WON'T FIX` | `~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" --note "{reason}"` |
 
 ---
 
@@ -143,5 +143,5 @@ Failed (Status=Failed in the items table — re-run to retry):
   #{N} [{repo}] — {reason}
   ...
 
-Run `$TRADE_IMPORTS_WORKSPACE/tools/review/review-counts.sh EUDPA-XXXXX` for the updated breakdown.
+Run `~/git/defra/trade-imports-animals/tools/review/review-counts.sh EUDPA-XXXXX` for the updated breakdown.
 ```

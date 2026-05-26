@@ -4,7 +4,7 @@ confirm tests are still green, commit.
 
 Your prompt specifies the ticket, item, repo, file, line, issue, and fix.
 
-Paths anchored on `$TRADE_IMPORTS_WORKSPACE` — compute via the `find_workspace_root`
+Paths anchored on `~/git/defra/trade-imports-animals` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ---
@@ -26,7 +26,7 @@ helper in `docs/agent-skills.md`.
 Read the file from the live repo:
 
 ```
-$TRADE_IMPORTS_WORKSPACE/repos/{repo}/{file}
+~/git/defra/trade-imports-animals/repos/{repo}/{file}
 ```
 
 Check whether the specific violation described in the Issue is present
@@ -60,7 +60,7 @@ After editing Node.js files, run Prettier to avoid pre-commit hook
 failures:
 
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npx prettier --write {file}
+cd ~/git/defra/trade-imports-animals/repos/{repo} && npx prettier --write {file}
 ```
 
 ---
@@ -74,33 +74,33 @@ streaming output or re-run to check partial results.
 
 Unit tests:
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests (run after any change that could affect the user journey):
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created for the summary line only. If
 failures exist, do NOT grep the output — instead find and read the
 structured artifacts:
 
 ```bash
-find $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-tests/test-results -name "error-context.md"
+find ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/test-results -name "error-context.md"
 ```
 
 Read each `error-context.md` to diagnose what actually failed.
 
 ### Java repo
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created. Surefire also writes per-class
 reports to `target/surefire-reports/`.
 
 **If unit tests fail:**
-- Revert: `cd $TRADE_IMPORTS_WORKSPACE/repos/{repo} && git checkout -- {file}`
+- Revert: `cd ~/git/defra/trade-imports-animals/repos/{repo} && git checkout -- {file}`
 - Return: `FAILED: #N — unit tests broke after change, reverted`
 
 **If E2E tests fail:**
@@ -113,7 +113,7 @@ reports to `target/surefire-reports/`.
 ## Step 5: Commit
 
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/{repo}
+cd ~/git/defra/trade-imports-animals/repos/{repo}
 git add {file}
 git commit -m "fix(EUDPA-XXXXX): [concise description of what was fixed]
 

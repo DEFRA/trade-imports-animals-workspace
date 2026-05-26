@@ -16,7 +16,7 @@ correct and final outcome for any failure in Phase 2.
 ## Step 1: Check there is work to do
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/npm/upgrade-status.sh --run-id {run-id}
+~/git/defra/trade-imports-animals/tools/npm/upgrade-status.sh --run-id {run-id}
 ```
 
 If no `.auto.md` plans exist: report "No automated upgrades found.
@@ -27,7 +27,7 @@ Phase 2 complete (nothing to do)."
 Run all repos in parallel as background tasks:
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/npm/run-automated-upgrades.sh {repo-name} --run-id {run-id}
+~/git/defra/trade-imports-animals/tools/npm/run-automated-upgrades.sh {repo-name} --run-id {run-id}
 ```
 
 Capture output per repo. Wait for all to complete before reporting.
@@ -38,7 +38,7 @@ retry.
 ## Step 3: Report
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/npm/upgrade-status.sh --run-id {run-id}
+~/git/defra/trade-imports-animals/tools/npm/upgrade-status.sh --run-id {run-id}
 ```
 
 ```

@@ -3,7 +3,7 @@ Research one npm package upgrade and write a migration plan.
 Your prompt names the run, repo, package, current/target versions, type
 and dependency kind.
 
-Paths anchored on `$TRADE_IMPORTS_WORKSPACE` — compute via the `find_workspace_root`
+Paths anchored on `~/git/defra/trade-imports-animals` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ---
@@ -19,14 +19,14 @@ classification, mark as `.manual.md`.
 ## Inputs
 
 - `{run-id}`, `{repo-name}`, `{pkg}`, `{cur}`, `{tgt}`, `{type}`, `{dependency}`
-- Stub file: `$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md`
+- Stub file: `~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md`
 
 ---
 
 ## Workflow
 
 1. Research: changelog, breaking changes, migration guides (WebFetch).
-2. Codebase: find usages (Grep on `$TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src`).
+2. Codebase: find usages (Grep on `~/git/defra/trade-imports-animals/repos/{repo-name}/src`).
 3. Write plan using template below.
 4. Save as `.auto.md` or `.manual.md` (see Classification).
 5. Delete the zero-byte stub `.md`.
@@ -46,8 +46,8 @@ Search terms:
 Usage scan:
 
 ```bash
-grep -r "from '{package}'" $TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src
-grep -r "require('{package}')" $TRADE_IMPORTS_WORKSPACE/repos/{repo-name}/src
+grep -r "from '{package}'" ~/git/defra/trade-imports-animals/repos/{repo-name}/src
+grep -r "require('{package}')" ~/git/defra/trade-imports-animals/repos/{repo-name}/src
 ```
 
 ---

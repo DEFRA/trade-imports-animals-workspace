@@ -6,10 +6,10 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 ## Before You Start
 
-1. Read plan at `$TRADE_IMPORTS_WORKSPACE/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
-2. Read ticket: `$TRADE_IMPORTS_WORKSPACE/tools/jira/ticket.sh EUDPA-XXXXX`
-3. Check tech stack in plan, or run: `$TRADE_IMPORTS_WORKSPACE/tools/review/detect-tech.sh $TRADE_IMPORTS_WORKSPACE/repos/<repo-name>`
-4. Read listed best-practices at `$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`
+1. Read plan at `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+2. Read ticket: `~/git/defra/trade-imports-animals/tools/jira/ticket.sh EUDPA-XXXXX`
+3. Check tech stack in plan, or run: `~/git/defra/trade-imports-animals/tools/review/detect-tech.sh ~/git/defra/trade-imports-animals/repos/<repo-name>`
+4. Read listed best-practices at `~/git/defra/trade-imports-animals/docs/best-practices/`
 5. Verify `[ASSUMPTION]` and `[NEEDS VERIFICATION]` items
 6. **Run all tests** - do NOT proceed if failing
 
@@ -23,7 +23,7 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 ### Branch Setup
 
 ```bash
-cd $TRADE_IMPORTS_WORKSPACE/repos/<repo-name>
+cd ~/git/defra/trade-imports-animals/repos/<repo-name>
 git fetch origin && git checkout <base-branch> && git pull
 git checkout -b feature/EUDPA-XXXXX-<description>
 ```
@@ -61,8 +61,8 @@ git checkout -b feature/EUDPA-XXXXX-<description>
 ## GitHub Actions Verification
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/github-actions/trigger-workflow.sh <repo-name> ci.yml <branch-name>
-$TRADE_IMPORTS_WORKSPACE/tools/github-actions/wait-for-run.sh <repo-name> <run-id> 1800
+~/git/defra/trade-imports-animals/tools/github-actions/trigger-workflow.sh <repo-name> ci.yml <branch-name>
+~/git/defra/trade-imports-animals/tools/github-actions/wait-for-run.sh <repo-name> <run-id> 1800
 ```
 
 ## Completion Checklist

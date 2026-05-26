@@ -6,7 +6,7 @@ file in a ticket review. Replaces the legacy `.review.md` template.
 ## Location
 
 ```
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{encoded_path}.review.json
+~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{encoded_path}.review.json
 ```
 
 `{encoded_path}` is the file path with `/` replaced by `_`
@@ -97,7 +97,7 @@ test for new behaviour) > `Minor` (nitpicks against a best-practice).
 ## Citation convention
 
 `best_practice` is the relative path under
-`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/` of the rule that was
+`~/git/defra/trade-imports-animals/docs/best-practices/` of the rule that was
 violated (e.g. `node/pino-logging.md`, `java/spring-boot.md`). Only
 set when the finding maps to a best-practices file the reviewer
 actually loaded.

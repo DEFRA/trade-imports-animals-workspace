@@ -7,13 +7,13 @@ Your prompt specifies the repo, the file path, the commit(s), the mode
 
 The per-file review artifact is a JSON file written by helper scripts —
 never by hand. Schema:
-`$TRADE_IMPORTS_WORKSPACE/.claude/skills/review/assets/file-review-schema.md`.
+`~/git/defra/trade-imports-animals/.claude/skills/review/assets/file-review-schema.md`.
 
 You will **not** write markdown. You will call three commands:
 
 ```bash
 # For each finding (run as many times as you have findings):
-$TRADE_IMPORTS_WORKSPACE/tools/review/file-review-add-item.sh EUDPA-XXXXX \
+~/git/defra/trade-imports-animals/tools/review/file-review-add-item.sh EUDPA-XXXXX \
     --repo <repo> --file <file-path> \
     --line <line> --severity <Critical|Major|Minor> \
     --category <short-tag> \
@@ -22,7 +22,7 @@ $TRADE_IMPORTS_WORKSPACE/tools/review/file-review-add-item.sh EUDPA-XXXXX \
     [--best-practice <relative/path.md>]
 
 # Exactly once, at the end:
-$TRADE_IMPORTS_WORKSPACE/tools/review/file-review-set-verdict.sh EUDPA-XXXXX \
+~/git/defra/trade-imports-animals/tools/review/file-review-set-verdict.sh EUDPA-XXXXX \
     --repo <repo> --file <file-path> \
     --verdict <SAFE|NEEDS_ATTENTION|RISKY> \
     --reason "<one sentence>"
@@ -67,7 +67,7 @@ neither.
 In every mode:
 
 1. **Per-PR best practices.** Read
-   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/.review-meta.json`
+   `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/.review-meta.json`
    and find the entry where `prs[].repo` matches your assigned repo.
    Load every file listed under `prs[].tech.best_practices` — those
    are the standards that apply to *your* repo. Don't load the
@@ -81,7 +81,7 @@ In REFRESH / MERGE_RESOLVED only, additionally:
 3. **Prior consolidated items for this file** — this is the most
    important context:
    ```bash
-   $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
+   ~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
      | awk -F'\t' '$3 == "{file-path}"'
    ```
    Columns: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
@@ -113,14 +113,14 @@ In REFRESH / MERGE_RESOLVED only, additionally:
    no findings), and that's correct.
 
 4. **Prior per-file review snapshot** — optional reading for context:
-   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`.
+   `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`.
    This is what *you* (or a prior reviewer) wrote last time. The
    consolidated items table above is the canonical source of truth.
 
 ### 3. Get the file-scoped diff
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/github/file-diff.sh {repo} {pr-number} {file-path} --ticket EUDPA-XXXXX
+~/git/defra/trade-imports-animals/tools/github/file-diff.sh {repo} {pr-number} {file-path} --ticket EUDPA-XXXXX
 ```
 
 Returns only the hunks for your file — don't fetch the whole PR diff.
@@ -133,7 +133,7 @@ In MERGE_RESOLVED mode the prompt also gives you `old_sha` / `new_sha`;
 the resolution delta is:
 
 ```bash
-git -C $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo} \
+git -C ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo} \
     diff {old_sha}..{new_sha} -- {file-path}
 ```
 
@@ -142,7 +142,7 @@ git -C $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo} \
 The file itself:
 
 ```
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
+~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
 ```
 
 Then follow the relationships worth looking at — pick what's

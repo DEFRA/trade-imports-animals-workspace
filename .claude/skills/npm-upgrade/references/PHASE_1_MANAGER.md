@@ -14,15 +14,15 @@ classifications, or touch repos.
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
 Repos are all 4 EUDP Live Animals Node repos under
-`$TRADE_IMPORTS_WORKSPACE/repos/`. Strategy is `latest`.
+`~/git/defra/trade-imports-animals/repos/`. Strategy is `latest`.
 
 ## Step 1: Discover packages
 
 Run for each repo:
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/npm/discover-upgrades.sh \
-  $TRADE_IMPORTS_WORKSPACE/repos/{repo-name} \
+~/git/defra/trade-imports-animals/tools/npm/discover-upgrades.sh \
+  ~/git/defra/trade-imports-animals/repos/{repo-name} \
   --run-id {run-id} \
   --strategy latest
 ```
@@ -34,18 +34,18 @@ Record stub counts per repo.
 List all stubs across all repos:
 
 ```bash
-ls $TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/{run-id}/*/upgrade__*.md 2>/dev/null
+ls ~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/*/upgrade__*.md 2>/dev/null
 ```
 
 For each stub, spawn a `general-purpose` Task subagent concurrently. Parse
 package/version/type from `.upgrades-meta.json`. Spawn prompt:
 
 ```
-Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/npm-upgrade/references/PACKAGE_PLANNER.md.
 
 Run ID: {run-id}
 Repository: {repo-name}
-Stub file: $TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md
+Stub file: ~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo-name}/upgrade__{pkg}__{cur}__{tgt}.md
 Package: {pkg}
 Current: {cur}
 Target: {tgt}
@@ -58,7 +58,7 @@ Dependency: {dependencies|devDependencies}
 Wait for all subagents. Check for unclassified stubs:
 
 ```bash
-find $TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/{run-id} -name "upgrade__*.md" ! -name "*.auto.md" ! -name "*.manual.md"
+find ~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id} -name "upgrade__*.md" ! -name "*.auto.md" ! -name "*.manual.md"
 ```
 
 If any remain, re-spawn `PACKAGE_PLANNER` workers for them once. Still
@@ -67,7 +67,7 @@ remaining after retry → list as INCOMPLETE in report.
 ## Step 4: Report
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/npm/upgrade-status.sh --run-id {run-id}
+~/git/defra/trade-imports-animals/tools/npm/upgrade-status.sh --run-id {run-id}
 ```
 
 ```

@@ -19,7 +19,7 @@ for cmd in curl jq gh; do command -v "$cmd" >/dev/null || brew install "$cmd"; d
 
 ### 1. Workspace location
 
-The skills and `tools/` scripts reference `$TRADE_IMPORTS_WORKSPACE`
+The skills and `tools/` scripts reference `~/git/defra/trade-imports-animals`
 directly. Set it in `~/.zshrc` or `~/.bashrc`:
 
 ```bash
