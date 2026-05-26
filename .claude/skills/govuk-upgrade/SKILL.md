@@ -14,9 +14,8 @@ Cross-workspace paths use the literal home-relative form —
 `~/git/defra/trade-imports-animals/tools/<domain>/`,
 `~/git/defra/trade-imports-animals/docs/best-practices/`,
 `~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
-your home directory automatically. Scripts under `tools/` still use
-the `$TRADE_IMPORTS_WORKSPACE` env var internally — set it in your
-shell profile, see [`docs/agent-onboarding.md`](../../../docs/agent-onboarding.md).
+your home directory automatically. Scripts under `tools/` hardcode the workspace path as
+`$HOME/git/defra/trade-imports-animals/...` — no env var needed.
 Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.

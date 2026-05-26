@@ -11,7 +11,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 # Parse arguments
 TICKET=""
@@ -76,7 +75,7 @@ else
     REVIEW_ID="$TICKET"
 fi
 
-REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$REVIEW_ID"
+REVIEW_DIR="$HOME/git/defra/trade-imports-animals/workareas/reviews/$REVIEW_ID"
 
 # Helper for output
 log() {
@@ -131,7 +130,7 @@ EOF
 else
     # Standard mode: fetch from JIRA
     log "Fetching ticket details..."
-    ticket_json=$("$TRADE_IMPORTS_WORKSPACE/tools/jira/ticket.sh" "$TICKET" json 2>/dev/null) || error "Failed to fetch ticket $TICKET"
+    ticket_json=$("$HOME/git/defra/trade-imports-animals/tools/jira/ticket.sh" "$TICKET" json 2>/dev/null) || error "Failed to fetch ticket $TICKET"
 
     # Extract ticket metadata
     ticket_key=$(echo "$ticket_json" | jq -r '.key')
@@ -146,7 +145,7 @@ else
 
     # Fetch comments
     log "Fetching comments..."
-    comments_json=$("$TRADE_IMPORTS_WORKSPACE/tools/jira/comments.sh" "$TICKET" json 2>/dev/null) || comments_json="[]"
+    comments_json=$("$HOME/git/defra/trade-imports-animals/tools/jira/comments.sh" "$TICKET" json 2>/dev/null) || comments_json="[]"
     comments_count=$(echo "$comments_json" | jq 'length')
 
     # Extract Confluence links from description
@@ -159,7 +158,7 @@ else
         while IFS= read -r link; do
             [[ -z "$link" ]] && continue
             log "  Fetching: $link"
-            page_content=$("$TRADE_IMPORTS_WORKSPACE/tools/confluence/page.sh" "$link" 2>/dev/null) || continue
+            page_content=$("$HOME/git/defra/trade-imports-animals/tools/confluence/page.sh" "$link" 2>/dev/null) || continue
             confluence_content+="### $(echo "$page_content" | head -2 | tail -1 | sed 's/Title: //')"$'\n\n'
             confluence_content+="$page_content"$'\n\n'
         done <<< "$confluence_links"
@@ -231,7 +230,7 @@ if [[ "$NO_TICKET" == "true" ]]; then
     fi
 else
     # Search by ticket ID
-    prs_json=$("$TRADE_IMPORTS_WORKSPACE/tools/github/prs.sh" "$TICKET" json 2>/dev/null) || prs_json="[]"
+    prs_json=$("$HOME/git/defra/trade-imports-animals/tools/github/prs.sh" "$TICKET" json 2>/dev/null) || prs_json="[]"
 fi
 
 if [[ "$prs_json" == "[]" ]] || [[ -z "$prs_json" ]]; then
@@ -277,7 +276,7 @@ for ((i=0; i<pr_count; i++)); do
 
         log "Processing $repo_name#$pr_number ($pr_state)..."
 
-        pr_details=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || exit 0
+        pr_details=$("$HOME/git/defra/trade-imports-animals/tools/github/pr-details.sh" "$repo_name" "$pr_number" json 2>/dev/null) || exit 0
         files_changed=$(echo "$pr_details" | jq -r '.files[].path' | wc -l | tr -d ' ')
         pr_merged_at=$(echo "$pr_details" | jq -r '.mergedAt // empty')
 
@@ -399,7 +398,7 @@ echo "$meta_prs_json" | jq -c '.[] | {repo, bps: (.tech.best_practices // [])}' 
         echo
         echo "$entry" | jq -r '.bps[]' | while IFS= read -r path; do
             [[ -z "$path" ]] && continue
-            src="$TRADE_IMPORTS_WORKSPACE/$path"
+            src="$HOME/git/defra/trade-imports-animals/$path"
             if [[ -f "$src" ]]; then
                 echo
                 echo "---"
@@ -434,7 +433,7 @@ while IFS= read -r pr_meta; do
     pr_number=$(echo "$pr_meta" | jq -r '.pr')
     commit=$(echo "$pr_meta" | jq -r '.commit')
 
-    files=$("$TRADE_IMPORTS_WORKSPACE/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
+    files=$("$HOME/git/defra/trade-imports-animals/tools/github/pr-details.sh" "$repo" "$pr_number" files 2>/dev/null) || continue
 
     repo_review_dir="$REVIEW_DIR/file-reviews/$repo"
     mkdir -p "$repo_review_dir"

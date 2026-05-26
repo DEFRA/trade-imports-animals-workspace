@@ -6,7 +6,6 @@
 # cell values are escaped as `\|` so the table stays well-formed.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -22,7 +21,7 @@ done
 [[ -z "$TICKET" ]] && { echo "Usage: $0 EUDPA-XXXXX --repo REPO" >&2; exit 1; }
 [[ -z "$REPO"   ]] && { echo "--repo required" >&2; exit 1; }
 
-target="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
+target="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
 [[ -f "$target" ]] || { echo "Items file not found: $target" >&2; exit 1; }
 
 echo "| # | File | Line | Rule | Severity | Issue | Fix | Disposition | Status | Notes |"

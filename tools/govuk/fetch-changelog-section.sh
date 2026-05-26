@@ -8,7 +8,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 VERSION=""
 RUN_ID=""
@@ -86,7 +85,7 @@ error() {
 # Strip v prefix if present
 VERSION=$(echo "$VERSION" | sed 's/^v//')
 
-CHANGELOG_FILE="$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/$RUN_ID/$REPO_NAME/CHANGELOG.md"
+CHANGELOG_FILE="$HOME/git/defra/trade-imports-animals/workareas/govuk-upgrades/$RUN_ID/$REPO_NAME/CHANGELOG.md"
 
 if [[ ! -f "$CHANGELOG_FILE" ]]; then
     error "Cached CHANGELOG.md not found at: $CHANGELOG_FILE. Run discover-versions.sh first."

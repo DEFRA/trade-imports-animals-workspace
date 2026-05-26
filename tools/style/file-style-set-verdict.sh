@@ -1,6 +1,6 @@
 #!/bin/bash
-# Set verdict + reason on a per-file review JSON. Stamps reviewed_at.
-# Usage: file-review-set-verdict.sh EUDPA-X --repo R --file F --verdict V [--reason "..."]
+# Set verdict + reason on a per-file style review JSON. Stamps reviewed_at.
+# Usage: file-style-set-verdict.sh EUDPA-X --repo R --file F --verdict V [--reason "..."]
 
 set -e
 
@@ -22,13 +22,13 @@ for v in TICKET REPO FILE VERDICT; do
 done
 
 case "$VERDICT" in
-    SAFE|NEEDS_ATTENTION|RISKY) ;;
-    *) echo "Invalid verdict: $VERDICT (must be SAFE|NEEDS_ATTENTION|RISKY)" >&2; exit 1 ;;
+    COMPLIANT|MINOR_ISSUES|NEEDS_WORK) ;;
+    *) echo "Invalid verdict: $VERDICT (must be COMPLIANT|MINOR_ISSUES|NEEDS_WORK)" >&2; exit 1 ;;
 esac
 
 encoded="${FILE//\//_}"
-target="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/file-reviews/$REPO/$encoded.review.json"
-[[ -f "$target" ]] || { echo "No review file at $target — call file-review-init.sh first" >&2; exit 1; }
+target="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/file-reviews/$REPO/$encoded.style.json"
+[[ -f "$target" ]] || { echo "No style file at $target — call file-style-init.sh first" >&2; exit 1; }
 
 now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 

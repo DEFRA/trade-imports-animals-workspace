@@ -20,7 +20,6 @@
 # --json overrides --section and emits the raw combined JSON instead.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -44,7 +43,7 @@ done
 [[ -z "$TICKET" ]] && { echo "Missing ticket" >&2; exit 1; }
 [[ -z "$REPO" ]] && { echo "Missing --repo" >&2; exit 1; }
 
-review_dir="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
+review_dir="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET"
 dir="$review_dir/file-reviews/$REPO"
 [[ -d "$dir" ]] || { echo "No review dir: $dir" >&2; exit 1; }
 

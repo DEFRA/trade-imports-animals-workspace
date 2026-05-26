@@ -53,11 +53,11 @@ make setup    # clone all repos
 make install  # npm install in Node repos
 ```
 
-Set `export TRADE_IMPORTS_WORKSPACE=/path/to/this/checkout` in your
-shell profile alongside the JIRA / GitHub env vars — the agent skills
-and `tools/` scripts reference it directly. Scripts bail with a clear
-error if it's unset. See [`docs/agent-onboarding.md`](docs/agent-onboarding.md)
-for the full env-var setup.
+Scripts under `tools/` assume the workspace lives at
+`~/git/defra/trade-imports-animals/` — the path is hardcoded. Clone here
+and nothing further is needed. See
+[`docs/agent-onboarding.md`](docs/agent-onboarding.md) for the JIRA /
+GitHub / Confluence credentials the tools still need.
 
 **Daily update:**
 ```bash

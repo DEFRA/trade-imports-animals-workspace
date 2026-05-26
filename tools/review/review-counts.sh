@@ -4,7 +4,6 @@
 #   review-counts.sh EUDPA-XXXXX [--repo REPO] [--json]
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -27,7 +26,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
+REVIEW_DIR="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET"
 [[ -d "$REVIEW_DIR" ]] || { echo "Review workspace not found: $REVIEW_DIR" >&2; exit 1; }
 
 files=()

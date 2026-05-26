@@ -19,16 +19,10 @@ for cmd in curl jq gh; do command -v "$cmd" >/dev/null || brew install "$cmd"; d
 
 ### 1. Workspace location
 
-The skills and `tools/` scripts reference `~/git/defra/trade-imports-animals`
-directly. Set it in `~/.zshrc` or `~/.bashrc`:
-
-```bash
-export TRADE_IMPORTS_WORKSPACE="$HOME/path/to/trade-imports-animals-workspace"
-```
-
-Scripts bail with `TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md`
-if it's missing. No fallback — this is by design so the workspace path is
-explicit on every machine.
+The skills and `tools/` scripts assume the workspace lives at
+`~/git/defra/trade-imports-animals/`. The path is hardcoded in the
+scripts — clone the repo to that location and nothing further is needed.
+No env var to set.
 
 ### 2. Get Your Credentials
 

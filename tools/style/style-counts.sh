@@ -4,7 +4,6 @@
 #   style-counts.sh EUDPA-XXXXX [--repo REPO] [--json]
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -27,7 +26,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-STYLE_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET"
+STYLE_DIR="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET"
 [[ -d "$STYLE_DIR" ]] || { echo "Style review workspace not found: $STYLE_DIR" >&2; exit 1; }
 
 files=()

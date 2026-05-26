@@ -3,7 +3,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 REPO_NAME=""
 RUN_ID=""
@@ -35,7 +34,7 @@ if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
 fi
 
-IMPL_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/npm-implementations/$RUN_ID/$REPO_NAME"
+IMPL_DIR="$HOME/git/defra/trade-imports-animals/workareas/npm-implementations/$RUN_ID/$REPO_NAME"
 
 # Auto-demote function: Rename .auto.md plan to .manual.md when automation fails
 auto_demote() {
@@ -61,7 +60,7 @@ TODO_FILE=$(ls "$IMPL_DIR"/*.todo 2>/dev/null | head -1)
 # plan format: upgrade__package__current__target.auto.md
 TODO_BASENAME=$(basename "$TODO_FILE" .todo)
 PLAN_FILE="${TODO_BASENAME/implement__/upgrade__}"
-PLAN_PATH="$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/$RUN_ID/$REPO_NAME/${PLAN_FILE}.auto.md"
+PLAN_PATH="$HOME/git/defra/trade-imports-animals/workareas/npm-upgrades/$RUN_ID/$REPO_NAME/${PLAN_FILE}.auto.md"
 # Format: upgrade__@scope__name__current__target.auto.md or upgrade__name__current__target.auto.md
 
 # Parse using awk to handle double-underscore delimiter correctly

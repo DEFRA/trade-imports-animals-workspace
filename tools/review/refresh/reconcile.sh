@@ -18,7 +18,6 @@
 # user can spot-check potential regressions.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ADD_ITEM="$SCRIPT_DIR/../review-add-item.sh"
@@ -43,7 +42,7 @@ done
 [[ -z "$TICKET" ]] && { echo "Missing ticket" >&2; exit 1; }
 [[ -z "$REPO" ]] && { echo "Missing --repo" >&2; exit 1; }
 
-review_dir="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
+review_dir="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET"
 file_review_dir="$review_dir/file-reviews/$REPO"
 items_file="$review_dir/items.${REPO}.json"
 

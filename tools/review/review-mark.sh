@@ -13,7 +13,6 @@
 # --note overwrites the Notes column. Without --note, Notes is left as-is.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -58,7 +57,7 @@ case "$DISPOSITION" in
     "") STATUS="" ;;
 esac
 
-target="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/items.${REPO}.json"
+target="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/items.${REPO}.json"
 [[ -f "$target" ]] || { echo "Items file not found: $target" >&2; exit 1; }
 
 # Verify item exists.

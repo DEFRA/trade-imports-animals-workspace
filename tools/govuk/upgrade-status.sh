@@ -7,7 +7,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 RUN_ID=""
 REPO_FILTER=""
@@ -71,7 +70,7 @@ error() {
 
 [[ -z "$RUN_ID" ]] && error "--run-id TICKET is required"
 
-WORKSPACE_BASE="$TRADE_IMPORTS_WORKSPACE/workareas/govuk-upgrades/$RUN_ID"
+WORKSPACE_BASE="$HOME/git/defra/trade-imports-animals/workareas/govuk-upgrades/$RUN_ID"
 
 if [[ ! -d "$WORKSPACE_BASE" ]]; then
     error "Workspace not found: $WORKSPACE_BASE. Run discover-versions.sh first."

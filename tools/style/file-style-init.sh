@@ -1,6 +1,6 @@
 #!/bin/bash
-# Initialise a per-file review JSON placeholder.
-# Usage: file-review-init.sh EUDPA-X --repo R --file F --commit SHA --pr N --mode M
+# Initialise a per-file style review JSON placeholder.
+# Usage: file-style-init.sh EUDPA-X --repo R --file F --commit SHA --pr N --mode M
 # Idempotent: overwrites any existing file at the placeholder path.
 # Prints the absolute path of the created file.
 
@@ -30,7 +30,7 @@ case "$MODE" in
 esac
 
 encoded="${FILE//\//_}"
-out="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/file-reviews/$REPO/$encoded.review.json"
+out="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/file-reviews/$REPO/$encoded.style.json"
 
 mkdir -p "$(dirname "$out")"
 

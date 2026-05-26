@@ -11,7 +11,6 @@
 # caller can branch without re-detecting.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET="${1:-}"
 shift || true
@@ -21,14 +20,14 @@ if [[ -z "$TICKET" ]] || [[ "$TICKET" == "-h" ]] || [[ "$TICKET" == "--help" ]];
     exit 1
 fi
 
-REVIEW_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET"
+REVIEW_DIR="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET"
 
 if [[ -f "$REVIEW_DIR/review-index.md" ]]; then
     echo "MODE: REFRESH"
     echo
-    exec "$TRADE_IMPORTS_WORKSPACE/tools/review/refresh/scope.sh" "$TICKET" --write-snapshot "$@"
+    exec "$HOME/git/defra/trade-imports-animals/tools/review/refresh/scope.sh" "$TICKET" --write-snapshot "$@"
 else
     echo "MODE: FRESH"
     echo
-    exec "$TRADE_IMPORTS_WORKSPACE/tools/review/prepare-review.sh" "$TICKET" "$@"
+    exec "$HOME/git/defra/trade-imports-animals/tools/review/prepare-review.sh" "$TICKET" "$@"
 fi

@@ -4,7 +4,7 @@
 # Example: ./file-diff.sh trade-imports-animals-frontend 1234 src/server/router.js
 #
 # If --ticket is provided AND the workareas diff cache exists at
-# $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-X/.diffs/REPO.diff,
+# $HOME/git/defra/trade-imports-animals/workareas/reviews/EUDPA-X/.diffs/REPO.diff,
 # reads from there instead of hitting `gh pr diff`. With 100 parallel
 # file-reviewers, this avoids hammering the GitHub API.
 #
@@ -42,8 +42,8 @@ if [[ -z "$REPO" ]] || [[ -z "$PR_NUMBER" ]] || [[ -z "$FILE_PATH" ]]; then
 fi
 
 source_cmd=()
-if [[ -n "$TICKET" ]] && [[ -n "${TRADE_IMPORTS_WORKSPACE:-}" ]]; then
-    cache="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/.diffs/$REPO.diff"
+if [[ -n "$TICKET" ]]; then
+    cache="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/.diffs/$REPO.diff"
     if [[ -s "$cache" ]]; then
         source_cmd=( cat "$cache" )
     fi

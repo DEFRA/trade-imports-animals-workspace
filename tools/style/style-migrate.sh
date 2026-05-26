@@ -16,7 +16,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 MIGRATOR="$SCRIPT_DIR/lib/migrate-legacy-to-items.awk"
 
 TICKET=""
@@ -38,7 +37,7 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-STYLE_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET"
+STYLE_DIR="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET"
 LEGACY_FILE="$STYLE_DIR/code-style-review.md"
 META_FILE="$STYLE_DIR/.style-meta.json"
 

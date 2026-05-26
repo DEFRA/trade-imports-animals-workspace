@@ -5,7 +5,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 RUN_ID=""
 JSON_OUTPUT=false
@@ -39,7 +38,7 @@ if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
 fi
 
-WORKSPACE_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades/$RUN_ID"
+WORKSPACE_DIR="$HOME/git/defra/trade-imports-animals/workareas/npm-upgrades/$RUN_ID"
 
 # Extract risk level from migration plan content
 get_risk_level() {

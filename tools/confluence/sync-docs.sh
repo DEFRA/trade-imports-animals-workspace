@@ -20,9 +20,8 @@ set -euo pipefail
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 ROOT_FOLDER_ID="6447269328"
-OUTPUT_DIR="$TRADE_IMPORTS_WORKSPACE/docs/confluence"
+OUTPUT_DIR="$HOME/git/defra/trade-imports-animals/docs/confluence"
 INDEX_FILE="$OUTPUT_DIR/_index.md"
 BASE_URL="${JIRA_BASE_URL:?JIRA_BASE_URL is not set}/wiki"
 DRY_RUN=false

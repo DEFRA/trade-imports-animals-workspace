@@ -26,21 +26,17 @@ Two layers:
   use the literal home-relative path `~/git/defra/trade-imports-animals/...`.
   Bash expands `~` to `$HOME` automatically. Contributors must clone
   to this canonical location for the LLM-typed allowlist to match.
-- **Inside `tools/<domain>/<script>.sh`**: scripts use the
-  `$TRADE_IMPORTS_WORKSPACE` env var internally and bail loudly if
-  it's unset. Set it in your shell profile —
-  see [`agent-onboarding.md`](agent-onboarding.md).
-
-```bash
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
-```
+- **Inside `tools/<domain>/<script>.sh`**: scripts hardcode the path
+  literally as `$HOME/git/defra/trade-imports-animals/...`. No env var.
+  `$HOME` expands inside the shell at script-run time; it never reaches
+  the permission system or an LLM.
 
 The split exists because Claude Code's permission system flags
 parameter expansion (`$VAR`) in LLM-typed Bash commands as "Contains
 simple_expansion" — even when the variable is explicitly allowlisted
 ([GH#51001](https://github.com/anthropics/claude-code/issues/51001)).
-Literal `~` paths don't trip the check. Script internals never reach
-the permission system, so the env var convention works fine there.
+Literal `~` paths in agent-typed commands don't trip the check, and
+`$HOME` inside script bodies never crosses the boundary.
 
 Earlier iterations used a walk-up helper that derived the root from
 `${BASH_SOURCE[0]}` or `$PWD`. That had two failure modes: off-by-one

@@ -16,14 +16,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 # Defaults
 REPO_PATH=""
 RUN_ID=""
 STRATEGY="latest"
 JSON_OUTPUT=false
-WORKSPACE_BASE="$TRADE_IMPORTS_WORKSPACE/workareas/npm-upgrades"
+WORKSPACE_BASE="$HOME/git/defra/trade-imports-animals/workareas/npm-upgrades"
 FORCE=false
 
 show_help() {

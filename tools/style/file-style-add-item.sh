@@ -1,14 +1,14 @@
 #!/bin/bash
-# Append a todo to a per-file review JSON. Auto-assigns next id.
+# Append a todo to a per-file style review JSON. Auto-assigns next id.
 # Usage:
-#   file-review-add-item.sh EUDPA-X --repo R --file F \
-#       --line L --severity S --category C \
+#   file-style-add-item.sh EUDPA-X --repo R --file F \
+#       --line L --rule R --severity S \
 #       --issue "..." --fix "..." [--best-practice PATH]
 # Prints the new id.
 
 set -e
 
-TICKET=""; REPO=""; FILE=""; LINE=""; SEVERITY=""; CATEGORY=""
+TICKET=""; REPO=""; FILE=""; LINE=""; RULE=""; SEVERITY=""
 ISSUE=""; FIX=""; BEST_PRACTICE=""
 
 while [[ $# -gt 0 ]]; do
@@ -17,8 +17,8 @@ while [[ $# -gt 0 ]]; do
         --repo) REPO="$2"; shift 2 ;;
         --file) FILE="$2"; shift 2 ;;
         --line) LINE="$2"; shift 2 ;;
+        --rule) RULE="$2"; shift 2 ;;
         --severity) SEVERITY="$2"; shift 2 ;;
-        --category) CATEGORY="$2"; shift 2 ;;
         --issue) ISSUE="$2"; shift 2 ;;
         --fix) FIX="$2"; shift 2 ;;
         --best-practice) BEST_PRACTICE="$2"; shift 2 ;;
@@ -26,34 +26,34 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-for v in TICKET REPO FILE LINE SEVERITY CATEGORY ISSUE FIX; do
+for v in TICKET REPO FILE RULE SEVERITY ISSUE FIX; do
     [[ -z "${!v}" ]] && { echo "Missing $v" >&2; exit 1; }
 done
 
 case "$SEVERITY" in
-    Critical|Major|Minor) ;;
-    *) echo "Invalid severity: $SEVERITY (must be Critical|Major|Minor)" >&2; exit 1 ;;
+    FAIL|WARN) ;;
+    *) echo "Invalid severity: $SEVERITY (must be FAIL|WARN)" >&2; exit 1 ;;
 esac
 
 encoded="${FILE//\//_}"
-target="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/file-reviews/$REPO/$encoded.review.json"
-[[ -f "$target" ]] || { echo "No review file at $target — call file-review-init.sh first" >&2; exit 1; }
+target="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/file-reviews/$REPO/$encoded.style.json"
+[[ -f "$target" ]] || { echo "No style file at $target — call file-style-init.sh first" >&2; exit 1; }
 
 next_id=$(jq '(.todos | map(.id) | max // 0) + 1' "$target")
 
 jq \
     --argjson id "$next_id" \
-    --argjson line "$LINE" \
+    --arg line "$LINE" \
+    --arg rule "$RULE" \
     --arg severity "$SEVERITY" \
-    --arg category "$CATEGORY" \
     --arg issue "$ISSUE" \
     --arg fix "$FIX" \
     --arg best_practice "$BEST_PRACTICE" \
     '.todos += [({
         id: $id,
         line: $line,
+        rule: $rule,
         severity: $severity,
-        category: $category,
         issue: $issue,
         fix: $fix
     } + (if $best_practice != "" then {best_practice: $best_practice} else {} end))]' \

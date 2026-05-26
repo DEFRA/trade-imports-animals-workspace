@@ -15,7 +15,6 @@
 
 set -e
 
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET="${1:-}"
 if [[ -z "$TICKET" ]]; then
@@ -23,7 +22,7 @@ if [[ -z "$TICKET" ]]; then
   exit 1
 fi
 
-dir="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET"
+dir="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET"
 if compgen -G "$dir/style-review.*.md" > /dev/null; then
   echo EXISTS
 else

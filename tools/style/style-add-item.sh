@@ -8,7 +8,6 @@
 # Prints the new ID to stdout.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -63,7 +62,7 @@ case "$SEVERITY" in
     *) echo "Invalid --severity: $SEVERITY (must be FAIL|WARN)" >&2; exit 1 ;;
 esac
 
-target="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
+target="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
 
 # Initialise if missing so callers don't have to know.
 if [[ ! -f "$target" ]]; then

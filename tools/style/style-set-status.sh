@@ -6,7 +6,6 @@
 # --note overwrites the Notes column when provided.
 
 set -e
-: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -45,7 +44,7 @@ case "$STATUS" in
     *) echo "Invalid --status: $STATUS" >&2; exit 1 ;;
 esac
 
-target="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
+target="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
 [[ -f "$target" ]] || { echo "Items file not found: $target" >&2; exit 1; }
 
 exists=$(jq --argjson id "$ITEM" '[.items[] | select(.id == $id)] | length' "$target")
