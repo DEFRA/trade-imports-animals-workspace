@@ -4,8 +4,7 @@
 #   style-counts.sh EUDPA-XXXXX [--repo REPO] [--json]
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+: "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
 
 TICKET=""
 REPO=""
@@ -28,45 +27,52 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-ITEMS_ARGS=( "$TICKET" )
-[[ -n "$REPO" ]] && ITEMS_ARGS+=( --repo "$REPO" )
+STYLE_DIR="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET"
+[[ -d "$STYLE_DIR" ]] || { echo "Style review workspace not found: $STYLE_DIR" >&2; exit 1; }
 
-items_tsv=$("$SCRIPT_DIR/style-items.sh" "${ITEMS_ARGS[@]}")
+files=()
+if [[ -n "$REPO" ]]; then
+    f="$STYLE_DIR/items.${REPO}.json"
+    [[ -f "$f" ]] && files+=("$f")
+else
+    while IFS= read -r f; do files+=("$f"); done < <(find "$STYLE_DIR" -maxdepth 1 -name 'items.*.json' | sort)
+fi
 
-counts=$(printf '%s\n' "$items_tsv" | awk -F'\t' '
-    NF == 0 { next }
-    {
-        disp = ($9 == "" ? "Pending" : $9)
-        stat = $10
-        key = disp "\t" stat
-        c[key]++
-        total++
-    }
-    END {
-        for (k in c) print c[k] "\t" k
-        print "TOTAL\t" total "\t"
-    }
-')
+if [[ ${#files[@]} -eq 0 ]]; then
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        echo '{"breakdown":[],"total":0}'
+    else
+        echo "Counts for $TICKET${REPO:+ (repo: $REPO)}:"
+        echo "  ----"
+        echo "     0  TOTAL"
+    fi
+    exit 0
+fi
+
+summary=$(jq -s '
+    [.[] | .items[] | {
+        disposition: (.disposition // "Pending"),
+        status: (.status // "")
+    }]
+    | group_by([.disposition, .status])
+    | map({
+        disposition: .[0].disposition,
+        status: .[0].status,
+        count: length
+    })
+    | sort_by(.disposition, .status)
+    | {breakdown: ., total: (map(.count) | add // 0)}
+' "${files[@]}")
 
 if [[ "$JSON_OUTPUT" == "true" ]]; then
-    printf '%s\n' "$counts" | jq -Rn '
-        [inputs | split("\t")] as $rows
-        | reduce $rows[] as $r ({};
-            if $r[0] == "TOTAL" then .total = ($r[1] | tonumber)
-            else
-                .breakdown += [{ disposition: $r[1], status: $r[2], count: ($r[0] | tonumber) }]
-            end
-        )'
+    echo "$summary"
 else
-    printf '%s\n' "Counts for $TICKET${REPO:+ (repo: $REPO)}:"
-    total=$(printf '%s\n' "$counts" | awk -F'\t' '$1=="TOTAL"{print $2}')
-    printf '%s\n' "$counts" \
-        | awk -F'\t' '$1!="TOTAL"' \
-        | sort -t$'\t' -k2,2 -k3,3 \
-        | awk -F'\t' '{
-            disp = $2
-            stat = ($3 == "" ? "—" : $3)
-            printf "  %4d  %-15s  %s\n", $1, disp, stat
-        }'
-    printf '  ----\n  %4d  TOTAL\n' "$total"
+    echo "Counts for $TICKET${REPO:+ (repo: $REPO)}:"
+    echo "$summary" | jq -r '.breakdown[] | [.count, .disposition, (.status // "" | if . == "" then "—" else . end)] | @tsv' \
+        | while IFS=$'\t' read -r count disposition status; do
+            printf '  %4d  %-15s  %s\n' "$count" "$disposition" "$status"
+        done
+    echo "  ----"
+    total=$(echo "$summary" | jq -r '.total')
+    printf '  %4d  TOTAL\n' "$total"
 fi

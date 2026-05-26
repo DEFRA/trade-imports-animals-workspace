@@ -12,9 +12,9 @@
 #
 # Lists:
 #   A — changed `.js` files (re-review with file reviewer)
-#   B — items in style-review.{repo}.md that are open AND in unchanged files
+#   B — items in items.{repo}.json that are open AND in unchanged files
 #   C — `.js` files merge-resolved in window
-#   D — `.js` files in PR with no `.style.md` (coverage gap)
+#   D — `.js` files in PR with no `.style.json` (coverage gap)
 #
 # `prior_sha` per repo = current_commit of the most recent .style-meta.json
 # re_reviews snapshot. Falls back to .review-meta.json#prs[].commit on the
@@ -29,7 +29,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REVIEW_REFRESH_DIR="$TRADE_IMPORTS_WORKSPACE/tools/review/refresh"
 PULL_SH="$REVIEW_REFRESH_DIR/pull-repos.sh"
 MERGE_SH="$REVIEW_REFRESH_DIR/list-merge-resolved.sh"
-ITEMS_SH="$TRADE_IMPORTS_WORKSPACE/tools/style/style-items.sh"
 
 TICKET=""
 REPO_FILTER=""
@@ -84,9 +83,6 @@ if [[ "$DO_PULL" == "true" ]]; then
 fi
 
 # ---- Step 2: per-repo scope --------------------------------------------
-
-# Pre-load items table (TSV) once
-items_tsv=$("$ITEMS_SH" "$TICKET")
 
 # Discover repos: union of .style-meta.json#js_files[].repo and
 # .review-meta.json#prs[].repo (style metadata is the source of truth for which
@@ -149,17 +145,17 @@ for repo in "${repos[@]}"; do
         merge_resolved_js=$(printf '%s\n' "$merge_resolved_full" | awk -F'\t' '$2 ~ /\.js$/ && $2 != ""' || true)
     fi
 
-    # Coverage gaps: PR `.js` files lacking a `.style.md`. Inline check (no
-    # equivalent of list-coverage-gaps.sh — review uses .review.md, style uses
-    # .style.md under file-reviews/{repo}/).
+    # Coverage gaps: PR `.js` files lacking a `.style.json`. Inline check (no
+    # equivalent of list-coverage-gaps.sh — review uses .review.json, style uses
+    # .style.json under file-reviews/{repo}/).
     coverage_gaps=""
     if pr_files=$(gh pr view "$pr_number" --repo "DEFRA/$repo" --json files --jq '.files[].path' 2>/dev/null); then
         while IFS= read -r f; do
             [[ -z "$f" ]] && continue
             [[ "$f" == *.js ]] || continue
             underscored=${f//\//_}
-            review_file="$STYLE_DIR/file-reviews/$repo/${underscored}.style.md"
-            if [[ ! -f "$review_file" ]] || [[ ! -s "$review_file" ]]; then
+            json_file="$STYLE_DIR/file-reviews/$repo/${underscored}.style.json"
+            if [[ ! -f "$json_file" ]] || [[ "$(jq -r '.verdict // "null"' "$json_file" 2>/dev/null)" == "null" ]]; then
                 coverage_gaps="${coverage_gaps}${f}"$'\n'
             fi
         done <<<"$pr_files"
@@ -169,17 +165,16 @@ for repo in "${repos[@]}"; do
 
     # ---- Build Lists ------------------------------------------------------
 
-    # Pre-build the per-repo items array so List A and List C entries can
-    # carry `prior_items` inline — saves the persona from a follow-up
-    # style-items.sh + jq filter dance per file.
-    repo_items_json=$(printf '%s' "$items_tsv" \
-        | awk -F'\t' -v REPO="$repo" '$1 == REPO' \
-        | jq -Rn '
-            [inputs | select(length > 0) | split("\t") |
-                {repo: .[0], id: (.[1] | tonumber? // .[1]), file: .[2], line: .[3],
-                 rule: .[4], severity: .[5], issue: .[6], fix: .[7],
-                 disposition: .[8], status: .[9], notes: .[10]}
-            ]')
+    # Pre-build the per-repo items array (from canonical items.{repo}.json)
+    # so List A and List C entries can carry `prior_items` inline.
+    items_file="$STYLE_DIR/items.${repo}.json"
+    if [[ -f "$items_file" ]]; then
+        repo_items_json=$(jq --arg repo "$repo" '
+            [.items[] | . + {repo: $repo}]
+        ' "$items_file")
+    else
+        repo_items_json="[]"
+    fi
 
     # List C — merge-resolved .js files (with prior items per file)
     list_c_json=$(printf '%s\n' "$merge_resolved_js" \
@@ -201,30 +196,21 @@ for repo in "${repos[@]}"; do
                    prior_items: [$items[] | select(.file == $f)]}]
         ')
 
-    # List D — coverage gaps (.js files lacking a .style.md)
+    # List D — coverage gaps (.js files lacking a .style.json verdict)
     # No prior_items by definition — these are first-time reviews of files
     # already in the PR but never covered.
     list_d_json=$(printf '%s' "$coverage_gaps" | jq -Rn '[inputs | select(length > 0) | {file: .}]')
 
     # List B — items pending OR (Fix/Discuss + Not Done) AND file not in changed_files
-    list_b_json=$(printf '%s' "$items_tsv" \
-        | awk -F'\t' -v REPO="$repo" '$1 == REPO { print }' \
-        | awk -F'\t' '
-            BEGIN { OFS="\t" }
-            {
-                disp = $9
-                stat = $10
-                if (disp == "" || ((disp == "Fix" || disp == "Discuss") && stat == "Not Done")) {
-                    print $0
-                }
-            }' \
-        | jq -Rn --argjson changed "$(printf '%s\n' "$changed_files" | jq -Rn '[inputs | select(length>0)]')" '
-            [inputs | select(length > 0) | split("\t") |
-                {repo: .[0], id: (.[1] | tonumber? // .[1]), file: .[2], line: .[3],
-                 rule: .[4], severity: .[5], issue: .[6], fix: .[7],
-                 disposition: .[8], status: .[9], notes: .[10]}
-            ] | map(select(.file as $f | ($changed | index($f)) == null))
-        ')
+    changed_files_json=$(printf '%s\n' "$changed_files" | jq -Rn '[inputs | select(length>0)]')
+    list_b_json=$(echo "$repo_items_json" | jq --argjson changed "$changed_files_json" '
+        map(select(
+            (
+                ((.disposition // "") == "") or
+                (((.disposition == "Fix") or (.disposition == "Discuss")) and ((.status // "") == "Not Done"))
+            )
+            and (.file as $f | ($changed | index($f)) == null)
+        ))')
 
     a_count=$(jq 'length' <<<"$list_a_json")
     b_count=$(jq 'length' <<<"$list_b_json")

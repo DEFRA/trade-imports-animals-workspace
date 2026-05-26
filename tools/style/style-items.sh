@@ -1,23 +1,22 @@
 #!/bin/bash
-# List items from style-review.{repo}.md files for a ticket.
+# List items from items.{repo}.json files for a ticket.
 # Usage:
-#   style-items.sh EUDPA-XXXXX [--repo REPO] [--filter pending|fix|wont-fix|discuss|auto-resolved]
+#   style-items.sh EUDPA-XXXXX [--repo REPO] [--file PATH]
+#                              [--filter pending|fix|wont-fix|discuss|auto-resolved]
 #                              [--status not-done|done|failed] [--by-file] [--json]
 #
-# Output (TSV columns):
+# TSV output columns (in this order):
 #   repo \t id \t file \t line \t rule \t severity \t issue \t fix \t disposition \t status \t notes
 #
-# --by-file groups items by (repo, file) and emits JSON groups (only valid with --json).
+# --by-file groups items by (repo, file) and emits JSON groups (implies --json).
 # Filters narrow the result set. Multiple filters AND together.
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
-PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
 REPO_FILTER=""
+FILE_FILTER=""
 DISPOSITION_FILTER=""
 STATUS_FILTER=""
 JSON_OUTPUT=false
@@ -25,9 +24,10 @@ BY_FILE=false
 
 usage() {
     cat <<EOF
-Usage: $0 EUDPA-XXXXX [--repo REPO] [--filter DISPOSITION] [--status STATUS] [--by-file] [--json]
+Usage: $0 EUDPA-XXXXX [--repo REPO] [--file PATH] [--filter DISPOSITION] [--status STATUS] [--by-file] [--json]
 
-  --repo R         Limit to one repo (matches style-review.<R>.md)
+  --repo R         Limit to one repo
+  --file P         Limit to items for one file (exact path match)
   --filter F       Filter by Disposition: pending|fix|wont-fix|discuss|auto-resolved
   --status S       Filter by Status: not-done|done|failed
   --by-file        Group items by (repo, file) — implies --json
@@ -39,6 +39,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case $1 in
         --repo) REPO_FILTER="$2"; shift 2 ;;
+        --file) FILE_FILTER="$2"; shift 2 ;;
         --filter) DISPOSITION_FILTER="$2"; shift 2 ;;
         --status) STATUS_FILTER="$2"; shift 2 ;;
         --by-file) BY_FILE=true; JSON_OUTPUT=true; shift ;;
@@ -79,74 +80,50 @@ STATUS_MATCH=""
 [[ -n "$DISPOSITION_FILTER" ]] && DISPOSITION_MATCH=$(disposition_label "$DISPOSITION_FILTER")
 [[ -n "$STATUS_FILTER" ]] && STATUS_MATCH=$(status_label "$STATUS_FILTER")
 
-tmp_tsv=$(mktemp)
-trap 'rm -f "$tmp_tsv"' EXIT
+files=()
+if [[ -n "$REPO_FILTER" ]]; then
+    f="$STYLE_DIR/items.${REPO_FILTER}.json"
+    [[ -f "$f" ]] && files+=("$f")
+else
+    while IFS= read -r f; do files+=("$f"); done < <(find "$STYLE_DIR" -maxdepth 1 -name 'items.*.json' | sort)
+fi
 
-shopt -s nullglob
-for review_file in "$STYLE_DIR"/style-review.*.md; do
-    base=$(basename "$review_file")
-    repo="${base#style-review.}"
-    repo="${repo%.md}"
+[[ ${#files[@]} -eq 0 ]] && exit 0
 
-    [[ -z "$repo" ]] && continue
-
-    if [[ -n "$REPO_FILTER" ]] && [[ "$repo" != "$REPO_FILTER" ]]; then
-        continue
-    fi
-
-    awk -f "$PARSER" "$review_file" \
-        | awk -v REPO="$repo" 'BEGIN{OFS="\t"} {print REPO, $0}' >> "$tmp_tsv"
-done
-
-filter_rows() {
-    awk -F'\t' -v DISP="$DISPOSITION_MATCH" -v DISP_FILTER="$DISPOSITION_FILTER" \
-                -v ST="$STATUS_MATCH" -v ST_FILTER="$STATUS_FILTER" '
-    {
-        # Columns: 1=repo 2=id 3=file 4=line 5=rule 6=severity 7=issue 8=fix 9=disp 10=status 11=notes
-        if (DISP_FILTER != "" && $9 != DISP) next
-        if (ST_FILTER  != "" && $10 != ST) next
-        print
-    }' "$tmp_tsv"
-}
+filtered=$(jq -s \
+    --arg disp_filter "$DISPOSITION_FILTER" \
+    --arg disp_match "$DISPOSITION_MATCH" \
+    --arg stat_filter "$STATUS_FILTER" \
+    --arg stat_match "$STATUS_MATCH" \
+    --arg file_filter "$FILE_FILTER" \
+    '
+    [.[] as $f
+        | $f.items[]
+        | . + {repo: $f.repo}
+        | select(
+            ($disp_filter == "" or (.disposition // "") == $disp_match) and
+            ($stat_filter == "" or (.status // "") == $stat_match) and
+            ($file_filter == "" or .file == $file_filter)
+          )
+    ]' "${files[@]}")
 
 if [[ "$BY_FILE" == "true" ]]; then
-    filter_rows | jq -Rn '
-        [inputs
-            | split("\t")
-            | {
-                repo: .[0],
-                id: (.[1] | tonumber? // .[1]),
-                file: .[2],
-                line: .[3],
-                rule: .[4],
-                severity: .[5],
-                issue: .[6],
-                fix: .[7],
-                disposition: .[8],
-                status: .[9],
-                notes: .[10]
-              }
-        ]
-        | group_by([.repo, .file])
-        | map({repo: .[0].repo, file: .[0].file, items: .})'
+    echo "$filtered" | jq 'group_by([.repo, .file]) | map({repo: .[0].repo, file: .[0].file, items: .})'
 elif [[ "$JSON_OUTPUT" == "true" ]]; then
-    filter_rows | jq -Rn '
-        [inputs
-            | split("\t")
-            | {
-                repo: .[0],
-                id: (.[1] | tonumber? // .[1]),
-                file: .[2],
-                line: .[3],
-                rule: .[4],
-                severity: .[5],
-                issue: .[6],
-                fix: .[7],
-                disposition: .[8],
-                status: .[9],
-                notes: .[10]
-              }
-        ]'
+    echo "$filtered"
 else
-    filter_rows
+    echo "$filtered" | jq -r '.[] |
+        [
+            .repo,
+            (.id | tostring),
+            .file,
+            (.line // ""),
+            (.rule // ""),
+            (.severity // ""),
+            (.issue // ""),
+            (.fix // ""),
+            (.disposition // ""),
+            (.status // ""),
+            (.notes // "")
+        ] | @tsv'
 fi

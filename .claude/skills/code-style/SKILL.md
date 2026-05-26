@@ -4,9 +4,13 @@ description: 'JS code-style/lint review (formatting, conventions, style rules) a
 ---
 
 JS code-style review and remediation for EUDP Live Animals tickets.
-State lives in per-repo `style-review.{repo}.md` files with consolidated
-`## Items` tables. All reads/writes go through helper scripts — never
-edit the table by hand.
+
+Per-repo state lives in
+`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXX/items.{repo}.json`
+— canonical JSON, mutated only via `style-*.sh` helpers. The `## Items`
+markdown table in `style-review.{repo}.md` is a rendered view (via
+`render-items.sh`). See `assets/items-table.md` for the JSON schema
+and allowed Disposition/Status values.
 
 ## Path conventions
 

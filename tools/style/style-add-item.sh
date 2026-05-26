@@ -1,16 +1,14 @@
 #!/bin/bash
-# Append a new item to style-review.{repo}.md at the next available ID.
+# Append a new item to items.{repo}.json at the next available ID.
 # Usage:
-#   style-add-item.sh EUDPA-XXXXX --repo REPO --file PATH --line N --rule R --severity S --issue "..." --fix "..."
+#   style-add-item.sh EUDPA-XXXXX --repo REPO --file PATH --line N --rule R --severity S \
+#                     --issue "..." --fix "..." [--best-practice PATH]
 #
-# Disposition, Status, and Notes start blank.
+# Disposition, Status, and Notes start null.
 # Prints the new ID to stdout.
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${TRADE_IMPORTS_WORKSPACE:?TRADE_IMPORTS_WORKSPACE not set — see docs/agent-onboarding.md}"
-PARSER="$SCRIPT_DIR/lib/parse-items-table.awk"
 
 TICKET=""
 REPO=""
@@ -20,18 +18,16 @@ RULE=""
 SEVERITY=""
 ISSUE=""
 FIX=""
+BEST_PRACTICE=""
 
 usage() {
     cat <<EOF
-Usage: $0 EUDPA-XXXXX --repo REPO --file PATH --line N --rule R --severity S --issue "..." --fix "..."
+Usage: $0 EUDPA-XXXXX --repo REPO --file PATH --line N --rule R --severity S \\
+    --issue "..." --fix "..." [--best-practice PATH]
 
-  --repo R       Target repo (matches style-review.<R>.md)
-  --file P       Path of the affected source file
-  --line N       Line number (or range like "12-15"); pass "" if unknown
-  --rule R       Style guide rule number (1-17)
-  --severity S   One of: FAIL, WARN
-  --issue "..."  Issue description
-  --fix "..."    Suggested fix
+  --rule R        Style guide rule number (1-17)
+  --severity S    One of: FAIL, WARN
+  --best-practice Optional citation path under docs/best-practices/
 EOF
     exit 1
 }
@@ -45,6 +41,7 @@ while [[ $# -gt 0 ]]; do
         --severity) SEVERITY="$2"; shift 2 ;;
         --issue) ISSUE="$2"; shift 2 ;;
         --fix) FIX="$2"; shift 2 ;;
+        --best-practice) BEST_PRACTICE="$2"; shift 2 ;;
         -h|--help) usage ;;
         -*) echo "Unknown option: $1" >&2; usage ;;
         *) TICKET="$1"; shift ;;
@@ -61,51 +58,43 @@ for var in REPO FILE RULE SEVERITY ISSUE FIX; do
     fi
 done
 
-REVIEW_FILE="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/style-review.${REPO}.md"
-[[ -f "$REVIEW_FILE" ]] || { echo "Style review file not found: $REVIEW_FILE" >&2; exit 1; }
+case "$SEVERITY" in
+    FAIL|WARN) ;;
+    *) echo "Invalid --severity: $SEVERITY (must be FAIL|WARN)" >&2; exit 1 ;;
+esac
 
-# Compute next ID
-NEXT_ID=$(awk -f "$PARSER" "$REVIEW_FILE" | awk -F'\t' 'BEGIN{max=0} $1+0>max{max=$1+0} END{print max+1}')
+target="$TRADE_IMPORTS_WORKSPACE/workareas/code-style-reviews/$TICKET/items.${REPO}.json"
 
-# Escape | in cell values
-escape_pipes() { printf '%s' "$1" | sed 's/|/\\|/g'; }
-
-NEW_ROW="| #${NEXT_ID} | $(escape_pipes "$FILE") | $(escape_pipes "$LINE") | $(escape_pipes "$RULE") | $(escape_pipes "$SEVERITY") | $(escape_pipes "$ISSUE") | $(escape_pipes "$FIX") |  |  |  |"
-
-# Find insertion point: line number of last data row in ## Items, or separator if no data yet.
-last_data_line=$(awk '
-    /^## Items[[:space:]]*$/ { in_items=1; seen=0; next }
-    /^## / { if (in_items) in_items=0; next }
-    !in_items { next }
-    /^\|[[:space:]]*-+/ { seen=1; sep_line=NR; next }
-    seen && /^\|/ { last=NR }
-    END {
-        if (last) print last
-        else if (sep_line) print sep_line
-        else print 0
-    }
-' "$REVIEW_FILE")
-
-if [[ "$last_data_line" -eq 0 ]]; then
-    echo "No '## Items' section found in $REVIEW_FILE" >&2
-    exit 1
+# Initialise if missing so callers don't have to know.
+if [[ ! -f "$target" ]]; then
+    mkdir -p "$(dirname "$target")"
+    jq -n --arg ticket "$TICKET" --arg repo "$REPO" \
+        '{ticket: $ticket, repo: $repo, items: []}' > "$target"
 fi
 
-tmp_out=$(mktemp)
-tmp_row=$(mktemp)
-trap 'rm -f "$tmp_out" "$tmp_row"' EXIT
+next_id=$(jq '(.items | map(.id) | max // 0) + 1' "$target")
 
-# Write the new row to a tmp file and read it from awk via getline,
-# bypassing -v's backslash-escape processing (which strips `\|`).
-printf '%s\n' "$NEW_ROW" > "$tmp_row"
+jq \
+    --argjson id "$next_id" \
+    --arg file "$FILE" \
+    --arg line "$LINE" \
+    --arg rule "$RULE" \
+    --arg severity "$SEVERITY" \
+    --arg issue "$ISSUE" \
+    --arg fix "$FIX" \
+    --arg best_practice "$BEST_PRACTICE" \
+    '.items += [({
+        id: $id,
+        file: $file,
+        line: $line,
+        rule: $rule,
+        severity: $severity,
+        issue: $issue,
+        fix: $fix,
+        disposition: null,
+        status: null,
+        notes: null
+    } + (if $best_practice != "" then {best_practice: $best_practice} else {} end))]' \
+    "$target" > "$target.tmp" && mv "$target.tmp" "$target"
 
-awk -v lineno="$last_data_line" -v rowfile="$tmp_row" '
-    BEGIN { getline row < rowfile; close(rowfile) }
-    NR == lineno { print; print row; next }
-    { print }
-' "$REVIEW_FILE" > "$tmp_out"
-
-mv "$tmp_out" "$REVIEW_FILE"
-trap - EXIT
-
-echo "$NEXT_ID"
+echo "$next_id"
