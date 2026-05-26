@@ -114,11 +114,23 @@ Phase 2 delegates per-version analysis to `general-purpose` Task
 subagents following `references/VERSION_PLANNER.md` — one instance per
 version stub, parallel fan-out.
 
-Present its report verbatim. **Gate:** "Phase 2 complete. Proceed to
-Phase 3 (implementation)?"
+Present its report verbatim. **Gate:** "Phase 2 complete. Walk the
+plans before Phase 3?"
 
-If any versions are marked INCOMPLETE, flag them and ask how to handle
-before proceeding.
+## Walker (Phase 2 → Phase 3 batch triage)
+
+```
+Follow references/PLAN_WALKER.md. Run ID: {run-id}
+```
+
+The walker presents every pending version's plan in one batch table
+and takes a single keystroke string from the user
+(`A`pply / `S`kip / `D`iscuss / `Q`uarantine). INCOMPLETE versions
+from Phase 2 land here as `unplanned` rows — the user can re-plan,
+skip, or quarantine them per Decision 5.
+
+The walker is optional. If the user is happy with the Phase 2 report,
+proceed straight to Phase 3.
 
 ## Phase 3: Implementation
 
@@ -135,9 +147,10 @@ problem-solve. Wait for instruction.
 
 ## References
 
-- `references/PHASE_1_MANAGER.md` — version discovery + CHANGELOG cache.
+- `references/PHASE_1_MANAGER.md` — Phase 1 gate (start-upgrade.sh wrapper).
 - `references/PHASE_2_MANAGER.md` — fan-out to `VERSION_PLANNER.md` workers.
-- `references/PHASE_3_MANAGER.md` — implementation in strict semver order.
+- `references/PLAN_WALKER.md` — batch triage of Phase 2 output before Phase 3.
+- `references/PHASE_3_MANAGER.md` — implementation in strict semver order (delegates to `apply-version.sh`).
 - `references/VERSION_PLANNER.md` — single-version CHANGELOG analysis + per-repo plan classification (spawned per version as `general-purpose`).
 
 Best-practices (load when the changelog warrants):
