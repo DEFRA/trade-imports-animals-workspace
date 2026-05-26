@@ -1,102 +1,81 @@
 # Phase 3 Manager — Implementation
 
-**Job:** Implement all `.todo` version plans in strict semver ascending
-order. Stop on first failure per repo.
+**Job:** Apply every `todo`-classified version per repo in strict semver
+ascending order. Stop a repo on first failure.
 
 ## Boundaries
 
-Implement code changes, run tests, commit. Do not skip versions,
-reorder them, or modify `.noop` files.
+Edit source files per the plan in `versions.{repo}.json`. Hand off the
+package.json / install / test / commit / state-transition cycle to
+`apply-version.sh`. Do not skip versions, reorder them, or modify
+`noop`-classified entries.
 
 ## Inputs
 
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
-## Step 1: Check for work
+## Step 1: Snapshot work
 
 ```bash
 ~/git/defra/trade-imports-animals/tools/govuk/upgrade-status.sh --run-id {run-id}
 ```
 
-If no `.todo` files exist: report "No code changes required. Phase 3
-complete (nothing to do)."
+If `Todo: 0 Failed: 0`: report "Nothing to implement. Phase 3 complete."
 
-## Step 2: Process each repo
+## Step 2: Per-repo, per-version loop
 
-Process repos independently. Within each repo, process versions in
-**strict semver ascending order**.
-
-List `.todo` files for a repo (sorted):
+Read the in-scope repo list from `.run-meta.json`:
 
 ```bash
-find ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name} -name "version__*.todo" | sort -V
+jq -r '.repos[]' ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/.run-meta.json
 ```
 
-For each `.todo` file:
-
-### 2a. Read the plan
-
-Read `~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo`
-and understand:
-
-- Which files need changing
-- What specific changes are required
-
-### 2b. Make code changes
-
-Edit the files listed in the plan. Do not modify files not listed in
-the plan.
-
-### 2c. Update package.json
-
-For intermediate versions (not the final target), set an exact version
-constraint:
-
-```json
-"govuk-frontend": "{version}"
-```
-
-For the final target version, restore the original constraint style
-(e.g. `"^{version}"`).
-
-### 2d. Install and test
+For each repo, list pending versions in semver order:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo-name} install
-```
-```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo-name} test
+~/git/defra/trade-imports-animals/tools/govuk/upgrade-status.sh \
+  --run-id {run-id} --repo {repo-name} --filter pending --sort-semver --json
 ```
 
-### 2e. On success
+For each pending entry in that order:
 
-Commit all changes:
+### 2a. Make source-file changes
 
-```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} add package.json package-lock.json src/
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} commit -m "Upgrade govuk-frontend to {version}
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-```
-
-Rename marker to indicate completion:
+Read the plan (renders the JSON entry as markdown):
 
 ```bash
-mv ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.done
+~/git/defra/trade-imports-animals/tools/govuk/render-version-plan.sh \
+  --run-id {run-id} --repo {repo-name} --version {version}
 ```
 
-### 2f. On failure
+Apply every change listed under `## Changes Required` to the files
+named. Don't touch files not in the list. (No source edits are needed
+for `noop`-classified versions — `apply-version.sh` short-circuits
+them in Step 2b.)
 
-Record failure and stop this repo immediately. Do not proceed to the
-next version.
+### 2b. Apply
 
 ```bash
-mv ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.todo \
-   ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.failed
+~/git/defra/trade-imports-animals/tools/govuk/apply-version.sh \
+  --run-id {run-id} --repo {repo-name} --version {version}
 ```
 
-Report the test output verbatim.
+`apply-version.sh` handles everything from here:
+
+- Mutates `package.json` (exact version for intermediates, recorded
+  `original_constraint_prefix + version` for the final target — it
+  auto-detects "final" by comparing to `target_version` in the JSON).
+- Runs `npm install` (output to `/tmp/govuk-install-...txt`).
+- Runs `npm test` (output to `/tmp/govuk-test-...txt`).
+- On success: `git add -A`, commits with
+  `chore({run-id}): upgrade govuk-frontend to {version}`, then calls
+  `version-mark-implemented.sh` with the new SHA as its LAST action.
+- On failure: calls `version-mark-failed.sh` with the log path as
+  the reason, exits non-zero.
+
+If `apply-version.sh` exits non-zero, Read the referenced `/tmp/...txt`
+log file, surface the failing test/error to the user, and **stop this
+repo**. Do not proceed to its next pending version.
 
 ## Step 3: Report
 
@@ -107,19 +86,28 @@ Report the test output verbatim.
 ```
 === PHASE 3 COMPLETE ===
 
-trade-imports-animals-frontend:
-  Done:   {list of applied versions}
-  Noop:   {list of skipped versions}
-  Failed: {version — error summary}
-
-trade-imports-animals-admin:
-  Done:   {list}
-  Noop:   {list}
+{repo}:
+  Done:   {versions}
+  Noop:   {versions}
+  Failed: {version — reason}
 
 Summary:
-  Applied:  {count} versions committed locally (not pushed)
-  Skipped:  {count} (noop — no changes needed)
-  Failed:   {count} — investigate before proceeding
+  Applied: {N} versions committed locally (not pushed)
+  Noop:    {N}
+  Failed:  {N}
 
-{If failures: "Fix the failure at version {v} in {repo} before re-running Phase 3."}
+{If failures: name the version and repo; the test log path is in the
+versions.{repo}.json failure_reason field.}
 ```
+
+## Step 4: E2E (only after the last commit lands)
+
+Per Decision 3: run E2E once after the final version commit. From the
+workspace:
+
+```bash
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local
+```
+
+On E2E failure, halt and prompt the user — don't auto-revert across N
+commits.
