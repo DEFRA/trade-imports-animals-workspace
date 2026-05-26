@@ -236,6 +236,51 @@ batch implementor / refresh tools mutate it via `review-*.sh`. The
 
 Skip this step if only one repository is involved.
 
+## Step 5.5: Handoff check (FRESH only)
+
+Before writing the index and finishing, determine whether the PRs you
+just reviewed are yours or someone else's. If any are someone else's,
+offer to hand off the review to them via a workspace branch +
+inline PR comment.
+
+For each PR in `.review-meta.json`:
+
+```bash
+~/git/defra/trade-imports-animals/tools/github/pr-author.sh {repo} {pr}
+```
+
+```bash
+~/git/defra/trade-imports-animals/tools/github/whoami.sh
+```
+
+Compare authors against the `gh` user:
+
+- **All PRs authored by you** — print
+  `PRs authored by you — proceeding to walker.` and continue to
+  Step 6. No prompt.
+- **Any PR not authored by you** — show the user a per-PR table and
+  prompt:
+
+  ```markdown
+  | Repository | PR | Author | Handoff? |
+  |---|---|---|---|
+  | {repo} | #{pr} | {author} | [Y/n] |
+  ```
+
+  On `Y` for at least one PR, run the handoff for the matching subset:
+
+  ```bash
+  ~/git/defra/trade-imports-animals/tools/review/share-review.sh EUDPA-XXXXX [--pr N]
+  ```
+
+  Omit `--pr` if every non-yours PR is being handed off; pass `--pr N`
+  per-PR if the user only wants a subset.
+
+  On `n` for every non-yours PR, fall through to Step 6 / walker.
+
+Capture the printed handoff branch URL and PR comment URLs — include
+them in the Completion Output.
+
 ## Step 6: Write Index
 
 Create `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md` —
@@ -307,6 +352,12 @@ Summary:
 
 Index: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md
 Repo reviews: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
+
+[If a handoff happened in Step 5.5, append:]
+Handoff branch: chore/EUDPA-XXXXX (pushed to workspace remote)
+PR comments posted:
+  - {repo}#{pr} → {comment url}
+  ...
 
 Next: run `walk review EUDPA-XXXXX` to triage items. (Don't hand-edit
 the markdown items table — it's rendered from items.{repo}.json by
@@ -526,6 +577,7 @@ All under `~/git/defra/trade-imports-animals/tools/review/`:
 | `review-add-item.sh` | Append a newly-found violation; returns the new ID |
 | `review-counts.sh` | Final reports (walker + batch implementor) — breakdown by Disposition+Status |
 | `aggregate-file-reviews.sh` | Fresh Step 5 — write `items.{repo}.json` from per-file `.review.json` files; emit File Analysis Summary / Items markdown |
+| `share-review.sh` | Fresh Step 5.5 — push handoff branch `chore/EUDPA-X` to workspace remote + post PR comment(s) for PRs you didn't author |
 | `render-items.sh` | Render `items.{repo}.json` as the `## Items` markdown view |
 | `file-review-init.sh` / `file-review-add-item.sh` / `file-review-set-verdict.sh` | Per-file JSON helpers used by the FILE_REVIEWER persona |
 | `refresh/scope.sh` | Refresh Steps R1-R3 orchestrator |
