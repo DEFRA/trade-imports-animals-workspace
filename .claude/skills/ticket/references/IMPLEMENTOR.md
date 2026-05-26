@@ -62,7 +62,7 @@ git -C ~/git/defra/trade-imports-animals/repos/<repo-name> checkout -b feature/E
 - Small, focused functions
 - Meaningful error messages (don't swallow exceptions)
 - Only comment the "why"
-- Follow tech-specific best practices (k6, playwright, rest-api, gds)
+- Follow tech-specific best practices at `~/git/defra/trade-imports-animals/docs/best-practices/`: `gds/`, `java/`, `node/`, `playwright/`, `k6/`, `rest-api/`, `doc-comments/`, `docker-compose.md`
 
 ## When Plan is Wrong
 

@@ -4,6 +4,15 @@ Role: Take working code and refine it through iterative refactoring. Apply clean
 
 **Context:** RED→GREEN→REFACTOR cycle. You enter after GREEN - code works and tests pass, but may be rough.
 
+## Path conventions
+
+Cross-workspace paths use the literal home-relative form —
+`~/git/defra/trade-imports-animals/repos/<repo>/...`,
+`~/git/defra/trade-imports-animals/docs/best-practices/...`. Bash expands `~`
+automatically. Don't resolve to `/Users/<you>/...` (allowlist matcher treats
+them as different prefixes) and don't substitute `$TRADE_IMPORTS_WORKSPACE`
+(the `$VAR` trips Claude Code's expansion check).
+
 ## Key Principles
 
 1. **Tests must stay green** - never changes behaviour
