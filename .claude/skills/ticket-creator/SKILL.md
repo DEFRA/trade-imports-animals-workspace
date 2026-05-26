@@ -36,12 +36,16 @@ pipe doesn't match even when each piece would. Specifically:
 
 Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
-## Writing Style (GDS)
+## Session start — Read these once
 
-- Plain English - avoid jargon
-- Active voice - "Remove the variables" not "The variables should be removed"
-- Short sentences
-- Be concise
+Before the interview, Read these references so the rules are in
+context for the whole session:
+
+- `~/git/defra/trade-imports-animals/docs/best-practices/gds/writing.md`
+  — GDS plain-English rules for ticket prose.
+- `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
+  — Type / priority / AC / named-conventions guidance for the EUDPA
+  project.
 
 ## Workflow
 
@@ -93,8 +97,9 @@ parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 | Label | When |
 |-------|------|
 | technicalImprovement | Tech debt |
-| DevOps | Pipeline/CI/CD |
 | LiveIncidents | Production issues |
+
+(See ticket-conventions.md for guidance on label casing.)
 
 ## Step 3: Write Description
 
@@ -173,19 +178,10 @@ Link: ${JIRA_BASE_URL}/browse/EUDPA-XXXXX
 Draft retained at: ~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md
 ```
 
-## Good Acceptance Criteria
+## References
 
-**Good:**
-- API returns 400 when commodity code <6 digits
-- Error displays: "Commodity code must be at least 6 digits"
-- Page loads in <2 seconds
-
-**Bad:**
-- Code is clean (vague)
-- Performance is good (not measurable)
-
-## Tech Debt Board (862)
-
-- Always use `technicalImprovement` label
-- Always use `Lowest` priority
-- Common epics: EUDPA-17736 (Accessibility), EUDPA-20628 (QA Automation)
+- AC style and examples — see
+  `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
+  (free-form bullets; no Gherkin mandate).
+- Named conventions (Tech Debt Board bundle etc.) — same doc, "Named
+  conventions" section.
