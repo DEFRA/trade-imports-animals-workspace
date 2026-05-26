@@ -17,12 +17,22 @@ shape doesn't match the prefix rule.
 
 ## Before You Start
 
-1. Read plan at `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
-2. Read ticket: `~/git/defra/trade-imports-animals/tools/jira/ticket.sh EUDPA-XXXXX`
-3. Check tech stack in plan, or run: `~/git/defra/trade-imports-animals/tools/review/detect-tech.sh ~/git/defra/trade-imports-animals/repos/<repo-name>`
-4. Read listed best-practices at `~/git/defra/trade-imports-animals/docs/best-practices/`
-5. Verify `[ASSUMPTION]` and `[NEEDS VERIFICATION]` items
-6. **Run all tests** - do NOT proceed if failing
+One dispatch — asserts the plan exists, re-validates detect-tech per
+repo, caches the PR diff if a prior PR for the ticket exists, and emits
+`.implement-meta.json`:
+
+```bash
+~/git/defra/trade-imports-animals/tools/ticket/prepare-implement.sh EUDPA-XXXXX
+```
+
+Then read in this order:
+
+1. `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+2. `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/ticket.md`
+3. `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/.implement-meta.json` (tech list per repo)
+4. `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/best-practices/<repo>.md` (pre-baked at plan time)
+5. Verify `[ASSUMPTION]` and `[NEEDS VERIFICATION]` items in the plan
+6. **Run all tests** — do NOT proceed if failing
 
 Redirect output to a tmp file and read the file once — don't grep streaming output:
 

@@ -19,20 +19,28 @@ shape doesn't match the prefix rule.
 
 ### 1. Gather Context
 
+One dispatch — fetches the ticket, comments, Confluence references, and
+(if `--repos` is passed) per-repo detect-tech + best-practices bundles.
+Reads `workareas/ticket-planning/EUDPA-XXXXX/{ticket.md,.plan-meta.json,best-practices/<repo>.md}`
+when done.
+
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/ticket.sh EUDPA-XXXXX
-~/git/defra/trade-imports-animals/tools/jira/comments.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals/tools/ticket/prepare-plan.sh EUDPA-XXXXX
+```
+
+Or, if the affected repos are already known up front:
+
+```bash
+~/git/defra/trade-imports-animals/tools/ticket/prepare-plan.sh EUDPA-XXXXX --repos trade-imports-animals-frontend,trade-imports-animals-backend
 ```
 
 ### 2. Explore Codebase
 
 Find: similar functionality, services involved, integration points, configuration.
 
-```bash
-~/git/defra/trade-imports-animals/tools/review/detect-tech.sh ~/git/defra/trade-imports-animals/repos/<repo-name>
-```
-
-Include detected technologies and best-practices paths in plan.
+Tech + best-practices are already baked in `.plan-meta.json` and
+`best-practices/<repo>.md` for the repos you passed. If you discover
+further repos in scope, re-run `prepare-plan.sh --repos` to refresh.
 
 ### 3. Create Plan
 
