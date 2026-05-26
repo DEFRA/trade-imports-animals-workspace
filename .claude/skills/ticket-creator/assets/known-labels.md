@@ -24,25 +24,16 @@ forms exist on older tickets but should not be used on new work.
 ### Capability-tracking family — `CAP-*` and `CORE-CAP-*`
 
 Stories that belong to a Capability (CAP) work-stream carry a label
-of the form `CAP-<area>.<sub>` or `CORE-CAP-<area>.<sub>`. The set
-observed in the 2026-05-26 sample:
+of the form `CAP-<area>.<sub>` or `CORE-CAP-<area>.<sub>`. These
+codes are defined in the [EUDP Import Notification Capability Map][cap-map]
+on Confluence (page id `6468764101`), not in this catalogue.
 
-```
-CAP-0.1   CAP-0.1.1   CAP-0.2   CAP-0.3   CAP-0.4
-CAP-01.1  CAP-01.2    CAP-01.3
-CAP-02.1  CAP-02.2    CAP-02.3  CAP-02.4  CAP-02.5
-CAP-04.2  CAP-04.3
-CAP-05.1  CAP-05.2    CAP-05.3  CAP-05.5
-CAP-06.1  CAP-06.3    CAP-06.4  CAP-06.5
-CAP-07.1  CAP-07.2    CAP-07.3
-CAP-H.1   CAP-H.2     CAP-H.3   CAP-H.4
-CORE-CAP-03.1  CORE-CAP-04.1
-```
+The active set is pulled fresh on each session by
+`tools/ticket-creator/prepare-ticket-creation.sh` and Read at
+session start from `workareas/ticket-creation/.prereqs/capabilities.txt`.
+Pick from that list — don't coin new codes from this skill.
 
-This is a **live family** — new sub-codes appear as new capability
-slices are scoped. When a Story relates to an existing CAP slice,
-re-use the matching code. Don't coin new CAP codes from this skill
-— that decision lives with the team.
+[cap-map]: https://eaflood.atlassian.net/wiki/spaces/EUDP/pages/6468764101
 
 ## Legacy / deprecated labels (do not use on new tickets)
 

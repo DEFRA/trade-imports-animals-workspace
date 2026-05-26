@@ -278,6 +278,8 @@ Shared shell scripts called by skills via
 | `tools/ticket/prepare-plan.sh` | EUDPA-X [--repos r1,r2] [--json] | Pre-bake `ticket.md` + `.plan-meta.json` + per-repo `best-practices/<repo>.md` for PLANNER |
 | `tools/ticket/prepare-implement.sh` | EUDPA-X [--repo R] [--json] | Assert plan, re-validate detect-tech, cache prior PR diff, emit `.implement-meta.json` |
 | `tools/ticket/setup-branch.sh` | EUDPA-X --repo R --slug S [--base B] | Fetch → checkout base → pull → checkout -b `feature/EUDPA-X-<slug>` in one dispatch |
+| **ticket-creator** | | |
+| `tools/ticket-creator/prepare-ticket-creation.sh` | [--board ID] [--cap-page ID] | Refresh `workareas/ticket-creation/.prereqs/` with active EUDPA epics + EUDP capability codes |
 
 ## Workareas (runtime cache, gitignored)
 
@@ -292,6 +294,7 @@ workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review
 workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
 workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, items.{repo}.json, style-review.{repo}.md, style-rules.{repo}.md
 workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.json
+workareas/ticket-creation/.prereqs/                → epics.txt, capabilities.txt, meta.json (refreshed by prepare-ticket-creation.sh)
 workareas/ticket-creation/<slug>/                  → draft.md
 workareas/ticket-planning/EUDPA-X/                 → ticket.md, plan.md, .plan-meta.json, .implement-meta.json, best-practices/{repo}.md, .diffs/{repo}.diff
 workareas/ticket-refinement/EUDPA-X/               → ticket.md, review.md, .refinement-meta.json

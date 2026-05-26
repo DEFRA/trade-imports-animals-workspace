@@ -23,11 +23,28 @@ epic preflight, create-ticket). One command per Bash call, no
 table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) →
 "Bash call hygiene".
 
-## Session start — Read these once
+## Step 0: Session start
 
-Before the interview, Read these references so the rules are in
-context for the whole session:
+Before the interview, refresh the present-info prereqs and Read the
+rules.
 
+```bash
+~/git/defra/trade-imports-animals/tools/ticket-creator/prepare-ticket-creation.sh
+```
+
+That writes the current set of active EUDPA-board epics and EUDP
+capability codes under `workareas/ticket-creation/.prereqs/`. Surface
+any `WARNING:` line from the output to the user (e.g. stale capability
+map suggests running `tools/confluence/sync-docs.sh`).
+
+Then Read these references so they sit in context for the whole
+session:
+
+- `~/git/defra/trade-imports-animals/workareas/ticket-creation/.prereqs/epics.txt`
+  — fresh `KEY — summary` for each open epic on board 13780.
+- `~/git/defra/trade-imports-animals/workareas/ticket-creation/.prereqs/capabilities.txt`
+  — `CAP-X.X — Name` for each capability defined in the EUDP capability
+  map.
 - `~/git/defra/trade-imports-animals/docs/best-practices/gds/writing.md`
   — GDS plain-English rules for ticket prose.
 - `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
@@ -38,6 +55,7 @@ context for the whole session:
 
 ## Workflow
 
+0. Refresh prereqs and Read the rules (above)
 1. Gather information
 2. Determine type and fields
 3. Draft ticket to `~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md`
@@ -65,15 +83,22 @@ question.
 ### Parent epic — always asked
 
 EUDPA is a feature/capability project: every ticket sits under one
-of ~20 active feature epics on the EUDPA board (board 13780). Ask
-the user which epic this work belongs to. If they don't know, offer
-to list the open epics:
+of the active feature epics on the EUDPA board. The current set is
+already Read into context as `workareas/ticket-creation/.prereqs/epics.txt`
+(see Step 0).
 
-```bash
-~/git/defra/trade-imports-animals/tools/jira/list-board-epics.sh 13780
-```
+Ask the user which epic this work belongs to. If they don't know,
+read back the candidates from `epics.txt` so they can pick. Step 1.5
+verifies the chosen key.
 
-The user picks one; Step 1.5 then verifies the key.
+### Capability code (Stories only — optional)
+
+For a Story tied to an EUDP capability slice, ask which capability
+applies. The current set is already Read into context as
+`workareas/ticket-creation/.prereqs/capabilities.txt`. If the user
+isn't sure, read back the candidates and let them pick. The chosen
+code becomes a label on the ticket (e.g. `CAP-02.5`); coining new
+codes is out of scope for this skill.
 
 ### Tech-debt modifier (opt-in)
 
