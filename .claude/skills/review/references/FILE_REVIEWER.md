@@ -78,19 +78,44 @@ In every mode:
 
 In REFRESH / MERGE_RESOLVED only, additionally:
 
-3. **Prior findings for this file.** Read the existing JSON at
-   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`
-   to see what was reported last time.
-4. **Prior dispositions** (whether the user has decided `Won't Fix` /
-   `Auto-Resolved` on any item):
+3. **Prior consolidated items for this file** — this is the most
+   important context:
    ```bash
    $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
      | awk -F'\t' '$3 == "{file-path}"'
    ```
    Columns: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
-   Items with Disposition `Won't Fix` or `Auto-Resolved` must NOT be
-   re-reported — leave them out of your add-item calls. The
-   orchestrator carries them forward separately.
+
+   **Reporting rule for REFRESH / MERGE_RESOLVED:**
+
+   The reconciler appends *all* of your findings to the consolidated
+   items table as new entries. So your findings must contain **only**
+   things not already represented there:
+
+   - For each prior item (any disposition, any status) where the
+     violation is still present in the current code: **do NOT
+     re-report it.** The item already exists; re-reporting creates a
+     duplicate.
+   - For each prior item that is now resolved (violation no longer
+     present in the code): **do NOT report it.** The orchestrator
+     drains stale items separately.
+   - For each prior `Fix + Done` item where the violation is BACK
+     (regression): **DO report it**, with `--category regression`
+     and a `--note`-equivalent phrasing in the `--issue` field
+     mentioning the prior item ID. The reconciler emits a spot-check
+     advisory but does not auto-mutate the prior `Fix + Done` row;
+     the user re-walks the new entry.
+   - For each genuinely new violation introduced by changes since
+     the last review: **DO report it** as normal.
+
+   Net: in REFRESH, your `.review.json` should contain only deltas —
+   regressions and net-new findings. Often it's empty (verdict SAFE,
+   no findings), and that's correct.
+
+4. **Prior per-file review snapshot** — optional reading for context:
+   `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`.
+   This is what *you* (or a prior reviewer) wrote last time. The
+   consolidated items table above is the canonical source of truth.
 
 ### 3. Get the file-scoped diff
 

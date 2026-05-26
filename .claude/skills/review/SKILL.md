@@ -381,48 +381,73 @@ Use the FRESH-mode prompt from Step 2 of the Fresh Review section above.
 Note in the prompt that the file is in PR diff but had no prior per-file
 review — this is a coverage gap, not a fresh PR.
 
-## Step R5: Check List B Items Inline
+## Step R5: Reconcile and re-render
 
-For each item in List B: read the current file from the workspace.
-Determine if the specific violation is still present (unchanged file may
-still have had a quiet fix in a prior commit). If the item is `Won't Fix`
-or `Auto-Resolved` in the consolidated table, skip it.
+Once all refresh reviewers finish, fold their findings into the
+consolidated items file and re-render the markdown view:
 
-## Step R6: Update review.{repo}.md In Place
+```bash
+# Append new findings from .review.json files; emit Fix+Done
+# spot-check advisory for refreshed files (potential regressions).
+$TRADE_IMPORTS_WORKSPACE/tools/review/refresh/reconcile.sh EUDPA-XXXXX --repo {repo} --json > /tmp/refresh-summary-{repo}.json
 
-Once all agents complete and List B is checked, apply changes via the
-helper scripts. Do NOT hand-edit the items table — the scripts keep
-escaping consistent.
+# Re-render the ## Items markdown view from items.{repo}.json
+$TRADE_IMPORTS_WORKSPACE/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
+```
 
-**Map agent / inline-check results to script calls:**
+The reconciler trusts the FILE_REVIEWER persona contract: each
+refresh reviewer's `.review.json` contains **only deltas** —
+regressions and net-new findings. Items that exist in items.json and
+are still present in the code are NOT re-reported (the persona
+instructs this). The reconciler simply appends every todo it finds.
 
-- Item already `Auto-Resolved` or `Won't Fix` → leave alone.
-- Item `Fix` + `Done` and agent confirms fix is in place → leave alone.
-- Item `Fix` + `Done` and agent finds the pattern back → log as a regression in the Refresh Summary; do NOT change disposition (the user can re-walk it).
-- Item `Fix` + `Not Done` confirmed still present → leave alone.
-- Item with no disposition that the inline check determines is no longer present → `$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh --disposition "Auto-Resolved" --note "..."`.
-- New violation found by a refresh agent → `$TRADE_IMPORTS_WORKSPACE/tools/review/review-add-item.sh --repo R --file F --line L --severity S --category C --issue ... --fix ...`. Returns the new ID.
+`/tmp/refresh-summary-{repo}.json` shape:
+```json
+{
+  "added_count": N,
+  "added": ["file:line [severity] issue", ...],
+  "added_ids": [12, 13, ...],
+  "spot_check": [{ "id": 6, "file": "...", "line": 42, "issue": "...", "notes": "abc1234" }, ...],
+  "skipped_already_reconciled": N,
+  "skipped_unreviewed": N
+}
+```
 
-**Update `review.{repo}.md` cosmetics:**
+`spot_check` lists prior `Fix + Done` items in files that were
+refreshed — verify they have not regressed. If any have, the user
+re-walks the corresponding new item the reviewer added (with
+`--category regression`).
 
-1. Add a "Refreshed" line near the top: `**Refreshed:** [today]`.
-2. Add a "Refresh Summary" section before the Verdict (multiple summaries accumulate):
-   ```markdown
-   ## Refresh Summary ([date])
+**Stale items not addressed automatically:** the simplified
+reconciler does NOT auto-mark prior open items as Auto-Resolved when
+they're missing from the new findings. The persona tells the
+reviewer to NOT re-report still-present items, so absence is
+indistinguishable from "I missed it". Stale items get drained by the
+user during the next walker run (hit `S` to leave pending, or `W`
+with note "already done").
 
-   **Changes since last review:** [X] files modified, [Y] files added
-   **Items resolved this round:** [N]
-   **New issues found:** [M]
+## Step R6: Update review.{repo}.md cosmetics
 
-   | Change | File | Detail |
-   |--------|------|--------|
-   | ✅ Resolved | `path/to/file` | Item #N: [description] |
-   | ➕ New | `path/to/file` | Item #N: [Severity]: [description] |
-   | ⚠️ Regressed | `path/to/file` | Item #N: was Done, pattern back |
+Populate the Refresh Summary section in `review.{repo}.md` from
+the reconciler's JSON output:
 
-   Do NOT include `Won't Fix` items in this table.
-   ```
-3. Update the Repository Verdict if warranted.
+```markdown
+## Refresh Summary ([date])
+
+**Files refreshed:** [N]
+**New items added:** [M]
+**Spot-check (Fix+Done items in refreshed files):** [K]
+
+| # | Change | File:Line | Severity | Issue |
+|---|--------|-----------|----------|-------|
+| 1 | ➕ New | `path:N` | Critical | ... |
+| 2 | ⚠️ Spot-check | `path:N` | Major | ... (prior Fix+Done #6) |
+```
+
+Then:
+
+1. Add `**Refreshed:** [today]` line near the top.
+2. Update the Repository Verdict if warranted.
 
 **Also update `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review-index.md`:**
 
@@ -473,6 +498,7 @@ All under `$TRADE_IMPORTS_WORKSPACE/tools/review/`:
 | `render-items.sh` | Render `items.{repo}.json` as the `## Items` markdown view |
 | `file-review-init.sh` / `file-review-add-item.sh` / `file-review-set-verdict.sh` | Per-file JSON helpers used by the FILE_REVIEWER persona |
 | `refresh/scope.sh` | Refresh Steps R1-R3 orchestrator |
+| `refresh/reconcile.sh` | Refresh Step R5 — fold per-file `.review.json` findings into `items.{repo}.json`; emit Fix+Done spot-check advisory |
 | `refresh/pull-repos.sh` | Refresh helper — `git pull --rebase` per repo |
 | `refresh/list-merge-resolved.sh` | Refresh helper — hand-resolved merge files (List C) |
 | `refresh/list-coverage-gaps.sh` | Refresh helper — PR files lacking a `.review.md` (List D) |
