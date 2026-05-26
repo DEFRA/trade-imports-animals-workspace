@@ -1,50 +1,33 @@
 # Phase 1 Manager — Version Discovery
 
-**Job:** Discover all govuk-frontend versions between current and target.
-Create upgrade workspace with zero-byte stubs and cache the CHANGELOG.
+**Job:** Verify Phase 1 ran (via `start-upgrade.sh`) and present its
+output. Phase 1 itself is fully scripted — this manager exists for the
+"Phase 1 complete?" gate.
 
 ## Boundaries
 
-Discovery only. Do not read changelog content, evaluate what changes
-are needed, or modify source files.
+Reporting only. Do not re-run any helper unless the user explicitly
+asks (e.g. to change the target with `--target`).
 
 ## Inputs
 
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
-Repos are always frontend and admin. Target is always latest stable.
-
-## Step 1: Discover versions
-
-Run for each of the 2 repos:
+## Step 1: Confirm `.run-meta.json` exists
 
 ```bash
-~/git/defra/trade-imports-animals/tools/govuk/discover-versions.sh \
-  ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend \
-  --run-id {run-id}
-
-~/git/defra/trade-imports-animals/tools/govuk/discover-versions.sh \
-  ~/git/defra/trade-imports-animals/repos/trade-imports-animals-admin \
-  --run-id {run-id}
+ls ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/.run-meta.json
 ```
 
-Record the current version, target version, and stub count for each
-repo.
+If missing: instruct the user to run
+`tools/govuk/start-upgrade.sh --ticket {run-id}` (or `--branch ...`)
+first. Stop.
 
-## Step 2: Report
+## Step 2: Present a status snapshot
 
 ```bash
 ~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh --run-id {run-id}
 ```
 
-```
-=== PHASE 1 COMPLETE ===
-
-trade-imports-animals-frontend:  {current} → {target}  |  {N} versions to plan
-trade-imports-animals-admin:     {current} → {target}  |  {N} versions to plan
-
-Total: {N} versions across 2 repos
-CHANGELOG.md cached to: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/*/CHANGELOG.md
-
-Next: Phase 2 will spawn one `general-purpose` Task subagent per version (following `references/VERSION_PLANNER.md`) for each version's changelog entry.
-```
+Report verbatim, then ask: "Phase 1 complete. Proceed to Phase 2
+(changelog analysis)?"

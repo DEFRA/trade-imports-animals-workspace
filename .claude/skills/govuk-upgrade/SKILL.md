@@ -59,14 +59,14 @@ membership.
 
 ## Worker references
 
-| Persona | Used in | Artifact |
+| Persona | Used in | Mutation surface |
 |---|---|---|
-| `references/VERSION_PLANNER.md` | `references/PHASE_2_MANAGER.md` Step 2 — one per version stub, parallel fan-out | per-version `version__*.{todo|noop}` |
+| `references/VERSION_PLANNER.md` | `references/PHASE_2_MANAGER.md` Step 2 — one per unplanned version, parallel fan-out | `version-classify.sh` + `version-add-change.sh` against `versions.{repo}.json` |
 
 Spawn idiom inside Phase 2: Task tool with `subagent_type: general-purpose`
 and a prompt beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.`
-`general-purpose` carries `Tools: *` so the worker can fetch the
-changelog, grep the repo and write its plan file.
+`general-purpose` carries `Tools: *` so the worker can Read the pre-baked
+changelog, Grep the repo, and call the `version-*` helpers.
 
 ## Step 1: Establish ticket + branch
 

@@ -1,8 +1,8 @@
 # Phase 2 Manager — Changelog Analysis and Planning
 
 **Job:** Spawn `general-purpose` Task subagents following
-`references/VERSION_PLANNER.md`, one per zero-byte stub. Verify all
-versions are classified as `.todo` or `.noop`.
+`references/VERSION_PLANNER.md`, one per unplanned version across every
+in-scope repo. Verify all versions are classified as `todo` or `noop`.
 
 ## Boundaries
 
@@ -13,25 +13,21 @@ evaluate changes, or touch source files.
 
 - `{run-id}` — Jira ticket e.g. EUDPA-20578
 
-## Step 1: List unplanned stubs
+## Step 1: List unplanned versions
 
 ```bash
-~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh --run-id {run-id}
+~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh \
+  --run-id {run-id} --filter unplanned --json
 ```
 
-If no unplanned stubs remain: report "All versions already planned.
-Phase 2 complete (nothing to do)."
+If the JSON `summary.unplanned == 0`: report "All versions already
+classified. Phase 2 complete (nothing to do)."
 
 ## Step 2: Spawn VERSION_PLANNER workers
 
-List all zero-byte stubs across both repos:
-
-```bash
-find ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id} -name "version__*.md" -size 0
-```
-
-For each unplanned version, spawn a `general-purpose` Task subagent
-concurrently. Spawn prompt:
+The Step 1 JSON has one entry per unplanned `{repo, version}` pair.
+Spawn one `general-purpose` Task subagent per pair concurrently
+(no cap — Decision 7). Spawn prompt:
 
 ```
 Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.
@@ -46,15 +42,17 @@ Best-practices bundle: ~/git/defra/trade-imports-animals/workareas/govuk-upgrade
 
 ## Step 3: Verify coverage
 
-Wait for all subagents to complete. Check for remaining unclassified
-stubs:
+Wait for all subagents to complete, then re-run the unplanned query:
 
 ```bash
-find ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id} -name "version__*.md" -size 0
+~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh \
+  --run-id {run-id} --filter unplanned --json
 ```
 
 If any remain, re-spawn `VERSION_PLANNER` workers for them once. Still
-remaining after retry → list as INCOMPLETE in report.
+remaining after retry → list as INCOMPLETE in report. The walker
+handles INCOMPLETE entries by surfacing them as `Discuss` by default
+(see `references/PLAN_WALKER.md`) — do NOT block Phase 3 here.
 
 ## Step 4: Report
 
@@ -65,18 +63,13 @@ remaining after retry → list as INCOMPLETE in report.
 ```
 === PHASE 2 COMPLETE ===
 
-trade-imports-animals-frontend:
-  Todo (.todo):   {count} — {list of versions with changes needed}
-  Noop (.noop):   {count} — {list of versions with no changes}
-  Incomplete:     {count} — NEEDS ATTENTION
+{repo}:
+  Todo:        {count} — {list}
+  Noop:        {count} — {list}
+  Incomplete:  {count} — surfaced in walker
 
-trade-imports-animals-admin:
-  Todo (.todo):   {count} — {list}
-  Noop (.noop):   {count} — {list}
-  Incomplete:     {count} — NEEDS ATTENTION
-
-Total: {N} versions planned across 2 repos
-  Todo (code changes needed): {count}  → Phase 3
+Total across in-scope repos:
+  Todo (code changes needed): {count}  → walker, then Phase 3
   Noop (no changes needed):   {count}  → skipped in Phase 3
-  Incomplete:                 {count}  → NEEDS ATTENTION (list filenames)
+  Incomplete:                 {count}  → walker (Discuss)
 ```
