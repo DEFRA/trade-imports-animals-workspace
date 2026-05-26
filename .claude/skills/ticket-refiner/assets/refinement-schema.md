@@ -6,8 +6,9 @@ Single flat JSON sidecar per refinement, written by
 `workareas/ticket-refinement/EUDPA-X/.refinement-meta.json`.
 
 The prose narrative (questions, improvements, AC analysis, technical
-notes) stays in `review.md` — this sidecar only carries fields a
-batch query needs to surface.
+notes) stays in `review.md`. The sidecar exists to make the verdict
+typo-safe (enum-enforced by `refine-finalize.sh`) and machine-readable
+so the verdict can be recalled later without re-parsing `review.md`.
 
 ## Fields
 
@@ -35,6 +36,8 @@ batch query needs to surface.
   `review.md`. There are no `refine-add-question.sh` helpers and no
   `render-review.sh` — `review.md` is the canonical narrative, written
   by the LLM.
+- **No batch / cross-ticket aggregation.** Refinement is one ticket at
+  a time. The sidecar isn't consumed by a batch tool.
 
 ## Verdict enum
 

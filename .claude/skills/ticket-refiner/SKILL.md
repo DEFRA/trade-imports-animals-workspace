@@ -147,8 +147,7 @@ trailing `## Verdict` block.
 
 ## Step 5: Finalise Verdict
 
-After filling `review.md`, record the verdict on the meta JSON so
-batch mode (`refine-batch.sh`) can query it:
+After filling `review.md`, record the verdict on the meta JSON:
 
 ```bash
 ~/git/defra/trade-imports-animals/tools/refine/refine-finalize.sh EUDPA-XXXXX --verdict READY --reason "Clear AC, repos identified"
