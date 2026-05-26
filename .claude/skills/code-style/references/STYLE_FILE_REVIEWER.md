@@ -54,11 +54,10 @@ are the implementor's job, not yours.
 
 ### 1. Read the pre-baked style rules bundle
 
-Your prompt specifies the bundle path
-`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.md`
-(one per repo). Read it in full — it concatenates the 17-rule guide and
-the doc-comment rules so you don't pay per-file Read cost across 100
-parallel reviewers.
+Your prompt specifies the per-repo bundle path
+`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md`.
+Read it in full — it concatenates the 17-rule guide and the doc-comment
+rules so you don't pay per-file Read cost across 100 parallel reviewers.
 
 ### 2. Determine mode
 
