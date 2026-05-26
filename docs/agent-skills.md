@@ -66,6 +66,27 @@ references/<NAME>.md
 assets/<NAME>.md
 ```
 
+## Bash call hygiene (avoiding permission prompts)
+
+The project allowlist (`.claude/settings.json`) matches Bash calls
+against patterns like `Bash(~/git/defra/trade-imports-animals/tools/**)`.
+A command only matches the allowlist if it **starts with the literal
+allowlisted path**. The following patterns DO NOT match and will
+trigger a permission prompt:
+
+| Anti-pattern | Why it fails | Do instead |
+|---|---|---|
+| `cd ~/git/defra/trade-imports-animals && tools/review/foo.sh ...` | command starts with `cd`, not the allowlisted path | `~/git/defra/trade-imports-animals/tools/review/foo.sh ...` (no `cd`) |
+| `tools/review/foo.sh ...` (relative) | matcher sees `tools/...`, not `~/git/...` | use the full `~/git/...` form |
+| `tools/review/foo.sh ... && tools/review/bar.sh ...` | chained commands are matched as a single string | run as two separate Bash calls |
+| `$TRADE_IMPORTS_WORKSPACE/tools/review/foo.sh ...` | "Contains simple_expansion" check (GH#51001) | use the literal `~/git/...` form |
+| `python3 -c "import json..."` to query workspace JSON | not allowlisted; reaches for a tool the workspace doesn't need | use `jq`, or the helpers under `tools/` |
+
+In short: **one Bash call per script invocation, starting with the
+literal `~/git/defra/trade-imports-animals/...` path**. The skill
+prose models this in every example — follow the model.
+```
+
 Worker personas are addressed by an absolute `references/<NAME>.md` path
 inside the spawn prompt — see "Worker references" below.
 
