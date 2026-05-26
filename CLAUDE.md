@@ -222,14 +222,21 @@ Shared shell scripts called by skills via
 | `tools/review/refresh/list-merge-resolved.sh` | REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json] | Refresh helper |
 | `tools/review/refresh/list-coverage-gaps.sh` | REVIEW_DIR REPO PR_NUM [--tsv\|--json] | Refresh helper |
 | **style** | | |
-| `tools/style/detect-mode.sh` | EUDPA-X | Print `FRESH` or `EXISTS` (Step 0) |
-| `tools/style/style-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--by-file] [--json] | List items |
+| `tools/style/start-style.sh` | EUDPA-X | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
+| `tools/style/prepare-style.sh` | EUDPA-X [--json] | Fresh Step 1 — init `.style.json` placeholders + per-repo rules bundle |
+| `tools/style/bake-rules-bundle.sh` | EUDPA-X REPO | Concatenate `docs/best-practices/` into `style-rules.{repo}.md` |
+| `tools/style/aggregate-file-reviews.sh` | EUDPA-X --repo R [--write-items] [--section ...] [--json] | Write `items.{repo}.json` from per-file `.style.json` + emit markdown sections |
+| `tools/style/render-items.sh` | EUDPA-X --repo R | Render `items.{repo}.json` as the `## Items` markdown view |
+| `tools/style/style-items.sh` | EUDPA-X [--repo R] [--file F] [--filter ...] [--status ...] [--by-file] [--json] | List items |
 | `tools/style/style-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition |
 | `tools/style/style-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |
-| `tools/style/style-add-item.sh` | EUDPA-X --repo R --file F --line L --rule R --severity S --issue "..." --fix "..." | Append new item |
+| `tools/style/style-add-item.sh` | EUDPA-X --repo R --file F --line L --rule R --severity S --issue "..." --fix "..." [--best-practice PATH] | Append new item |
 | `tools/style/style-counts.sh` | EUDPA-X [--repo R] [--json] | Summary by Disposition+Status |
-| `tools/style/style-migrate.sh` | EUDPA-X [--dry-run] | One-shot legacy migration |
+| `tools/style/file-style-init.sh` | EUDPA-X --repo R --file F --commit SHA --pr N --mode M | Initialise per-file `.style.json` placeholder |
+| `tools/style/file-style-add-item.sh` | EUDPA-X --repo R --file F --line L --rule R --severity S --issue "..." --fix "..." [--best-practice PATH] | Append a finding to a per-file `.style.json` |
+| `tools/style/file-style-set-verdict.sh` | EUDPA-X --repo R --file F --verdict V [--reason "..."] | Set per-file verdict (marks file as reviewed) |
 | `tools/style/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh, filtered to `.js` |
+| `tools/style/refresh/reconcile.sh` | EUDPA-X --repo R [--dry-run] [--json] [--force] | Refresh Step R5 — fold `.style.json` findings into items.json + emit Fix+Done spot-check advisory |
 | **npm** | | |
 | `tools/npm/discover-upgrades.sh` | repo-path --run-id TICKET [--strategy LEVEL] [--json] | Phase 1: discover outdated deps |
 | `tools/npm/analyze-migration-plans.sh` | --run-id TICKET [--json] | Phase 1: planning status |
@@ -251,8 +258,8 @@ run. It is **gitignored** — never checked into the repo.
 ```
 workareas/reviews/EUDPA-X/                         → ticket.md, repos/, review-index.md, review.{repo}.md
 workareas/reviews/EUDPA-X/file-reviews/{repo}/     → {file}.review.md, _consistency-check.md
-workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, style-review.{repo}.md
-workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.md
+workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, items.{repo}.json, style-review.{repo}.md, style-rules.{repo}.md
+workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.json
 workareas/ticket-creation/<slug>/                  → draft.md
 workareas/ticket-planning/EUDPA-X/                 → plan.md
 workareas/ticket-refinement/EUDPA-X/               → review.md, repos/

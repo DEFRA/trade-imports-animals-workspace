@@ -45,80 +45,69 @@ Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Ba
 
 ## Workflow modes
 
-| User intent | Section |
+| User intent | What to follow |
 |---|---|
-| "style review EUDPA-X" / fresh | FRESH REVIEW (Steps 1-7) |
-| "re-style review" / "refresh" | REFRESH REVIEW (Steps R1-R6) |
-| "fix style EUDPA-X" / "implement style fixes" | IMPLEMENTATION (Steps I1-I4) |
+| "style review EUDPA-X" / "re-style review" / "style refresh" | this SKILL.md — FRESH + REFRESH (start-style.sh dispatches) |
+| "walk style EUDPA-X" / "triage style" | `Follow references/STYLE_WALKER.md` |
+| "fix style EUDPA-X" / "implement style fixes" | IMPLEMENTATION section below (or `Follow references/STYLE_IMPLEMENTOR.md` per group) |
 
 ## Worker references
 
-The skill delegates to two worker personas defined as `references/*.md`
+The skill delegates to three worker personas defined as `references/*.md`
 prose. Each is spawned as a `general-purpose` Task subagent with a
 `Follow …` reference to the persona file. `general-purpose` carries
 `Tools: *` (Write/Edit/Bash) and is not subject to the no-write
 guardrail that restricted custom subagents receive — so workers can
-write the per-file paper trail, run the helper scripts and commit.
+write per-file JSONs, run the helper scripts and commit.
 
 | Persona | Used in | Artifact |
 |---|---|---|
-| `references/STYLE_FILE_REVIEWER.md` | FRESH Step 4 (parallel, up to 100); REFRESH Steps R2/R3/R4 | per-file `.style.md` |
+| `references/STYLE_FILE_REVIEWER.md` | FRESH Step 2 (parallel, up to 100); REFRESH Steps R2/R3/R4 | per-file `.style.json` (schema in `assets/file-style-schema.md`) |
+| `references/STYLE_WALKER.md` | `walk style EUDPA-X` triage trigger | item dispositions via `style-mark.sh` |
 | `references/STYLE_IMPLEMENTOR.md` | IMPLEMENTATION Step I3 (sequential, one group at a time) | source edits + commit |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
 beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/code-style/references/<NAME>.md.`
 
-## Step 0: Detect Mode
+## Step 0: Start the review
 
 ```bash
-~/git/defra/trade-imports-animals/tools/style/detect-mode.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals/tools/style/start-style.sh EUDPA-XXXXX
 ```
 
-Prints `FRESH` (no prior style review) or `EXISTS` (at least one
-`style-review.{repo}.md` is present). Combine with the user's trigger
-phrase:
+Single dispatch — detects FRESH vs REFRESH from workspace state and
+runs the appropriate first-step setup script.
 
-- `FRESH` → FRESH REVIEW (Step 1).
-- `EXISTS` AND user wants a re-review → REFRESH REVIEW (Step R1).
-- `EXISTS` AND user asks to "fix style" / "implement style fixes" → IMPLEMENTATION (Step I1).
-- `FRESH` AND user asks to implement → error: no review to implement against. Run a FRESH review first.
+First line of output is `MODE: FRESH` or `MODE: REFRESH`. Branch on it:
+
+- `MODE: FRESH` → setup ran `prepare-style.sh`; go to Fresh Review,
+  Step 2.
+- `MODE: REFRESH` → setup ran `refresh/scope.sh --write-snapshot`; go to
+  Refresh Review, Step R3.5.
+
+IMPLEMENT and WALK are separate top-level triggers (Decision 3) — they
+do NOT route through start-style.sh.
+
+**On Claude Code auto-backgrounding:** for fresh reviews the setup may
+shallow-clone repos via `prepare-review.sh`, which takes 30–90s. If the
+Bash tool auto-backgrounds it, **wait for the harness's
+`task-notification` (status: completed) — do NOT poll the PID file or
+`tail` the output**.
 
 ---
 
 # FRESH REVIEW
 
-## Step 1: Prepare Review Workspace
+## Step 1: Workspace prepared (by Step 0)
 
-The code-style review piggybacks on the standard review workspace for
-cloned repos. Ensure it exists:
+`start-style.sh` ran `prepare-style.sh` which produced:
 
-```bash
-ls ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/.review-meta.json 2>/dev/null \
-  || ~/git/defra/trade-imports-animals/tools/review/prepare-review.sh EUDPA-XXXXX
-```
+- `~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/`
+  with `.style-meta.json`, per-repo `file-reviews/{repo}/` subtrees,
+  per-file `.style.json` placeholders, and per-repo `style-rules.{repo}.md`
+  bundles.
 
-**On Claude Code auto-backgrounding:** `prepare-review.sh` shallow-clones
-in parallel but can still take 30–90s. If the Bash tool auto-backgrounds
-it, **wait for the harness's `task-notification` (status: completed) —
-do NOT poll the PID file or `tail` the output**.
-
-Then create the code-style workspace:
-
-```bash
-mkdir -p ~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews
-```
-
-## Step 2: Discover JavaScript Files
-
-Read `.review-meta.json` to get repos and PR numbers. For each repo/PR
-pair:
-
-```bash
-~/git/defra/trade-imports-animals/tools/github/pr-details.sh {repo} {pr-number} files
-```
-
-Keep only files ending in `.js`. If no `.js` files are found across any
-PR, output:
+If `.style-meta.json#js_files` is empty, output:
 
 ```
 No JavaScript files found in this PR. No JavaScript code style review needed.
@@ -126,43 +115,7 @@ No JavaScript files found in this PR. No JavaScript code style review needed.
 
 And stop.
 
-## Step 3: Create Workspace Files
-
-For each `.js` file found:
-1. Create `~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/`
-2. Create a zero-byte placeholder `{safe_path}.style.md` (path separators → `_`)
-
-Write `.style-meta.json`:
-
-```json
-{
-  "id": "EUDPA-XXXXX",
-  "created": "ISO-DATE",
-  "js_files": [
-    { "repo": "repo-name", "path": "path/to/file.js", "pr": 123 }
-  ]
-}
-```
-
-For each repo with `.js` files, create an empty `style-review.{repo}.md`:
-
-```markdown
-# Code Style Review: {repo-name}
-
-**Ticket:** EUDPA-XXXXX
-**PR:** #{pr-number}
-**JS Files Reviewed:** {count}
-**Verdict:** _pending_
-
-## Items
-
-| # | File | Line | Rule | Severity | Issue | Fix | Disposition | Status | Notes |
-|---|------|------|------|----------|-------|-----|-------------|--------|-------|
-```
-
-File reviewers append rows via `style-add-item.sh`.
-
-## Step 4: Review Each File
+## Step 2: Review Each File
 
 **MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 100 in
 parallel via the Task tool with `subagent_type: general-purpose`.
@@ -174,51 +127,82 @@ Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/code
 
 **Mode: FRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ~/git/defra/trade-imports-animals/docs/best-practices/node/code-style.md
+**Style rules bundle:** ~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo-name].md
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
 - PR: #[pr-number]
-- Full path in workspace: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
-
-**Write your per-file paper trail to:**
-~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo-name]/[safe_path].style.md
-
-**Append each finding via:**
-~/git/defra/trade-imports-animals/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo-name] \
-  --file [file-path] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
-  --issue "[description]" --fix "[suggested fix]"
+- Snapshot path (read-only): ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
 ```
 
-## Step 5: Verify Coverage
+The reviewer writes findings to the per-file JSON placeholder via the
+`file-style-add-item.sh` / `file-style-set-verdict.sh` helpers — no
+markdown, no placeholder path needed in the spawn prompt.
+
+## Step 3: Verify Coverage
 
 ```bash
 ~/git/defra/trade-imports-animals/tools/review/verify-style-coverage.sh EUDPA-XXXXX
 ```
 
-The script's name reflects what it verifies; its location is shared
-with the `review` skill at `tools/review/`. **Do not proceed until 100%
+(The script lives under `tools/review/` for cross-skill reasons but
+checks the JSON `.verdict != null` field.) **Do not proceed until 100%
 coverage.**
 
-## Step 6: Set Per-Repo Verdicts
+## Step 4: Aggregate to items.{repo}.json + render
 
-For each `style-review.{repo}.md`:
+For each repo with `.js` files:
+
+```bash
+~/git/defra/trade-imports-animals/tools/style/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --write-items
+```
+
+This rolls per-file `.style.json` todos into the canonical
+`items.{repo}.json` (globally renumbered IDs) and stamps `reconciled_at`
+on every reviewed `.style.json` so the refresh reconciler can detect
+new work.
+
+## Step 5: Write Per-Repo Summaries
+
+For each repo, write
+`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md`:
+
+```bash
+~/git/defra/trade-imports-animals/tools/style/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --section file-summary
+~/git/defra/trade-imports-animals/tools/style/render-items.sh EUDPA-XXXXX --repo {repo}
+```
+
+Skeleton:
+
+```markdown
+# Code Style Review: {repo-name}
+
+**Ticket:** EUDPA-XXXXX
+**PR:** #{pr-number}
+**JS Files Reviewed:** {count}
+**Verdict:** [VERDICT — see Verdict Guidelines]
+
+<!-- paste output of `aggregate-file-reviews.sh ... --section file-summary` here -->
+
+<!-- paste output of `render-items.sh EUDPA-XXXXX --repo {repo}` here.
+     Full schema and `|` escape rules: assets/items-table.md.
+     Disposition / Status / Notes start blank — walker fills them. -->
+```
+
+After Step 5, `items.{repo}.json` is the canonical state. Walker /
+implementor / refresh tools mutate it via `style-*.sh`. The `## Items`
+markdown view is regenerated by `render-items.sh` whenever the JSON
+changes.
+
+## Step 6: Set Per-Repo Verdicts
 
 ```bash
 ~/git/defra/trade-imports-animals/tools/style/style-counts.sh EUDPA-XXXXX --repo {repo} --json
 ```
 
-Use the breakdown to set the verdict line in the file header:
-
-| Counts (Fix items, FAIL severity) | Verdict |
-|---|---|
-| 0 | COMPLIANT |
-| 1-3 | MINOR ISSUES |
-| ≥4, or any FAIL items | NEEDS WORK |
-
-Edit the `**Verdict:** _pending_` line in the per-repo header. Nothing
-else in the file changes.
+Use the breakdown to set the verdict line in the per-repo file header
+(see Verdict Guidelines below).
 
 ## Step 7: Done
 
@@ -228,117 +212,101 @@ Output the completion summary (see "Completion Output" below).
 
 # REFRESH REVIEW
 
-## Step R1: Compute Refresh Scope
+## Steps R1-R3: Refresh scope built (by Step 0)
 
-One call captures both the human summary and the machine-readable lists:
+`start-style.sh` already ran `refresh/scope.sh --write-snapshot` and
+emitted a JSON object on stdout. Read it from there.
 
-```bash
-~/git/defra/trade-imports-animals/tools/style/refresh/scope.sh EUDPA-XXXXX \
-  --write-snapshot --human --json-out /tmp/scope-EUDPA-XXXXX.json
-```
+Each `repos[]` entry has `prior_sha`, `current_sha`, `no_changes`,
+and `lists.{A,B,C,D}`:
 
-This:
-1. Pulls each repo (`pull-repos.sh` under the hood).
-2. Computes `prior_sha` per repo — last `re_review` snapshot's `current_commit` (falling back to the regular review's snapshot history, then the original PR commit).
-3. Filters everything to `.js` files.
-4. Builds Lists A/B/C/D.
-5. Appends a snapshot to `.style-meta.json#re_reviews[]`.
-6. Prints the human summary to stdout.
-7. Dumps the full JSON to `/tmp/scope-EUDPA-XXXXX.json` for use in Steps R2-R5.
+- **List A** — `[{ file, old_sha, new_sha, prior_items }]` — `.js` file changed in window, not merge-resolved
+- **List B** — `[{ id, file, line, rule, severity, ... }]` — open items whose file did *not* change
+- **List C** — `[{ file, merge_sha, old_sha, new_sha, prior_items }]` — hand-resolved merge files (`.js` only)
+- **List D** — `[{ file }]` — PR `.js` files lacking a `.style.json` verdict
 
-**Critical:** always pass `--json-out` in the same call as
-`--write-snapshot`. Re-running scope.sh after a snapshot was written
-would compute `prior_sha == current_sha` and return empty lists.
+If totals are all zero across all repos: report the branch is unchanged
+since the last refresh and stop.
 
-If totals are all zero, output "No changes since last refresh" and stop.
-
-The JSON shape per repo is `{repo, pr, prior_sha, current_sha,
-no_changes, lists: {A, B, C, D}}`. Use `jq` against
-`/tmp/scope-EUDPA-XXXXX.json` in subsequent steps:
+## Step R3.5: Load full item inventory
 
 ```bash
-# Iterate List A across all repos:
-jq -r '.repos[] | .repo as $r | .pr as $pr | .lists.A[] | "\($r)\t\($pr)\t\(.file)\t\(.old_sha)\t\(.new_sha)"' /tmp/scope-EUDPA-XXXXX.json
+~/git/defra/trade-imports-animals/tools/style/style-items.sh EUDPA-XXXXX --json
 ```
 
-## Step R2: Re-review List A — Changed `.js` Files
+Use this when reconciling agent results in R6:
 
-Each List A entry is `{file, old_sha, new_sha, prior_items}` —
-`prior_items` is already a JSON array, no follow-up `style-items.sh`
-call needed.
+- `Won't Fix` / `Auto-Resolved` → carry forward; do NOT re-report.
+- `Fix` + `Done` → spot-check after refresh (reconciler emits a list).
+- `Fix` + `Not Done` and `Discuss` → still open.
+- Blank disposition → pending (walker will pick up; should appear in List B).
 
-Spawn `general-purpose` Task subagents (parallel, up to 100). Spawn prompt:
+Deleted files: mark their items as `Auto-Resolved` via `style-mark.sh`.
+
+## Step R4: Re-review files
+
+Spawn `general-purpose` Task subagents in parallel (up to 100), one per
+entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
+(Mode=FRESH; coverage gap). Each spawn prompt begins with
+`Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.`
+
+### Spawn prompt — REFRESH (List A)
 
 ```markdown
 Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.
 
 **Mode: REFRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style guide:** ~/git/defra/trade-imports-animals/docs/best-practices/node/code-style.md
+**Style rules bundle:** ~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo].md
 
 **Your assigned file:**
 - Repository: [repo]
 - Path: [entry.file]
 - PR: #[pr]
-- Diff window: [entry.old_sha]..[entry.new_sha]
-- Full path in workspace: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/[repo]/[entry.file]
+- Previous commit: [entry.old_sha]
+- Current commit: [entry.new_sha]
 
 **Prior items reported for this file (JSON):**
 [entry.prior_items]
-
-**For each prior item:**
-- If the violation is resolved in the new code:
-  ~/git/defra/trade-imports-animals/tools/style/style-mark.sh EUDPA-XXXXX --repo [repo] --item [id] \
-    --disposition Auto-Resolved --note "resolved [date]"
-- If still present: leave as-is.
-
-**For each NEW violation:**
-~/git/defra/trade-imports-animals/tools/style/style-add-item.sh EUDPA-XXXXX --repo [repo] \
-  --file [entry.file] --line [N or ""] --rule [1-17] --severity [FAIL|WARN] \
-  --issue "[description]" --fix "[suggested fix]"
-
-**Write paper trail to:**
-~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/[repo]/[safe_path].style.md
 ```
 
-To slice the JSON for dispatch:
+### Spawn prompt — MERGE_RESOLVED (List C)
+
+Same as REFRESH but with `**Mode: REFRESH (merge-resolved)**` and an
+extra `**Merge commit:** [entry.merge_sha]` header line.
+
+### Spawn prompt — FRESH (List D, coverage gap)
+
+Use the FRESH-mode prompt from Step 2 of the Fresh Review section above.
+Note in the prompt that the file is in PR diff but had no prior per-file
+review — this is a coverage gap, not a fresh PR.
+
+Workers write deltas (new findings + regressions) to their per-file
+`.style.json` exclusively — no direct `style-add-item.sh` calls. The
+reconciler folds those deltas into `items.{repo}.json` in R5.
+
+## Step R5: Reconcile and re-render
+
+Once all refresh reviewers finish, fold their findings into the
+consolidated items file and re-render the markdown view:
 
 ```bash
-jq -c '.repos[] | .repo as $r | .pr as $pr | .lists.A[] | {repo: $r, pr: $pr, entry: .}' /tmp/scope-EUDPA-XXXXX.json
+~/git/defra/trade-imports-animals/tools/style/refresh/reconcile.sh EUDPA-XXXXX --repo {repo} --json > /tmp/refresh-summary-{repo}.json
+~/git/defra/trade-imports-animals/tools/style/render-items.sh EUDPA-XXXXX --repo {repo}
 ```
 
-## Step R3: List C — Merge-Resolved `.js` Files
+The reconciler trusts the STYLE_FILE_REVIEWER persona contract: each
+refresh reviewer's `.style.json` contains **only deltas** — regressions
+and net-new findings. Items already in `items.{repo}.json` and still
+present are NOT re-reported (the persona instructs this).
 
-Each List C entry is `{file, merge_sha, old_sha, new_sha, prior_items}`.
-Same envelope as R2 with one extra header line and a different mode:
+## Step R6: Update per-repo verdicts and refresh notes
 
-```markdown
-[same envelope as R2, but with]
-
-**Mode: REFRESH (merge-resolved)**
-**Merge commit:** [entry.merge_sha]
-
-This file was hand-resolved during the merge above. The resolution may differ
-from a clean rebase. Pay extra attention to:
-- Code that may have been dropped or duplicated during conflict resolution
-- Style drift introduced by the merge
-```
-
-## Step R4: List D — Coverage Gaps
-
-Each List D entry is `{file}` only (no prior items by definition — these
-files were never reviewed). Use the FRESH prompt from Step 4.
-
-## Step R5: List B — Items in Unchanged Files
-
-`lists.B` contains open items (Disposition blank OR Fix/Discuss + Not
-Done) whose file did NOT change in the window. No action — these carry
-forward unchanged. Mention the count in the completion summary.
-
-## Step R6: Update Per-Repo Verdicts
-
-After all subagents complete, recompute verdicts as in Step 6 of FRESH
-REVIEW.
+Recompute verdicts as in Step 6 of FRESH REVIEW. Add a `## Refresh
+Summary ({date})` section to `style-review.{repo}.md` with counts from
+`/tmp/refresh-summary-{repo}.json` and a spot-check list of prior
+`Fix+Done` items in refreshed files (the reconciler emits these as
+potential regressions).
 
 ---
 
@@ -506,3 +474,29 @@ Summary:
 
 Per-repo files: ~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-review.{repo}.md
 ```
+
+## Scripts cheat-sheet
+
+All under `~/git/defra/trade-imports-animals/tools/style/`:
+
+| Script | Purpose |
+|---|---|
+| `start-style.sh` | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
+| `prepare-style.sh` | Fresh Step 1 workspace setup; init `.style.json` placeholders; bake per-repo rules bundles |
+| `bake-rules-bundle.sh` | Concatenate `docs/best-practices/` files into `style-rules.{repo}.md` |
+| `aggregate-file-reviews.sh` | Fresh Step 4 — write `items.{repo}.json` from per-file `.style.json` files; emit File Analysis Summary / Items markdown |
+| `render-items.sh` | Render `items.{repo}.json` as the `## Items` markdown view |
+| `style-items.sh` | Walker / implementor / refresh — list items with filters |
+| `style-add-item.sh` | Append a new item to `items.{repo}.json`; auto-assigns `id`; returns the new ID |
+| `style-mark.sh` | Set Disposition (auto-sets Status) |
+| `style-set-status.sh` | Set Status only (after fix attempt) |
+| `style-counts.sh` | Breakdown by Disposition + Status — used in per-repo verdict |
+| `file-style-init.sh` / `file-style-add-item.sh` / `file-style-set-verdict.sh` | Per-file `.style.json` helpers used by the STYLE_FILE_REVIEWER persona |
+| `refresh/scope.sh` | Refresh Steps R1-R3 orchestrator |
+| `refresh/reconcile.sh` | Refresh Step R5 — fold per-file `.style.json` findings into `items.{repo}.json`; emit Fix+Done spot-check advisory |
+
+Cross-domain script under `tools/review/`:
+
+| Script | Purpose |
+|---|---|
+| `verify-style-coverage.sh` | Fresh Step 3 coverage gate — checks `.verdict != null` on each per-file `.style.json` |
