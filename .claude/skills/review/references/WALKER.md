@@ -1,186 +1,173 @@
 # Walker — interactive triage
 
 Interactive walkthrough of pending review items for an EUDPA ticket.
-Presents items one at a time with real code context, waits for a user
-decision, **records the disposition by calling helper scripts**, then
-moves on. No fixing happens here — the batch implementor does that
-afterwards.
+Presents items one at a time, **fast**, from `items.{repo}.json` only —
+no file reads, no code context, no fix-already-applied auto-detection.
+Just disposition, next item.
+
+User hits a single key per item. When they want context, they hit `D`
+and the walker switches to slow-track for that one item.
 
 **Trigger:** `"walk review EUDPA-XXXXX"`, `"walk review EUDPA-XXXXX
-{repo}"` (optional repo filter), or `"walk review EUDPA-XXXXX --major"`
-(optional severity filter).
+{repo}"` (repo filter), or `"walk review EUDPA-XXXXX --major"`
+(severity filter).
 
-All script paths are anchored on `$TRADE_IMPORTS_WORKSPACE` per the parent
-SKILL.md's path-conventions preamble. The items table schema lives in
-`assets/items-table.md`.
+The items table schema lives in `assets/items-table.md`.
 
 ---
 
-## Step 1: Load the Work List
-
-Pull all items missing a disposition (i.e. the user has not hand-marked
-them and the walker has not yet recorded one):
+## Step 1: Load the work list
 
 ```bash
 $TRADE_IMPORTS_WORKSPACE/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
 ```
 
-Apply any filters from the trigger:
+Apply trigger filters:
 - `{repo}` — add `--repo {repo}`
-- `--critical` / `--major` — filter the JSON output for matching severities
+- `--critical` / `--major` — filter the JSON for matching severities
 
-The items table is the single source of truth. Hand-marked rows (where
-the user typed `Fix` / `Won't Fix` into the Disposition column
-themselves) are already excluded by `--filter pending`.
+Hand-marked rows (where the user typed `Fix` / `Won't Fix` directly
+into `items.{repo}.json`) are excluded by `--filter pending`.
 
-If the work list is empty:
+If empty:
 ```
 Nothing to walk — all items have a disposition.
 ```
-And stop.
+Stop.
 
 ---
 
-## Step 2: Report Starting State
+## Step 2: Announce
 
 ```
-Walking review EUDPA-XXXXX [{repo filter}] [{severity filter}]
+Walking review EUDPA-XXXXX [{filters}]
 Pending items: [N] ([breakdown by repo])
-Hand-marked / decided: see `review-counts.sh EUDPA-XXXXX`
 
-Order: [list of item numbers]
-
-Decisions are written directly to: $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md
-Run `implement review EUDPA-XXXXX` afterwards to apply Fix-disposition items.
+F = Fix · W = Won't Fix · D = Discuss · S = Skip
 ```
 
 ---
 
-## Step 3: Present Items One at a Time
+## Step 3: Present items one at a time
 
-For each item in work list order:
-
-### 3a. Check whether the violation is still present
-
-Try to read the file from the live repo first:
-```
-$TRADE_IMPORTS_WORKSPACE/repos/{repo}/{file-path}
-```
-Fall back to the workspace copy if the live repo is not available:
-```
-$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
-```
-
-Extract ~10 lines of context centred on the reported line number. Scan
-those lines for the specific pattern named in the Issue column (function
-name, variable name, operator, attribute, etc.).
-
-**If NOT found:** the violation has already been resolved. Auto-record:
-```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found instead}"
-```
-Report it, and move on — no user input needed.
-
-### 3b. Present the item
+For each item in work-list order:
 
 ```
-─── Item N of M ── [{SEVERITY}] ── {repo} ──────────────────────
-File: {path/to/file}  Line: {NN}
-Category: {category}
-Issue: {issue description}
-
-{code snippet — ~10 lines, with the offending line highlighted}
-
-Fix: {fix description from the items table}
-──────────────────────────────────────────────────────────────────
-Options: [F]ix  [W]on't Fix  [S]kip  [D]iscuss
+[i/N] {Severity} · {repo} · {file}:{line} · {category}
+  Issue: {issue}
+  Fix:   {fix}
+  Cite:  {best_practice}                ← omit if null
+  [F]ix [W]on't Fix [D]iscuss [S]kip:
 ```
 
-### 3c. Wait for user response
+All fields come from the JSON. **Do not read the source file. Do not
+print code snippets. Do not check whether the violation is still
+present.** That's all on the slow path (Discuss).
 
-Do not proceed until the user responds. Handle responses:
+Wait for user response.
 
 | Response | Action |
 |----------|--------|
-| `F` / `fix` / `yes` / `fix it` | → Step 4: Record `Fix` |
-| `W` / `won't fix` / `wont fix` / `no` | → Step 5: Record `Won't Fix` |
-| `D` / `discuss` | → Step 6: Discuss inline, then record `Discuss` (or `Fix` / `Won't Fix` if the discussion concludes) |
-| `S` / `skip` | Leave the row's disposition blank, move to next item |
+| `F` / `fix` / `yes` | Step 4 — record Fix |
+| `W` / `won't fix` / `no` | Step 5 — record Won't Fix |
+| `D` / `discuss` | Step 6 — slow-track this one item |
+| `S` / `skip` | Leave disposition pending, move to next |
+
+Multi-key shortcuts: if the user types a sequence like `FFW`, apply
+them in order to the current and next two items.
 
 ---
 
-## Step 4: Record `Fix`
+## Step 4: Record Fix
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix" [--note "{refined fix or context}"]
+$TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Fix"
 ```
 
-The script auto-sets Status to `Not Done`. Log:
+Auto-sets Status to `Not Done`.
+
 ```
-✅ Item #N — queued as Fix
+✓ #{N} Fix
 ```
 
-Move to next item. **Do not spawn a fixer agent.**
+Move to next.
 
 ---
 
-## Step 5: Record `Won't Fix`
+## Step 5: Record Won't Fix
 
-If the user provides a reason, pass it as `--note`.
+If the user provided a reason inline (e.g. `W: not in scope`), pass it
+as `--note "{reason}"`.
 
 ```bash
 $TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Won't Fix" [--note "{reason}"]
 ```
 
-Log:
 ```
-⏭️  Item #N — Won't Fix{: reason if given}
+✗ #{N} Won't Fix
 ```
 
-Move to next item.
+Move to next.
 
 ---
 
-## Step 6: Discuss
+## Step 6: Discuss — slow-track this one item
 
-Answer the user's question(s) inline using whatever context is available
-(read code, follow up on related items, etc.). When the discussion
-settles:
+The user wants more context before deciding. Switch modes for this
+item only:
 
-- If the conclusion is **fix it** → call Step 4 with a `--note` summarising the agreed approach.
-- If the conclusion is **leave it** → call Step 5 with the reason.
-- If the user wants to **defer to a wider conversation** (e.g. PR thread, standup) →
-  ```bash
-  $TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{summary of open question / who to ask}"
-  ```
+1. **Read the file** from the workspace copy:
+   ```
+   $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
+   ```
+2. **Show ~10 lines around the reported line.** Highlight the
+   reported line.
+3. **Engage with the user.** Answer their question, follow related
+   items, read whatever neighbouring files help.
+4. **Conclude with a disposition.** When the discussion settles, call
+   the right helper:
+   - "fix it" → Step 4 with `--note "{agreed approach}"`
+   - "leave it" → Step 5 with `--note "{reason}"`
+   - "defer to PR thread / standup / wider conversation":
+     ```bash
+     $TRADE_IMPORTS_WORKSPACE/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{open question / who to ask}"
+     ```
+     ```
+     💬 #{N} Discuss — {note}
+     ```
 
-Log:
-```
-💬 Item #N — Discuss queued: {note}
-```
-
-Move to next item.
+Move to next.
 
 ---
 
-## Step 7: Final Report
+## Step 7: Final report
 
-After all items are processed:
+After all items processed:
 
 ```
 Walk complete for EUDPA-XXXXX [{filters}].
 
-Dispositions recorded this run:
-  ✅ Fix:            N items  (queued for implementor)
-  🔍 Auto-resolved:  N items  (already fixed in code)
-  ❌ Won't Fix:      N items
-  💬 Discuss:        N items  (left flagged for human follow-up)
-  ⏭️  Skipped:       N items  (still pending — re-walk to revisit)
+  Fix:        N
+  Won't Fix:  N
+  Discuss:    N
+  Skipped:    N  (still pending)
 
-Items table updated in: $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
-
-To apply the Fix items, run:
-  implement review EUDPA-XXXXX
+To apply the Fix items: implement review EUDPA-XXXXX
 ```
 
-If there are no Fix dispositions added in this run, omit the last line.
+Omit the last line if no Fix dispositions were recorded.
+
+---
+
+## Speed notes
+
+The point of the walker is **rate of decision-making**. Don't:
+- Read the source file before D.
+- Print code snippets before D.
+- Check whether the violation is "still present" — if the user spots
+  a stale item, they hit W with note "already done".
+- Verbose-log between items. One line per disposition is enough.
+
+For long backlogs, prefer the multi-key shortcut (`FFWFFW`) over
+per-item single keys. The user knows what they want; the walker just
+records it.
