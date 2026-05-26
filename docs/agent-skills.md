@@ -68,33 +68,49 @@ assets/<NAME>.md
 
 ## Bash call hygiene (avoiding permission prompts)
 
-The project allowlist (`.claude/settings.json`) matches Bash calls
-against patterns like `Bash(~/git/defra/trade-imports-animals/tools/**)`.
-A command only matches the allowlist if it **starts with the literal
-allowlisted path**. The following patterns DO NOT match and will
-trigger a permission prompt:
+**The core principle: one command per Bash call.** The allowlist
+matches against the whole command string — anything that makes the
+call a *compound* shape (a chain, a pipe, an embedded sub-command,
+or a variable expansion) doesn't match the prefix rule even when
+each piece would individually. Symptoms:
 
-| Anti-pattern | Why it fails | Do instead |
-|---|---|---|
-| `cd ~/git/defra/trade-imports-animals && tools/review/foo.sh ...` | command starts with `cd`, not the allowlisted path | `~/git/defra/trade-imports-animals/tools/review/foo.sh ...` (no `cd`) |
-| `tools/review/foo.sh ...` (relative) | matcher sees `tools/...`, not `~/git/...` | use the full `~/git/...` form |
-| `tools/review/foo.sh ... && tools/review/bar.sh ...` | chained commands are matched as a single string | run as two separate Bash calls |
-| `$TRADE_IMPORTS_WORKSPACE/tools/review/foo.sh ...` | "Contains simple_expansion" check (GH#51001) | use the literal `~/git/...` form |
-| `cd <dir> && git log/diff/checkout ...` | Claude Code-specific safety check: cd-then-git could run untrusted hooks | `git -C <dir> log/diff/checkout ...` |
-| `python3 -c "import json..."` to query workspace JSON | not allowlisted; reaches for a tool the workspace doesn't need | use `jq`, or the helpers under `tools/` |
-| `awk '...' file` or `sed -n '...' file` to peek at file contents | spawns a prompt for an ad-hoc command | use the Read tool with `offset` + `limit` |
-| `find <dir> -name X -exec cat {} \;` to read a file by name | Claude Code refuses to prefix-allowlist any `-exec` form (it can run anything) | use the Glob tool to locate the file, then the Read tool to read it |
-| `tools/review/foo.sh ... \| awk -F'\t' '$3 == "..."'` | the pipe falls outside the allowlist | prefer a `--filter` flag on the helper (extend the helper if missing) over piping |
+- `&&` / `;` / `|` — turns N commands into one string the matcher
+  doesn't recognise. Run them as separate Bash calls instead.
+- `cd <dir> && cmd ...` — special case of `&&`. Use `cmd -C <dir>` /
+  full paths instead.
+- `find ... -exec cmd {} \;` — `-exec` runs an arbitrary embedded
+  command. Claude Code refuses to prefix-allowlist it. Use Glob +
+  Read for "find then read" workflows.
+- `$VAR` in the command — Claude Code's "Contains simple_expansion"
+  check ([GH#51001](https://github.com/anthropics/claude-code/issues/51001))
+  trips before the allowlist matcher sees it. Use literal
+  `~/git/defra/trade-imports-animals/...` paths.
+- Ad-hoc text utilities (`awk`, `sed`, `find`) on files outside the
+  workspace — scoped to workspace paths in the allowlist; system
+  paths still prompt.
 
-In short:
+**Don't reach for Bash combos when an LLM-native tool does the job:**
 
-- **One Bash call per script invocation**, starting with the literal `~/git/defra/trade-imports-animals/...` path.
-- **`git -C <dir>` for git operations on workspace repos** — never `cd <dir> && git ...`.
-- **Read tool for file inspection**, not awk/sed/grep pipes.
-- **Filter at the script, not at the pipe** — if a helper lacks the filter you need, propose extending it.
+- File inspection → Read (with `offset` + `limit`), not `awk`, `sed -n`, `grep -n`.
+- File location by name → Glob, not `find -exec` or `find ... | xargs`.
+- JSON queries → `jq` against a workspace file, not `python3 -c "import json"`.
+- Filtering script output → add a `--filter` / `--file` / `--repo` flag to the helper, not `| awk`. If the helper lacks the flag, propose extending it.
+
+**Quick reference:**
+
+| Anti-pattern | Use instead |
+|---|---|
+| `cd ~/git/.../foo && tools/x.sh` | `~/git/.../tools/x.sh` (no `cd`) |
+| `tools/x.sh` (relative) | full `~/git/...` form |
+| `tools/x.sh && tools/y.sh` | two separate Bash calls |
+| `$TRADE_IMPORTS_WORKSPACE/tools/x.sh` | literal `~/git/...` form |
+| `cd <dir> && git ...` | `git -C <dir> ...` |
+| `awk '...' file` (workspace inspection) | Read tool with offset+limit |
+| `find <dir> -name X -exec cat {} \;` | Glob + Read |
+| `tools/x.sh \| awk` | helper `--filter` flag |
+| `python3 -c "import json..."` | `jq` |
 
 The skill prose models this in every example — follow the model.
-```
 
 Worker personas are addressed by an absolute `references/<NAME>.md` path
 inside the spawn prompt — see "Worker references" below.

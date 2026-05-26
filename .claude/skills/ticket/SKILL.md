@@ -32,14 +32,21 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** (avoid permission prompts):
-- Invoke scripts via the literal `~/git/defra/trade-imports-animals/tools/...` path. Never `cd <workspace> && tools/...` or bare `tools/...` — neither matches the allowlist.
-- One Bash call per script invocation. Don't chain with `&&` or `;` — the matcher treats the whole string as a single command, and chained forms aren't allowlisted.
-- Use `git -C <dir> ...` for git on workspace repos. Never `cd <dir> && git ...` (Claude Code's safety check blocks it — cd-then-git could run untrusted hooks).
-- Use the Read tool (with `offset` + `limit`) to peek at file contents — not `awk`, `sed -n`, or `grep -n` pipes.
-- No `find ... -exec ...` for reading files — Claude Code refuses to prefix-allowlist `-exec` forms. Use the Glob tool to locate, then Read.
-- Filter at the script, not at the pipe. If a helper lacks the `--filter` / `--file` / `--repo` flag you need, propose extending it; don't reach for `tools/... | awk`.
-- Don't reach for `python3 -c "..."` or other ad-hoc tools to query workspace JSON — use `jq` or the helpers under `tools/`.
+**Bash call hygiene** — the rule: **one command per Bash call**.
+The allowlist matcher sees the whole command string, so a chain or
+pipe doesn't match even when each piece would. Specifically:
+
+- No `&&` / `;` / `|` between commands — separate Bash calls instead.
+- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
+- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
+
+**Prefer LLM-native tools over Bash combos:**
+
+- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
+- File location → Glob, not `find -exec`.
+- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
 
 Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
