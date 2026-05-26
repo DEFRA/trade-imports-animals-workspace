@@ -191,6 +191,62 @@ else
     log "Using cached CHANGELOG.md"
 fi
 
+# Pre-bake per-version CHANGELOG sections so VERSION_PLANNER can Read
+# one file per spawn.
+for version in "${sorted_versions[@]}"; do
+    out="$WORKSPACE_DIR/version__${version}.changelog.md"
+    if [[ -f "$out" && "$FORCE" != "true" ]]; then
+        continue
+    fi
+    section=$(awk "
+        /^## v${version}([[:space:](]|\$)/ { found=1; next }
+        found && /^## v/ { exit }
+        found { print }
+    " "$CHANGELOG_FILE")
+    if [[ -z "$section" ]]; then
+        log "  WARN: no CHANGELOG section found for v${version}"
+        continue
+    fi
+    {
+        echo "## govuk-frontend v${version} — Changelog"
+        echo
+        echo "$section"
+    } > "$out.tmp" && mv "$out.tmp" "$out"
+done
+
+# Pre-bake the per-repo best-practices bundle. Concatenates the
+# docs/best-practices/ files listed in SKILL.md "load when the
+# changelog warrants" so VERSION_PLANNER can Read one file.
+BP_OUT="$WORKSPACE_DIR/best-practices.md"
+if [[ ! -f "$BP_OUT" || "$FORCE" == "true" ]]; then
+    BP_SOURCES=(
+        "docs/best-practices/node/govuk-frontend.md"
+        "docs/best-practices/gds/components.md"
+        "docs/best-practices/gds/patterns.md"
+        "docs/best-practices/gds/accessibility.md"
+        "docs/best-practices/gds/styles.md"
+    )
+    {
+        echo "# Best practices applicable to ${REPO_NAME} (govuk-frontend upgrade)"
+        echo
+        echo "Concatenated at Phase 1. Apply these standards when planning changes."
+        for path in "${BP_SOURCES[@]}"; do
+            src="$HOME/git/defra/trade-imports-animals/$path"
+            echo
+            echo "---"
+            echo
+            echo "## Source: \`$path\`"
+            echo
+            if [[ -f "$src" ]]; then
+                cat "$src"
+            else
+                echo "_(missing — file not found at \`$src\`)_"
+            fi
+        done
+    } > "$BP_OUT.tmp" && mv "$BP_OUT.tmp" "$BP_OUT"
+    log "Cached: $BP_OUT"
+fi
+
 # Build versions JSON, preserving any per-version state already present
 # in the existing file (classification, implementation_status, etc.).
 now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")

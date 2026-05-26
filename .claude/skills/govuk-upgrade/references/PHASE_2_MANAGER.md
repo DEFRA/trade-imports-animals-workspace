@@ -30,8 +30,8 @@ List all zero-byte stubs across both repos:
 find ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id} -name "version__*.md" -size 0
 ```
 
-For each stub, spawn a `general-purpose` Task subagent concurrently. Parse
-repo name and version from the file path. Spawn prompt:
+For each unplanned version, spawn a `general-purpose` Task subagent
+concurrently. Spawn prompt:
 
 ```
 Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.
@@ -40,7 +40,8 @@ Run ID: {run-id}
 Repository: {repo-name}
 Repo path: ~/git/defra/trade-imports-animals/repos/{repo-name}
 Version: {version}
-Stub file: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.md
+Pre-baked changelog: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.changelog.md
+Best-practices bundle: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/best-practices.md
 ```
 
 ## Step 3: Verify coverage

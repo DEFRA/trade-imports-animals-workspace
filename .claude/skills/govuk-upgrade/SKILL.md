@@ -148,7 +148,9 @@ Best-practices (load when the changelog warrants):
 
 Scripts (`~/git/defra/trade-imports-animals/tools/govuk/`):
 
-- `discover-versions.sh` — Phase 1 stub creation + CHANGELOG cache.
-- `fetch-changelog-section.sh` — Phase 2 helper (per-version section extraction; consumed by the subagent).
-- `list-plans.sh` — Phase 1 + 2 status snapshot.
-- `upgrade-status.sh` — combined status across phases.
+- `discover-versions.sh` — Phase 1 state seed + per-version `*.changelog.md` + per-repo `best-practices.md`.
+- `discover-repos.sh` — Phase 1 helper that writes the run-level `.run-meta.json` (in-scope repos).
+- `version-classify.sh` / `version-add-change.sh` — VERSION_PLANNER's mutation surface for `versions.{repo}.json`.
+- `version-mark-implemented.sh` / `version-mark-failed.sh` — Phase 3 state transitions (helper-as-last-action).
+- `render-version-plan.sh` — read-only markdown view of one version's plan.
+- `list-plans.sh` / `upgrade-status.sh` — filterable status views of the canonical JSON.
