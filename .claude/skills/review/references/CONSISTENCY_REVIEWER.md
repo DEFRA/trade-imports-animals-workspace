@@ -26,16 +26,19 @@ cat $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/.review-meta.json
 cat $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/ticket.md
 ```
 
-### 2. Fetch all diffs
+### 2. Read all diffs (from the workspace cache)
 
-For **each repo** in `.review-meta.json`, fetch the full diff:
+`prepare-review.sh` already cached the full PR diff for every repo
+at:
 
-```bash
-$TRADE_IMPORTS_WORKSPACE/tools/github/diff.sh {repo-name} {pr-number}
+```
+$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/.diffs/{repo-name}.diff
 ```
 
-Collect all diffs before analysing — you need the full picture across
-all repos simultaneously.
+Read those files directly — no need to call `gh pr diff` or
+redirect to /tmp. You need the full picture across all repos
+simultaneously, so collect every `.diffs/*.diff` listed in
+`.review-meta.json` before analysing.
 
 ### 3. Analyse for cross-repo patterns
 

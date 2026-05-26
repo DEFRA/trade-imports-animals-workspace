@@ -120,10 +120,14 @@ In REFRESH / MERGE_RESOLVED only, additionally:
 ### 3. Get the file-scoped diff
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/github/file-diff.sh {repo} {pr-number} {file-path}
+$TRADE_IMPORTS_WORKSPACE/tools/github/file-diff.sh {repo} {pr-number} {file-path} --ticket EUDPA-XXXXX
 ```
 
 Returns only the hunks for your file — don't fetch the whole PR diff.
+`--ticket` makes it read from the workspace's cached PR diff
+(`workareas/reviews/EUDPA-XXXXX/.diffs/{repo}.diff`) instead of
+hitting the GitHub API, which matters when 100 reviewers run in
+parallel.
 
 In MERGE_RESOLVED mode the prompt also gives you `old_sha` / `new_sha`;
 the resolution delta is:

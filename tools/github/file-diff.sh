@@ -1,25 +1,59 @@
 #!/bin/bash
-# Get a single file's hunks from a PR diff
-# Usage: ./file-diff.sh REPO PR_NUMBER FILE_PATH
+# Get a single file's hunks from a PR diff.
+# Usage: ./file-diff.sh REPO PR_NUMBER FILE_PATH [--ticket EUDPA-X]
 # Example: ./file-diff.sh trade-imports-animals-frontend 1234 src/server/router.js
 #
-# Filters `gh pr diff` to only the `diff --git a/FILE b/FILE` block for
-# the requested file. Exit 0 with empty output if the file is not in
-# the PR diff.
+# If --ticket is provided AND the workareas diff cache exists at
+# $TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-X/.diffs/REPO.diff,
+# reads from there instead of hitting `gh pr diff`. With 100 parallel
+# file-reviewers, this avoids hammering the GitHub API.
+#
+# Without --ticket (or if the cache is missing), falls back to
+# `gh pr diff` over the network.
+#
+# Filters output to only the `diff --git a/FILE b/FILE` block for the
+# requested file. Exit 0 with empty output if the file is not in the
+# diff.
 
 set -e
 
-REPO="${1:-}"
-PR_NUMBER="${2:-}"
-FILE_PATH="${3:-}"
+REPO=""
+PR_NUMBER=""
+FILE_PATH=""
+TICKET=""
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --ticket) TICKET="$2"; shift 2 ;;
+        -*) echo "Unknown option: $1" >&2; exit 1 ;;
+        *) POSITIONAL+=("$1"); shift ;;
+    esac
+done
+
+REPO="${POSITIONAL[0]:-}"
+PR_NUMBER="${POSITIONAL[1]:-}"
+FILE_PATH="${POSITIONAL[2]:-}"
 
 if [[ -z "$REPO" ]] || [[ -z "$PR_NUMBER" ]] || [[ -z "$FILE_PATH" ]]; then
-    echo "Usage: ./file-diff.sh REPO PR_NUMBER FILE_PATH" >&2
-    echo "Example: ./file-diff.sh trade-imports-animals-frontend 1234 src/server/router.js" >&2
+    echo "Usage: ./file-diff.sh REPO PR_NUMBER FILE_PATH [--ticket EUDPA-X]" >&2
+    echo "Example: ./file-diff.sh trade-imports-animals-frontend 1234 src/server/router.js --ticket EUDPA-134" >&2
     exit 1
 fi
 
-gh pr diff "$PR_NUMBER" --repo "DEFRA/$REPO" | awk -v f="$FILE_PATH" '
+source_cmd=()
+if [[ -n "$TICKET" ]] && [[ -n "${TRADE_IMPORTS_WORKSPACE:-}" ]]; then
+    cache="$TRADE_IMPORTS_WORKSPACE/workareas/reviews/$TICKET/.diffs/$REPO.diff"
+    if [[ -s "$cache" ]]; then
+        source_cmd=( cat "$cache" )
+    fi
+fi
+
+if [[ ${#source_cmd[@]} -eq 0 ]]; then
+    source_cmd=( gh pr diff "$PR_NUMBER" --repo "DEFRA/$REPO" )
+fi
+
+"${source_cmd[@]}" | awk -v f="$FILE_PATH" '
     /^diff --git / {
         in_block = ($0 ~ ("a/" f "[[:space:]]") && $0 ~ ("b/" f "$"))
     }
