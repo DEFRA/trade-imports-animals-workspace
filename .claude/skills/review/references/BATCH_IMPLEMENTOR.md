@@ -124,6 +124,25 @@ within the same repo may affect shared files or tests).
 
 ---
 
+## Step 4.5: Handoff branch detection
+
+Before the final report, check whether this implementor session is
+running on a review-handoff branch (set up by `share-review.sh` during
+the reviewer's FRESH Step 5.5):
+
+```bash
+git -C ~/git/defra/trade-imports-animals rev-parse --abbrev-ref HEAD
+```
+
+If the branch name is exactly `chore/EUDPA-XXXXX` (matching this
+ticket), the session is running in **handoff context** — note that
+fact for Step 5.
+
+The handoff branch lives on the workspace repo (not on any sub-repo),
+so detection runs against the workspace, not `repos/{repo}`.
+
+---
+
 ## Step 5: Final Report
 
 ```
@@ -144,4 +163,47 @@ Failed (Status=Failed in the items table — re-run to retry):
   ...
 
 Run `~/git/defra/trade-imports-animals/tools/review/review-counts.sh EUDPA-XXXXX` for the updated breakdown.
+```
+
+---
+
+## Step 6: Handoff branch cleanup (handoff context only)
+
+If Step 4.5 flagged this session as handoff context, offer cleanup now.
+Skip this step entirely otherwise.
+
+Prompt the user:
+
+```
+This session ran on the handoff branch chore/EUDPA-XXXXX. The review
+items have been actioned and committed in the sub-repos. Clean up the
+handoff branch?
+
+Delete local handoff branch and switch back to main? [Y/n]
+```
+
+On `Y` (default): switch the workspace back and delete the local
+branch.
+
+```bash
+git -C ~/git/defra/trade-imports-animals checkout main
+```
+
+```bash
+git -C ~/git/defra/trade-imports-animals branch -D chore/EUDPA-XXXXX
+```
+
+On `n`: skip both prompts.
+
+Then ask about the remote:
+
+```
+Delete the remote handoff branch (origin/chore/EUDPA-XXXXX) too? [y/N]
+```
+
+Default is **No** — the reviewer may still want to refer back to it.
+On `y`:
+
+```bash
+~/git/defra/trade-imports-animals/tools/github/delete-remote-branch.sh trade-imports-animals-workspace chore/EUDPA-XXXXX
 ```
