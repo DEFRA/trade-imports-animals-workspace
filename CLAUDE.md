@@ -138,6 +138,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `code-style` | "style review EUDPA-", "walk style EUDPA-", "triage style", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies", "walk upgrade EUDPA-X", "implement upgrade EUDPA-X" | Three-phase non-govuk-frontend npm upgrade workflow + interactive manual-side walker. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
+| `skill-creator` | "scaffold skill `<name>`", "skill-create `<name>`", "new workspace skill `<name>`", "audit skill `<name>`", "audit skills" | Meta-skill — CREATE scaffolds a new workspace skill end-to-end (interview + scaffold + allowlist); AUDIT walks an existing skill (or all skills via fan-out) against the 8-pattern checklist and writes a plan under `workareas/skills-audit/<name>.md`. |
 
 ### Worker references (per-skill fan-out personas)
 
@@ -160,6 +161,8 @@ artifacts that downstream `tools/` scripts consume.
 | `npm-upgrade` | `references/MANUAL_UPGRADE_IMPLEMENTOR.md` | One manual package upgrade at a time (edit + test + commit + rollback) |
 | `govuk-upgrade` | `references/VERSION_PLANNER.md` | Per-version CHANGELOG analysis + per-repo plan |
 | `govuk-upgrade` | `references/PLAN_WALKER.md` | Batch triage of pending version plans before Phase 3 |
+| `skill-creator` | `references/AUDITOR.md` | Per-skill 8-pattern audit (parallel fan-out across all skills) |
+| `skill-creator` | `references/INTERVIEWER.md` | Parent-loaded CREATE-mode interview (8 shape questions → `decisions.json`) |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>). It has no parallel subagent
@@ -282,6 +285,11 @@ Shared shell scripts called by skills via
 | `tools/ticket/setup-branch.sh` | EUDPA-X --repo R --slug S [--base B] | Fetch → checkout base → pull → checkout -b `feature/EUDPA-X-<slug>` in one dispatch |
 | **ticket-creator** | | |
 | `tools/ticket-creator/prepare-ticket-creation.sh` | [--board ID] [--cap-page ID] | Refresh `workareas/ticket-creation/.prereqs/` with active EUDPA epics + EUDP capability codes |
+| **skill-creator** | | |
+| `tools/skill-creator/start-skill-creator.sh` | "<trigger phrase>" | Step 0 dispatcher — parses trigger, emits `MODE: CREATE` / `MODE: AUDIT_ONE` / `MODE: AUDIT_ALL` + JSON payload |
+| `tools/skill-creator/interview-add-answer.sh` | --run-id NAME --field PATH --value JSON | CREATE — atomic mutation of `decisions.json` (one shape question per call) |
+| `tools/skill-creator/render-interview.sh` | --run-id NAME | CREATE — markdown view of `decisions.json` (recap + `decisions.md` sidecar) |
+| `tools/skill-creator/scaffold-skill.sh` | --run-id NAME [--dry-run] | CREATE — materialise SKILL.md + references/ + assets/ + tools/<name>/ stubs from `decisions.json`; append allowlist entries |
 
 ## Workareas (runtime cache, gitignored)
 
@@ -304,6 +312,8 @@ workareas/npm-upgrades/EUDPA-X/{repo}/             → packages.{repo}.json, .up
 workareas/govuk-upgrades/EUDPA-X/                  → .run-meta.json
 workareas/govuk-upgrades/EUDPA-X/{repo}/           → versions.{repo}.json, CHANGELOG.md, version__{v}.changelog.md, best-practices.md
 workareas/shared/EUDPA-X/                          → review handoff artifacts (tracked; committed to chore/EUDPA-X-review-handoff)
+workareas/skill-creator/<name>/                    → decisions.json (CREATE-mode interview state)
+workareas/skills-audit/<name>.md                   → AUDIT-mode plan document (per skill)
 ```
 
 ## Conventions
