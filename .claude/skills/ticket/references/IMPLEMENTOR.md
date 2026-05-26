@@ -43,18 +43,15 @@ npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests
 
 ### Branch Setup
 
+One allowlisted dispatch — fetch / checkout base / pull / checkout -b. The
+helper always produces `feature/EUDPA-XXXXX-<slug>` and preserves the
+EUDPA-* prefix (don't strip it on split branches).
+
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/<repo-name> fetch origin
+~/git/defra/trade-imports-animals/tools/ticket/setup-branch.sh EUDPA-XXXXX --repo <repo-name> --slug <description>
 ```
-```bash
-git -C ~/git/defra/trade-imports-animals/repos/<repo-name> checkout <base-branch>
-```
-```bash
-git -C ~/git/defra/trade-imports-animals/repos/<repo-name> pull
-```
-```bash
-git -C ~/git/defra/trade-imports-animals/repos/<repo-name> checkout -b feature/EUDPA-XXXXX-<description>
-```
+
+Optional `--base <branch>` if branching from anything other than `main`.
 
 ### For Each Step
 
