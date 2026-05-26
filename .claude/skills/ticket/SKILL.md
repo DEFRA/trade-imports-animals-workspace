@@ -76,10 +76,13 @@ All under `~/git/defra/trade-imports-animals/tools/` per CC-3:
 
 | Domain | Used by | Purpose |
 |---|---|---|
+| `tools/ticket/prepare-plan.sh EUDPA-X [--repos r1,r2] [--json]` | PLANNER | Pre-bake `ticket.md` + `.plan-meta.json` + per-repo `best-practices/<repo>.md` |
+| `tools/ticket/prepare-implement.sh EUDPA-X [--repo R] [--json]` | IMPLEMENTOR | Assert plan, re-validate detect-tech, cache prior PR diff, emit `.implement-meta.json` |
+| `tools/ticket/setup-branch.sh EUDPA-X --repo R --slug S [--base B]` | IMPLEMENTOR | One-dispatch fetch → checkout base → pull → checkout -b `feature/EUDPA-X-<slug>` |
 | `tools/jira/` (`ticket.sh`, `comments.sh`, `add-comment.sh`, `transition-ticket.sh`) | PLANNER, IMPLEMENTOR | Fetch ticket + comments; post completion comments; transition status |
 | `tools/github/` (`prs.sh`, `pr-details.sh`, `diff.sh`) | IMPLEMENTOR | PR creation context + inspection |
 | `tools/github-actions/` (`trigger-workflow.sh`, `wait-for-run.sh`, `get-failure.sh`, `run-status.sh`, `get-logs.sh`) | IMPLEMENTOR | CI verification |
-| `tools/review/detect-tech.sh` | PLANNER, IMPLEMENTOR | Detect repo tech stack + emit best-practices paths under `docs/best-practices/` |
+| `tools/review/detect-tech.sh` | called by `prepare-plan.sh` / `prepare-implement.sh` | Detect repo tech stack + emit best-practices paths under `docs/best-practices/` |
 
 Authenticate to Jira/GitHub before fetching (or run the umbrella
 `~/git/defra/trade-imports-animals/tools/auth.sh`).
@@ -96,7 +99,12 @@ applies to the repo being worked on.
 
 | Path | Purpose |
 |---|---|
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/ticket.md` | `prepare-plan.sh` writes (Jira metadata + description + comments + Confluence refs) |
 | `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/plan.md` | PLANNER writes; IMPLEMENTOR reads; both may amend with deviations |
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.plan-meta.json` | `prepare-plan.sh` writes — ticket metadata + per-repo tech list |
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/best-practices/<repo>.md` | `prepare-plan.sh` writes — concatenated best-practices bundle per repo |
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.implement-meta.json` | `prepare-implement.sh` writes — re-validated tech + cached PR diffs |
+| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.diffs/<repo>.diff` | `prepare-implement.sh` writes — cached PR diff (when a prior PR exists) |
 
 ## Skill-level don'ts
 
