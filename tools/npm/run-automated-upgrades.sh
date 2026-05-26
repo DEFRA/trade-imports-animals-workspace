@@ -41,10 +41,10 @@ Rollback safety:
   - All commits stay local until you review and push
 
 Next steps after completion:
-  - Review commits: git log
-  - Review failed packages: look at .failed files
-  - Demote failures: ./tools/npm/demote-to-manual.sh
-  - Push when ready: git push
+  - Review commits: git -C ~/git/defra/trade-imports-animals/repos/<repo-name> log
+  - Review failed packages: ~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id TICKET --status failed
+  - Failed automated upgrades are auto-demoted to classification=manual in packages.{repo}.json
+  - Push when ready: git -C ~/git/defra/trade-imports-animals/repos/<repo-name> push
 EOF
     exit 0
 }
@@ -113,18 +113,14 @@ if [[ ! -d "$REPO_PATH" ]]; then
     exit 1
 fi
 
-cd "$REPO_PATH"
-
-if [[ -n $(git status --porcelain -uno) ]]; then
+if [[ -n $(git -C "$REPO_PATH" status --porcelain -uno) ]]; then
     echo "Error: Repository has uncommitted changes" >&2
     echo "" >&2
-    git status --short -uno >&2
+    git -C "$REPO_PATH" status --short -uno >&2
     echo "" >&2
     echo "Please commit or stash changes before running automated upgrades" >&2
     exit 1
 fi
-
-cd - > /dev/null
 
 echo "✓ Git status clean"
 echo ""
@@ -215,28 +211,22 @@ echo ""
 
 if [[ $SUCCESS -gt 0 ]]; then
     echo "✅ Review successful upgrades:"
-    echo "   cd ../../../$REPO_NAME/service"
-    echo "   git log --oneline -$SUCCESS"
-    echo "   npm test  # Verify final state"
+    echo "   git -C ~/git/defra/trade-imports-animals/repos/$REPO_NAME log --oneline -$SUCCESS"
+    echo "   npm --prefix ~/git/defra/trade-imports-animals/repos/$REPO_NAME test"
     echo ""
 fi
 
 if [[ $FAILED -gt 0 ]]; then
-    echo "❌ Review and demote failed packages:"
-    echo "   # Check failure reasons in .failed files"
-    echo "   ls $IMPL_DIR/*.failed"
-    echo ""
-    echo "   # Demote to manual implementation"
-    echo "   ./tools/npm/demote-to-manual.sh $REPO_NAME <package> \"<reason>\""
+    echo "❌ Failed packages auto-demoted to classification=manual:"
+    echo "   ~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id $RUN_ID --repo $REPO_NAME --status failed"
     echo ""
 fi
 
 if [[ $SUCCESS -gt 0 ]]; then
     echo "🚀 Push when ready:"
-    echo "   cd ../../../$REPO_NAME/service"
-    echo "   git push origin <branch-name>"
+    echo "   git -C ~/git/defra/trade-imports-animals/repos/$REPO_NAME push origin <branch-name>"
     echo ""
 fi
 
 echo "📊 Overall status:"
-echo "   ./tools/npm/upgrade-status.sh --run-id $RUN_ID"
+echo "   ~/git/defra/trade-imports-animals/tools/npm/packages-counts.sh --run-id $RUN_ID"

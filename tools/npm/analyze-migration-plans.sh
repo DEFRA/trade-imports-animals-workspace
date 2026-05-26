@@ -77,8 +77,13 @@ parse_filename() {
     base="${base%.manual.md}"
     base="${base#upgrade__}"
 
-    # Split by __
-    IFS='__' read -ra parts <<< "$base"
+    # Split by __ using awk (handles multi-char delimiters correctly;
+    # bash IFS treats __ as a character set so the trivial form would
+    # split on every _ and produce empty fields).
+    local parts=()
+    while IFS= read -r part; do
+        parts+=("$part")
+    done < <(echo "$base" | awk -F'__' '{for(i=1;i<=NF;i++) print $i}')
 
     if [[ "${parts[0]}" == "@"* ]]; then
         # Scoped package: @scope__name__current__target

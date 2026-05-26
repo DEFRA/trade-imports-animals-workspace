@@ -85,12 +85,16 @@ Parse `EUDPA-XXXXX` from the branch name (e.g.
 For each repo, ensure it's on `feature/{run-id}-npm-dependency-upgrades`:
 
 ```bash
-# Check
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} branch -a | grep "feature/{run-id}-npm-dependency-upgrades"
+# Check (separate Bash calls — no pipes)
+git -C ~/git/defra/trade-imports-animals/repos/{repo-name} branch --list "feature/{run-id}-npm-dependency-upgrades"
+```
 
+```bash
 # Create if missing
 git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
+```
 
+```bash
 # Switch if exists
 git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
 ```
