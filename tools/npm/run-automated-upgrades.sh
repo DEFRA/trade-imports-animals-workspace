@@ -1,8 +1,11 @@
 #!/bin/bash
-# Run automated upgrades for a repository
-# Orchestrates the full Stage 2 workflow: discover -> upgrade loop -> report
+# Run automated upgrades for one repo, driven entirely off
+# packages.{repo}.json. Loops through every package where
+# classification == "auto" and implementation_status is null or
+# "todo", calling upgrade-one-package.sh per package.
 #
-# Usage: ./run-automated-upgrades.sh <repo-name> --run-id TICKET
+# Usage:
+#   run-automated-upgrades.sh <repo-name> --run-id TICKET
 
 set -e
 
@@ -10,222 +13,159 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
     cat << EOF
-Run automated upgrades for a repository (Stage 2 workflow)
+Run automated upgrades for one repo (Phase 2).
 
-Usage: ./run-automated-upgrades.sh <repo-name> --run-id TICKET [options]
-
-Arguments:
-  repo-name     Repository name (e.g., trade-imports-animals-frontend)
-
-Options:
-  --run-id TICKET        Run ID / Jira ticket (e.g. EUDPA-20578) [required]
-  --discover    Run discover-implementations first (default: yes)
-  --no-discover Skip discovery, use existing .todo files
-  --help        Show this help message
-
-Examples:
-  ./run-automated-upgrades.sh trade-imports-animals-frontend --run-id EUDPA-20578
-  ./run-automated-upgrades.sh trade-imports-animals-frontend --run-id EUDPA-20578 --no-discover
+Usage: ./run-automated-upgrades.sh <repo-name> --run-id TICKET
 
 What it does:
-  1. Runs discover-implementations.sh to find "no code changes" packages
-  2. Loops through packages sequentially, upgrading one at a time
-  3. Tracks progress with .todo -> .done/.failed markers
-  4. Shows final status with failures highlighted
-  5. Does NOT push to remote (commits stay local for review)
+  1. Pre-flight: git status clean.
+  2. Loops every auto-classified, not-yet-attempted package:
+     - upgrade-one-package.sh installs, tests, commits, or
+       rolls back + demotes to manual on failure.
+  3. Cascade failure (rollback also fails) stops the loop.
+  4. Final per-repo summary.
+
+State: ~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/packages.{repo}.json
 
 Rollback safety:
-  - Each upgrade is committed separately
-  - Failed upgrades are rolled back automatically
-  - Cascade failure detection stops the loop if rollback fails
-  - All commits stay local until you review and push
-
-Next steps after completion:
-  - Review commits: git -C ~/git/defra/trade-imports-animals/repos/<repo-name> log
-  - Review failed packages: ~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id TICKET --status failed
-  - Failed automated upgrades are auto-demoted to classification=manual in packages.{repo}.json
-  - Push when ready: git -C ~/git/defra/trade-imports-animals/repos/<repo-name> push
+  - Each upgrade is committed separately, locally only.
+  - Failed upgrades are reverted and their classification flipped to
+    "manual" with demoted_from_auto=true.
+  - Cascade detection stops the loop if rollback itself fails.
 EOF
     exit 0
 }
 
-RUN_DISCOVER=true
+REPO_NAME=""
 RUN_ID=""
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --help|-h)
-            show_help
-            ;;
-        --run-id)
-            RUN_ID="$2"
-            shift 2
-            ;;
-        --no-discover)
-            RUN_DISCOVER=false
-            shift
-            ;;
-        --discover)
-            RUN_DISCOVER=true
-            shift
-            ;;
+        --help|-h) show_help ;;
+        --run-id) RUN_ID="$2"; shift 2 ;;
+        --no-discover|--discover) shift ;;  # legacy no-ops; we read JSON
         *)
             if [[ -z "$REPO_NAME" ]]; then
-                REPO_NAME="$1"
-                shift
+                REPO_NAME="$1"; shift
             else
-                echo "Error: Unknown option: $1" >&2
-                exit 1
+                echo "Unknown arg: $1" >&2; exit 1
             fi
             ;;
     esac
 done
 
-if [[ -z "$REPO_NAME" ]]; then
-    echo "Error: Missing repository name" >&2
-    echo "Usage: ./run-automated-upgrades.sh <repo-name> --run-id TICKET" >&2
-    echo "Use --help for more information" >&2
-    exit 1
-fi
+[[ -z "$REPO_NAME" ]] && { echo "Missing repo-name" >&2; exit 1; }
+[[ -z "$RUN_ID" ]] && { echo "--run-id required" >&2; exit 1; }
 
-if [[ -z "$RUN_ID" ]]; then
-    echo "Error: --run-id TICKET is required (e.g. --run-id EUDPA-12345)" >&2
-    exit 1
-fi
-
-# Warn if RUN_ID doesn't look like a Jira ticket
 if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
-    echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
+    echo "Warning: --run-id '$RUN_ID' does not match Jira-ticket format" >&2
 fi
 
+PKGS_FILE="$HOME/git/defra/trade-imports-animals/workareas/npm-upgrades/$RUN_ID/$REPO_NAME/packages.${REPO_NAME}.json"
+[[ -f "$PKGS_FILE" ]] || { echo "Packages file not found: $PKGS_FILE" >&2; exit 1; }
+
+REPO_PATH="$HOME/git/defra/trade-imports-animals/repos/$REPO_NAME"
+[[ -d "$REPO_PATH" ]] || { echo "Repo not found: $REPO_PATH" >&2; exit 1; }
+
 echo "==========================================="
-echo "Automated NPM Upgrades - Stage 2"
+echo "Automated NPM Upgrades — $REPO_NAME"
 echo "==========================================="
-echo "Repository: $REPO_NAME"
-echo ""
 
-# Prerequisite: Check git status
-REPO_PATH="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")/repos/$REPO_NAME"
-
-if [[ ! -d "$REPO_PATH" ]]; then
-    echo "Error: Repository not found at $REPO_PATH" >&2
-    exit 1
-fi
-
+# Pre-flight: clean git tree.
 if [[ -n $(git -C "$REPO_PATH" status --porcelain -uno) ]]; then
     echo "Error: Repository has uncommitted changes" >&2
-    echo "" >&2
     git -C "$REPO_PATH" status --short -uno >&2
-    echo "" >&2
-    echo "Please commit or stash changes before running automated upgrades" >&2
+    echo "Commit or stash before running automated upgrades." >&2
     exit 1
 fi
-
 echo "✓ Git status clean"
-echo ""
+echo
 
-# Step 1: Discovery
-if [[ "$RUN_DISCOVER" == "true" ]]; then
-    echo "Step 1: Discovering automation candidates..."
-    "$SCRIPT_DIR/discover-implementations.sh" --repo "$REPO_NAME" --run-id "$RUN_ID"
-    echo ""
-else
-    echo "Step 1: Skipping discovery (using existing .todo files)"
-    echo ""
-fi
+# Initial backlog: every auto package with pending status.
+list_pending() {
+    "$SCRIPT_DIR/packages-list.sh" \
+        --run-id "$RUN_ID" --repo "$REPO_NAME" \
+        --classification auto --status pending --json
+}
 
-# Step 2: Check if there are packages to process
-IMPL_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")/workareas/npm-implementations/$RUN_ID/$REPO_NAME"
-
-if [[ ! -d "$IMPL_DIR" ]]; then
-    echo "Error: Implementation directory not found: $IMPL_DIR" >&2
-    echo "Run with --discover to create it" >&2
-    exit 1
-fi
-
-TODO_COUNT=$(find "$IMPL_DIR" -name "*.todo" 2>/dev/null | wc -l | tr -d ' ')
-
-if [[ "$TODO_COUNT" -eq 0 ]]; then
-    echo "No packages to process (no .todo files found)"
-    echo ""
-    "$SCRIPT_DIR/upgrade-status.sh" --repo "$REPO_NAME" --run-id "$RUN_ID"
+initial_count=$(list_pending | jq 'length')
+if [[ "$initial_count" -eq 0 ]]; then
+    echo "No auto-classified packages awaiting upgrade in $REPO_NAME."
     exit 0
 fi
 
-echo "Step 2: Processing $TODO_COUNT packages..."
-echo ""
+echo "Processing $initial_count package(s) sequentially..."
+echo
 
-# Step 3: Run upgrade loop
 PROCESSED=0
 SUCCESS=0
 FAILED=0
 
-while [[ -f $(find "$IMPL_DIR" -name "*.todo" 2>/dev/null | head -1) ]]; do
+while true; do
+    next_pkg=$(list_pending | jq -r 'first.package // empty')
+    [[ -z "$next_pkg" ]] && break
+
     ((PROCESSED++))
+    echo "=== Package $PROCESSED/$initial_count ==="
 
-    echo "=== Package $PROCESSED/$TODO_COUNT ==="
-
-    if "$SCRIPT_DIR/upgrade-one-package.sh" --repo "$REPO_NAME" --run-id "$RUN_ID"; then
-        ((SUCCESS++))
-        echo "✓ Success"
+    if "$SCRIPT_DIR/upgrade-one-package.sh" --run-id "$RUN_ID" --repo "$REPO_NAME" --package "$next_pkg"; then
+        # Check whether it succeeded or controlled-failed.
+        latest=$("$SCRIPT_DIR/packages-list.sh" \
+            --run-id "$RUN_ID" --repo "$REPO_NAME" --package "$next_pkg" --json | jq -r '.[0].implementation_status')
+        if [[ "$latest" == "done" ]]; then
+            ((SUCCESS++))
+            echo "✓ Success"
+        else
+            ((FAILED++))
+            echo "✗ Failed (demoted to manual)"
+        fi
     else
         EXIT_CODE=$?
         if [[ $EXIT_CODE -eq 1 ]]; then
-            # Cascade failure detected - stop immediately
-            echo "✗ CRITICAL: Cascade failure detected - stopping"
-            echo ""
-            echo "A package upgrade broke the test suite and rollback also failed."
-            echo "This indicates the repository is in an inconsistent state."
-            echo "Manual intervention required before continuing."
+            echo "✗ CRITICAL: Cascade failure — stopping" >&2
             exit 1
-        else
-            # Normal failure (tests failed, rollback succeeded)
-            ((FAILED++))
-            echo "✗ Failed (rolled back)"
         fi
+        ((FAILED++))
+        echo "✗ Failed (unexpected exit $EXIT_CODE)"
     fi
 
-    echo ""
+    echo
 done
 
-# Step 4: Show summary
 echo "==========================================="
-echo "Automated Upgrades Complete"
+echo "Automated upgrades complete for $REPO_NAME"
 echo "==========================================="
-echo ""
-echo "📊 Summary:"
-echo "  Processed: $PROCESSED packages"
+echo
+echo "  Processed: $PROCESSED"
 echo "  ✅ Success: $SUCCESS"
-echo "  ❌ Failed: $FAILED"
-echo ""
+echo "  ❌ Failed:  $FAILED"
+echo
 
-# Step 5: Show detailed status
-"$SCRIPT_DIR/upgrade-status.sh" --repo "$REPO_NAME" --run-id "$RUN_ID"
+"$SCRIPT_DIR/packages-counts.sh" --run-id "$RUN_ID" --repo "$REPO_NAME"
 
-echo ""
+echo
 echo "==========================================="
 echo "Next Steps"
 echo "==========================================="
-echo ""
+echo
 
 if [[ $SUCCESS -gt 0 ]]; then
     echo "✅ Review successful upgrades:"
     echo "   git -C ~/git/defra/trade-imports-animals/repos/$REPO_NAME log --oneline -$SUCCESS"
     echo "   npm --prefix ~/git/defra/trade-imports-animals/repos/$REPO_NAME test"
-    echo ""
+    echo
 fi
 
 if [[ $FAILED -gt 0 ]]; then
     echo "❌ Failed packages auto-demoted to classification=manual:"
     echo "   ~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id $RUN_ID --repo $REPO_NAME --status failed"
-    echo ""
+    echo
 fi
 
 if [[ $SUCCESS -gt 0 ]]; then
     echo "🚀 Push when ready:"
     echo "   git -C ~/git/defra/trade-imports-animals/repos/$REPO_NAME push origin <branch-name>"
-    echo ""
+    echo
 fi
 
 echo "📊 Overall status:"

@@ -252,11 +252,9 @@ Shared shell scripts called by skills via
 | `tools/npm/packages-counts.sh` | --run-id TICKET [--repo R] [--json] | Counts by classification × status × risk |
 | `tools/npm/packages-set-classification.sh` | --run-id TICKET --repo R --package PKG --classification auto\|manual --risk LOW\|MEDIUM\|HIGH --safe-for-automation true\|false --rationale "..." [--files-affected CSV] [--changes-required "..."] [--changelog-url URL] [--migration-guide-url URL] [--demoted-from-auto true\|false] | Set PACKAGE_PLANNER fields on one package |
 | `tools/npm/packages-set-status.sh` | --run-id TICKET --repo R --package PKG --status todo\|inprogress\|done\|failed [--failure-reason "..."] [--commit-sha SHA] | Set implementation_status (+ commit_sha / failure_reason) |
-| `tools/npm/run-automated-upgrades.sh` | repo-name --run-id TICKET [--no-discover] | Phase 2 per-repo runner |
-| `tools/npm/upgrade-status.sh` | --run-id TICKET [--repo NAME] [--json] | Combined status (legacy — prefer `packages-counts.sh`) |
-| `tools/npm/analyze-migration-plans.sh` | --run-id TICKET [--json] | Legacy planning status (will be removed) |
-| `tools/npm/discover-implementations.sh` | --run-id TICKET [--repo NAME] [--json] | Legacy: marker-file population (replaced by JSON state) |
-| `tools/npm/discover-manual-upgrades.sh` | --run-id TICKET [--repo NAME] [--json] | Legacy manual list (use `packages-list.sh --classification manual`) |
+| `tools/npm/run-automated-upgrades.sh` | repo-name --run-id TICKET | Phase 2 per-repo runner (JSON-state-driven) |
+| `tools/npm/upgrade-one-package.sh` | --run-id TICKET --repo R --package PKG | Phase 2 internal: install + test + commit + rollback |
+| `tools/npm/run-manual-upgrade.sh` | --run-id TICKET --repo R --package PKG | Phase 3 per-package manual runner (spawned by WALKER) |
 | **govuk** | | |
 | `tools/govuk/start-upgrade.sh` | --ticket EUDPA-X \| --branch B [--target V] | Phase 1 dispatcher: `.run-meta.json` + branch setup + version discovery |
 | `tools/govuk/discover-repos.sh` | --run-id TICKET [--branch B] [--target V] [--json] | Phase 1: write run-level `.run-meta.json` (in-scope repos) |
@@ -288,8 +286,7 @@ workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.json
 workareas/ticket-creation/<slug>/                  → draft.md
 workareas/ticket-planning/EUDPA-X/                 → plan.md
 workareas/ticket-refinement/EUDPA-X/               → review.md, repos/
-workareas/npm-upgrades/EUDPA-X/{repo}/             → upgrade__{pkg}__{cur}__{tgt}.{auto|manual}.md, .upgrades-meta.json
-workareas/npm-implementations/EUDPA-X/{repo}/      → implement__{pkg}__{current}.{todo|done|failed}
+workareas/npm-upgrades/EUDPA-X/{repo}/             → packages.{repo}.json, .upgrades-meta.json, best-practices.md, .context/{pkg}/
 workareas/govuk-upgrades/EUDPA-X/                  → .run-meta.json
 workareas/govuk-upgrades/EUDPA-X/{repo}/           → versions.{repo}.json, CHANGELOG.md, version__{v}.changelog.md, best-practices.md
 workareas/shared/EUDPA-X/                          → review handoff artifacts (tracked; committed to chore/EUDPA-X-review-handoff)
