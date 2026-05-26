@@ -4,6 +4,17 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 
 **Critical:** Plan is a **first impression**. Mark uncertainty with `[ASSUMPTION]` and `[NEEDS VERIFICATION]`.
 
+## Bash call hygiene
+
+**Rule: one command per Bash call.** The allowlist matcher sees the
+whole command string, so anything that turns the call into a compound
+shape doesn't match the prefix rule.
+
+- No `&&` / `;` / `|` between commands — separate Bash calls instead.
+- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `/Users/<you>/git/...` — type `~/`, don't resolve it.
+
 ## Workflow
 
 ### 1. Gather Context

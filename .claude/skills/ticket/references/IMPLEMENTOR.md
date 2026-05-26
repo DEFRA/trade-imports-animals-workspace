@@ -4,6 +4,17 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 **Critical:** Plan is a **starting point**. Verify assumptions, adapt as needed, document deviations.
 
+## Bash call hygiene
+
+**Rule: one command per Bash call.** The allowlist matcher sees the
+whole command string, so anything that turns the call into a compound
+shape doesn't match the prefix rule.
+
+- No `&&` / `;` / `|` between commands — separate Bash calls instead.
+- No `cd <dir> && cmd ...` — use `git -C <dir>`, `npm --prefix <dir>`, `mvn -f <dir>/pom.xml`.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `/Users/<you>/git/...` — type `~/`, don't resolve it.
+
 ## Before You Start
 
 1. Read plan at `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
@@ -31,9 +42,6 @@ npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests
 ## Implementation
 
 ### Branch Setup
-
-Each command is a separate Bash call — `git -C <repo>` not
-`cd <repo> && git ...`.
 
 ```bash
 git -C ~/git/defra/trade-imports-animals/repos/<repo-name> fetch origin
