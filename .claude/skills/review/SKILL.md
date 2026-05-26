@@ -308,12 +308,20 @@ Summary:
 
 Index: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md
 Repo reviews: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
+
+Next: run `walk review EUDPA-XXXXX` to triage items. (Don't hand-edit
+the markdown items table — it's rendered from items.{repo}.json by
+render-items.sh and gets overwritten.)
 ```
 
-**Hand-marking shortcut:** open the items table in `review.{repo}.md`
-and type `Fix` or `Won't Fix` directly into the Disposition column for
-items you have a clear answer on. Then run `walk review EUDPA-XXXXX` —
-the walker skips those and only presents items still pending.
+**Bulk-marking shortcut:** the markdown `## Items` table in
+`review.{repo}.md` is a rendered view of `items.{repo}.json` —
+hand-edits there get overwritten by the next `render-items.sh`.
+To pre-decide items before walking, call `review-mark.sh` directly
+for each (or run `walk review EUDPA-XXXXX` and rattle through with
+F / W / D keystrokes — that's normally faster). The walker only
+shows items with `disposition: null`, so pre-marked items are
+skipped.
 
 ---
 

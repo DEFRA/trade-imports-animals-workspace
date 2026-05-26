@@ -25,7 +25,7 @@ Apply any filters from the trigger:
 
 If the fix list is empty:
 ```
-No Fix-disposition items pending for EUDPA-XXXXX [{repo filter}]. Run `walk review EUDPA-XXXXX` first or hand-mark items.
+No Fix-disposition items pending for EUDPA-XXXXX [{repo filter}]. Run `walk review EUDPA-XXXXX` first, or call `review-mark.sh --disposition Fix` directly for items you've already triaged.
 ```
 And stop.
 
