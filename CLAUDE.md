@@ -200,7 +200,7 @@ Shared shell scripts called by skills via
 | `tools/github-actions/trigger-workflow.sh` | repo workflow-file [branch] [key=value...] | Trigger workflow |
 | `tools/github-actions/list-runs.sh` | repo [branch] [workflow] | List recent runs |
 | **review** | | |
-| `tools/review/detect-mode.sh` | EUDPA-X | Print `FRESH` or `REFRESH` (Step 0) |
+| `tools/review/start-review.sh` | EUDPA-X | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
 | `tools/review/prepare-review.sh` | EUDPA-X [--json] | Setup workspace |
 | `tools/review/verify-coverage.sh` | EUDPA-X [--json] | Check coverage |
 | `tools/review/verify-consistency.sh` | EUDPA-X [--json] | Check consistency |

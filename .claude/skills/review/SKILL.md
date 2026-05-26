@@ -63,39 +63,42 @@ subagents receive — so workers can write their on-disk artifacts.
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
 beginning `Follow the instructions in $TRADE_IMPORTS_WORKSPACE/.claude/skills/review/references/<NAME>.md.`
 
-## Step 0: Detect Mode
+## Step 0: Start the review
 
 ```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/detect-mode.sh EUDPA-XXXXX
+$TRADE_IMPORTS_WORKSPACE/tools/review/start-review.sh EUDPA-XXXXX
 ```
 
-Prints `FRESH` (no prior review) or `REFRESH` (workspace exists with a
-`review-index.md`). Branch on the value:
+Single dispatch — detects mode and runs the appropriate first-step
+setup script.
 
-- `FRESH` → Fresh Review, Step 1.
-- `REFRESH` → Refresh Review, Step R1.
+First line of output is `MODE: FRESH` or `MODE: REFRESH`. Branch on it:
+
+- `MODE: FRESH` → setup ran `prepare-review.sh`; go to Fresh Review,
+  Step 2.
+- `MODE: REFRESH` → setup ran `refresh/scope.sh --write-snapshot`; go to
+  Refresh Review, Step R3.5.
+
+**On Claude Code auto-backgrounding:** for fresh reviews the setup
+clones repos in parallel but can still take 30–90s. If the Bash tool
+auto-backgrounds it, **wait for the harness's `task-notification`
+(status: completed) — do NOT poll the PID file or `tail` the output**.
+The notification arrives automatically.
 
 ---
 
 # FRESH REVIEW
 
-## Step 1: Prepare Workspace
+## Step 1: Workspace prepared (by Step 0)
 
-```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/prepare-review.sh EUDPA-XXXXX
-```
+`start-review.sh` already ran `prepare-review.sh` and produced:
 
-Creates `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/` with ticket.md,
-repos/, file-reviews/ placeholders, and `.review-meta.json` (the latter
-includes detected tech + best-practices paths under
-`$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`).
+- `$TRADE_IMPORTS_WORKSPACE/workareas/reviews/EUDPA-XXXXX/` with
+  ticket.md, repos/, file-reviews/ placeholders, and
+  `.review-meta.json` (detected tech + best-practices paths under
+  `$TRADE_IMPORTS_WORKSPACE/docs/best-practices/`).
 
-**On Claude Code auto-backgrounding:** this script clones repos in
-parallel but can still take 30–90s. If the Bash tool auto-backgrounds
-it, **wait for the harness's `task-notification` (status: completed) —
-do NOT poll the PID file or `tail` the output**. The notification
-arrives automatically; manual polling is wasteful and operates on
-unstable internal harness state.
+Proceed to Step 2.
 
 ## Step 2: Review Each File
 
@@ -299,14 +302,13 @@ Used when `review-index.md` already exists. Updates the existing doc in
 place — verifies prior feedback has been addressed, catches new issues
 after further work or merge conflicts.
 
-## Step R1-R3: Build Refresh Scope
+## Step R1-R3: Refresh scope built (by Step 0)
 
-```bash
-$TRADE_IMPORTS_WORKSPACE/tools/review/refresh/scope.sh EUDPA-XXXXX --write-snapshot
-```
+`start-review.sh` already ran `refresh/scope.sh --write-snapshot` and
+emitted a JSON object on stdout. Read it from there.
 
-Output is a JSON object on stdout. Each `repos[]` entry has `prior_sha`,
-`current_sha`, `no_changes`, and `lists.{A,B,C,D}`:
+Each `repos[]` entry has `prior_sha`, `current_sha`, `no_changes`,
+and `lists.{A,B,C,D}`:
 
 - **List A** — `[{ file, old_sha, new_sha }]` — file changed in window, not merge-resolved
 - **List B** — `[{ id, file, line, issue, fix, disposition, status, ... }]` — open items whose file did *not* change
@@ -484,6 +486,7 @@ All under `$TRADE_IMPORTS_WORKSPACE/tools/review/`:
 
 | Script | Purpose |
 |---|---|
+| `start-review.sh` | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
 | `prepare-review.sh` | Fresh Step 1 workspace setup; transitively seeds best-practices via `detect-tech.sh` |
 | `verify-coverage.sh` | Fresh Step 3 coverage gate |
 | `verify-consistency.sh` | Fresh Step 4 consistency gate |
