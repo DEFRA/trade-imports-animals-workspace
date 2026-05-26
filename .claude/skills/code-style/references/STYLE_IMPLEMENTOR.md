@@ -116,7 +116,7 @@ cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm ru
 
 **If unit tests fail:**
 
-- Revert the file: `cd ~/git/defra/trade-imports-animals/repos/{repo} && git checkout -- {file}`
+- Revert the file: `git -C ~/git/defra/trade-imports-animals/repos/{repo} checkout -- {file}`
 - For each item in `applicable_items`:
   ```bash
   ~/git/defra/trade-imports-animals/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \

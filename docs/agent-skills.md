@@ -80,11 +80,19 @@ trigger a permission prompt:
 | `tools/review/foo.sh ...` (relative) | matcher sees `tools/...`, not `~/git/...` | use the full `~/git/...` form |
 | `tools/review/foo.sh ... && tools/review/bar.sh ...` | chained commands are matched as a single string | run as two separate Bash calls |
 | `$TRADE_IMPORTS_WORKSPACE/tools/review/foo.sh ...` | "Contains simple_expansion" check (GH#51001) | use the literal `~/git/...` form |
+| `cd <dir> && git log/diff/checkout ...` | Claude Code-specific safety check: cd-then-git could run untrusted hooks | `git -C <dir> log/diff/checkout ...` |
 | `python3 -c "import json..."` to query workspace JSON | not allowlisted; reaches for a tool the workspace doesn't need | use `jq`, or the helpers under `tools/` |
+| `awk '...' file` or `sed -n '...' file` to peek at file contents | spawns a prompt for an ad-hoc command | use the Read tool with `offset` + `limit` |
+| `tools/review/foo.sh ... \| awk -F'\t' '$3 == "..."'` | the pipe falls outside the allowlist | prefer a `--filter` flag on the helper (extend the helper if missing) over piping |
 
-In short: **one Bash call per script invocation, starting with the
-literal `~/git/defra/trade-imports-animals/...` path**. The skill
-prose models this in every example — follow the model.
+In short:
+
+- **One Bash call per script invocation**, starting with the literal `~/git/defra/trade-imports-animals/...` path.
+- **`git -C <dir>` for git operations on workspace repos** — never `cd <dir> && git ...`.
+- **Read tool for file inspection**, not awk/sed/grep pipes.
+- **Filter at the script, not at the pipe** — if a helper lacks the filter you need, propose extending it.
+
+The skill prose models this in every example — follow the model.
 ```
 
 Worker personas are addressed by an absolute `references/<NAME>.md` path

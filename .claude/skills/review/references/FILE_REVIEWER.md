@@ -84,8 +84,7 @@ In REFRESH / MERGE_RESOLVED only, additionally:
 3. **Prior consolidated items for this file** — this is the most
    important context:
    ```bash
-   ~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} \
-     | awk -F'\t' '$3 == "{file-path}"'
+   ~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --repo {repo} --file {file-path}
    ```
    Columns: `repo  id  file  line  severity  category  issue  fix  disposition  status  notes`.
 

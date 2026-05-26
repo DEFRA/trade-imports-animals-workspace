@@ -16,13 +16,15 @@ TICKET=""
 REPO_FILTER=""
 DISPOSITION_FILTER=""
 STATUS_FILTER=""
+FILE_FILTER=""
 JSON_OUTPUT=false
 
 usage() {
     cat <<EOF
-Usage: $0 EUDPA-XXXXX [--repo REPO] [--filter DISPOSITION] [--status STATUS] [--json]
+Usage: $0 EUDPA-XXXXX [--repo REPO] [--file PATH] [--filter DISPOSITION] [--status STATUS] [--json]
 
   --repo R         Limit to one repo
+  --file P         Limit to items for one file (exact path match)
   --filter F       Filter by Disposition: pending|fix|wont-fix|discuss|auto-resolved
   --status S       Filter by Status: not-done|done|failed
   --json           Output JSON array instead of TSV
@@ -33,6 +35,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case $1 in
         --repo) REPO_FILTER="$2"; shift 2 ;;
+        --file) FILE_FILTER="$2"; shift 2 ;;
         --filter) DISPOSITION_FILTER="$2"; shift 2 ;;
         --status) STATUS_FILTER="$2"; shift 2 ;;
         --json) JSON_OUTPUT=true; shift ;;
@@ -87,13 +90,15 @@ filtered=$(jq -s \
     --arg disp_match "$DISPOSITION_MATCH" \
     --arg stat_filter "$STATUS_FILTER" \
     --arg stat_match "$STATUS_MATCH" \
+    --arg file_filter "$FILE_FILTER" \
     '
     [.[] as $f
         | $f.items[]
         | . + {repo: $f.repo}
         | select(
             ($disp_filter == "" or (.disposition // "") == $disp_match) and
-            ($stat_filter == "" or (.status // "") == $stat_match)
+            ($stat_filter == "" or (.status // "") == $stat_match) and
+            ($file_filter == "" or .file == $file_filter)
           )
     ]' "${files[@]}")
 

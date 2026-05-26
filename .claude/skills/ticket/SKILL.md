@@ -35,6 +35,9 @@ by name via the Task tool.
 **Bash call hygiene** (avoid permission prompts):
 - Invoke scripts via the literal `~/git/defra/trade-imports-animals/tools/...` path. Never `cd <workspace> && tools/...` or bare `tools/...` — neither matches the allowlist.
 - One Bash call per script invocation. Don't chain with `&&` or `;` — the matcher treats the whole string as a single command, and chained forms aren't allowlisted.
+- Use `git -C <dir> ...` for git on workspace repos. Never `cd <dir> && git ...` (Claude Code's safety check blocks it — cd-then-git could run untrusted hooks).
+- Use the Read tool (with `offset` + `limit`) to peek at file contents — not `awk`, `sed -n`, or `grep -n` pipes.
+- Filter at the script, not at the pipe. If a helper lacks the `--filter` / `--file` / `--repo` flag you need, propose extending it; don't reach for `tools/... | awk`.
 - Don't reach for `python3 -c "..."` or other ad-hoc tools to query workspace JSON — use `jq` or the helpers under `tools/`.
 
 Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".

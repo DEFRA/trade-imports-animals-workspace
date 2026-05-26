@@ -100,7 +100,7 @@ Then read the file you just created. Surefire also writes per-class
 reports to `target/surefire-reports/`.
 
 **If unit tests fail:**
-- Revert: `cd ~/git/defra/trade-imports-animals/repos/{repo} && git checkout -- {file}`
+- Revert: `git -C ~/git/defra/trade-imports-animals/repos/{repo} checkout -- {file}`
 - Return: `FAILED: #N — unit tests broke after change, reverted`
 
 **If E2E tests fail:**
