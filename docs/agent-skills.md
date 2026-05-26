@@ -83,6 +83,7 @@ trigger a permission prompt:
 | `cd <dir> && git log/diff/checkout ...` | Claude Code-specific safety check: cd-then-git could run untrusted hooks | `git -C <dir> log/diff/checkout ...` |
 | `python3 -c "import json..."` to query workspace JSON | not allowlisted; reaches for a tool the workspace doesn't need | use `jq`, or the helpers under `tools/` |
 | `awk '...' file` or `sed -n '...' file` to peek at file contents | spawns a prompt for an ad-hoc command | use the Read tool with `offset` + `limit` |
+| `find <dir> -name X -exec cat {} \;` to read a file by name | Claude Code refuses to prefix-allowlist any `-exec` form (it can run anything) | use the Glob tool to locate the file, then the Read tool to read it |
 | `tools/review/foo.sh ... \| awk -F'\t' '$3 == "..."'` | the pipe falls outside the allowlist | prefer a `--filter` flag on the helper (extend the helper if missing) over piping |
 
 In short:
