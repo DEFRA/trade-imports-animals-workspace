@@ -381,6 +381,43 @@ cat > "$REVIEW_DIR/.review-meta.json" << EOF
 }
 EOF
 
+# Bake the per-repo applicable best-practices into a single file per
+# repo so file-reviewers (and consistency reviewers) can Read once
+# without invoking a helper or doing per-path filesystem walks.
+log ""
+log "Concatenating best-practices per repo..."
+mkdir -p "$REVIEW_DIR/best-practices"
+echo "$meta_prs_json" | jq -c '.[] | {repo, bps: (.tech.best_practices // [])}' \
+| while IFS= read -r entry; do
+    repo=$(echo "$entry" | jq -r '.repo')
+    out="$REVIEW_DIR/best-practices/$repo.md"
+    {
+        echo "# Best practices applicable to $repo"
+        echo
+        echo "Concatenated from \`docs/best-practices/\` at prepare-review time."
+        echo "Apply these standards when reviewing files in this repo."
+        echo
+        echo "$entry" | jq -r '.bps[]' | while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            src="$TRADE_IMPORTS_WORKSPACE/$path"
+            if [[ -f "$src" ]]; then
+                echo
+                echo "---"
+                echo
+                echo "## Source: \`$path\`"
+                echo
+                cat "$src"
+            else
+                echo
+                echo "---"
+                echo
+                echo "## Source: \`$path\` (missing — check detect-tech.sh)"
+            fi
+        done
+    } > "$out"
+    log "  Created: best-practices/$repo.md"
+done
+
 # Create file review placeholders (JSON-canonical, schema in
 # .claude/skills/review/assets/file-review-schema.md). Each placeholder
 # starts with verdict=null and an empty todos array; the file-reviewer

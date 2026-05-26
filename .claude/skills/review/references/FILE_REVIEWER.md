@@ -66,14 +66,17 @@ neither.
 
 In every mode:
 
-1. **Per-PR best practices.** Read
-   `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/.review-meta.json`
-   and find the entry where `prs[].repo` matches your assigned repo.
-   Load every file listed under `prs[].tech.best_practices` — those
-   are the standards that apply to *your* repo. Don't load the
-   top-level `best_practices` union (it mixes in standards for the
-   other repos in the ticket). Cite the ones you applied with
-   `--best-practice <path>` on `file-review-add-item.sh`.
+1. **Per-PR best practices.** Read one file:
+   ```
+   ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/best-practices/{repo}.md
+   ```
+   `prepare-review.sh` already concatenated every best-practice file
+   applicable to your repo there. Don't walk
+   `.review-meta.json` or read individual `docs/best-practices/*.md`
+   files — the bundle is the single source. When citing a rule on
+   `file-review-add-item.sh --best-practice <path>`, use the relative
+   path shown in the bundle's `## Source: docs/best-practices/...`
+   headings (e.g. `node/pino-logging.md`).
 2. **Ticket.** Read `ticket.md` for AC and intent.
 
 In REFRESH / MERGE_RESOLVED only, additionally:
