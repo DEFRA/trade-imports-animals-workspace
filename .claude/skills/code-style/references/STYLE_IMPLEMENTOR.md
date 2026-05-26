@@ -66,13 +66,13 @@ If `applicable_items` is empty (every item is already fixed):
 Run unit tests in the relevant repo:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/style-pre-{repo}.log 2>&1
 ```
 
 Run E2E tests:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/style-pre-e2e.log 2>&1
 ```
 
 Read each log file once.
@@ -124,13 +124,13 @@ After all edits, run Prettier to avoid pre-commit hook failures:
 Run unit tests:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test 2>&1 > /tmp/style-post-{repo}.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/style-post-{repo}.log 2>&1
 ```
 
 Run E2E tests:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/style-post-e2e.log 2>&1
 ```
 
 **If unit tests fail:**
