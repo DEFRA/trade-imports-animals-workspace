@@ -88,10 +88,13 @@ Extract: summary, description, AC, linked tickets/pages, comments.
 
 Clone relevant repos:
 
+Each command is a separate Bash call:
+
 ```bash
 mkdir -p ~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/repos
-cd ~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/repos
-gh repo clone DEFRA/<repo-name> -- --depth 1
+```
+```bash
+gh repo clone DEFRA/<repo-name> ~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/repos/<repo-name> -- --depth 1
 ```
 
 ### Common Repos

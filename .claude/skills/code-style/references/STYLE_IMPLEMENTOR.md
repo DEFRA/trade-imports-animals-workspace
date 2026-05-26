@@ -10,6 +10,25 @@ helper in `docs/agent-skills.md`.
 
 ---
 
+## Bash call hygiene
+
+**Rule: one command per Bash call.** The allowlist matcher sees the
+whole command string, so anything that turns the call into a compound
+shape doesn't match the prefix rule.
+
+- No `&&` / `;` / `|` between commands — separate Bash calls instead.
+- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
+- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
+- No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
+
+**Prefer LLM-native tools over Bash combos:**
+
+- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
+- File location → Glob, not `find -exec`.
+- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
+
 ## Inputs (from spawn prompt)
 
 - **Ticket:** EUDPA-XXXXX
@@ -47,13 +66,13 @@ If `applicable_items` is empty (every item is already fixed):
 Run unit tests in the relevant repo:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test 2>&1 > /tmp/style-pre-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local 2>&1 > /tmp/style-pre-e2e.log; echo $?
 ```
 
 Read each log file once.
@@ -95,7 +114,7 @@ rule):
 After all edits, run Prettier to avoid pre-commit hook failures:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npx prettier --write {file}
+~/git/defra/trade-imports-animals/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals/repos/{repo}/{file}
 ```
 
 ---
@@ -105,13 +124,13 @@ cd ~/git/defra/trade-imports-animals/repos/{repo} && npx prettier --write {file}
 Run unit tests:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test 2>&1 > /tmp/style-post-{repo}.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test 2>&1 > /tmp/style-post-{repo}.log; echo $?
 ```
 
 Run E2E tests:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local 2>&1 > /tmp/style-post-e2e.log; echo $?
 ```
 
 **If unit tests fail:**
@@ -134,12 +153,15 @@ cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm ru
 
 ## Step 5: Commit
 
-One commit per file. Use the Item IDs in the message:
+One commit per file. Use the Item IDs in the message. Each git op
+is a separate Bash call — no `cd && git`.
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo}
-git add {file}
-git commit -m "style(EUDPA-XXXXX): {file} — {N} items
+git -C ~/git/defra/trade-imports-animals/repos/{repo} add {file}
+```
+
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/{repo} commit -m "style(EUDPA-XXXXX): {file} — {N} items
 
 Items: #{id1}, #{id2}, #{id3}
 
@@ -148,12 +170,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 If the pre-commit hook fails due to Prettier:
 ```bash
-npx prettier --write {file}
-git add {file}
+~/git/defra/trade-imports-animals/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals/repos/{repo}/{file}
+```
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/{repo} add {file}
 ```
 Then create a NEW commit (do NOT amend).
 
-Capture the short SHA: `git rev-parse --short HEAD`.
+Capture the short SHA:
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/{repo} rev-parse --short HEAD
+```
 
 ---
 

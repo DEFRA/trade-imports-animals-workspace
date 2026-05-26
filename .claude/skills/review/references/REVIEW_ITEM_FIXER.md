@@ -9,6 +9,25 @@ helper in `docs/agent-skills.md`.
 
 ---
 
+## Bash call hygiene
+
+**Rule: one command per Bash call.** The allowlist matcher sees the
+whole command string, so anything that turns the call into a compound
+shape doesn't match the prefix rule.
+
+- No `&&` / `;` / `|` between commands — separate Bash calls instead.
+- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
+- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
+- No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
+
+**Prefer LLM-native tools over Bash combos:**
+
+- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
+- File location → Glob, not `find -exec`.
+- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
+
 ## Inputs (from spawn prompt)
 
 - **Ticket:** EUDPA-XXXXX
@@ -60,7 +79,7 @@ After editing Node.js files, run Prettier to avoid pre-commit hook
 failures:
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npx prettier --write {file}
+~/git/defra/trade-imports-animals/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals/repos/{repo}/{file}
 ```
 
 ---
@@ -74,13 +93,13 @@ streaming output or re-run to check partial results.
 
 Unit tests:
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests (run after any change that could affect the user journey):
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created for the summary line only. If
 failures exist, do NOT grep the output — instead find and read the
@@ -94,7 +113,7 @@ Read each `error-context.md` to diagnose what actually failed.
 
 ### Java repo
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend && mvn test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml test > /tmp/backend-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created. Surefire also writes per-class
 reports to `target/surefire-reports/`.
@@ -112,20 +131,26 @@ reports to `target/surefire-reports/`.
 
 ## Step 5: Commit
 
+Each git operation is a separate Bash call — no `cd && git`.
+
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo}
-git add {file}
-git commit -m "fix(EUDPA-XXXXX): [concise description of what was fixed]
+git -C ~/git/defra/trade-imports-animals/repos/{repo} add {file}
+```
+
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/{repo} commit -m "fix(EUDPA-XXXXX): [concise description of what was fixed]
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 ```
 
 If the pre-commit hook fails due to Prettier:
 ```bash
-npx prettier --write {file}
-git add {file}
+~/git/defra/trade-imports-animals/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals/repos/{repo}/{file}
 ```
-Then retry the commit.
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/{repo} add {file}
+```
+Then retry the commit (a NEW commit; do NOT `--amend`).
 
 ---
 

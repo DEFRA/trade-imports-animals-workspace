@@ -22,10 +22,20 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 ### Branch Setup
 
+Each command is a separate Bash call — `git -C <repo>` not
+`cd <repo> && git ...`.
+
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/<repo-name>
-git fetch origin && git checkout <base-branch> && git pull
-git checkout -b feature/EUDPA-XXXXX-<description>
+git -C ~/git/defra/trade-imports-animals/repos/<repo-name> fetch origin
+```
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/<repo-name> checkout <base-branch>
+```
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/<repo-name> pull
+```
+```bash
+git -C ~/git/defra/trade-imports-animals/repos/<repo-name> checkout -b feature/EUDPA-XXXXX-<description>
 ```
 
 ### For Each Step

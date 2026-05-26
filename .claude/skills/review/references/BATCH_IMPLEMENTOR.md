@@ -54,13 +54,13 @@ grep streaming output or re-run to check partial results.
 
 Unit tests:
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo} && npm test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/{repo}-unit-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created.
 
 E2E tests:
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests && npm run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/e2e-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created for the summary. If failures exist,
 do NOT grep the console output — find and read the structured Playwright
@@ -73,7 +73,7 @@ find ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/test-re
 Runs surefire (unit `*Test`) and failsafe (integration `*IT`,
 Testcontainers-backed) in one pass:
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend && mvn verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
+mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify > /tmp/backend-tests-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 Then read the file you just created. Confirm both `Tests run:` totals
 (surefire and failsafe) and `BUILD SUCCESS`.

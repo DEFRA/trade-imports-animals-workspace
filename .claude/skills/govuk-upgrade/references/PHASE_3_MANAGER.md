@@ -62,9 +62,10 @@ For the final target version, restore the original constraint style
 ### 2d. Install and test
 
 ```bash
-cd ~/git/defra/trade-imports-animals/repos/{repo-name}
-npm install
-npm test
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo-name} install
+```
+```bash
+npm --prefix ~/git/defra/trade-imports-animals/repos/{repo-name} test
 ```
 
 ### 2e. On success
