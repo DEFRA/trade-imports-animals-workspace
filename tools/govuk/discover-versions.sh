@@ -1,20 +1,18 @@
 #!/bin/bash
-# Discover govuk-frontend versions between current and target, create upgrade workspace
+# Discover govuk-frontend versions between current and target, create upgrade workspace.
 # Usage: ./discover-versions.sh <repo-path> --run-id TICKET [options]
 #
-# Creates zero-byte marker files for each intermediate version.
-# Agents then process these files to research what changes are needed.
+# Seeds versions.{repo}.json with one entry per intermediate semver between
+# current and target. Caches the upstream CHANGELOG.md.
 #
 # Options:
 #   --run-id TICKET        Run ID / Jira ticket (e.g. EUDPA-20578) [required]
 #   --target VERSION       Target govuk-frontend version (default: latest stable)
 #   --json                 Output JSON format instead of human-readable
-#   --force                Force re-run (re-fetch changelog, recreate stubs)
+#   --force                Force re-run (re-fetch changelog, reseed JSON)
 #   --help                 Show help message
 
 set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 REPO_PATH=""
 RUN_ID=""
@@ -38,13 +36,12 @@ Options:
   --run-id TICKET        Run ID / Jira ticket (e.g. EUDPA-20578) [required]
   --target VERSION       Target govuk-frontend version (default: latest stable)
   --json                 Output JSON format instead of human-readable
-  --force                Force re-run (re-fetch changelog, recreate stubs)
+  --force                Force re-run (re-fetch changelog, reseed JSON)
   --help                 Show this help message
 
-Examples:
-  ./discover-versions.sh ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend --run-id EUDPA-20578
-  ./discover-versions.sh ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend --run-id EUDPA-20578 --target 6.1.0
-  ./discover-versions.sh ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend --run-id EUDPA-20578 --json
+Schema:
+  workareas/govuk-upgrades/{run-id}/{repo}/versions.{repo}.json
+  See .claude/skills/govuk-upgrade/assets/version-state-schema.md.
 
 Environment:
   Requires: jq, curl, npm
@@ -52,7 +49,6 @@ EOF
     exit 0
 }
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --help) show_help ;;
@@ -92,21 +88,17 @@ error() {
     exit 1
 }
 
-# Validate required arguments
 [[ -z "$RUN_ID" ]] && error "--run-id TICKET is required (e.g. --run-id EUDPA-12345)"
 [[ -z "$REPO_PATH" ]] && error "Repository path is required. Use --help for usage information"
 
-# Warn if RUN_ID doesn't look like a Jira ticket
 if [[ ! "$RUN_ID" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "Warning: --run-id '$RUN_ID' does not match expected Jira ticket format (e.g. PROJ-123)" >&2
 fi
 
-# Check dependencies
 command -v jq >/dev/null 2>&1 || error "jq is required for JSON processing"
 command -v curl >/dev/null 2>&1 || error "curl is required"
 command -v npm >/dev/null 2>&1 || error "npm is required"
 
-# Validate repository
 [[ ! -d "$REPO_PATH" ]] && error "Repository path does not exist: $REPO_PATH"
 REPO_PATH=$(cd "$REPO_PATH" && pwd)
 
@@ -115,16 +107,18 @@ PACKAGE_JSON="$REPO_PATH/package.json"
 
 REPO_NAME=$(basename "$REPO_PATH")
 
-# Strip semver prefix (^, ~, >=, etc.)
-strip_prefix() {
-    echo "$1" | sed 's/^[^0-9]*//'
-}
+# Read raw constraint, split prefix and bare version.
+CURRENT_RAW=$(jq -r '.dependencies["govuk-frontend"] // .devDependencies["govuk-frontend"] // empty' "$PACKAGE_JSON")
+[[ -z "$CURRENT_RAW" ]] && error "govuk-frontend not found in dependencies or devDependencies in $PACKAGE_JSON"
 
-# Semver comparison: returns 0 (true) if $1 > $2
+# Split prefix (leading non-digits) from bare version.
+ORIGINAL_PREFIX=$(printf '%s' "$CURRENT_RAW" | sed -n 's/^\([^0-9]*\).*/\1/p')
+CURRENT=$(printf '%s' "$CURRENT_RAW" | sed 's/^[^0-9]*//')
+
 semver_gt() {
     local a b a1 a2 a3 b1 b2 b3
-    a=$(strip_prefix "$1")
-    b=$(strip_prefix "$2")
+    a=$(printf '%s' "$1" | sed 's/^[^0-9]*//')
+    b=$(printf '%s' "$2" | sed 's/^[^0-9]*//')
     IFS='.' read -r a1 a2 a3 <<< "$a"
     IFS='.' read -r b1 b2 b3 <<< "$b"
     a3="${a3:-0}"; b3="${b3:-0}"
@@ -136,23 +130,21 @@ semver_gt() {
     return 1
 }
 
-# Get current version from package.json
-CURRENT_RAW=$(jq -r '.dependencies["govuk-frontend"] // .devDependencies["govuk-frontend"] // empty' "$PACKAGE_JSON")
-[[ -z "$CURRENT_RAW" ]] && error "govuk-frontend not found in dependencies or devDependencies in $PACKAGE_JSON"
-CURRENT=$(strip_prefix "$CURRENT_RAW")
+log "Current govuk-frontend version: $CURRENT (constraint: ${CURRENT_RAW})"
 
-log "Current govuk-frontend version: $CURRENT"
-
-# Get target version if not specified
 if [[ -z "$TARGET_VERSION" ]]; then
     log "Fetching latest govuk-frontend version from npm..."
     TARGET_VERSION=$(npm view govuk-frontend dist-tags.latest 2>/dev/null) || error "Failed to fetch latest version from npm"
 fi
-TARGET=$(strip_prefix "$TARGET_VERSION")
+TARGET=$(printf '%s' "$TARGET_VERSION" | sed 's/^[^0-9]*//')
 
 log "Target govuk-frontend version: $TARGET"
 
-# Check if already at target
+WORKSPACE_DIR="$WORKSPACE_BASE/$RUN_ID/$REPO_NAME"
+mkdir -p "$WORKSPACE_DIR"
+STATE_FILE="$WORKSPACE_DIR/versions.${REPO_NAME}.json"
+CHANGELOG_FILE="$WORKSPACE_DIR/CHANGELOG.md"
+
 if ! semver_gt "$TARGET" "$CURRENT"; then
     if [[ "$JSON_OUTPUT" == "true" ]]; then
         echo "{\"status\": \"up-to-date\", \"current\": \"$CURRENT\", \"target\": \"$TARGET\", \"versions\": []}"
@@ -162,24 +154,18 @@ if ! semver_gt "$TARGET" "$CURRENT"; then
     exit 0
 fi
 
-# Get all stable versions from npm registry
 log "Fetching version list from npm..."
 ALL_VERSIONS_JSON=$(npm view govuk-frontend versions --json 2>/dev/null) || error "Failed to fetch version list from npm"
 
-# Filter: stable only (no pre-release suffix), strictly greater than current, at most target
 VERSIONS_TO_PROCESS=()
 while IFS= read -r version; do
     [[ -z "$version" ]] && continue
-    # Skip pre-releases (contains -)
     [[ "$version" == *"-"* ]] && continue
-    # Skip if <= current
     semver_gt "$version" "$CURRENT" || continue
-    # Skip if > target
     semver_gt "$version" "$TARGET" && continue
     VERSIONS_TO_PROCESS+=("$version")
 done < <(echo "$ALL_VERSIONS_JSON" | jq -r '.[]')
 
-# Sort ascending by version
 IFS=$'\n' sorted_versions=($(printf '%s\n' "${VERSIONS_TO_PROCESS[@]}" | sort -V))
 unset IFS
 
@@ -196,12 +182,7 @@ fi
 
 log "Found $VERSION_COUNT versions to process"
 
-# Create workspace directory
-WORKSPACE_DIR="$WORKSPACE_BASE/$RUN_ID/$REPO_NAME"
-mkdir -p "$WORKSPACE_DIR"
-
-# Cache CHANGELOG.md (fetch once, reuse on subsequent runs)
-CHANGELOG_FILE="$WORKSPACE_DIR/CHANGELOG.md"
+# Cache CHANGELOG.md.
 if [[ ! -f "$CHANGELOG_FILE" ]] || [[ "$FORCE" == "true" ]]; then
     log "Fetching CHANGELOG.md from GitHub..."
     curl -sf "$CHANGELOG_URL" -o "$CHANGELOG_FILE" || error "Failed to fetch CHANGELOG.md from $CHANGELOG_URL"
@@ -210,81 +191,79 @@ else
     log "Using cached CHANGELOG.md"
 fi
 
-# Create zero-byte stubs for each version not already planned
-created_count=0
-skipped_count=0
-versions_json="["
-first=true
+# Build versions JSON, preserving any per-version state already present
+# in the existing file (classification, implementation_status, etc.).
+now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+sorted_versions_json=$(printf '%s\n' "${sorted_versions[@]}" | jq -R . | jq -s .)
 
-for version in "${sorted_versions[@]}"; do
-    stub="$WORKSPACE_DIR/version__${version}.md"
-    todo_file="$WORKSPACE_DIR/version__${version}.todo"
-    noop_file="$WORKSPACE_DIR/version__${version}.noop"
-    done_file="$WORKSPACE_DIR/version__${version}.done"
-    failed_file="$WORKSPACE_DIR/version__${version}.failed"
+if [[ -f "$STATE_FILE" && "$FORCE" != "true" ]]; then
+    prior_versions=$(jq '.versions' "$STATE_FILE")
+    created_at=$(jq -r '.created_at // empty' "$STATE_FILE")
+    [[ -z "$created_at" ]] && created_at="$now"
+else
+    prior_versions='[]'
+    created_at="$now"
+fi
 
-    status="pending"
+new_versions=$(jq -n \
+    --argjson sorted "$sorted_versions_json" \
+    --argjson prior "$prior_versions" \
+    '[
+        $sorted[] as $v
+        | ($prior | map(select(.version == $v)) | .[0]) as $existing
+        | if $existing != null then
+            $existing
+          else
+            {
+                version: $v,
+                classification: null,
+                classified_at: null,
+                implementation_status: null,
+                implemented_at: null,
+                commit_sha: null,
+                failure_reason: null,
+                changelog_path: ("version__" + $v + ".changelog.md"),
+                summary: null,
+                changes: []
+            }
+          end
+    ]')
 
-    if [[ -f "$done_file" ]]; then
-        status="done"
-        ((skipped_count++))
-    elif [[ -f "$failed_file" ]]; then
-        status="failed"
-        ((skipped_count++))
-    elif [[ -f "$todo_file" ]]; then
-        status="todo"
-        ((skipped_count++))
-    elif [[ -f "$noop_file" ]]; then
-        status="noop"
-        ((skipped_count++))
-    else
-        if [[ ! -f "$stub" ]] || [[ "$FORCE" == "true" ]]; then
-            touch "$stub"
-            ((created_count++))
-            log "  Created: version__${version}.md"
-        else
-            log "  Exists:  version__${version}.md"
-        fi
-    fi
-
-    [[ "$first" == "true" ]] && first=false || versions_json+=","
-    versions_json+="{\"version\":\"$version\",\"status\":\"$status\"}"
-done
-versions_json+="]"
-
-# Write metadata file
-cat > "$WORKSPACE_DIR/.upgrade-meta.json" << EOF
-{
-    "repo_name": "$REPO_NAME",
-    "repo_path": "$REPO_PATH",
-    "workspace_dir": "$WORKSPACE_DIR",
-    "package": "govuk-frontend",
-    "current_version": "$CURRENT",
-    "target_version": "$TARGET",
-    "created": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-    "last_discovered": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-    "total_versions": $VERSION_COUNT,
-    "versions": $versions_json
-}
-EOF
+jq -n \
+    --arg ticket "$RUN_ID" \
+    --arg repo "$REPO_NAME" \
+    --arg current "$CURRENT" \
+    --arg target "$TARGET" \
+    --arg prefix "$ORIGINAL_PREFIX" \
+    --arg created_at "$created_at" \
+    --arg last_discovered_at "$now" \
+    --argjson versions "$new_versions" \
+    '{
+        ticket: $ticket,
+        repo: $repo,
+        package: "govuk-frontend",
+        current_version: $current,
+        target_version: $target,
+        original_constraint_prefix: $prefix,
+        created_at: $created_at,
+        last_discovered_at: $last_discovered_at,
+        versions: $versions
+    }' > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
 
 if [[ "$JSON_OUTPUT" == "true" ]]; then
-    cat "$WORKSPACE_DIR/.upgrade-meta.json"
+    cat "$STATE_FILE"
 else
     echo ""
     echo "=== govuk-frontend Version Discovery Complete ==="
     echo "Repository:  $REPO_NAME"
-    echo "Upgrade:     $CURRENT → $TARGET"
+    echo "Upgrade:     $CURRENT → $TARGET  (constraint prefix: '${ORIGINAL_PREFIX}')"
     echo "Versions:    $VERSION_COUNT intermediate versions"
-    echo "Workspace:   $WORKSPACE_DIR"
-    echo ""
-    echo "Stubs created:    $created_count"
-    echo "Already planned:  $skipped_count"
+    echo "State:       $STATE_FILE"
     echo ""
     echo "Versions:"
     for v in "${sorted_versions[@]}"; do
         echo "  $v"
     done
     echo ""
-    echo "Next: Process stubs with VERSION_PLANNER agents (Phase 2)"
+    echo "Next: Phase 2 spawns VERSION_PLANNER workers per pending version"
 fi

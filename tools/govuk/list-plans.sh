@@ -1,39 +1,36 @@
 #!/bin/bash
-# List govuk-frontend version upgrade planning status across repos
-# Usage: ./list-plans.sh --run-id TICKET [--repo REPO_NAME] [--json]
-#
-# Shows which versions are unplanned (zero-byte stub), .todo (changes needed),
-# or .noop (no changes needed) for each repo.
+# List govuk-frontend version planning status from versions.{repo}.json.
+# Usage: ./list-plans.sh --run-id TICKET [--repo REPO_NAME] [--filter F] [--sort-semver] [--json]
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 RUN_ID=""
 REPO_FILTER=""
+FILTER=""
+SORT_SEMVER=false
 JSON_OUTPUT=false
 
 show_help() {
     cat << EOF
-List govuk-frontend version upgrade planning status
+List govuk-frontend version planning status
 
 Usage: ./list-plans.sh --run-id TICKET [options]
 
 Options:
   --run-id TICKET        Run ID / Jira ticket (e.g. EUDPA-20578) [required]
   --repo REPO_NAME       Only show specific repo
+  --filter F             unplanned|todo|noop|done|failed|pending
+  --sort-semver          Sort version listings ascending by semver
   --json                 Output JSON format
   --help                 Show this help message
 
-Examples:
-  ./list-plans.sh --run-id EUDPA-20578
-  ./list-plans.sh --run-id EUDPA-20578 --repo trade-imports-animals-frontend
-  ./list-plans.sh --run-id EUDPA-20578 --json
-
-Output states:
-  unplanned  zero-byte .md stub — not yet analysed
-  todo       .todo file — code changes required
-  noop       .noop file — no changes needed for this version
+Filter semantics:
+  unplanned  classification == null
+  todo       classification == "todo" && implementation_status == null
+  noop       classification == "noop"
+  done       implementation_status == "done"
+  failed     implementation_status == "failed"
+  pending    implementation_status == null
 EOF
     exit 0
 }
@@ -43,6 +40,8 @@ while [[ $# -gt 0 ]]; do
         --help) show_help ;;
         --run-id) RUN_ID="$2"; shift 2 ;;
         --repo) REPO_FILTER="$2"; shift 2 ;;
+        --filter) FILTER="$2"; shift 2 ;;
+        --sort-semver) SORT_SEMVER=true; shift ;;
         --json) JSON_OUTPUT=true; shift ;;
         *)
             echo "Unknown option: $1"
@@ -51,12 +50,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-log() {
-    if [[ "$JSON_OUTPUT" == "false" ]]; then
-        echo "$1"
-    fi
-}
 
 error() {
     if [[ "$JSON_OUTPUT" == "true" ]]; then
@@ -69,99 +62,124 @@ error() {
 
 [[ -z "$RUN_ID" ]] && error "--run-id TICKET is required"
 
+case "$FILTER" in
+    ""|unplanned|todo|noop|done|failed|pending) ;;
+    *) error "Invalid --filter: $FILTER" ;;
+esac
+
 WORKSPACE_BASE="$HOME/git/defra/trade-imports-animals/workareas/govuk-upgrades/$RUN_ID"
 
 if [[ ! -d "$WORKSPACE_BASE" ]]; then
     error "Workspace not found: $WORKSPACE_BASE. Run discover-versions.sh first."
 fi
 
+# Compose jq filter expression for one version entry given $FILTER.
+jq_pred=""
+case "$FILTER" in
+    unplanned) jq_pred='select(.classification == null)' ;;
+    todo)      jq_pred='select(.classification == "todo" and .implementation_status == null)' ;;
+    noop)      jq_pred='select(.classification == "noop")' ;;
+    done)      jq_pred='select(.implementation_status == "done")' ;;
+    failed)    jq_pred='select(.implementation_status == "failed")' ;;
+    pending)   jq_pred='select(.implementation_status == null)' ;;
+    "")        jq_pred='.' ;;
+esac
+
+state_files=()
+if [[ -n "$REPO_FILTER" ]]; then
+    f="$WORKSPACE_BASE/$REPO_FILTER/versions.${REPO_FILTER}.json"
+    [[ -f "$f" ]] && state_files+=("$f")
+else
+    while IFS= read -r f; do state_files+=("$f"); done < <(find "$WORKSPACE_BASE" -maxdepth 3 -name 'versions.*.json' | sort)
+fi
+
+[[ ${#state_files[@]} -eq 0 ]] && error "No versions.{repo}.json found under $WORKSPACE_BASE"
+
 total_unplanned=0
 total_todo=0
 total_noop=0
+total_done=0
+total_failed=0
 
 if [[ "$JSON_OUTPUT" == "true" ]]; then
-    echo "{"
-    echo "  \"run_id\": \"$RUN_ID\","
-    echo "  \"repos\": ["
-    first_repo=true
+    repo_objs=()
 fi
 
-for repo_dir in "$WORKSPACE_BASE"/trade-imports-animals-*; do
-    [[ ! -d "$repo_dir" ]] && continue
-    repo_name=$(basename "$repo_dir")
-    [[ -n "$REPO_FILTER" ]] && [[ "$repo_name" != "$REPO_FILTER" ]] && continue
+for state_file in "${state_files[@]}"; do
+    repo=$(jq -r '.repo' "$state_file")
+    current=$(jq -r '.current_version' "$state_file")
+    target=$(jq -r '.target_version' "$state_file")
 
-    unplanned_list=()
-    todo_list=()
-    noop_list=()
-
-    # Zero-byte .md stubs = unplanned
-    while IFS= read -r -d '' f; do
-        v=$(basename "$f" .md | sed 's/^version__//')
-        unplanned_list+=("$v")
-    done < <(find "$repo_dir" -maxdepth 1 -name "version__*.md" -size 0 -print0 2>/dev/null | sort -z -V)
-
-    # .todo files = changes needed
-    while IFS= read -r -d '' f; do
-        v=$(basename "$f" .todo | sed 's/^version__//')
-        todo_list+=("$v")
-    done < <(find "$repo_dir" -maxdepth 1 -name "version__*.todo" -print0 2>/dev/null | sort -z -V)
-
-    # .noop files = no changes needed
-    while IFS= read -r -d '' f; do
-        v=$(basename "$f" .noop | sed 's/^version__//')
-        noop_list+=("$v")
-    done < <(find "$repo_dir" -maxdepth 1 -name "version__*.noop" -print0 2>/dev/null | sort -z -V)
-
-    ((total_unplanned+=${#unplanned_list[@]}))
-    ((total_todo+=${#todo_list[@]}))
-    ((total_noop+=${#noop_list[@]}))
-
-    # Read meta for current/target
-    current=""
-    target=""
-    if [[ -f "$repo_dir/.upgrade-meta.json" ]]; then
-        current=$(jq -r '.current_version // ""' "$repo_dir/.upgrade-meta.json" 2>/dev/null || echo "")
-        target=$(jq -r '.target_version // ""' "$repo_dir/.upgrade-meta.json" 2>/dev/null || echo "")
+    matched=$(jq -c "[.versions[] | $jq_pred]" "$state_file")
+    # Sort by semver when requested (use Python-style version key in jq sort_by ints).
+    if [[ "$SORT_SEMVER" == "true" ]]; then
+        matched=$(echo "$matched" | jq '
+            sort_by(
+                .version | split(".") | map(tonumber? // 0) + [0,0,0] | .[0:3]
+            )
+        ')
     fi
 
+    unplanned=$(jq '[.versions[] | select(.classification == null)] | length' "$state_file")
+    todo=$(jq '[.versions[] | select(.classification == "todo" and .implementation_status == null)] | length' "$state_file")
+    noop=$(jq '[.versions[] | select(.classification == "noop")] | length' "$state_file")
+    done_count=$(jq '[.versions[] | select(.implementation_status == "done")] | length' "$state_file")
+    failed=$(jq '[.versions[] | select(.implementation_status == "failed")] | length' "$state_file")
+
+    ((total_unplanned+=unplanned))
+    ((total_todo+=todo))
+    ((total_noop+=noop))
+    ((total_done+=done_count))
+    ((total_failed+=failed))
+
     if [[ "$JSON_OUTPUT" == "true" ]]; then
-        [[ "$first_repo" == "true" ]] && first_repo=false || echo ","
-        unplanned_json=$(printf '%s\n' "${unplanned_list[@]+"${unplanned_list[@]}"}" | jq -R . | jq -s .)
-        todo_json=$(printf '%s\n' "${todo_list[@]+"${todo_list[@]}"}" | jq -R . | jq -s .)
-        noop_json=$(printf '%s\n' "${noop_list[@]+"${noop_list[@]}"}" | jq -R . | jq -s .)
-        echo -n "    {\"repo\": \"$repo_name\", \"current\": \"$current\", \"target\": \"$target\","
-        echo -n " \"unplanned\": $unplanned_json, \"todo\": $todo_json, \"noop\": $noop_json}"
+        repo_obj=$(jq -n \
+            --arg repo "$repo" \
+            --arg current "$current" \
+            --arg target "$target" \
+            --argjson unplanned "$unplanned" \
+            --argjson todo "$todo" \
+            --argjson noop "$noop" \
+            --argjson done "$done_count" \
+            --argjson failed "$failed" \
+            --argjson matched "$matched" \
+            '{repo: $repo, current: $current, target: $target,
+              counts: {unplanned: $unplanned, todo: $todo, noop: $noop, done: $done, failed: $failed},
+              versions: $matched}')
+        repo_objs+=("$repo_obj")
     else
         echo ""
-        echo "$repo_name  ($current → $target)"
-        printf "  Unplanned: %3d  |  Todo: %3d  |  Noop: %3d\n" \
-            "${#unplanned_list[@]}" "${#todo_list[@]}" "${#noop_list[@]}"
-        if [[ "${#unplanned_list[@]}" -gt 0 ]]; then
-            echo "  Unplanned:  ${unplanned_list[*]}"
-        fi
-        if [[ "${#todo_list[@]}" -gt 0 ]]; then
-            echo "  Todo:       ${todo_list[*]}"
-        fi
-        if [[ "${#noop_list[@]}" -gt 0 ]]; then
-            echo "  Noop:       ${noop_list[*]}"
+        printf "%s  (%s → %s)\n" "$repo" "$current" "$target"
+        printf "  Unplanned: %3d  Todo: %3d  Noop: %3d  Done: %3d  Failed: %3d\n" \
+            "$unplanned" "$todo" "$noop" "$done_count" "$failed"
+        version_list=$(echo "$matched" | jq -r '.[] | .version')
+        if [[ -n "$version_list" ]]; then
+            if [[ -n "$FILTER" ]]; then
+                echo "  Versions ($FILTER):"
+            else
+                echo "  Versions:"
+            fi
+            echo "$version_list" | sed 's/^/    /'
         fi
     fi
 done
 
 if [[ "$JSON_OUTPUT" == "true" ]]; then
-    echo ""
-    echo "  ],"
-    echo "  \"summary\": {"
-    echo "    \"unplanned\": $total_unplanned,"
-    echo "    \"todo\": $total_todo,"
-    echo "    \"noop\": $total_noop"
-    echo "  }"
-    echo "}"
+    printf '%s\n' "${repo_objs[@]}" | jq -s \
+        --arg run_id "$RUN_ID" \
+        --argjson unplanned "$total_unplanned" \
+        --argjson todo "$total_todo" \
+        --argjson noop "$total_noop" \
+        --argjson done "$total_done" \
+        --argjson failed "$total_failed" \
+        '{run_id: $run_id, repos: .,
+          summary: {unplanned: $unplanned, todo: $todo, noop: $noop, done: $done, failed: $failed}}'
 else
     echo ""
     echo "=== Summary ==="
     echo "  Unplanned:         $total_unplanned"
     echo "  Todo (changes):    $total_todo"
     echo "  Noop (no changes): $total_noop"
+    echo "  Done:              $total_done"
+    echo "  Failed:            $total_failed"
 fi
