@@ -112,6 +112,25 @@ Do not introduce other named conventions in this skill.
 - Services affected?
 - Related tickets?
 
+## Step 1.5: Verify parent epic (if provided)
+
+If the user supplied a parent epic key during Step 1, verify it before
+drafting — typo'd keys are easier to catch now than after the user has
+spent a turn answering the rest of the interview.
+
+```bash
+~/git/defra/trade-imports-animals/tools/jira/ticket.sh "$PARENT" summary
+```
+
+- Exit 0: confirm the epic summary back to the user ("Parent: $PARENT
+  — $SUMMARY"), then continue.
+- Non-zero or `Issue does not exist...` in the output: surface the
+  error verbatim and ask for a corrected key, or for the user to
+  remove the parent. Do not proceed to drafting until the lookup
+  succeeds or the user removes the parent.
+
+Skip this step entirely when no parent epic was supplied.
+
 ## Step 2: Determine Fields
 
 | Field | How to Determine |
