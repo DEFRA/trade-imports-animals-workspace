@@ -133,7 +133,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `ticket-refiner` | "is ticket ready", "pre-refinement", "refinement check" | Assess whether a ticket is READY / NEEDS WORK / SPIKE REQUIRED. |
 | `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
 | `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
-| `code-style` | "style review EUDPA-", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
+| `code-style` | "style review EUDPA-", "walk style EUDPA-", "triage style", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies" | Three-phase non-govuk-frontend npm upgrade workflow. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans. |
 
@@ -151,6 +151,7 @@ artifacts that downstream `tools/` scripts consume.
 | `review` | `references/CONSISTENCY_REVIEWER.md` | Per-repo consistency check |
 | `review` | `references/REVIEW_ITEM_FIXER.md` | One Fix-disposition item at a time |
 | `code-style` | `references/STYLE_FILE_REVIEWER.md` | Per-`.js` file style review |
+| `code-style` | `references/STYLE_WALKER.md` | Batch triage walker for pending items |
 | `code-style` | `references/STYLE_IMPLEMENTOR.md` | Per-file batched style fixes |
 | `npm-upgrade` | `references/PACKAGE_PLANNER.md` | Per-package research + auto/manual classification |
 | `govuk-upgrade` | `references/VERSION_PLANNER.md` | Per-version CHANGELOG analysis + per-repo plan |
