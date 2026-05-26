@@ -24,7 +24,7 @@ shape doesn't match the prefix rule.
 
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals-workspace/...` form.
 - No `/Users/<you>/git/...` — type `~/`, don't resolve it.
 
 ---
@@ -32,7 +32,7 @@ shape doesn't match the prefix rule.
 ## Step 1: Load the work list
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id EUDPA-XXXXX --classification manual --json
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-list.sh --run-id EUDPA-XXXXX --classification manual --json
 ```
 
 For an optional repo filter add `--repo {repo}`. Also pull the
@@ -40,7 +40,7 @@ failed-auto demotion side (these are already classified manual via
 demoted_from_auto, but a separate query helps render them first):
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-list.sh --run-id EUDPA-XXXXX --classification auto --status failed --json
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-list.sh --run-id EUDPA-XXXXX --classification auto --status failed --json
 ```
 
 If both queries are empty:
@@ -109,7 +109,7 @@ isn't `I`, `D`, or `S` with a clear error and re-prompt.
 
 For `D`:
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-set-status.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-set-status.sh \
   --run-id EUDPA-XXXXX --repo {repo} --package {pkg} \
   --status failed --failure-reason "Deferred by walker — file follow-up ticket"
 ```
@@ -143,7 +143,7 @@ commits, and we don't want two implementors racing on the same repo).
 Spawn prompt:
 
 ```markdown
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/npm-upgrade/references/MANUAL_UPGRADE_IMPLEMENTOR.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/npm-upgrade/references/MANUAL_UPGRADE_IMPLEMENTOR.md.
 
 Run ID: EUDPA-XXXXX
 Repository: {repo}
@@ -151,7 +151,7 @@ Package: {package}
 Current: {current}
 Target: {target}
 
-Context bundle: ~/git/defra/trade-imports-animals/workareas/npm-upgrades/EUDPA-XXXXX/{repo}/.context/{normalized-package}/
+Context bundle: ~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/EUDPA-XXXXX/{repo}/.context/{normalized-package}/
 Files affected (from planner): {files_affected}
 Required changes (from planner): {changes_required_summary}
 ```
@@ -163,7 +163,7 @@ You can also call `run-manual-upgrade.sh` directly if you'd prefer the
 script-driven flow without an extra subagent:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/run-manual-upgrade.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/run-manual-upgrade.sh \
   --run-id EUDPA-XXXXX --repo {repo} --package {package}
 ```
 
@@ -177,7 +177,7 @@ manual classification).
 ## Step 5: Final report
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-counts.sh --run-id EUDPA-XXXXX
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-counts.sh --run-id EUDPA-XXXXX
 ```
 
 Print the summary:

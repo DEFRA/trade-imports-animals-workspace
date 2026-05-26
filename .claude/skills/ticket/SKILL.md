@@ -22,11 +22,11 @@ reviewing someone's PR — use `review` (correctness across languages) or
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals/tools/<domain>/`,
-`~/git/defra/trade-imports-animals/docs/best-practices/`,
-`~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
+`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
 your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals/...` — no env var needed.
+`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
 Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
@@ -38,7 +38,7 @@ pipe doesn't match even when each piece would. Specifically:
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
 
@@ -56,7 +56,7 @@ Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Ba
 
 If the user asks to plan / scope / "how should I" an EUDPA ticket,
 follow `references/PLANNER.md`. Produces
-`~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/plan.md`. No
+`~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/plan.md`. No
 implementation.
 
 ### Implement
@@ -72,7 +72,7 @@ follow `references/REFACTORER.md`. Tests must stay green throughout.
 
 ## Shared tooling
 
-All under `~/git/defra/trade-imports-animals/tools/` per CC-3:
+All under `~/git/defra/trade-imports-animals-workspace/tools/` per CC-3:
 
 | Domain | Used by | Purpose |
 |---|---|---|
@@ -85,12 +85,12 @@ All under `~/git/defra/trade-imports-animals/tools/` per CC-3:
 | `tools/review/detect-tech.sh` | called by `prepare-plan.sh` / `prepare-implement.sh` | Detect repo tech stack + emit best-practices paths under `docs/best-practices/` |
 
 Authenticate to Jira/GitHub before fetching (or run the umbrella
-`~/git/defra/trade-imports-animals/tools/auth.sh`).
+`~/git/defra/trade-imports-animals-workspace/tools/auth.sh`).
 
 ## Best practices
 
 PLANNER and IMPLEMENTOR cite a subset of
-`~/git/defra/trade-imports-animals/docs/best-practices/` based on detected tech. The
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/` based on detected tech. The
 universe spans `gds/`, `java/`, `node/`, `playwright/`, `k6/`,
 `rest-api/`, `doc-comments/`, and `docker-compose.md`. Load only what
 applies to the repo being worked on.
@@ -99,12 +99,12 @@ applies to the repo being worked on.
 
 | Path | Purpose |
 |---|---|
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/ticket.md` | `prepare-plan.sh` writes (Jira metadata + description + comments + Confluence refs) |
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/plan.md` | PLANNER writes; IMPLEMENTOR reads; both may amend with deviations |
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.plan-meta.json` | `prepare-plan.sh` writes — ticket metadata + per-repo tech list |
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/best-practices/<repo>.md` | `prepare-plan.sh` writes — concatenated best-practices bundle per repo |
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.implement-meta.json` | `prepare-implement.sh` writes — re-validated tech + cached PR diffs |
-| `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-X/.diffs/<repo>.diff` | `prepare-implement.sh` writes — cached PR diff (when a prior PR exists) |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/ticket.md` | `prepare-plan.sh` writes (Jira metadata + description + comments + Confluence refs) |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/plan.md` | PLANNER writes; IMPLEMENTOR reads; both may amend with deviations |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.plan-meta.json` | `prepare-plan.sh` writes — ticket metadata + per-repo tech list |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/best-practices/<repo>.md` | `prepare-plan.sh` writes — concatenated best-practices bundle per repo |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.implement-meta.json` | `prepare-implement.sh` writes — re-validated tech + cached PR diffs |
+| `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.diffs/<repo>.diff` | `prepare-implement.sh` writes — cached PR diff (when a prior PR exists) |
 
 ## Skill-level don'ts
 

@@ -7,7 +7,7 @@ Your prompt names the run, repo, package, current/target versions,
 files-affected hint and required-changes summary, plus the
 context-bundle directory.
 
-Paths anchored on `~/git/defra/trade-imports-animals` — compute via the
+Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the
 `find_workspace_root` helper in `docs/agent-skills.md`.
 
 ---
@@ -22,7 +22,7 @@ shape doesn't match the prefix rule.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or `npm
   --prefix <dir>`.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...`.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...`.
 - No `/Users/<you>/git/...` either — type `~/`, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or the
   workspace helpers under `tools/`.
@@ -47,14 +47,14 @@ shape doesn't match the prefix rule.
 - `{run-id}`, `{repo}`, `{package}`, `{current}`, `{target}`
 - `files_affected` — list of paths the planner identified
 - `changes_required_summary` — one-line description from the planner
-- Context bundle: `~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/.context/{normalized-package}/`
+- Context bundle: `~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/{run-id}/{repo}/.context/{normalized-package}/`
 
 ---
 
 ## Step 1: Mark inprogress + claim the lane
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-set-status.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-set-status.sh \
   --run-id {run-id} --repo {repo} --package {package} --status inprogress
 ```
 
@@ -63,13 +63,13 @@ shape doesn't match the prefix rule.
 ## Step 2: Pre-flight checks
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} status --porcelain -uno
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} status --porcelain -uno
 ```
 
 If non-empty: stop. Return `CANNOT START: uncommitted changes`.
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/baseline-{repo}-{package-normalized}.log 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/baseline-{repo}-{package-normalized}.log 2>&1
 ```
 
 If baseline fails: stop. Mark status=failed with reason "baseline
@@ -92,7 +92,7 @@ extras in your edit pass.
 ## Step 4: Install the target
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} install {package}@{target}
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} install {package}@{target}
 ```
 
 If install fails (peer conflict, network etc.):
@@ -112,7 +112,7 @@ After editing Node.js files, run Prettier to avoid pre-commit hook
 failures:
 
 ```bash
-~/git/defra/trade-imports-animals/repos/{repo}/node_modules/.bin/prettier --write {edited-file}
+~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write {edited-file}
 ```
 
 (One Bash call per file.)
@@ -122,7 +122,7 @@ failures:
 ## Step 6: Run tests
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/upgrade-{repo}-{package-normalized}.log 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/upgrade-{repo}-{package-normalized}.log 2>&1
 ```
 
 Read the log file you just created.
@@ -132,17 +132,17 @@ If unit tests pass: continue to Step 7.
 If unit tests fail:
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} checkout -- .
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} checkout -- .
 ```
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} install
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} install
 ```
 
 Verify rollback:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals/repos/{repo} test > /tmp/rollback-verify-{repo}-{package-normalized}.log 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/rollback-verify-{repo}-{package-normalized}.log 2>&1
 ```
 
 If rollback verification passes:
@@ -158,17 +158,17 @@ If rollback verification ALSO fails — cascade:
 ## Step 7: Commit
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} add package.json package-lock.json
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add package.json package-lock.json
 ```
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} add {each-edited-file}
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {each-edited-file}
 ```
 
 (One add per edited file is fine — keeps the staged diff explicit.)
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} commit -m "Upgrade {package} {current} → {target}
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "Upgrade {package} {current} → {target}
 
 {short description of the API changes you made}
 
@@ -181,13 +181,13 @@ the offending file, re-add, and create a NEW commit (do NOT --amend).
 Capture the short SHA:
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/{repo} rev-parse --short HEAD
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} rev-parse --short HEAD
 ```
 
 Mark done:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-set-status.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-set-status.sh \
   --run-id {run-id} --repo {repo} --package {package} --status done --commit-sha {short-sha}
 ```
 

@@ -6,7 +6,7 @@
 # Usage: bake-rules-bundle.sh EUDPA-XXXXX REPO
 #
 # Writes to:
-#   ~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md
+#   ~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md
 #
 # Per-repo even though today's content is identical across repos
 # (Decision 4) — leaves room for per-repo divergence without changing
@@ -22,7 +22,7 @@ if [[ -z "$TICKET" ]] || [[ -z "$REPO" ]]; then
     exit 1
 fi
 
-ROOT="$HOME/git/defra/trade-imports-animals"
+ROOT="$HOME/git/defra/trade-imports-animals-workspace"
 STYLE_DIR="$ROOT/workareas/code-style-reviews/$TICKET"
 out="$STYLE_DIR/style-rules.${REPO}.md"
 

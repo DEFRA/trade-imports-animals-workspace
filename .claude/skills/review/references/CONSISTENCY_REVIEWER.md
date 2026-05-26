@@ -4,7 +4,7 @@ Identify patterns present in some repos but absent in others. Produce
 one `_consistency-check.md` per repo, using the 0-byte stub as a
 tracking gate.
 
-Paths anchored on `~/git/defra/trade-imports-animals` — compute via the `find_workspace_root`
+Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
 ## Bash call hygiene
@@ -16,7 +16,7 @@ shape doesn't match the prefix rule.
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
 
@@ -29,7 +29,7 @@ shape doesn't match the prefix rule.
 ## Workspace
 
 ```
-~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/
+~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/
 ├── ticket.md              # READ: change intent and AC
 ├── .review-meta.json      # READ: repos, PR numbers, commits
 └── file-reviews/{repo}/
@@ -41,8 +41,8 @@ shape doesn't match the prefix rule.
 ### 1. Read context
 
 ```bash
-cat ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/.review-meta.json
-cat ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/ticket.md
+cat ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/.review-meta.json
+cat ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/ticket.md
 ```
 
 ### 2. Read all diffs (from the workspace cache)
@@ -51,7 +51,7 @@ cat ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/ticket.md
 at:
 
 ```
-~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/.diffs/{repo-name}.diff
+~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/.diffs/{repo-name}.diff
 ```
 
 Read those files directly — no need to call `gh pr diff` or
@@ -84,7 +84,7 @@ For **every** repo in `.review-meta.json`, write to the existing 0-byte
 stub:
 
 ```
-~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
+~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/_consistency-check.md
 ```
 
 Use this template:

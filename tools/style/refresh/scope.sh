@@ -25,7 +25,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-REVIEW_REFRESH_DIR="$HOME/git/defra/trade-imports-animals/tools/review/refresh"
+REVIEW_REFRESH_DIR="$HOME/git/defra/trade-imports-animals-workspace/tools/review/refresh"
 PULL_SH="$REVIEW_REFRESH_DIR/pull-repos.sh"
 MERGE_SH="$REVIEW_REFRESH_DIR/list-merge-resolved.sh"
 
@@ -66,8 +66,8 @@ done
 
 [[ -z "$TICKET" ]] && usage
 
-REVIEW_DIR="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET"
-STYLE_DIR="$HOME/git/defra/trade-imports-animals/workareas/code-style-reviews/$TICKET"
+REVIEW_DIR="$HOME/git/defra/trade-imports-animals-workspace/workareas/reviews/$TICKET"
+STYLE_DIR="$HOME/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/$TICKET"
 REVIEW_META="$REVIEW_DIR/.review-meta.json"
 STYLE_META="$STYLE_DIR/.style-meta.json"
 [[ -f "$STYLE_META" ]] || { echo "Style meta not found: $STYLE_META" >&2; exit 1; }

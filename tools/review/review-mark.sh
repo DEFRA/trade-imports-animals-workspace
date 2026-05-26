@@ -57,7 +57,7 @@ case "$DISPOSITION" in
     "") STATUS="" ;;
 esac
 
-target="$HOME/git/defra/trade-imports-animals/workareas/reviews/$TICKET/items.${REPO}.json"
+target="$HOME/git/defra/trade-imports-animals-workspace/workareas/reviews/$TICKET/items.${REPO}.json"
 [[ -f "$target" ]] || { echo "Items file not found: $target" >&2; exit 1; }
 
 # Verify item exists.

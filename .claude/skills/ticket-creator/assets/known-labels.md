@@ -6,7 +6,7 @@ patterns and stops inventing new labels.
 
 **Snapshot date:** 2026-05-26
 **Source:** backlog sample via
-`~/git/defra/trade-imports-animals/tools/jira/list-board-labels.sh 13780`
+`~/git/defra/trade-imports-animals-workspace/tools/jira/list-board-labels.sh 13780`
 (129 issues).
 
 Casing rule: **camelCase canonical** (e.g. `technicalImprovement`,
@@ -48,7 +48,7 @@ When the snapshot drifts from reality, re-run the aggregator and
 update this file:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/list-board-labels.sh 13780
+~/git/defra/trade-imports-animals-workspace/tools/jira/list-board-labels.sh 13780
 ```
 
 Update the **Snapshot date** in the header, refresh the counts in

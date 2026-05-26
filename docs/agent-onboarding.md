@@ -17,12 +17,22 @@ Install any that aren't already on your `PATH`:
 for cmd in curl jq gh; do command -v "$cmd" >/dev/null || brew install "$cmd"; done
 ```
 
-### 1. Workspace location
+### 1. Canonical clone location
 
-The skills and `tools/` scripts assume the workspace lives at
-`~/git/defra/trade-imports-animals/`. The path is hardcoded in the
-scripts — clone the repo to that location and nothing further is needed.
-No env var to set.
+This workspace expects to live at
+`~/git/defra/trade-imports-animals-workspace`. Every LLM-typed Bash
+command, every helper script, and the `.claude/settings.json` allowlist
+patterns hardcode that path. No env var to set.
+
+If your checkout is elsewhere, symlink it:
+
+```bash
+ln -s "$(pwd)" ~/git/defra/trade-imports-animals-workspace
+```
+
+(run from your checkout root). `git -C <symlink>` and
+`git -C <symlink>/repos/<repo>` both resolve correctly — the symlink is
+transparent for everything `tools/` touches.
 
 ### 2. Get Your Credentials
 

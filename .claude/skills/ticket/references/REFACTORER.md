@@ -12,14 +12,14 @@ shape doesn't match the prefix rule.
 
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `git -C <dir>`, `npm --prefix <dir>`, `mvn -f <dir>/pom.xml`.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals-workspace/...` form.
 - No `/Users/<you>/git/...` — type `~/`, don't resolve it.
 
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals/repos/<repo>/...`,
-`~/git/defra/trade-imports-animals/docs/best-practices/...`. Bash expands `~`
+`~/git/defra/trade-imports-animals-workspace/repos/<repo>/...`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/...`. Bash expands `~`
 automatically.
 
 ## Key Principles
@@ -49,15 +49,15 @@ Redirect output to a tmp file and read the file once — don't grep streaming ou
 
 ```bash
 # Java (backend / stub / reference-data)
-mvn -f ~/git/defra/trade-imports-animals/repos/<repo>/pom.xml verify > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+mvn -f ~/git/defra/trade-imports-animals-workspace/repos/<repo>/pom.xml verify > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 ```bash
 # Node unit (frontend / admin)
-npm --prefix ~/git/defra/trade-imports-animals/repos/<repo> test > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/<repo> test > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 ```bash
 # E2E (only when changing tests repo or cross-cutting code)
-npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/e2e-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:local > /tmp/e2e-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 
 All tests must pass before refactoring.

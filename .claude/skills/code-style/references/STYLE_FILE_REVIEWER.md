@@ -6,7 +6,7 @@ REFRESH) the prior items reported for this file. Findings are persisted
 exclusively via the per-file JSON helper triad — never edit
 `style-review.{repo}.md` or any per-file artifact by hand.
 
-Paths anchored on `~/git/defra/trade-imports-animals` — compute via the
+Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the
 `find_workspace_root` helper in `docs/agent-skills.md`.
 
 ## Bash call hygiene
@@ -18,7 +18,7 @@ shape doesn't match the prefix rule.
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
 
@@ -31,7 +31,7 @@ shape doesn't match the prefix rule.
 ## Workspace
 
 ```
-~/git/defra/trade-imports-animals/
+~/git/defra/trade-imports-animals-workspace/
 ├── docs/best-practices/node/code-style.md          # READ: 17 JS style rules
 ├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
 │   ├── BEST_PRACTICES.md
@@ -55,7 +55,7 @@ are the implementor's job, not yours.
 ### 1. Read the pre-baked style rules bundle
 
 Your prompt specifies the per-repo bundle path
-`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md`.
+`~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md`.
 Read it in full — it concatenates the 17-rule guide and the doc-comment
 rules so you don't pay per-file Read cost across 100 parallel reviewers.
 
@@ -69,7 +69,7 @@ rules so you don't pay per-file Read cost across 100 parallel reviewers.
 ### 3a. FRESH mode — get the file diff (cached)
 
 ```bash
-~/git/defra/trade-imports-animals/tools/github/file-diff.sh {repo} {pr-number} {file} --ticket EUDPA-XXXXX
+~/git/defra/trade-imports-animals-workspace/tools/github/file-diff.sh {repo} {pr-number} {file} --ticket EUDPA-XXXXX
 ```
 
 `--ticket` reads from the diff cache populated by `prepare-review.sh`
@@ -81,7 +81,7 @@ this PR.
 ### 3b. REFRESH mode — check old violations and new changes
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
+git -C ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/{repo} diff {old_sha}..{new_sha} -- {file}
 ```
 
 For **each prior item** in the JSON block of your prompt:
@@ -90,7 +90,7 @@ For **each prior item** in the JSON block of your prompt:
   present** or **resolved**.
 - If resolved, call:
   ```bash
-  ~/git/defra/trade-imports-animals/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} --disposition Auto-Resolved --note "resolved <today>"
+  ~/git/defra/trade-imports-animals-workspace/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} --disposition Auto-Resolved --note "resolved <today>"
   ```
 - If still present, leave as-is (don't re-add).
 
@@ -104,7 +104,7 @@ dropped/duplicated code, style drift introduced by the merge resolution.
 ### 4. Read the full file
 
 Read the file from
-`~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
+`~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
 (read-only snapshot) for context. Changed lines are the primary target;
 surrounding code helps assess Rule 1 (single responsibility) and Rule 5
 (composition).
@@ -115,7 +115,7 @@ The per-file `.style.json` placeholder was initialised by
 `prepare-style.sh`. For every violation you decide to flag:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/style/file-style-add-item.sh EUDPA-XXXXX --repo {repo} --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} --issue "describe the violation, anchored to the specific function/symbol/literal" --fix "concrete suggested fix"
+~/git/defra/trade-imports-animals-workspace/tools/style/file-style-add-item.sh EUDPA-XXXXX --repo {repo} --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} --issue "describe the violation, anchored to the specific function/symbol/literal" --fix "concrete suggested fix"
 ```
 
 Add `--best-practice node/code-style.md` (or another path under
@@ -129,7 +129,7 @@ id. No markdown, no escaping, no file paths to type.
 After all findings are recorded, call:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/style/file-style-set-verdict.sh EUDPA-XXXXX --repo {repo} --file {file} --verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK} --reason "one sentence"
+~/git/defra/trade-imports-animals-workspace/tools/style/file-style-set-verdict.sh EUDPA-XXXXX --repo {repo} --file {file} --verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK} --reason "one sentence"
 ```
 
 Verdict criteria:

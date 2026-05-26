@@ -18,7 +18,7 @@ evaluate changes, or touch source files.
 ## Step 1: List unplanned versions
 
 ```bash
-~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh \
+~/git/defra/trade-imports-animals-workspace/tools/govuk/list-plans.sh \
   --run-id {run-id} --filter unplanned --json
 ```
 
@@ -32,14 +32,14 @@ Spawn one `general-purpose` Task subagent per pair concurrently
 (no cap — Decision 7). Spawn prompt:
 
 ```
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/govuk-upgrade/references/VERSION_PLANNER.md.
 
 Run ID: {run-id}
 Repository: {repo-name}
-Repo path: ~/git/defra/trade-imports-animals/repos/{repo-name}
+Repo path: ~/git/defra/trade-imports-animals-workspace/repos/{repo-name}
 Version: {version}
-Pre-baked changelog: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.changelog.md
-Best-practices bundle: ~/git/defra/trade-imports-animals/workareas/govuk-upgrades/{run-id}/{repo-name}/best-practices.md
+Pre-baked changelog: ~/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/{run-id}/{repo-name}/version__{version}.changelog.md
+Best-practices bundle: ~/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/{run-id}/{repo-name}/best-practices.md
 ```
 
 ## Step 3: Verify coverage
@@ -47,7 +47,7 @@ Best-practices bundle: ~/git/defra/trade-imports-animals/workareas/govuk-upgrade
 Wait for all subagents to complete, then re-run the unplanned query:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh \
+~/git/defra/trade-imports-animals-workspace/tools/govuk/list-plans.sh \
   --run-id {run-id} --filter unplanned --json
 ```
 
@@ -59,7 +59,7 @@ handles INCOMPLETE entries by surfacing them as `Discuss` by default
 ## Step 4: Report
 
 ```bash
-~/git/defra/trade-imports-animals/tools/govuk/list-plans.sh --run-id {run-id}
+~/git/defra/trade-imports-animals-workspace/tools/govuk/list-plans.sh --run-id {run-id}
 ```
 
 ```

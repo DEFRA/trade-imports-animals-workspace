@@ -12,7 +12,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUTPUT_DIR="$HOME/git/defra/trade-imports-animals/docs/confluence"
+OUTPUT_DIR="$HOME/git/defra/trade-imports-animals-workspace/docs/confluence"
 
 if [[ -d "$OUTPUT_DIR" ]]; then
   echo "Removing $OUTPUT_DIR..."

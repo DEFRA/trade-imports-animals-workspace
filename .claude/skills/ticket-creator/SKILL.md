@@ -1,6 +1,6 @@
 ---
 name: ticket-creator
-description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
+description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
 ---
 
 Role: Help create well-structured, actionable Jira tickets.
@@ -8,11 +8,11 @@ Role: Help create well-structured, actionable Jira tickets.
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals/tools/<domain>/`,
-`~/git/defra/trade-imports-animals/docs/best-practices/`,
-`~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
+`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
 your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals/...` — no env var needed.
+`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
 Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
@@ -29,7 +29,7 @@ Before the interview, refresh the present-info prereqs and Read the
 rules.
 
 ```bash
-~/git/defra/trade-imports-animals/tools/ticket-creator/prepare-ticket-creation.sh
+~/git/defra/trade-imports-animals-workspace/tools/ticket-creator/prepare-ticket-creation.sh
 ```
 
 That writes the current set of active EUDPA-board epics and EUDP
@@ -40,17 +40,17 @@ map suggests running `tools/confluence/sync-docs.sh`).
 Then Read these references so they sit in context for the whole
 session:
 
-- `~/git/defra/trade-imports-animals/workareas/ticket-creation/.prereqs/epics.txt`
+- `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/.prereqs/epics.txt`
   — fresh `KEY — summary` for each open epic on board 13780.
-- `~/git/defra/trade-imports-animals/workareas/ticket-creation/.prereqs/capabilities.txt`
+- `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/.prereqs/capabilities.txt`
   — `CAP-X.X — Name` for each capability defined in the EUDP capability
   map.
-- `~/git/defra/trade-imports-animals/docs/best-practices/gds/writing.md`
+- `~/git/defra/trade-imports-animals-workspace/docs/best-practices/gds/writing.md`
   — GDS plain-English rules for ticket prose.
-- `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
+- `~/git/defra/trade-imports-animals-workspace/docs/best-practices/jira/ticket-conventions.md`
   — Type / priority / AC / named-conventions guidance for the EUDPA
   project.
-- `~/git/defra/trade-imports-animals/.claude/skills/ticket-creator/assets/known-labels.md`
+- `~/git/defra/trade-imports-animals-workspace/.claude/skills/ticket-creator/assets/known-labels.md`
   — accepted EUDPA-project Jira labels (camelCase canonical form).
 
 ## Workflow
@@ -58,7 +58,7 @@ session:
 0. Refresh prereqs and Read the rules (above)
 1. Gather information
 2. Determine type and fields
-3. Draft ticket to `~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md`
+3. Draft ticket to `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md`
 4. Iterate on draft with user
 5. Create ticket from final draft
 
@@ -140,7 +140,7 @@ drafting — typo'd keys are easier to catch now than after the user has
 spent a turn answering the rest of the interview.
 
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/ticket.sh "$PARENT" summary
+~/git/defra/trade-imports-animals-workspace/tools/jira/ticket.sh "$PARENT" summary
 ```
 
 - Exit 0: confirm the epic summary back to the user ("Parent: $PARENT
@@ -164,7 +164,7 @@ Skip this step entirely when no parent epic was supplied.
 
 camelCase canonical form (e.g. `technicalImprovement`, not
 `tech-improvement`). Pick from the catalogue at
-`~/git/defra/trade-imports-animals/.claude/skills/ticket-creator/assets/known-labels.md`
+`~/git/defra/trade-imports-animals-workspace/.claude/skills/ticket-creator/assets/known-labels.md`
 — prefer reusing an existing label over coining a new one.
 
 ## Step 3: Write Description
@@ -188,7 +188,7 @@ Jira; preserve them verbatim.
 
 ## Step 4: Iterate on Draft
 
-Write the draft to `~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md`:
+Write the draft to `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md`:
 
 ```markdown
 # Ticket Draft: <slug>
@@ -212,7 +212,7 @@ DRAFT — awaiting user approval
 
 Show the draft path to the user, summarise what is in it, and ask:
 
-> Draft at `~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md`.
+> Draft at `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md`.
 > Review and tell me what to change, or say "create it" to proceed.
 
 Edit the file in place as the user gives feedback. Only move to Step 5 once
@@ -222,7 +222,7 @@ before creating.
 ## Step 5: Create Ticket
 
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/create-ticket.sh [options] "Summary" "Description"
+~/git/defra/trade-imports-animals-workspace/tools/jira/create-ticket.sh [options] "Summary" "Description"
 ```
 
 | Flag | Description | Default |
@@ -241,13 +241,13 @@ Append the new key and link to the bottom of `draft.md` and update
 ```
 Ticket created: EUDPA-XXXXX
 Link: ${JIRA_BASE_URL}/browse/EUDPA-XXXXX
-Draft retained at: ~/git/defra/trade-imports-animals/workareas/ticket-creation/<slug>/draft.md
+Draft retained at: ~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md
 ```
 
 ## References
 
 - AC style and examples — see
-  `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
+  `~/git/defra/trade-imports-animals-workspace/docs/best-practices/jira/ticket-conventions.md`
   (free-form bullets; no Gherkin mandate).
 - Named conventions (Tech Debt Board bundle etc.) — same doc, "Named
   conventions" section.

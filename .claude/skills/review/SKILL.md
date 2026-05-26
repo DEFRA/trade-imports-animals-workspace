@@ -9,11 +9,11 @@ languages.
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals/tools/<domain>/`,
-`~/git/defra/trade-imports-animals/docs/best-practices/`,
-`~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
+`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
 your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals/...` — no env var needed.
+`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
 Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
@@ -25,7 +25,7 @@ pipe doesn't match even when each piece would. Specifically:
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
 
@@ -48,7 +48,7 @@ Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Ba
   (`Follow references/BATCH_IMPLEMENTOR.md`).
 
 Per-repo state lives in
-`~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXX/items.{repo}.json`
+`~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXX/items.{repo}.json`
 — canonical JSON, mutated only via `review-*.sh` helpers. The
 `## Items` markdown table in `review.{repo}.md` is a rendered view
 (via `render-items.sh`). See `assets/items-table.md` for the JSON
@@ -81,12 +81,12 @@ subagents receive — so workers can write their on-disk artifacts.
 | `references/REVIEW_ITEM_FIXER.md` | `BATCH_IMPLEMENTOR.md` Step 4 (one per Fix-disposition item, sequential) | source edits + commit |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
-beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/<NAME>.md.`
+beginning `Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/<NAME>.md.`
 
 ## Step 0: Start the review
 
 ```bash
-~/git/defra/trade-imports-animals/tools/review/start-review.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals-workspace/tools/review/start-review.sh EUDPA-XXXXX
 ```
 
 Single dispatch — detects mode and runs the appropriate first-step
@@ -113,10 +113,10 @@ The notification arrives automatically.
 
 `start-review.sh` already ran `prepare-review.sh` and produced:
 
-- `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/` with
+- `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/` with
   ticket.md, repos/, file-reviews/ placeholders, and
   `.review-meta.json` (detected tech + best-practices paths under
-  `~/git/defra/trade-imports-animals/docs/best-practices/`).
+  `~/git/defra/trade-imports-animals-workspace/docs/best-practices/`).
 
 Proceed to Step 2.
 
@@ -132,7 +132,7 @@ Spawn up to **100 in parallel** via the Task tool with
 #### Spawn prompt template
 
 ```markdown
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode:** FRESH
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
@@ -151,7 +151,7 @@ markdown, no placeholder path needed in the spawn prompt.
 ## Step 3: Verify Coverage
 
 ```bash
-~/git/defra/trade-imports-animals/tools/review/verify-coverage.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals-workspace/tools/review/verify-coverage.sh EUDPA-XXXXX
 ```
 
 **Do NOT proceed to Step 4 until 100% coverage.**
@@ -161,10 +161,10 @@ markdown, no placeholder path needed in the spawn prompt.
 Spawn one Task subagent with `subagent_type: general-purpose`. Spawn prompt:
 
 ```markdown
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/CONSISTENCY_REVIEWER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/CONSISTENCY_REVIEWER.md.
 
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Review workspace:** ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/
+**Review workspace:** ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/
 
 Read .review-meta.json for all repos and PR numbers.
 Write _consistency-check.md for every repo listed.
@@ -176,7 +176,7 @@ before proceeding.
 ## Step 5: Create Repository Summaries
 
 For each repository, write
-`~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review.{repo}.md`.
+`~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review.{repo}.md`.
 Two sections are generated deterministically from the per-file JSONs
 via the aggregator; the rest is your synthesis from reading the
 per-file JSONs and the diff.
@@ -187,13 +187,13 @@ per-file JSONs and the diff.
 # Write items.{repo}.json from per-file .review.json (initial population).
 # Globally renumbers IDs across the repo's files; preserves no prior
 # disposition/status — call this ONCE per repo at FRESH Step 5.
-~/git/defra/trade-imports-animals/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --write-items
+~/git/defra/trade-imports-animals-workspace/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --write-items
 
 # File Analysis Summary table (markdown)
-~/git/defra/trade-imports-animals/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --section file-summary
+~/git/defra/trade-imports-animals-workspace/tools/review/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --section file-summary
 
 # ## Items markdown view (rendered from items.{repo}.json)
-~/git/defra/trade-imports-animals/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
+~/git/defra/trade-imports-animals-workspace/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
 ```
 
 After Step 5, the canonical state is `items.{repo}.json`. Walker /
@@ -246,11 +246,11 @@ inline PR comment.
 For each PR in `.review-meta.json`:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/github/pr-author.sh {repo} {pr}
+~/git/defra/trade-imports-animals-workspace/tools/github/pr-author.sh {repo} {pr}
 ```
 
 ```bash
-~/git/defra/trade-imports-animals/tools/github/whoami.sh
+~/git/defra/trade-imports-animals-workspace/tools/github/whoami.sh
 ```
 
 Compare authors against the `gh` user:
@@ -270,7 +270,7 @@ Compare authors against the `gh` user:
   On `Y` for at least one PR, run the handoff for the matching subset:
 
   ```bash
-  ~/git/defra/trade-imports-animals/tools/review/share-review.sh EUDPA-XXXXX [--pr N]
+  ~/git/defra/trade-imports-animals-workspace/tools/review/share-review.sh EUDPA-XXXXX [--pr N]
   ```
 
   Omit `--pr` if every non-yours PR is being handed off; pass `--pr N`
@@ -283,7 +283,7 @@ them in the Completion Output.
 
 ## Step 6: Write Index
 
-Create `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md` —
+Create `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review-index.md` —
 a thin navigation index only, no item rows:
 
 ```markdown
@@ -350,8 +350,8 @@ Summary:
 - Critical findings: [X]
 - Total todo items: [X]
 
-Index: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md
-Repo reviews: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
+Index: ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review-index.md
+Repo reviews: ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review.{repo}.md (one per repo)
 
 [If a handoff happened in Step 5.5, append:]
 Handoff branch: chore/EUDPA-XXXXX (pushed to workspace remote)
@@ -404,7 +404,7 @@ unchanged since the last refresh and stop.
 ## Step R3.5: Load Full Item Inventory
 
 ```bash
-~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --json
+~/git/defra/trade-imports-animals-workspace/tools/review/review-items.sh EUDPA-XXXXX --json
 ```
 
 Use this when reconciling agent results in R6:
@@ -421,12 +421,12 @@ Deleted files: mark their items as `Auto-Resolved` via `review-mark.sh`.
 Spawn `general-purpose` Task subagents in parallel (up to 100), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
-`Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/FILE_REVIEWER.md.`
+`Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.`
 
 ### Spawn prompt — REFRESH (List A)
 
 ```markdown
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode:** REFRESH
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
@@ -442,7 +442,7 @@ Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/revi
 ### Spawn prompt — MERGE_RESOLVED (List C)
 
 ```markdown
-Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/review/references/FILE_REVIEWER.md.
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.
 
 **Mode:** MERGE_RESOLVED
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
@@ -470,10 +470,10 @@ consolidated items file and re-render the markdown view:
 ```bash
 # Append new findings from .review.json files; emit Fix+Done
 # spot-check advisory for refreshed files (potential regressions).
-~/git/defra/trade-imports-animals/tools/review/refresh/reconcile.sh EUDPA-XXXXX --repo {repo} --json > /tmp/refresh-summary-{repo}.json
+~/git/defra/trade-imports-animals-workspace/tools/review/refresh/reconcile.sh EUDPA-XXXXX --repo {repo} --json > /tmp/refresh-summary-{repo}.json
 
 # Re-render the ## Items markdown view from items.{repo}.json
-~/git/defra/trade-imports-animals/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
+~/git/defra/trade-imports-animals-workspace/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
 ```
 
 The reconciler trusts the FILE_REVIEWER persona contract: each
@@ -530,7 +530,7 @@ Then:
 1. Add `**Refreshed:** [today]` line near the top.
 2. Update the Repository Verdict if warranted.
 
-**Also update `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md`:**
+**Also update `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review-index.md`:**
 
 1. Add `**Last Updated:** [today]` line.
 2. Update the Repositories table verdicts.
@@ -556,12 +556,12 @@ Summary:
 - Todo items resolved: [N] / [M]
 - New issues found: [N]
 
-Updated: ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/review-index.md + review.{repo}.md files
+Updated: ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/review-index.md + review.{repo}.md files
 ```
 
 ## Scripts cheat-sheet
 
-All under `~/git/defra/trade-imports-animals/tools/review/`:
+All under `~/git/defra/trade-imports-animals-workspace/tools/review/`:
 
 | Script | Purpose |
 |---|---|

@@ -2,6 +2,8 @@
 
 This is a local workspace aggregating 6 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
+The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If your checkout is elsewhere, symlink it — see [`docs/agent-onboarding.md`](docs/agent-onboarding.md#1-canonical-clone-location).
+
 ## Repo map
 
 | Folder | GitHub repo | Role | Stack |
@@ -54,7 +56,7 @@ make install  # npm install in Node repos
 ```
 
 Scripts under `tools/` assume the workspace lives at
-`~/git/defra/trade-imports-animals/` — the path is hardcoded. Clone here
+`~/git/defra/trade-imports-animals-workspace/` — the path is hardcoded. Clone here
 and nothing further is needed. See
 [`docs/agent-onboarding.md`](docs/agent-onboarding.md) for the JIRA /
 GitHub / Confluence credentials the tools still need.
@@ -116,7 +118,7 @@ layout (5 role overlays + dev overlay), env knobs that must use
 - `docs/best-practices/` — tech-specific practice guides
   (gds/, java/, node/, playwright/, k6/, rest-api/, doc-comments/,
   docker-compose.md). Cited by SKILL.md files via
-  `~/git/defra/trade-imports-animals/docs/best-practices/<topic>/<file>`.
+  `~/git/defra/trade-imports-animals-workspace/docs/best-practices/<topic>/<file>`.
 
 ## Skills
 
@@ -141,7 +143,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 
 Long-running fan-out workers live as `references/<NAME>.md` prose inside
 the owning skill and are spawned as `general-purpose` Task subagents
-(`Follow ~/git/defra/trade-imports-animals/.claude/skills/<owner>/references/<NAME>.md.`).
+(`Follow ~/git/defra/trade-imports-animals-workspace/.claude/skills/<owner>/references/<NAME>.md.`).
 `general-purpose` carries `Tools: *` so workers can write the on-disk
 artifacts that downstream `tools/` scripts consume.
 
@@ -167,7 +169,7 @@ session rather than fanning out.
 ## Tools (`tools/`)
 
 Shared shell scripts called by skills via
-`~/git/defra/trade-imports-animals/tools/<domain>/<script>`. Environment:
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/<script>`. Environment:
 `JIRA_USER`, `JIRA_TOKEN`, `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`.
 
 | Script | Args | Purpose |

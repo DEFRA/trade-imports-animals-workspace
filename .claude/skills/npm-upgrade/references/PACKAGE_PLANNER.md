@@ -4,7 +4,7 @@ the canonical JSON state.
 Your prompt names the run, repo, package, current/target versions,
 upgrade type, dependency kind, and a context-bundle directory.
 
-Paths anchored on `~/git/defra/trade-imports-animals` — compute via the
+Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the
 `find_workspace_root` helper in `docs/agent-skills.md`.
 
 ---
@@ -18,7 +18,7 @@ shape doesn't match the prefix rule.
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
 
@@ -44,7 +44,7 @@ classification, write `classification: manual`.
 - `context_baked` — `true`, `"partial"`, or `false`
 - `context_missing` — list of context fields the pre-bake couldn't
   resolve (e.g. `["changelog", "migration_guide"]`)
-- Context bundle: `~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/.context/{normalized-package}/`
+- Context bundle: `~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/{run-id}/{repo}/.context/{normalized-package}/`
   where `/` in the package name becomes `__` (so `@hapi/hapi` →
   `@hapi__hapi`)
 
@@ -68,11 +68,11 @@ classification, write `classification: manual`.
    - `migration_guide` → search the changelog body and the project
      docs for migration / upgrade guides for the target version.
    - `usages` → use the **Grep tool** (not Bash) over
-     `~/git/defra/trade-imports-animals/repos/{repo}/src` for
+     `~/git/defra/trade-imports-animals-workspace/repos/{repo}/src` for
      `from ['"]{package}` and `require\(['"]{package}` patterns.
 3. **Read the per-repo best-practices bundle** if the package is
    framework-adjacent (Hapi, govuk-frontend, Vitest, Playwright).
-   Path: `~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/best-practices.md`.
+   Path: `~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/{run-id}/{repo}/best-practices.md`.
 4. **Decide classification, risk, and whether the upgrade is safe to
    automate.** See Classification below.
 5. **Write the classification into JSON** via
@@ -84,7 +84,7 @@ classification, write `classification: manual`.
 ## Writing the classification
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-set-classification.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-set-classification.sh \
   --run-id {run-id} \
   --repo {repo} \
   --package {package} \
@@ -100,7 +100,7 @@ classification, write `classification: manual`.
 For a manual classification:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/npm/packages-set-classification.sh \
+~/git/defra/trade-imports-animals-workspace/tools/npm/packages-set-classification.sh \
   --run-id {run-id} \
   --repo {repo} \
   --package {package} \

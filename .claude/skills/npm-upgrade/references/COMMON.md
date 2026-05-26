@@ -2,7 +2,7 @@
 
 Shared reference for all npm-upgrade phases.
 
-All scripts referenced below live at `~/git/defra/trade-imports-animals/tools/npm/` per
+All scripts referenced below live at `~/git/defra/trade-imports-animals-workspace/tools/npm/` per
 the parent SKILL.md's path-conventions preamble. The phase managers
 invoke them by absolute path.
 
@@ -30,7 +30,7 @@ invoke them by absolute path.
 ## State model
 
 All per-package state is in `packages.{repo}.json` under
-`~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/`.
+`~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/{run-id}/{repo}/`.
 Schema: `assets/packages-table.md`.
 
 There are no `.auto.md` / `.manual.md` plan files on disk — the
@@ -55,7 +55,7 @@ in the same JSON row.
 ## Workspace Layout
 
 ```
-~/git/defra/trade-imports-animals/workareas/npm-upgrades/{run-id}/{repo}/
+~/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/{run-id}/{repo}/
   packages.{repo}.json              — canonical per-repo state (schema in assets/packages-table.md)
   .upgrades-meta.json               — thin discovery header
   best-practices.md                 — per-repo dependency-relevant best practices

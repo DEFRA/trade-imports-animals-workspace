@@ -79,9 +79,9 @@ echo
 # Step 1: discover in-scope repos.
 discover_args=(--run-id "$RUN_ID" --branch "$BRANCH")
 [[ -n "$TARGET_VERSION" ]] && discover_args+=(--target "$TARGET_VERSION")
-"$HOME/git/defra/trade-imports-animals/tools/govuk/discover-repos.sh" "${discover_args[@]}"
+"$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/discover-repos.sh" "${discover_args[@]}"
 
-META_FILE="$HOME/git/defra/trade-imports-animals/workareas/govuk-upgrades/$RUN_ID/.run-meta.json"
+META_FILE="$HOME/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/$RUN_ID/.run-meta.json"
 mapfile -t REPOS < <(jq -r '.repos[]' "$META_FILE")
 
 if [[ ${#REPOS[@]} -eq 0 ]]; then
@@ -93,22 +93,22 @@ fi
 echo
 echo "Setting up branch $BRANCH on ${#REPOS[@]} repo(s)..."
 for repo in "${REPOS[@]}"; do
-    "$HOME/git/defra/trade-imports-animals/tools/govuk/setup-branch.sh" --branch "$BRANCH" --repo "$repo"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/setup-branch.sh" --branch "$BRANCH" --repo "$repo"
 done
 
 # Step 3: discover versions per repo.
 echo
 echo "Discovering versions per repo..."
 for repo in "${REPOS[@]}"; do
-    repo_path="$HOME/git/defra/trade-imports-animals/repos/$repo"
+    repo_path="$HOME/git/defra/trade-imports-animals-workspace/repos/$repo"
     dv_args=("$repo_path" --run-id "$RUN_ID")
     [[ -n "$TARGET_VERSION" ]] && dv_args+=(--target "$TARGET_VERSION")
-    "$HOME/git/defra/trade-imports-animals/tools/govuk/discover-versions.sh" "${dv_args[@]}"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/discover-versions.sh" "${dv_args[@]}"
 done
 
 echo
 echo "=== START COMPLETE ==="
-"$HOME/git/defra/trade-imports-animals/tools/govuk/list-plans.sh" --run-id "$RUN_ID"
+"$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/list-plans.sh" --run-id "$RUN_ID"
 
 echo
 echo "Next: Phase 2 — spawn VERSION_PLANNER per unplanned version (see PHASE_2_MANAGER.md)."

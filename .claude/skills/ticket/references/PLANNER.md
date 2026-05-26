@@ -12,7 +12,7 @@ shape doesn't match the prefix rule.
 
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals-workspace/...` form.
 - No `/Users/<you>/git/...` — type `~/`, don't resolve it.
 
 ## Workflow
@@ -25,13 +25,13 @@ Reads `workareas/ticket-planning/EUDPA-XXXXX/{ticket.md,.plan-meta.json,best-pra
 when done.
 
 ```bash
-~/git/defra/trade-imports-animals/tools/ticket/prepare-plan.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals-workspace/tools/ticket/prepare-plan.sh EUDPA-XXXXX
 ```
 
 Or, if the affected repos are already known up front:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/ticket/prepare-plan.sh EUDPA-XXXXX --repos trade-imports-animals-frontend,trade-imports-animals-backend
+~/git/defra/trade-imports-animals-workspace/tools/ticket/prepare-plan.sh EUDPA-XXXXX --repos trade-imports-animals-frontend,trade-imports-animals-backend
 ```
 
 ### 2. Explore Codebase
@@ -44,7 +44,7 @@ further repos in scope, re-run `prepare-plan.sh --repos` to refresh.
 
 ### 3. Create Plan
 
-Create: `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
+Create: `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-XXXXX/plan.md`
 
 ```markdown
 # Implementation Plan: EUDPA-XXXXX
@@ -92,7 +92,7 @@ Create: `~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX
 ## Output
 
 ```
-Plan created: ~/git/defra/trade-imports-animals/workareas/ticket-planning/EUDPA-XXXXX/plan.md
+Plan created: ~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-XXXXX/plan.md
 Repos: [list] | Steps: [X] | Confidence: [level]
 Items needing verification: [X]
 ```

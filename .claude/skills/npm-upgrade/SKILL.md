@@ -10,11 +10,11 @@ Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
 ## Path conventions
 
 Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals/tools/<domain>/`,
-`~/git/defra/trade-imports-animals/docs/best-practices/`,
-`~/git/defra/trade-imports-animals/workareas/`. Bash expands `~` to
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
+`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
 your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals/...` — no env var needed.
+`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
 Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
@@ -26,7 +26,7 @@ pipe doesn't match even when each piece would. Specifically:
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
 - No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals/...` (the `$VAR` trips Claude Code's expansion check).
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
 - No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
 - No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
 
@@ -46,7 +46,7 @@ Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Ba
 | `references/MANUAL_UPGRADE_IMPLEMENTOR.md` | `references/WALKER.md` `I` keystroke — one per package the operator chooses to implement | source edits + commit + JSON status row update |
 
 Spawn idiom: Task tool with `subagent_type: general-purpose` and a prompt
-beginning `Follow the instructions in ~/git/defra/trade-imports-animals/.claude/skills/npm-upgrade/references/<NAME>.md.`
+beginning `Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/npm-upgrade/references/<NAME>.md.`
 `general-purpose` carries `Tools: *` so workers can WebFetch
 changelogs, Grep the codebase, and (for the implementor) edit source
 files and run tests.
@@ -66,7 +66,7 @@ extension conventions, and global rules shared by all phases.
 
 ## Repos
 
-All EUDP Live Animals Node repos under `~/git/defra/trade-imports-animals/repos/`:
+All EUDP Live Animals Node repos under `~/git/defra/trade-imports-animals-workspace/repos/`:
 
 - trade-imports-animals-frontend
 - trade-imports-animals-backend
@@ -76,7 +76,7 @@ All EUDP Live Animals Node repos under `~/git/defra/trade-imports-animals/repos/
 ## Step 1: Establish Run ID
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend branch --show-current
+git -C ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend branch --show-current
 ```
 
 Parse `EUDPA-XXXXX` from the branch name (e.g.
@@ -88,17 +88,17 @@ For each repo, ensure it's on `feature/{run-id}-npm-dependency-upgrades`:
 
 ```bash
 # Check (separate Bash calls — no pipes)
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} branch --list "feature/{run-id}-npm-dependency-upgrades"
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} branch --list "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 ```bash
 # Create if missing
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 ```bash
 # Switch if exists
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 All repos must be on the feature branch before continuing.
@@ -177,7 +177,7 @@ repo / single package / planning-only batches.
 - `references/MANUAL_UPGRADE_IMPLEMENTOR.md` — per-package atomic edit-test-commit-rollback worker (spawned by the WALKER on `I`).
 - `assets/packages-table.md` — canonical JSON schema for `packages.{repo}.json`.
 
-Scripts (`~/git/defra/trade-imports-animals/tools/npm/`):
+Scripts (`~/git/defra/trade-imports-animals-workspace/tools/npm/`):
 
 - `start-upgrade.sh` — single dispatcher (phase 1 / 2 / 3).
 - `discover-upgrades.sh` — discovery + seed `packages.{repo}.json`.

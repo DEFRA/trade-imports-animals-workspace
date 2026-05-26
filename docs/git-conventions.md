@@ -6,7 +6,7 @@ Observed across all four repos. The tests repo is the most consistent reference 
 
 ```
 type/TICKET/short-description
-```
+```erpic
 
 | Segment | Format | Example |
 |---------|--------|---------|

@@ -28,7 +28,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WORKSPACE="$HOME/git/defra/trade-imports-animals"
+WORKSPACE="$HOME/git/defra/trade-imports-animals-workspace"
 
 TICKET=""
 PR_FILTER=""
@@ -154,8 +154,8 @@ body_tmp=$(mktemp -t "share-review-$TICKET-XXXXXX.md")
 **Option A — walk it in Claude Code (recommended):**
 
 \`\`\`bash
-git -C ~/git/defra/trade-imports-animals fetch origin
-git -C ~/git/defra/trade-imports-animals checkout $BRANCH
+git -C ~/git/defra/trade-imports-animals-workspace fetch origin
+git -C ~/git/defra/trade-imports-animals-workspace checkout $BRANCH
 \`\`\`
 
 Then in a Claude Code session opened at the workspace:

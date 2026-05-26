@@ -20,7 +20,7 @@ shape doesn't match the prefix rule.
 
 - No `&&` / `;` / `|` between commands — separate Bash calls instead.
 - No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals/...` form.
+- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals-workspace/...` form.
 - No `/Users/<you>/git/...` — type `~/`, don't resolve it.
 
 ---
@@ -28,7 +28,7 @@ shape doesn't match the prefix rule.
 ## Step 1: Load the work list
 
 ```bash
-~/git/defra/trade-imports-animals/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
+~/git/defra/trade-imports-animals-workspace/tools/review/review-items.sh EUDPA-XXXXX --filter pending --json
 ```
 
 Apply trigger filters:
@@ -126,7 +126,7 @@ For each item marked `D`, in input order:
 
 1. **Read the file** from the workspace copy:
    ```
-   ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
+   ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file-path}
    ```
    Use the Read tool with `offset` / `limit` to grab ~10 lines around
    the reported line.
@@ -143,7 +143,7 @@ For each item marked `D`, in input order:
    - "leave it" → `review-mark.sh ... --disposition "Won't Fix" --note "{reason}"`
    - "defer to PR thread / standup / wider conversation":
      ```bash
-     ~/git/defra/trade-imports-animals/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{open question / who to ask}"
+     ~/git/defra/trade-imports-animals-workspace/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Discuss" --note "{open question / who to ask}"
      ```
 
 Move to the next Discuss item.
@@ -156,7 +156,7 @@ Re-render the markdown items view so the user can see the dispositions
 they just set:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
+~/git/defra/trade-imports-animals-workspace/tools/review/render-items.sh EUDPA-XXXXX --repo {repo}
 ```
 
 Print the summary:

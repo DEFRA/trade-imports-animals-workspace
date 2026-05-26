@@ -86,7 +86,7 @@ case "$SAFE" in
     *) echo "Invalid --safe-for-automation: $SAFE (true|false)" >&2; exit 1 ;;
 esac
 
-TARGET="$HOME/git/defra/trade-imports-animals/workareas/npm-upgrades/$RUN_ID/$REPO/packages.${REPO}.json"
+TARGET="$HOME/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/$RUN_ID/$REPO/packages.${REPO}.json"
 [[ -f "$TARGET" ]] || { echo "Packages file not found: $TARGET" >&2; exit 1; }
 
 exists=$(jq --arg p "$PACKAGE" '[.packages[] | select(.package == $p)] | length' "$TARGET")

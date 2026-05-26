@@ -44,11 +44,11 @@ for v in RUN_ID REPO VERSION; do
     [[ -z "${!v}" ]] && { echo "Missing --${v,,}" >&2; exit 1; }
 done
 
-TOOLS="$HOME/git/defra/trade-imports-animals/tools/govuk"
-REPO_DIR="$HOME/git/defra/trade-imports-animals/repos/$REPO"
+TOOLS="$HOME/git/defra/trade-imports-animals-workspace/tools/govuk"
+REPO_DIR="$HOME/git/defra/trade-imports-animals-workspace/repos/$REPO"
 [[ -d "$REPO_DIR/.git" ]] || { echo "Not a git repo: $REPO_DIR" >&2; exit 1; }
 
-STATE_FILE="$HOME/git/defra/trade-imports-animals/workareas/govuk-upgrades/$RUN_ID/$REPO/versions.${REPO}.json"
+STATE_FILE="$HOME/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/$RUN_ID/$REPO/versions.${REPO}.json"
 [[ -f "$STATE_FILE" ]] || { echo "Versions file not found: $STATE_FILE" >&2; exit 1; }
 
 entry=$(jq --arg v "$VERSION" '.versions[] | select(.version == $v)' "$STATE_FILE")
