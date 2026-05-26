@@ -182,14 +182,36 @@ fi
 
 log "Found $VERSION_COUNT versions to process"
 
-# Cache CHANGELOG.md.
+# Cache CHANGELOG.md. Refresh automatically if the cached file doesn't
+# contain the target version's section (i.e. we're targeting a release
+# newer than the cache).
+needs_changelog_refresh=false
 if [[ ! -f "$CHANGELOG_FILE" ]] || [[ "$FORCE" == "true" ]]; then
+    needs_changelog_refresh=true
+elif ! grep -q "^## v${TARGET}\([[:space:](]\|\$\)" "$CHANGELOG_FILE"; then
+    log "Cached CHANGELOG.md is missing v${TARGET} — refreshing"
+    needs_changelog_refresh=true
+fi
+
+if [[ "$needs_changelog_refresh" == "true" ]]; then
     log "Fetching CHANGELOG.md from GitHub..."
     curl -sf "$CHANGELOG_URL" -o "$CHANGELOG_FILE" || error "Failed to fetch CHANGELOG.md from $CHANGELOG_URL"
     log "Cached: $CHANGELOG_FILE"
 else
     log "Using cached CHANGELOG.md"
 fi
+
+# Prune per-version artifacts whose version is no longer in the
+# (current, target] window. This catches re-runs with a lower --target
+# (or with intermediate versions yanked from npm).
+keep_list=" ${sorted_versions[*]} "
+while IFS= read -r stale; do
+    bare=$(basename "$stale" .changelog.md | sed 's/^version__//')
+    if [[ "$keep_list" != *" $bare "* ]]; then
+        rm -f "$stale"
+        log "  Pruned stale changelog cache: version__${bare}.changelog.md"
+    fi
+done < <(find "$WORKSPACE_DIR" -maxdepth 1 -name 'version__*.changelog.md')
 
 # Pre-bake per-version CHANGELOG sections so VERSION_PLANNER can Read
 # one file per spawn.
