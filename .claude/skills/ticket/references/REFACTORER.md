@@ -27,12 +27,19 @@ Only deviate if existing pattern has clear problems.
 
 ## Step 0: Verify Starting Point
 
-```bash
-# Java
-mvn clean test && mvn clean verify
+Redirect output to a tmp file and read the file once — don't grep streaming output:
 
-# TypeScript
-npm test && npm run test:integration
+```bash
+# Java (backend / stub / reference-data)
+mvn -f ~/git/defra/trade-imports-animals/repos/<repo>/pom.xml verify > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+```
+```bash
+# Node unit (frontend / admin)
+npm --prefix ~/git/defra/trade-imports-animals/repos/<repo> test > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+```
+```bash
+# E2E (only when changing tests repo or cross-cutting code)
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/e2e-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 
 All tests must pass before refactoring.

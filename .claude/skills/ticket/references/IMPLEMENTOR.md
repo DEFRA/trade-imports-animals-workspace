@@ -13,9 +13,19 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 5. Verify `[ASSUMPTION]` and `[NEEDS VERIFICATION]` items
 6. **Run all tests** - do NOT proceed if failing
 
+Redirect output to a tmp file and read the file once — don't grep streaming output:
+
 ```bash
-# Java: mvn clean verify
-# Node: npm test && npm run test:integration
+# Java (backend / stub / reference-data)
+mvn -f ~/git/defra/trade-imports-animals/repos/<repo>/pom.xml verify > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+```
+```bash
+# Node unit (frontend / admin)
+npm --prefix ~/git/defra/trade-imports-animals/repos/<repo> test > /tmp/<repo>-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
+```
+```bash
+# E2E (only when changing tests repo or cross-cutting code)
+npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > /tmp/e2e-pre-$(date +%Y%m%d-%H%M%S).txt 2>&1
 ```
 
 ## Implementation
