@@ -3,12 +3,11 @@ style guide.
 
 Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in
 REFRESH) the prior items reported for this file. Findings are persisted
-by calling **`style-add-item.sh`** per violation — never edit
-`style-review.{repo}.md` by hand. The per-file `.style.md` is a thin
-paper trail listing what you reported.
+exclusively via the per-file JSON helper triad — never edit
+`style-review.{repo}.md` or any per-file artifact by hand.
 
-Paths anchored on `~/git/defra/trade-imports-animals` — compute via the `find_workspace_root`
-helper in `docs/agent-skills.md`.
+Paths anchored on `~/git/defra/trade-imports-animals` — compute via the
+`find_workspace_root` helper in `docs/agent-skills.md`.
 
 ## Bash call hygiene
 
@@ -37,24 +36,29 @@ shape doesn't match the prefix rule.
 ├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
 │   ├── BEST_PRACTICES.md
 │   └── jsdoc.md
-├── tools/style/                                    # CALL: style-add-item.sh, style-mark.sh
+├── tools/style/                                    # CALL: file-style-*.sh helpers
 └── workareas/
-    ├── reviews/EUDPA-XXXXX/repos/{repo}/{file}     # READ: the actual source file
+    ├── reviews/EUDPA-XXXXX/
+    │   ├── repos/{repo}/{file}                     # READ-ONLY: source snapshot
+    │   └── best-practices/{repo}.md                # READ: pre-baked rules bundle
     └── code-style-reviews/EUDPA-XXXXX/
         └── file-reviews/{repo}/
-            └── {safe_path}.style.md                # WRITE: thin paper trail
+            └── {safe_path}.style.json              # WRITE via helpers only
 ```
+
+The source tree under `workareas/reviews/EUDPA-XXXXX/repos/{repo}/` is
+the read-only snapshot at the PR commit — never edit it. Live-repo edits
+are the implementor's job, not yours.
 
 ## Workflow
 
-### 1. Read the style guides
+### 1. Read the pre-baked style rules bundle
 
-Read `~/git/defra/trade-imports-animals/docs/best-practices/node/code-style.md` in full.
-Know all 17 rules.
-
-For doc-comment accuracy (Rule 17), read
-`~/git/defra/trade-imports-animals/docs/best-practices/doc-comments/BEST_PRACTICES.md`
-and `~/git/defra/trade-imports-animals/docs/best-practices/doc-comments/jsdoc.md`.
+Your prompt specifies the bundle path
+`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.md`
+(one per repo). Read it in full — it concatenates the 17-rule guide and
+the doc-comment rules so you don't pay per-file Read cost across 100
+parallel reviewers.
 
 ### 2. Determine mode
 
@@ -63,15 +67,17 @@ and `~/git/defra/trade-imports-animals/docs/best-practices/doc-comments/jsdoc.md
 **REFRESH** — your prompt includes `Prior items reported for this file
 (JSON)` and a diff window (`old_sha..new_sha`).
 
-### 3a. FRESH mode — get the diff
+### 3a. FRESH mode — get the file diff (cached)
 
 ```bash
-~/git/defra/trade-imports-animals/tools/github/diff.sh {repo} {pr-number}
+~/git/defra/trade-imports-animals/tools/github/file-diff.sh {repo} {pr-number} {file} --ticket EUDPA-XXXXX
 ```
 
-Extract hunks for your file. Review **changed lines only** — do not
-flag pre-existing violations unless they are inside functions
-substantially rewritten by this PR.
+`--ticket` reads from the diff cache populated by `prepare-review.sh`
+(`workareas/reviews/EUDPA-XXXXX/.diffs/{repo}.diff`), filtered to your
+file's hunks. Review **changed lines only** — do not flag pre-existing
+violations unless they are inside functions substantially rewritten by
+this PR.
 
 ### 3b. REFRESH mode — check old violations and new changes
 
@@ -81,16 +87,16 @@ git -C ~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{re
 
 For **each prior item** in the JSON block of your prompt:
 
-- Read the current file and decide whether the violation is **still present** or **resolved**.
+- Read the current file and decide whether the violation is **still
+  present** or **resolved**.
 - If resolved, call:
   ```bash
-  ~/git/defra/trade-imports-animals/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
-    --disposition Auto-Resolved --note "resolved <today>"
+  ~/git/defra/trade-imports-animals/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} --disposition Auto-Resolved --note "resolved <today>"
   ```
 - If still present, leave as-is (don't re-add).
 
 For **new violations** in changed lines (since `old_sha`), call
-`style-add-item.sh` (see Step 5).
+`file-style-add-item.sh` (see Step 5).
 
 In **REFRESH (merge-resolved)** mode (your prompt names a `merge_sha`),
 use that merge as the diff anchor and pay extra attention to:
@@ -100,65 +106,43 @@ dropped/duplicated code, style drift introduced by the merge resolution.
 
 Read the file from
 `~/git/defra/trade-imports-animals/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
-for context. Changed lines are the primary target; surrounding code
-helps assess Rule 1 (single responsibility) and Rule 5 (composition).
+(read-only snapshot) for context. Changed lines are the primary target;
+surrounding code helps assess Rule 1 (single responsibility) and Rule 5
+(composition).
 
-### 5. Persist each finding via `style-add-item.sh`
+### 5. Persist each finding via `file-style-add-item.sh`
 
-For every violation you decide to flag (FRESH or REFRESH):
+The per-file `.style.json` placeholder was initialised by
+`prepare-style.sh`. For every violation you decide to flag:
 
 ```bash
-~/git/defra/trade-imports-animals/tools/style/style-add-item.sh EUDPA-XXXXX --repo {repo} \
-  --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} \
-  --issue "describe the violation, anchored to the specific function/symbol/literal" \
-  --fix  "concrete suggested fix"
+~/git/defra/trade-imports-animals/tools/style/file-style-add-item.sh EUDPA-XXXXX --repo {repo} --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} --issue "describe the violation, anchored to the specific function/symbol/literal" --fix "concrete suggested fix"
 ```
 
-The script appends a row at the next available ID and prints the new
-ID. Capture the IDs you reported for the paper trail.
+Add `--best-practice node/code-style.md` (or another path under
+`docs/best-practices/`) when the finding maps to a specific rule file.
 
-### 6. Write the paper trail
+The script appends a todo at the next available id and prints the new
+id. No markdown, no escaping, no file paths to type.
 
-Overwrite the file path specified in your prompt (e.g.
-`~/git/defra/trade-imports-animals/workareas/code-style-reviews/EUDPA-XXXXX/file-reviews/{repo}/{safe_path}.style.md`):
+### 6. Set the verdict
 
-```markdown
-# Style review: {file}
+After all findings are recorded, call:
 
-**Repository:** {repo}
-**PR:** #{pr-number}
-**Mode:** FRESH | REFRESH | REFRESH (merge-resolved)
-**Reviewed:** {date}
-
-## Items reported
-
-{list of new IDs returned by style-add-item.sh, one per line, e.g.}
-- #117 (Rule 2, FAIL): function declaration `getRows()` should be fat-arrow
-- #118 (Rule 13, WARN): bare `'PENDING'` literal — extract to `SCAN_STATUS_PENDING`
-
-## Resolved (REFRESH only)
-
-{list of prior item IDs you marked Auto-Resolved, e.g.}
-- #45 (Rule 6): `t` parameter renamed to `type` — verified at line 25
-
-## Notes
-
-{optional — surprising patterns, suggested team-level conventions, sibling files
-that share the same problem and might warrant a sweep}
+```bash
+~/git/defra/trade-imports-animals/tools/style/file-style-set-verdict.sh EUDPA-XXXXX --repo {repo} --file {file} --verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK} --reason "one sentence"
 ```
 
-If you reported nothing and resolved nothing, write a one-line file:
+Verdict criteria:
 
-```markdown
-# Style review: {file}
+| Verdict | Criteria |
+|---|---|
+| `COMPLIANT` | No FAIL or WARN findings |
+| `MINOR_ISSUES` | 1-3 WARN-only findings |
+| `NEEDS_WORK` | Any FAIL, or ≥4 WARN |
 
-**Repository:** {repo}
-**PR:** #{pr-number}
-**Mode:** FRESH | REFRESH
-**Reviewed:** {date}
-
-No items reported. File is compliant.
-```
+This stamps `reviewed_at` and flips the coverage gate to "reviewed" for
+this file. Schema reference: `assets/file-style-schema.md`.
 
 ## The 17 Rules
 
@@ -189,12 +173,12 @@ No items reported. File is compliant.
 | **FAIL** | Clear, unambiguous violation of a stated rule (`var`, mutation in a hot path, `.then()` chain where `async/await` is the rule) |
 | **WARN** | Violation exists but with a plausible contextual reason; or a borderline case |
 
-If a finding is `PASS` or `N/A` — do nothing. Don't add a row.
+If a finding is `PASS` or `N/A` — do nothing. Don't add a todo.
 
 ## Output
 
 Return one line summarising what you did:
 
 ```
-Reviewed {file}: {N} added, {M} resolved, paper trail at {path}
+Reviewed {file}: {N} added, {M} resolved, verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK}
 ```

@@ -2,8 +2,9 @@
 # Verify code style review coverage for a ticket
 # Usage: ./verify-style-coverage.sh EUDPA-XXXXX [--json]
 #
-# Checks that every .js file changed in the PR has a .style.md review.
-# Reads .style-meta.json from workareas/code-style-reviews/EUDPA-XXXXX/
+# Checks that every .js file changed in the PR has a .style.json review
+# with a non-null verdict. Reads .style-meta.json from
+# workareas/code-style-reviews/EUDPA-XXXXX/
 
 set -e
 
@@ -20,7 +21,7 @@ fi
 if [[ -z "$TICKET" ]]; then
     echo "Usage: ./verify-style-coverage.sh EUDPA-XXXXX [--json]"
     echo ""
-    echo "Verifies all changed .js files have .style.md review files."
+    echo "Verifies all changed .js files have .style.json reviews with verdict set."
     exit 1
 fi
 
@@ -65,12 +66,12 @@ for ((i=0; i<total_files; i++)); do
     filepath=$(echo "$js_files_json" | jq -r ".[$i].path")
 
     safe_path=$(echo "$filepath" | tr '/' '_')
-    review_file="$FILE_REVIEWS_DIR/$repo/${safe_path}.style.md"
+    review_file="$FILE_REVIEWS_DIR/$repo/${safe_path}.style.json"
 
     all_repos+=("$repo")
     all_files+=("$filepath")
 
-    if [[ -f "$review_file" ]] && [[ -s "$review_file" ]]; then
+    if [[ -f "$review_file" ]] && jq -e '.verdict != null' "$review_file" > /dev/null 2>&1; then
         all_statuses+=("reviewed")
         ((reviewed_count++))
     elif [[ -f "$review_file" ]]; then
