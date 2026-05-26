@@ -50,12 +50,12 @@ upgrade", "bump govuk-frontend".
 
 ## Repos in scope
 
-govuk-frontend is consumed by 2 of the 4 EUDP Live Animals Node repos:
-
-- `~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend`
-- `~/git/defra/trade-imports-animals/repos/trade-imports-animals-admin`
-
-(Not backend / stub / reference-data / tests.)
+Auto-detected at Phase 1 by `discover-repos.sh` — any repo under
+`repos/*` whose `package.json` lists `govuk-frontend` is in scope. The
+list is written to
+`workareas/govuk-upgrades/{run-id}/.run-meta.json` as `repos[]`.
+Phase 2 and Phase 3 iterate that list; no skill prose hard-codes repo
+membership.
 
 ## Worker references
 
@@ -68,36 +68,38 @@ and a prompt beginning `Follow the instructions in ~/git/defra/trade-imports-ani
 `general-purpose` carries `Tools: *` so the worker can fetch the
 changelog, grep the repo and write its plan file.
 
-## Step 1: Establish Run ID
+## Step 1: Establish ticket + branch
+
+Ask the user which ticket this upgrade tracks. Three paths:
+
+1. **Existing ticket** — they give an `EUDPA-XXXXX`. Branch is
+   `chore/EUDPA-XXXXX`. Proceed to Step 2.
+2. **Create a new ticket** — call
+   `~/git/defra/trade-imports-animals/tools/jira/create-ticket.sh`
+   with DevOps conventions: parent `EUDPA-144`, labels
+   `DevOps` + `tech-improvement`, priority Medium, type Task. See the
+   `ticket-creator` skill for the GDS question-gathering flow. Capture
+   the new ticket key, then Branch is `chore/EUDPA-XXXXX`.
+3. **Custom branch name (no Jira ticket)** — accept the user-supplied
+   branch verbatim. Use this only when there's a deliberate reason not
+   to track work in Jira.
+
+## Step 2: Run Phase 1 dispatcher
 
 ```bash
-git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend branch --show-current
+~/git/defra/trade-imports-animals/tools/govuk/start-upgrade.sh --ticket EUDPA-XXXXX [--target 6.1.0]
 ```
 
-Parse `EUDPA-XXXXX` from the branch name. If not found, ask the user.
-
-## Step 2: Branch Setup
-
-For each repo, ensure it's on `feature/{run-id}-govuk-frontend-upgrade`:
+Or with a custom branch:
 
 ```bash
-# Check
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} branch -a | grep "feature/{run-id}-govuk-frontend-upgrade"
-
-# Create if missing
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout -b "feature/{run-id}-govuk-frontend-upgrade"
-
-# Switch if exists
-git -C ~/git/defra/trade-imports-animals/repos/{repo-name} checkout "feature/{run-id}-govuk-frontend-upgrade"
+~/git/defra/trade-imports-animals/tools/govuk/start-upgrade.sh --branch <branch-name> [--target 6.1.0]
 ```
 
-Both repos must be on the feature branch before continuing.
-
-## Phase 1: Version Discovery
-
-```
-Follow references/PHASE_1_MANAGER.md. Run ID: {run-id}
-```
+`start-upgrade.sh` writes `.run-meta.json`, ensures every in-scope repo
+is on the branch, and seeds `versions.{repo}.json` + pre-bakes the
+per-version changelog and best-practices files. It prints `PHASE: 1`
+on the first line so you can confirm the dispatch.
 
 Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
 Phase 2 (changelog analysis)?"
@@ -148,9 +150,12 @@ Best-practices (load when the changelog warrants):
 
 Scripts (`~/git/defra/trade-imports-animals/tools/govuk/`):
 
-- `discover-versions.sh` — Phase 1 state seed + per-version `*.changelog.md` + per-repo `best-practices.md`.
-- `discover-repos.sh` — Phase 1 helper that writes the run-level `.run-meta.json` (in-scope repos).
+- `start-upgrade.sh` — Phase 1 dispatcher: `.run-meta.json`, branch setup, version discovery.
+- `discover-repos.sh` — write run-level `.run-meta.json` (in-scope repos).
+- `discover-versions.sh` — seed `versions.{repo}.json` + cache CHANGELOG + pre-bake per-version sections + best-practices bundle.
+- `setup-branch.sh` — idempotent `git checkout` for one repo + branch.
 - `version-classify.sh` / `version-add-change.sh` — VERSION_PLANNER's mutation surface for `versions.{repo}.json`.
-- `version-mark-implemented.sh` / `version-mark-failed.sh` — Phase 3 state transitions (helper-as-last-action).
+- `apply-version.sh` — Phase 3 per-version: update package.json, `npm install`, `npm test`, commit, mark implemented (last action).
+- `version-mark-implemented.sh` / `version-mark-failed.sh` — state transitions used by `apply-version.sh`.
 - `render-version-plan.sh` — read-only markdown view of one version's plan.
 - `list-plans.sh` / `upgrade-status.sh` — filterable status views of the canonical JSON.
