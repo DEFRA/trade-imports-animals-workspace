@@ -46,6 +46,8 @@ context for the whole session:
 - `~/git/defra/trade-imports-animals/docs/best-practices/jira/ticket-conventions.md`
   — Type / priority / AC / named-conventions guidance for the EUDPA
   project.
+- `~/git/defra/trade-imports-animals/.claude/skills/ticket-creator/assets/known-labels.md`
+  — accepted EUDPA-project Jira labels (camelCase canonical form).
 
 ## Workflow
 
@@ -94,12 +96,11 @@ parent epic, prefix with the epic key (e.g. `EUDPA-9888-rotate-jenkins-token`).
 | Priority | Highest/High=blocking; Medium=normal; Low/Lowest=nice-to-have |
 
 ### Labels
-| Label | When |
-|-------|------|
-| technicalImprovement | Tech debt |
-| LiveIncidents | Production issues |
 
-(See ticket-conventions.md for guidance on label casing.)
+camelCase canonical form (e.g. `technicalImprovement`, not
+`tech-improvement`). Pick from the catalogue at
+`~/git/defra/trade-imports-animals/.claude/skills/ticket-creator/assets/known-labels.md`
+— prefer reusing an existing label over coining a new one.
 
 ## Step 3: Write Description
 
