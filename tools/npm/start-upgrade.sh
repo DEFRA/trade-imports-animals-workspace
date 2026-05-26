@@ -88,9 +88,18 @@ phase1() {
             >/dev/null
     done
 
-    # Optionally pre-bake context for every pending package. We call
-    # prebake-context.sh per (repo, package); the worker hydrates any
-    # field marked partial/false at spawn time.
+    # Per-repo best-practices bundle (one file per repo). Cheap and
+    # depends only on local files.
+    if [[ -x "$SCRIPT_DIR/bake-best-practices.sh" ]]; then
+        for repo in "${REPOS[@]}"; do
+            "$SCRIPT_DIR/bake-best-practices.sh" --run-id "$TICKET" --repo "$repo" \
+                >/dev/null 2>&1 || true
+        done
+    fi
+
+    # Per-package pre-bake (best-effort; sets context_baked +
+    # context_missing on each package row). Worker hydrates missing
+    # pieces via WebFetch / Grep at spawn time.
     if [[ -x "$SCRIPT_DIR/prebake-context.sh" ]]; then
         echo "Pre-baking per-package context..." >&2
         for repo in "${REPOS[@]}"; do
