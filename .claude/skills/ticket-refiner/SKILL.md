@@ -69,45 +69,34 @@ Confluence + GitHub.)
 
 ## Workflow
 
-1. Fetch ticket details
-2. Explore codebase
+1. Prepare workspace (one helper call — fetches Jira ticket + comments + Confluence links, seeds meta JSON, stubs `review.md`)
+2. Explore codebase (read directly from `~/git/defra/trade-imports-animals/repos/<repo>/`)
 3. Assess readiness
 4. Write review
+5. Finalise verdict
 
-## Step 1: Fetch Ticket
+## Step 1: Prepare Workspace
 
 ```bash
-~/git/defra/trade-imports-animals/tools/jira/ticket.sh EUDPA-XXXXX full
-~/git/defra/trade-imports-animals/tools/jira/comments.sh EUDPA-XXXXX
+~/git/defra/trade-imports-animals/tools/refine/prepare-refinement.sh EUDPA-XXXXX
 ```
 
-Extract: summary, description, AC, linked tickets/pages, comments.
+This produces, under `~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/`:
+
+- `ticket.md` — summary, description, AC, comments, Confluence references (from Jira JSON)
+- `.refinement-meta.json` — ticket fields + `verdict: null` (finalised in Step 5)
+- `review.md` — pre-populated stub from `assets/review-template.md`
+
+Read `ticket.md` to internalise the summary, AC and comments. The helper has already substituted `[Date]`, `[Ticket summary]`, type and priority into the review stub.
 
 ## Step 2: Explore Codebase
 
-Clone relevant repos:
-
-Each command is a separate Bash call:
-
-```bash
-mkdir -p ~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/repos
-```
-```bash
-gh repo clone DEFRA/<repo-name> ~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/repos/<repo-name> -- --depth 1
-```
-
-### Common Repos
-| Repository | Purpose |
-|------------|---------|
-| eudp-live-animals-imports-frontend | Main imports UI |
-| eudp-live-animals-frontend-notification | Notification UI |
-| eudp-live-animals-notification-microservice | Notification service |
-| .github/workflows | GitHub Actions workflow definitions |
-
-The repo names above are legacy; the live workspace under
-`~/git/defra/trade-imports-animals/repos/` uses the current `trade-imports-animals-*`
-naming. Refer to the workspace-root `CLAUDE.md` repo map for the
-authoritative list.
+The workspace already has the canonical clones at
+`~/git/defra/trade-imports-animals/repos/<repo>/`. Read directly from those
+working trees when you need to peek at code — do **not** clone anywhere.
+See the workspace `CLAUDE.md` repo map for the authoritative repo list
+(`trade-imports-animals-frontend`, `-backend`, `-admin`, `-tests`,
+`trade-imports-stub`, `trade-imports-reference-data`).
 
 ### Investigate
 **Features:** Where does it fit? Patterns to follow? Similar features?
@@ -148,10 +137,26 @@ authoritative list.
 
 ## Step 4: Write Review
 
-Read the canonical review skeleton from `assets/review-template.md` and
-write the populated review to
-`~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/review.md`,
-filling each section from Steps 1-3.
+`prepare-refinement.sh` already stubbed
+`~/git/defra/trade-imports-animals/workareas/ticket-refinement/EUDPA-XXXXX/review.md`
+from `assets/review-template.md`. Fill each section in place from
+Steps 1-3 — `## Description Summary`, `## Acceptance Criteria`,
+`## Codebase Investigation`, `## Readiness Assessment`,
+`## Questions for Refinement`, `## Suggested Improvements`, and the
+trailing `## Verdict` block.
+
+## Step 5: Finalise Verdict
+
+After filling `review.md`, record the verdict on the meta JSON so
+batch mode (`refine-batch.sh`) can query it:
+
+```bash
+~/git/defra/trade-imports-animals/tools/refine/refine-finalize.sh EUDPA-XXXXX --verdict READY --reason "Clear AC, repos identified"
+```
+
+Verdict must be one of `READY`, `NEEDS WORK`, `SPIKE REQUIRED` (the
+helper rejects anything else). The `--reason` is optional but
+recommended.
 
 ## Verdict Guidelines
 

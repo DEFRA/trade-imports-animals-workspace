@@ -269,6 +269,8 @@ Shared shell scripts called by skills via
 | `tools/govuk/list-plan-summaries.sh` | --run-id TICKET [--repo R] [--json] | PLAN_WALKER: one summary row per pending version |
 | `tools/govuk/list-plans.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Filterable Phase 1/2 status |
 | `tools/govuk/upgrade-status.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Combined Phase 1/2/3 status (delegates to list-plans.sh) |
+| **refine** | | |
+| `tools/refine/prepare-refinement.sh` | EUDPA-X [--json] | Fetch Jira ticket + comments + Confluence links, seed `.refinement-meta.json` (verdict=null), stub `review.md` |
 | **ticket** | | |
 | `tools/ticket/prepare-plan.sh` | EUDPA-X [--repos r1,r2] [--json] | Pre-bake `ticket.md` + `.plan-meta.json` + per-repo `best-practices/<repo>.md` for PLANNER |
 | `tools/ticket/prepare-implement.sh` | EUDPA-X [--repo R] [--json] | Assert plan, re-validate detect-tech, cache prior PR diff, emit `.implement-meta.json` |
@@ -289,7 +291,7 @@ workareas/code-style-reviews/EUDPA-X/              → .style-meta.json, items.{
 workareas/code-style-reviews/EUDPA-X/file-reviews/{repo}/ → {file}.style.json
 workareas/ticket-creation/<slug>/                  → draft.md
 workareas/ticket-planning/EUDPA-X/                 → ticket.md, plan.md, .plan-meta.json, .implement-meta.json, best-practices/{repo}.md, .diffs/{repo}.diff
-workareas/ticket-refinement/EUDPA-X/               → review.md, repos/
+workareas/ticket-refinement/EUDPA-X/               → ticket.md, review.md, .refinement-meta.json
 workareas/npm-upgrades/EUDPA-X/{repo}/             → packages.{repo}.json, .upgrades-meta.json, best-practices.md, .context/{pkg}/
 workareas/govuk-upgrades/EUDPA-X/                  → .run-meta.json
 workareas/govuk-upgrades/EUDPA-X/{repo}/           → versions.{repo}.json, CHANGELOG.md, version__{v}.changelog.md, best-practices.md
