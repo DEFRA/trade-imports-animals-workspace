@@ -82,7 +82,10 @@ discover_args=(--run-id "$RUN_ID" --branch "$BRANCH")
 "$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/discover-repos.sh" "${discover_args[@]}"
 
 META_FILE="$HOME/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/$RUN_ID/.run-meta.json"
-mapfile -t REPOS < <(jq -r '.repos[]' "$META_FILE")
+REPOS=()
+while IFS= read -r line; do
+    REPOS+=("$line")
+done < <(jq -r '.repos[]' "$META_FILE")
 
 if [[ ${#REPOS[@]} -eq 0 ]]; then
     echo "No repos depend on govuk-frontend — nothing to do." >&2
