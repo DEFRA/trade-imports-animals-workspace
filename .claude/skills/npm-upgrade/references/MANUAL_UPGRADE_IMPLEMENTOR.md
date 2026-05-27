@@ -68,6 +68,13 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} status --porcela
 
 If non-empty: stop. Return `CANNOT START: uncommitted changes`.
 
+**Skip the baseline `npm test` when `{repo}` is
+`trade-imports-animals-tests`.** That repo has no unit-test suite —
+it IS the E2E suite. The WALKER runs `npm run test:local` once at
+end of batch as the integration gate.
+
+For every other repo:
+
 ```bash
 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/baseline-{repo}-{package-normalized}.log 2>&1
 ```
@@ -120,6 +127,13 @@ failures:
 ---
 
 ## Step 6: Run tests
+
+**Skip this entire step when `{repo}` is `trade-imports-animals-tests`** —
+no unit-test suite exists. Commit straight through to Step 7; the
+WALKER runs `npm run test:local` once at end of batch and reports
+any regression there.
+
+For every other repo:
 
 ```bash
 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/upgrade-{repo}-{package-normalized}.log 2>&1

@@ -47,9 +47,19 @@ TARGET=$(echo "$row" | jq -r '.target')
 
 REPO_PATH="$HOME/git/defra/trade-imports-animals-workspace/repos/$REPO_NAME"
 [[ -d "$REPO_PATH" ]] || { echo "Repo not found: $REPO_PATH" >&2; exit 2; }
+# Resolve symlinks so npm doesn't rewrite the lockfile relative to the
+# workspace symlink. `cd && pwd -P` is POSIX, works on macOS and Linux
+# without needing realpath/readlink -f.
+REPO_PATH=$(cd "$REPO_PATH" && pwd -P)
+
+# Tests-repo has no unit-test suite. Skip the per-package npm-test
+# gating; the WALKER runs `npm run test:local` once at end of batch.
+SKIP_NPM_TEST=0
+[[ "$REPO_NAME" == "trade-imports-animals-tests" ]] && SKIP_NPM_TEST=1
 
 echo "========================================="
 echo "Manual upgrade: $PACKAGE | $CURRENT → $TARGET (repo: $REPO_NAME)"
+[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; walker runs test:local at end of batch)"
 echo "========================================="
 
 set_status() {
@@ -68,14 +78,16 @@ if [[ -n $(git -C "$REPO_PATH" status --porcelain -uno) ]]; then
     exit 2
 fi
 
-# Baseline test.
-echo "Running baseline tests..."
-if ! npm --prefix "$REPO_PATH" test >/tmp/baseline-manual.log 2>&1; then
-    echo "ERROR: Baseline tests failed (repo issue)"
-    set_status failed --failure-reason "Baseline tests failed before upgrade; repo issue"
-    exit 0
+# Baseline test (skipped for tests repo).
+if [[ "$SKIP_NPM_TEST" == "0" ]]; then
+    echo "Running baseline tests..."
+    if ! npm --prefix "$REPO_PATH" test >/tmp/baseline-manual.log 2>&1; then
+        echo "ERROR: Baseline tests failed (repo issue)"
+        set_status failed --failure-reason "Baseline tests failed before upgrade; repo issue"
+        exit 0
+    fi
+    echo "✓ Baseline pass"
 fi
-echo "✓ Baseline pass"
 
 # Install.
 echo "Installing $PACKAGE@$TARGET..."
@@ -86,24 +98,26 @@ if ! npm --prefix "$REPO_PATH" install "$PACKAGE@$TARGET" >/tmp/install-manual.l
 fi
 echo "✓ Installed"
 
-# Test.
-echo "Testing..."
-if ! npm --prefix "$REPO_PATH" test >/tmp/upgrade-manual.log 2>&1; then
-    echo "ERROR: Tests failed — rolling back"
-    git -C "$REPO_PATH" checkout package.json package-lock.json
-    npm --prefix "$REPO_PATH" install >/dev/null 2>&1
+# Test (skipped for tests repo — walker runs test:local at end of batch).
+if [[ "$SKIP_NPM_TEST" == "0" ]]; then
+    echo "Testing..."
+    if ! npm --prefix "$REPO_PATH" test >/tmp/upgrade-manual.log 2>&1; then
+        echo "ERROR: Tests failed — rolling back"
+        git -C "$REPO_PATH" checkout package.json package-lock.json
+        npm --prefix "$REPO_PATH" install >/dev/null 2>&1
 
-    if npm --prefix "$REPO_PATH" test >/tmp/rollback-verify-manual.log 2>&1; then
-        echo "✓ Rollback OK — manual code changes needed (spawn MANUAL_UPGRADE_IMPLEMENTOR)"
-        set_status failed --failure-reason "Install succeeded but tests fail — manual code changes required"
-        exit 0
-    else
-        echo "✗ CASCADE: rollback also failed"
-        set_status failed --failure-reason "CASCADE: rollback failed after manual upgrade; manual intervention required"
-        exit 1
+        if npm --prefix "$REPO_PATH" test >/tmp/rollback-verify-manual.log 2>&1; then
+            echo "✓ Rollback OK — manual code changes needed (spawn MANUAL_UPGRADE_IMPLEMENTOR)"
+            set_status failed --failure-reason "Install succeeded but tests fail — manual code changes required"
+            exit 0
+        else
+            echo "✗ CASCADE: rollback also failed"
+            set_status failed --failure-reason "CASCADE: rollback failed after manual upgrade; manual intervention required"
+            exit 1
+        fi
     fi
+    echo "✓ Tests pass"
 fi
-echo "✓ Tests pass"
 
 # Commit.
 git -C "$REPO_PATH" add package.json package-lock.json

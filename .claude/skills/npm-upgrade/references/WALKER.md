@@ -174,6 +174,33 @@ manual classification).
 
 ---
 
+## Step 4.5: End-of-batch E2E gate (tests repo only)
+
+If any `I`-keystroke implementor returned `DONE` for a package in
+`trade-imports-animals-tests`, run `npm run test:local` ONCE now as
+the integration gate. Per-package `npm test` was skipped for this
+repo (it has no unit suite — it IS the E2E suite), so this is the
+first chance to confirm the upgrades didn't break the test runner.
+
+```bash
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:local > /tmp/test-local-$(date +%Y%m%d-%H%M%S).log 2>&1
+```
+
+Read the log file you just created — summary line only. On failure,
+**do NOT grep the streaming output**. Find the structured artifacts:
+
+```bash
+find ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests/test-results -name "error-context.md"
+```
+
+Read each `error-context.md` to diagnose what broke. Surface the
+failure clearly in the Step 5 report — the upgrades are committed,
+so the operator must decide whether to revert or fix forward.
+
+If no `DONE` package was in the tests repo, skip this step.
+
+---
+
 ## Step 5: Final report
 
 ```bash
@@ -189,6 +216,9 @@ Walk complete for EUDPA-XXXXX [{filters}].
   Failed:      N  (rolled back / requires investigation)
   Deferred:    N  (file follow-up tickets)
   Skipped:     N  (still pending)
+
+  E2E gate (tests repo): PASS | FAIL | n/a
+  {if FAIL: include short summary from error-context.md}
 
 To implement deferred items later, re-run `walk upgrade EUDPA-XXXXX`.
 ```

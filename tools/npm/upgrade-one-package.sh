@@ -19,6 +19,13 @@
 #        failed, exit 0.
 #   6. git commit. Mark done with commit_sha. Exit 0.
 #
+# Tests-repo exception (trade-imports-animals-tests):
+# Steps 3 and 5 are SKIPPED. The tests repo has no unit-test suite
+# (it IS the test suite — a Playwright runner against the live stack).
+# Per-package installs commit straight through; the orchestrating
+# runner (run-automated-upgrades.sh) runs `npm run test:local` ONCE
+# after all upgrades land, as the end-of-batch integration gate.
+#
 # Exit codes:
 #   0  → success OR controlled failure (demoted to manual)
 #   1  → cascade failure (rollback failed, repo in inconsistent state)
@@ -56,9 +63,20 @@ CLASSIFICATION=$(echo "$row" | jq -r '.classification // "null"')
 
 REPO_PATH="$HOME/git/defra/trade-imports-animals-workspace/repos/$REPO_NAME"
 [[ -d "$REPO_PATH" ]] || { echo "Repo not found: $REPO_PATH" >&2; exit 2; }
+# Resolve symlinks so npm doesn't rewrite the lockfile relative to the
+# workspace symlink. `cd && pwd -P` is POSIX, works on macOS and Linux
+# without needing realpath/readlink -f.
+REPO_PATH=$(cd "$REPO_PATH" && pwd -P)
+
+# Tests-repo has no unit-test suite — it IS the E2E suite. Skip the
+# per-package npm-test gating; run-automated-upgrades.sh runs
+# `npm run test:local` once at the end of the batch instead.
+SKIP_NPM_TEST=0
+[[ "$REPO_NAME" == "trade-imports-animals-tests" ]] && SKIP_NPM_TEST=1
 
 echo "========================================="
 echo "Package: $PACKAGE | $CURRENT → $TARGET | classification: $CLASSIFICATION"
+[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; test:local runs at end of batch)"
 echo "========================================="
 
 set_status() {
@@ -91,14 +109,16 @@ export NVM_DIR="$HOME/.nvm"
 
 echo "✓ nvm use OK"
 
-# Step 3: baseline test
-echo "Running baseline tests..."
-if ! npm --prefix "$REPO_PATH" test >/tmp/baseline.log 2>&1; then
-    echo "ERROR: Baseline tests failed (repo issue, not upgrade)"
-    set_status failed --failure-reason "Baseline tests failed before upgrade; repo issue, not package-specific"
-    exit 0
+# Step 3: baseline test (skipped for tests repo)
+if [[ "$SKIP_NPM_TEST" == "0" ]]; then
+    echo "Running baseline tests..."
+    if ! npm --prefix "$REPO_PATH" test >/tmp/baseline.log 2>&1; then
+        echo "ERROR: Baseline tests failed (repo issue, not upgrade)"
+        set_status failed --failure-reason "Baseline tests failed before upgrade; repo issue, not package-specific"
+        exit 0
+    fi
+    echo "✓ Baseline pass"
 fi
-echo "✓ Baseline pass"
 
 # Step 4: install
 echo "Upgrading..."
@@ -110,26 +130,28 @@ if ! npm --prefix "$REPO_PATH" install "$PACKAGE@$TARGET" >/tmp/install.log 2>&1
 fi
 echo "✓ Installed"
 
-# Step 5: test after upgrade
-echo "Testing upgraded package..."
-if ! npm --prefix "$REPO_PATH" test >/tmp/upgrade.log 2>&1; then
-    echo "ERROR: Tests failed after upgrade — rolling back"
-    git -C "$REPO_PATH" checkout package.json package-lock.json
-    npm --prefix "$REPO_PATH" install >/dev/null 2>&1
+# Step 5: test after upgrade (skipped for tests repo — see top-of-file)
+if [[ "$SKIP_NPM_TEST" == "0" ]]; then
+    echo "Testing upgraded package..."
+    if ! npm --prefix "$REPO_PATH" test >/tmp/upgrade.log 2>&1; then
+        echo "ERROR: Tests failed after upgrade — rolling back"
+        git -C "$REPO_PATH" checkout package.json package-lock.json
+        npm --prefix "$REPO_PATH" install >/dev/null 2>&1
 
-    echo "Verifying rollback..."
-    if npm --prefix "$REPO_PATH" test >/tmp/rollback-verify.log 2>&1; then
-        echo "✓ Rollback successful"
-        demote_to_manual "Tests fail after upgrade; requires investigation"
-        set_status failed --failure-reason "Tests failed after upgrade to $TARGET; rolled back; demoted to manual"
-        exit 0
-    else
-        echo "✗ CRITICAL: Tests still failing after rollback — cascade failure"
-        set_status failed --failure-reason "CASCADE: tests still failing after rollback. Previous upgrade may have broken something. Manual intervention required."
-        exit 1
+        echo "Verifying rollback..."
+        if npm --prefix "$REPO_PATH" test >/tmp/rollback-verify.log 2>&1; then
+            echo "✓ Rollback successful"
+            demote_to_manual "Tests fail after upgrade; requires investigation"
+            set_status failed --failure-reason "Tests failed after upgrade to $TARGET; rolled back; demoted to manual"
+            exit 0
+        else
+            echo "✗ CRITICAL: Tests still failing after rollback — cascade failure"
+            set_status failed --failure-reason "CASCADE: tests still failing after rollback. Previous upgrade may have broken something. Manual intervention required."
+            exit 1
+        fi
     fi
+    echo "✓ Tests pass"
 fi
-echo "✓ Tests pass"
 
 # Step 6: commit
 git -C "$REPO_PATH" add package.json package-lock.json

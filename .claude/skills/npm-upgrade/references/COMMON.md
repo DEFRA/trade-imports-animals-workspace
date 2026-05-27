@@ -42,6 +42,22 @@ There are no `.todo` / `.inprogress` / `.done` / `.failed` marker
 files either — implementation status lives on `implementation_status`
 in the same JSON row.
 
+## Tests-repo exception
+
+`trade-imports-animals-tests` has **no unit-test suite** — it IS the
+E2E suite (Playwright runner against the live stack). The per-package
+`npm test` baseline + post-upgrade checks are SKIPPED for this repo
+inside both `upgrade-one-package.sh` and `run-manual-upgrade.sh`.
+
+Instead, the orchestrating runner — `run-automated-upgrades.sh` for
+the auto side, and the WALKER for the manual side — runs
+`npm run test:local` **once at end of batch** as the integration
+gate. A failure there means at least one of the just-landed
+upgrades broke E2E; the upgrades are already committed, so the
+operator decides whether to revert or fix forward (read
+`test-results/*/error-context.md` to diagnose — never grep the
+streaming log tail).
+
 ## Failure Types
 
 | Type | Cause | Action |
