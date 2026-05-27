@@ -76,7 +76,7 @@ end of batch as the integration gate.
 For every other repo:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/baseline-{repo}-{package-normalized}.log 2>&1
+~/git/defra/trade-imports-animals-workspace/tools/npm/npm-in-repo.sh --repo {repo} test > /tmp/baseline-{repo}-{package-normalized}.log 2>&1
 ```
 
 If baseline fails: stop. Mark status=failed with reason "baseline
@@ -99,7 +99,7 @@ extras in your edit pass.
 ## Step 4: Install the target
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} install {package}@{target}
+~/git/defra/trade-imports-animals-workspace/tools/npm/npm-in-repo.sh --repo {repo} install {package}@{target}
 ```
 
 If install fails (peer conflict, network etc.):
@@ -136,7 +136,7 @@ any regression there.
 For every other repo:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/upgrade-{repo}-{package-normalized}.log 2>&1
+~/git/defra/trade-imports-animals-workspace/tools/npm/npm-in-repo.sh --repo {repo} test > /tmp/upgrade-{repo}-{package-normalized}.log 2>&1
 ```
 
 Read the log file you just created.
@@ -150,13 +150,13 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} checkout -- .
 ```
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} install
+~/git/defra/trade-imports-animals-workspace/tools/npm/npm-in-repo.sh --repo {repo} install
 ```
 
 Verify rollback:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tmp/rollback-verify-{repo}-{package-normalized}.log 2>&1
+~/git/defra/trade-imports-animals-workspace/tools/npm/npm-in-repo.sh --repo {repo} test > /tmp/rollback-verify-{repo}-{package-normalized}.log 2>&1
 ```
 
 If rollback verification passes:

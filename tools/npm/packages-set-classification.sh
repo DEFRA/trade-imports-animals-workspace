@@ -1,6 +1,13 @@
 #!/bin/bash
-# Set the classification + risk + rationale fields on one package row
-# in packages.{repo}.json. Called by PACKAGE_PLANNER workers.
+# Write a per-package classification fragment for one PACKAGE_PLANNER
+# subagent. Fragments are merged into the canonical packages.{repo}.json
+# by packages-aggregate-classifications.sh after the fan-out completes.
+#
+# Each call writes a single file at:
+#   workareas/npm-upgrades/{run-id}/{repo}/classifications/{pkg-norm}.json
+# where {pkg-norm} substitutes "/" with "__" (so @hapi/hapi → @hapi__hapi).
+# This is safe under concurrent PACKAGE_PLANNER fan-out — each worker
+# writes its own file, so there is no shared state to race on.
 #
 # Usage:
 #   packages-set-classification.sh --run-id TICKET --repo REPO --package PKG \
@@ -86,15 +93,22 @@ case "$SAFE" in
     *) echo "Invalid --safe-for-automation: $SAFE (true|false)" >&2; exit 1 ;;
 esac
 
-TARGET="$HOME/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/$RUN_ID/$REPO/packages.${REPO}.json"
-[[ -f "$TARGET" ]] || { echo "Packages file not found: $TARGET" >&2; exit 1; }
+REPO_DIR="$HOME/git/defra/trade-imports-animals-workspace/workareas/npm-upgrades/$RUN_ID/$REPO"
+CANONICAL="$REPO_DIR/packages.${REPO}.json"
+[[ -f "$CANONICAL" ]] || { echo "Packages file not found: $CANONICAL" >&2; exit 1; }
 
-exists=$(jq --arg p "$PACKAGE" '[.packages[] | select(.package == $p)] | length' "$TARGET")
-[[ "$exists" -eq 0 ]] && { echo "Package not found in $TARGET: $PACKAGE" >&2; exit 1; }
+exists=$(jq --arg p "$PACKAGE" '[.packages[] | select(.package == $p)] | length' "$CANONICAL")
+[[ "$exists" -eq 0 ]] && { echo "Package not in seed manifest ($CANONICAL): $PACKAGE" >&2; exit 1; }
 
-# Build a partial-update object that we merge into the package row.
-# files_affected: if provided, split CSV; if empty string, treat as
-# explicit empty list.
+FRAGMENT_DIR="$REPO_DIR/classifications"
+mkdir -p "$FRAGMENT_DIR"
+
+# Normalise package name: replace "/" with "__" so @scope/name → @scope__name.
+PKG_NORM=${PACKAGE//\//__}
+FRAGMENT="$FRAGMENT_DIR/${PKG_NORM}.json"
+
+NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 files_json='null'
 if [[ "$SET_FILES" == "1" ]]; then
     if [[ -z "$FILES_AFFECTED" ]]; then
@@ -113,7 +127,7 @@ migration_json='null'
 demoted_json='false'
 [[ "$SET_DEMOTED" == "1" ]] && [[ "$DEMOTED" == "true" ]] && demoted_json='true'
 
-jq \
+jq -n \
     --arg p "$PACKAGE" \
     --arg cls "$CLASSIFICATION" \
     --arg risk "$RISK" \
@@ -123,24 +137,26 @@ jq \
     --argjson changes "$changes_json" \
     --argjson changelog "$changelog_json" \
     --argjson migration "$migration_json" \
+    --argjson demoted "$demoted_json" \
     --argjson set_files "$SET_FILES" \
     --argjson set_changes "$SET_CHANGES" \
     --argjson set_changelog "$SET_CHANGELOG" \
     --argjson set_migration "$SET_MIGRATION" \
     --argjson set_demoted "$SET_DEMOTED" \
-    --argjson demoted "$demoted_json" \
-    '.packages |= map(
-        if .package == $p then
-            .classification = $cls
-            | .risk = $risk
-            | .safe_for_automation = $safe
-            | .rationale = $rationale
-            | (if $set_files == 1 then .files_affected = $files else . end)
-            | (if $set_changes == 1 then .changes_required_summary = $changes else . end)
-            | (if $set_changelog == 1 then .changelog_url = $changelog else . end)
-            | (if $set_migration == 1 then .migration_guide_url = $migration else . end)
-            | (if $set_demoted == 1 then .demoted_from_auto = $demoted else . end)
-        else . end
-    )' "$TARGET" > "$TARGET.tmp" && mv "$TARGET.tmp" "$TARGET"
+    --arg now "$NOW" \
+    '{
+        package: $p,
+        classification: $cls,
+        risk: $risk,
+        safe_for_automation: $safe,
+        rationale: $rationale,
+        classified_at: $now
+    }
+    | (if $set_files == 1 then .files_affected = $files else . end)
+    | (if $set_changes == 1 then .changes_required_summary = $changes else . end)
+    | (if $set_changelog == 1 then .changelog_url = $changelog else . end)
+    | (if $set_migration == 1 then .migration_guide_url = $migration else . end)
+    | (if $set_demoted == 1 then .demoted_from_auto = $demoted else . end)
+    ' > "$FRAGMENT"
 
-echo "Classified $PACKAGE in $REPO: $CLASSIFICATION (risk=$RISK)"
+echo "Classified $PACKAGE in $REPO: $CLASSIFICATION (risk=$RISK) → $FRAGMENT"

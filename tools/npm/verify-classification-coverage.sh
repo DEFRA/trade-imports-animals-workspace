@@ -34,6 +34,12 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Fold any per-package classification fragments left by PACKAGE_PLANNER
+# workers into the canonical packages.{repo}.json files before counting.
+agg_args=(--run-id "$RUN_ID")
+[[ -n "$REPO_FILTER" ]] && agg_args+=(--repo "$REPO_FILTER")
+"$SCRIPT_DIR/packages-aggregate-classifications.sh" "${agg_args[@]}" >&2 || true
+
 # packages-list.sh handles filtering + JSON output for us.
 pending_args=(--run-id "$RUN_ID" --classification pending --json)
 [[ -n "$REPO_FILTER" ]] && pending_args+=(--repo "$REPO_FILTER")

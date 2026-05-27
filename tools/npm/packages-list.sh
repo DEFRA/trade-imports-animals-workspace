@@ -100,7 +100,7 @@ filtered=$(jq -s \
             ($cls == "pending" and .classification == null) or
             (.classification == $cls)) and
         ($stat == "" or
-            ($stat == "pending" and .implementation_status == null) or
+            ($stat == "pending" and (.implementation_status == null or .implementation_status == "todo")) or
             (.implementation_status == $stat)) and
         ($risk == "" or .risk == $risk) and
         ($pkg == "" or .package == $pkg)

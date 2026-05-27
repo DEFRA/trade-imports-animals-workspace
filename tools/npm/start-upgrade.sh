@@ -147,6 +147,10 @@ phase1() {
 }
 
 phase2() {
+    # Fold any leftover PACKAGE_PLANNER classification fragments into
+    # the canonical packages.{repo}.json before reading state.
+    "$SCRIPT_DIR/packages-aggregate-classifications.sh" --run-id "$TICKET" >&2 || true
+
     # Pre-flight: any auto packages left to run?
     local auto_pending
     auto_pending=$("$SCRIPT_DIR/packages-list.sh" \
@@ -217,6 +221,9 @@ phase2() {
 }
 
 phase3() {
+    # Defensive aggregate in case Phase 1 verify wasn't the last gate.
+    "$SCRIPT_DIR/packages-aggregate-classifications.sh" --run-id "$TICKET" >&2 || true
+
     # Emit the handoff manifest: every manual package (regardless of
     # status) plus any auto that ended up failed (these have already
     # been demoted to manual by upgrade-one-package, but the safety
