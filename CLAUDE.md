@@ -318,6 +318,7 @@ workareas/skills-audit/<name>.md                   → AUDIT-mode plan document 
 
 ## Conventions
 
-- Branch naming: `feat/`, `fix/`, `chore/` prefixes
+- Branch naming: `feat/EUDPA-XXXX[-slug]` or `chore/EUDPA-XXXX[-slug]` (also `fix/EUDPA-XXXX[-slug]`)
+- Cross-repo branches must share the same name across every affected repo — the workspace stack's `--branch` flag probes each repo for a matching branch-tagged image and falls back to `:latest` per service, so mismatched names break the linked-branch pickup
 - PRs: raise against `main` in the relevant repo
 - Cross-repo changes: coordinate via the tests repo

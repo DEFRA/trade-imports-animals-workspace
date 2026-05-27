@@ -15,63 +15,32 @@ Local workspace aggregating the DEFRA trade imports animals service repos. Not a
 
 ## Quickstart
 
+The workspace and every helper script under `tools/` hardcode the path
+`~/git/defra/trade-imports-animals-workspace`. If your checkout is
+elsewhere, symlink it before doing anything else:
+
+```bash
+ln -s "$(pwd)" ~/git/defra/trade-imports-animals-workspace
+```
+
+Then:
+
 ```bash
 make setup    # clone all repos into repos/
 make install  # npm install in all Node repos
 ```
 
-## Common commands
+Run `make help` for the full list of cross-repo commands.
 
-| Command | What it does |
-|---------|-------------|
-| `make setup` | Clone all repos (idempotent) |
-| `make update` | `git pull --rebase` all repos |
-| `make status` | `git status` across all repos |
-| `make install` | `npm install` in all Node repos |
-| `make test` | Run tests across all repos |
-| `make start-frontend` | Start frontend from source |
-| `make start-backend` | Start backend from source |
-| `make start-admin` | Start admin from source |
+## Skills
 
-## Branch-aware stack (alpha)
+This workspace ships custom Claude Code skills under `.claude/skills/`. They must be invoked from the workspace root — `cd` into a repo first and they won't be discoverable.
 
-`./scripts/stack/run-stack.sh` brings up the full stack from Dockerhub, optionally
-mixing in branch-tagged images for any service whose repo has published one
-(see EUDPA-175):
+Skills change often enough that any list here goes stale. For a live overview, paste this into Claude Code from the workspace root:
 
-```bash
-./scripts/stack/run-stack.sh                                              # all services on :latest
-./scripts/stack/run-stack.sh --branch feat/EUDPA-123                      # branch where published, latest elsewhere
-./scripts/stack/run-stack.sh --exclude backend                            # skip backend; run it locally
-./scripts/stack/run-stack.sh --branch feat/EUDPA-123 --exclude backend    # combine: branch tags + local backend
 ```
-
-Short forms: `-b` for `--branch`, `-e` for `--exclude`, `-d` for `--dev`.
-Run `./scripts/stack/run-stack.sh --help` for the full flag reference
-including `--dev` (build from local source) and `--profile` (run a subset of
-tiers). See also the other scripts in `scripts/stack/`.
-
-Run the tests-repo E2E specs against this stack:
-
-```bash
-cd repos/trade-imports-animals-tests
-npm run test:local
+List every skill under .claude/skills/. For each, read its SKILL.md frontmatter and give me one line: name, trigger phrases, and what it does. Group by which phase of work they cover.
 ```
-
-### Swap a service into IntelliJ
-
-The stack routes all inter-service URLs through `host.docker.internal`, and
-every service publishes its port to the host. To run one repo-backed service
-from source instead of from Docker:
-
-```bash
-./scripts/stack/run-stack.sh --exclude backend
-# now run trade-imports-animals-backend in IntelliJ on port 8085
-# frontend / admin reach the IntelliJ instance via host.docker.internal:8085
-```
-
-This sits alongside (not in place of) the existing `make docker-compose-*`
-flow while we evaluate the approach. EUDPA-178 will consolidate.
 
 ## Working on a single repo
 
@@ -83,15 +52,8 @@ git checkout -b feat/my-feature
 
 Each repo has its own `CLAUDE.md` with repo-specific context.
 
-## Structure
-
-```
-agents/     AI agent skills and workflows (Jira, GitHub, review, upgrade orchestration)
-docs/       Architecture notes, setup guides, ADRs
-scripts/    Shell scripts used by make targets
-skills/     Claude Code skill definitions
-```
-
 ## Docs
 
+- [Agent onboarding](docs/agent-onboarding.md) — credentials and canonical clone location for the agent skills
 - [Local setup](docs/local-setup.md) — how to run the full stack locally
+- [`docker/stack/AGENTS.md`](docker/stack/AGENTS.md) — workspace stack flags, overlays, env knobs
