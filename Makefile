@@ -6,8 +6,10 @@ JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-
 TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
 LOCAL_COMPOSE := docker/local.compose.yml
 LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
+CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
+WORKSPACE_ROOT := $(abspath .)
 
-.PHONY: setup update reset status install lint test \
+.PHONY: setup link update reset status install lint test \
         start-frontend start-backend start-admin \
         docker-local-branches docker-compose-up docker-compose-dev docker-compose-down docker-compose-bounce docker-logs docker-restart-backend clean help
 
@@ -20,6 +22,29 @@ help: ## Show this help
 
 setup: ## Clone all repos into repos/
 	@bash scripts/setup.sh
+
+link: ## Symlink ~/git/defra/trade-imports-animals-workspace -> this checkout (required by tools/)
+	@if [ "$(WORKSPACE_ROOT)" = "$(CANONICAL_PATH)" ]; then \
+		echo "Already at canonical path — no symlink needed."; \
+		exit 0; \
+	fi; \
+	if [ -L "$(CANONICAL_PATH)" ]; then \
+		current=$$(readlink "$(CANONICAL_PATH)"); \
+		if [ "$$current" = "$(WORKSPACE_ROOT)" ]; then \
+			echo "Already linked: $(CANONICAL_PATH) -> $$current"; \
+			exit 0; \
+		fi; \
+		echo "ERROR: $(CANONICAL_PATH) is a symlink to $$current, not this checkout."; \
+		echo "  Remove it manually if you want to repoint: rm $(CANONICAL_PATH)"; \
+		exit 1; \
+	fi; \
+	if [ -e "$(CANONICAL_PATH)" ]; then \
+		echo "ERROR: $(CANONICAL_PATH) exists and is not a symlink — refusing to clobber."; \
+		exit 1; \
+	fi; \
+	mkdir -p "$$(dirname "$(CANONICAL_PATH)")"; \
+	ln -s "$(WORKSPACE_ROOT)" "$(CANONICAL_PATH)"; \
+	echo "Linked $(CANONICAL_PATH) -> $(WORKSPACE_ROOT)"
 
 update: ## Pull --rebase all repos
 	@bash scripts/update.sh $(REPOS)
