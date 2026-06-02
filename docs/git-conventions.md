@@ -64,7 +64,8 @@ Imperative, present tense. Write the commit as an instruction:
 
 - Raise against `main`
 - One PR per ticket (or per logical unit of work within a ticket)
-- GitHub squash-or-merge; the merge commit is auto-generated (`Merge pull request #N from DEFRA/...`)
+- Don't force-push to the PR branch, preserve history for reviewers;
+- GitHub squash merge commit so `main` history is clean;
 
 ---
 
