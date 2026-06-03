@@ -65,7 +65,7 @@ Imperative, present tense. Write the commit as an instruction:
 
 - Raise against `main`
 - One PR per ticket (or per logical unit of work within a ticket)
-- Don't force-push to the PR branch, preserve history for reviewers;
+- Once the PR is advertised as ready for review, preserve the commit history for reviewers. Don't force-push history changes (unless absolutely necessary);
 - GitHub squash merge commit so `main` history is clean
 
 ---
