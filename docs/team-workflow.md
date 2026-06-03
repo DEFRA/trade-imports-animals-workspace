@@ -42,21 +42,6 @@ Clear testable acceptance criteria · dependencies identified · test approach a
 ## Definition of Done
 Reviewed & merged · tests added and passing · QA verified · docs updated · no new lint/pipeline regressions.
 
-## Open Questions — to agree as a team
-
-**Branch history & merge strategy.** We need a single agreed convention across all three repos. [git-conventions.md](./git-conventions.md) currently says "GitHub squash-or-merge" — ambiguous — and recent history shows actual merge commits. Resolve it and update that file. Two decisions:
-
-1. **Force-pushing V not force-pushing to a feature branch during review.**
-   - *Force-push (rebase) on review feedback:* keeps a clean, linear branch history; but it rewrites commits a reviewer may already have looked at, making "what changed since I last reviewed?" harder, and breaks anyone who pulled the branch.
-   - *Only add new commits during review:* reviewers can see exactly what changed in response to feedback; history is messier (`fix review comment` commits) but honest. Often combined with squashing on merge so the mess doesn't reach `main`.
-
-2. **How we merge to `main`.**
-   - *Squash merge:* one tidy commit per ticket on `main`, easy to read and revert; loses the per-commit detail of how the change was built. Pairs naturally with "add commits during review" since the mess gets squashed away.
-   - *Merge commit:* preserves the full branch history and an explicit merge point; `main` shows every intermediate commit, which can be noisy if branches aren't curated.
-   - *Rebase merge:* linear `main` with all individual commits preserved; requires authors to curate clean, atomic commits, which takes discipline.
-
-**Suggested default to ratify:** add commits during review (don't force-push), **squash merge** to `main`. This gives reviewers an honest diff during review and a clean, revertable history on `main`, with the least process overhead — but the team should confirm or override this, and then apply the same setting to all three repos.
-
 ## Rules
 - **Keep tickets small** — a ticket may span the frontend, backend, and tests repos, but anything that feels larger than ~3 days should be split. Split oversized tickets at refinement; if a ticket turns out bigger than expected once work starts, stop and have a conversation rather than letting it sprawl.
 - **Limit WIP for feature tickets** — finish before starting.

@@ -4,9 +4,9 @@ Observed across all four repos. The tests repo is the most consistent reference 
 
 ## Branch naming
 
-```
+
 type/TICKET/short-description
-```erpic
+
 
 | Segment | Format | Example |
 |---------|--------|---------|
@@ -15,6 +15,7 @@ type/TICKET/short-description
 | `short-description` | Kebab-case, brief | `add-origin-page` |
 
 **Full example:** `feat/EUDPA-42/add-origin-page`
+
 
 ### Types
 
@@ -65,7 +66,7 @@ Imperative, present tense. Write the commit as an instruction:
 - Raise against `main`
 - One PR per ticket (or per logical unit of work within a ticket)
 - Don't force-push to the PR branch, preserve history for reviewers;
-- GitHub squash merge commit so `main` history is clean;
+- GitHub squash merge commit so `main` history is clean
 
 ---
 
