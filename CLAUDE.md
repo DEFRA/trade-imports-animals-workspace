@@ -1,6 +1,6 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 6 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 7 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If your checkout is elsewhere, symlink it — see [`docs/agent-onboarding.md`](docs/agent-onboarding.md#1-canonical-clone-location).
 
@@ -14,6 +14,7 @@ The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If you
 | `repos/trade-imports-animals-admin` | DEFRA/trade-imports-animals-admin | Internal admin interface | Node.js |
 | `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
+| `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Centralised gateway forwarding events to Azure Service Bus (ADR-EUDP-001 Option B) | Java / Spring Boot |
 
 ## How to navigate
 
@@ -31,7 +32,7 @@ Run `make help` from this directory to see all cross-repo commands.
 
 | Target | What it does |
 |--------|-------------|
-| `make setup` | Clone all 4 repos (idempotent — safe to re-run) |
+| `make setup` | Clone all repos (idempotent — safe to re-run) |
 | `make update` | `git pull --rebase` all repos |
 | `make status` | `git status -sb` across all repos |
 | `make install` | `npm install` in all Node repos |
@@ -46,6 +47,7 @@ Run `make help` from this directory to see all cross-repo commands.
 | `make start-frontend` | Start frontend dev server from source (outside Docker) |
 | `make start-backend` | Start backend from source (outside Docker) |
 | `make start-admin` | Start admin dev server from source (outside Docker) |
+| `make start-gateway` | Start dynamics gateway from source (outside Docker) |
 
 ## Common workflows
 

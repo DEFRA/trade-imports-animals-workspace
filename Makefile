@@ -1,8 +1,8 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin
-JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
 TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
 LOCAL_COMPOSE := docker/local.compose.yml
 LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
@@ -204,4 +204,7 @@ start-backend: ## Start backend from source
 
 start-admin: ## Start admin dev server from source
 	PORT=3001 npm --prefix $(REPOS_DIR)/trade-imports-animals-admin run dev
+
+start-gateway: ## Start dynamics gateway from source
+	SPRING_PROFILES_ACTIVE=local mvn -f $(REPOS_DIR)/trade-imports-dynamics-gateway/pom.xml spring-boot:run
 
