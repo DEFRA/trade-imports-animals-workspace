@@ -13,6 +13,8 @@ import { register as registerWorkspaceSetup } from './commands/workspace/setup.j
 import { register as registerWorkspaceUpdate } from './commands/workspace/update.js'
 import { register as registerWorkspaceReset } from './commands/workspace/reset.js'
 import { register as registerLink } from './commands/link.js'
+import { register as registerDocker } from './commands/docker/index.js'
+import { register as registerStart } from './commands/start.js'
 
 const SCHEMA_VERSION = 1
 
@@ -88,6 +90,8 @@ export const buildProgram = () => {
   registerWorkspaceReset(workspace, { timVersion: pkg.version })
 
   registerLink(program, { timVersion: pkg.version })
+  registerDocker(program, { timVersion: pkg.version })
+  registerStart(program, { timVersion: pkg.version })
 
   return program
 }
