@@ -16,6 +16,10 @@ import { register as registerLink } from './commands/link.js'
 import { register as registerDocker } from './commands/docker/index.js'
 import { register as registerStart } from './commands/start.js'
 import { register as registerAuth } from './commands/auth.js'
+import { register as registerJira } from './commands/jira/index.js'
+import { register as registerGithub } from './commands/github/index.js'
+import { register as registerConfluence } from './commands/confluence/index.js'
+import { register as registerGha } from './commands/gha/index.js'
 
 const SCHEMA_VERSION = 1
 
@@ -94,6 +98,10 @@ export const buildProgram = () => {
   registerDocker(program, { timVersion: pkg.version })
   registerStart(program, { timVersion: pkg.version })
   registerAuth(program, { timVersion: pkg.version })
+  registerJira(program, { timVersion: pkg.version })
+  registerGithub(program, { timVersion: pkg.version })
+  registerConfluence(program, { timVersion: pkg.version })
+  registerGha(program, { timVersion: pkg.version })
 
   return program
 }

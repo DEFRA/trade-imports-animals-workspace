@@ -8,8 +8,9 @@ const mapStatus = (status, action) => {
     )
   }
   if (status === 404) return new TimError('NOT_FOUND', `${action}: not found.`)
-  if (status === 429)
-    {return new TimError('RATE_LIMIT', `${action}: rate limited.`)}
+  if (status === 429) {
+    return new TimError('RATE_LIMIT', `${action}: rate limited.`)
+  }
   if (status >= 400) {
     return new TimError('NETWORK', `${action}: Confluence returned ${status}.`)
   }

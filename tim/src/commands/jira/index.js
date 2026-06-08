@@ -1,0 +1,54 @@
+import { createJiraClient } from '../../clients/jira-client.js'
+import { makeClientAction } from '../_client-action.js'
+
+export const renderTicket = (t) =>
+  [
+    `${t.id}  ${t.summary}`,
+    `Status:    ${t.status ?? '?'}`,
+    `Type:      ${t.type ?? '?'}`,
+    `Assignee:  ${t.assignee ?? 'unassigned'}`,
+    `Priority:  ${t.priority ?? '?'}`,
+    '',
+    t.description?.trim() ?? ''
+  ]
+    .join('\n')
+    .trimEnd()
+
+export const renderComments = (comments) => {
+  if (comments.length === 0) return '(no comments)'
+  return comments
+    .map((c) =>
+      [`--- ${c.author ?? 'unknown'} on ${c.createdAt}`, c.body].join('\n')
+    )
+    .join('\n\n')
+}
+
+export const register = (program, { timVersion }) => {
+  const jira = program
+    .command('jira')
+    .description('Read Jira tickets and comments')
+
+  jira
+    .command('ticket <id>')
+    .description('Fetch a Jira ticket by id (e.g. EUDPA-200)')
+    .action(
+      makeClientAction({
+        client: () => createJiraClient(),
+        call: (c, [id]) => c.getTicket(id),
+        renderText: renderTicket,
+        timVersion
+      })
+    )
+
+  jira
+    .command('comments <id>')
+    .description('Fetch the comments on a Jira ticket')
+    .action(
+      makeClientAction({
+        client: () => createJiraClient(),
+        call: (c, [id]) => c.getComments(id),
+        renderText: renderComments,
+        timVersion
+      })
+    )
+}

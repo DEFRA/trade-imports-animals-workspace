@@ -15,8 +15,9 @@ export const resolveGithubToken = async (env = process.env) => {
   if (env.GITHUB_TOKEN) return env.GITHUB_TOKEN
   try {
     const result = await runProcess('gh', ['auth', 'token'])
-    if (result.exitCode === 0 && result.stdout.trim())
-      {return result.stdout.trim()}
+    if (result.exitCode === 0 && result.stdout.trim()) {
+      return result.stdout.trim()
+    }
     return null
   } catch (error) {
     if (error?.code === 'MISSING_DEP') return null
