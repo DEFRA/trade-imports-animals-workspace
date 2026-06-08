@@ -27,6 +27,32 @@ Each repo has its own `CLAUDE.md` with repo-specific context.
 
 Run `make help` from this directory to see all cross-repo commands.
 
+## `tim` CLI (alternative to Make + tools/)
+
+[`tim/`](tim/) is a Node.js CLI that mirrors the Makefile + read-only
+parts of `tools/`. Library-first integrations (octokit, REST clients —
+no shell-out to `gh`/`jq`), behaviourally tested, deterministic
+`--json` output for skill use. Dual-runs with the bash; pick whichever.
+
+```bash
+cd tim && npm i -g .   # tim on PATH (or npm link for live edits)
+tim --help              # full surface
+tim workspace status    # equivalent of `make status` + jq-friendly --json
+tim docker dev          # equivalent of `scripts/stack/run-stack.sh -d`
+tim jira ticket EUDPA-X # equivalent of tools/jira/ticket.sh
+tim auth                # equivalent of tools/auth.sh
+tim github prs EUDPA-X  # equivalent of tools/github/prs.sh
+```
+
+See [`tim/CLAUDE.md`](tim/CLAUDE.md) for rails (test-on-input/output,
+library-first, GDS plain English, `__mocks__`-style network-boundary
+mocking via nock) and [`tim/README.md`](tim/README.md) for usage and
+the env-var contract (the same `JIRA_USER`/`JIRA_TOKEN`/`JIRA_BASE_URL`
+/ `GITHUB_TOKEN` the bash uses — seamless pickup).
+
+Skills should prefer `tim <cmd> --json` over bare bash once a surface
+is covered by tim — the JSON envelope is schema-versioned and stable.
+
 ## Make targets
 
 | Target | What it does |
