@@ -69,6 +69,9 @@ export const buildProgram = () => {
       'Trade Imports CLI — dual-runs alongside the bash tooling in ../tools/'
     )
     .version(pkg.version)
+    .showHelpAfterError(true)
+    // No subcommand given → show help instead of exiting silently.
+    .action(() => program.help())
 
   addGlobalOptions(program)
 
@@ -106,8 +109,8 @@ export const buildProgram = () => {
   return program
 }
 
-const invokedAsBin =
-  process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
-if (invokedAsBin) {
-  buildProgram().parse(process.argv)
-}
+// cli.js IS the bin entry. Run unconditionally so the global `tim`
+// symlink (which makes process.argv[1] !== import.meta.url) works.
+// Tests spawn node src/cli.js as a subprocess; nothing imports this
+// file's exports at module load time.
+buildProgram().parse(process.argv)

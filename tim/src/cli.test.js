@@ -37,4 +37,35 @@ describe('tim CLI', () => {
     const { exitCode } = await runTim(['nope-this-does-not-exist'])
     expect(exitCode).not.toBe(0)
   })
+
+  // Regression — earlier the bin was gated by `if (import.meta.url === process.argv[1])`
+  // which was false when invoked via npm's installed symlink, so `tim --help`
+  // produced zero output. Asserting on actual help text covers that mode.
+  test('--help lists every registered top-level command group', async () => {
+    const { stdout, exitCode } = await runTim(['--help'])
+    expect(exitCode).toBe(0)
+    for (const cmd of [
+      'hello',
+      'workspace',
+      'link',
+      'docker',
+      'start',
+      'auth',
+      'jira',
+      'github',
+      'confluence',
+      'gha'
+    ]) {
+      expect(stdout).toContain(cmd)
+    }
+  })
+
+  test('no args shows help instead of exiting silently', async () => {
+    const { stdout, stderr, exitCode } = await runTim([])
+    // commander shows help on stderr by convention for the no-args case;
+    // accept either stream
+    const combined = stdout + stderr
+    expect(combined).toMatch(/Usage:|Commands:/)
+    expect(exitCode).not.toBe(undefined)
+  })
 })
