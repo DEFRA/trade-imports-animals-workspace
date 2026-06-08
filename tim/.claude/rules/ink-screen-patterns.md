@@ -1,6 +1,6 @@
 ---
 paths:
-  - "src/components/**"
+  - 'src/components/**'
 ---
 
 # Ink screen conventions

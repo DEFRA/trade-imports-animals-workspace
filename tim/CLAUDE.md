@@ -23,6 +23,7 @@ Node.js Ink/React CLI for the trade-imports-animals workspace. Dual-runs alongsi
 ## Path-scoped rules
 
 See `.claude/rules/` — loaded by glob:
+
 - `cli-patterns.md` — `src/cli.js`, `src/commands/**`
 - `client-patterns.md` — `src/clients/**`
 - `test-patterns.md` — `**/*.test.js`

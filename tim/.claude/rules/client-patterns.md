@@ -1,6 +1,6 @@
 ---
 paths:
-  - "src/clients/**"
+  - 'src/clients/**'
 ---
 
 # Client conventions

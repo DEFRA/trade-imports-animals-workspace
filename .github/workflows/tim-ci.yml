@@ -1,0 +1,38 @@
+name: tim CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tim/**'
+      - '.github/workflows/tim-ci.yml'
+  pull_request:
+    paths:
+      - 'tim/**'
+      - '.github/workflows/tim-ci.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tim
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tim/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run format:check
+
+      - run: npm run lint
+
+      - run: npm test
+        env:
+          CI: 'true'

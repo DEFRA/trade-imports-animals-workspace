@@ -1,7 +1,7 @@
 ---
 paths:
-  - "src/cli.js"
-  - "src/commands/**"
+  - 'src/cli.js'
+  - 'src/commands/**'
 ---
 
 # CLI conventions
@@ -26,7 +26,7 @@ paths:
 
 - All errors go to stderr. Stdout is reserved for the command's output (text or JSON).
 - Use the constants in `src/constants/exitCodes.js`. Don't write magic numbers.
-- In `--json` mode, errors emit `{ok: false, schema_version: 1, tim_version, errors: [{code, message}]}` to stdout *and* set the exit code.
+- In `--json` mode, errors emit `{ok: false, schema_version: 1, tim_version, errors: [{code, message}]}` to stdout _and_ set the exit code.
 
 ## Help text
 
