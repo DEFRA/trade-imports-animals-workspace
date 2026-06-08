@@ -22,3 +22,8 @@ export const repoPath = (workspaceRoot, repoName) =>
 export const isNodeRepo = (repoName) => NODE_REPOS.includes(repoName)
 
 export const isJavaRepo = (repoName) => JAVA_REPOS.includes(repoName)
+
+export const GITHUB_ORG = 'DEFRA'
+
+export const repoUrl = (repoName) =>
+  `https://github.com/${GITHUB_ORG}/${repoName}.git`

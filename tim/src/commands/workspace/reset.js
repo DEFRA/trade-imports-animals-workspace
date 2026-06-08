@@ -1,0 +1,142 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { REPOS, repoPath } from '../../constants/repos.js'
+import { resolveWorkspaceRoot } from '../../env/workspace-root.js'
+import { run } from '../../exec/exec.js'
+import { runAcross } from '../../exec/parallel.js'
+import {
+  OK,
+  USAGE,
+  ERROR,
+  USER_ABORT,
+  PARTIAL_FAILURE
+} from '../../constants/exitCodes.js'
+import { isTimError } from '../../errors.js'
+import { lastLines, renderTaskText, renderTaskJson } from './_task-output.js'
+
+const SCHEMA_VERSION = 1
+
+const resetRepo = async (workspaceRoot, repo) => {
+  const dir = repoPath(workspaceRoot, repo)
+  if (!existsSync(join(dir, '.git'))) {
+    return {
+      repo,
+      label: `${repo} — (not cloned, skipping)`,
+      exitCode: 0,
+      action: 'skipped',
+      stderrTail: null
+    }
+  }
+  const fetch = await run('git', ['-C', dir, 'fetch', 'origin'])
+  if (fetch.exitCode !== 0) {
+    return {
+      repo,
+      label: `${repo} — git fetch`,
+      exitCode: fetch.exitCode,
+      action: 'fetch-failed',
+      stderrTail: lastLines(fetch.stderr)
+    }
+  }
+  const checkout = await run('git', ['-C', dir, 'checkout', 'main'])
+  if (checkout.exitCode !== 0) {
+    return {
+      repo,
+      label: `${repo} — git checkout main`,
+      exitCode: checkout.exitCode,
+      action: 'checkout-failed',
+      stderrTail: lastLines(checkout.stderr)
+    }
+  }
+  const reset = await run('git', ['-C', dir, 'reset', '--hard', 'origin/main'])
+  return {
+    repo,
+    label: `${repo} — git reset --hard origin/main`,
+    exitCode: reset.exitCode,
+    action: reset.exitCode === 0 ? 'reset' : 'reset-failed',
+    stderrTail: lastLines(reset.stderr)
+  }
+}
+
+export const resetAll = (workspaceRoot) =>
+  runAcross(REPOS, (repo) => resetRepo(workspaceRoot, repo))
+
+const promptYes = async () => {
+  if (!process.stdin.isTTY) return false
+  process.stderr.write(
+    'This will discard ALL local changes in every repo and hard-reset to origin/main.\nType "yes" to continue: '
+  )
+  return new Promise((resolve) => {
+    process.stdin.once('data', (chunk) => {
+      resolve(chunk.toString().trim().toLowerCase() === 'yes')
+    })
+  })
+}
+
+const emit = (text) => process.stdout.write(`${text}\n`)
+const emitError = (text) => process.stderr.write(`${text}\n`)
+
+export const register = (parent, { timVersion }) => {
+  parent
+    .command('reset')
+    .description(
+      'Hard-reset every cloned repo to origin/main. Discards uncommitted work.'
+    )
+    .option(
+      '--yes',
+      'Skip the interactive confirmation (required in --json mode)'
+    )
+    .action(async function resetAction(opts) {
+      const globalOpts = this.optsWithGlobals()
+      try {
+        const workspaceRoot = resolveWorkspaceRoot({
+          explicit: globalOpts.workspace
+        })
+
+        const confirmed = opts.yes || (await promptYes())
+        if (!confirmed) {
+          if (globalOpts.json) {
+            emit(
+              JSON.stringify({
+                ok: false,
+                schema_version: SCHEMA_VERSION,
+                tim_version: timVersion,
+                result: null,
+                errors: [
+                  {
+                    code: 'USER_ABORT',
+                    message: 'Reset cancelled. Use --yes to skip the prompt.'
+                  }
+                ]
+              })
+            )
+          } else {
+            emitError('Reset cancelled. Use --yes to skip the prompt.')
+          }
+          process.exit(USER_ABORT)
+        }
+
+        const results = await resetAll(workspaceRoot)
+        if (globalOpts.json) emit(renderTaskJson(results, timVersion))
+        else emit(renderTaskText(results))
+        const someFailed = results.some((r) => !r.ok)
+        process.exit(someFailed ? PARTIAL_FAILURE : OK)
+      } catch (error) {
+        if (isTimError(error) && globalOpts.json) {
+          emit(
+            JSON.stringify({
+              ok: false,
+              schema_version: SCHEMA_VERSION,
+              tim_version: timVersion,
+              result: null,
+              errors: [{ code: error.code, message: error.message }]
+            })
+          )
+        } else {
+          emitError(error.message ?? String(error))
+        }
+        process.exit(
+          isTimError(error) && error.code === 'USAGE' ? USAGE : ERROR
+        )
+      }
+    })
+}

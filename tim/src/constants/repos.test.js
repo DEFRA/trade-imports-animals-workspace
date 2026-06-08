@@ -6,7 +6,9 @@ import {
   REPOS_DIR,
   repoPath,
   isNodeRepo,
-  isJavaRepo
+  isJavaRepo,
+  GITHUB_ORG,
+  repoUrl
 } from './repos.js'
 
 describe('repo constants', () => {
@@ -61,5 +63,15 @@ describe('repo constants', () => {
     expect(() => NODE_REPOS.push('x')).toThrow()
     expect(() => JAVA_REPOS.push('x')).toThrow()
     expect(() => REPOS.push('x')).toThrow()
+  })
+
+  test('GITHUB_ORG is DEFRA — matches scripts/setup.sh', () => {
+    expect(GITHUB_ORG).toBe('DEFRA')
+  })
+
+  test('repoUrl builds the canonical HTTPS clone URL', () => {
+    expect(repoUrl('trade-imports-animals-frontend')).toBe(
+      'https://github.com/DEFRA/trade-imports-animals-frontend.git'
+    )
   })
 })

@@ -9,6 +9,10 @@ import { register as registerWorkspaceClean } from './commands/workspace/clean.j
 import { register as registerWorkspaceInstall } from './commands/workspace/install.js'
 import { register as registerWorkspaceLint } from './commands/workspace/lint.js'
 import { register as registerWorkspaceTest } from './commands/workspace/test.js'
+import { register as registerWorkspaceSetup } from './commands/workspace/setup.js'
+import { register as registerWorkspaceUpdate } from './commands/workspace/update.js'
+import { register as registerWorkspaceReset } from './commands/workspace/reset.js'
+import { register as registerLink } from './commands/link.js'
 
 const SCHEMA_VERSION = 1
 
@@ -79,6 +83,11 @@ export const buildProgram = () => {
   registerWorkspaceInstall(workspace, { timVersion: pkg.version })
   registerWorkspaceLint(workspace, { timVersion: pkg.version })
   registerWorkspaceTest(workspace, { timVersion: pkg.version })
+  registerWorkspaceSetup(workspace, { timVersion: pkg.version })
+  registerWorkspaceUpdate(workspace, { timVersion: pkg.version })
+  registerWorkspaceReset(workspace, { timVersion: pkg.version })
+
+  registerLink(program, { timVersion: pkg.version })
 
   return program
 }

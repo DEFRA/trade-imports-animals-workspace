@@ -9,8 +9,9 @@ const SCHEMA_VERSION = 1
 
 export const cleanRepo = (workspaceRoot, repo) => {
   const modulesPath = join(repoPath(workspaceRoot, repo), 'node_modules')
-  if (!existsSync(modulesPath))
-    {return { repo, removed: false, path: modulesPath }}
+  if (!existsSync(modulesPath)) {
+    return { repo, removed: false, path: modulesPath }
+  }
   rmSync(modulesPath, { recursive: true, force: true })
   return { repo, removed: true, path: modulesPath }
 }
