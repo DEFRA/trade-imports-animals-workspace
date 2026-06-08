@@ -2,8 +2,9 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
 import { z } from 'zod'
+import { register as registerWorkspaceStatus } from './commands/workspace/status.js'
 
 const SCHEMA_VERSION = 1
 
@@ -31,6 +32,20 @@ const emitHelloJson = () =>
 
 const emitHelloText = () => writeLine('Hello from tim')
 
+const addGlobalOptions = (program) => {
+  program
+    .option(
+      '--json',
+      'Emit one structured JSON line on stdout (suppresses Ink)'
+    )
+    .option('--no-ui', 'Plain text on stdout (suppresses Ink)')
+    .option('--verbose', 'Emit structured logs to stderr')
+    .addOption(
+      new Option('--workspace <path>', 'Override the resolved workspace root')
+    )
+  return program
+}
+
 export const buildProgram = () => {
   const program = new Command()
   program
@@ -40,11 +55,22 @@ export const buildProgram = () => {
     )
     .version(pkg.version)
 
+  addGlobalOptions(program)
+
   program
     .command('hello')
     .description('Print a hello message — used for smoke testing')
-    .option('--json', 'Emit a structured JSON line instead of plain text')
-    .action((opts) => (opts.json ? emitHelloJson() : emitHelloText()))
+    .action(function helloAction() {
+      const { json } = this.optsWithGlobals()
+      if (json) emitHelloJson()
+      else emitHelloText()
+    })
+
+  const workspace = program
+    .command('workspace')
+    .description('Commands that operate across every repo in the workspace')
+
+  registerWorkspaceStatus(workspace, { timVersion: pkg.version })
 
   return program
 }
