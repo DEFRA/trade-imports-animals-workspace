@@ -15,6 +15,7 @@ import { register as registerWorkspaceReset } from './commands/workspace/reset.j
 import { register as registerLink } from './commands/link.js'
 import { register as registerDocker } from './commands/docker/index.js'
 import { register as registerStart } from './commands/start.js'
+import { register as registerAuth } from './commands/auth.js'
 
 const SCHEMA_VERSION = 1
 
@@ -92,6 +93,7 @@ export const buildProgram = () => {
   registerLink(program, { timVersion: pkg.version })
   registerDocker(program, { timVersion: pkg.version })
   registerStart(program, { timVersion: pkg.version })
+  registerAuth(program, { timVersion: pkg.version })
 
   return program
 }
