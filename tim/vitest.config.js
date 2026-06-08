@@ -18,7 +18,10 @@ export default defineConfig({
         'src/**/*.test.js',
         'src/test-support/**',
         'src/**/__fixtures__/**',
-        'src/**/fixtures/**'
+        'src/**/fixtures/**',
+        // cli.js is the bin entry — covered behaviourally via subprocess
+        // tests in cli.test.js, which v8 coverage can't instrument.
+        'src/cli.js'
       ],
       thresholds: {
         lines: 80,
