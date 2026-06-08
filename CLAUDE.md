@@ -139,6 +139,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies", "walk upgrade EUDPA-X", "implement upgrade EUDPA-X" | Three-phase non-govuk-frontend npm upgrade workflow + interactive manual-side walker. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
 | `skill-creator` | "scaffold skill `<name>`", "skill-create `<name>`", "new workspace skill `<name>`", "audit skill `<name>`", "audit skills" | Meta-skill — CREATE scaffolds a new workspace skill end-to-end (interview + scaffold + allowlist); AUDIT walks an existing skill (or all skills via fan-out) against the 8-pattern checklist and writes a plan under `workareas/skills-audit/<name>.md`. |
+| `understanding-check` | "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X" | Pre-merge author-understanding check on an AI-assisted PR. Per-repo diff analysis → 8-12 evidence-anchored questions with categorical rubrics → in-skill plan gate → terminal Q&A → deterministic verdict (pass / needs-review / high-risk) + paste-ready PR comment. Coaching signal, not a merge gate. |
 
 ### Worker references (per-skill fan-out personas)
 
@@ -163,6 +164,9 @@ artifacts that downstream `tools/` scripts consume.
 | `govuk-upgrade` | `references/PLAN_WALKER.md` | Batch triage of pending version plans before Phase 3 |
 | `skill-creator` | `references/AUDITOR.md` | Per-skill 8-pattern audit (parallel fan-out across all skills) |
 | `skill-creator` | `references/INTERVIEWER.md` | Parent-loaded CREATE-mode interview (8 shape questions → `decisions.json`) |
+| `understanding-check` | `references/ANALYST.md` | Per-repo diff analyst — emits `analysis.{repo}.json` (one per repo, parallel) |
+| `understanding-check` | `references/QUESTION_GENERATOR.md` | One-shot — combines all per-repo analyses into `questions.json` |
+| `understanding-check` | `references/SCORER.md` | Per-question scorer — must quote the rubric clause that fired (one per question, parallel) |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>). It has no parallel subagent
@@ -290,6 +294,21 @@ Shared shell scripts called by skills via
 | `tools/skill-creator/interview-add-answer.sh` | --run-id NAME --field PATH --value JSON | CREATE — atomic mutation of `decisions.json` (one shape question per call) |
 | `tools/skill-creator/render-interview.sh` | --run-id NAME | CREATE — markdown view of `decisions.json` (recap + `decisions.md` sidecar) |
 | `tools/skill-creator/scaffold-skill.sh` | --run-id NAME [--dry-run] | CREATE — materialise SKILL.md + references/ + assets/ + tools/<name>/ stubs from `decisions.json`; append allowlist entries |
+| **understanding-check** | | |
+| `tools/understanding-check/start-check.sh` | EUDPA-X | Step 0 dispatcher — emits `MODE: FRESH` or `MODE: RESUME` |
+| `tools/understanding-check/prepare-check.sh` | EUDPA-X [--json] [--max-diff-bytes N] | Step 1 — fetch ticket + PRs, cache redacted diffs, bake best-practices, seed meta + per-repo analysis placeholders |
+| `tools/understanding-check/redact-diff.js` | IN OUT | Helper — redact env vars / API keys / PEM blocks in a diff before it lands on disk |
+| `tools/understanding-check/analysis-add-finding.sh` | EUDPA-X --repo R --section S --evidence-file F --evidence-lines L --field K=V ... | ANALYST helper — append finding (rejects without evidence) |
+| `tools/understanding-check/analysis-set-verdict.sh` | EUDPA-X --repo R --change-summary "..." --why-it-changed "..." | ANALYST helper — mark per-repo analysis complete |
+| `tools/understanding-check/question-add.sh` | EUDPA-X --category C --prompt "..." --anchor-file F --anchor-lines L --expected-concepts CSV --rubric-pass "..." --rubric-partial "..." --rubric-fail "..." | QUESTION_GENERATOR helper — append question (caps at 12; rejects hedged rubrics) |
+| `tools/understanding-check/question-replace.sh` | EUDPA-X --id QN ... | Plan-gate edit — replace question by id |
+| `tools/understanding-check/question-remove.sh` | EUDPA-X --id QN | Plan-gate edit — drop a question (renumbers downstream ids) |
+| `tools/understanding-check/transcript-record-answer.sh` | EUDPA-X --question-id QN --answer-file F [--skipped] | Interview — persist developer's answer |
+| `tools/understanding-check/transcript-add-score.sh` | EUDPA-X --question-id QN --verdict V --rubric-match "..." --missed-concepts CSV --evidence-cited file:lines[,...] [--follow-up "..."] | SCORER helper — append score (forces FAIL/unscorable if rubric_match doesn't overlap a clause) |
+| `tools/understanding-check/counts.sh` | EUDPA-X [--json] | Diagnostic — PASS/PARTIAL/FAIL/security-FAIL/coverage-gap counts |
+| `tools/understanding-check/verify-coverage.sh` | EUDPA-X [--json] | Step 7 gate — every question scored, every finding has evidence |
+| `tools/understanding-check/finalize-verdict.sh` | EUDPA-X [--json] | Step 7 — apply deterministic counting rule, stamp verdict + exit code |
+| `tools/understanding-check/render-report.sh` | EUDPA-X [--preview] | Plan-gate preview (Step 4) or full report (Step 7) |
 
 ## Workareas (runtime cache, gitignored)
 
@@ -314,6 +333,7 @@ workareas/govuk-upgrades/EUDPA-X/{repo}/           → versions.{repo}.json, CHA
 workareas/shared/EUDPA-X/                          → review handoff artifacts (tracked; committed to chore/EUDPA-X-review-handoff)
 workareas/skill-creator/<name>/                    → decisions.json (CREATE-mode interview state)
 workareas/skills-audit/<name>.md                   → AUDIT-mode plan document (per skill)
+workareas/understanding-checks/EUDPA-X/            → .interview-meta.json, ticket.md, analysis.{repo}.json, questions.json, transcript.json, report.md, .diffs/{repo}.diff, best-practices/{repo}.md
 ```
 
 ## Conventions
