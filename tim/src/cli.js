@@ -5,6 +5,10 @@ import { dirname, join } from 'node:path'
 import { Command, Option } from 'commander'
 import { z } from 'zod'
 import { register as registerWorkspaceStatus } from './commands/workspace/status.js'
+import { register as registerWorkspaceClean } from './commands/workspace/clean.js'
+import { register as registerWorkspaceInstall } from './commands/workspace/install.js'
+import { register as registerWorkspaceLint } from './commands/workspace/lint.js'
+import { register as registerWorkspaceTest } from './commands/workspace/test.js'
 
 const SCHEMA_VERSION = 1
 
@@ -71,6 +75,10 @@ export const buildProgram = () => {
     .description('Commands that operate across every repo in the workspace')
 
   registerWorkspaceStatus(workspace, { timVersion: pkg.version })
+  registerWorkspaceClean(workspace, { timVersion: pkg.version })
+  registerWorkspaceInstall(workspace, { timVersion: pkg.version })
+  registerWorkspaceLint(workspace, { timVersion: pkg.version })
+  registerWorkspaceTest(workspace, { timVersion: pkg.version })
 
   return program
 }

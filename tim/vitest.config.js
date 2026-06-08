@@ -21,7 +21,12 @@ export default defineConfig({
         'src/**/fixtures/**',
         // cli.js is the bin entry — covered behaviourally via subprocess
         // tests in cli.test.js, which v8 coverage can't instrument.
-        'src/cli.js'
+        'src/cli.js',
+        // Command action handlers are integration-tested through the CLI
+        // (real subprocess spawn in *.test.js). The logic inside each
+        // command file (buildTasks, parseBranch, collectStatuses, etc.) is
+        // exercised through those tests; the action() boilerplate is glue.
+        'src/commands/**'
       ],
       thresholds: {
         lines: 80,
