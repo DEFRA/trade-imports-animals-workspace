@@ -5,13 +5,14 @@ import { render } from 'ink-testing-library'
 import { SCREENS } from '../../../constants/menuConfig.js'
 import { useMainMenuFeature } from './useMainMenuFeature.js'
 
-const Harness = ({ workspace, onExit = () => {} }) => {
+const Harness = ({ workspace, auth, onExit = () => {} }) => {
   const [screen, setScreen] = useState(SCREENS.MAIN)
   const [screenData, setScreenData] = useState({})
   const feature = useMainMenuFeature({
     setScreen,
     setScreenData,
     workspace,
+    auth,
     exit: onExit
   })
 
@@ -20,6 +21,9 @@ const Harness = ({ workspace, onExit = () => {} }) => {
   }
   if (screen === SCREENS.WORKSPACE_MENU) {
     return createElement(Text, null, 'workspace-menu')
+  }
+  if (screen === SCREENS.LOADING) {
+    return createElement(Text, null, 'loading')
   }
   const route = feature.routes[screen]
   if (!route) return createElement(Text, null, `unknown:${screen}`)
@@ -33,10 +37,18 @@ const stubWorkspace = (onSelect) => ({
   handleMainMenuSelect: onSelect
 })
 
+const stubAuth = (onSelect) => ({
+  routes: {},
+  handleMainMenuSelect: onSelect
+})
+
 describe('useMainMenuFeature', () => {
   test('lists every top-level command group on the main menu', () => {
     const { lastFrame } = render(
-      createElement(Harness, { workspace: stubWorkspace(() => {}) })
+      createElement(Harness, {
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {})
+      })
     )
 
     const frame = lastFrame()
@@ -61,12 +73,46 @@ describe('useMainMenuFeature', () => {
       createElement(Harness, {
         workspace: stubWorkspace(() => {
           workspaceOpened = true
-        })
+        }),
+        auth: stubAuth(() => {})
       })
     )
 
     stdin.write('\r')
     await vi.waitFor(() => expect(workspaceOpened).toBe(true))
+  })
+
+  test('selecting Auth hands control to the auth feature', async () => {
+    let authOpened = false
+    const AuthHarness = ({ onAuth }) => {
+      const [screen, setScreen] = useState(SCREENS.MAIN)
+      const [, setScreenData] = useState({})
+      const feature = useMainMenuFeature({
+        setScreen,
+        setScreenData,
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(onAuth),
+        exit: () => {}
+      })
+      const route = feature.routes[screen]
+      const props =
+        typeof route.props === 'function' ? route.props({}) : route.props
+      const { items, onSelect } = props
+      const authItem = items.find((item) => item.value === 'auth')
+      expect(authItem).toBeDefined()
+      onSelect(authItem)
+      return null
+    }
+
+    render(
+      createElement(AuthHarness, {
+        onAuth: () => {
+          authOpened = true
+        }
+      })
+    )
+
+    await vi.waitFor(() => expect(authOpened).toBe(true))
   })
 
   test('selecting Quit calls the exit handler', async () => {
@@ -76,6 +122,7 @@ describe('useMainMenuFeature', () => {
         setScreen: () => {},
         setScreenData: () => {},
         workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
         exit: onExit
       })
       const { items, onSelect } = feature.routes[SCREENS.MAIN].props
@@ -107,6 +154,7 @@ describe('useMainMenuFeature', () => {
           errorRaised = true
         },
         workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
         exit: () => {}
       })
       const { onSelect } = feature.routes[SCREENS.MAIN].props
@@ -121,7 +169,10 @@ describe('useMainMenuFeature', () => {
   test('selecting an unimplemented feature surfaces a coming-soon error', async () => {
     const DOWN = String.fromCharCode(27) + '[B'
     const { stdin, lastFrame } = render(
-      createElement(Harness, { workspace: stubWorkspace(() => {}) })
+      createElement(Harness, {
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {})
+      })
     )
 
     stdin.write(DOWN)

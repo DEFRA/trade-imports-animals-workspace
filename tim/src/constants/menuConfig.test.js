@@ -12,6 +12,13 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifiers used by Phase 5b routing', () => {
+    expect(SCREENS).toMatchObject({
+      WORKSPACE_TASK_RESULTS: 'workspace-task-results',
+      AUTH_RESULTS: 'auth-results'
+    })
+  })
+
   test('every value is a unique non-empty string', () => {
     const values = Object.values(SCREENS)
     expect(new Set(values).size).toBe(values.length)

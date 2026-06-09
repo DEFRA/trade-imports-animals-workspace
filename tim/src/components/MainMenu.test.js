@@ -68,6 +68,29 @@ describe('MainMenu', () => {
     await vi.waitFor(() => expect(lastFrame()).toContain('command group'))
   })
 
+  test('selecting Auth drives the probe and renders the auth results', async () => {
+    const probe = async () => [
+      { service: 'github', ok: true, user: { login: 'sam' } },
+      { service: 'jira', ok: true, user: { displayName: 'Sam F' } },
+      { service: 'confluence', ok: true, user: { user: 'sam' } }
+    ]
+    const { stdin, lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot, probe })
+    )
+
+    // Workspace, Docker, Start, Auth — three down arrows
+    for (let i = 0; i < 3; i++) {
+      stdin.write(ARROW_DOWN)
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    }
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toContain('signed in'))
+    expect(lastFrame()).toContain('github')
+    expect(lastFrame()).toContain('jira')
+    expect(lastFrame()).toContain('confluence')
+  })
+
   test('selecting an unimplemented top-level option renders the error screen', async () => {
     const { stdin, lastFrame } = render(
       createElement(MainMenu, { workspaceRoot: fakeRoot })

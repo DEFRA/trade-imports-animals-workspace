@@ -2,11 +2,16 @@ import { createElement, useState } from 'react'
 import { useApp } from 'ink'
 import { SCREENS } from '../constants/menuConfig.js'
 import { useWorkspaceFeature } from './features/workspace/useWorkspaceFeature.js'
+import { useAuthFeature } from './features/auth/useAuthFeature.js'
 import { useMainMenuFeature } from './features/mainMenu/useMainMenuFeature.js'
 import LoadingScreen from './common/screens/LoadingScreen.js'
 import ErrorScreen from './common/screens/ErrorScreen.js'
 
-const MainMenu = ({ initialScreen = SCREENS.MAIN, workspaceRoot } = {}) => {
+const MainMenu = ({
+  initialScreen = SCREENS.MAIN,
+  workspaceRoot,
+  probe
+} = {}) => {
   const { exit } = useApp()
   const [screen, setScreen] = useState(initialScreen)
   const [screenData, setScreenData] = useState({})
@@ -25,10 +30,19 @@ const MainMenu = ({ initialScreen = SCREENS.MAIN, workspaceRoot } = {}) => {
     workspaceRoot
   })
 
+  const auth = useAuthFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    ...(probe ? { probe } : {})
+  })
+
   const mainMenu = useMainMenuFeature({
     setScreen,
     setScreenData,
     workspace,
+    auth,
     exit
   })
 
@@ -42,7 +56,7 @@ const MainMenu = ({ initialScreen = SCREENS.MAIN, workspaceRoot } = {}) => {
     })
   }
 
-  const routes = { ...workspace.routes, ...mainMenu.routes }
+  const routes = { ...workspace.routes, ...auth.routes, ...mainMenu.routes }
   const route = routes[screen]
   if (!route) return null
   const props =

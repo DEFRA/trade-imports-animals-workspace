@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
-import { createElement, useState } from 'react'
+import { createElement, useState, useEffect } from 'react'
 import { Text } from 'ink'
 import { render } from 'ink-testing-library'
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
@@ -16,7 +16,7 @@ const createFakeWorkspace = async () => {
   return root
 }
 
-const Harness = ({ workspaceRoot, onReturn = () => {} }) => {
+const Harness = ({ workspaceRoot, onReturn = () => {}, runners }) => {
   const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -28,7 +28,8 @@ const Harness = ({ workspaceRoot, onReturn = () => {} }) => {
     setScreenData,
     setLoadingMessage,
     navigateToMain,
-    workspaceRoot
+    workspaceRoot,
+    ...(runners ? { runners } : {})
   })
 
   if (screen === SCREENS.LOADING) {
@@ -41,6 +42,17 @@ const Harness = ({ workspaceRoot, onReturn = () => {} }) => {
     typeof route.props === 'function' ? route.props(screenData) : route.props
   return createElement(route.component, props)
 }
+
+const stubRunners = (overrides = {}) => ({
+  install: async () => [],
+  lint: async () => [],
+  test: async () => [],
+  clean: async () => [],
+  setup: async () => [],
+  update: async () => [],
+  reset: async () => [],
+  ...overrides
+})
 
 let fakeRoot
 
@@ -99,8 +111,26 @@ describe('useWorkspaceFeature', () => {
 
   test('selecting Back returns the user to the main menu', async () => {
     let returnedToMain = false
-    const { stdin } = render(
-      createElement(Harness, {
+    const BackHarness = ({ workspaceRoot, onReturn }) => {
+      const [, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+      const [, setScreenData] = useState({})
+      const [, setLoadingMessage] = useState('')
+      const feature = useWorkspaceFeature({
+        setScreen,
+        setScreenData,
+        setLoadingMessage,
+        navigateToMain: onReturn,
+        workspaceRoot
+      })
+      const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+      const backItem = items.find((item) => item.value === 'back')
+      expect(backItem).toBeDefined()
+      onSelect(backItem)
+      return null
+    }
+
+    render(
+      createElement(BackHarness, {
         workspaceRoot: fakeRoot,
         onReturn: () => {
           returnedToMain = true
@@ -108,9 +138,6 @@ describe('useWorkspaceFeature', () => {
       })
     )
 
-    stdin.write('[B')
-    await new Promise((resolve) => setTimeout(resolve, 30))
-    stdin.write('\r')
     await vi.waitFor(() => expect(returnedToMain).toBe(true))
   })
 
@@ -161,5 +188,134 @@ describe('useWorkspaceFeature', () => {
     stdin.write('\r')
     await vi.waitFor(() => expect(capturedError).toBeTruthy())
     expect(capturedError).toMatch(/workspace/i)
+  })
+
+  const RunVerbHarness = ({ workspaceRoot, runners, verb }) => {
+    const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+    const [screenData, setScreenData] = useState({})
+    const [loadingMessage, setLoadingMessage] = useState('')
+    const feature = useWorkspaceFeature({
+      setScreen,
+      setScreenData,
+      setLoadingMessage,
+      navigateToMain: () => {},
+      workspaceRoot,
+      runners
+    })
+    useEffect(() => {
+      const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+      const item = items.find((i) => i.value === verb)
+      onSelect(item)
+    }, [])
+    if (screen === SCREENS.LOADING) {
+      return createElement(LoadingScreen, { message: loadingMessage })
+    }
+    const route = feature.routes[screen]
+    if (!route) return createElement(Text, null, `unknown:${screen}`)
+    const props =
+      typeof route.props === 'function' ? route.props(screenData) : route.props
+    return createElement(route.component, props)
+  }
+
+  test('selecting Install runs the install runner and renders the task results', async () => {
+    const installResults = [
+      {
+        repo: 'trade-imports-animals-frontend',
+        label: 'trade-imports-animals-frontend — npm ci',
+        exitCode: 0,
+        durationMs: 1200,
+        stderrTail: null
+      },
+      {
+        repo: 'trade-imports-animals-backend',
+        label: 'trade-imports-animals-backend — mvn install -DskipTests',
+        exitCode: 1,
+        durationMs: 3400,
+        stderrTail: 'BUILD FAILURE'
+      }
+    ]
+    const runners = stubRunners({ install: async () => installResults })
+
+    const { lastFrame } = render(
+      createElement(RunVerbHarness, {
+        workspaceRoot: fakeRoot,
+        runners,
+        verb: 'install'
+      })
+    )
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toContain('trade-imports-animals-frontend')
+    )
+    const frame = lastFrame()
+    expect(frame).toContain('trade-imports-animals-frontend')
+    expect(frame).toContain('trade-imports-animals-backend')
+    expect(frame).toMatch(/failed/i)
+    expect(frame).toContain('BUILD FAILURE')
+    expect(frame).toMatch(/1 passed, 1 failed/i)
+  })
+
+  test('selecting Clean handles results that report ok directly without exitCode', async () => {
+    const cleanResults = [
+      { repo: 'trade-imports-animals-frontend', ok: true, removed: true }
+    ]
+    const runners = stubRunners({ clean: async () => cleanResults })
+
+    const { lastFrame } = render(
+      createElement(RunVerbHarness, {
+        workspaceRoot: fakeRoot,
+        runners,
+        verb: 'clean'
+      })
+    )
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toContain('trade-imports-animals-frontend')
+    )
+    expect(lastFrame()).toMatch(/done/i)
+  })
+
+  test('a failing runner surfaces the message on the error screen', async () => {
+    const runners = stubRunners({
+      install: async () => {
+        throw new Error('npm exploded')
+      }
+    })
+    const ErrorHarness = ({ workspaceRoot }) => {
+      const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+      const [screenData, setScreenData] = useState({})
+      const [, setLoadingMessage] = useState('')
+      const feature = useWorkspaceFeature({
+        setScreen,
+        setScreenData,
+        setLoadingMessage,
+        navigateToMain: () => {},
+        workspaceRoot,
+        runners
+      })
+      useEffect(() => {
+        const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+        const installItem = items.find((item) => item.value === 'install')
+        onSelect(installItem)
+      }, [])
+      if (screen === SCREENS.ERROR) {
+        return createElement(Text, null, `error:${screenData.error}`)
+      }
+      if (screen === SCREENS.LOADING) {
+        return createElement(Text, null, 'loading')
+      }
+      const route = feature.routes[screen]
+      const props =
+        typeof route.props === 'function'
+          ? route.props(screenData)
+          : route.props
+      return createElement(route.component, props)
+    }
+
+    const { lastFrame } = render(
+      createElement(ErrorHarness, { workspaceRoot: fakeRoot })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:npm exploded/))
   })
 })

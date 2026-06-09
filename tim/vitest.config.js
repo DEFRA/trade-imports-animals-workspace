@@ -5,6 +5,10 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
+    // Subprocess-spawning tests (docker, start, exec) hit the default 5s
+    // timeout under parallel load when many test files run concurrently.
+    // 15s is the headroom they need without slowing passing tests.
+    testTimeout: 15_000,
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
