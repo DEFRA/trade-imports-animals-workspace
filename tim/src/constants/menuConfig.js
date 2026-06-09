@@ -5,5 +5,17 @@ export const SCREENS = Object.freeze({
   WORKSPACE_MENU: 'workspace-menu',
   WORKSPACE_STATUS_OUTPUT: 'workspace-status-output',
   WORKSPACE_TASK_RESULTS: 'workspace-task-results',
-  AUTH_RESULTS: 'auth-results'
+  AUTH_RESULTS: 'auth-results',
+  JIRA_MENU: 'jira-menu',
+  JIRA_TICKET_INPUT: 'jira-ticket-input',
+  JIRA_TICKET_RESULT: 'jira-ticket-result',
+  GITHUB_MENU: 'github-menu',
+  GITHUB_PRS_INPUT: 'github-prs-input',
+  GITHUB_PRS_RESULT: 'github-prs-result',
+  CONFLUENCE_MENU: 'confluence-menu',
+  CONFLUENCE_PAGE_INPUT: 'confluence-page-input',
+  CONFLUENCE_PAGE_RESULT: 'confluence-page-result',
+  GHA_MENU: 'gha-menu',
+  GHA_RUNS_INPUT: 'gha-runs-input',
+  GHA_RUNS_RESULT: 'gha-runs-result'
 })

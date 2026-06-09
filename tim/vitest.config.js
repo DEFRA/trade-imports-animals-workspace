@@ -5,10 +5,21 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     clearMocks: true,
-    // Subprocess-spawning tests (docker, start, exec) hit the default 5s
+    // Subprocess-spawning tests (docker, start, exec, status — anything
+    // that shells out or spawns `node src/cli.js`) hit the default 5s
     // timeout under parallel load when many test files run concurrently.
-    // 15s is the headroom they need without slowing passing tests.
-    testTimeout: 15_000,
+    // 30s is the headroom they need without slowing passing tests; the
+    // status.test.js beforeEach also runs `git init` per test which can
+    // queue up behind sibling subprocess work.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+    // Many test files spawn `node src/cli.js` subprocesses. Letting vitest
+    // run one worker per CPU saturates the box and starves the pure-function
+    // tests sharing a worker. Cap at 4 to keep CI and dev predictable.
+    poolOptions: {
+      threads: { maxThreads: 4 },
+      forks: { maxForks: 4 }
+    },
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',

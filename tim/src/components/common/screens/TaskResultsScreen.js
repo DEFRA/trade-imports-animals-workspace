@@ -10,8 +10,9 @@ const describeResult = (result) => {
   }
   const parts = []
   if (typeof result.exitCode === 'number') parts.push(`exit ${result.exitCode}`)
-  if (typeof result.durationMs === 'number')
-    {parts.push(`${result.durationMs}ms`)}
+  if (typeof result.durationMs === 'number') {
+    parts.push(`${result.durationMs}ms`)
+  }
   const suffix = parts.length > 0 ? ` (${parts.join(', ')})` : ''
   return { label: `failed${suffix}`, tone: 'red' }
 }

@@ -3,6 +3,10 @@ import { useApp } from 'ink'
 import { SCREENS } from '../constants/menuConfig.js'
 import { useWorkspaceFeature } from './features/workspace/useWorkspaceFeature.js'
 import { useAuthFeature } from './features/auth/useAuthFeature.js'
+import { useJiraFeature } from './features/jira/useJiraFeature.js'
+import { useGithubFeature } from './features/github/useGithubFeature.js'
+import { useConfluenceFeature } from './features/confluence/useConfluenceFeature.js'
+import { useGhaFeature } from './features/gha/useGhaFeature.js'
 import { useMainMenuFeature } from './features/mainMenu/useMainMenuFeature.js'
 import LoadingScreen from './common/screens/LoadingScreen.js'
 import ErrorScreen from './common/screens/ErrorScreen.js'
@@ -10,7 +14,11 @@ import ErrorScreen from './common/screens/ErrorScreen.js'
 const MainMenu = ({
   initialScreen = SCREENS.MAIN,
   workspaceRoot,
-  probe
+  probe,
+  getTicket,
+  findPrsForTicket,
+  getPage,
+  listRuns
 } = {}) => {
   const { exit } = useApp()
   const [screen, setScreen] = useState(initialScreen)
@@ -38,11 +46,47 @@ const MainMenu = ({
     ...(probe ? { probe } : {})
   })
 
+  const jira = useJiraFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    ...(getTicket ? { getTicket } : {})
+  })
+
+  const github = useGithubFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    ...(findPrsForTicket ? { findPrsForTicket } : {})
+  })
+
+  const confluence = useConfluenceFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    ...(getPage ? { getPage } : {})
+  })
+
+  const gha = useGhaFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    ...(listRuns ? { listRuns } : {})
+  })
+
   const mainMenu = useMainMenuFeature({
     setScreen,
     setScreenData,
     workspace,
     auth,
+    jira,
+    github,
+    confluence,
+    gha,
     exit
   })
 
@@ -56,7 +100,15 @@ const MainMenu = ({
     })
   }
 
-  const routes = { ...workspace.routes, ...auth.routes, ...mainMenu.routes }
+  const routes = {
+    ...workspace.routes,
+    ...auth.routes,
+    ...jira.routes,
+    ...github.routes,
+    ...confluence.routes,
+    ...gha.routes,
+    ...mainMenu.routes
+  }
   const route = routes[screen]
   if (!route) return null
   const props =

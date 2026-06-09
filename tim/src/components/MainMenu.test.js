@@ -91,6 +91,41 @@ describe('MainMenu', () => {
     expect(lastFrame()).toContain('confluence')
   })
 
+  test('selecting Jira and submitting a ticket id renders the ticket result end-to-end', async () => {
+    const getTicket = async (id) => ({
+      id,
+      summary: 'Plan the rollout',
+      status: 'In Progress',
+      type: 'Story',
+      assignee: 'Sam',
+      priority: 'High',
+      description: 'Get it shipped.'
+    })
+
+    const { stdin, lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot, getTicket })
+    )
+
+    // Workspace, Docker, Start, Auth, Jira — four down arrows
+    for (let i = 0; i < 4; i++) {
+      stdin.write(ARROW_DOWN)
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    }
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Look up a ticket/i))
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    stdin.write('\r')
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('EUDPA-200')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toContain('Plan the rollout'))
+    expect(lastFrame()).toContain('In Progress')
+  })
+
   test('selecting an unimplemented top-level option renders the error screen', async () => {
     const { stdin, lastFrame } = render(
       createElement(MainMenu, { workspaceRoot: fakeRoot })

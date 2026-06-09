@@ -5,7 +5,20 @@ import { render } from 'ink-testing-library'
 import { SCREENS } from '../../../constants/menuConfig.js'
 import { useMainMenuFeature } from './useMainMenuFeature.js'
 
-const Harness = ({ workspace, auth, onExit = () => {} }) => {
+const stubFeature = (onSelect) => ({
+  routes: {},
+  handleMainMenuSelect: onSelect
+})
+
+const Harness = ({
+  workspace,
+  auth,
+  jira = stubFeature(() => {}),
+  github = stubFeature(() => {}),
+  confluence = stubFeature(() => {}),
+  gha = stubFeature(() => {}),
+  onExit = () => {}
+}) => {
   const [screen, setScreen] = useState(SCREENS.MAIN)
   const [screenData, setScreenData] = useState({})
   const feature = useMainMenuFeature({
@@ -13,6 +26,10 @@ const Harness = ({ workspace, auth, onExit = () => {} }) => {
     setScreenData,
     workspace,
     auth,
+    jira,
+    github,
+    confluence,
+    gha,
     exit: onExit
   })
 
@@ -32,15 +49,9 @@ const Harness = ({ workspace, auth, onExit = () => {} }) => {
   return createElement(route.component, props)
 }
 
-const stubWorkspace = (onSelect) => ({
-  routes: {},
-  handleMainMenuSelect: onSelect
-})
+const stubWorkspace = (onSelect) => stubFeature(onSelect)
 
-const stubAuth = (onSelect) => ({
-  routes: {},
-  handleMainMenuSelect: onSelect
-})
+const stubAuth = (onSelect) => stubFeature(onSelect)
 
 describe('useMainMenuFeature', () => {
   test('lists every top-level command group on the main menu', () => {
@@ -92,6 +103,10 @@ describe('useMainMenuFeature', () => {
         setScreenData,
         workspace: stubWorkspace(() => {}),
         auth: stubAuth(onAuth),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {}),
         exit: () => {}
       })
       const route = feature.routes[screen]
@@ -123,6 +138,10 @@ describe('useMainMenuFeature', () => {
         setScreenData: () => {},
         workspace: stubWorkspace(() => {}),
         auth: stubAuth(() => {}),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {}),
         exit: onExit
       })
       const { items, onSelect } = feature.routes[SCREENS.MAIN].props
@@ -143,6 +162,103 @@ describe('useMainMenuFeature', () => {
     await vi.waitFor(() => expect(exited).toBe(true))
   })
 
+  test('selecting Jira hands control to the jira feature', async () => {
+    let jiraOpened = false
+    const JiraHarness = () => {
+      const feature = useMainMenuFeature({
+        setScreen: () => {},
+        setScreenData: () => {},
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
+        jira: stubFeature(() => {
+          jiraOpened = true
+        }),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {}),
+        exit: () => {}
+      })
+      const { items, onSelect } = feature.routes[SCREENS.MAIN].props
+      const item = items.find((i) => i.value === 'jira')
+      onSelect(item)
+      return null
+    }
+    render(createElement(JiraHarness))
+    await vi.waitFor(() => expect(jiraOpened).toBe(true))
+  })
+
+  test('selecting GitHub hands control to the github feature', async () => {
+    let githubOpened = false
+    const GhHarness = () => {
+      const feature = useMainMenuFeature({
+        setScreen: () => {},
+        setScreenData: () => {},
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {
+          githubOpened = true
+        }),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {}),
+        exit: () => {}
+      })
+      const { items, onSelect } = feature.routes[SCREENS.MAIN].props
+      onSelect(items.find((i) => i.value === 'github'))
+      return null
+    }
+    render(createElement(GhHarness))
+    await vi.waitFor(() => expect(githubOpened).toBe(true))
+  })
+
+  test('selecting Confluence hands control to the confluence feature', async () => {
+    let opened = false
+    const CHarness = () => {
+      const feature = useMainMenuFeature({
+        setScreen: () => {},
+        setScreenData: () => {},
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {
+          opened = true
+        }),
+        gha: stubFeature(() => {}),
+        exit: () => {}
+      })
+      const { items, onSelect } = feature.routes[SCREENS.MAIN].props
+      onSelect(items.find((i) => i.value === 'confluence'))
+      return null
+    }
+    render(createElement(CHarness))
+    await vi.waitFor(() => expect(opened).toBe(true))
+  })
+
+  test('selecting GitHub Actions hands control to the gha feature', async () => {
+    let opened = false
+    const GhaHarness = () => {
+      const feature = useMainMenuFeature({
+        setScreen: () => {},
+        setScreenData: () => {},
+        workspace: stubWorkspace(() => {}),
+        auth: stubAuth(() => {}),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {
+          opened = true
+        }),
+        exit: () => {}
+      })
+      const { items, onSelect } = feature.routes[SCREENS.MAIN].props
+      onSelect(items.find((i) => i.value === 'gha'))
+      return null
+    }
+    render(createElement(GhaHarness))
+    await vi.waitFor(() => expect(opened).toBe(true))
+  })
+
   test('an unknown menu value is a silent no-op (no error, no screen change)', () => {
     let errorRaised = false
     const NoOpHarness = () => {
@@ -155,6 +271,10 @@ describe('useMainMenuFeature', () => {
         },
         workspace: stubWorkspace(() => {}),
         auth: stubAuth(() => {}),
+        jira: stubFeature(() => {}),
+        github: stubFeature(() => {}),
+        confluence: stubFeature(() => {}),
+        gha: stubFeature(() => {}),
         exit: () => {}
       })
       const { onSelect } = feature.routes[SCREENS.MAIN].props

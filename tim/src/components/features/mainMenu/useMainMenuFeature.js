@@ -15,11 +15,7 @@ const MAIN_ITEMS = [
 
 const PLACEHOLDER_LABELS = {
   docker: 'Docker',
-  start: 'Start',
-  jira: 'Jira',
-  github: 'GitHub',
-  confluence: 'Confluence',
-  gha: 'GitHub Actions'
+  start: 'Start'
 }
 
 export const useMainMenuFeature = ({
@@ -27,12 +23,20 @@ export const useMainMenuFeature = ({
   setScreenData,
   workspace,
   auth,
+  jira,
+  github,
+  confluence,
+  gha,
   exit
 }) => {
   const handleMainSelect = (item) => {
     if (item.value === 'quit') return exit()
     if (item.value === 'workspace') return workspace.handleMainMenuSelect()
     if (item.value === 'auth') return auth.handleMainMenuSelect()
+    if (item.value === 'jira') return jira.handleMainMenuSelect()
+    if (item.value === 'github') return github.handleMainMenuSelect()
+    if (item.value === 'confluence') return confluence.handleMainMenuSelect()
+    if (item.value === 'gha') return gha.handleMainMenuSelect()
     const label = PLACEHOLDER_LABELS[item.value]
     if (label) {
       setScreenData({

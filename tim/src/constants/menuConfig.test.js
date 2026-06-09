@@ -19,6 +19,23 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifiers used by Phase 5c routing', () => {
+    expect(SCREENS).toMatchObject({
+      JIRA_MENU: 'jira-menu',
+      JIRA_TICKET_INPUT: 'jira-ticket-input',
+      JIRA_TICKET_RESULT: 'jira-ticket-result',
+      GITHUB_MENU: 'github-menu',
+      GITHUB_PRS_INPUT: 'github-prs-input',
+      GITHUB_PRS_RESULT: 'github-prs-result',
+      CONFLUENCE_MENU: 'confluence-menu',
+      CONFLUENCE_PAGE_INPUT: 'confluence-page-input',
+      CONFLUENCE_PAGE_RESULT: 'confluence-page-result',
+      GHA_MENU: 'gha-menu',
+      GHA_RUNS_INPUT: 'gha-runs-input',
+      GHA_RUNS_RESULT: 'gha-runs-result'
+    })
+  })
+
   test('every value is a unique non-empty string', () => {
     const values = Object.values(SCREENS)
     expect(new Set(values).size).toBe(values.length)
