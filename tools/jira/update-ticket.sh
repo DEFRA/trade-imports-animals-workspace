@@ -6,6 +6,7 @@
 #   -s, --summary TEXT      Update summary
 #   -d, --description TEXT  Update description (use - to read from stdin)
 #   -P, --priority LEVEL    Update priority: Lowest, Low, Medium, High, Highest
+#   -p, --parent KEY        Set parent epic (use "none" to clear)
 #   -l, --labels LABELS     Set labels (comma-separated, replaces existing)
 #   --add-label LABEL       Add a label (can be used multiple times)
 #   -h, --help              Show this help message
@@ -15,6 +16,8 @@
 #   ./update-ticket.sh EUDPA-12345 -d "New description"
 #   echo "Description from pipe" | ./update-ticket.sh EUDPA-12345 -d -
 #   ./update-ticket.sh EUDPA-12345 -P High --add-label urgent
+#   ./update-ticket.sh EUDPA-12345 -p EUDPA-215
+#   ./update-ticket.sh EUDPA-12345 -p none
 
 set -e
 
@@ -23,6 +26,8 @@ TICKET=""
 SUMMARY=""
 DESCRIPTION=""
 PRIORITY=""
+PARENT=""
+PARENT_SET=0
 LABELS=""
 ADD_LABELS=()
 
@@ -36,6 +41,7 @@ Options:
   -s, --summary TEXT      Update summary
   -d, --description TEXT  Update description (use - to read from stdin)
   -P, --priority LEVEL    Update priority: Lowest, Low, Medium, High, Highest
+  -p, --parent KEY        Set parent epic (use "none" to clear)
   -l, --labels LABELS     Set labels (comma-separated, replaces existing)
   --add-label LABEL       Add a label (can be used multiple times)
   -h, --help              Show this help message
@@ -45,6 +51,8 @@ Examples:
   ./update-ticket.sh EUDPA-12345 -d "New description"
   echo "Long description" | ./update-ticket.sh EUDPA-12345 -d -
   ./update-ticket.sh EUDPA-12345 -P High --add-label urgent
+  ./update-ticket.sh EUDPA-12345 -p EUDPA-215
+  ./update-ticket.sh EUDPA-12345 -p none
 
 Environment Variables:
   JIRA_USER   Your Atlassian email address
@@ -70,6 +78,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -P|--priority)
             PRIORITY="$2"
+            shift 2
+            ;;
+        -p|--parent)
+            PARENT="$2"
+            PARENT_SET=1
             shift 2
             ;;
         -l|--labels)
@@ -115,9 +128,15 @@ if [[ ! "$TICKET" =~ ^[A-Z]+-[0-9]+$ ]]; then
 fi
 
 # Check we have something to update
-if [[ -z "$SUMMARY" && -z "$DESCRIPTION" && -z "$PRIORITY" && -z "$LABELS" && ${#ADD_LABELS[@]} -eq 0 ]]; then
+if [[ -z "$SUMMARY" && -z "$DESCRIPTION" && -z "$PRIORITY" && $PARENT_SET -eq 0 && -z "$LABELS" && ${#ADD_LABELS[@]} -eq 0 ]]; then
     echo "Error: Nothing to update. Provide at least one option."
     echo "Use --help for usage information"
+    exit 1
+fi
+
+# Validate parent key format if provided
+if [[ $PARENT_SET -eq 1 && "$PARENT" != "none" && ! "$PARENT" =~ ^[A-Z]+-[0-9]+$ ]]; then
+    echo "Error: Invalid parent key format '$PARENT'. Expected format: EUDPA-12345 or 'none' to clear."
     exit 1
 fi
 
@@ -173,6 +192,14 @@ fi
 
 if [[ -n "$PRIORITY" ]]; then
     PAYLOAD=$(echo "$PAYLOAD" | jq --arg priority "$PRIORITY" '.fields.priority = {name: $priority}')
+fi
+
+if [[ $PARENT_SET -eq 1 ]]; then
+    if [[ "$PARENT" == "none" ]]; then
+        PAYLOAD=$(echo "$PAYLOAD" | jq '.fields.parent = null')
+    else
+        PAYLOAD=$(echo "$PAYLOAD" | jq --arg parent "$PARENT" '.fields.parent = {key: $parent}')
+    fi
 fi
 
 if [[ -n "$LABELS" ]]; then
