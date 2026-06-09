@@ -7,6 +7,8 @@ import { useJiraFeature } from './features/jira/useJiraFeature.js'
 import { useGithubFeature } from './features/github/useGithubFeature.js'
 import { useConfluenceFeature } from './features/confluence/useConfluenceFeature.js'
 import { useGhaFeature } from './features/gha/useGhaFeature.js'
+import { useDockerFeature } from './features/docker/useDockerFeature.js'
+import { useStartFeature } from './features/start/useStartFeature.js'
 import { useMainMenuFeature } from './features/mainMenu/useMainMenuFeature.js'
 import LoadingScreen from './common/screens/LoadingScreen.js'
 import ErrorScreen from './common/screens/ErrorScreen.js'
@@ -18,7 +20,9 @@ const MainMenu = ({
   getTicket,
   findPrsForTicket,
   getPage,
-  listRuns
+  listRuns,
+  launchStackScript,
+  launchService
 } = {}) => {
   const { exit } = useApp()
   const [screen, setScreen] = useState(initialScreen)
@@ -78,15 +82,33 @@ const MainMenu = ({
     ...(listRuns ? { listRuns } : {})
   })
 
-  const mainMenu = useMainMenuFeature({
+  const docker = useDockerFeature({
     setScreen,
     setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    workspaceRoot,
+    ...(launchStackScript ? { launchStackScript } : {})
+  })
+
+  const start = useStartFeature({
+    setScreen,
+    setScreenData,
+    setLoadingMessage,
+    navigateToMain,
+    workspaceRoot,
+    ...(launchService ? { launchService } : {})
+  })
+
+  const mainMenu = useMainMenuFeature({
     workspace,
     auth,
     jira,
     github,
     confluence,
     gha,
+    docker,
+    start,
     exit
   })
 
@@ -107,6 +129,8 @@ const MainMenu = ({
     ...github.routes,
     ...confluence.routes,
     ...gha.routes,
+    ...docker.routes,
+    ...start.routes,
     ...mainMenu.routes
   }
   const route = routes[screen]

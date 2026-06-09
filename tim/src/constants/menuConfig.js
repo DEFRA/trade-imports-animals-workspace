@@ -17,5 +17,7 @@ export const SCREENS = Object.freeze({
   CONFLUENCE_PAGE_RESULT: 'confluence-page-result',
   GHA_MENU: 'gha-menu',
   GHA_RUNS_INPUT: 'gha-runs-input',
-  GHA_RUNS_RESULT: 'gha-runs-result'
+  GHA_RUNS_RESULT: 'gha-runs-result',
+  DOCKER_MENU: 'docker-menu',
+  START_MENU: 'start-menu'
 })

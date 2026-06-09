@@ -13,13 +13,6 @@ export default defineConfig({
     // queue up behind sibling subprocess work.
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    // Many test files spawn `node src/cli.js` subprocesses. Letting vitest
-    // run one worker per CPU saturates the box and starves the pure-function
-    // tests sharing a worker. Cap at 4 to keep CI and dev predictable.
-    poolOptions: {
-      threads: { maxThreads: 4 },
-      forks: { maxForks: 4 }
-    },
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
@@ -50,5 +43,13 @@ export default defineConfig({
         statements: 80
       }
     }
+  },
+  // Many test files spawn `node src/cli.js` subprocesses. Letting vitest
+  // run one worker per CPU saturates the box and starves the pure-function
+  // tests sharing a worker. Cap at 4 to keep CI and dev predictable.
+  // Vitest 4 moved poolOptions to top-level (out from under test).
+  poolOptions: {
+    threads: { maxThreads: 4 },
+    forks: { maxForks: 4 }
   }
 })

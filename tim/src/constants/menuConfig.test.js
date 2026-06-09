@@ -19,6 +19,13 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifiers used by Phase 5d routing', () => {
+    expect(SCREENS).toMatchObject({
+      DOCKER_MENU: 'docker-menu',
+      START_MENU: 'start-menu'
+    })
+  })
+
   test('exposes the screen identifiers used by Phase 5c routing', () => {
     expect(SCREENS).toMatchObject({
       JIRA_MENU: 'jira-menu',

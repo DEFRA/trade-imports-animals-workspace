@@ -13,37 +13,27 @@ const MAIN_ITEMS = [
   { label: 'Quit', value: 'quit' }
 ]
 
-const PLACEHOLDER_LABELS = {
-  docker: 'Docker',
-  start: 'Start'
-}
-
 export const useMainMenuFeature = ({
-  setScreen,
-  setScreenData,
   workspace,
   auth,
   jira,
   github,
   confluence,
   gha,
+  docker,
+  start,
   exit
 }) => {
   const handleMainSelect = (item) => {
     if (item.value === 'quit') return exit()
     if (item.value === 'workspace') return workspace.handleMainMenuSelect()
+    if (item.value === 'docker') return docker.handleMainMenuSelect()
+    if (item.value === 'start') return start.handleMainMenuSelect()
     if (item.value === 'auth') return auth.handleMainMenuSelect()
     if (item.value === 'jira') return jira.handleMainMenuSelect()
     if (item.value === 'github') return github.handleMainMenuSelect()
     if (item.value === 'confluence') return confluence.handleMainMenuSelect()
     if (item.value === 'gha') return gha.handleMainMenuSelect()
-    const label = PLACEHOLDER_LABELS[item.value]
-    if (label) {
-      setScreenData({
-        error: `${label} isn't wired up in tim yet. Use the bash tooling under ../tools/ for now.`
-      })
-      setScreen(SCREENS.ERROR)
-    }
   }
 
   const routes = {

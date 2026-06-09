@@ -126,17 +126,33 @@ describe('MainMenu', () => {
     expect(lastFrame()).toContain('In Progress')
   })
 
-  test('selecting an unimplemented top-level option renders the error screen', async () => {
+  test('selecting Docker > Dev launches run-stack.sh with -d via the injected launcher', async () => {
+    const captured = []
+    const launchStackScript = async (spec) => captured.push(spec)
     const { stdin, lastFrame } = render(
-      createElement(MainMenu, { workspaceRoot: fakeRoot })
+      createElement(MainMenu, {
+        workspaceRoot: fakeRoot,
+        launchStackScript
+      })
     )
 
+    // Workspace, Docker — one down
     stdin.write(ARROW_DOWN)
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    await new Promise((resolve) => setTimeout(resolve, 30))
     stdin.write('\r')
 
-    await vi.waitFor(() =>
-      expect(lastFrame()).toMatch(/Docker isn't wired up/i)
-    )
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/run-stack\.sh/))
+
+    // Docker submenu: Up (0), Dev (1) — one down
+    stdin.write(ARROW_DOWN)
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(captured).toHaveLength(1))
+    expect(captured[0]).toEqual({
+      workspaceRoot: fakeRoot,
+      script: 'run-stack.sh',
+      args: ['-d']
+    })
   })
 })
