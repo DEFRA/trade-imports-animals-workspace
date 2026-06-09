@@ -219,6 +219,21 @@ if [[ "$WRITE_SNAPSHOT" == "true" ]]; then
     tmp=$(mktemp)
     jq --argjson s "$snap" '.re_review = $s | .re_reviews = ((.re_reviews // []) + [$s])' "$META_FILE" > "$tmp"
     mv "$tmp" "$META_FILE"
+
+    # Reset per-file `.review.json` todos for files about to be re-reviewed
+    # (Lists A and C). Without this, REFRESH reviewers that find nothing new
+    # leave the prior FRESH todos in place; the reconciler then re-appends
+    # them as duplicates of the items already in items.{repo}.json.
+    # List D files have no .review.json yet (they ARE the coverage gap) so
+    # nothing to clear.
+    while IFS=$'\t' read -r repo file; do
+        [[ -z "$repo" || -z "$file" ]] && continue
+        underscored=${file//\//_}
+        rj="$REVIEW_DIR/file-reviews/$repo/${underscored}.review.json"
+        [[ -f "$rj" ]] || continue
+        tmp=$(mktemp)
+        jq '.todos = []' "$rj" > "$tmp" && mv "$tmp" "$rj"
+    done < <(jq -r '.repos[] | .repo as $r | (.lists.A + .lists.C)[] | [$r, .file] | @tsv' <<<"$output")
 fi
 
 # ---- Step 5: emit -------------------------------------------------------
