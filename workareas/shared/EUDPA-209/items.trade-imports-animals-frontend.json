@@ -1,0 +1,93 @@
+{
+  "ticket": "EUDPA-209",
+  "repo": "trade-imports-animals-frontend",
+  "items": [
+    {
+      "id": 1,
+      "line": 11,
+      "severity": "Minor",
+      "category": "maintainability",
+      "issue": "appHeading hardcodes heading: \"Search for a place of destination\", duplicating the controller's pageTitle value; the old code passed the pageTitle variable, so the <title> and h1 can now drift if the controller string changes",
+      "fix": "Pass the context variable instead: appHeading({ pageTitle: \"Address\", heading: pageTitle })",
+      "file": "src/server/addresses/destinations/select/index.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "line": 15,
+      "severity": "Minor",
+      "category": "content-change",
+      "issue": "appHeading lost its caption: old call passed caption: 'Description of the goods' (rendered as govuk-caption-m); new call is { heading: 'Commodity' } only, so the 'Description of the goods' caption is dropped — a content change in a layout-only ticket, and inconsistent with sibling commodities/details/index.njk which keeps pageTitle: 'Description of the goods'.",
+      "fix": "If the caption was intended to stay, use { pageTitle: 'Description of the goods', heading: 'Commodity' } to match commodities/details; otherwise confirm the removal is intended.",
+      "file": "src/server/commodities/select/index.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "line": 17,
+      "severity": "Minor",
+      "category": "formatting",
+      "issue": "After removing the govuk-grid-row / govuk-grid-column-two-thirds wrapper divs, lines 17-82 keep the old two-level indentation that those divs justified, leaving the block body over-indented relative to the new structure.",
+      "fix": "Re-indent the block body (the govuk-body div, form, table, selects) to match the removed wrapper nesting.",
+      "file": "src/server/commodities/select/index.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "line": 15,
+      "severity": "Minor",
+      "category": "content-change",
+      "issue": "appHeading call dropped the caption \"Description of the goods\" (old: { caption, text: \"Commodity\" } -> new: { heading: \"Commodity\" }); the rename text->heading is a fix since the macro reads params.heading, but the caption removal is user-visible content unrelated to the layout-width goal.",
+      "fix": "Confirm the caption removal is intentional; if not, pass caption: \"Description of the goods\" alongside heading.",
+      "file": "src/server/commodities/select/index.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "line": 10,
+      "severity": "Major",
+      "category": "invalid-html",
+      "issue": "Empty <p> spacer (line 10) sits inside the <h1> (opened line 3, closed line 14); a <p> is flow content and is invalid nested inside a heading element, producing a malformed DOM on every appHeading call that passes a caption.",
+      "fix": "Move the caption out of the <h1>; render the caption <span> after the heading and drop the nested <p> spacer, using a margin utility on the heading/caption instead.",
+      "best_practice": "gds/styling.md",
+      "file": "src/server/common/components/heading/template.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 6,
+      "line": 1,
+      "severity": "Major",
+      "category": "accessibility",
+      "issue": "Empty <p> elements on lines 1 and 10 are used purely as vertical spacers; non-semantic empty paragraphs are an accessibility smell (screen readers may announce an empty element) and GDS spacing guidance applies margin utilities to real content, not empty tags.",
+      "fix": "Remove the empty spacer <p>s and apply a govuk-!-margin-* utility (or govuk-caption spacing) to the heading/caption elements themselves.",
+      "best_practice": "gds/styling.md",
+      "file": "src/server/common/components/heading/template.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 7,
+      "line": 54,
+      "severity": "Major",
+      "category": "consistency",
+      "issue": "Renaming the inner block to pageContent leaves 3 pages (about/index.njk, error/index.njk, auth/unauthorised.njk) still overriding {% block content %}, so they bypass the new govuk-grid-column-full wrapper and keep their own two-thirds grid — width is no longer 'defined in one place' for them.",
+      "fix": "Migrate about, error and unauthorised templates to {% block pageContent %} and drop their local govuk-grid-row/two-thirds wrappers, or record in the ticket that these pages intentionally stay two-thirds.",
+      "best_practice": "node/nunjucks.md",
+      "file": "src/server/common/templates/layouts/page.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}
