@@ -27,5 +27,7 @@ export const SCREENS = Object.freeze({
   GITHUB_DIFF_INPUT: 'github-diff-input',
   GITHUB_DIFF_RESULT: 'github-diff-result',
   GHA_STATUS_INPUT: 'gha-status-input',
-  GHA_STATUS_RESULT: 'gha-status-result'
+  GHA_STATUS_RESULT: 'gha-status-result',
+  GHA_WAIT_INPUT: 'gha-wait-input',
+  GHA_WAIT_PROGRESS: 'gha-wait-progress'
 })

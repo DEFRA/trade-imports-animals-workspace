@@ -36,6 +36,7 @@ const Harness = ({ listRuns, getRunStatus, onReturn = () => {} }) => {
 const RunActionHarness = ({
   listRuns,
   getRunStatus,
+  waitForRun,
   action,
   onReturn = () => {}
 }) => {
@@ -48,7 +49,8 @@ const RunActionHarness = ({
     setLoadingMessage,
     navigateToMain: onReturn,
     listRuns,
-    getRunStatus
+    getRunStatus,
+    waitForRun
   })
   useEffect(() => {
     const { items, onSelect } = feature.routes[SCREENS.GHA_MENU].props
@@ -69,7 +71,7 @@ const RunActionHarness = ({
 }
 
 describe('useGhaFeature', () => {
-  test('opens on a submenu with Recent-runs, Status and Back options', () => {
+  test('opens on a submenu with Recent-runs, Status, Wait and Back options', () => {
     const { lastFrame } = render(
       createElement(Harness, { listRuns: async () => [] })
     )
@@ -78,6 +80,7 @@ describe('useGhaFeature', () => {
     expect(frame).toMatch(/GitHub Actions/i)
     expect(frame).toMatch(/Recent workflow runs/i)
     expect(frame).toMatch(/Status of a single run/i)
+    expect(frame).toMatch(/Wait for a run to finish/i)
     expect(frame).toContain('Back')
   })
 
@@ -235,5 +238,74 @@ describe('useGhaFeature', () => {
     stdin.write('\r')
 
     await vi.waitFor(() => expect(lastFrame()).toMatch(/error:.*not found/i))
+  })
+
+  test('waiting on a run shows the progress screen then the final status', async () => {
+    const captured = []
+    const waitForRun = async (...args) => {
+      captured.push(args)
+      return {
+        id: 99,
+        status: 'completed',
+        conclusion: 'success',
+        url: 'https://github.com/x/y/actions/runs/99'
+      }
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { waitForRun, action: 'wait' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('trade-imports-animals-frontend 99')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toContain('Run #99'))
+    expect(captured[0]).toEqual(['trade-imports-animals-frontend', 99])
+    expect(lastFrame()).toContain('success')
+  })
+
+  test('an unparseable wait input surfaces a plain-English error', async () => {
+    const captured = []
+    const waitForRun = async (...args) => {
+      captured.push(args)
+      return {}
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { waitForRun, action: 'wait' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('foo')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:.*repo and a run id/i)
+    )
+    expect(captured).toEqual([])
+  })
+
+  test('a non-Error throw from waitForRun falls back to String(error)', async () => {
+    const waitForRun = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'wait kaboom'
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { waitForRun, action: 'wait' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('trade-imports-animals-frontend 7')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:wait kaboom/))
   })
 })

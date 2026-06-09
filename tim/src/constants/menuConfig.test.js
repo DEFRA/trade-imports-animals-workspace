@@ -56,6 +56,13 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifiers used by Phase 5f routing', () => {
+    expect(SCREENS).toMatchObject({
+      GHA_WAIT_INPUT: 'gha-wait-input',
+      GHA_WAIT_PROGRESS: 'gha-wait-progress'
+    })
+  })
+
   test('every value is a unique non-empty string', () => {
     const values = Object.values(SCREENS)
     expect(new Set(values).size).toBe(values.length)
