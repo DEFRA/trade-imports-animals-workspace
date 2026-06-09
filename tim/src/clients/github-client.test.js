@@ -166,6 +166,80 @@ describe('listWorkflowRuns', () => {
   })
 })
 
+describe('error mapping', () => {
+  test('maps a 403 with a rate-limit body to TimError(RATE_LIMIT)', async () => {
+    mockPool(ORIGIN).get('/user').reply(403, {
+      message: 'API rate limit exceeded for user ID 1.',
+      documentation_url: 'https://docs.github.com/'
+    })
+    const client = createGithubClient({ token: 't' })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'RATE_LIMIT'
+    })
+  })
+
+  test('maps a generic 4xx/5xx to TimError(NETWORK)', async () => {
+    mockPool(ORIGIN).get('/user').reply(500, { message: 'Internal error' })
+    const client = createGithubClient({ token: 't' })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'NETWORK',
+      message: expect.stringContaining('500')
+    })
+  })
+})
+
+describe('getPrDiff', () => {
+  test('returns the diff as a string for repo + number', async () => {
+    const diff = 'diff --git a/file.js b/file.js\n+const a = 1\n'
+    mockPool(ORIGIN)
+      .get('/repos/DEFRA/trade-imports-animals-frontend/pulls/42')
+      .reply(200, diff, { 'content-type': 'application/vnd.github.v3.diff' })
+
+    const result = await createGithubClient({ token: 't' }).getPrDiff(
+      'trade-imports-animals-frontend',
+      42
+    )
+
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
+  })
+})
+
+describe('listWorkflowRuns filtered by workflow id', () => {
+  test('hits the workflow-specific endpoint when a workflow id is supplied', async () => {
+    mockPool(ORIGIN)
+      .get(
+        '/repos/DEFRA/trade-imports-animals-frontend/actions/workflows/ci.yml/runs'
+      )
+      .query({ per_page: 20, branch: 'main' })
+      .reply(200, {
+        workflow_runs: [
+          {
+            id: 7,
+            name: 'ci',
+            head_branch: 'main',
+            head_sha: 'sha',
+            status: 'completed',
+            conclusion: 'success',
+            html_url: 'https://github.com/x/y/actions/runs/7',
+            created_at: '2026-06-08T10:00:00Z'
+          }
+        ]
+      })
+
+    const runs = await createGithubClient({ token: 't' }).listWorkflowRuns(
+      'trade-imports-animals-frontend',
+      { workflow: 'ci.yml', branch: 'main' }
+    )
+
+    expect(runs).toEqual([
+      expect.objectContaining({ id: 7, name: 'ci', conclusion: 'success' })
+    ])
+  })
+})
+
 describe('getRunStatus', () => {
   test('returns the status and conclusion of a single run', async () => {
     mockPool(ORIGIN)

@@ -40,6 +40,16 @@ describe('runAcross', () => {
     }))
     expect(results.map((r) => r.ok)).toEqual([true, false, false])
   })
+
+  test('falls back to String(error) when the thrown value has no message', async () => {
+    const results = await runAcross([1], async () => {
+      // Throwing a non-Error literal — error.message is undefined.
+      // eslint-disable-next-line no-throw-literal
+      throw 'plain string failure'
+    })
+    expect(results[0].ok).toBe(false)
+    expect(results[0].error).toBe('plain string failure')
+  })
 })
 
 describe('runSerial', () => {
@@ -57,6 +67,22 @@ describe('runSerial', () => {
       return { ok: true, value: n }
     })
     expect(results.map((r) => r.ok)).toEqual([true, false, true])
+  })
+
+  test('infers ok from exitCode when the task does not set ok explicitly', async () => {
+    const results = await runSerial([0, 1, 2], async (code) => ({
+      exitCode: code
+    }))
+    expect(results.map((r) => r.ok)).toEqual([true, false, false])
+  })
+
+  test('falls back to String(error) when the thrown value has no message', async () => {
+    const results = await runSerial([1], async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'plain string failure'
+    })
+    expect(results[0].ok).toBe(false)
+    expect(results[0].error).toBe('plain string failure')
   })
 
   test('runs tasks serially — total wall-clock is the sum', async () => {

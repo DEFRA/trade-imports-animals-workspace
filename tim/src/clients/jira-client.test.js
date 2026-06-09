@@ -95,6 +95,49 @@ describe('getTicket', () => {
   })
 })
 
+describe('error mapping', () => {
+  test('maps 429 to TimError(RATE_LIMIT)', async () => {
+    mockPool(BASE).get('/rest/api/2/myself').reply(429, {})
+    const client = createJiraClient({ user: 'u', token: 't', baseUrl: BASE })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'RATE_LIMIT'
+    })
+  })
+
+  test('maps 500 to TimError(NETWORK) with the status code in the message', async () => {
+    mockPool(BASE).get('/rest/api/2/myself').reply(500, {})
+    const client = createJiraClient({ user: 'u', token: 't', baseUrl: BASE })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'NETWORK',
+      message: expect.stringContaining('500')
+    })
+  })
+
+  test('maps a fetch failure (no response) to TimError(NETWORK)', async () => {
+    mockPool(BASE)
+      .get('/rest/api/2/myself')
+      .replyWithError({ message: 'connection reset' })
+    const client = createJiraClient({ user: 'u', token: 't', baseUrl: BASE })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'NETWORK'
+    })
+  })
+
+  test('maps an invalid JSON response body to TimError(PARSE)', async () => {
+    mockPool(BASE).get('/rest/api/2/myself').reply(200, 'not really json', {
+      'content-type': 'application/json'
+    })
+    const client = createJiraClient({ user: 'u', token: 't', baseUrl: BASE })
+    await expect(client.whoami()).rejects.toMatchObject({
+      name: 'TimError',
+      code: 'PARSE'
+    })
+  })
+})
+
 describe('getComments', () => {
   test('returns the parsed comments list', async () => {
     mockPool(BASE)

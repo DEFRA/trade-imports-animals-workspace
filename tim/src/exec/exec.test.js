@@ -36,6 +36,16 @@ describe('run', () => {
     })
   })
 
+  test('re-throws an aborted subprocess error unchanged (not a missing-dep, not a non-zero exit)', async () => {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 20)
+    await expect(
+      run('node', ['-e', 'setInterval(() => {}, 1000)'], {
+        cancelSignal: controller.signal
+      })
+    ).rejects.toThrowError(/abort/i)
+  })
+
   test('passes through cwd via opts', async () => {
     const result = await run(
       'node',
@@ -58,5 +68,16 @@ describe('runStreamed', () => {
     await expect(
       runStreamed('a-definitely-not-installed-binary-xyz', [])
     ).rejects.toBeInstanceOf(TimError)
+  })
+
+  test('re-throws an aborted subprocess error unchanged', async () => {
+    const controller = new AbortController()
+    setTimeout(() => controller.abort(), 20)
+    await expect(
+      runStreamed('node', ['-e', 'setInterval(() => {}, 1000)'], {
+        cancelSignal: controller.signal,
+        stdio: 'pipe'
+      })
+    ).rejects.toThrowError(/abort/i)
   })
 })
