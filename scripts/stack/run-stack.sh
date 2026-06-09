@@ -12,6 +12,7 @@ services=(
   "admin|trade-imports-animals-admin|TRADE_IMPORTS_ANIMALS_ADMIN"
   "stub|trade-imports-stub|TRADE_IMPORTS_STUB"
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
+  "gateway|trade-imports-dynamics-gateway|TRADE_IMPORTS_DYNAMICS_GATEWAY"
 )
 
 valid_labels=()

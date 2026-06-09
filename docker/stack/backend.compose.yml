@@ -31,6 +31,34 @@ services:
     platform: linux/amd64
     ports:
       - '8085:8085'
+  trade-imports-dynamics-gateway:
+    profiles: [backend]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      localstack-init:
+        condition: service_completed_successfully
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=8088
+      - SPRING_PROFILES_ACTIVE=local
+      - AWS_EMF_AGENT_ENDPOINT=http://host.docker.internal:4566
+      - APP_AWS_ENDPOINT_OVERRIDE=http://host.docker.internal:4566
+      - TRADE_IMPORTS_DYNAMICS_GATEWAY_BASE_URL=http://host.docker.internal:8088
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 60s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8088/health
+    image: defradigital/trade-imports-dynamics-gateway:${TRADE_IMPORTS_DYNAMICS_GATEWAY:-latest}
+    platform: linux/amd64
+    ports:
+      - '8088:8088'
   trade-imports-reference-data:
     profiles: [backend]
     extra_hosts:
