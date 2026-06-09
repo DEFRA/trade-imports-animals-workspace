@@ -1,0 +1,84 @@
+import { describe, test, expect, beforeAll, afterAll, vi } from 'vitest'
+import { createElement } from 'react'
+import { render } from 'ink-testing-library'
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import MainMenu from './MainMenu.js'
+
+const createFakeWorkspace = async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tim-mm-'))
+  await mkdir(join(root, 'repos'))
+  await writeFile(join(root, 'Makefile'), '# fake workspace\n')
+  return root
+}
+
+const ARROW_DOWN = String.fromCharCode(27) + '[B'
+
+let fakeRoot
+
+beforeAll(async () => {
+  fakeRoot = await createFakeWorkspace()
+})
+
+afterAll(async () => {
+  await rm(fakeRoot, { recursive: true, force: true })
+})
+
+describe('MainMenu', () => {
+  test('opens on the top-level menu with every command group listed', () => {
+    const { lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot })
+    )
+
+    const frame = lastFrame()
+    expect(frame).toContain('tim')
+    expect(frame).toContain('Workspace')
+    expect(frame).toContain('Quit')
+  })
+
+  test('drives Workspace → Status all the way to the rendered status output', async () => {
+    const { stdin, lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot })
+    )
+
+    stdin.write('\r')
+    await vi.waitFor(() => expect(lastFrame()).toContain('Workspace'))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toContain('Workspace status'))
+    expect(lastFrame()).toContain('trade-imports-animals-frontend')
+    expect(lastFrame()).toContain('Not cloned')
+  })
+
+  test('pressing Enter on the status output returns the user to the top-level menu', async () => {
+    const { stdin, lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot })
+    )
+
+    stdin.write('\r')
+    await vi.waitFor(() => expect(lastFrame()).toContain('Workspace'))
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    stdin.write('\r')
+    await vi.waitFor(() => expect(lastFrame()).toContain('Workspace status'))
+
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    stdin.write('\r')
+    await vi.waitFor(() => expect(lastFrame()).toContain('command group'))
+  })
+
+  test('selecting an unimplemented top-level option renders the error screen', async () => {
+    const { stdin, lastFrame } = render(
+      createElement(MainMenu, { workspaceRoot: fakeRoot })
+    )
+
+    stdin.write(ARROW_DOWN)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    stdin.write('\r')
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/Docker isn't wired up/i)
+    )
+  })
+})

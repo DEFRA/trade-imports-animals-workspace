@@ -61,6 +61,16 @@ const addGlobalOptions = (program) => {
   return program
 }
 
+const launchInteractive = async ({ workspaceRoot }) => {
+  const [{ createElement }, { default: MainMenu }, { mount }] =
+    await Promise.all([
+      import('react'),
+      import('./components/MainMenu.js'),
+      import('./components/inkControl.js')
+    ])
+  mount(createElement(MainMenu, { workspaceRoot }))
+}
+
 export const buildProgram = () => {
   const program = new Command()
   program
@@ -70,8 +80,19 @@ export const buildProgram = () => {
     )
     .version(pkg.version)
     .showHelpAfterError(true)
-    // No subcommand given → show help instead of exiting silently.
-    .action(() => program.help())
+    // No subcommand → launch the Ink menu when stdout is a TTY and the
+    // user hasn't asked for plain text. Otherwise show help (so pipes,
+    // CI, and `--no-ui` keep working unchanged).
+    .action(async function noSubcommandAction() {
+      const opts = this.optsWithGlobals()
+      const interactive =
+        process.stdout.isTTY && opts.ui !== false && !opts.json
+      if (!interactive) {
+        program.help()
+        return
+      }
+      await launchInteractive({ workspaceRoot: opts.workspace })
+    })
 
   addGlobalOptions(program)
 

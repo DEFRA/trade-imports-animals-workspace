@@ -25,18 +25,26 @@ npm link
 
 ## Usage
 
-Run with no arguments for the interactive menu (once features land):
+### Interactive menu
+
+Run with no arguments in a terminal to open the Ink menu:
 
 ```bash
 tim
 ```
 
-Or run a specific command directly:
+Arrow keys navigate, Enter selects, the menu groups every command surface tim covers. Phase 5a wires up `Workspace` → `Status` end-to-end; the rest of the top-level entries are placeholders and will show a "not wired up yet" message until later phases land.
+
+### Direct CLI
+
+Pass a subcommand to skip the menu and run a command in one shot:
 
 ```bash
 tim hello
 tim hello --json
 tim --version
+tim workspace status
+tim workspace status --json | jq
 ```
 
 Every command supports:
@@ -45,6 +53,15 @@ Every command supports:
 - `--no-ui` — plain text on stdout (suppresses Ink; auto-set when stdout is not a TTY)
 - `--verbose` — structured logs to stderr
 - `--workspace <path>` — override the resolved workspace root
+
+### Bypassing the interactive menu
+
+The menu only opens when stdout is a TTY and the user has not asked for plain text. In any of the following situations tim falls back to printing `--help` to stdout, so pipes, CI and skill scripts keep working unchanged:
+
+- A subcommand was given (`tim workspace status`)
+- Stdout is not a TTY (`tim | cat`, CI runs)
+- `--no-ui` is on the command line
+- `--json` is on the command line
 
 ## Auth
 
