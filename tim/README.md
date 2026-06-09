@@ -33,7 +33,40 @@ Run with no arguments in a terminal to open the Ink menu:
 tim
 ```
 
-Arrow keys navigate, Enter selects, the menu groups every command surface tim covers. Phase 5a wires up `Workspace` → `Status` end-to-end; the rest of the top-level entries are placeholders and will show a "not wired up yet" message until later phases land.
+Arrow keys navigate, Enter selects, Enter on an empty input goes back. Every top-level entry is wired to the same library code the direct CLI uses — pick whichever you prefer.
+
+#### Menu quick reference
+
+| Menu path                                                    | CLI equivalent                    |
+| ------------------------------------------------------------ | --------------------------------- |
+| Workspace → Status                                           | `tim workspace status`            |
+| Workspace → Install                                          | `tim workspace install`           |
+| Workspace → Lint                                             | `tim workspace lint`              |
+| Workspace → Test                                             | `tim workspace test`              |
+| Workspace → Clean                                            | `tim workspace clean`             |
+| Workspace → Setup                                            | `tim workspace setup`             |
+| Workspace → Update                                           | `tim workspace update`            |
+| Workspace → Reset                                            | `tim workspace reset`             |
+| Docker → Start the stack (run-stack.sh)                      | `tim docker up`                   |
+| Docker → Start the stack from local source (run-stack.sh -d) | `tim docker dev`                  |
+| Docker → Stop the stack (stop-stack.sh)                      | `tim docker down`                 |
+| Docker → Restart the whole stack (restart-stack.sh)          | `tim docker restart`              |
+| Docker → Bounce backend (bounce-backend.sh)                  | `tim docker bounce-backend`       |
+| Docker → Bounce mongo (bounce-mongo.sh)                      | `tim docker bounce-mongo`         |
+| Start → Frontend (npm run dev)                               | `tim start frontend`              |
+| Start → Backend (mvn spring-boot:run)                        | `tim start backend`               |
+| Start → Admin (npm run dev)                                  | `tim start admin`                 |
+| Auth                                                         | `tim auth`                        |
+| Jira → Look up a ticket                                      | `tim jira ticket <id>`            |
+| Jira → Read comments on a ticket                             | `tim jira comments <id>`          |
+| GitHub → Find pull requests for a ticket                     | `tim github prs <ticketId>`       |
+| GitHub → Open a single PR                                    | `tim github pr <repo> <number>`   |
+| GitHub → Show a PR diff                                      | `tim github diff <repo> <number>` |
+| Confluence → Look up a page                                  | `tim confluence page <id>`        |
+| GitHub Actions → Recent workflow runs for a repo             | `tim gha runs <repo>`             |
+| GitHub Actions → Status of a single run                      | `tim gha status <repo> <runId>`   |
+| GitHub Actions → Wait for a run to finish                    | `tim gha wait <repo> <runId>`     |
+| Quit                                                         | exits the menu                    |
 
 ### Direct CLI
 

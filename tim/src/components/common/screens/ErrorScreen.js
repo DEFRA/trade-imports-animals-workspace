@@ -16,11 +16,7 @@ const ErrorScreen = ({ error, onReturn }) =>
       ? createElement(
           Box,
           { flexDirection: 'column' },
-          createElement(
-            Text,
-            { color: 'gray' },
-            'Press Enter to return to the main menu'
-          ),
+          createElement(Text, { color: 'gray' }, 'Press Enter to go back'),
           createElement(TextInput, {
             value: '',
             onChange: () => {},

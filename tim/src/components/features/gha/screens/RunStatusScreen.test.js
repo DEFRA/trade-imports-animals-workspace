@@ -50,11 +50,11 @@ describe('RunStatusScreen', () => {
     const withoutReturn = render(
       createElement(RunStatusScreen, { repo: 'r', run })
     )
-    expect(withoutReturn.lastFrame()).not.toMatch(/Press Enter to return/i)
+    expect(withoutReturn.lastFrame()).not.toMatch(/Press Enter to go back/i)
 
     const withReturn = render(
       createElement(RunStatusScreen, { repo: 'r', run, onReturn: () => {} })
     )
-    expect(withReturn.lastFrame()).toMatch(/Press Enter to return/i)
+    expect(withReturn.lastFrame()).toMatch(/Press Enter to go back/i)
   })
 })

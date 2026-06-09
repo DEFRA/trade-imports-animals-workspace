@@ -141,7 +141,7 @@ describe('ParallelProgressScreen', () => {
     )
 
     await vi.waitFor(() =>
-      expect(lastFrame()).toMatch(/Press Enter to return/i)
+      expect(lastFrame()).toMatch(/Press Enter to go back/i)
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
     stdin.write('\r')

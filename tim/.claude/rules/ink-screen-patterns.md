@@ -13,7 +13,7 @@ All user-facing strings follow GDS plain English (see `@../docs/best-practices/g
 
 - Screens are pure given their props. Side-effects (network calls, file I/O, subprocess spawn) live in the feature hook (`use<Name>Feature.js`), not in the screen.
 - One screen = one file. One feature folder = one hook + one or more screens.
-- Shared screens (`MenuScreen`, `LoadingScreen`, `ErrorScreen`, `ConfirmScreen`, `ParallelProgressScreen`, `StreamingLogScreen`) live under `src/components/common/screens/` and are reused. Don't fork them per feature.
+- Shared screens (`MenuScreen`, `LoadingScreen`, `ErrorScreen`, `InputScreen`, `TaskResultsScreen`, `ParallelProgressScreen`) live under `src/components/common/screens/` and are reused. Don't fork them per feature.
 
 ## Detaching for long-running stdio
 

@@ -29,7 +29,7 @@ describe('PrDetailsScreen', () => {
     expect(frame).toContain('url:')
     expect(frame).toContain(samplePr.url)
     expect(frame).toContain('Implements the origin page.')
-    expect(frame).toContain('Press Enter to return')
+    expect(frame).toContain('Press Enter to go back')
   })
 
   test('shows a fallback when the body is blank', () => {

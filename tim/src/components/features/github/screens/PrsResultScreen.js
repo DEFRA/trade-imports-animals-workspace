@@ -58,11 +58,7 @@ const PrsResultScreen = ({ ticketId, prs = [], onReturn }) =>
       ? createElement(
           Box,
           { flexDirection: 'column', marginTop: 1 },
-          createElement(
-            Text,
-            { color: 'gray' },
-            'Press Enter to return to the main menu'
-          ),
+          createElement(Text, { color: 'gray' }, 'Press Enter to go back'),
           createElement(TextInput, {
             value: '',
             onChange: () => {},

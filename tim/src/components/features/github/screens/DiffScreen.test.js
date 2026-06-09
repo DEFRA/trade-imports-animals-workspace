@@ -19,7 +19,7 @@ describe('DiffScreen', () => {
     expect(frame).toContain('Diff — trade-imports-animals-frontend#42')
     expect(frame).toContain('+hello')
     expect(frame).toContain('-world')
-    expect(frame).toContain('Press Enter to return')
+    expect(frame).toContain('Press Enter to go back')
   })
 
   test('shows a fallback when the diff is empty', () => {
