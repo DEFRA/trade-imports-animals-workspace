@@ -16,7 +16,12 @@ const createFakeWorkspace = async () => {
   return root
 }
 
-const Harness = ({ workspaceRoot, onReturn = () => {}, runners }) => {
+const Harness = ({
+  workspaceRoot,
+  onReturn = () => {},
+  runners,
+  cleanRunner
+}) => {
   const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -29,7 +34,8 @@ const Harness = ({ workspaceRoot, onReturn = () => {}, runners }) => {
     setLoadingMessage,
     navigateToMain,
     workspaceRoot,
-    ...(runners ? { runners } : {})
+    ...(runners ? { runners } : {}),
+    ...(cleanRunner ? { cleanRunner } : {})
   })
 
   if (screen === SCREENS.LOADING) {
@@ -43,14 +49,13 @@ const Harness = ({ workspaceRoot, onReturn = () => {}, runners }) => {
   return createElement(route.component, props)
 }
 
-const stubRunners = (overrides = {}) => ({
-  install: async () => [],
-  lint: async () => [],
-  test: async () => [],
-  clean: async () => [],
-  setup: async () => [],
-  update: async () => [],
-  reset: async () => [],
+const stubBuilders = (overrides = {}) => ({
+  install: () => [],
+  lint: () => [],
+  test: () => [],
+  setup: () => [],
+  update: () => [],
+  reset: () => [],
   ...overrides
 })
 
@@ -190,7 +195,7 @@ describe('useWorkspaceFeature', () => {
     expect(capturedError).toMatch(/workspace/i)
   })
 
-  const RunVerbHarness = ({ workspaceRoot, runners, verb }) => {
+  const RunVerbHarness = ({ workspaceRoot, runners, cleanRunner, verb }) => {
     const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
     const [screenData, setScreenData] = useState({})
     const [loadingMessage, setLoadingMessage] = useState('')
@@ -200,7 +205,8 @@ describe('useWorkspaceFeature', () => {
       setLoadingMessage,
       navigateToMain: () => {},
       workspaceRoot,
-      runners
+      ...(runners ? { runners } : {}),
+      ...(cleanRunner ? { cleanRunner } : {})
     })
     useEffect(() => {
       const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
@@ -217,24 +223,36 @@ describe('useWorkspaceFeature', () => {
     return createElement(route.component, props)
   }
 
-  test('selecting Install runs the install runner and renders the task results', async () => {
-    const installResults = [
+  test('selecting Install builds tasks and renders the parallel progress screen', async () => {
+    const installTasks = [
       {
+        id: 'trade-imports-animals-frontend',
         repo: 'trade-imports-animals-frontend',
         label: 'trade-imports-animals-frontend — npm ci',
-        exitCode: 0,
-        durationMs: 1200,
-        stderrTail: null
+        run: async () => ({
+          repo: 'trade-imports-animals-frontend',
+          label: 'trade-imports-animals-frontend — npm ci',
+          ok: true,
+          exitCode: 0,
+          durationMs: 12,
+          stderrTail: null
+        })
       },
       {
+        id: 'trade-imports-animals-backend',
         repo: 'trade-imports-animals-backend',
         label: 'trade-imports-animals-backend — mvn install -DskipTests',
-        exitCode: 1,
-        durationMs: 3400,
-        stderrTail: 'BUILD FAILURE'
+        run: async () => ({
+          repo: 'trade-imports-animals-backend',
+          label: 'trade-imports-animals-backend — mvn install -DskipTests',
+          ok: false,
+          exitCode: 1,
+          durationMs: 34,
+          stderrTail: 'BUILD FAILURE'
+        })
       }
     ]
-    const runners = stubRunners({ install: async () => installResults })
+    const runners = stubBuilders({ install: () => installTasks })
 
     const { lastFrame } = render(
       createElement(RunVerbHarness, {
@@ -244,27 +262,24 @@ describe('useWorkspaceFeature', () => {
       })
     )
 
-    await vi.waitFor(() =>
-      expect(lastFrame()).toContain('trade-imports-animals-frontend')
-    )
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/1 passed, 1 failed/i))
     const frame = lastFrame()
     expect(frame).toContain('trade-imports-animals-frontend')
     expect(frame).toContain('trade-imports-animals-backend')
     expect(frame).toMatch(/failed/i)
     expect(frame).toContain('BUILD FAILURE')
-    expect(frame).toMatch(/1 passed, 1 failed/i)
   })
 
-  test('selecting Clean handles results that report ok directly without exitCode', async () => {
+  test('selecting Clean handles sync results that report ok directly', async () => {
     const cleanResults = [
       { repo: 'trade-imports-animals-frontend', ok: true, removed: true }
     ]
-    const runners = stubRunners({ clean: async () => cleanResults })
+    const cleanRunner = async () => cleanResults
 
     const { lastFrame } = render(
       createElement(RunVerbHarness, {
         workspaceRoot: fakeRoot,
-        runners,
+        cleanRunner,
         verb: 'clean'
       })
     )
@@ -275,10 +290,52 @@ describe('useWorkspaceFeature', () => {
     expect(lastFrame()).toMatch(/done/i)
   })
 
-  test('a failing runner surfaces the message on the error screen', async () => {
-    const runners = stubRunners({
-      install: async () => {
-        throw new Error('npm exploded')
+  test('a failing clean runner surfaces the message on the error screen', async () => {
+    const cleanRunner = async () => {
+      throw new Error('rm exploded')
+    }
+    const ErrorHarness = ({ workspaceRoot }) => {
+      const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+      const [screenData, setScreenData] = useState({})
+      const [, setLoadingMessage] = useState('')
+      const feature = useWorkspaceFeature({
+        setScreen,
+        setScreenData,
+        setLoadingMessage,
+        navigateToMain: () => {},
+        workspaceRoot,
+        cleanRunner
+      })
+      useEffect(() => {
+        const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+        const cleanItem = items.find((item) => item.value === 'clean')
+        onSelect(cleanItem)
+      }, [])
+      if (screen === SCREENS.ERROR) {
+        return createElement(Text, null, `error:${screenData.error}`)
+      }
+      if (screen === SCREENS.LOADING) {
+        return createElement(Text, null, 'loading')
+      }
+      const route = feature.routes[screen]
+      const props =
+        typeof route.props === 'function'
+          ? route.props(screenData)
+          : route.props
+      return createElement(route.component, props)
+    }
+
+    const { lastFrame } = render(
+      createElement(ErrorHarness, { workspaceRoot: fakeRoot })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:rm exploded/))
+  })
+
+  test('a failing builder surfaces the message on the error screen', async () => {
+    const runners = stubBuilders({
+      install: () => {
+        throw new Error('builder exploded')
       }
     })
     const ErrorHarness = ({ workspaceRoot }) => {
@@ -316,12 +373,14 @@ describe('useWorkspaceFeature', () => {
       createElement(ErrorHarness, { workspaceRoot: fakeRoot })
     )
 
-    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:npm exploded/))
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:builder exploded/)
+    )
   })
 
-  test('a non-Error throw from a runner falls back to String(error)', async () => {
-    const runners = stubRunners({
-      install: async () => {
+  test('a non-Error throw from a builder falls back to String(error)', async () => {
+    const runners = stubBuilders({
+      install: () => {
         // eslint-disable-next-line no-throw-literal
         throw 'workspace kaboom'
       }

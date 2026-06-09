@@ -1,5 +1,47 @@
 import { describe, test, expect } from 'vitest'
-import { renderTaskText, renderTaskJson, lastLines } from './_task-output.js'
+import {
+  renderTaskText,
+  renderTaskJson,
+  lastLines,
+  toResultRecord
+} from './_task-output.js'
+
+describe('toResultRecord', () => {
+  test('returns a record with the task labels and exec exit code', () => {
+    const task = { repo: 'frontend', label: 'frontend — npm ci' }
+    const record = toResultRecord(task, {
+      exitCode: 0,
+      stderr: 'a\nb\nc',
+      stdout: 'noise'
+    })
+    expect(record).toEqual({
+      repo: 'frontend',
+      label: 'frontend — npm ci',
+      exitCode: 0,
+      stderrTail: 'a\nb\nc'
+    })
+  })
+
+  test('falls back to stdout when stderr is empty and stderrSource is stderr-or-stdout', () => {
+    const task = { repo: 'admin', label: 'admin — npm test' }
+    const record = toResultRecord(
+      task,
+      { exitCode: 1, stderr: '', stdout: 'log line' },
+      { stderrSource: 'stderr-or-stdout' }
+    )
+    expect(record.stderrTail).toBe('log line')
+  })
+
+  test('keeps stderr when both stderr and stdout are present', () => {
+    const task = { repo: 'admin', label: 'admin — npm test' }
+    const record = toResultRecord(
+      task,
+      { exitCode: 1, stderr: 'real error', stdout: 'log line' },
+      { stderrSource: 'stderr-or-stdout' }
+    )
+    expect(record.stderrTail).toBe('real error')
+  })
+})
 
 describe('lastLines', () => {
   test('returns the last N lines from a multi-line string', () => {

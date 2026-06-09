@@ -5,30 +5,41 @@ import { run } from '../../exec/exec.js'
 import { runAcross } from '../../exec/parallel.js'
 import { lastLines, makeTaskAction } from './_task-output.js'
 
-const cloneIfMissing = async (workspaceRoot, repo) => {
+const cloneTask = (workspaceRoot, repo) => {
   const dir = repoPath(workspaceRoot, repo)
-  if (existsSync(join(dir, '.git'))) {
+  const alreadyCloned = existsSync(join(dir, '.git'))
+  const label = alreadyCloned
+    ? `${repo} — already cloned`
+    : `${repo} — git clone`
+  const task = { id: repo, repo, label }
+  task.run = async () => {
+    if (alreadyCloned) {
+      return {
+        repo,
+        label,
+        exitCode: 0,
+        action: 'exists',
+        stderrTail: null
+      }
+    }
+    mkdirSync(join(workspaceRoot, REPOS_DIR), { recursive: true })
+    const result = await run('git', ['clone', repoUrl(repo), dir])
     return {
       repo,
-      label: `${repo} — already cloned`,
-      exitCode: 0,
-      action: 'exists',
-      stderrTail: null
+      label,
+      exitCode: result.exitCode,
+      action: result.exitCode === 0 ? 'cloned' : 'failed',
+      stderrTail: lastLines(result.stderr)
     }
   }
-  mkdirSync(join(workspaceRoot, REPOS_DIR), { recursive: true })
-  const result = await run('git', ['clone', repoUrl(repo), dir])
-  return {
-    repo,
-    label: `${repo} — git clone`,
-    exitCode: result.exitCode,
-    action: result.exitCode === 0 ? 'cloned' : 'failed',
-    stderrTail: lastLines(result.stderr)
-  }
+  return task
 }
 
+export const buildSetupTasks = (workspaceRoot) =>
+  REPOS.map((repo) => cloneTask(workspaceRoot, repo))
+
 export const setupAll = (workspaceRoot) =>
-  runAcross(REPOS, (repo) => cloneIfMissing(workspaceRoot, repo))
+  runAcross(buildSetupTasks(workspaceRoot), (task) => task.run())
 
 export const register = (parent, { timVersion }) => {
   parent

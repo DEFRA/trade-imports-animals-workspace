@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { NODE_REPOS, repoPath } from '../../constants/repos.js'
 import { run } from '../../exec/exec.js'
 import { runAcross } from '../../exec/parallel.js'
-import { lastLines, makeTaskAction } from './_task-output.js'
+import { makeTaskAction, toResultRecord } from './_task-output.js'
 
 const hasLintScript = (dir) => {
   const pkgPath = join(dir, 'package.json')
@@ -16,32 +16,23 @@ const hasLintScript = (dir) => {
   }
 }
 
-const buildTasks = (workspaceRoot) => {
+export const buildLintTasks = (workspaceRoot) => {
   const tasks = []
   for (const repo of NODE_REPOS) {
     const dir = repoPath(workspaceRoot, repo)
     if (!hasLintScript(dir)) continue
-    tasks.push({
-      repo,
-      label: `${repo} — npm run lint`,
-      run: () => run('npm', ['--prefix', dir, 'run', 'lint'])
-    })
+    const task = { id: repo, repo, label: `${repo} — npm run lint` }
+    task.run = async () =>
+      toResultRecord(task, await run('npm', ['--prefix', dir, 'run', 'lint']), {
+        stderrSource: 'stderr-or-stdout'
+      })
+    tasks.push(task)
   }
   return tasks
 }
 
-export const lintAll = async (workspaceRoot) => {
-  const tasks = buildTasks(workspaceRoot)
-  return runAcross(tasks, async (task) => {
-    const result = await task.run()
-    return {
-      repo: task.repo,
-      label: task.label,
-      exitCode: result.exitCode,
-      stderrTail: lastLines(result.stderr || result.stdout)
-    }
-  })
-}
+export const lintAll = (workspaceRoot) =>
+  runAcross(buildLintTasks(workspaceRoot), (task) => task.run())
 
 export const register = (parent, { timVersion }) => {
   parent

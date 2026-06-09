@@ -56,6 +56,12 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifier used by Phase 5g routing', () => {
+    expect(SCREENS).toMatchObject({
+      WORKSPACE_TASK_PROGRESS: 'workspace-task-progress'
+    })
+  })
+
   test('exposes the screen identifiers used by Phase 5f routing', () => {
     expect(SCREENS).toMatchObject({
       GHA_WAIT_INPUT: 'gha-wait-input',

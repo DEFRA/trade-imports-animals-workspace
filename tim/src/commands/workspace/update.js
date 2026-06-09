@@ -5,29 +5,40 @@ import { run } from '../../exec/exec.js'
 import { runAcross } from '../../exec/parallel.js'
 import { lastLines, makeTaskAction } from './_task-output.js'
 
-const updateRepo = async (workspaceRoot, repo) => {
+const updateTask = (workspaceRoot, repo) => {
   const dir = repoPath(workspaceRoot, repo)
-  if (!existsSync(join(dir, '.git'))) {
+  const cloned = existsSync(join(dir, '.git'))
+  const label = cloned
+    ? `${repo} — git pull --rebase`
+    : `${repo} — (not cloned, skipping)`
+  const task = { id: repo, repo, label }
+  task.run = async () => {
+    if (!cloned) {
+      return {
+        repo,
+        label,
+        exitCode: 0,
+        action: 'skipped',
+        stderrTail: null
+      }
+    }
+    const result = await run('git', ['-C', dir, 'pull', '--rebase'])
     return {
       repo,
-      label: `${repo} — (not cloned, skipping)`,
-      exitCode: 0,
-      action: 'skipped',
-      stderrTail: null
+      label,
+      exitCode: result.exitCode,
+      action: result.exitCode === 0 ? 'pulled' : 'failed',
+      stderrTail: lastLines(result.stderr)
     }
   }
-  const result = await run('git', ['-C', dir, 'pull', '--rebase'])
-  return {
-    repo,
-    label: `${repo} — git pull --rebase`,
-    exitCode: result.exitCode,
-    action: result.exitCode === 0 ? 'pulled' : 'failed',
-    stderrTail: lastLines(result.stderr)
-  }
+  return task
 }
 
+export const buildUpdateTasks = (workspaceRoot) =>
+  REPOS.map((repo) => updateTask(workspaceRoot, repo))
+
 export const updateAll = (workspaceRoot) =>
-  runAcross(REPOS, (repo) => updateRepo(workspaceRoot, repo))
+  runAcross(buildUpdateTasks(workspaceRoot), (task) => task.run())
 
 export const register = (parent, { timVersion }) => {
   parent

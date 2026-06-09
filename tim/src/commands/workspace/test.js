@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { NODE_REPOS, JAVA_REPOS, repoPath } from '../../constants/repos.js'
 import { run } from '../../exec/exec.js'
 import { runSerial } from '../../exec/parallel.js'
-import { lastLines, makeTaskAction } from './_task-output.js'
+import { makeTaskAction, toResultRecord } from './_task-output.js'
 
 const hasTestScript = (dir) => {
   const pkgPath = join(dir, 'package.json')
@@ -16,42 +16,34 @@ const hasTestScript = (dir) => {
   }
 }
 
-const buildTasks = (workspaceRoot) => {
+export const buildTestTasks = (workspaceRoot) => {
   const tasks = []
   for (const repo of NODE_REPOS) {
     const dir = repoPath(workspaceRoot, repo)
     if (!hasTestScript(dir)) continue
-    tasks.push({
-      repo,
-      label: `${repo} — npm test`,
-      run: () => run('npm', ['--prefix', dir, 'test'])
-    })
+    const task = { id: repo, repo, label: `${repo} — npm test` }
+    task.run = async () =>
+      toResultRecord(task, await run('npm', ['--prefix', dir, 'test']), {
+        stderrSource: 'stderr-or-stdout'
+      })
+    tasks.push(task)
   }
   for (const repo of JAVA_REPOS) {
     const dir = repoPath(workspaceRoot, repo)
     const pom = join(dir, 'pom.xml')
     if (!existsSync(pom)) continue
-    tasks.push({
-      repo,
-      label: `${repo} — mvn verify`,
-      run: () => run('mvn', ['-f', pom, 'verify'])
-    })
+    const task = { id: repo, repo, label: `${repo} — mvn verify` }
+    task.run = async () =>
+      toResultRecord(task, await run('mvn', ['-f', pom, 'verify']), {
+        stderrSource: 'stderr-or-stdout'
+      })
+    tasks.push(task)
   }
   return tasks
 }
 
-export const testAll = async (workspaceRoot) => {
-  const tasks = buildTasks(workspaceRoot)
-  return runSerial(tasks, async (task) => {
-    const result = await task.run()
-    return {
-      repo: task.repo,
-      label: task.label,
-      exitCode: result.exitCode,
-      stderrTail: lastLines(result.stderr || result.stdout)
-    }
-  })
-}
+export const testAll = (workspaceRoot) =>
+  runSerial(buildTestTasks(workspaceRoot), (task) => task.run())
 
 export const register = (parent, { timVersion }) => {
   parent

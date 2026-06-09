@@ -16,49 +16,66 @@ import { lastLines, renderTaskText, renderTaskJson } from './_task-output.js'
 
 const SCHEMA_VERSION = 1
 
-const resetRepo = async (workspaceRoot, repo) => {
+const resetTask = (workspaceRoot, repo) => {
   const dir = repoPath(workspaceRoot, repo)
-  if (!existsSync(join(dir, '.git'))) {
+  const cloned = existsSync(join(dir, '.git'))
+  const label = cloned
+    ? `${repo} — git reset --hard origin/main`
+    : `${repo} — (not cloned, skipping)`
+  const task = { id: repo, repo, label }
+  task.run = async () => {
+    if (!cloned) {
+      return {
+        repo,
+        label,
+        exitCode: 0,
+        action: 'skipped',
+        stderrTail: null
+      }
+    }
+    const fetch = await run('git', ['-C', dir, 'fetch', 'origin'])
+    if (fetch.exitCode !== 0) {
+      return {
+        repo,
+        label: `${repo} — git fetch`,
+        exitCode: fetch.exitCode,
+        action: 'fetch-failed',
+        stderrTail: lastLines(fetch.stderr)
+      }
+    }
+    const checkout = await run('git', ['-C', dir, 'checkout', 'main'])
+    if (checkout.exitCode !== 0) {
+      return {
+        repo,
+        label: `${repo} — git checkout main`,
+        exitCode: checkout.exitCode,
+        action: 'checkout-failed',
+        stderrTail: lastLines(checkout.stderr)
+      }
+    }
+    const reset = await run('git', [
+      '-C',
+      dir,
+      'reset',
+      '--hard',
+      'origin/main'
+    ])
     return {
       repo,
-      label: `${repo} — (not cloned, skipping)`,
-      exitCode: 0,
-      action: 'skipped',
-      stderrTail: null
+      label,
+      exitCode: reset.exitCode,
+      action: reset.exitCode === 0 ? 'reset' : 'reset-failed',
+      stderrTail: lastLines(reset.stderr)
     }
   }
-  const fetch = await run('git', ['-C', dir, 'fetch', 'origin'])
-  if (fetch.exitCode !== 0) {
-    return {
-      repo,
-      label: `${repo} — git fetch`,
-      exitCode: fetch.exitCode,
-      action: 'fetch-failed',
-      stderrTail: lastLines(fetch.stderr)
-    }
-  }
-  const checkout = await run('git', ['-C', dir, 'checkout', 'main'])
-  if (checkout.exitCode !== 0) {
-    return {
-      repo,
-      label: `${repo} — git checkout main`,
-      exitCode: checkout.exitCode,
-      action: 'checkout-failed',
-      stderrTail: lastLines(checkout.stderr)
-    }
-  }
-  const reset = await run('git', ['-C', dir, 'reset', '--hard', 'origin/main'])
-  return {
-    repo,
-    label: `${repo} — git reset --hard origin/main`,
-    exitCode: reset.exitCode,
-    action: reset.exitCode === 0 ? 'reset' : 'reset-failed',
-    stderrTail: lastLines(reset.stderr)
-  }
+  return task
 }
 
+export const buildResetTasks = (workspaceRoot) =>
+  REPOS.map((repo) => resetTask(workspaceRoot, repo))
+
 export const resetAll = (workspaceRoot) =>
-  runAcross(REPOS, (repo) => resetRepo(workspaceRoot, repo))
+  runAcross(buildResetTasks(workspaceRoot), (task) => task.run())
 
 const promptYes = async () => {
   if (!process.stdin.isTTY) return false

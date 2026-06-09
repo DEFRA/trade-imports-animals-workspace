@@ -8,6 +8,29 @@ const STDERR_TAIL_LINES = 30
 export const lastLines = (text = '', n = STDERR_TAIL_LINES) =>
   text.split('\n').slice(-n).join('\n')
 
+/**
+ * Convert a raw exec result into the per-task result record used by every
+ * workspace verb. `stderrSource` picks which exec stream the tail comes from
+ * (some verbs surface stdout because the tool writes errors there).
+ *
+ * @param {{repo: string, label: string}} task
+ * @param {{exitCode: number, stderr?: string, stdout?: string}} execResult
+ * @param {{stderrSource?: 'stderr'|'stderr-or-stdout'}} [options]
+ * @returns {{repo: string, label: string, exitCode: number, stderrTail: string}}
+ */
+export const toResultRecord = (task, execResult, { stderrSource } = {}) => {
+  const raw =
+    stderrSource === 'stderr-or-stdout'
+      ? (execResult.stderr ?? '') || (execResult.stdout ?? '')
+      : (execResult.stderr ?? '')
+  return {
+    repo: task.repo,
+    label: task.label,
+    exitCode: execResult.exitCode,
+    stderrTail: lastLines(raw)
+  }
+}
+
 export const renderTaskText = (results) =>
   results
     .map((r) => {

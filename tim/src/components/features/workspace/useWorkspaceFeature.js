@@ -1,15 +1,16 @@
 import { SCREENS } from '../../../constants/menuConfig.js'
 import { collectStatuses } from '../../../commands/workspace/status.js'
-import { installAll } from '../../../commands/workspace/install.js'
-import { lintAll } from '../../../commands/workspace/lint.js'
-import { testAll } from '../../../commands/workspace/test.js'
+import { buildInstallTasks } from '../../../commands/workspace/install.js'
+import { buildLintTasks } from '../../../commands/workspace/lint.js'
+import { buildTestTasks } from '../../../commands/workspace/test.js'
 import { cleanAll } from '../../../commands/workspace/clean.js'
-import { setupAll } from '../../../commands/workspace/setup.js'
-import { updateAll } from '../../../commands/workspace/update.js'
-import { resetAll } from '../../../commands/workspace/reset.js'
+import { buildSetupTasks } from '../../../commands/workspace/setup.js'
+import { buildUpdateTasks } from '../../../commands/workspace/update.js'
+import { buildResetTasks } from '../../../commands/workspace/reset.js'
 import { resolveWorkspaceRoot } from '../../../env/workspace-root.js'
 import MenuScreen from '../../common/screens/MenuScreen.js'
 import TaskResultsScreen from '../../common/screens/TaskResultsScreen.js'
+import ParallelProgressScreen from '../../common/screens/ParallelProgressScreen.js'
 import StatusOutputScreen from './screens/StatusOutputScreen.js'
 
 const WORKSPACE_ITEMS = [
@@ -34,25 +35,16 @@ const VERB_LABELS = {
   reset: 'Reset'
 }
 
-const VERB_LOADING_MESSAGES = {
-  install: 'Installing dependencies in every repo…',
-  lint: 'Linting every Node.js repo with a lint script…',
-  test: 'Running tests across every repo…',
-  clean: 'Removing node_modules in every Node.js repo…',
-  setup: 'Cloning any missing repos…',
-  update: 'Pulling the latest on every repo…',
-  reset: 'Resetting every repo to its default branch…'
+const DEFAULT_BUILDERS = {
+  install: buildInstallTasks,
+  lint: buildLintTasks,
+  test: buildTestTasks,
+  setup: buildSetupTasks,
+  update: buildUpdateTasks,
+  reset: buildResetTasks
 }
 
-const DEFAULT_RUNNERS = {
-  install: installAll,
-  lint: lintAll,
-  test: testAll,
-  clean: cleanAll,
-  setup: setupAll,
-  update: updateAll,
-  reset: resetAll
-}
+const DEFAULT_CLEAN_RUNNER = cleanAll
 
 const normaliseResult = (raw) =>
   raw.ok !== undefined ? raw : { ...raw, ok: raw.exitCode === 0 }
@@ -63,7 +55,8 @@ export const useWorkspaceFeature = ({
   setLoadingMessage,
   navigateToMain,
   workspaceRoot,
-  runners = DEFAULT_RUNNERS,
+  runners = DEFAULT_BUILDERS,
+  cleanRunner = DEFAULT_CLEAN_RUNNER,
   statusCollector = collectStatuses
 }) => {
   const runStatus = async () => {
@@ -80,15 +73,27 @@ export const useWorkspaceFeature = ({
     }
   }
 
-  const runVerb = async (verb) => {
-    setLoadingMessage(VERB_LOADING_MESSAGES[verb])
+  const runClean = async () => {
+    setLoadingMessage('Removing node_modules in every Node.js repo…')
     setScreen(SCREENS.LOADING)
     try {
       const root = resolveWorkspaceRoot({ explicit: workspaceRoot })
-      const raw = await runners[verb](root)
+      const raw = await cleanRunner(root)
       const results = raw.map(normaliseResult)
-      setScreenData({ title: VERB_LABELS[verb], results })
+      setScreenData({ title: VERB_LABELS.clean, results })
       setScreen(SCREENS.WORKSPACE_TASK_RESULTS)
+    } catch (error) {
+      setScreenData({ error: error.message ?? String(error) })
+      setScreen(SCREENS.ERROR)
+    }
+  }
+
+  const runVerb = (verb) => {
+    try {
+      const root = resolveWorkspaceRoot({ explicit: workspaceRoot })
+      const tasks = runners[verb](root)
+      setScreenData({ title: VERB_LABELS[verb], tasks })
+      setScreen(SCREENS.WORKSPACE_TASK_PROGRESS)
     } catch (error) {
       setScreenData({ error: error.message ?? String(error) })
       setScreen(SCREENS.ERROR)
@@ -98,6 +103,7 @@ export const useWorkspaceFeature = ({
   const handleWorkspaceSelect = (item) => {
     if (item.value === 'back') return navigateToMain()
     if (item.value === 'status') return runStatus()
+    if (item.value === 'clean') return runClean()
     if (VERB_LABELS[item.value]) return runVerb(item.value)
   }
 
@@ -125,6 +131,14 @@ export const useWorkspaceFeature = ({
       props: (screenData) => ({
         title: screenData.title ?? 'Workspace',
         results: screenData.results ?? [],
+        onReturn: navigateToMain
+      })
+    },
+    [SCREENS.WORKSPACE_TASK_PROGRESS]: {
+      component: ParallelProgressScreen,
+      props: (screenData) => ({
+        title: screenData.title ?? 'Workspace',
+        tasks: screenData.tasks ?? [],
         onReturn: navigateToMain
       })
     }
