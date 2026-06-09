@@ -72,6 +72,19 @@ describe('useAuthFeature', () => {
     )
   })
 
+  test('a probe that throws a non-Error value falls back to String(error)', async () => {
+    const probe = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'auth probe kaboom'
+    }
+
+    const { lastFrame } = render(createElement(Harness, { probe }))
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:auth probe kaboom/)
+    )
+  })
+
   test('pressing Enter on the results screen returns to the main menu', async () => {
     const probe = async () => [
       { service: 'github', ok: true, user: { login: 'sam' } }

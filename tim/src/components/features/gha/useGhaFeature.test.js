@@ -6,7 +6,7 @@ import { SCREENS } from '../../../constants/menuConfig.js'
 import LoadingScreen from '../../common/screens/LoadingScreen.js'
 import { useGhaFeature } from './useGhaFeature.js'
 
-const Harness = ({ listRuns, onReturn = () => {} }) => {
+const Harness = ({ listRuns, getRunStatus, onReturn = () => {} }) => {
   const [screen, setScreen] = useState(SCREENS.GHA_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -16,7 +16,8 @@ const Harness = ({ listRuns, onReturn = () => {} }) => {
     setScreenData,
     setLoadingMessage,
     navigateToMain: onReturn,
-    listRuns
+    listRuns,
+    getRunStatus
   })
 
   if (screen === SCREENS.LOADING) {
@@ -32,7 +33,12 @@ const Harness = ({ listRuns, onReturn = () => {} }) => {
   return createElement(route.component, props)
 }
 
-const RunActionHarness = ({ listRuns, action, onReturn = () => {} }) => {
+const RunActionHarness = ({
+  listRuns,
+  getRunStatus,
+  action,
+  onReturn = () => {}
+}) => {
   const [screen, setScreen] = useState(SCREENS.GHA_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -41,7 +47,8 @@ const RunActionHarness = ({ listRuns, action, onReturn = () => {} }) => {
     setScreenData,
     setLoadingMessage,
     navigateToMain: onReturn,
-    listRuns
+    listRuns,
+    getRunStatus
   })
   useEffect(() => {
     const { items, onSelect } = feature.routes[SCREENS.GHA_MENU].props
@@ -62,7 +69,7 @@ const RunActionHarness = ({ listRuns, action, onReturn = () => {} }) => {
 }
 
 describe('useGhaFeature', () => {
-  test('opens on a submenu with a Recent-runs option and Back', () => {
+  test('opens on a submenu with Recent-runs, Status and Back options', () => {
     const { lastFrame } = render(
       createElement(Harness, { listRuns: async () => [] })
     )
@@ -70,6 +77,7 @@ describe('useGhaFeature', () => {
     const frame = lastFrame()
     expect(frame).toMatch(/GitHub Actions/i)
     expect(frame).toMatch(/Recent workflow runs/i)
+    expect(frame).toMatch(/Status of a single run/i)
     expect(frame).toContain('Back')
   })
 
@@ -117,6 +125,112 @@ describe('useGhaFeature', () => {
     await vi.waitFor(() => expect(lastFrame()).toMatch(/Repo name/i))
     await new Promise((resolve) => setTimeout(resolve, 50))
     stdin.write('foo')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:.*not found/i))
+  })
+
+  test('submitting "repo runId" fetches the run status and renders it', async () => {
+    const captured = []
+    const getRunStatus = async (...args) => {
+      captured.push(args)
+      return {
+        id: 42,
+        status: 'completed',
+        conclusion: 'success',
+        url: 'https://github.com/x/y/actions/runs/42'
+      }
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getRunStatus, action: 'status' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('trade-imports-animals-frontend 42')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toContain('Run #42'))
+    expect(captured[0]).toEqual(['trade-imports-animals-frontend', 42])
+    expect(lastFrame()).toContain('success')
+  })
+
+  test('an unparseable input surfaces a plain-English error', async () => {
+    const captured = []
+    const getRunStatus = async (...args) => {
+      captured.push(args)
+      return {}
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getRunStatus, action: 'status' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('foo')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:.*repo and a run id/i)
+    )
+    expect(captured).toEqual([])
+  })
+
+  test('a non-Error throw from listRuns falls back to String(error)', async () => {
+    const listRuns = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'runs kaboom'
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { listRuns, action: 'runs' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Repo name/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('foo')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:runs kaboom/))
+  })
+
+  test('a non-Error throw from getRunStatus falls back to String(error)', async () => {
+    const getRunStatus = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'status kaboom'
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getRunStatus, action: 'status' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('trade-imports-animals-frontend 7')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:status kaboom/))
+  })
+
+  test('a failed status lookup surfaces the client error', async () => {
+    const getRunStatus = async () => {
+      throw new Error('getRunStatus(repo, 7): not found.')
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getRunStatus, action: 'status' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/repo runId/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('trade-imports-animals-frontend 7')
     await new Promise((resolve) => setTimeout(resolve, 50))
     stdin.write('\r')
 

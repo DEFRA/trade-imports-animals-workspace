@@ -318,4 +318,94 @@ describe('useWorkspaceFeature', () => {
 
     await vi.waitFor(() => expect(lastFrame()).toMatch(/error:npm exploded/))
   })
+
+  test('a non-Error throw from a runner falls back to String(error)', async () => {
+    const runners = stubRunners({
+      install: async () => {
+        // eslint-disable-next-line no-throw-literal
+        throw 'workspace kaboom'
+      }
+    })
+    const ErrorHarness = ({ workspaceRoot }) => {
+      const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+      const [screenData, setScreenData] = useState({})
+      const [, setLoadingMessage] = useState('')
+      const feature = useWorkspaceFeature({
+        setScreen,
+        setScreenData,
+        setLoadingMessage,
+        navigateToMain: () => {},
+        workspaceRoot,
+        runners
+      })
+      useEffect(() => {
+        const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+        const installItem = items.find((item) => item.value === 'install')
+        onSelect(installItem)
+      }, [])
+      if (screen === SCREENS.ERROR) {
+        return createElement(Text, null, `error:${screenData.error}`)
+      }
+      if (screen === SCREENS.LOADING) {
+        return createElement(Text, null, 'loading')
+      }
+      const route = feature.routes[screen]
+      const props =
+        typeof route.props === 'function'
+          ? route.props(screenData)
+          : route.props
+      return createElement(route.component, props)
+    }
+
+    const { lastFrame } = render(
+      createElement(ErrorHarness, { workspaceRoot: fakeRoot })
+    )
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:workspace kaboom/)
+    )
+  })
+
+  test('a non-Error throw from statusCollector falls back to String(error)', async () => {
+    const statusCollector = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'status kaboom'
+    }
+    const ErrorHarness = ({ workspaceRoot }) => {
+      const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+      const [screenData, setScreenData] = useState({})
+      const [, setLoadingMessage] = useState('')
+      const feature = useWorkspaceFeature({
+        setScreen,
+        setScreenData,
+        setLoadingMessage,
+        navigateToMain: () => {},
+        workspaceRoot,
+        statusCollector
+      })
+      useEffect(() => {
+        const { items, onSelect } = feature.routes[SCREENS.WORKSPACE_MENU].props
+        const statusItem = items.find((item) => item.value === 'status')
+        onSelect(statusItem)
+      }, [])
+      if (screen === SCREENS.ERROR) {
+        return createElement(Text, null, `error:${screenData.error}`)
+      }
+      if (screen === SCREENS.LOADING) {
+        return createElement(Text, null, 'loading')
+      }
+      const route = feature.routes[screen]
+      const props =
+        typeof route.props === 'function'
+          ? route.props(screenData)
+          : route.props
+      return createElement(route.component, props)
+    }
+
+    const { lastFrame } = render(
+      createElement(ErrorHarness, { workspaceRoot: fakeRoot })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:status kaboom/))
+  })
 })

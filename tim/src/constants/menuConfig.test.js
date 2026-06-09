@@ -26,6 +26,19 @@ describe('SCREENS', () => {
     })
   })
 
+  test('exposes the screen identifiers used by Phase 5e routing', () => {
+    expect(SCREENS).toMatchObject({
+      JIRA_COMMENTS_INPUT: 'jira-comments-input',
+      JIRA_COMMENTS_RESULT: 'jira-comments-result',
+      GITHUB_PR_INPUT: 'github-pr-input',
+      GITHUB_PR_RESULT: 'github-pr-result',
+      GITHUB_DIFF_INPUT: 'github-diff-input',
+      GITHUB_DIFF_RESULT: 'github-diff-result',
+      GHA_STATUS_INPUT: 'gha-status-input',
+      GHA_STATUS_RESULT: 'gha-status-result'
+    })
+  })
+
   test('exposes the screen identifiers used by Phase 5c routing', () => {
     expect(SCREENS).toMatchObject({
       JIRA_MENU: 'jira-menu',

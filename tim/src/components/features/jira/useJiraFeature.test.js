@@ -6,7 +6,7 @@ import { SCREENS } from '../../../constants/menuConfig.js'
 import LoadingScreen from '../../common/screens/LoadingScreen.js'
 import { useJiraFeature } from './useJiraFeature.js'
 
-const Harness = ({ getTicket, onReturn = () => {} }) => {
+const Harness = ({ getTicket, getComments, onReturn = () => {} }) => {
   const [screen, setScreen] = useState(SCREENS.JIRA_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -16,7 +16,8 @@ const Harness = ({ getTicket, onReturn = () => {} }) => {
     setScreenData,
     setLoadingMessage,
     navigateToMain: onReturn,
-    getTicket
+    getTicket,
+    getComments
   })
 
   if (screen === SCREENS.LOADING) {
@@ -32,7 +33,12 @@ const Harness = ({ getTicket, onReturn = () => {} }) => {
   return createElement(route.component, props)
 }
 
-const RunActionHarness = ({ getTicket, action, onReturn = () => {} }) => {
+const RunActionHarness = ({
+  getTicket,
+  getComments,
+  action,
+  onReturn = () => {}
+}) => {
   const [screen, setScreen] = useState(SCREENS.JIRA_MENU)
   const [screenData, setScreenData] = useState({})
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -41,7 +47,8 @@ const RunActionHarness = ({ getTicket, action, onReturn = () => {} }) => {
     setScreenData,
     setLoadingMessage,
     navigateToMain: onReturn,
-    getTicket
+    getTicket,
+    getComments
   })
   useEffect(() => {
     const { items, onSelect } = feature.routes[SCREENS.JIRA_MENU].props
@@ -71,6 +78,14 @@ describe('useJiraFeature', () => {
     expect(frame).toContain('Jira')
     expect(frame).toMatch(/Look up a ticket/i)
     expect(frame).toContain('Back')
+  })
+
+  test('the submenu lists Read comments on a ticket', () => {
+    const { lastFrame } = render(
+      createElement(Harness, { getTicket: async () => ({}) })
+    )
+
+    expect(lastFrame()).toMatch(/Read comments on a ticket/i)
   })
 
   test('selecting Back returns to the main menu', async () => {
@@ -167,6 +182,131 @@ describe('useJiraFeature', () => {
     }
     const { stdin, lastFrame } = render(
       createElement(RunActionHarness, { getTicket, action: 'ticket' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('EUDPA-NOPE')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:.*not found/i))
+  })
+
+  test('a non-Error throw from getTicket falls back to String(error)', async () => {
+    const getTicket = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'ticket kaboom'
+    }
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getTicket, action: 'ticket' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('EUDPA-9')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:ticket kaboom/))
+  })
+
+  test('selecting Read comments opens the input screen', async () => {
+    const { lastFrame } = render(
+      createElement(RunActionHarness, {
+        getComments: async () => [],
+        action: 'comments'
+      })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    expect(lastFrame()).toMatch(/Read comments on a Jira ticket/i)
+  })
+
+  test('submitting a ticket id fetches comments and renders the result', async () => {
+    const comments = [
+      {
+        id: '1',
+        author: 'Sam',
+        createdAt: '2026-06-09T10:00:00.000+0000',
+        body: 'Started work on this.'
+      },
+      {
+        id: '2',
+        author: 'Alex',
+        createdAt: '2026-06-09T11:30:00.000+0000',
+        body: 'Reviewed the plan.'
+      }
+    ]
+    const getComments = async (id) => {
+      expect(id).toBe('EUDPA-200')
+      return comments
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getComments, action: 'comments' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('EUDPA-200')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toContain('Comments on EUDPA-200')
+    )
+    expect(lastFrame()).toContain('Sam')
+    expect(lastFrame()).toContain('Started work on this.')
+    expect(lastFrame()).toContain('Alex')
+    expect(lastFrame()).toContain('Reviewed the plan.')
+  })
+
+  test('blank input on the comments prompt cancels back to the main menu', async () => {
+    let returned = false
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, {
+        getComments: async () => [],
+        action: 'comments',
+        onReturn: () => {
+          returned = true
+        }
+      })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(returned).toBe(true))
+  })
+
+  test('a non-Error throw from getComments falls back to String(error)', async () => {
+    const getComments = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'comments kaboom'
+    }
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getComments, action: 'comments' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('EUDPA-9')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:comments kaboom/))
+  })
+
+  test('a failed comments fetch shows the error screen with the client message', async () => {
+    const getComments = async () => {
+      const error = new Error('EUDPA-NOPE: not found.')
+      error.code = 'NOT_FOUND'
+      throw error
+    }
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getComments, action: 'comments' })
     )
 
     await vi.waitFor(() => expect(lastFrame()).toMatch(/Ticket id/i))

@@ -99,6 +99,27 @@ describe('useConfluenceFeature', () => {
     expect(lastFrame()).toContain('Step 1')
   })
 
+  test('a non-Error throw falls back to String(error)', async () => {
+    const getPage = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'confluence kaboom'
+    }
+
+    const { stdin, lastFrame } = render(
+      createElement(RunActionHarness, { getPage, action: 'page' })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/Page id/i))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('99')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    stdin.write('\r')
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/error:confluence kaboom/)
+    )
+  })
+
   test('a failed lookup surfaces the error', async () => {
     const getPage = async () => {
       throw new Error('getPage(9): not found.')

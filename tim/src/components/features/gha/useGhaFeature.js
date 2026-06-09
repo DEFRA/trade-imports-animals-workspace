@@ -3,20 +3,37 @@ import { createGhaClient } from '../../../clients/gha-client.js'
 import MenuScreen from '../../common/screens/MenuScreen.js'
 import InputScreen from '../../common/screens/InputScreen.js'
 import RunsResultScreen from './screens/RunsResultScreen.js'
+import RunStatusScreen from './screens/RunStatusScreen.js'
 
 const GHA_ITEMS = [
   { label: 'Recent workflow runs for a repo', value: 'runs' },
+  { label: 'Status of a single run', value: 'status' },
   { label: 'Back', value: 'back' }
 ]
 
 const defaultListRuns = (repo) => createGhaClient().listRuns(repo)
+const defaultGetRunStatus = (repo, runId) =>
+  createGhaClient().getRunStatus(repo, runId)
+
+const parseError =
+  "Enter a repo and a run id, separated by a space — e.g. 'trade-imports-animals-frontend 12345'."
+
+const parseRepoAndRunId = (raw) => {
+  const parts = raw.split(/\s+/).filter((part) => part !== '')
+  if (parts.length < 2) return { error: parseError }
+  const [repo, runIdRaw] = parts
+  const runId = Number(runIdRaw)
+  if (!Number.isInteger(runId) || runId <= 0) return { error: parseError }
+  return { repo, runId }
+}
 
 export const useGhaFeature = ({
   setScreen,
   setScreenData,
   setLoadingMessage,
   navigateToMain,
-  listRuns = defaultListRuns
+  listRuns = defaultListRuns,
+  getRunStatus = defaultGetRunStatus
 }) => {
   const fetchRuns = async (repo) => {
     setLoadingMessage(`Fetching recent workflow runs for ${repo}…`)
@@ -31,9 +48,30 @@ export const useGhaFeature = ({
     }
   }
 
+  const fetchRunStatus = async (raw) => {
+    const parsed = parseRepoAndRunId(raw)
+    if (parsed.error) {
+      setScreenData({ error: parsed.error })
+      setScreen(SCREENS.ERROR)
+      return
+    }
+    const { repo, runId } = parsed
+    setLoadingMessage(`Fetching status for run ${runId} in ${repo}…`)
+    setScreen(SCREENS.LOADING)
+    try {
+      const run = await getRunStatus(repo, runId)
+      setScreenData({ repo, run })
+      setScreen(SCREENS.GHA_STATUS_RESULT)
+    } catch (error) {
+      setScreenData({ error: error.message ?? String(error) })
+      setScreen(SCREENS.ERROR)
+    }
+  }
+
   const handleGhaSelect = (item) => {
     if (item.value === 'back') return navigateToMain()
     if (item.value === 'runs') return setScreen(SCREENS.GHA_RUNS_INPUT)
+    if (item.value === 'status') return setScreen(SCREENS.GHA_STATUS_INPUT)
   }
 
   const handleMainMenuSelect = () => setScreen(SCREENS.GHA_MENU)
@@ -64,6 +102,25 @@ export const useGhaFeature = ({
       props: (screenData) => ({
         repo: screenData.repo,
         runs: screenData.runs ?? [],
+        onReturn: navigateToMain
+      })
+    },
+    [SCREENS.GHA_STATUS_INPUT]: {
+      component: InputScreen,
+      props: {
+        title: 'GitHub Actions',
+        subtitle: 'Status of a single run',
+        label: 'repo runId',
+        placeholder: 'trade-imports-animals-frontend 12345',
+        onSubmit: fetchRunStatus,
+        onCancel: navigateToMain
+      }
+    },
+    [SCREENS.GHA_STATUS_RESULT]: {
+      component: RunStatusScreen,
+      props: (screenData) => ({
+        repo: screenData.repo,
+        run: screenData.run,
         onReturn: navigateToMain
       })
     }

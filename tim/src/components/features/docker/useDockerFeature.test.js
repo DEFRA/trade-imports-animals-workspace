@@ -206,4 +206,22 @@ describe('useDockerFeature', () => {
       { timeout: 5000 }
     )
   })
+
+  test('a non-Error throw from the launcher falls back to String(error)', async () => {
+    const launchStackScript = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'docker kaboom'
+    }
+    const { lastFrame } = render(
+      createElement(RunActionHarness, {
+        launchStackScript,
+        workspaceRoot: '/fake',
+        action: 'up'
+      })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:docker kaboom/), {
+      timeout: 5000
+    })
+  })
 })

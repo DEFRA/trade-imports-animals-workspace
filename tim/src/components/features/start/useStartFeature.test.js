@@ -171,9 +171,26 @@ describe('useStartFeature', () => {
       })
     )
 
-    await vi.waitFor(
-      () => expect(lastFrame()).toMatch(/error:.*not cloned/i),
-      { timeout: 5000 }
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:.*not cloned/i), {
+      timeout: 5000
+    })
+  })
+
+  test('a non-Error throw from the launcher falls back to String(error)', async () => {
+    const launchService = async () => {
+      // eslint-disable-next-line no-throw-literal
+      throw 'start kaboom'
+    }
+    const { lastFrame } = render(
+      createElement(RunActionHarness, {
+        launchService,
+        workspaceRoot: '/fake',
+        action: 'frontend'
+      })
     )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:start kaboom/), {
+      timeout: 5000
+    })
   })
 })
