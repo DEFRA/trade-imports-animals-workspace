@@ -99,10 +99,10 @@ for ((i=0; i<pr_count; i++)); do
 
     log "  Changes detected: ${reviewed_commit:0:7} -> ${current_commit:0:7}"
 
-    # Fetch and get diff
+    # Fetch only the PR ref — a bare `git fetch origin` here would pull
+    # every branch incl. gh-pages on clones with the default refspec.
     (
         cd "$repo_dir"
-        git fetch --quiet origin 2>/dev/null || true
         git fetch --quiet origin "pull/$pr_number/head:pr-$pr_number" 2>/dev/null || true
     )
 

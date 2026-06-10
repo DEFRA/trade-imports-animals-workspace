@@ -154,7 +154,9 @@ body_tmp=$(mktemp -t "share-review-$TICKET-XXXXXX.md")
 **Option A — walk it in Claude Code (recommended):**
 
 \`\`\`bash
-git -C ~/git/defra/trade-imports-animals-workspace fetch origin
+# Branch-scoped fetch — a bare \`fetch origin\` would also pull the
+# workspace repo's gh-pages (~1 GiB).
+git -C ~/git/defra/trade-imports-animals-workspace fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 git -C ~/git/defra/trade-imports-animals-workspace checkout $BRANCH
 \`\`\`
 

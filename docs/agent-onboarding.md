@@ -78,5 +78,24 @@ are configured:
 
 This checks Jira, Confluence, and GitHub authentication.
 
+### 4. Keep git fetches light (gh-pages exclusion)
+
+The product repos' `gh-pages` branches hold published artifacts and are
+enormous (17 GB object graph on the frontend vs 7 MB for main), and the
+workspace repo's own `gh-pages` is ~1 GiB. Any clone still on the
+default `+refs/heads/*` fetch refspec drags them in on a bare
+`git fetch` / `git pull`.
+
+Pin your workspace clone once:
+
+```bash
+bash tools/git/light-remote.sh --exclude-gh-pages ~/git/defra/trade-imports-animals-workspace
+git -C ~/git/defra/trade-imports-animals-workspace gc --prune=now   # reclaims ~1 GiB if gh-pages was ever fetched
+```
+
+Per-ticket review clones under `workareas/` are pinned automatically by
+`tools/review/prepare-review.sh` (and self-healed on refresh by
+`tools/review/refresh/pull-repos.sh`).
+
 
 
