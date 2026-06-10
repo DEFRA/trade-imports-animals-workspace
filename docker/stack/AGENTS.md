@@ -31,7 +31,7 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 |---|---|---|
 | `compose.yml` | (`name:` only) | — |
 | `database.compose.yml` | `mongodb` | `database` |
-| `infrastructure.compose.yml` | `localstack`, `localstack-init`, `redis`, `cdp-uploader` | `infrastructure` |
+| `infrastructure.compose.yml` | `floci`, `floci-init`, `redis`, `cdp-uploader` | `infrastructure` |
 | `stubs.compose.yml` | `trade-imports-defra-id-stub`, `trade-imports-stub` | `stubs` |
 | `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-reference-data` | `backend` |
 | `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin` | `frontend` |
@@ -116,7 +116,7 @@ Two hostnames, used for different audiences:
   stub's `WELL_KNOWN_HOST_OVERRIDE`. The dev machine resolves these
   natively.
 - **Inter-container URLs** use `host.docker.internal` (auto-injected
-  inside containers by Docker Desktop). Mongo, redis, localstack, the
+  inside containers by Docker Desktop). Mongo, redis, floci, the
   cdp-uploader, the frontend's server-side `DEFRA_ID_OIDC_CONFIGURATION_URL`
   fetch.
 
@@ -147,6 +147,6 @@ sign-out URL (built from `DEFRA_ID_OIDC_CONFIGURATION_URL`, which uses
 - `<role>.compose.yml` — per-role service definitions (see layout table above).
 - `dev.compose.yml` — build/target/volumes overlay for `--dev`.
 - `shared.env` — env vars loaded by multiple services (mongo URIs, AWS test
-  creds, localstack endpoints, the truststore cert blob).
-- `scripts/mongodb/`, `scripts/localstack/` — init scripts copied into the
-  respective containers at boot.
+  creds, floci endpoints, the truststore cert blob).
+- `scripts/mongodb/`, `scripts/floci/` — init scripts copied into the
+  respective containers at boot (`scripts/floci/` is run by the `floci-init` aws-cli container, not mounted into floci itself).

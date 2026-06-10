@@ -1,5 +1,5 @@
 #!/bin/bash
-# Provisions LocalStack AWS resources for local development.
+# Provisions Floci AWS resources for local development.
 # Creates two S3 buckets (quarantine and document storage), four SQS queues
 # (ClamAV results, download requests, mock ClamAV, and a FIFO scan-results
 # callback queue), and wires an S3 event notification so that files uploaded
@@ -7,14 +7,14 @@
 set -euo pipefail
 
 # S3 buckets (|| true makes creation idempotent on restart)
-aws --endpoint-url="$LOCALSTACK_URL" s3 --region "$AWS_REGION" mb s3://cdp-uploader-quarantine || true
-aws --endpoint-url="$LOCALSTACK_URL" s3 --region "$AWS_REGION" mb s3://trade-imports-animals-documents || true
+aws --endpoint-url="$FLOCI_URL" s3 --region "$AWS_REGION" mb s3://cdp-uploader-quarantine || true
+aws --endpoint-url="$FLOCI_URL" s3 --region "$AWS_REGION" mb s3://trade-imports-animals-documents || true
 
 # SQS queues (|| true makes creation idempotent on restart)
-aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-clamav-results || true
-aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-uploader-download-requests || true
-aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name mock-clamav || true
-aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-uploader-scan-results-callback.fifo \
+aws --endpoint-url="$FLOCI_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-clamav-results || true
+aws --endpoint-url="$FLOCI_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-uploader-download-requests || true
+aws --endpoint-url="$FLOCI_URL" sqs create-queue --region "$AWS_REGION" --queue-name mock-clamav || true
+aws --endpoint-url="$FLOCI_URL" sqs create-queue --region "$AWS_REGION" --queue-name cdp-uploader-scan-results-callback.fifo \
   --attributes FifoQueue=true,ContentBasedDeduplication=true || true
 # || true makes creation idempotent on restart. Assumes queue attributes haven't changed between
 # runs — if they have (e.g. after a local config change), the existing queue will be silently
@@ -22,7 +22,7 @@ aws --endpoint-url="$LOCALSTACK_URL" sqs create-queue --region "$AWS_REGION" --q
 
 # S3 event notifications — trigger mock virus scanner when files land in quarantine
 MOCK_CLAMAV_ARN="arn:aws:sqs:${AWS_REGION}:000000000000:mock-clamav"
-aws --endpoint-url="$LOCALSTACK_URL" s3api put-bucket-notification-configuration \
+aws --endpoint-url="$FLOCI_URL" s3api put-bucket-notification-configuration \
   --bucket cdp-uploader-quarantine \
   --region "$AWS_REGION" \
   --notification-configuration "{\"QueueConfigurations\":[{\"Id\":\"mock-virus-scan\",\"QueueArn\":\"${MOCK_CLAMAV_ARN}\",\"Events\":[\"s3:ObjectCreated:*\"]}]}"
