@@ -218,12 +218,20 @@ fi
 
 current_branch=$(git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD)
 
-# Branch may already exist (re-share). Create if not, switch to it.
+# Branch may already exist (re-share). The freshly-rsynced shared tree is
+# untracked on the current branch but tracked on an existing handoff
+# branch, so a plain checkout refuses to overwrite it — park the payload,
+# switch, then restore it over the branch's older copy.
+shared_tmp=$(mktemp -d -t "share-review-$TICKET")
+mv "$shared_dir" "$shared_tmp/payload"
 if git -C "$WORKSPACE" rev-parse --verify --quiet "$BRANCH" > /dev/null; then
     git -C "$WORKSPACE" checkout "$BRANCH"
 else
     git -C "$WORKSPACE" checkout -b "$BRANCH"
 fi
+rm -rf "$shared_dir"
+mv "$shared_tmp/payload" "$shared_dir"
+rmdir "$shared_tmp"
 
 git -C "$WORKSPACE" add "workareas/shared/$TICKET"
 
