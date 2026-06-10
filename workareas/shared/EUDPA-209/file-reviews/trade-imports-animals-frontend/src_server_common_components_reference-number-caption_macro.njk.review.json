@@ -1,0 +1,31 @@
+{
+  "file": "src/server/common/components/reference-number-caption/macro.njk",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "2ddf65ec55e7722334e42fdfa687b202c1103523",
+  "pr": 126,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-10T11:35:23Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Unconditional spacing wrapper emits an empty 30px-margin paragraph when no reference number is supplied, and the new wrapper behaviour has no test coverage.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 2,
+      "severity": "Major",
+      "category": "layout-bug",
+      "issue": "Wrapper <p class=\"govuk-body govuk-!-margin-bottom-6\"> is unconditional, but template.njk renders nothing without params.referenceNumber - macro now emits an empty paragraph with a 30px bottom margin, adding a stray vertical gap on pages with no reference number (a state the component's own tests treat as supported)",
+      "fix": "Make the spacing conditional with the content: move the wrapper (or a govuk-!-margin-bottom-6 class on the span) inside template.njk's {% if params.referenceNumber %} block so nothing renders when there is no reference number",
+      "best_practice": "gds/styles.md"
+    },
+    {
+      "id": 2,
+      "line": 2,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "New wrapper paragraph behaviour is untested - template.test.js renders via the macro but only queries [data-testid=app-reference-number-caption], so the 'Without a reference number' suite still passes despite the new empty styled <p> being emitted",
+      "fix": "Extend template.test.js: assert the macro output contains no <p> when referenceNumber is absent, and that the caption span is wrapped in p.govuk-body.govuk-\\!-margin-bottom-6 when present",
+      "best_practice": "node/testing/frontend.md"
+    }
+  ],
+  "reconciled_at": "2026-06-10T11:35:52Z"
+}

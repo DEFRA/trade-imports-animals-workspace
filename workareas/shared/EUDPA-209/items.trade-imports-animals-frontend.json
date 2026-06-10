@@ -10,9 +10,9 @@
       "issue": "appHeading hardcodes heading: \"Search for a place of destination\", duplicating the controller's pageTitle value; the old code passed the pageTitle variable, so the <title> and h1 can now drift if the controller string changes",
       "fix": "Pass the context variable instead: appHeading({ pageTitle: \"Address\", heading: pageTitle })",
       "file": "src/server/addresses/destinations/select/index.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: appHeading({ pageTitle: 'Address', heading: pageTitle }) — verified by refresh reviewer"
     },
     {
       "id": 2,
@@ -22,9 +22,9 @@
       "issue": "appHeading lost its caption: old call passed caption: 'Description of the goods' (rendered as govuk-caption-m); new call is { heading: 'Commodity' } only, so the 'Description of the goods' caption is dropped — a content change in a layout-only ticket, and inconsistent with sibling commodities/details/index.njk which keeps pageTitle: 'Description of the goods'.",
       "fix": "If the caption was intended to stay, use { pageTitle: 'Description of the goods', heading: 'Commodity' } to match commodities/details; otherwise confirm the removal is intended.",
       "file": "src/server/commodities/select/index.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: caption restored via pageTitle: 'Description of the goods' — verified by refresh reviewer"
     },
     {
       "id": 3,
@@ -34,9 +34,9 @@
       "issue": "After removing the govuk-grid-row / govuk-grid-column-two-thirds wrapper divs, lines 17-82 keep the old two-level indentation that those divs justified, leaving the block body over-indented relative to the new structure.",
       "fix": "Re-indent the block body (the govuk-body div, form, table, selects) to match the removed wrapper nesting.",
       "file": "src/server/commodities/select/index.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: block body re-indented — verified by refresh reviewer"
     },
     {
       "id": 4,
@@ -46,9 +46,9 @@
       "issue": "appHeading call dropped the caption \"Description of the goods\" (old: { caption, text: \"Commodity\" } -> new: { heading: \"Commodity\" }); the rename text->heading is a fix since the macro reads params.heading, but the caption removal is user-visible content unrelated to the layout-width goal.",
       "fix": "Confirm the caption removal is intentional; if not, pass caption: \"Description of the goods\" alongside heading.",
       "file": "src/server/commodities/select/index.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: duplicate of #2, caption restored — verified by refresh reviewer"
     },
     {
       "id": 5,
@@ -59,9 +59,9 @@
       "fix": "Move the caption out of the <h1>; render the caption <span> after the heading and drop the nested <p> spacer, using a margin utility on the heading/caption instead.",
       "best_practice": "gds/styling.md",
       "file": "src/server/common/components/heading/template.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: empty <p> spacer removed from inside <h1>; caption span is valid phrasing content — verified by refresh reviewer"
     },
     {
       "id": 6,
@@ -72,9 +72,9 @@
       "fix": "Remove the empty spacer <p>s and apply a govuk-!-margin-* utility (or govuk-caption spacing) to the heading/caption elements themselves.",
       "best_practice": "gds/styling.md",
       "file": "src/server/common/components/heading/template.njk",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: spacer <p>s replaced with govuk-!-margin-* utilities on real content — verified by refresh reviewer"
     },
     {
       "id": 7,
@@ -85,9 +85,48 @@
       "fix": "Migrate about, error and unauthorised templates to {% block pageContent %} and drop their local govuk-grid-row/two-thirds wrappers, or record in the ticket that these pages intentionally stay two-thirds.",
       "best_practice": "node/nunjucks.md",
       "file": "src/server/common/templates/layouts/page.njk",
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "Fixed in 2ddf65e: about, error and unauthorised migrated to {% block pageContent %}; reviewer verified all 23 templates now use pageContent"
+    },
+    {
+      "id": 8,
+      "file": "src/server/common/components/reference-number-caption/macro.njk",
+      "line": "2",
+      "severity": "Major",
+      "category": "layout-bug",
+      "issue": "Wrapper <p class=\"govuk-body govuk-!-margin-bottom-6\"> is unconditional, but template.njk renders nothing without params.referenceNumber - macro now emits an empty paragraph with a 30px bottom margin, adding a stray vertical gap on pages with no reference number (a state the component's own tests treat as supported)",
+      "fix": "Make the spacing conditional with the content: move the wrapper (or a govuk-!-margin-bottom-6 class on the span) inside template.njk's {% if params.referenceNumber %} block so nothing renders when there is no reference number",
       "disposition": null,
       "status": null,
-      "notes": null
+      "notes": null,
+      "best_practice": "gds/styles.md"
+    },
+    {
+      "id": 9,
+      "file": "src/server/common/components/reference-number-caption/macro.njk",
+      "line": "2",
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "New wrapper paragraph behaviour is untested - template.test.js renders via the macro but only queries [data-testid=app-reference-number-caption], so the 'Without a reference number' suite still passes despite the new empty styled <p> being emitted",
+      "fix": "Extend template.test.js: assert the macro output contains no <p> when referenceNumber is absent, and that the caption span is wrapped in p.govuk-body.govuk-\\!-margin-bottom-6 when present",
+      "disposition": null,
+      "status": null,
+      "notes": null,
+      "best_practice": "node/testing/frontend.md"
+    },
+    {
+      "id": 10,
+      "file": "src/server/error/index.njk",
+      "line": "6",
+      "severity": "Minor",
+      "category": "govuk-styles",
+      "issue": "Error message paragraph is a bare <p>{{ message }}</p> with no govuk-body class, so it renders without GDS typography; the surrounding markup was fully restructured by this PR",
+      "fix": "Use <p class=\"govuk-body\">{{ message }}</p>",
+      "disposition": null,
+      "status": null,
+      "notes": null,
+      "best_practice": "node/govuk-frontend.md"
     }
   ]
 }
