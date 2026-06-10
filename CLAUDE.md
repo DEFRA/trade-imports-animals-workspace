@@ -67,7 +67,7 @@ is covered by tim — the JSON envelope is schema-versioned and stable.
 | `make test` | Run tests across all repos |
 | `make docker-compose-up` | Start full stack from published Docker Hub images |
 | `make docker-compose-dev` | Start full stack built from local source (hot-reload for Node, volume mount for Java) |
-| `make docker-compose-down` | Stop the stack and wipe all volumes (mongo data, localstack state) for a clean slate |
+| `make docker-compose-down` | Stop the stack and wipe all volumes (mongo data, floci state) for a clean slate |
 | `make docker-compose-bounce` | Wipe and restart the dev stack (`docker-compose-down` then `docker-compose-dev`) |
 | `make docker-logs` | Tail frontend + admin + backend logs (`Ctrl-C` to stop) |
 | `make docker-restart-backend` | Restart backend container after Java source changes |

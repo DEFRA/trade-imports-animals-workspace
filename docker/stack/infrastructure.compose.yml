@@ -4,7 +4,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      localstack-init:
+      floci-init:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
@@ -26,15 +26,16 @@ services:
     platform: linux/amd64
     ports:
       - '7337:7337'
-  localstack:
+  floci:
     profiles: [infrastructure]
     env_file:
       - ./shared.env
     environment:
-      - LS_LOG=WARN
-      - SERVICES=s3,sqs,sns,dynamodb
-      - LOCALSTACK_HOST=localstack
-      - SQS_ENDPOINT_STRATEGY=off
+      - FLOCI_HOSTNAME=floci
+    # See https://floci.io/floci/getting-started/migrate-from-localstack/#5-health-and-status-endpoints
+    # Floci's own /_floci/ namespace mirrors the LocalStack /_localstack/ paths
+    # (health, init, info all work the same way).
+    # The use of the floci path seems more natural
     healthcheck:
       interval: 5s
       retries: 6
@@ -43,26 +44,23 @@ services:
         - CMD
         - curl
         - '-f'
-        - http://localhost:4566/_localstack/health
-    image: localstack/localstack:3.0.2
+        - http://localhost:4566/_floci/health
+    image: floci/floci:latest
     ports:
       - '4566:4566'
-      - '4510-4559:4510-4559'
-  localstack-init:
+  floci-init:
     profiles: [infrastructure]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      localstack:
+      floci:
         condition: service_healthy
-    entrypoint: bash /scripts/start-localstack.sh
+    entrypoint: bash /scripts/10-setup-buckets.sh
     env_file:
       - ./shared.env
-    image: localstack/localstack:3.0.2
+    image: amazon/aws-cli
     volumes:
-      # Staged from the backend repo (the canonical localstack init) by
-      # scripts/stack/lib/init-scripts.sh
-      - ./.staged/localstack:/scripts
+      - ./scripts/floci:/scripts
   mssql:
     profiles: [servicebus]
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -95,6 +93,7 @@ services:
       - ./.staged/servicebus/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
     ports:
       - '5672:5672'
+
 
   redis:
     profiles: [infrastructure]
