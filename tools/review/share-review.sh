@@ -206,7 +206,9 @@ fi
 # Stash any unrelated working changes so the checkout doesn't lose them.
 # We don't go that far here — just abort if the workspace is dirty
 # outside workareas/shared/.
-dirty=$(git -C "$WORKSPACE" status --porcelain | grep -v '^?? workareas/shared/' | grep -v '^.M workareas/shared/' | grep -v 'workareas/shared/' || true)
+# -uall: without it, an entirely-untracked workareas/shared/ tree collapses
+# to a single "?? workareas/" line that the exclusion patterns can't match.
+dirty=$(git -C "$WORKSPACE" status --porcelain -uall | grep -v '^?? workareas/shared/' | grep -v '^.M workareas/shared/' | grep -v 'workareas/shared/' || true)
 if [[ -n "$dirty" ]]; then
     echo "Workspace has uncommitted changes outside workareas/shared/:" >&2
     echo "$dirty" >&2
