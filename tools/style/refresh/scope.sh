@@ -98,8 +98,10 @@ for repo in "${repos[@]}"; do
     repo_dir="$REVIEW_DIR/repos/$repo"
     [[ -d "$repo_dir/.git" ]] || { echo "Skipping $repo: not cloned at $repo_dir" >&2; continue; }
 
-    pr_number=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .pr' "$REVIEW_META")
-    original_sha=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .commit' "$REVIEW_META")
+    # A repo can carry more than one PR (follow-up PRs raised mid-review);
+    # use the latest as the reference point.
+    pr_number=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .pr] | max' "$REVIEW_META")
+    original_sha=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r)] | max_by(.pr) | .commit' "$REVIEW_META")
     current_sha=$(git -C "$repo_dir" rev-parse HEAD)
 
     # prior_sha for this repo:

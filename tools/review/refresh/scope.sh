@@ -90,8 +90,11 @@ for repo in "${repos[@]}"; do
     repo_dir="$REVIEW_DIR/repos/$repo"
     [[ -d "$repo_dir/.git" ]] || { echo "Skipping $repo: not cloned" >&2; continue; }
 
-    pr_number=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .pr' "$META_FILE")
-    original_sha=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .commit' "$META_FILE")
+    # A repo can carry more than one PR (follow-up PRs raised mid-review);
+    # the latest PR is the reference point, gaps are checked across all.
+    pr_number=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .pr] | max' "$META_FILE")
+    original_sha=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r)] | max_by(.pr) | .commit' "$META_FILE")
+    all_pr_numbers=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .pr' "$META_FILE")
     current_sha=$(git -C "$repo_dir" rev-parse HEAD)
 
     # prior_sha = the most recent re_review snapshot's current_commit for this repo
@@ -121,8 +124,12 @@ for repo in "${repos[@]}"; do
         merge_resolved=$("$MERGE_SH" "$repo_dir" "$prior_sha" "$current_sha" --tsv || true)
     fi
 
-    # Coverage gaps
-    coverage_gaps=$("$GAPS_SH" "$REVIEW_DIR" "$repo" "$pr_number" --tsv 2>/dev/null || true)
+    # Coverage gaps — across every PR recorded for this repo
+    coverage_gaps=$(
+        for pn in $all_pr_numbers; do
+            "$GAPS_SH" "$REVIEW_DIR" "$repo" "$pn" --tsv 2>/dev/null || true
+        done | sort -u
+    )
 
     # ---- Build Lists ------------------------------------------------------
     # List C — merge-resolved
