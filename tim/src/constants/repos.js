@@ -12,7 +12,8 @@ export const NODE_REPOS = Object.freeze([
 export const JAVA_REPOS = Object.freeze([
   'trade-imports-animals-backend',
   'trade-imports-stub',
-  'trade-imports-reference-data'
+  'trade-imports-reference-data',
+  'trade-imports-dynamics-gateway'
 ])
 
 export const REPOS = Object.freeze([...NODE_REPOS, ...JAVA_REPOS])

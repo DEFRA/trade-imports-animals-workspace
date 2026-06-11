@@ -17,6 +17,7 @@ else
     trade-imports-stub
     trade-imports-reference-data
     trade-imports-defra-id-stub
+    trade-imports-dynamics-gateway
   )
 fi
 

@@ -1,11 +1,11 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub
 # defra-id-stub's unit tests need its docker:test compose env (ENTRA_*, S3);
 # plain `npm test` is red by design upstream, so the test target skips it.
 UNIT_TESTABLE_NODE_REPOS := $(filter-out trade-imports-defra-id-stub,$(NODE_REPOS))
-JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
 TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
 LOCAL_COMPOSE := docker/local.compose.yml
 LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml

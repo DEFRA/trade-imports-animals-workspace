@@ -1,6 +1,6 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 7 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 8 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If your checkout is elsewhere, symlink it — see [`docs/agent-onboarding.md`](docs/agent-onboarding.md#1-canonical-clone-location).
 
@@ -15,6 +15,7 @@ The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If you
 | `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
 | `repos/trade-imports-defra-id-stub` | DEFRA/trade-imports-defra-id-stub | Stub of the Defra ID (OIDC) sign-in service | Node.js |
+| `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Gateway to Dynamics | Java / Spring Boot |
 
 ## How to navigate
 
