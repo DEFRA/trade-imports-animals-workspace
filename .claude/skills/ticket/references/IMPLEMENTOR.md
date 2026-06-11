@@ -88,6 +88,28 @@ Optional `--base <branch>` if branching from anything other than `main`.
 - [Something learned]
 ```
 
+## Self-Review Before Raising the PR
+
+Review your own diff the way the `review` skill would — but fix
+findings now instead of logging them. For each repo touched:
+
+1. Get the full diff (one call per repo):
+
+```bash
+git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> diff main...HEAD
+```
+
+2. Re-read it cold against the pre-baked
+   `workareas/ticket-planning/EUDPA-XXXXX/best-practices/<repo>.md`
+   bundle — judge what the diff *says*, not what you meant.
+3. Check: correctness edge cases, error handling (no swallowed
+   exceptions), security (input validation, no secrets), test coverage
+   for every new path, AC actually met, no unrelated changes.
+4. Fix violations immediately, then re-run tests.
+
+This is the cheap 80% of the review skill; the full fan-out review
+should come back clean afterwards.
+
 ## GitHub Actions Verification
 
 ```bash
@@ -99,6 +121,7 @@ Optional `--base <branch>` if branching from anything other than `main`.
 
 - [ ] All AC met
 - [ ] Tests pass (before and after)
+- [ ] Self-review done; findings fixed
 - [ ] Build succeeds / GitHub Actions green
 - [ ] Plan updated with deviations
 
