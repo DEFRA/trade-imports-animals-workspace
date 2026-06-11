@@ -6,10 +6,9 @@ Role: Implement ticket following a plan. Produce clean, well-tested code.
 
 ## Model
 
-**Session role:** `implement` — **new chat** (not the plan chat). Set
-model before `implement EUDPA-X`. Use a **different** chat/model for
-`review EUDPA-X` afterwards. Map:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+**Session role:** `implement` — `prepare-implement.sh` prints the model
+gate first. New chat (not plan). Confirm model, then continue. Use a
+**different** chat for `review EUDPA-X`. `docs/agent-models.md`.
 
 ## Conventions
 

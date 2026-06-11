@@ -13,8 +13,9 @@ languages.
 | Fresh / refresh / walk | `review-orchestrator` | `review-worker` on per-file spawns |
 | Implement review fixes | `implement` | inherit session (no Task `model`) |
 
-**New chat for review** — not the implement chat. Map:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+**New chat for review.** `start-review.sh` prints a model gate first —
+confirm picker or `/model`, then continue.
+`docs/agent-models.md` · `tools/agent/resolve-model.sh`.
 
 ## Conventions
 
@@ -59,6 +60,10 @@ Fan-out workers are spawned as `general-purpose` Task subagents
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/review/start-review.sh EUDPA-XXXXX
 ```
+
+The script prints `MODE:` then a **model gate** (role
+`review-orchestrator`). Confirm the session model matches the gate
+before following FRESH/REFRESH.
 
 Single dispatch — detects mode, runs the appropriate setup, and prints
 the mode on the first line:

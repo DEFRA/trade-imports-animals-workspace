@@ -58,6 +58,11 @@ if [[ ! -f "$PLAN_FILE" ]]; then
     exit 1
 fi
 
+if [[ "$JSON_OUTPUT" == "false" ]]; then
+    "$WORKSPACE/tools/agent/resolve-model.sh" --role implement --host auto
+    echo
+fi
+
 log() {
     if [[ "$JSON_OUTPUT" == "false" ]]; then
         echo "$1"

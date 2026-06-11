@@ -12,8 +12,9 @@ JS code-style review and remediation for EUDP Live Animals tickets.
 | Fresh / refresh / walk | `review-orchestrator` | `review-worker` on per-file spawns |
 | Implement style fixes | `implement` | `style-worker` (= `review-worker` tier) |
 
-New chat for style **review** (orchestrator role). Map:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+New chat for style **review** (orchestrator role). `start-style.sh`
+prints a model gate first. `docs/agent-models.md` ·
+`tools/agent/resolve-model.sh`.
 
 ## Conventions
 

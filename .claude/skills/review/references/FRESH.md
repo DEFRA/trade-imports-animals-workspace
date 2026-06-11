@@ -8,20 +8,25 @@ with `ticket.md`, `repos/`, `file-reviews/` placeholders, and
 
 ## Model
 
-**Orchestrator:** session role `review-orchestrator` (this chat).
-**Workers:** Task spawns use role `review-worker` — pass `model` from
-`docs/agent-models.json` → `roles.review-worker.hosts.<cursor|claude_code>.task_slug`
-when the Task tool supports it; else omit. Do **not** pass `model` on
-the single `CONSISTENCY_REVIEWER` spawn (inherits session).
+**Orchestrator:** session role `review-orchestrator` (gate from
+`start-review.sh`).
+**Workers:** before spawning, resolve once:
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh --worker review-worker --host auto --json
+```
+
+Pass `task_slug` from the JSON on each Task spawn when supported; omit
+if null. Do **not** pass `model` on the single `CONSISTENCY_REVIEWER`
+spawn (inherits session).
 
 ## Step 2: Review Each File
 
 **MANDATORY:** create a review for EVERY changed file. No exceptions.
 
 Spawn up to **100 in parallel** via the Task tool with
-`subagent_type: general-purpose` and, when supported,
-`model:` per `docs/agent-models.json` → `roles.review-worker` (see
-`docs/agent-models.md`):
+`subagent_type: general-purpose` and `model:` set to the resolved
+`task_slug` (see Model section above; omit if null):
 
 ```markdown
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.

@@ -1,14 +1,15 @@
 {
-  "version": 1,
-  "note": "Adjust task_slug values for your token plan. Session models are chosen by the developer — not by skills.",
+  "version": 2,
+  "subscription": "cursor_pro_claude_pro",
+  "note": "Defaults for Cursor Pro + Claude Pro. Session models: picker or /model. Workers: Task model param. Lookup: tools/agent/resolve-model.sh",
   "hosts": {
     "cursor": {
-      "session": "Model picker on the Agent chat before triggering the skill",
-      "task_spawn": "Task tool model parameter — slug from your available-models list"
+      "session": "Agent chat model picker before triggering the skill",
+      "task_spawn": "Task tool model parameter"
     },
     "claude_code": {
-      "session": "/model before triggering the skill",
-      "task_spawn": "Task tool model parameter when the host exposes it; else omit"
+      "session": "/model in the chat before triggering the skill",
+      "task_spawn": "Task tool model parameter when supported; else omit"
     }
   },
   "roles": {
@@ -16,13 +17,17 @@
       "purpose": "Scoping, Testing Strategy, multi-repo analysis, assumptions",
       "hosts": {
         "cursor": {
-          "session_hint": "Reasoning/thinking tier",
+          "session_hint": "Reasoning — Sonnet thinking; Opus for complex multi-repo tickets",
+          "picker_label": "Claude Sonnet 4.6 (thinking)",
           "session_slug": "claude-4.6-sonnet-medium-thinking",
+          "session_slug_complex": "claude-opus-4-8-thinking-high",
           "task_slug": null
         },
         "claude_code": {
-          "session_hint": "Opus or Sonnet (extended thinking)",
-          "session_slug": null,
+          "session_hint": "Sonnet default; Opus for complex tickets",
+          "model_command": "/model sonnet",
+          "model_command_complex": "/model opus",
+          "session_slug": "sonnet",
           "task_slug": null
         }
       }
@@ -32,13 +37,16 @@
       "must_differ_session_from": ["review-orchestrator"],
       "hosts": {
         "cursor": {
-          "session_hint": "Strong coding tier",
-          "session_slug": "gpt-5.3-codex",
+          "session_hint": "Composer pool — daily coding",
+          "picker_label": "Composer 2.5",
+          "session_slug": "composer-2.5-fast",
           "task_slug": null
         },
         "claude_code": {
-          "session_hint": "Opus or Sonnet",
-          "session_slug": null,
+          "session_hint": "Sonnet daily driver; Opus for hard refactors",
+          "model_command": "/model sonnet",
+          "model_command_complex": "/model opus",
+          "session_slug": "sonnet",
           "task_slug": null
         }
       }
@@ -52,27 +60,32 @@
       "must_differ_session_from": ["implement"],
       "hosts": {
         "cursor": {
-          "session_hint": "Reasoning tier — pick a different family or tier than implement",
+          "session_hint": "Different from implement — Opus or Sonnet, not Composer",
+          "picker_label": "Claude Opus 4.8",
           "session_slug": "claude-opus-4-8-thinking-high",
           "task_slug": null
         },
         "claude_code": {
-          "session_hint": "Opus (new chat, not the implement session)",
-          "session_slug": null,
+          "session_hint": "New session — not the implement chat",
+          "model_command": "/model opus",
+          "model_command_fallback": "/model sonnet",
+          "session_slug": "opus",
           "task_slug": null
         }
       }
     },
     "review-worker": {
-      "purpose": "Per-file FILE_REVIEWER / STYLE_FILE_REVIEWER — scripted, JSON output",
+      "purpose": "Per-file FILE_REVIEWER / STYLE_FILE_REVIEWER — scripted JSON output",
       "hosts": {
         "cursor": {
           "session_hint": null,
+          "picker_label": null,
           "session_slug": null,
-          "task_slug": "composer-2.5-fast"
+          "task_slug": "gemini-3.5-flash"
         },
         "claude_code": {
           "session_hint": null,
+          "model_command": null,
           "session_slug": null,
           "task_slug": "haiku"
         }
@@ -84,14 +97,19 @@
     }
   },
   "bindings": {
-    "plan EUDPA-": { "session_role": "plan" },
-    "implement EUDPA-": { "session_role": "implement" },
+    "plan eudpa-": { "session_role": "plan" },
+    "implement eudpa-": { "session_role": "implement" },
+    "build eudpa-": { "session_role": "implement" },
     "refactor": { "session_role": "refactor" },
-    "review EUDPA-": { "session_role": "review-orchestrator" },
+    "tidy up": { "session_role": "refactor" },
+    "review eudpa-": { "session_role": "review-orchestrator" },
+    "re-review": { "session_role": "review-orchestrator" },
+    "style review eudpa-": { "session_role": "review-orchestrator" },
+    "implement review": { "session_role": "implement" },
+    "implement style": { "session_role": "implement" },
     "review.file_reviewer": { "worker_role": "review-worker" },
     "review.consistency_reviewer": { "worker_role": "review-orchestrator" },
-    "review.batch_implementor": { "session_role": "implement" },
     "code-style.fresh_or_refresh_worker": { "worker_role": "review-worker" },
-    "code-style.implementation": { "session_role": "implement", "worker_role": "style-worker" }
+    "code-style.style_implementor": { "worker_role": "style-worker" }
   }
 }

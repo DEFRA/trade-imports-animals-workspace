@@ -54,6 +54,11 @@ fi
 
 command -v jq >/dev/null 2>&1 || { echo "Error: jq is required" >&2; exit 1; }
 
+if [[ "$JSON_OUTPUT" == "false" ]]; then
+    "$WORKSPACE/tools/agent/resolve-model.sh" --role plan --host auto
+    echo
+fi
+
 PLAN_DIR="$WORKSPACE/workareas/ticket-planning/$TICKET"
 mkdir -p "$PLAN_DIR/best-practices"
 

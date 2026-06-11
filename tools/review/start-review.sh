@@ -24,10 +24,12 @@ REVIEW_DIR="$HOME/git/defra/trade-imports-animals-workspace/workareas/reviews/$T
 
 if [[ -f "$REVIEW_DIR/review-index.md" ]]; then
     echo "MODE: REFRESH"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh" --role review-orchestrator --host auto
     echo
     exec "$HOME/git/defra/trade-imports-animals-workspace/tools/review/refresh/scope.sh" "$TICKET" --write-snapshot "$@"
 else
     echo "MODE: FRESH"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh" --role review-orchestrator --host auto
     echo
     exec "$HOME/git/defra/trade-imports-animals-workspace/tools/review/prepare-review.sh" "$TICKET" "$@"
 fi

@@ -6,9 +6,12 @@ may be rough.
 
 ## Model
 
-**Session role:** `refactor` (same tier as `implement`). Prefer the
-implement chat if still open; otherwise new chat with implement-tier
-model. `~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+**Session role:** `refactor` (= implement tier). Run the gate, confirm
+model, then refactor:
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh --role refactor --host auto
+```
 
 ## Conventions
 

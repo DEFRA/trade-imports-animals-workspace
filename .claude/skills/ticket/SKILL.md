@@ -23,9 +23,10 @@ NOT for creating tickets (`ticket-creator`), refinement readiness
 | IMPLEMENT | `implement` |
 | REFACTOR | `refactor` (same tier as implement) |
 
-New chat per phase; pick model before triggering. Review uses a
-**different** role — see `review` skill. Full map:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+New chat per phase. `prepare-plan.sh` / `prepare-implement.sh` print a
+**model gate** first — confirm the picker or `/model` matches, then
+continue. Review uses a different role — see `review` skill.
+`docs/agent-models.md` · `tools/agent/resolve-model.sh`.
 
 ## Conventions
 

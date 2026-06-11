@@ -29,10 +29,12 @@ STYLE_META="$HOME/git/defra/trade-imports-animals-workspace/workareas/code-style
 
 if [[ -f "$STYLE_META" ]]; then
     echo "MODE: REFRESH"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh" --role review-orchestrator --host auto
     echo
     exec "$SCRIPT_DIR/refresh/scope.sh" "$TICKET" --write-snapshot "$@"
 else
     echo "MODE: FRESH"
+    "$HOME/git/defra/trade-imports-animals-workspace/tools/agent/resolve-model.sh" --role review-orchestrator --host auto
     echo
     exec "$SCRIPT_DIR/prepare-style.sh" "$TICKET" "$@"
 fi

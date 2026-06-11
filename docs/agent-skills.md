@@ -188,20 +188,13 @@ Rationale:
 
 ## Model routing
 
-Each workflow phase uses a **session role** (plan / implement /
-review-orchestrator / …). Fan-out Task workers use a **worker role**
-(review-worker / style-worker). Mappings, Cursor slugs, Claude Code
-`/model` hints, and spawn rules:
+Each workflow phase resolves its model via
+`tools/agent/resolve-model.sh` (config: `docs/agent-models.json`).
+Prepare/start scripts print a **model gate**; the agent confirms the
+picker or `/model` matches before continuing. Fan-out workers use
+`--worker review-worker --json` for Task `model`.
 
-`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`
-(machine-readable: `docs/agent-models.json`).
-
-Skills carry a short `## Model` block — follow it; don't hardcode model
-names elsewhere.
-
-**In-skill pointer:** skills that vary by phase carry a short `## Model`
-block listing the session role (and worker role if fan-out). Full rules:
-`docs/agent-models.md`.
+Prose: `docs/agent-models.md`. Skills carry a short `## Model` block.
 
 ## Runtime workareas
 

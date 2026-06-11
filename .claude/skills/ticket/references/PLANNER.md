@@ -6,10 +6,9 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 
 ## Model
 
-**Session role:** `plan` — new chat; set model before `plan EUDPA-X`.
-Cursor: `agent-models.json` → `roles.plan.hosts.cursor.session_slug`.
-Claude Code: `/model` per `roles.plan.hosts.claude_code.session_hint`.
-Details: `~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+**Session role:** `plan` — `prepare-plan.sh` prints the model gate first.
+Confirm picker (Cursor) or run `/model` (Claude Code), then continue.
+Details: `docs/agent-models.md`.
 
 ## Conventions
 

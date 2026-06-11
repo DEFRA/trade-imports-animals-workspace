@@ -130,23 +130,20 @@ Local branches, stashes and uncommitted files are untouched. The
 tooling also copes with `gh-pages` being absent on the remote (the
 truncate job deletes and re-creates it).
 
-### 4. Model per phase (Cursor and Claude Code)
+### 4. Model per phase (Cursor Pro + Claude Pro)
 
-Each ticket phase uses a different **session model**; review fan-out
-uses a cheaper **worker model**. Pick the model before triggering the
-skill — use a **new chat** for plan, implement, and review.
+Each stage resolves its model automatically via
+`tools/agent/resolve-model.sh`. Prepare/start scripts print a **model
+gate** — confirm the Cursor picker or Claude `/model`, then say
+continue.
 
-Full map (including Cursor slugs and Claude Code `/model` hints):
-[`agent-models.md`](agent-models.md).
+| You say | New chat? | Resolved role | Cursor session | Claude Code |
+|---|---|---|---|---|
+| `plan EUDPA-X` | Yes | `plan` | Sonnet 4.6 (thinking) | `/model sonnet` |
+| `implement EUDPA-X` | Yes | `implement` | **Composer 2.5** | `/model sonnet` |
+| `review EUDPA-X` | Yes — not implement | `review-orchestrator` | **Opus 4.8** | `/model opus` |
+| Review fan-out workers | — | `review-worker` | Gemini Flash (Task) | Haiku (Task) |
 
-Quick reference:
-
-| You say | New chat? | Role |
-|---|---|---|
-| `plan EUDPA-X` | Yes | `plan` — reasoning |
-| `implement EUDPA-X` | Yes | `implement` — coding |
-| `review EUDPA-X` | Yes — **not** the implement chat | `review-orchestrator` |
-| `implement review EUDPA-X` | Yes | `implement` |
-
-Edit slugs for your token plan in [`agent-models.json`](agent-models.json).
+Full map: [`agent-models.md`](agent-models.md). Edit
+[`agent-models.json`](agent-models.json) for your picker labels.
 
