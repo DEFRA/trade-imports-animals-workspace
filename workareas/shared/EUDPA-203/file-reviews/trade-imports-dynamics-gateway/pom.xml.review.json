@@ -1,0 +1,31 @@
+{
+  "file": "pom.xml",
+  "repo": "trade-imports-dynamics-gateway",
+  "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
+  "pr": 2,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-11T09:20:43Z",
+  "verdict": "SAFE",
+  "verdict_reason": "All new dependencies (azure-messaging-servicebus, testcontainers azure/mssqlserver, mssql-jdbc) are verified in use, no secrets, and the re-added jacoco-check at 0.65 matches the project convention; only two Minor BOM-usage nits remain.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 97,
+      "severity": "Minor",
+      "category": "dependency-management",
+      "issue": "azure-messaging-servicebus version 7.17.11 is pinned directly on the artifact instead of importing the Azure SDK BOM (com.azure:azure-sdk-bom) in dependencyManagement; future Azure artifacts (e.g. azure-identity when SAS auth is swapped per the ticket) can drift out of sync",
+      "fix": "Import com.azure:azure-sdk-bom in dependencyManagement (alongside the existing AWS BOM) and drop the explicit version from azure-messaging-servicebus",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 109,
+      "severity": "Minor",
+      "category": "dependency-management",
+      "issue": "Per-artifact <version>${testcontainers.version}</version> on org.testcontainers:azure and :mssqlserver is redundant — spring-boot-starter-parent already imports the testcontainers BOM and honours the testcontainers.version property override set at line 27",
+      "fix": "Keep the <testcontainers.version>1.21.4</testcontainers.version> property override and remove the explicit <version> elements from both testcontainers dependencies so they resolve via the Boot-managed testcontainers BOM",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-06-11T09:26:54Z"
+}

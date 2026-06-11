@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/cdp/dynamicsgateway/exceptions/GlobalExceptionHandler.java",
+  "repo": "trade-imports-dynamics-gateway",
+  "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
+  "pr": 2,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-11T09:20:54Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Handlers correctly satisfy the 400-on-malformed-JSON and error-on-ASB-failure ACs with safe generic bodies and tests, but the error contract diverges from the documented ProblemDetail+traceId pattern (Major) and lacks a catch-all handler (Minor)",
+  "todos": [
+    {
+      "id": 1,
+      "line": 15,
+      "severity": "Major",
+      "category": "best-practice",
+      "issue": "Error responses are ad-hoc Map.of(\"error\", ...) bodies instead of RFC 7807 ProblemDetail with a /problems/... type URI and traceId — the repo's RequestTracingFilter puts traceId in MDC but it is never surfaced in error responses, and this PR establishes the error contract for the whole new service",
+      "fix": "Return ProblemDetail.forStatusAndDetail(...) from both handlers, set problem.setType(URI.create(\"/problems/...\")) and problem.setProperty(\"traceId\", MDC.get(\"traceId\")) per the documented GlobalExceptionHandler pattern",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 12,
+      "severity": "Minor",
+      "category": "error-handling",
+      "issue": "No catch-all @ExceptionHandler(Exception.class) — unexpected exceptions fall through to Spring Boot's default error attributes, giving a different error body shape from the {\"error\": ...} responses defined here",
+      "fix": "Add a handleException(Exception ex) handler that logs at error level and returns 500 with the same body shape (\"An unexpected error occurred\"), matching the documented GlobalExceptionHandler pattern",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-06-11T09:26:54Z"
+}

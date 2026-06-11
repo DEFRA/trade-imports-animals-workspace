@@ -1,0 +1,29 @@
+{
+  "file": "compose.yml",
+  "repo": "trade-imports-dynamics-gateway",
+  "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
+  "pr": 2,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-11T09:20:28Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Local-dev compose additions are correct and consistent with servicebus-config.json and application config; only two minor robustness nits (unpinned emulator :latest tag, no emulator healthcheck behind service_started).",
+  "todos": [
+    {
+      "id": 1,
+      "line": 22,
+      "severity": "Minor",
+      "category": "reproducibility",
+      "issue": "servicebus-emulator uses the unpinned :latest tag while the sibling localstack service is pinned to 3.0.2 — an upstream emulator release can silently break every developer's local stack",
+      "fix": "Pin the image to a specific version tag (e.g. mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2), matching the pinned-localstack pattern in this file"
+    },
+    {
+      "id": 2,
+      "line": 72,
+      "severity": "Minor",
+      "category": "startup-ordering",
+      "issue": "Gateway depends_on servicebus-emulator with condition: service_started and the emulator has no healthcheck, so the app can start before the emulator accepts AMQP connections (mssql gets service_healthy; the emulator does not)",
+      "fix": "Add a healthcheck to servicebus-emulator (e.g. TCP probe on 5672 or the emulator's documented readiness check) and change the gateway dependency to condition: service_healthy"
+    }
+  ],
+  "reconciled_at": "2026-06-11T09:26:54Z"
+}

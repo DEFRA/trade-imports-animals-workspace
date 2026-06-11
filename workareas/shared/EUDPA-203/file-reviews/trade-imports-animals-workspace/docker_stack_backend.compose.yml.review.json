@@ -1,0 +1,21 @@
+{
+  "file": "docker/stack/backend.compose.yml",
+  "repo": "trade-imports-animals-workspace",
+  "commit": "43093a3b29aaa789e12f56c0f8a8fa90f1c38dc0",
+  "pr": 6,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-11T09:21:13Z",
+  "verdict": "SAFE",
+  "verdict_reason": "New gateway compose block correctly mirrors the established backend-tier pattern (unique port, valid healthcheck, legitimate localstack deps, no secrets, no hard-coded TST values); only a Minor ASB env pass-through gap",
+  "todos": [
+    {
+      "id": 1,
+      "line": 43,
+      "severity": "Minor",
+      "category": "configurability",
+      "issue": "Gateway service environment block has no AZURE_SERVICE_BUS_CONNECTION_STRING / AZURE_SERVICE_BUS_QUEUE pass-through, so the container is locked to the dummy local-profile defaults and the stack cannot be pointed at the real TST namespace for the ticket's manual connectivity testing without editing the file",
+      "fix": "Add value-less pass-through entries '- AZURE_SERVICE_BUS_CONNECTION_STRING' and '- AZURE_SERVICE_BUS_QUEUE' to the environment list; when unset on the host they are omitted and the local-profile defaults still apply"
+    }
+  ],
+  "reconciled_at": "2026-06-11T09:26:53Z"
+}
