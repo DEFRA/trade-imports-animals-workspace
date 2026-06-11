@@ -3,6 +3,7 @@ import {
   REPOS,
   NODE_REPOS,
   JAVA_REPOS,
+  UNIT_TEST_EXEMPT_REPOS,
   REPOS_DIR,
   repoPath,
   isNodeRepo,
@@ -16,11 +17,12 @@ describe('repo constants', () => {
     expect(REPOS_DIR).toBe('repos')
   })
 
-  test('NODE_REPOS lists the three Node.js repos', () => {
+  test('NODE_REPOS lists the four Node.js repos', () => {
     expect([...NODE_REPOS].sort()).toEqual([
       'trade-imports-animals-admin',
       'trade-imports-animals-frontend',
-      'trade-imports-animals-tests'
+      'trade-imports-animals-tests',
+      'trade-imports-defra-id-stub'
     ])
   })
 
@@ -34,6 +36,12 @@ describe('repo constants', () => {
 
   test('REPOS is the union of NODE_REPOS and JAVA_REPOS', () => {
     expect([...REPOS].sort()).toEqual([...NODE_REPOS, ...JAVA_REPOS].sort())
+  })
+
+  test('every unit-test-exempt repo is a known repo', () => {
+    for (const repo of UNIT_TEST_EXEMPT_REPOS) {
+      expect(REPOS).toContain(repo)
+    }
   })
 
   test('NODE_REPOS and JAVA_REPOS do not overlap', () => {
@@ -73,5 +81,18 @@ describe('repo constants', () => {
     expect(repoUrl('trade-imports-animals-frontend')).toBe(
       'https://github.com/DEFRA/trade-imports-animals-frontend.git'
     )
+  })
+
+  test('repoUrl honours the TIM_GITHUB_BASE_URL override', () => {
+    const original = process.env.TIM_GITHUB_BASE_URL
+    process.env.TIM_GITHUB_BASE_URL = 'file:///tmp/fixtures'
+    try {
+      expect(repoUrl('trade-imports-animals-frontend')).toBe(
+        'file:///tmp/fixtures/trade-imports-animals-frontend.git'
+      )
+    } finally {
+      if (original === undefined) delete process.env.TIM_GITHUB_BASE_URL
+      else process.env.TIM_GITHUB_BASE_URL = original
+    }
   })
 })

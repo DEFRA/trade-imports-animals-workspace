@@ -1,6 +1,6 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 6 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 7 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If your checkout is elsewhere, symlink it — see [`docs/agent-onboarding.md`](docs/agent-onboarding.md#1-canonical-clone-location).
 
@@ -14,6 +14,7 @@ The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If you
 | `repos/trade-imports-animals-admin` | DEFRA/trade-imports-animals-admin | Internal admin interface | Node.js |
 | `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
+| `repos/trade-imports-defra-id-stub` | DEFRA/trade-imports-defra-id-stub | Stub of the Defra ID (OIDC) sign-in service | Node.js |
 
 ## How to navigate
 
@@ -57,8 +58,8 @@ is covered by tim — the JSON envelope is schema-versioned and stable.
 
 | Target | What it does |
 |--------|-------------|
-| `make setup` | Clone all 4 repos (idempotent — safe to re-run) |
-| `make update` | `git pull --rebase` all repos |
+| `make setup` | Clone all repos (idempotent — safe to re-run; clones exclude `gh-pages`) |
+| `make update` | `git pull --rebase` all repos (one-off heal pins the `gh-pages` exclusion + gc on old clones) |
 | `make status` | `git status -sb` across all repos |
 | `make install` | `npm install` in all Node repos |
 | `make lint` | Lint all Node repos |

@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
+import { REPOS } from '../../constants/repos.js'
 import { collectStatuses, renderText } from './status.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -107,7 +108,7 @@ describe('tim workspace status CLI', () => {
     const payload = JSON.parse(stdout.trim())
     expect(payload.ok).toBe(true)
     expect(payload.schema_version).toBe(1)
-    expect(payload.result).toHaveLength(6)
+    expect(payload.result).toHaveLength(REPOS.length)
     const frontend = payload.result.find(
       (r) => r.repo === 'trade-imports-animals-frontend'
     )
