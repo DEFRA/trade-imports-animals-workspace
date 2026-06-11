@@ -38,6 +38,9 @@ services:
     depends_on:
       localstack-init:
         condition: service_completed_successfully
+      servicebus-emulator:
+        condition: service_started
+        required: false
     env_file:
       - ./shared.env
     environment:
@@ -46,6 +49,7 @@ services:
       - AWS_EMF_AGENT_ENDPOINT=http://host.docker.internal:4566
       - APP_AWS_ENDPOINT_OVERRIDE=http://host.docker.internal:4566
       - TRADE_IMPORTS_DYNAMICS_GATEWAY_BASE_URL=http://host.docker.internal:8088
+      - AZURE_SERVICE_BUS_CONNECTION_STRING=${AZURE_SERVICE_BUS_CONNECTION_STRING:-Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;EntityPath=local-queue}
     healthcheck:
       interval: 5s
       retries: 10
