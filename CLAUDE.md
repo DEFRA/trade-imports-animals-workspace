@@ -159,7 +159,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 
 | Skill | Triggers | Purpose |
 |---|---|---|
-| `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
+| `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug", "flesh out ticket" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
 | `ticket-refiner` | "is ticket ready", "pre-refinement", "refinement check" | Assess whether a ticket is READY / NEEDS WORK / SPIKE REQUIRED. |
 | `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
 | `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
