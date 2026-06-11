@@ -100,10 +100,12 @@ The menu only opens when stdout is a TTY and the user has not asked for plain te
 
 `tim` reuses the same environment variables as the bash tooling in [`../tools/`](../tools/) — anyone with the bash tools working gets seamless pickup with no new setup:
 
-| Variable                                   | Used for                                                                                       |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `JIRA_USER`, `JIRA_TOKEN`, `JIRA_BASE_URL` | Jira and Confluence (Confluence sits at `${JIRA_BASE_URL}/wiki` with the same Atlassian token) |
-| `GITHUB_TOKEN`                             | GitHub and GitHub Actions. If unset, `tim` falls back to one `gh auth token` call at startup   |
+| Variable                                   | Used for                                                                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `JIRA_USER`, `JIRA_TOKEN`, `JIRA_BASE_URL` | Jira and Confluence (Confluence sits at `${JIRA_BASE_URL}/wiki` with the same Atlassian token)                                                    |
+| `GITHUB_TOKEN`                             | GitHub and GitHub Actions. If unset, `tim` falls back to one `gh auth token` call at startup                                                      |
+| `TIM_WORKSPACE`                            | Workspace root override (same as `--workspace`)                                                                                                   |
+| `TIM_GITHUB_BASE_URL`                      | Clone URL prefix override for `workspace setup` (default `https://github.com/DEFRA`) — used by the behavioural tests to clone from local fixtures |
 
 Run [`../tools/auth.sh`](../tools/auth.sh) to verify your setup against the bash side. `tim auth` (when it lands) does the same via library clients.
 

@@ -79,4 +79,18 @@ describe('tim workspace test CLI', () => {
     const payload = JSON.parse(stdout.trim())
     expect(payload.result).toHaveLength(0)
   }, 30_000)
+
+  test('skips trade-imports-defra-id-stub even when it has a test script', async () => {
+    seedNodeRepo('trade-imports-defra-id-stub', {
+      test: 'node -e "process.exit(3)"'
+    })
+    const { stdout, exitCode } = await execa(
+      'node',
+      [cliPath, 'workspace', 'test', '--workspace', workspace, '--json'],
+      { reject: false }
+    )
+    expect(exitCode).toBe(0)
+    const payload = JSON.parse(stdout.trim())
+    expect(payload.result).toHaveLength(0)
+  }, 30_000)
 })
