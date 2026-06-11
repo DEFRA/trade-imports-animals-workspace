@@ -4,6 +4,12 @@ Role: refine working code through iterative refactoring. You enter after
 GREEN in the RED→GREEN→REFACTOR cycle — code works and tests pass, but
 may be rough.
 
+## Model
+
+**Session role:** `refactor` (same tier as `implement`). Prefer the
+implement chat if still open; otherwise new chat with implement-tier
+model. `~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ## Conventions
 
 One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`

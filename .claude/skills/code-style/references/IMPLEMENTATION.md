@@ -7,6 +7,12 @@ file (not per item) — each file is read once, edited once, tested once,
 staged once. Nothing is committed until the developer reviews and
 approves (Step I4).
 
+## Model
+
+**Session role:** `implement`. **Workers:** role `style-worker`
+(same tier as `review-worker`) — Task `model` from
+`docs/agent-models.json` when supported.
+
 **Prerequisite:** services must be running (frontend, backend, admin)
 for E2E tests to pass.
 
@@ -39,7 +45,9 @@ First few groups:
 ## Step I3: Implement Groups Sequentially
 
 For each group, in order (frontend before other repos, then
-alphabetical by file), spawn a `general-purpose` Task subagent:
+alphabetical by file), spawn a `general-purpose` Task subagent. When
+the Task tool supports `model`, use role `style-worker` per
+`docs/agent-models.json` (same tier as `review-worker`):
 
 ```
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/references/STYLE_IMPLEMENTOR.md.

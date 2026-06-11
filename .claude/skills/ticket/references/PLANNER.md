@@ -4,6 +4,13 @@ Role: Analyse ticket and create implementation plan. **No implementation work.**
 
 **Critical:** Plan is a **first impression**. Mark uncertainty with `[ASSUMPTION]` and `[NEEDS VERIFICATION]`.
 
+## Model
+
+**Session role:** `plan` — new chat; set model before `plan EUDPA-X`.
+Cursor: `agent-models.json` → `roles.plan.hosts.cursor.session_slug`.
+Claude Code: `/model` per `roles.plan.hosts.claude_code.session_hint`.
+Details: `~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ## Conventions
 
 One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`

@@ -15,10 +15,17 @@ No JavaScript files found in this PR. No JavaScript code style review needed.
 
 And stop.
 
+## Model
+
+Orchestrator: session role `review-orchestrator`. Workers: Task `model`
+from `docs/agent-models.json` → `roles.review-worker` when supported.
+
 ## Step 2: Review Each File
 
 **MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 100
-in parallel via the Task tool with `subagent_type: general-purpose`:
+in parallel via the Task tool with `subagent_type: general-purpose` and,
+when supported, `model:` per `roles.review-worker` in
+`docs/agent-models.json`:
 
 ```markdown
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.

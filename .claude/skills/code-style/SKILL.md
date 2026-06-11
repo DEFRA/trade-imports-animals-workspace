@@ -5,6 +5,16 @@ description: 'JS code-style/lint review and remediation for EUDPA PRs against th
 
 JS code-style review and remediation for EUDP Live Animals tickets.
 
+## Model
+
+| Mode | Session role | Worker role |
+|---|---|---|
+| Fresh / refresh / walk | `review-orchestrator` | `review-worker` on per-file spawns |
+| Implement style fixes | `implement` | `style-worker` (= `review-worker` tier) |
+
+New chat for style **review** (orchestrator role). Map:
+`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ## Conventions
 
 One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`

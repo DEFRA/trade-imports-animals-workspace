@@ -15,6 +15,18 @@ peer phases split on verb — follow the matching reference:
 NOT for creating tickets (`ticket-creator`), refinement readiness
 (`ticket-refiner`), or reviewing PRs (`review` / `code-style`).
 
+## Model
+
+| Phase | Session role |
+|---|---|
+| PLAN | `plan` |
+| IMPLEMENT | `implement` |
+| REFACTOR | `refactor` (same tier as implement) |
+
+New chat per phase; pick model before triggering. Review uses a
+**different** role — see `review` skill. Full map:
+`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ## Conventions
 
 One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`

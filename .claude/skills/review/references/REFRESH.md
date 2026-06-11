@@ -41,7 +41,8 @@ Deleted files: mark their items `Auto-Resolved` via `review-mark.sh`.
 
 Spawn `general-purpose` Task subagents in parallel (up to 100), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
-(Mode=FRESH; coverage gap). Prompt template:
+(Mode=FRESH; coverage gap). When the Task tool supports `model`, use
+role `review-worker` per `docs/agent-models.json`. Prompt template:
 
 ```markdown
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.

@@ -9,6 +9,12 @@ is committed until the developer reviews and approves (Step 5).
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review
 EUDPA-XXXXX {repo}"` (optional repo filter).
 
+## Model
+
+**Session role:** `implement` — new chat (not the review chat). Task
+fixer spawns inherit the session model — do **not** pass Task `model`.
+`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ---
 
 ## Step 1: Load the Fix List

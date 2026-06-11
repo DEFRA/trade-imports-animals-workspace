@@ -186,6 +186,23 @@ Rationale:
   sandboxes them off the parent workspace's `.claude/` (#31905). Do NOT
   symlink into them. Working inside a sub-repo means no workspace skills.
 
+## Model routing
+
+Each workflow phase uses a **session role** (plan / implement /
+review-orchestrator / …). Fan-out Task workers use a **worker role**
+(review-worker / style-worker). Mappings, Cursor slugs, Claude Code
+`/model` hints, and spawn rules:
+
+`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`
+(machine-readable: `docs/agent-models.json`).
+
+Skills carry a short `## Model` block — follow it; don't hardcode model
+names elsewhere.
+
+**In-skill pointer:** skills that vary by phase carry a short `## Model`
+block listing the session role (and worker role if fan-out). Full rules:
+`docs/agent-models.md`.
+
 ## Runtime workareas
 
 `~/git/defra/trade-imports-animals-workspace/workareas/` is runtime cache and is gitignored. Skills

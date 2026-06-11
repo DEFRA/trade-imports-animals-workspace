@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "note": "Adjust task_slug values for your token plan. Session models are chosen by the developer — not by skills.",
+  "hosts": {
+    "cursor": {
+      "session": "Model picker on the Agent chat before triggering the skill",
+      "task_spawn": "Task tool model parameter — slug from your available-models list"
+    },
+    "claude_code": {
+      "session": "/model before triggering the skill",
+      "task_spawn": "Task tool model parameter when the host exposes it; else omit"
+    }
+  },
+  "roles": {
+    "plan": {
+      "purpose": "Scoping, Testing Strategy, multi-repo analysis, assumptions",
+      "hosts": {
+        "cursor": {
+          "session_hint": "Reasoning/thinking tier",
+          "session_slug": "claude-4.6-sonnet-medium-thinking",
+          "task_slug": null
+        },
+        "claude_code": {
+          "session_hint": "Opus or Sonnet (extended thinking)",
+          "session_slug": null,
+          "task_slug": null
+        }
+      }
+    },
+    "implement": {
+      "purpose": "Write code and tests, self-review, stage for developer commit",
+      "must_differ_session_from": ["review-orchestrator"],
+      "hosts": {
+        "cursor": {
+          "session_hint": "Strong coding tier",
+          "session_slug": "gpt-5.3-codex",
+          "task_slug": null
+        },
+        "claude_code": {
+          "session_hint": "Opus or Sonnet",
+          "session_slug": null,
+          "task_slug": null
+        }
+      }
+    },
+    "refactor": {
+      "purpose": "Post-green tidy-up — same bar as implement",
+      "same_as": "implement"
+    },
+    "review-orchestrator": {
+      "purpose": "Fresh/refresh aggregation, consistency, verdict — fresh eyes vs implement",
+      "must_differ_session_from": ["implement"],
+      "hosts": {
+        "cursor": {
+          "session_hint": "Reasoning tier — pick a different family or tier than implement",
+          "session_slug": "claude-opus-4-8-thinking-high",
+          "task_slug": null
+        },
+        "claude_code": {
+          "session_hint": "Opus (new chat, not the implement session)",
+          "session_slug": null,
+          "task_slug": null
+        }
+      }
+    },
+    "review-worker": {
+      "purpose": "Per-file FILE_REVIEWER / STYLE_FILE_REVIEWER — scripted, JSON output",
+      "hosts": {
+        "cursor": {
+          "session_hint": null,
+          "session_slug": null,
+          "task_slug": "composer-2.5-fast"
+        },
+        "claude_code": {
+          "session_hint": null,
+          "session_slug": null,
+          "task_slug": "haiku"
+        }
+      }
+    },
+    "style-worker": {
+      "purpose": "Mechanical style fixes — same tier as review-worker",
+      "same_as": "review-worker"
+    }
+  },
+  "bindings": {
+    "plan EUDPA-": { "session_role": "plan" },
+    "implement EUDPA-": { "session_role": "implement" },
+    "refactor": { "session_role": "refactor" },
+    "review EUDPA-": { "session_role": "review-orchestrator" },
+    "review.file_reviewer": { "worker_role": "review-worker" },
+    "review.consistency_reviewer": { "worker_role": "review-orchestrator" },
+    "review.batch_implementor": { "session_role": "implement" },
+    "code-style.fresh_or_refresh_worker": { "worker_role": "review-worker" },
+    "code-style.implementation": { "session_role": "implement", "worker_role": "style-worker" }
+  }
+}

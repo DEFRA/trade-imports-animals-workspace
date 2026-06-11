@@ -130,5 +130,23 @@ Local branches, stashes and uncommitted files are untouched. The
 tooling also copes with `gh-pages` being absent on the remote (the
 truncate job deletes and re-creates it).
 
+### 4. Model per phase (Cursor and Claude Code)
 
+Each ticket phase uses a different **session model**; review fan-out
+uses a cheaper **worker model**. Pick the model before triggering the
+skill — use a **new chat** for plan, implement, and review.
+
+Full map (including Cursor slugs and Claude Code `/model` hints):
+[`agent-models.md`](agent-models.md).
+
+Quick reference:
+
+| You say | New chat? | Role |
+|---|---|---|
+| `plan EUDPA-X` | Yes | `plan` — reasoning |
+| `implement EUDPA-X` | Yes | `implement` — coding |
+| `review EUDPA-X` | Yes — **not** the implement chat | `review-orchestrator` |
+| `implement review EUDPA-X` | Yes | `implement` |
+
+Edit slugs for your token plan in [`agent-models.json`](agent-models.json).
 

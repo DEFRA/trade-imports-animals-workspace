@@ -6,6 +6,16 @@ description: 'Pre-merge code review (correctness, security, performance, tests) 
 Pre-merge code review for EUDP Live Animals tickets across all repos and
 languages.
 
+## Model
+
+| Mode | Session role | Worker role |
+|---|---|---|
+| Fresh / refresh / walk | `review-orchestrator` | `review-worker` on per-file spawns |
+| Implement review fixes | `implement` | inherit session (no Task `model`) |
+
+**New chat for review** — not the implement chat. Map:
+`~/git/defra/trade-imports-animals-workspace/docs/agent-models.md`.
+
 ## Conventions
 
 One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
