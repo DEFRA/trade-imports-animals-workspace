@@ -106,6 +106,11 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> diff main...HEAD
    exceptions), security (input validation, no secrets), test coverage
    for every new path, AC actually met, no unrelated changes.
 4. Fix violations immediately, then re-run tests.
+5. **Local Sonar gate (user handoff):** ask the developer to run the
+   SonarQube for IDE plugin analysis in IntelliJ on the changed files
+   (default Sonar way rules — same as CI) and paste back any findings.
+   Fix each reported finding, re-run tests, then ask them to re-analyse
+   until clean. Do not raise the PR with open Sonar findings.
 
 This is the cheap 80% of the review skill; the full fan-out review
 should come back clean afterwards.
@@ -122,6 +127,7 @@ should come back clean afterwards.
 - [ ] All AC met
 - [ ] Tests pass (before and after)
 - [ ] Self-review done; findings fixed
+- [ ] Local Sonar analysis (IntelliJ plugin) clean
 - [ ] Build succeeds / GitHub Actions green
 - [ ] Plan updated with deviations
 
