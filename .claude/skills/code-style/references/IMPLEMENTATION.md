@@ -4,7 +4,8 @@ Loaded from SKILL.md on "fix style EUDPA-X" / "implement style fixes".
 Applies all open Fix items by delegating one
 `STYLE_IMPLEMENTOR.md`-following `general-purpose` Task subagent per
 file (not per item) — each file is read once, edited once, tested once,
-committed once.
+staged once. Nothing is committed until the developer reviews and
+approves (Step I4).
 
 **Prerequisite:** services must be running (frontend, backend, admin)
 for E2E tests to pass.
@@ -65,7 +66,7 @@ Subagents return summaries like:
 
 ```
 {repo}/{file}: 3 done, 1 auto-resolved, 0 failed
-  #117 → Done (commit abc123)
+  #117 → Done (staged)
   #92  → Auto-Resolved (already fixed by earlier work)
 ```
 
@@ -85,7 +86,33 @@ CANNOT START: {repo}/{file} — pre-existing test failures
 **Stop immediately on `CANNOT START`** — pre-existing failures must be
 resolved before continuing.
 
-## Step I4: Final Report
+## Step I4: Developer Review + Commit Gate
+
+**Never commit automatically.** All fixes are staged, uncommitted.
+
+1. Present the staged changes per repo:
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} diff --staged --stat
+   ```
+   Plus the per-file item list from Step I3.
+2. Ask the developer to review and wait for explicit approval. Apply
+   any corrections, re-run tests, re-present.
+3. On approval, one commit per repo. Message per
+   `~/git/defra/trade-imports-animals-workspace/docs/git-conventions.md`
+   — **no agent/AI references** (no `Co-Authored-By`, no
+   "Generated with"):
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "style(EUDPA-XXXXX): apply style fixes — items #N, #M, #K"
+   ```
+   If the pre-commit hook fails due to Prettier: run prettier on the
+   offending files, `git add`, NEW commit (do NOT `--amend`).
+4. Capture `git -C ... rev-parse --short HEAD` and replace each Done
+   item's `staged` note with the sha via `style-set-status.sh`.
+
+If the developer declines, leave everything staged with `staged` notes
+and stop.
+
+## Step I5: Final Report
 
 After all groups are processed (or stopped early):
 

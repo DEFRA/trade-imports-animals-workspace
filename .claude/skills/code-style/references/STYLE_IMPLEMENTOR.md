@@ -138,35 +138,18 @@ npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-ani
 
 ---
 
-## Step 5: Commit
+## Step 5: Stage (do NOT commit)
 
-One commit per file. Use the Item IDs in the message. Each git op
-is a separate Bash call — no `cd && git`.
+Committing is the orchestrator's job — it happens only after the
+developer has reviewed the staged changes. Run prettier first so the
+staged diff is hook-clean:
 
-```bash
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {file}
-```
-
-```bash
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "style(EUDPA-XXXXX): {file} — {N} items
-
-Items: #{id1}, #{id2}, #{id3}
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
-If the pre-commit hook fails due to Prettier:
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
+
 ```bash
 git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {file}
-```
-Then create a NEW commit (do NOT amend).
-
-Capture the short SHA:
-```bash
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} rev-parse --short HEAD
 ```
 
 ---
@@ -177,7 +160,7 @@ For each item in `applicable_items`:
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/style/style-set-status.sh EUDPA-XXXXX --repo {repo} --item {id} \
-  --status Done --note "{short-sha}"
+  --status Done --note "staged"
 ```
 
 For each item in `skipped_items`:
@@ -204,8 +187,8 @@ Return a per-item summary:
 
 ```
 {repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
-  #117 → Done (commit abc123)
-  #121 → Done (commit abc123)
+  #117 → Done (staged)
+  #121 → Done (staged)
   #92  → Auto-Resolved (already fixed)
   #58  → Won't Fix (deliberate codebase choice — type augmentation)
 ```

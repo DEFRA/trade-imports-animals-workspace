@@ -116,28 +116,19 @@ reports to `target/surefire-reports/`.
 
 ---
 
-## Step 5: Commit
+## Step 5: Stage (do NOT commit)
 
-Each git operation is a separate Bash call — no `cd && git`.
+Committing is the orchestrator's job — it happens only after the
+developer has reviewed the staged changes. Run prettier first so the
+staged diff is hook-clean (Node repos only):
 
-```bash
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {file}
-```
-
-```bash
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "fix(EUDPA-XXXXX): [concise description of what was fixed]
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-```
-
-If the pre-commit hook fails due to Prettier:
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
+
 ```bash
 git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {file}
 ```
-Then retry the commit (a NEW commit; do NOT `--amend`).
 
 ---
 
@@ -147,7 +138,7 @@ Return exactly one of:
 
 ```
 DONE: #N — [brief description of change]
-Repo: {repo} | File: {file} | Commit: {short-sha}
+Repo: {repo} | File: {file} | Staged
 ```
 
 ```

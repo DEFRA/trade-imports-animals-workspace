@@ -169,9 +169,7 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} add {each-edited
 ```bash
 git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "Upgrade {package} {current} → {target}
 
-{short description of the API changes you made}
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+{short description of the API changes you made}"
 ```
 
 If the pre-commit hook fails due to Prettier, re-run prettier on

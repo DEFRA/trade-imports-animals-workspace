@@ -3,8 +3,8 @@
 Apply all queued `Fix`-disposition items from a completed walker session.
 Reads the consolidated items table, delegates to a `general-purpose` Task
 subagent following `references/REVIEW_ITEM_FIXER.md` one item at a time,
-and updates the table with results — no user input required during the
-run.
+and updates the table with results. Fixers stage changes only — nothing
+is committed until the developer reviews and approves (Step 5).
 
 **Trigger:** `"implement review EUDPA-XXXXX"` or `"implement review
 EUDPA-XXXXX {repo}"` (optional repo filter).
@@ -39,7 +39,8 @@ Queued fixes: [N] ([breakdown by repo])
 
 Order: [list of item numbers]
 
-No input needed — running all fixes now.
+Running all fixes now — changes are staged, not committed; you review
+before anything is committed.
 ```
 
 ---
@@ -116,7 +117,7 @@ within the same repo may affect shared files or tests).
 
 | Result | Action |
 |--------|--------|
-| `DONE` | `~/git/defra/trade-imports-animals-workspace/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"` |
+| `DONE` | `~/git/defra/trade-imports-animals-workspace/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "staged"` |
 | `SKIPPED` | `~/git/defra/trade-imports-animals-workspace/tools/review/review-mark.sh EUDPA-XXXXX --repo {repo} --item {N} --disposition "Auto-Resolved" --note "{what was found}"` |
 | `FAILED` | `~/git/defra/trade-imports-animals-workspace/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Failed --note "{reason}"` |
 | `CANNOT START` | **Stop immediately.** Report pre-existing failures. Ask user to resolve before re-running. |
@@ -136,14 +137,49 @@ git -C ~/git/defra/trade-imports-animals-workspace rev-parse --abbrev-ref HEAD
 
 If the branch name is exactly `chore/EUDPA-XXXXX` (matching this
 ticket), the session is running in **handoff context** — note that
-fact for Step 5.
+fact for Steps 6–7.
 
 The handoff branch lives on the workspace repo (not on any sub-repo),
 so detection runs against the workspace, not `repos/{repo}`.
 
 ---
 
-## Step 5: Final Report
+## Step 5: Developer Review + Commit Gate
+
+**Never commit automatically.** All fixes are staged, uncommitted.
+
+1. Present the staged changes per repo:
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} diff --staged --stat
+   ```
+   Plus the list of fixed items per repo (#N — description).
+2. Ask the developer to review and wait for explicit approval. If they
+   want changes, apply them, re-run tests, re-present.
+3. On approval, one commit per repo. Message per
+   `~/git/defra/trade-imports-animals-workspace/docs/git-conventions.md`
+   — **no agent/AI references** (no `Co-Authored-By`, no
+   "Generated with"):
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} commit -m "fix(EUDPA-XXXXX): apply review fixes — items #N, #M, #K"
+   ```
+   If the pre-commit hook fails due to Prettier: run prettier on the
+   offending files, `git add` them, and create a NEW commit (do NOT
+   `--amend`).
+4. Capture the short SHA and replace the `staged` note on each Done
+   item in that repo:
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo} rev-parse --short HEAD
+   ```
+   ```bash
+   ~/git/defra/trade-imports-animals-workspace/tools/review/review-set-status.sh EUDPA-XXXXX --repo {repo} --item {N} --status Done --note "{short-sha}"
+   ```
+
+If the developer declines, leave everything staged, keep the `staged`
+notes, and stop — they can re-trigger after deciding.
+
+---
+
+## Step 6: Final Report
 
 ```
 Implementation complete for EUDPA-XXXXX [{filters}].
@@ -167,7 +203,7 @@ Run `~/git/defra/trade-imports-animals-workspace/tools/review/review-counts.sh E
 
 ---
 
-## Step 6: Handoff branch cleanup (handoff context only)
+## Step 7: Handoff branch cleanup (handoff context only)
 
 If Step 4.5 flagged this session as handoff context, offer cleanup now.
 Skip this step entirely otherwise.

@@ -118,6 +118,27 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> diff main...HEAD
 This is the cheap 80% of the review skill; the full fan-out review
 should come back clean afterwards.
 
+## Commit Gate (developer review)
+
+**Never commit automatically.** Work stays uncommitted on the feature
+branch until the developer has reviewed it:
+
+1. Present the changes per repo:
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> status --short
+   ```
+   ```bash
+   git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> diff --stat
+   ```
+   Plus a short prose summary of what changed and why.
+2. Ask the developer to review (in the IDE or via the diff) and wait
+   for explicit approval. Apply any corrections they ask for, re-run
+   tests, and re-present.
+3. On approval, commit following
+   `~/git/defra/trade-imports-animals-workspace/docs/git-conventions.md` —
+   `type(EUDPA-XXXXX): description`, imperative mood, **no agent/AI
+   references** (no `Co-Authored-By` trailers, no "Generated with").
+
 ## GitHub Actions Verification
 
 ```bash
@@ -164,6 +185,8 @@ PR isn't ready.
 - [ ] Planned tests exist (or deviation noted in plan)
 - [ ] Self-review done; findings fixed
 - [ ] Local Sonar analysis (IntelliJ plugin) clean
+- [ ] Developer reviewed and approved the diff before commit
+- [ ] Commit messages per git-conventions, no agent references
 - [ ] PR raised with templated body (AC evidence checked)
 - [ ] Build succeeds / GitHub Actions green
 - [ ] Plan updated with deviations

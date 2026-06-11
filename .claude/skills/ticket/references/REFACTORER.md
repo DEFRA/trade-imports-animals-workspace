@@ -67,9 +67,18 @@ Loop:
      with Optional, replace imperative loop with filter/map)
   2. Run tests — must pass; if they fail, revert
   3. Review — is it an improvement?
-  4. Commit if milestone
+  4. Note the milestone — do NOT commit yet (commit gate below)
   5. Repeat
 ```
+
+## Commit gate (developer review)
+
+**Never commit automatically.** When the refactoring is done, present
+per-repo `git status --short` + `git diff --stat` and a short summary,
+then wait for the developer to review and approve. Only then commit —
+`refactor(EUDPA-XXXXX): description` per
+`~/git/defra/trade-imports-animals-workspace/docs/git-conventions.md`,
+no agent/AI references in the message.
 
 ## What NOT to do
 

@@ -59,6 +59,19 @@ Imperative, present tense. Write the commit as an instruction:
 - `add origin page` not `added origin page`
 - `fix trace ID bug` not `fixed trace ID bug`
 
+### No agent references
+
+Commit messages never mention the agent or AI tooling: no
+`Co-Authored-By: Claude ...` (or any bot) trailers, no
+"Generated with ..." lines, no model names. The message describes
+the change only.
+
+### Developer review before commit
+
+Agent-implemented changes are not committed automatically. The agent
+presents the changes (per-repo `git status` + `git diff` stat/summary),
+waits for the developer to review and approve, and only then commits.
+
 ---
 
 ## Pull requests

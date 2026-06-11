@@ -129,9 +129,7 @@ if git -C "$REPO_PATH" diff --cached --quiet; then
     exit 0
 fi
 
-git -C "$REPO_PATH" commit -m "Upgrade $PACKAGE $CURRENT → $TARGET
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git -C "$REPO_PATH" commit -m "Upgrade $PACKAGE $CURRENT → $TARGET"
 
 COMMIT_SHA=$(git -C "$REPO_PATH" rev-parse --short HEAD)
 echo "✓ Committed: $COMMIT_SHA"
