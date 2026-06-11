@@ -13,10 +13,7 @@ import {
   excludeGhPagesFromFetch,
   pruneGhPagesObjects
 } from './git-exclude-gh-pages.js'
-import {
-  createBareRepo,
-  createFatClone
-} from '../test-support/git-fixtures.js'
+import { createBareRepo, createFatClone } from '../test-support/git-fixtures.js'
 
 let baseDir
 

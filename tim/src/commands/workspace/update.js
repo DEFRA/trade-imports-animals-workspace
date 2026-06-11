@@ -27,7 +27,12 @@ const healIfNeeded = async (repo, dir) => {
   if (!(await needsGhPagesExclusion(dir))) return null
   const exclude = await excludeGhPagesFromFetch(dir)
   if (exclude.exitCode !== 0) {
-    return failure(repo, `${repo} — exclude gh-pages`, exclude, 'exclude-failed')
+    return failure(
+      repo,
+      `${repo} — exclude gh-pages`,
+      exclude,
+      'exclude-failed'
+    )
   }
   const fetch = await run('git', ['-C', dir, 'fetch', '--quiet', 'origin'])
   if (fetch.exitCode !== 0) {

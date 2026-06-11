@@ -38,15 +38,30 @@ export const createBareRepo = async (
   const shas = { main: null, feature: null, ghPages: null }
 
   await execa('git', ['init', '--quiet', '-b', 'main', workPath])
-  shas.main = await commitFile(workPath, 'README.md', `# ${repoName}\n`, 'initial commit')
+  shas.main = await commitFile(
+    workPath,
+    'README.md',
+    `# ${repoName}\n`,
+    'initial commit'
+  )
   await git(workPath, 'tag', 'v1.0.0')
 
   await git(workPath, 'switch', '--quiet', '-c', 'feature/example')
-  shas.feature = await commitFile(workPath, 'feature.txt', 'feature work\n', 'feature commit')
+  shas.feature = await commitFile(
+    workPath,
+    'feature.txt',
+    'feature work\n',
+    'feature commit'
+  )
 
   if (withGhPages) {
     await git(workPath, 'switch', '--quiet', '--orphan', 'gh-pages')
-    shas.ghPages = await commitFile(workPath, 'report.html', '<html>report</html>\n', 'publish report')
+    shas.ghPages = await commitFile(
+      workPath,
+      'report.html',
+      '<html>report</html>\n',
+      'publish report'
+    )
   }
 
   await git(workPath, 'switch', '--quiet', 'main')
@@ -64,7 +79,12 @@ export const createBareRepo = async (
  */
 export const pushCommit = async (workPath, branch, fileName) => {
   await git(workPath, 'switch', '--quiet', branch)
-  const sha = await commitFile(workPath, fileName, `${fileName}\n`, `update ${fileName}`)
+  const sha = await commitFile(
+    workPath,
+    fileName,
+    `${fileName}\n`,
+    `update ${fileName}`
+  )
   await git(workPath, 'push', '--quiet', 'origin', branch)
   await git(workPath, 'switch', '--quiet', 'main')
   return sha

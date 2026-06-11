@@ -26,7 +26,12 @@ const failure = (repo, label, execResult, action) => ({
 const healTask = async (repo, dir) => {
   const exclude = await excludeGhPagesFromFetch(dir)
   if (exclude.exitCode !== 0) {
-    return failure(repo, `${repo} — exclude gh-pages`, exclude, 'exclude-failed')
+    return failure(
+      repo,
+      `${repo} — exclude gh-pages`,
+      exclude,
+      'exclude-failed'
+    )
   }
   const fetch = await run('git', ['-C', dir, 'fetch', '--quiet', 'origin'])
   if (fetch.exitCode !== 0) {
@@ -59,7 +64,12 @@ const cloneLight = async (repo, label, dir) => {
   }
   const exclude = await excludeGhPagesFromFetch(dir)
   if (exclude.exitCode !== 0) {
-    return failure(repo, `${repo} — exclude gh-pages`, exclude, 'exclude-failed')
+    return failure(
+      repo,
+      `${repo} — exclude gh-pages`,
+      exclude,
+      'exclude-failed'
+    )
   }
   const widen = await run('git', ['-C', dir, 'fetch', '--quiet', 'origin'])
   if (widen.exitCode !== 0) {

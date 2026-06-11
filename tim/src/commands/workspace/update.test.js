@@ -50,10 +50,7 @@ describe('tim workspace update CLI', () => {
 
   test('heals a fat clone on first update, then pulls without gh-pages', async () => {
     const repo = REPOS[0]
-    const { barePath, workPath, shas } = await createBareRepo(
-      fixturesDir,
-      repo
-    )
+    const { barePath, workPath, shas } = await createBareRepo(fixturesDir, repo)
     const dir = join(workspace, 'repos', repo)
     await createFatClone(barePath, dir)
     await execa('git', ['-C', dir, 'branch', 'local-work', shas.feature])
@@ -76,9 +73,7 @@ describe('tim workspace update CLI', () => {
     expect(first.exitCode).toBe(0)
     const firstPayload = JSON.parse(first.stdout.trim())
     expect(firstPayload.ok).toBe(true)
-    const healedEntry = firstPayload.result.find(
-      (entry) => entry.repo === repo
-    )
+    const healedEntry = firstPayload.result.find((entry) => entry.repo === repo)
     expect(healedEntry.label).toContain('gh-pages excluded')
 
     expect(
@@ -95,7 +90,12 @@ describe('tim workspace update CLI', () => {
     const branches = await execa('git', ['-C', dir, 'branch', '-a'])
     expect(branches.stdout).toContain('local-work')
     expect(branches.stdout).not.toContain('gh-pages')
-    const pulledSha = await execa('git', ['-C', dir, 'rev-parse', 'origin/main'])
+    const pulledSha = await execa('git', [
+      '-C',
+      dir,
+      'rev-parse',
+      'origin/main'
+    ])
     expect(pulledSha.stdout.trim()).toBe(newMainSha)
     const ghPagesObject = await execa(
       'git',
