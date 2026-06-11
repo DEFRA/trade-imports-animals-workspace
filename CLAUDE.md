@@ -373,7 +373,7 @@ workareas/understanding-checks/EUDPA-X/            → .interview-meta.json, tic
 - **MCP server** — query SonarCloud issues and rules via the `sonarqube` MCP server
 - **End-of-turn analysis** — a `Stop` hook runs `sonar analyze agentic` after each turn when uncommitted changes exist; any BLOCKER or CRITICAL findings are injected back as context so they can be addressed before the next response
 
-**When you encounter CI failures, test failures, or unexpected behaviour in code you have written:** run `sonar analyze --staged` (requires `sonar` CLI installed and `sonar auth login` completed) and fix any BLOCKER or CRITICAL findings before continuing. The MCP server can also be queried directly to fetch existing issues for a project.
+**Before committing code changes:** run `sonar analyze --staged` (requires `sonar` CLI installed and `sonar auth login` completed) and fix any BLOCKER or CRITICAL findings before committing. Also run it when encountering CI failures, test failures, or unexpected behaviour. The MCP server can also be queried directly to fetch existing issues for a project.
 
 ## Conventions
 
