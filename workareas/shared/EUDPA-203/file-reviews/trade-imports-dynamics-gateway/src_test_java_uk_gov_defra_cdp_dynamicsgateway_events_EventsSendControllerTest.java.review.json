@@ -4,37 +4,9 @@
   "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
   "pr": 2,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:21:15Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Solid @WebMvcTest slice covering all AC status codes, but two Major assertion gaps: the forwarded payload content is never asserted (publish verified with any()) and the 4xx rejection tests never verify nothing was sent to ASB, leaving that AC clause untested.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 38,
-      "severity": "Major",
-      "category": "test-quality",
-      "issue": "post_returnsAccepted_forValidJson verifies publish(any(JsonNode.class)) but never asserts the forwarded content equals the posted body — AC requires the endpoint to send 'that content' to ASB, and a controller forwarding a wrong/empty node would still pass",
-      "fix": "Capture the argument (ArgumentCaptor<JsonNode> or eq(objectMapper.readTree(...))) and assert the published JsonNode equals the posted JSON",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 50,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "Rejection tests (missing body, malformed JSON, unsupported media type) assert only the 4xx status — none verify queueMessageSender was never invoked, leaving the AC clause 'is rejected with a 4xx response and is not sent to ASB' untested",
-      "fix": "Add verifyNoInteractions(queueMessageSender) (or verify(queueMessageSender, never()).publish(any())) to each rejection test",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 3,
-      "line": 31,
-      "severity": "Minor",
-      "category": "conventions",
-      "issue": "Tests omit the // Given / // When / // Then comment blocks that the unit-testing guide mandates for all tests (short tests may combine as // When & Then)",
-      "fix": "Add // Given / // When & Then comment blocks to each test method",
-      "best_practice": "java/testing/unit.md"
-    }
-  ],
-  "reconciled_at": "2026-06-11T09:26:54Z"
+  "reviewed_at": "2026-06-11T15:34:42Z",
+  "verdict": "SAFE",
+  "verdict_reason": "All three prior items (13: content equality via ArgumentCaptor, 14: verifyNoInteractions on rejection paths, 15: Given/When/Then comments) are fixed in the new commit and the delta introduces no new issues.",
+  "todos": [],
+  "reconciled_at": "2026-06-11T15:37:56Z"
 }

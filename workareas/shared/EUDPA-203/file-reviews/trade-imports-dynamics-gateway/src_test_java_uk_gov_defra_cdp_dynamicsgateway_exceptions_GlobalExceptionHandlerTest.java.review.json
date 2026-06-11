@@ -4,28 +4,19 @@
   "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
   "pr": 2,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:20:48Z",
-  "verdict": "SAFE",
-  "verdict_reason": "Well-formed pure unit test matching the recommended exception-handler pattern with behaviour-based AssertJ assertions; only two Minor convention deviations (test naming and missing Given/When/Then blocks).",
+  "reviewed_at": "2026-06-11T15:36:02Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Prior items 19 and 20 are resolved and the new handleNoResource test is sound, but the new catch-all handleException 500 handler added since the last review has no test coverage anywhere.",
   "todos": [
     {
       "id": 1,
-      "line": 23,
-      "severity": "Minor",
-      "category": "test-naming",
-      "issue": "Test method names use {subject}_{doesWhat} (handleUnreadableBody_returns400WithErrorMessage, handleGatewayException_returns502WithErrorMessage) instead of the project convention {subject}_{shouldDoWhat}",
-      "fix": "Rename to handleUnreadableBody_shouldReturn400WithErrorMessage and handleGatewayException_shouldReturn502WithErrorMessage",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 24,
-      "severity": "Minor",
-      "category": "test-structure",
-      "issue": "Tests lack the explicit // Given, // When, // Then comment blocks the unit-testing guide mandates for all tests",
-      "fix": "Add // Given / // When / // Then (or combined // When & Then) comment blocks to both test methods",
+      "line": 62,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "New catch-all handleException(Exception.class) handler added to GlobalExceptionHandler since the last review has no test anywhere — handleNoResource got a unit test here and the 415 path is covered via EventsSendControllerTest, but the 500 path (status + error body shape) is unverified",
+      "fix": "Add handleException_shouldReturn500WithErrorMessage: call handler.handleException(new RuntimeException(...)) and assert INTERNAL_SERVER_ERROR plus the {error: \"An unexpected error occurred\"} body",
       "best_practice": "java/testing/unit.md"
     }
   ],
-  "reconciled_at": "2026-06-11T09:26:54Z"
+  "reconciled_at": "2026-06-11T15:37:56Z"
 }

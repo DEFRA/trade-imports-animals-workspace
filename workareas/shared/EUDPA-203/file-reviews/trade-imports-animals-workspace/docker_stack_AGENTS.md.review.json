@@ -4,26 +4,18 @@
   "commit": "43093a3b29aaa789e12f56c0f8a8fa90f1c38dc0",
   "pr": 6,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:20:53Z",
+  "reviewed_at": "2026-06-11T15:34:47Z",
   "verdict": "SAFE",
-  "verdict_reason": "Documentation accurately reflects the new gateway service wiring (compose service, port 8088, exclude label, dev overlay) except two minor doc-accuracy slips: a missed '5 repo-backed services' count on line 12 and an incorrect claim that the gateway Dockerfile lacks a dev-run stage.",
+  "verdict_reason": "Both prior items verified resolved in the delta (count corrected to 6; gateway dev-run wiring now real in dev.compose.yml and the Dockerfile); only one new Minor doc gap about how to restart the gateway in --dev mode.",
   "todos": [
     {
       "id": 1,
-      "line": 12,
+      "line": 110,
       "severity": "Minor",
       "category": "doc-accuracy",
-      "issue": "Usage example comment still says 'build the 5 repo-backed services from local source' but the PR adds a 6th repo-backed service (gateway) and updates the count to 6 at line 38 and in scripts/stack/lib/flags.sh usage text",
-      "fix": "Change '5 repo-backed services' to '6 repo-backed services' in the run-stack.sh -d example comment on line 12"
-    },
-    {
-      "id": 2,
-      "line": 106,
-      "severity": "Minor",
-      "category": "doc-accuracy",
-      "issue": "The --dev caveat added by this PR lumps gateway in with stub/reference-data as 'Dockerfiles only have an AS development stage... A dev-run stage in those repos would unlock that', but the gateway Dockerfile created under this same ticket already has an AS dev-run stage (Maven + source, line 46); it is dev.compose.yml targeting 'development' with no source mount that prevents hot-reload",
-      "fix": "Reword to note gateway already has a dev-run stage but dev.compose.yml does not use it yet, or wire dev.compose.yml to target dev-run with a src volume like the backend"
+      "issue": "New gateway --dev bullet says source changes are 'picked up on restart like the backend', but the doc's only documented restart mechanism (bounce-backend.sh, lines 20/46/50) is hard-coded to trade-imports-animals-backend — there is no scripted or documented way to restart the gateway container",
+      "fix": "Either document the gateway restart command (or extend bounce-backend.sh to take a service arg / add bounce-gateway.sh) and reference it from the gateway bullet and the 'Pick up edited Java source' rows"
     }
   ],
-  "reconciled_at": "2026-06-11T09:26:53Z"
+  "reconciled_at": "2026-06-11T15:37:53Z"
 }

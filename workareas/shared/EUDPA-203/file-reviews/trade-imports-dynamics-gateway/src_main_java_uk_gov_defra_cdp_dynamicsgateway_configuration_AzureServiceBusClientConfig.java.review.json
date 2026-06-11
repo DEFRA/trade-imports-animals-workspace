@@ -4,26 +4,18 @@
   "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
   "pr": 2,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:21:33Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Bean wiring is clean, config-sourced and exercised by the emulator-backed ITs, but the builder's default AMQP TCP transport bypasses the CDP egress proxy, so the sender is unlikely to reach ASB once deployed",
+  "reviewed_at": "2026-06-11T15:36:54Z",
+  "verdict": "RISKY",
+  "verdict_reason": "The forced AMQP_WEB_SOCKETS transport fixes the CDP proxy issue but breaks the emulator-backed integration test and local compose flow — CI is red on the current commit with the happy-path send IT timing out.",
   "todos": [
     {
       "id": 1,
-      "line": 21,
-      "severity": "Major",
+      "line": 20,
+      "severity": "Critical",
       "category": "connectivity",
-      "issue": "ServiceBusClientBuilder uses the default AMQP-over-TCP transport (port 5671), which bypasses the CDP egress proxy ProxyConfig sets via ProxySelector/system properties — the Azure SDK only honours a proxy with AMQP_WEB_SOCKETS, so the sender works locally and against the emulator ITs but cannot connect to ASB from a deployed CDP environment (breaks the send-to-ASB AC there)",
-      "fix": "Add .transportType(AmqpTransportType.AMQP_WEB_SOCKETS) to the builder so AMQP is tunnelled over 443 and the default ProxySelector from ProxyConfig is honoured (or pass explicit ProxyOptions built from cdp.proxyUrl)"
-    },
-    {
-      "id": 2,
-      "line": 12,
-      "severity": "Minor",
-      "category": "comments",
-      "issue": "Forward-looking migration note ('Once auth is confirmed, migrate to spring-cloud-azure-starter-servicebus and remove this class') is an in-file TODO that will rot; workspace convention keeps migration intent in tickets/git history, not code comments",
-      "fix": "Keep the two rationale lines explaining the manual wiring; drop the migration-instruction line and track the starter migration in the SDA-review follow-up ticket"
+      "issue": "Unconditional .transportType(AMQP_WEB_SOCKETS) (added to resolve item 7) is incompatible with the Service Bus emulator, which only accepts plain AMQP on 5672 — the websocket handshake hangs (WebSocketsConnectionHandler stuck at onConnectionLocalOpen), EventsSendControllerIT.post_shouldReturnAccepted_andMessageLandsInQueue times out after 30s, and CI is red on commit 4c1e745 (run 27358009070); the same hang affects the compose emulator dev flow",
+      "fix": "Make the transport configurable — e.g. add a transport-type field to AzureServiceBusConfig defaulting to AMQP_WEB_SOCKETS, and override to AMQP in application-local.yml, compose.yml and the integration-test profile so the emulator path works while deployed CDP traffic still tunnels over 443 via the egress proxy"
     }
   ],
-  "reconciled_at": "2026-06-11T09:26:54Z"
+  "reconciled_at": "2026-06-11T15:37:56Z"
 }

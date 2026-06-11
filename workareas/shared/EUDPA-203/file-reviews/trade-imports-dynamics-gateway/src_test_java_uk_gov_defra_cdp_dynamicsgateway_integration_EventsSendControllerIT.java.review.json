@@ -4,52 +4,9 @@
   "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
   "pr": 2,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:23:05Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Solid emulator-backed IT covering happy path, 400s and the BAD_GATEWAY send-failure path, but the AC clause that rejected bodies are 'not sent to ASB' is unasserted anywhere (Major), plus minor isolation/assertion/convention nits.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 55,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "AC says a missing/malformed body 'is rejected with a 4xx response and is not sent to ASB' — both 400 tests assert only the status/body, never that nothing reached Service Bus, and no other test (unit or IT) pins that clause",
-      "fix": "In post_returnsBadRequest_forMissingBody and post_returnsBadRequest_forMalformedJson add Mockito.verifyNoInteractions(senderClient) (or assert the queue is empty) after the status assertion"
-    },
-    {
-      "id": 2,
-      "line": 84,
-      "severity": "Minor",
-      "category": "test-isolation",
-      "issue": "receiveMessage() builds the receiver in the default PEEK_LOCK mode and never settles the received message, so after the lock expires the message returns to the shared static queue and can be redelivered into later tests/classes as the suite grows",
-      "fix": "Add .receiveMode(ServiceBusReceiveMode.RECEIVE_AND_DELETE) to the receiver builder (or call receiver.complete(received) before returning)"
-    },
-    {
-      "id": 3,
-      "line": 46,
-      "severity": "Minor",
-      "category": "assertion-strength",
-      "issue": "Happy-path test asserts the received body merely contains 'NotificationSubmitted' — a substring check would still pass if the gateway wrapped or mangled the payload, so it doesn't pin the AC's 'sends that content' forwarding fidelity",
-      "fix": "Assert the exact forwarded body (isEqualTo the posted JSON) and the message content type (received.getRawAmqpMessage()/getContentType() == application/json) which QueueMessageSender sets"
-    },
-    {
-      "id": 4,
-      "line": 39,
-      "severity": "Minor",
-      "category": "convention",
-      "issue": "No // Given / When / Then comment blocks in any test — the integration-testing guide says the comment blocks must be present even when When/Then are combined in a fluent chain",
-      "fix": "Add // Given, // When, // Then comments to each test method",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 5,
-      "line": 39,
-      "severity": "Minor",
-      "category": "convention",
-      "issue": "Test names use post_returnsX_whenY instead of the documented {subject}_{shouldDoWhat}_{whenContext} pattern (e.g. post_shouldReturnAccepted_whenValidJson) — same deviation across all four tests",
-      "fix": "Rename tests to the should-form, e.g. post_shouldReturnAccepted_andMessageLandsInQueue, post_shouldReturnBadGateway_whenSendFails",
-      "best_practice": "java/testing/integration.md"
-    }
-  ],
-  "reconciled_at": "2026-06-11T09:26:54Z"
+  "reviewed_at": "2026-06-11T15:34:51Z",
+  "verdict": "SAFE",
+  "verdict_reason": "All five prior items (21-25) are resolved in the refresh delta and the new assertions/helpers introduce no regressions or net-new violations.",
+  "todos": [],
+  "reconciled_at": "2026-06-11T15:37:56Z"
 }

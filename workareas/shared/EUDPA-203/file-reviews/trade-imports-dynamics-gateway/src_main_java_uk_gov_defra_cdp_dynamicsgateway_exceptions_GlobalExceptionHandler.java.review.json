@@ -4,28 +4,27 @@
   "commit": "37b735b0c8d5913b07e01f8db1257b215092a1b8",
   "pr": 2,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:20:54Z",
+  "reviewed_at": "2026-06-11T15:35:34Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Handlers correctly satisfy the 400-on-malformed-JSON and error-on-ASB-failure ACs with safe generic bodies and tests, but the error contract diverges from the documented ProblemDetail+traceId pattern (Major) and lacks a catch-all handler (Minor)",
+  "verdict_reason": "Delta adds three handlers; the new catch-all 500 handler is untested (Major) and downgrades framework client errors like 405 to 500 (Minor); prior item 11 (Map.of vs ProblemDetail) still applies, prior item 12 (missing catch-all) is now resolved",
   "todos": [
     {
       "id": 1,
-      "line": 15,
+      "line": 42,
       "severity": "Major",
-      "category": "best-practice",
-      "issue": "Error responses are ad-hoc Map.of(\"error\", ...) bodies instead of RFC 7807 ProblemDetail with a /problems/... type URI and traceId — the repo's RequestTracingFilter puts traceId in MDC but it is never surfaced in error responses, and this PR establishes the error contract for the whole new service",
-      "fix": "Return ProblemDetail.forStatusAndDetail(...) from both handlers, set problem.setType(URI.create(\"/problems/...\")) and problem.setProperty(\"traceId\", MDC.get(\"traceId\")) per the documented GlobalExceptionHandler pattern",
-      "best_practice": "java/spring-boot.md"
+      "category": "test-coverage",
+      "issue": "New catch-all handleException (added since last review) has no test — GlobalExceptionHandlerTest covers handleUnreadableBody/handleNoResource/handleGatewayException and EventsSendControllerTest covers 400/415/502, but no test asserts an unexpected RuntimeException returns 500 with the {\"error\": \"An unexpected error occurred\"} body",
+      "fix": "Add a MockMvc test in EventsSendControllerTest (doThrow(new RuntimeException(...)) on queueMessageSender, expect status().isInternalServerError() + jsonPath $.error) or a direct unit test in GlobalExceptionHandlerTest",
+      "best_practice": "java/testing.md"
     },
     {
       "id": 2,
-      "line": 12,
+      "line": 42,
       "severity": "Minor",
       "category": "error-handling",
-      "issue": "No catch-all @ExceptionHandler(Exception.class) — unexpected exceptions fall through to Spring Boot's default error attributes, giving a different error body shape from the {\"error\": ...} responses defined here",
-      "fix": "Add a handleException(Exception ex) handler that logs at error level and returns 500 with the same body shape (\"An unexpected error occurred\"), matching the documented GlobalExceptionHandler pattern",
-      "best_practice": "java/spring-boot.md"
+      "issue": "Catch-all @ExceptionHandler(Exception.class) also swallows framework client-error exceptions not handled above — e.g. GET /events throws HttpRequestMethodNotSupportedException, which now returns 500 + error-level log instead of 405 (same class of problem the NoResourceFoundException handler was added to fix)",
+      "fix": "Handle Spring's ErrorResponse exceptions by honouring their own status (e.g. an @ExceptionHandler(ErrorResponseException.class)/HttpRequestMethodNotSupportedException handler returning ex.getStatusCode()), or extend ResponseEntityExceptionHandler so framework exceptions keep their proper status codes"
     }
   ],
-  "reconciled_at": "2026-06-11T09:26:54Z"
+  "reconciled_at": "2026-06-11T15:37:56Z"
 }

@@ -1,0 +1,31 @@
+{
+  "file": "docker/stack/infrastructure.compose.yml",
+  "repo": "trade-imports-animals-workspace",
+  "commit": "f144c4f8e1555b49dba53067d3f0bb0cdb5048e1",
+  "pr": 6,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-11T15:36:07Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Solid emulator wiring (profile, config mount and queue name all line up with the gateway), but the emulator lacks a healthcheck so the gateway can race its readiness, and the :latest image tag breaks the file's pinning convention without a documented trade-off.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 78,
+      "severity": "Major",
+      "category": "healthcheck",
+      "issue": "New servicebus-emulator service has no healthcheck, so dependents can only wait on service_started — trade-imports-dynamics-gateway (backend.compose.yml:41-43) can come up and accept POSTs before the emulator's AMQP endpoint is ready (emulator boots only after mssql turns healthy, ~30s+), giving avoidable 5xx on first sends after stack-up",
+      "fix": "Add a healthcheck to servicebus-emulator (TCP fallback per the doc, e.g. nc -z localhost 5672, or the emulator's HTTP health endpoint if available) and upgrade the gateway's depends_on to condition: service_healthy",
+      "best_practice": "docker-compose.md"
+    },
+    {
+      "id": 2,
+      "line": 80,
+      "severity": "Minor",
+      "category": "image-pinning",
+      "issue": "servicebus-emulator uses an unpinned :latest tag with no documented trade-off comment, while sibling infra images are pinned (localstack 3.0.2, redis 7.2.3-alpine3.18) — the best-practice doc requires either a pin or a '# tracked: ...' comment so upstream breaking changes don't pull silently",
+      "fix": "Pin mcr.microsoft.com/azure-messaging/servicebus-emulator to a specific version tag (MS publishes versioned tags), or add a '# tracked-by: EUDPA-XX' comment documenting why :latest is acceptable",
+      "best_practice": "docker-compose.md"
+    }
+  ],
+  "reconciled_at": "2026-06-11T15:37:53Z"
+}

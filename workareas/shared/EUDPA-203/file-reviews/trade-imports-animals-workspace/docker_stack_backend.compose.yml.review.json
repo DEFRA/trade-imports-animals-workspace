@@ -4,18 +4,26 @@
   "commit": "43093a3b29aaa789e12f56c0f8a8fa90f1c38dc0",
   "pr": 6,
   "mode": "FRESH",
-  "reviewed_at": "2026-06-11T09:21:13Z",
-  "verdict": "SAFE",
-  "verdict_reason": "New gateway compose block correctly mirrors the established backend-tier pattern (unique port, valid healthcheck, legitimate localstack deps, no secrets, no hard-coded TST values); only a Minor ASB env pass-through gap",
+  "reviewed_at": "2026-06-11T15:37:09Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Refresh delta resolves prior item 5 by adding ASB env wiring and an optional servicebus-emulator dependency, but the emulator-targeting default connection string cannot work while the gateway client hardcodes AMQP WebSockets (emulator is AMQP-TCP-only), and the AZURE_SERVICE_BUS_QUEUE pass-through is dead config nothing reads.",
   "todos": [
     {
       "id": 1,
-      "line": 43,
+      "line": 52,
+      "severity": "Major",
+      "category": "integration",
+      "issue": "Default AZURE_SERVICE_BUS_CONNECTION_STRING targets servicebus-emulator, but the emulator supports AMQP TCP only (no WebSockets per MS docs) while the gateway's ServiceBusSenderClient hardcodes AmqpTransportType.AMQP_WEB_SOCKETS (AzureServiceBusClientConfig.java), so the out-of-the-box local emulator path cannot connect and sends fail unless the host overrides the connection string",
+      "fix": "Coordinate with trade-imports-dynamics-gateway to make the AMQP transport configurable (AMQP TCP for the local/emulator profile, WebSockets for CDP) and expose the knob via this environment block; verify a send against the emulator succeeds from the stack"
+    },
+    {
+      "id": 2,
+      "line": 53,
       "severity": "Minor",
-      "category": "configurability",
-      "issue": "Gateway service environment block has no AZURE_SERVICE_BUS_CONNECTION_STRING / AZURE_SERVICE_BUS_QUEUE pass-through, so the container is locked to the dummy local-profile defaults and the stack cannot be pointed at the real TST namespace for the ticket's manual connectivity testing without editing the file",
-      "fix": "Add value-less pass-through entries '- AZURE_SERVICE_BUS_CONNECTION_STRING' and '- AZURE_SERVICE_BUS_QUEUE' to the environment list; when unset on the host they are omitted and the local-profile defaults still apply"
+      "category": "dead-config",
+      "issue": "AZURE_SERVICE_BUS_QUEUE pass-through is read by nothing — the gateway has no reference to this env var anywhere and derives the queue solely from EntityPath in the connection string, so setting it on the host silently does nothing (added per prior item 5's suggested fix, but the var is unused)",
+      "fix": "Remove the '- AZURE_SERVICE_BUS_QUEUE' line; the target queue is selected via EntityPath in AZURE_SERVICE_BUS_CONNECTION_STRING (or wire the gateway to actually read AZURE_SERVICE_BUS_QUEUE if independent queue config is wanted)"
     }
   ],
-  "reconciled_at": "2026-06-11T09:26:53Z"
+  "reconciled_at": "2026-06-11T15:37:53Z"
 }

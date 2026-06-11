@@ -3,49 +3,50 @@
 **Ticket:** Create GatewayService POST endpoint to send content to Azure Service Bus
 **Reviewer:** Claude Code Agent
 **Date:** 2026-06-11
-**Verdict:** CONCERNS
+**Last Updated:** 2026-06-11 (refresh)
+**Verdict:** NEEDS MORE WORK
 
 ## Summary
 
-First slice of the ADR-EUDP-001 centralised gateway: a new `trade-imports-dynamics-gateway` Spring Boot service with a `POST /events` endpoint forwarding JSON to an ASB queue via a SAS send-only connection string, plus workspace registration of the new repo. Implementation quality is high (fail-fast config, no silent-loss error handling, real-emulator integration tests), but one Major connectivity concern — the default AMQP-over-TCP transport bypasses the CDP egress proxy — likely breaks the send-to-ASB AC in deployed environments, and the AC's forwarding-fidelity and not-sent-on-rejection clauses are untested.
+First slice of the ADR-EUDP-001 centralised gateway. The refresh shows excellent responsiveness — 32 of 33 first-pass items resolved (31 author-marked Fix/Done on the handoff branch, 1 Auto-Resolved; all independently verified): every test-fidelity Major, all dependency/pinning Minors, plus a new workspace-stack emulator tier that resolves the original consistency finding. But two of those fixes introduced new Criticals: the `AMQP_WEB_SOCKETS` transport (the fix for the CDP proxy issue) cannot connect to the AMQP-TCP-only Service Bus emulator, so **CI is red on the current gateway commit**, and the new emulator healthcheck probes with `nc` inside a distroless image, permanently blocking the gateway's compose startup.
 
 ## Repositories Analyzed
 
-| Repository | PR | Merge Commit | Files Changed | Verdict | Review |
-|------------|-----|--------------|---------------|---------|--------|
-| trade-imports-animals-workspace | #6 | 43093a3b29aaa789e12f56c0f8a8fa90f1c38dc0 | 8 | NEEDS ATTENTION | [review.trade-imports-animals-workspace.md](review.trade-imports-animals-workspace.md) |
-| trade-imports-dynamics-gateway | #2 | 37b735b0c8d5913b07e01f8db1257b215092a1b8 | 19 | NEEDS ATTENTION | [review.trade-imports-dynamics-gateway.md](review.trade-imports-dynamics-gateway.md) |
+| Repository | PR | Commit | Files Changed | Verdict | Review |
+|------------|-----|--------|---------------|---------|--------|
+| trade-imports-animals-workspace | #6 | f144c4f8e1555b49dba53067d3f0bb0cdb5048e1 | 11 | NEEDS ATTENTION | [review.trade-imports-animals-workspace.md](review.trade-imports-animals-workspace.md) |
+| trade-imports-dynamics-gateway | #2 | 4c1e7455fc98eb387cc277a66ad3874a2b8a3fc3 | 19 | RISKY | [review.trade-imports-dynamics-gateway.md](review.trade-imports-dynamics-gateway.md) |
 
 ## Acceptance Criteria Check
 
 | # | Criterion | Met? | Notes |
 |---|-----------|------|-------|
-| 1 | New `trade-imports-dynamics-gateway` repo/service exists and deploys on CDP | ✅ (repo) | Repo exists with CDP scaffold + CI (`mvn clean verify` on every PR/publish); actual CDP deployment is verified outside this review |
-| 2 | POST endpoint accepts JSON, sends content to ASB, returns success | ⚠️ | Implemented and proven against the emulator (202 + receive-and-assert IT), but gateway item 7: default AMQP-over-TCP transport bypasses the CDP egress proxy, so the send likely fails from a deployed environment — needs `AMQP_WEB_SOCKETS` |
-| 3 | JSON-only; non-JSON/malformed rejected with 4xx, not sent to ASB | ⚠️ | Behaviour implemented (415 non-JSON, 400 malformed/missing); the "not sent to ASB" clause is untested — no rejection test verifies the sender was never invoked (items 14, 21) |
-| 4 | Authenticates via SAS send-only connection string from configuration | ✅ | `ServiceBusClientBuilder.connectionString(...)` from `@Validated @ConfigurationProperties`; auth concern isolated per tech note for later swap |
-| 5 | Namespace/queue/credentials env-configurable, no TST values hard-coded | ✅ | `AZURE_SERVICE_BUS_CONNECTION_STRING` / `AZURE_SERVICE_BUS_QUEUE` with empty defaults + `@NotBlank` fail-fast; no secrets in either repo |
-| 6 | ASB send failure → error response + logged (no silent loss) | ✅ | `DynamicsGatewayException` → 502 with `log.error(..., ex)`; covered at unit, slice and integration levels |
+| 1 | New `trade-imports-dynamics-gateway` repo/service exists and deploys on CDP | ✅ (repo) | Repo + CDP scaffold + CI present; deployment verified outside this review |
+| 2 | POST endpoint accepts JSON, sends content to ASB, returns success | ❌ (regressed) | The proxy fix (`AMQP_WEB_SOCKETS`, gateway item 30) breaks the emulator path — `EventsSendControllerIT` times out and CI is red on 4c1e745. Transport must be configurable: WebSockets for CDP, plain AMQP for emulator/local |
+| 3 | JSON-only; non-JSON/malformed rejected with 4xx, not sent to ASB | ✅ | Now fully pinned: `verifyNoInteractions` in unit slice + queue-empty assertions in the ITs (prior items 14/21 fixed) |
+| 4 | Authenticates via SAS send-only connection string from configuration | ✅ | Connection-string-only config with `EntityPath` carrying the queue; `toString()` now redacts the SAS key (pinning test outstanding, item 31) |
+| 5 | Namespace/queue/credentials env-configurable, no TST values hard-coded | ✅ | Single `AZURE_SERVICE_BUS_CONNECTION_STRING` env var, empty default + `@NotBlank` fail-fast; workspace stack now passes it through |
+| 6 | ASB send failure → error response + logged (no silent loss) | ✅ | Unchanged; catch-all 500 handler added too (untested — items 32/34) |
 
 ## Test Coverage Assessment
 
-- **Unit Tests:** Present — controller slice, sender, exception handler. Gaps: no forwarding-fidelity assertion (published body == posted body, items 13/16) and no never-sent verification on rejection paths (item 14).
-- **Integration Tests:** Present and strong in shape — real Testcontainers Service Bus emulator end-to-end. Same fidelity/negative-path gaps (items 21/23) plus a PEEK_LOCK message-redelivery isolation hazard (item 22) and unpinned emulator image tags (item 26).
+- **Unit Tests:** Strong after refresh — content-fidelity captors and never-sent guards landed. Remaining gap: the new catch-all `handleException` 500 path is untested (gateway items 32/34).
+- **Integration Tests:** Structurally strong (real emulator, queue-empty negative assertions, RECEIVE_AND_DELETE isolation) but **failing in CI** on the current commit due to the WebSockets/emulator transport mismatch (gateway item 30, independently verified via run 27358009070).
 
 ## Configuration & Environment
 
-- **New Environment Variables:** `AZURE_SERVICE_BUS_CONNECTION_STRING`, `AZURE_SERVICE_BUS_QUEUE` (gateway). Not passed through by the workspace stack's gateway block (workspace item 5) — workspace-stack `POST /events` always 502s against the unreachable local-profile placeholder (consistency finding).
-- **Database Changes:** None for the gateway itself; local compose adds MSSQL purely as the ASB emulator's backing store.
+- **Environment Variables:** `AZURE_SERVICE_BUS_CONNECTION_STRING` (now the single ASB knob; queue rides in `EntityPath`). The workspace stack's `AZURE_SERVICE_BUS_QUEUE` pass-through is dead config (workspace item 10). A transport-type knob will be needed to resolve item 30.
+- **Database Changes:** None for the gateway; MSSQL added in both compose stacks purely as the emulator's backing store.
 
 ## Risk Matrix
 
 | Category | Risk Level |
 |----------|------------|
-| Correctness | Medium |
+| Correctness | High |
 | Code Quality | Low |
 | Security | Low |
 | Test Coverage | Medium |
 
 ## Conclusion
 
-Solid first slice with exemplary configuration hygiene and genuinely end-to-end emulator tests, but merge should wait on the AMQP transport/proxy fix (gateway item 7) — the one finding that breaks the core AC where it matters — and ideally the AC-clause test gaps (items 13/14/16/21). Full todo lists and item details are in each `review.{repo}.md` (6 workspace items, 27 gateway items).
+The first-pass feedback was addressed thoroughly (32/33 items verified fixed), but the two headline fixes — WebSockets transport and emulator healthcheck — each break the local/emulator path while solving their original problem, leaving CI red and compose unable to start the gateway. Both Criticals plus the untested 500 handler need rework before merge; 15 items remain open (2 Critical, 5 Major, 8 Minor) across the two `review.{repo}.md` files.

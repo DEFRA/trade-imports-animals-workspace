@@ -12,7 +12,7 @@
       "file": "CLAUDE.md",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed in refresh at f144c4f: count updated to 6"
     },
     {
       "id": 2,
@@ -24,7 +24,7 @@
       "file": "Makefile",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed at f144c4f: start-gateway added to .PHONY"
     },
     {
       "id": 3,
@@ -36,7 +36,7 @@
       "file": "docker/stack/AGENTS.md",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed at f144c4f: line 12 example now says 6 repo-backed services"
     },
     {
       "id": 4,
@@ -48,7 +48,7 @@
       "file": "docker/stack/AGENTS.md",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed at f144c4f: gateway split into its own --dev bullet; dev-run now wired (restart-script gap tracked as new item 8)"
     },
     {
       "id": 5,
@@ -60,7 +60,7 @@
       "file": "docker/stack/backend.compose.yml",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed at f144c4f: ASB env pass-through added (follow-ups: new items 9 transport mismatch, 10 dead AZURE_SERVICE_BUS_QUEUE)"
     },
     {
       "id": 6,
@@ -72,7 +72,93 @@
       "file": "docker/stack/dev.compose.yml",
       "disposition": "Fix",
       "status": "Done",
-      "notes": "f144c4f"
+      "notes": "Verified fixed at f144c4f: gateway now targets dev-run with src volume mount, mirroring the backend"
+    },
+    {
+      "id": 7,
+      "file": ".gitignore",
+      "line": "29",
+      "severity": "Minor",
+      "category": "scope-hygiene",
+      "issue": "PR adds a shared .gitignore rule for a personal local-only script (tools/review/prepare-ac-check.sh) inside the shared tools/review/ namespace — unrelated to EUDPA-203, and it blocks every clone from ever committing a script at that path (a name that parallels the committed prepare-review.sh review tooling)",
+      "fix": "Drop the entry from the shared .gitignore; ignore the personal script locally via .git/info/exclude instead, or commit it as shared review tooling if it is genuinely useful",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 8,
+      "file": "docker/stack/AGENTS.md",
+      "line": "110",
+      "severity": "Minor",
+      "category": "doc-accuracy",
+      "issue": "New gateway --dev bullet says source changes are 'picked up on restart like the backend', but the doc's only documented restart mechanism (bounce-backend.sh, lines 20/46/50) is hard-coded to trade-imports-animals-backend — there is no scripted or documented way to restart the gateway container",
+      "fix": "Either document the gateway restart command (or extend bounce-backend.sh to take a service arg / add bounce-gateway.sh) and reference it from the gateway bullet and the 'Pick up edited Java source' rows",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 9,
+      "file": "docker/stack/backend.compose.yml",
+      "line": "52",
+      "severity": "Major",
+      "category": "integration",
+      "issue": "Default AZURE_SERVICE_BUS_CONNECTION_STRING targets servicebus-emulator, but the emulator supports AMQP TCP only (no WebSockets per MS docs) while the gateway's ServiceBusSenderClient hardcodes AmqpTransportType.AMQP_WEB_SOCKETS (AzureServiceBusClientConfig.java), so the out-of-the-box local emulator path cannot connect and sends fail unless the host overrides the connection string",
+      "fix": "Coordinate with trade-imports-dynamics-gateway to make the AMQP transport configurable (AMQP TCP for the local/emulator profile, WebSockets for CDP) and expose the knob via this environment block; verify a send against the emulator succeeds from the stack",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 10,
+      "file": "docker/stack/backend.compose.yml",
+      "line": "53",
+      "severity": "Minor",
+      "category": "dead-config",
+      "issue": "AZURE_SERVICE_BUS_QUEUE pass-through is read by nothing — the gateway has no reference to this env var anywhere and derives the queue solely from EntityPath in the connection string, so setting it on the host silently does nothing (added per prior item 5's suggested fix, but the var is unused)",
+      "fix": "Remove the '- AZURE_SERVICE_BUS_QUEUE' line; the target queue is selected via EntityPath in AZURE_SERVICE_BUS_CONNECTION_STRING (or wire the gateway to actually read AZURE_SERVICE_BUS_QUEUE if independent queue config is wanted)",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 11,
+      "file": "docker/stack/infrastructure.compose.yml",
+      "line": "78",
+      "severity": "Major",
+      "category": "healthcheck",
+      "issue": "New servicebus-emulator service has no healthcheck, so dependents can only wait on service_started — trade-imports-dynamics-gateway (backend.compose.yml:41-43) can come up and accept POSTs before the emulator's AMQP endpoint is ready (emulator boots only after mssql turns healthy, ~30s+), giving avoidable 5xx on first sends after stack-up",
+      "fix": "Add a healthcheck to servicebus-emulator (TCP fallback per the doc, e.g. nc -z localhost 5672, or the emulator's HTTP health endpoint if available) and upgrade the gateway's depends_on to condition: service_healthy",
+      "disposition": null,
+      "status": null,
+      "notes": null,
+      "best_practice": "docker-compose.md"
+    },
+    {
+      "id": 12,
+      "file": "docker/stack/infrastructure.compose.yml",
+      "line": "80",
+      "severity": "Minor",
+      "category": "image-pinning",
+      "issue": "servicebus-emulator uses an unpinned :latest tag with no documented trade-off comment, while sibling infra images are pinned (localstack 3.0.2, redis 7.2.3-alpine3.18) — the best-practice doc requires either a pin or a '# tracked: ...' comment so upstream breaking changes don't pull silently",
+      "fix": "Pin mcr.microsoft.com/azure-messaging/servicebus-emulator to a specific version tag (MS publishes versioned tags), or add a '# tracked-by: EUDPA-XX' comment documenting why :latest is acceptable",
+      "disposition": null,
+      "status": null,
+      "notes": null,
+      "best_practice": "docker-compose.md"
+    },
+    {
+      "id": 13,
+      "file": "scripts/stack/lib/compose.sh",
+      "line": "15",
+      "severity": "Minor",
+      "category": "stale-doc",
+      "issue": "ALL_PROFILES gains a sixth profile (servicebus) but the --profile docs were not updated: scripts/stack/lib/flags.sh usage still says 'Valid: database, infrastructure, stubs, backend, frontend. Defaults to all five.' and docker/stack/AGENTS.md line 67 says the same, so users cannot discover --profile servicebus from --help",
+      "fix": "Add servicebus to the valid-profile list and change 'all five' to 'all six' in both the flags.sh usage() text and the AGENTS.md '--profile semantics' section",
+      "disposition": null,
+      "status": null,
+      "notes": null
     }
   ]
 }
