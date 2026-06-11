@@ -6,7 +6,7 @@
 Browser
   │
   ├──▶ Frontend (port 3000)  ──▶ Backend API (port 8085)  ──▶ MongoDB (27017)
-  │                                                         ──▶ LocalStack / AWS (4566)
+  │                                                         ──▶ Floci / AWS (4566)
   │
   └──▶ Admin (port 3001)     ──▶ Backend API (port 8085)
 
@@ -52,7 +52,7 @@ Services started:
 | cdp-uploader | 7337 | `defradigital/cdp-uploader` |
 | MongoDB | 27017 | `mongo:7.0` |
 | Redis | 6379 | `redis:7` |
-| LocalStack | 4566 | `localstack/localstack` |
+| Floci | 4566 | `floci/floci:latest` |
 
 To run images published from a feature branch (falls back to `:latest` per
 service when no branch-tagged image exists):
@@ -61,7 +61,7 @@ service when no branch-tagged image exists):
 ./scripts/stack/run-stack.sh --branch feature/EUDPA-123-my-change
 ```
 
-Tear down and wipe volumes (mongo data, localstack state):
+Tear down and wipe volumes (mongo data, floci state):
 
 ```bash
 ./scripts/stack/stop-stack.sh     # or: make docker-compose-down
@@ -128,7 +128,7 @@ cd repos/trade-imports-animals-frontend
 TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://localhost:8085 npm run dev
 ```
 
-For infrastructure only (MongoDB, Redis, LocalStack, cdp-uploader, stubs),
+For infrastructure only (MongoDB, Redis, Floci, cdp-uploader, stubs),
 limit the stack to the relevant profiles:
 
 ```bash
@@ -140,9 +140,9 @@ limit the stack to the relevant profiles:
 ## Reseeding the database
 
 The mongo init scripts are staged by `run-stack.sh` from their owning repos:
-the workspace owns the replica-set init, the tests repo owns the notification
-seed fixtures (`seeds/mongodb/` in `trade-imports-animals-tests`), and the
-backend owns the localstack provisioning (`compose/start-localstack.sh`).
+the workspace owns the replica-set init and the floci provisioning
+(`docker/stack/scripts/floci/10-setup-buckets.sh`), and the tests repo owns
+the notification seed fixtures (`seeds/mongodb/` in `trade-imports-animals-tests`).
 
 To wipe and reseed mongo without restarting the rest of the stack:
 
@@ -155,14 +155,18 @@ To wipe and reseed mongo without restarting the rest of the stack:
 
 ## Auth (Defra ID stub)
 
-All environments use `defradigital/trade-imports-defra-id-stub` as a local OIDC provider. It runs on port 3007 and accepts any username with a configurable password (set via `AUTH_PASSWORD` — see the stub image docs for the default).
+All environments use `defradigital/trade-imports-defra-id-stub` as a local OIDC provider. It runs on port 3007 and
+accepts any username with a configurable password (set via `AUTH_PASSWORD` — see the stub image docs for the default).
 
 The OIDC discovery URL is:
+
 ```
 http://localhost:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
 ```
 
-If running services inside Docker and the auth redirect needs to hit `localhost:3007` from the browser, add to `/etc/hosts`:
+If running services inside Docker and the auth redirect needs to hit `localhost:3007` from the browser, add to
+`/etc/hosts`:
+
 ```
 127.0.0.1 host.docker.internal
 ```
@@ -180,6 +184,6 @@ If running services inside Docker and the auth redirect needs to hit `localhost:
 | Reference data | 8086 |
 | Trade imports stub | 8087 |
 | cdp-uploader | 7337 |
-| LocalStack | 4566 |
+| Floci | 4566 |
 | MongoDB | 27017 |
 | Redis | 6379 |
