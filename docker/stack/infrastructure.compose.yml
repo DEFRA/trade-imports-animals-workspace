@@ -55,12 +55,14 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
-    entrypoint: bash /scripts/10-setup-buckets.sh
+    entrypoint: bash /scripts/start-localstack.sh
     env_file:
       - ./shared.env
     image: localstack/localstack:3.0.2
     volumes:
-      - ./scripts/localstack:/scripts
+      # Staged from the backend repo (the canonical localstack init) by
+      # scripts/stack/lib/init-scripts.sh
+      - ./.staged/localstack:/scripts
   redis:
     profiles: [infrastructure]
     healthcheck:

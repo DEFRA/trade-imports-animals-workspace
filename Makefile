@@ -6,9 +6,6 @@ NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trad
 # plain `npm test` is red by design upstream, so the test target skips it.
 UNIT_TESTABLE_NODE_REPOS := $(filter-out trade-imports-defra-id-stub,$(NODE_REPOS))
 JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
-TESTS_COMPOSE := $(REPOS_DIR)/trade-imports-animals-tests/compose.yml
-LOCAL_COMPOSE := docker/local.compose.yml
-LOCAL_DEV_COMPOSE := docker/local.dev.compose.yml
 CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 
@@ -162,22 +159,22 @@ test: ## Run unit tests in all repos
 
 # --- Build ---
 
-docker-compose-up: ## Start stack (edit docker/local.compose.yml to override image tags)
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) up --wait --detach
+docker-compose-up: ## Start full stack from published images (scripts/stack/run-stack.sh)
+	./scripts/stack/run-stack.sh
 
-docker-compose-dev: ## Start stack with frontend+admin built from source (hot-reload + docker logs)
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) up --wait --detach --build
+docker-compose-dev: ## Start stack built from local source (hot-reload; scripts/stack/run-stack.sh -d)
+	./scripts/stack/run-stack.sh -d
 
 docker-compose-down: ## Stop stack and wipe volumes (mongo data, localstack state) for a clean slate
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) down --volumes --remove-orphans
+	./scripts/stack/stop-stack.sh
 
 docker-compose-bounce: docker-compose-down docker-compose-dev ## Wipe and restart the dev stack (down + dev up)
 
 docker-logs: ## Follow logs for frontend, admin, and backend (Ctrl-C to stop)
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) logs -f trade-imports-animals-frontend trade-imports-animals-admin trade-imports-animals-backend
+	docker compose -p trade-imports-animals logs -f trade-imports-animals-frontend trade-imports-animals-admin trade-imports-animals-backend
 
-docker-restart-backend: ## Restart backend container (recompiles Java source via mvn spring-boot:run)
-	docker compose -f $(TESTS_COMPOSE) -f $(LOCAL_COMPOSE) -f $(LOCAL_DEV_COMPOSE) restart trade-imports-animals-backend
+docker-restart-backend: ## Recreate backend container to pick up Java changes in dev mode (scripts/stack/bounce-backend.sh)
+	./scripts/stack/bounce-backend.sh
 
 docker-local-branches: ## Build local/* Docker images for repos not on the default branch
 	@built=0; \
