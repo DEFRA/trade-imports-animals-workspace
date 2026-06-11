@@ -78,5 +78,35 @@ are configured:
 
 This checks Jira, Confluence, and GitHub authentication.
 
+### 4. Keep git fetches light (gh-pages exclusion)
+
+The product repos' `gh-pages` branches hold published artifacts and are
+enormous (17 GB object graph on the frontend vs 7 MB for main), and the
+workspace repo's own `gh-pages` is ~1 GiB. Any clone still on the
+default `+refs/heads/*` fetch refspec drags them in on a bare
+`git fetch` / `git pull`.
+
+Pin your workspace clone once:
+
+```bash
+bash tools/git/light-remote.sh --exclude-gh-pages ~/git/defra/trade-imports-animals-workspace
+git -C ~/git/defra/trade-imports-animals-workspace gc --prune=now   # reclaims ~1 GiB if gh-pages was ever fetched
+```
+
+Per-ticket review clones under `workareas/` are pinned automatically by
+`tools/review/prepare-review.sh` (and self-healed on refresh by
+`tools/review/refresh/pull-repos.sh`).
+
+The dev repos under `repos/` are handled for you: `make setup` /
+`tim workspace setup` clone with the exclusion in place
+(`--single-branch`, pin the refspec, then a widening fetch), and
+`make update` / `tim workspace update` heal any clone still on the
+default refspec exactly once — pin, refetch, then `git gc --prune=now`
+to reclaim the gh-pages packs already on disk. Expect that first update
+to take a few minutes per large clone; every later run skips the heal.
+Local branches, stashes and uncommitted files are untouched. The
+tooling also copes with `gh-pages` being absent on the remote (the
+truncate job deletes and re-creates it).
+
 
 

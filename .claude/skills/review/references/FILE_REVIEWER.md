@@ -131,7 +131,10 @@ In REFRESH / MERGE_RESOLVED only, additionally:
 
    Net: in REFRESH, your `.review.json` should contain only deltas —
    regressions and net-new findings. Often it's empty (verdict SAFE,
-   no findings), and that's correct.
+   no findings), and that's correct. `refresh/scope.sh --write-snapshot`
+   already clears the prior `todos` array for files in Lists A and C
+   before you run, so any todos in your `.review.json` at the end are
+   genuinely new.
 
 4. **Prior per-file review snapshot** — optional reading for context:
    `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/file-reviews/{repo}/{path_with_underscores}.review.json`.

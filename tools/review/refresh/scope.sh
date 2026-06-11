@@ -90,8 +90,11 @@ for repo in "${repos[@]}"; do
     repo_dir="$REVIEW_DIR/repos/$repo"
     [[ -d "$repo_dir/.git" ]] || { echo "Skipping $repo: not cloned" >&2; continue; }
 
-    pr_number=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .pr' "$META_FILE")
-    original_sha=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .commit' "$META_FILE")
+    # A repo can carry more than one PR (follow-up PRs raised mid-review);
+    # the latest PR is the reference point, gaps are checked across all.
+    pr_number=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .pr] | max' "$META_FILE")
+    original_sha=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r)] | max_by(.pr) | .commit' "$META_FILE")
+    all_pr_numbers=$(jq -r --arg r "$repo" '.prs[] | select(.repo==$r) | .pr' "$META_FILE")
     current_sha=$(git -C "$repo_dir" rev-parse HEAD)
 
     # prior_sha = the most recent re_review snapshot's current_commit for this repo
@@ -121,8 +124,12 @@ for repo in "${repos[@]}"; do
         merge_resolved=$("$MERGE_SH" "$repo_dir" "$prior_sha" "$current_sha" --tsv || true)
     fi
 
-    # Coverage gaps
-    coverage_gaps=$("$GAPS_SH" "$REVIEW_DIR" "$repo" "$pr_number" --tsv 2>/dev/null || true)
+    # Coverage gaps — across every PR recorded for this repo
+    coverage_gaps=$(
+        for pn in $all_pr_numbers; do
+            "$GAPS_SH" "$REVIEW_DIR" "$repo" "$pn" --tsv 2>/dev/null || true
+        done | sort -u
+    )
 
     # ---- Build Lists ------------------------------------------------------
     # List C — merge-resolved
@@ -219,6 +226,21 @@ if [[ "$WRITE_SNAPSHOT" == "true" ]]; then
     tmp=$(mktemp)
     jq --argjson s "$snap" '.re_review = $s | .re_reviews = ((.re_reviews // []) + [$s])' "$META_FILE" > "$tmp"
     mv "$tmp" "$META_FILE"
+
+    # Reset per-file `.review.json` todos for files about to be re-reviewed
+    # (Lists A and C). Without this, REFRESH reviewers that find nothing new
+    # leave the prior FRESH todos in place; the reconciler then re-appends
+    # them as duplicates of the items already in items.{repo}.json.
+    # List D files have no .review.json yet (they ARE the coverage gap) so
+    # nothing to clear.
+    while IFS=$'\t' read -r repo file; do
+        [[ -z "$repo" || -z "$file" ]] && continue
+        underscored=${file//\//_}
+        rj="$REVIEW_DIR/file-reviews/$repo/${underscored}.review.json"
+        [[ -f "$rj" ]] || continue
+        tmp=$(mktemp)
+        jq '.todos = []' "$rj" > "$tmp" && mv "$tmp" "$rj"
+    done < <(jq -r '.repos[] | .repo as $r | (.lists.A + .lists.C)[] | [$r, .file] | @tsv' <<<"$output")
 fi
 
 # ---- Step 5: emit -------------------------------------------------------

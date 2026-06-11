@@ -154,7 +154,9 @@ body_tmp=$(mktemp -t "share-review-$TICKET-XXXXXX.md")
 **Option A — walk it in Claude Code (recommended):**
 
 \`\`\`bash
-git -C ~/git/defra/trade-imports-animals-workspace fetch origin
+# Branch-scoped fetch — a bare \`fetch origin\` would also pull the
+# workspace repo's gh-pages (~1 GiB).
+git -C ~/git/defra/trade-imports-animals-workspace fetch origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
 git -C ~/git/defra/trade-imports-animals-workspace checkout $BRANCH
 \`\`\`
 
@@ -206,7 +208,9 @@ fi
 # Stash any unrelated working changes so the checkout doesn't lose them.
 # We don't go that far here — just abort if the workspace is dirty
 # outside workareas/shared/.
-dirty=$(git -C "$WORKSPACE" status --porcelain | grep -v '^?? workareas/shared/' | grep -v '^.M workareas/shared/' | grep -v 'workareas/shared/' || true)
+# -uall: without it, an entirely-untracked workareas/shared/ tree collapses
+# to a single "?? workareas/" line that the exclusion patterns can't match.
+dirty=$(git -C "$WORKSPACE" status --porcelain -uall | grep -v '^?? workareas/shared/' | grep -v '^.M workareas/shared/' | grep -v 'workareas/shared/' || true)
 if [[ -n "$dirty" ]]; then
     echo "Workspace has uncommitted changes outside workareas/shared/:" >&2
     echo "$dirty" >&2
@@ -216,12 +220,20 @@ fi
 
 current_branch=$(git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD)
 
-# Branch may already exist (re-share). Create if not, switch to it.
+# Branch may already exist (re-share). The freshly-rsynced shared tree is
+# untracked on the current branch but tracked on an existing handoff
+# branch, so a plain checkout refuses to overwrite it — park the payload,
+# switch, then restore it over the branch's older copy.
+shared_tmp=$(mktemp -d -t "share-review-$TICKET")
+mv "$shared_dir" "$shared_tmp/payload"
 if git -C "$WORKSPACE" rev-parse --verify --quiet "$BRANCH" > /dev/null; then
     git -C "$WORKSPACE" checkout "$BRANCH"
 else
     git -C "$WORKSPACE" checkout -b "$BRANCH"
 fi
+rm -rf "$shared_dir"
+mv "$shared_tmp/payload" "$shared_dir"
+rmdir "$shared_tmp"
 
 git -C "$WORKSPACE" add "workareas/shared/$TICKET"
 

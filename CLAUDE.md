@@ -1,6 +1,6 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 7 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 8 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If your checkout is elsewhere, symlink it — see [`docs/agent-onboarding.md`](docs/agent-onboarding.md#1-canonical-clone-location).
 
@@ -14,6 +14,7 @@ The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If you
 | `repos/trade-imports-animals-admin` | DEFRA/trade-imports-animals-admin | Internal admin interface | Node.js |
 | `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
+| `repos/trade-imports-defra-id-stub` | DEFRA/trade-imports-defra-id-stub | Stub of the Defra ID (OIDC) sign-in service | Node.js |
 | `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Centralised gateway forwarding events to Azure Service Bus (ADR-EUDP-001 Option B) | Java / Spring Boot |
 
 ## How to navigate
@@ -28,12 +29,38 @@ Each repo has its own `CLAUDE.md` with repo-specific context.
 
 Run `make help` from this directory to see all cross-repo commands.
 
+## `tim` CLI (alternative to Make + tools/)
+
+[`tim/`](tim/) is a Node.js CLI that mirrors the Makefile + read-only
+parts of `tools/`. Library-first integrations (octokit, REST clients —
+no shell-out to `gh`/`jq`), behaviourally tested, deterministic
+`--json` output for skill use. Dual-runs with the bash; pick whichever.
+
+```bash
+cd tim && npm i -g .   # tim on PATH (or npm link for live edits)
+tim --help              # full surface
+tim workspace status    # equivalent of `make status` + jq-friendly --json
+tim docker dev          # equivalent of `scripts/stack/run-stack.sh -d`
+tim jira ticket EUDPA-X # equivalent of tools/jira/ticket.sh
+tim auth                # equivalent of tools/auth.sh
+tim github prs EUDPA-X  # equivalent of tools/github/prs.sh
+```
+
+See [`tim/CLAUDE.md`](tim/CLAUDE.md) for rails (test-on-input/output,
+library-first, GDS plain English, `__mocks__`-style network-boundary
+mocking via nock) and [`tim/README.md`](tim/README.md) for usage and
+the env-var contract (the same `JIRA_USER`/`JIRA_TOKEN`/`JIRA_BASE_URL`
+/ `GITHUB_TOKEN` the bash uses — seamless pickup).
+
+Skills should prefer `tim <cmd> --json` over bare bash once a surface
+is covered by tim — the JSON envelope is schema-versioned and stable.
+
 ## Make targets
 
 | Target | What it does |
 |--------|-------------|
-| `make setup` | Clone all repos (idempotent — safe to re-run) |
-| `make update` | `git pull --rebase` all repos |
+| `make setup` | Clone all repos (idempotent — safe to re-run; clones exclude `gh-pages`) |
+| `make update` | `git pull --rebase` all repos (one-off heal pins the `gh-pages` exclusion + gc on old clones) |
 | `make status` | `git status -sb` across all repos |
 | `make install` | `npm install` in all Node repos |
 | `make lint` | Lint all Node repos |
@@ -141,6 +168,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies", "walk upgrade EUDPA-X", "implement upgrade EUDPA-X" | Three-phase non-govuk-frontend npm upgrade workflow + interactive manual-side walker. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
 | `skill-creator` | "scaffold skill `<name>`", "skill-create `<name>`", "new workspace skill `<name>`", "audit skill `<name>`", "audit skills" | Meta-skill — CREATE scaffolds a new workspace skill end-to-end (interview + scaffold + allowlist); AUDIT walks an existing skill (or all skills via fan-out) against the 8-pattern checklist and writes a plan under `workareas/skills-audit/<name>.md`. |
+| `understanding-check` | "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X" | Pre-merge author-understanding check on an AI-assisted PR. Per-repo diff analysis → 8-12 evidence-anchored questions with categorical rubrics → in-skill plan gate → terminal Q&A → deterministic verdict (pass / needs-review / high-risk) + paste-ready PR comment. Coaching signal, not a merge gate. |
 
 ### Worker references (per-skill fan-out personas)
 
@@ -165,6 +193,9 @@ artifacts that downstream `tools/` scripts consume.
 | `govuk-upgrade` | `references/PLAN_WALKER.md` | Batch triage of pending version plans before Phase 3 |
 | `skill-creator` | `references/AUDITOR.md` | Per-skill 8-pattern audit (parallel fan-out across all skills) |
 | `skill-creator` | `references/INTERVIEWER.md` | Parent-loaded CREATE-mode interview (8 shape questions → `decisions.json`) |
+| `understanding-check` | `references/ANALYST.md` | Per-repo diff analyst — emits `analysis.{repo}.json` (one per repo, parallel) |
+| `understanding-check` | `references/QUESTION_GENERATOR.md` | One-shot — combines all per-repo analyses into `questions.json` |
+| `understanding-check` | `references/SCORER.md` | Per-question scorer — must quote the rubric clause that fired (one per question, parallel) |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>). It has no parallel subagent
@@ -195,6 +226,7 @@ Shared shell scripts called by skills via
 | `tools/jira/get-issues-for-board.sh` | board-id [list\|summary\|json] | Board issues |
 | `tools/jira/list-board-epics.sh` | board-id [list\|json] [--include-done] | List epics on a board |
 | `tools/jira/list-board-labels.sh` | board-id [list\|json] | Aggregate label frequencies from a board's backlog |
+| `tools/jira/search.sh` | "JQL" [list\|summary\|json] [--fields ...] | Run JQL across the project (paginates via v3 endpoint) |
 | **github** | | |
 | `tools/github/prs.sh` | EUDPA-X [list\|json\|urls] | Find PRs |
 | `tools/github/pr-details.sh` | repo pr-num [full\|files\|json] | PR details |
@@ -292,6 +324,21 @@ Shared shell scripts called by skills via
 | `tools/skill-creator/interview-add-answer.sh` | --run-id NAME --field PATH --value JSON | CREATE — atomic mutation of `decisions.json` (one shape question per call) |
 | `tools/skill-creator/render-interview.sh` | --run-id NAME | CREATE — markdown view of `decisions.json` (recap + `decisions.md` sidecar) |
 | `tools/skill-creator/scaffold-skill.sh` | --run-id NAME [--dry-run] | CREATE — materialise SKILL.md + references/ + assets/ + tools/<name>/ stubs from `decisions.json`; append allowlist entries |
+| **understanding-check** | | |
+| `tools/understanding-check/start-check.sh` | EUDPA-X | Step 0 dispatcher — emits `MODE: FRESH` or `MODE: RESUME` |
+| `tools/understanding-check/prepare-check.sh` | EUDPA-X [--json] [--max-diff-bytes N] | Step 1 — fetch ticket + PRs, cache redacted diffs, bake best-practices, seed meta + per-repo analysis placeholders |
+| `tools/understanding-check/redact-diff.js` | IN OUT | Helper — redact env vars / API keys / PEM blocks in a diff before it lands on disk |
+| `tools/understanding-check/analysis-add-finding.sh` | EUDPA-X --repo R --section S --evidence-file F --evidence-lines L --field K=V ... | ANALYST helper — append finding (rejects without evidence) |
+| `tools/understanding-check/analysis-set-verdict.sh` | EUDPA-X --repo R --change-summary "..." --why-it-changed "..." | ANALYST helper — mark per-repo analysis complete |
+| `tools/understanding-check/question-add.sh` | EUDPA-X --category C --prompt "..." --anchor-file F --anchor-lines L --expected-concepts CSV --rubric-pass "..." --rubric-partial "..." --rubric-fail "..." | QUESTION_GENERATOR helper — append question (caps at 12; rejects hedged rubrics) |
+| `tools/understanding-check/question-replace.sh` | EUDPA-X --id QN ... | Plan-gate edit — replace question by id |
+| `tools/understanding-check/question-remove.sh` | EUDPA-X --id QN | Plan-gate edit — drop a question (renumbers downstream ids) |
+| `tools/understanding-check/transcript-record-answer.sh` | EUDPA-X --question-id QN --answer-file F [--skipped] | Interview — persist developer's answer |
+| `tools/understanding-check/transcript-add-score.sh` | EUDPA-X --question-id QN --verdict V --rubric-match "..." --missed-concepts CSV --evidence-cited file:lines[,...] [--follow-up "..."] | SCORER helper — append score (forces FAIL/unscorable if rubric_match doesn't overlap a clause) |
+| `tools/understanding-check/counts.sh` | EUDPA-X [--json] | Diagnostic — PASS/PARTIAL/FAIL/security-FAIL/coverage-gap counts |
+| `tools/understanding-check/verify-coverage.sh` | EUDPA-X [--json] | Step 7 gate — every question scored, every finding has evidence |
+| `tools/understanding-check/finalize-verdict.sh` | EUDPA-X [--json] | Step 7 — apply deterministic counting rule, stamp verdict + exit code |
+| `tools/understanding-check/render-report.sh` | EUDPA-X [--preview] | Plan-gate preview (Step 4) or full report (Step 7) |
 
 ## Workareas (runtime cache, gitignored)
 
@@ -316,6 +363,7 @@ workareas/govuk-upgrades/EUDPA-X/{repo}/           → versions.{repo}.json, CHA
 workareas/shared/EUDPA-X/                          → review handoff artifacts (tracked; committed to chore/EUDPA-X-review-handoff)
 workareas/skill-creator/<name>/                    → decisions.json (CREATE-mode interview state)
 workareas/skills-audit/<name>.md                   → AUDIT-mode plan document (per skill)
+workareas/understanding-checks/EUDPA-X/            → .interview-meta.json, ticket.md, analysis.{repo}.json, questions.json, transcript.json, report.md, .diffs/{repo}.diff, best-practices/{repo}.md
 ```
 
 ## Conventions

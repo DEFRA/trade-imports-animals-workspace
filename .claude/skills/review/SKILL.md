@@ -582,6 +582,6 @@ All under `~/git/defra/trade-imports-animals-workspace/tools/review/`:
 | `file-review-init.sh` / `file-review-add-item.sh` / `file-review-set-verdict.sh` | Per-file JSON helpers used by the FILE_REVIEWER persona |
 | `refresh/scope.sh` | Refresh Steps R1-R3 orchestrator |
 | `refresh/reconcile.sh` | Refresh Step R5 — fold per-file `.review.json` findings into `items.{repo}.json`; emit Fix+Done spot-check advisory |
-| `refresh/pull-repos.sh` | Refresh helper — `git pull --rebase` per repo |
+| `refresh/pull-repos.sh` | Refresh helper — pin PR-ref refspec, fetch + detach per repo (origin/main for merged PRs) |
 | `refresh/list-merge-resolved.sh` | Refresh helper — hand-resolved merge files (List C) |
 | `refresh/list-coverage-gaps.sh` | Refresh helper — PR files lacking a `.review.md` (List D) |

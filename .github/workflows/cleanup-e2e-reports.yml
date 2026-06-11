@@ -1,21 +1,25 @@
 name: Cleanup E2E Reports
 
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       head-ref:
-        description: 'PR head branch name. If provided, cleans up that branch report. If empty, runs stale cleanup.'
+        description: 'PR head branch name. If set (e.g. on pull_request: closed) the matching tag is force-removed from the keep-list so the closed PR''s preview is pruned even if the gh API has not yet reflected the closure.'
         required: false
         type: string
         default: ''
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
-  cleanup-branch:
-    if: inputs.head-ref != ''
+  prune-and-truncate:
     runs-on: ubuntu-latest
+    concurrency:
+      group: pages-${{ github.repository }}
+      cancel-in-progress: false
     steps:
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -23,57 +27,71 @@ jobs:
           ref: gh-pages
           fetch-depth: 1
 
-      - name: Resolve branch tag
-        id: branch-tag
+      - name: Prune subdirs not matching an active preview
         env:
           HEAD_REF: ${{ inputs.head-ref }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          tag="${HEAD_REF//\//-}"
-          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
-          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
-          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
-          tag="${tag:0:128}"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          sanitise() {
+            local raw="$1"
+            local tag="${raw//\//-}"
+            tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+            tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+            while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+            tag="${tag:0:128}"
+            printf '%s' "$tag"
+          }
 
-      - name: Remove branch report
-        run: |
-          dir="e2e/${{ steps.branch-tag.outputs.tag }}"
-          if [ -d "$dir" ]; then
-            rm -rf "$dir"
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "cleanup: remove E2E report for ${{ steps.branch-tag.outputs.tag }}"
-            git push
+          # Build the keep-list:
+          #   - always keep "main"
+          #   - keep any open PR whose updated_at falls within the activity window
+          cutoff=$(date -u -d '21 days ago' +"%Y-%m-%dT%H:%M:%SZ")
+          keep_list=$(mktemp)
+          echo "main" > "$keep_list"
+          gh api "repos/${REPO}/pulls?state=open&per_page=100" --paginate \
+            --jq ".[] | select(.updated_at >= \"$cutoff\") | .head.ref" \
+            | while IFS= read -r ref; do
+                [ -n "$ref" ] && { sanitise "$ref"; printf '\n'; }
+              done >> "$keep_list"
+
+          # Defensive: if the trigger supplied a head-ref (PR just closed),
+          # force-remove that sanitised tag from the keep-list.
+          if [ -n "$HEAD_REF" ]; then
+            closed_tag=$(sanitise "$HEAD_REF")
+            grep -vx "$closed_tag" "$keep_list" > "${keep_list}.tmp" || true
+            mv "${keep_list}.tmp" "$keep_list"
           fi
 
-  cleanup-stale:
-    if: inputs.head-ref == ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout gh-pages
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 0
+          echo "Keep-list (sanitised tags):"
+          sort -u "$keep_list"
 
-      - name: Remove reports older than 7 days
-        run: |
-          cutoff=$(date -d '7 days ago' +%s)
+          # Prune any subdir not in the keep-list
           changed=false
-          for dir in e2e/*/; do
-            [ -d "$dir" ] || continue
-            last_modified=$(git log -1 --format=%ct -- "$dir")
-            if [ -n "$last_modified" ] && [ "$last_modified" -lt "$cutoff" ]; then
-              echo "Removing stale report: $dir"
-              rm -rf "$dir"
-              changed=true
-            fi
+          for parent in e2e lighthouse; do
+            [ -d "$parent" ] || continue
+            for dir in "${parent}"/*/; do
+              [ -d "$dir" ] || continue
+              tag=$(basename "$dir")
+              if ! grep -qx "$tag" "$keep_list"; then
+                echo "Pruning $dir"
+                rm -rf "$dir"
+                changed=true
+              fi
+            done
           done
-          if [ "$changed" = true ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "cleanup: remove E2E reports older than 7 days"
-            git push
+
+          if [ "$changed" = false ]; then
+            echo "No subdirs to prune"
           fi
+
+      - name: Orphan-reset gh-pages
+        run: |
+          git checkout --orphan _orphan
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: prune + orphan-reset gh-pages (EUDPA-199)" --allow-empty
+          git branch -D gh-pages
+          git branch -m gh-pages
+          git push -f origin gh-pages

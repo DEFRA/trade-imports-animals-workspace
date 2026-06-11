@@ -1,5 +1,5 @@
 #!/bin/bash
-# List PR files for one repo that lack a per-file `.review.md`.
+# List PR files for one repo that lack a per-file `.review.json`.
 # Usage:
 #   list-coverage-gaps.sh REVIEW_DIR REPO_NAME PR_NUMBER [--tsv|--json]
 #
@@ -46,7 +46,7 @@ gaps=""
 while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     underscored=${f//\//_}
-    review_file="$REVIEW_DIR/file-reviews/$REPO_NAME/${underscored}.review.md"
+    review_file="$REVIEW_DIR/file-reviews/$REPO_NAME/${underscored}.review.json"
     if [[ ! -f "$review_file" ]]; then
         gaps="${gaps}${f}\n"
     fi

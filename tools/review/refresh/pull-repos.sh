@@ -1,11 +1,16 @@
 #!/bin/bash
-# Pull every repo in the review workspace via `git pull --rebase`.
+# Bring every repo in the review workspace up to date: pin the fetch
+# refspec to the PR ref (plus main for merged PRs), fetch, and detach
+# at the target ref. Review clones are read-only snapshots — detached
+# HEAD is their normal state, and the pinned refspec keeps a fetch
+# from dragging in gh-pages (multi-GB) via the default `+refs/heads/*`.
 # Usage:
 #   pull-repos.sh EUDPA-XXXXX [--repo REPO] [--json]
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE="$HOME/git/defra/trade-imports-animals-workspace"
 
 TICKET=""
 REPO_FILTER=""
@@ -50,8 +55,40 @@ for repo in $repos; do
         continue
     fi
 
-    # Pull silently; capture stderr
-    if out=$(git -C "$repo_dir" pull --rebase --quiet 2>&1); then
+    pr_number=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .pr] | first // empty' "$META_FILE")
+    pr_state=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .state] | first // "open"' "$META_FILE")
+    if [[ -z "$pr_number" ]]; then
+        overall_ok=false
+        if [[ "$JSON_OUTPUT" == "false" ]]; then
+            echo "  ❌ $repo — no PR number in $META_FILE"
+        fi
+        results_json=$(jq --arg r "$repo" --arg s "failed" --arg m "no PR number in meta" '. + [{repo: $r, status: $s, message: $m}]' <<<"$results_json")
+        continue
+    fi
+
+    # Merged PRs: refs/pull/N/head is frozen; post-merge work lands on main.
+    if [[ "$pr_state" == "merged" ]]; then
+        bash "$WORKSPACE/tools/git/light-remote.sh" --pr-only "$repo_dir" "$pr_number" --include-main > /dev/null
+        target_ref="refs/remotes/origin/main"
+        deepen_ref="main"
+    else
+        bash "$WORKSPACE/tools/git/light-remote.sh" --pr-only "$repo_dir" "$pr_number" > /dev/null
+        target_ref="refs/remotes/origin/pr-$pr_number"
+        deepen_ref="refs/pull/$pr_number/head"
+    fi
+
+    if out=$(
+        git -C "$repo_dir" fetch --quiet origin 2>&1 &&
+        git -C "$repo_dir" checkout --quiet --detach "$target_ref" 2>&1
+    ); then
+        # Shallow clones: make sure the prior-review..HEAD window is
+        # walkable, or scope.sh's diff silently produces an empty List A.
+        prior_sha=$(jq -r --arg r "$repo" '[.re_reviews[]?.changes[]? | select(.repo==$r) | .current_commit] | last // empty' "$META_FILE")
+        [[ -z "$prior_sha" ]] && prior_sha=$(jq -r --arg r "$repo" '[.prs[] | select(.repo==$r) | .commit] | first // empty' "$META_FILE")
+        if [[ -n "$prior_sha" ]]; then
+            git -C "$repo_dir" rev-list --quiet "$prior_sha..HEAD" -- 2>/dev/null \
+                || git -C "$repo_dir" fetch --quiet --depth=200 origin "$deepen_ref" 2>/dev/null || true
+        fi
         head_sha=$(git -C "$repo_dir" rev-parse HEAD)
         if [[ "$JSON_OUTPUT" == "false" ]]; then
             echo "  ✅ $repo — at ${head_sha:0:7}"
@@ -60,7 +97,7 @@ for repo in $repos; do
     else
         overall_ok=false
         if [[ "$JSON_OUTPUT" == "false" ]]; then
-            echo "  ❌ $repo — pull failed: $out"
+            echo "  ❌ $repo — fetch/detach failed: $out"
         fi
         msg_json=$(jq -nR --arg m "$out" '$m')
         results_json=$(jq --arg r "$repo" --arg s "failed" --argjson m "$msg_json" '. + [{repo: $r, status: $s, message: $m}]' <<<"$results_json")

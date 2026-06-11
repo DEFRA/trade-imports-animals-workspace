@@ -17,7 +17,16 @@ fi
 response=$(gh search prs "$TICKET" --owner DEFRA --json number,title,repository,url,state,createdAt 2>/dev/null)
 
 if [[ -z "$response" ]] || [[ "$response" == "[]" ]]; then
-    echo "No PRs found for $TICKET"
+    case "$FORMAT" in
+        json)
+            echo "[]"
+            ;;
+        urls)
+            ;;
+        list|*)
+            echo "No PRs found for $TICKET"
+            ;;
+    esac
     exit 0
 fi
 
