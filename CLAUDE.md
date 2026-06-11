@@ -127,7 +127,7 @@ git push origin my-feature
 
 `scripts/stack/run-stack.sh` brings up the full stack from Dockerhub.
 Supports `-b <branch>` (probe for branch-tagged images), `-d/--dev` (build
-the 5 repo-backed services from local source under `repos/`),
+the 6 repo-backed services from local source under `repos/`),
 `-e <service>` (exclude one so you can run it natively), and
 `--profile <name>` (run only a subset of tiers). `bounce-backend.sh` picks
 up edited Java source in `--dev` mode.

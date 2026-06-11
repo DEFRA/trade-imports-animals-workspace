@@ -9,7 +9,7 @@ alongside `make docker-compose-*` while we evaluate.
 ```bash
 ./scripts/stack/run-stack.sh                                # all services on :latest
 ./scripts/stack/run-stack.sh -b feat/EUDPA-123              # branch tag where published, latest elsewhere
-./scripts/stack/run-stack.sh -d                             # build the 5 repo-backed services from local source
+./scripts/stack/run-stack.sh -d                             # build the 6 repo-backed services from local source
 ./scripts/stack/run-stack.sh -e backend                     # run backend in IntelliJ / npm; rest in docker
 ./scripts/stack/run-stack.sh --profile frontend --profile infrastructure --profile database
                                                             # only those profiles; intended for "running other tiers natively"
@@ -103,9 +103,11 @@ the right one. Errors out if neither is up.
   of `src/`. Just save and refresh.
 - Java backend: recompiles on container start. After editing Java source run
   `./scripts/stack/bounce-backend.sh` to pick up the change (~30-45s).
-- Java stub, reference-data and gateway: their Dockerfiles only have an `AS development`
+- Java stub and reference-data: their Dockerfiles only have an `AS development`
   stage (pre-built JAR, no source mount). `--dev` rebuilds the image but does
   not hot-reload. A `dev-run` stage in those repos would unlock that.
+- Java gateway: has a `dev-run` stage and is wired to it in `--dev` mode with
+  a source mount, so source changes are picked up on restart like the backend.
 
 ## Hostname rules — no `/etc/hosts` edits required
 

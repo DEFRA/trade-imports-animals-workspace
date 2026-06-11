@@ -13,7 +13,7 @@ CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 
 .PHONY: setup link update reset status install lint test \
-        start-frontend start-backend start-admin \
+        start-frontend start-backend start-admin start-gateway \
         docker-local-branches docker-compose-up docker-compose-dev docker-compose-down docker-compose-bounce docker-logs docker-restart-backend clean help
 
 # --- Help ---
