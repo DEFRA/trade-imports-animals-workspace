@@ -37,6 +37,18 @@ Used when reconciling in R5/R6:
 
 Deleted files: mark their items `Auto-Resolved` via `review-mark.sh`.
 
+## Step R3.6: Snyk (changed repos)
+
+When List A includes dependency, source, or Dockerfile changes, re-run
+Snyk on those repos only. Follow `../snyk/SKILL.md`:
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/snyk/scan-repo.sh EUDPA-XXXXX --repo {repo}
+```
+
+Add `--fix` via `apply-fixes.sh` when OSS upgrades are appropriate. Skip
+if `MODE: SNYK_SKIP` from `ensure-auth.sh`.
+
 ## Step R4: Re-review Files
 
 Spawn `general-purpose` Task subagents in parallel (up to 100), one per

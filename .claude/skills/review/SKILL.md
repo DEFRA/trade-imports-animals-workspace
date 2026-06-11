@@ -1,6 +1,6 @@
 ---
 name: review
-description: 'Pre-merge code review (correctness, security, performance, tests) of a ticket''s PRs across all repos and languages: fresh review, refresh re-review, interactive walker triage, batched fix implementor. Triggers: "review EUDPA-X", "re-review", "refresh review", "check fixes", "walk review", "triage review", "implement review", "apply review fixes". NOT for JS lint/style (code-style); AC-only checks use the nested ac-check skill.'
+description: 'Pre-merge code review (correctness, security, performance, tests) of a ticket''s PRs across all repos and languages: fresh review, refresh re-review, interactive walker triage, batched fix implementor. Triggers: "review EUDPA-X", "re-review", "refresh review", "check fixes", "walk review", "triage review", "implement review", "apply review fixes". NOT for JS lint/style (code-style); AC-only checks use ac-check; Snyk CLI scan/fix uses snyk.'
 ---
 
 Pre-merge code review for EUDP Live Animals tickets across all repos and
@@ -40,6 +40,8 @@ markdown table in `review.{repo}.md` is a rendered view
 | "review EUDPA-X" / "re-review" / "refresh review" / "check fixes" | Step 0 below, then `references/FRESH.md` or `references/REFRESH.md` per mode |
 | "walk review EUDPA-X" / "triage review" | `references/WALKER.md` |
 | "implement review EUDPA-X" / "apply review fixes" | `references/BATCH_IMPLEMENTOR.md` |
+| "snyk review EUDPA-X" / "snyk scan EUDPA-X" / "run snyk on EUDPA-X" | `snyk/SKILL.md` (also FRESH Step 3.5) |
+| "AC check EUDPA-X" / "check AC EUDPA-X" | `ac-check/SKILL.md` |
 
 NOT for JavaScript lint/format/style findings — use `code-style`.
 

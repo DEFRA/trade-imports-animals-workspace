@@ -53,6 +53,19 @@ markdown, no placeholder path needed in the spawn prompt.
 
 **Do NOT proceed until 100% coverage.**
 
+## Step 3.5: Snyk security gate
+
+After file coverage is complete, run the Snyk CLI gate (OSS deps, Snyk
+Code, container/Dockerfile). Follow `../snyk/SKILL.md`:
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/snyk/start-snyk.sh EUDPA-XXXXX --fix
+```
+
+If the script prints `MODE: SNYK_SKIP` (CLI missing or not authed), log
+it and continue — do not block the review. If `--fix` changed lockfiles
+or Dockerfiles, present diffs for developer commit approval before Step 4.
+
 ## Step 4: Consistency Review
 
 Spawn one `general-purpose` Task subagent:

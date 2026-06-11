@@ -163,7 +163,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 | `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug", "flesh out ticket" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
 | `ticket-refiner` | "is ticket ready", "pre-refinement", "refinement check" | Assess whether a ticket is READY / NEEDS WORK / SPIKE REQUIRED. |
 | `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
-| `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
+| `review` | "review EUDPA-", "re-review", "walk review", "implement review", "snyk review EUDPA-", "snyk scan EUDPA-" | Code review across all languages and repos (correctness, security, tests). Nested `snyk/` runs Snyk CLI OSS/Code/container gate in FRESH Step 3.5. |
 | `code-style` | "style review EUDPA-", "walk style EUDPA-", "triage style", "fix style EUDPA-", "lint review" | JS code-style review + remediation against the 17-rule guide. |
 | `npm-upgrade` | "upgrade npm deps", "upgrade dependencies", "walk upgrade EUDPA-X", "implement upgrade EUDPA-X" | Three-phase non-govuk-frontend npm upgrade workflow + interactive manual-side walker. |
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
@@ -183,6 +183,7 @@ artifacts that downstream `tools/` scripts consume.
 | `review` | `references/FILE_REVIEWER.md` | Per-file review (parallel, up to 10) |
 | `review` | `references/CONSISTENCY_REVIEWER.md` | Per-repo consistency check |
 | `review` | `references/REVIEW_ITEM_FIXER.md` | One Fix-disposition item at a time |
+| `review` | `snyk/SKILL.md` | Snyk CLI OSS/Code/container scan + optional `snyk fix` (FRESH Step 3.5) |
 | `code-style` | `references/STYLE_FILE_REVIEWER.md` | Per-`.js` file style review |
 | `code-style` | `references/STYLE_WALKER.md` | Batch triage walker for pending items |
 | `code-style` | `references/STYLE_IMPLEMENTOR.md` | Per-file batched style fixes |
@@ -266,6 +267,13 @@ Shared shell scripts called by skills via
 | `tools/review/refresh/pull-repos.sh` | EUDPA-X [--repo R] [--json] | Refresh helper |
 | `tools/review/refresh/list-merge-resolved.sh` | REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json] | Refresh helper |
 | `tools/review/refresh/list-coverage-gaps.sh` | REVIEW_DIR REPO PR_NUM [--tsv\|--json] | Refresh helper |
+| **snyk** | | |
+| `tools/snyk/start-snyk.sh` | EUDPA-X [--fix] [--json] | Review Step 3.5 — sync PR branches, OSS/Code/container scan, optional `snyk fix`, write `snyk-report.md` |
+| `tools/snyk/scan-repo.sh` | EUDPA-X --repo R [--json] | One-repo Snyk scan → `workareas/reviews/EUDPA-X/snyk/*.json` |
+| `tools/snyk/apply-fixes.sh` | EUDPA-X --repo R [--dry-run] [--json] | `snyk fix` on OSS target + re-scan |
+| `tools/snyk/sync-workspace-repo.sh` | EUDPA-X --repo R [--json] | Checkout PR head on `repos/<repo>` |
+| `tools/snyk/detect-targets.sh` | --root PATH [--json] | Detect package.json / pom.xml / Dockerfiles |
+| `tools/snyk/ensure-auth.sh` | [--json] | Verify Snyk CLI + auth (exit 1 → SNYK_SKIP) |
 | **style** | | |
 | `tools/style/start-style.sh` | EUDPA-X | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
 | `tools/style/prepare-style.sh` | EUDPA-X [--json] | Fresh Step 1 — init `.style.json` placeholders + per-repo rules bundle |
