@@ -4,7 +4,9 @@
 
 ## Purpose
 
-User-facing web application that guides users through a multi-step form wizard for declaring animal/commodity imports into the UK. Steps cover origin, commodity selection, reason for import, and associated details. Requires authentication via Defra ID (OIDC).
+User-facing web application that guides users through a multi-step form wizard for declaring animal/commodity imports
+into the UK. Steps cover origin, commodity selection, reason for import, and associated details. Requires authentication
+via Defra ID (OIDC).
 
 ## Stack
 
@@ -23,13 +25,13 @@ User-facing web application that guides users through a multi-step form wizard f
 
 ## Infrastructure dependencies
 
-| Dependency | Purpose |
-|-----------|---------|
-| Redis | Distributed session cache |
-| MongoDB | Data store (accessed via backend API) |
-| Backend API | All business logic; frontend is a thin UI layer |
-| AWS (S3, SQS) | File/message handling via backend; LocalStack in dev |
-| Defra ID (OIDC) | Authentication |
+| Dependency      | Purpose                                         |
+|-----------------|-------------------------------------------------|
+| Redis           | Distributed session cache                       |
+| MongoDB         | Data store (accessed via backend API)           |
+| Backend API     | All business logic; frontend is a thin UI layer |
+| AWS (S3, SQS)   | File/message handling via backend; floci in dev |
+| Defra ID (OIDC) | Authentication                                  |
 
 ## How to run
 
@@ -39,6 +41,7 @@ npm run dev        # starts webpack watcher + nodemon, port 3000
 ```
 
 Docker:
+
 ```bash
 docker compose up --build -d
 ```
