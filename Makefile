@@ -2,9 +2,6 @@ SHELL         := /bin/bash
 REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub
-# defra-id-stub's unit tests need its docker:test compose env (ENTRA_*, S3);
-# plain `npm test` is red by design upstream, so the test target skips it.
-UNIT_TESTABLE_NODE_REPOS := $(filter-out trade-imports-defra-id-stub,$(NODE_REPOS))
 JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
 CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
@@ -142,7 +139,7 @@ lint: ## Run linting in all Node repos
 	exit $$status
 
 test: ## Run unit tests in all repos
-	@for repo in $(UNIT_TESTABLE_NODE_REPOS); do \
+	@for repo in $(NODE_REPOS); do \
 		dir=$(REPOS_DIR)/$$repo; \
 		if [ -d "$$dir" ]; then \
 			echo "\n=== $$repo — test ==="; \
