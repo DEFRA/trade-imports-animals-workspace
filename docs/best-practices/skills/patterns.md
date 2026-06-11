@@ -163,6 +163,23 @@ templates, per-step instructions, decision rationale that informs
 edge cases, cross-skill handoff prose, concrete file/line
 citations.
 
+## Pattern 10 (companion): Token budget
+
+Prose hygiene trims what's said; token budget controls what gets
+*loaded*. Frontmatter descriptions load into every session; SKILL.md
+loads on every trigger; references load per run. Keep each tier
+minimal:
+
+- `description` ≤ 60 words — what + trigger phrases + NOT-for
+  routing. No implementation detail.
+- No inline convention/hygiene rule blocks — the short
+  `## Conventions` pointer to `docs/agent-skills.md` only.
+- Multi-mode skills with SKILL.md over ~150 lines → dispatcher
+  pattern: thin SKILL.md routes to per-mode `references/*.md` so a
+  run loads only the flow it uses (`review`, `code-style`).
+- No script cheat-sheet tables duplicating commands already inline
+  in the steps.
+
 ## Cross-cutting conventions
 
 - **Path conventions** — literal

@@ -72,17 +72,32 @@ neither.
 
 In every mode:
 
-1. **Per-PR best practices.** Read one file:
+1. **Per-PR best practices — load only the sections for your file
+   type.** The bundle at
    ```
    ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/best-practices/{repo}.md
    ```
-   `prepare-review.sh` already concatenated every best-practice file
-   applicable to your repo there. Don't walk
-   `.review-meta.json` or read individual `docs/best-practices/*.md`
-   files — the bundle is the single source. When citing a rule on
-   `file-review-add-item.sh --best-practice <path>`, use the relative
-   path shown in the bundle's `## Source: docs/best-practices/...`
-   headings (e.g. `node/pino-logging.md`).
+   concatenates every best-practice file for the repo, delimited by
+   `## Source: docs/best-practices/...` headings. Don't read it whole:
+   Grep the bundle for `^## Source:` to list section offsets, then Read
+   (with `offset`/`limit`) only the sections relevant to your assigned
+   file:
+
+   | Assigned file | Read sections |
+   |---|---|
+   | `*.java` | `java/*`, `rest-api/*`, `sonar/*` |
+   | `*Test.java` / `*IT.java` | `java/testing/*`, `sonar/*` |
+   | `*.js` (source) | `node/*`, `rest-api/*`, `sonar/*` |
+   | `*.test.js` | `node/testing/*`, `sonar/*` |
+   | `*.njk` | `gds/*`, `node/nunjucks.md`, `node/govuk-frontend.md` |
+   | Playwright / k6 tests | `playwright/*` / `k6/*`, `sonar/*` |
+   | Config / lockfile | none — File type guidance below suffices |
+
+   If your file doesn't fit the table, read the full bundle. Don't walk
+   `.review-meta.json` or individual `docs/best-practices/*.md` files.
+   When citing a rule on `file-review-add-item.sh --best-practice
+   <path>`, use the relative path from the `## Source:` heading
+   (e.g. `node/pino-logging.md`).
 2. **Ticket.** Read `ticket.md` for AC and intent.
 
 In REFRESH / MERGE_RESOLVED only, additionally:
@@ -105,8 +120,14 @@ In REFRESH / MERGE_RESOLVED only, additionally:
      re-report it.** The item already exists; re-reporting creates a
      duplicate.
    - For each prior item that is now resolved (violation no longer
-     present in the code): **do NOT report it.** The orchestrator
-     drains stale items separately.
+     present in the code): **do NOT report it as a finding** —
+     instead record the resolution so the reconciler can drain it:
+     ```bash
+     ~/git/defra/trade-imports-animals-workspace/tools/review/file-review-mark-resolved.sh EUDPA-XXXXX \
+         --repo {repo} --file {file-path} --item {consolidated-item-id}
+     ```
+     Only call it when you positively verified the violation is gone
+     — when unsure, leave the item alone.
    - For each prior `Fix + Done` item where the violation is BACK
      (regression): **DO report it**, with `--category regression`
      and a `--note`-equivalent phrasing in the `--issue` field

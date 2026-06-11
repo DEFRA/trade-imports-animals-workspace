@@ -85,6 +85,8 @@ not re-reported; the reconciler appends every todo it finds.
   "added_count": N,
   "added": ["file:line [severity] issue", ...],
   "added_ids": [12, 13, ...],
+  "auto_resolved_count": N,
+  "auto_resolved": ["#6 src/path/file.js", ...],
   "spot_check": [{ "id": 6, "file": "...", "line": 42, "issue": "...", "notes": "abc1234" }, ...],
   "skipped_already_reconciled": N,
   "skipped_unreviewed": N
@@ -95,10 +97,12 @@ not re-reported; the reconciler appends every todo it finds.
 they haven't regressed; if one has, the user re-walks the new item the
 reviewer added (`--category regression`).
 
-**Stale items are not auto-resolved:** absence from new findings is
-indistinguishable from "the reviewer missed it". The user drains stale
-items in the next walker run (`S` to leave pending, or `W` with note
-"already done").
+**Stale items:** reviewers record prior items whose violation they
+positively verified as gone (`file-review-mark-resolved.sh` →
+`resolved_item_ids`); the reconciler auto-resolves the still-open ones
+and reports them in `auto_resolved`. Items the reviewer wasn't sure
+about stay open — the user drains those in the next walker run (`W`
+with note "already done").
 
 ## Step R6: Update review.{repo}.md cosmetics
 

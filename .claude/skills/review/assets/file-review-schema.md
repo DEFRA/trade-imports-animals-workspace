@@ -34,7 +34,11 @@ file in a ticket review. Replaces the legacy `.review.md` template.
       "fix": "Use structured logger.error({ err }, '...')",
       "best_practice": "node/pino-logging.md"  // optional, relative path
     }
-  ]
+  ],
+  "resolved_item_ids": [6, 9]  // REFRESH only — consolidated item ids whose
+                               // violation is verified gone (via
+                               // file-review-mark-resolved.sh); reconciler
+                               // auto-resolves still-open ones
 }
 ```
 

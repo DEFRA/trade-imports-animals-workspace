@@ -105,6 +105,9 @@ git -C ~/git/defra/trade-imports-animals-workspace/repos/<repo> diff main...HEAD
 3. Check: correctness edge cases, error handling (no swallowed
    exceptions), security (input validation, no secrets), test coverage
    for every new path, AC actually met, no unrelated changes.
+3a. **Reconcile against the plan's Testing Strategy table:** every
+   test it names exists, or the deviation is recorded in `plan.md`
+   under `## Implementation Notes`. Don't silently drop planned tests.
 4. Fix violations immediately, then re-run tests.
 5. **Local Sonar gate (user handoff):** ask the developer to run the
    SonarQube for IDE plugin analysis in IntelliJ on the changed files
@@ -122,12 +125,46 @@ should come back clean afterwards.
 ~/git/defra/trade-imports-animals-workspace/tools/github-actions/wait-for-run.sh <repo-name> <run-id> 1800
 ```
 
+## Raise the PR
+
+```bash
+gh pr create --repo DEFRA/<repo> --title "EUDPA-XXXXX: <summary>" \
+    --body-file ~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-XXXXX/pr-body-<repo>.md
+```
+
+Write the body file first, using this template:
+
+```markdown
+## What
+
+[1-2 sentences — the change and why]
+
+## Acceptance criteria
+
+- [x] AC1 — [evidence: file/test that satisfies it]
+- [x] AC2 — ...
+
+## Testing
+
+- Unit: [what's covered, test file names]
+- Integration/E2E: [what's covered, or why not applicable]
+
+## Deviations from plan
+
+[None, or list — mirrors plan.md ## Implementation Notes]
+```
+
+Every AC box must be checked with evidence; an unchecked box means the
+PR isn't ready.
+
 ## Completion Checklist
 
 - [ ] All AC met
 - [ ] Tests pass (before and after)
+- [ ] Planned tests exist (or deviation noted in plan)
 - [ ] Self-review done; findings fixed
 - [ ] Local Sonar analysis (IntelliJ plugin) clean
+- [ ] PR raised with templated body (AC evidence checked)
 - [ ] Build succeeds / GitHub Actions green
 - [ ] Plan updated with deviations
 
@@ -136,8 +173,9 @@ should come back clean afterwards.
 ```
 Complete: EUDPA-XXXXX
 Repos: [list] | Files: [count] | Tests added: [count]
+PRs: [repo#pr list]
 Deviations: [list or none]
-Next: Create PR, request review
+Next: request review
 ```
 
 ## Don'ts

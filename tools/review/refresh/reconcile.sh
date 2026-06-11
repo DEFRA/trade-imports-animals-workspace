@@ -16,11 +16,16 @@
 #
 # Advisory: emits a list of Fix+Done items in refreshed files so the
 # user can spot-check potential regressions.
+#
+# Stale drain: reviewers record prior consolidated items whose violation
+# is gone in `resolved_item_ids` (via file-review-mark-resolved.sh).
+# Still-open items in that list are auto-resolved here.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ADD_ITEM="$SCRIPT_DIR/../review-add-item.sh"
+MARK_ITEM="$SCRIPT_DIR/../review-mark.sh"
 
 TICKET=""
 REPO=""
@@ -80,14 +85,30 @@ for f in "${candidate_files[@]}"; do
     fi
 done
 
-# Collect new-item actions and refreshed file set.
+# Collect new-item actions, resolved-id claims, and refreshed file set.
 declare -a added_ids
 declare -a added_descriptions
+declare -a auto_resolved
 refreshed_files=()
 
 for f in "${to_process[@]}"; do
     file_path=$(jq -r '.file' "$f")
     refreshed_files+=("$file_path")
+
+    # Auto-resolve still-open items the reviewer marked as gone.
+    while IFS= read -r rid; do
+        [[ -z "$rid" ]] && continue
+        open=$(jq --argjson id "$rid" \
+            '[.items[] | select(.id == $id and ((.disposition == null) or (.status == "Not Done")))] | length' \
+            "$items_file")
+        [[ "$open" -eq 0 ]] && continue
+        if [[ "$DRY_RUN" != "1" ]]; then
+            "$MARK_ITEM" "$TICKET" --repo "$REPO" --item "$rid" \
+                --disposition "Auto-Resolved" \
+                --note "refresh: violation no longer present" >/dev/null
+        fi
+        auto_resolved+=("#$rid $file_path")
+    done < <(jq -r '(.resolved_item_ids // [])[]' "$f")
 
     todo_count=$(jq '.todos | length' "$f")
     for ((i=0; i<todo_count; i++)); do
@@ -148,11 +169,13 @@ arr_to_json() {
 
 added_json=$(arr_to_json "${added_descriptions[@]+"${added_descriptions[@]}"}")
 added_ids_json=$(arr_to_json "${added_ids[@]+"${added_ids[@]}"}")
+auto_resolved_json=$(arr_to_json "${auto_resolved[@]+"${auto_resolved[@]}"}")
 
 if [[ "$JSON" == "1" ]]; then
     jq -n \
         --argjson added "$added_json" \
         --argjson added_ids "$added_ids_json" \
+        --argjson auto_resolved "$auto_resolved_json" \
         --argjson skipped "${#already_done[@]}" \
         --argjson unreviewed "${#unreviewed[@]}" \
         --argjson spot_check "$spot_check_json" \
@@ -160,6 +183,8 @@ if [[ "$JSON" == "1" ]]; then
             added_count: ($added | length),
             added: $added,
             added_ids: $added_ids,
+            auto_resolved_count: ($auto_resolved | length),
+            auto_resolved: $auto_resolved,
             skipped_already_reconciled: $skipped,
             skipped_unreviewed: $unreviewed,
             spot_check: $spot_check
@@ -174,8 +199,17 @@ echo "  Refreshed files:           ${#to_process[@]}"
 echo "  Already reconciled (skip): ${#already_done[@]}"
 echo "  Unreviewed placeholders:   ${#unreviewed[@]}"
 echo "  New items added:           ${#added_descriptions[@]}"
+echo "  Auto-resolved stale items: ${#auto_resolved[@]}"
 [[ "$DRY_RUN" == "1" ]] && echo "  (dry-run — no mutations)"
 echo
+
+if [[ ${#auto_resolved[@]} -gt 0 ]]; then
+    echo "Auto-resolved (violation gone after refresh):"
+    for entry in "${auto_resolved[@]}"; do
+        echo "  $entry"
+    done
+    echo
+fi
 
 if [[ ${#added_descriptions[@]} -gt 0 ]]; then
     echo "Added:"

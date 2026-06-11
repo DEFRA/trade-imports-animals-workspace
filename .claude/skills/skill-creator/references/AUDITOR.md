@@ -147,6 +147,20 @@ in-place edits.
 
 If the prose is already tight, say so and skip the trim diff.
 
+### 10. Token budget (companion)
+
+Per `patterns.md` "Pattern 10 (companion)":
+
+- Frontmatter `description` ≤ 60 words: what + triggers + NOT-for
+  routing only. Implementation detail belongs in the body.
+- No inline convention/hygiene rule blocks — only the short
+  `## Conventions` pointer (see `docs/agent-skills.md`).
+- SKILL.md over ~150 lines with multiple modes/flows → flag for the
+  dispatcher pattern (thin SKILL.md routing to per-mode
+  `references/*.md`, as `review` and `code-style` do), so a run
+  loads only the flow it uses.
+- No script cheat-sheet tables duplicating per-step inline commands.
+
 ## Output: write the plan
 
 Write to the output path your spawn prompt named (path under
@@ -199,6 +213,11 @@ form.>
 
 <per-file deletions / collapses with line refs and short
 rationale. NOT in-place edits.>
+
+### 10. Token budget
+
+<description word count, inline rule blocks, dispatcher-pattern
+candidates, cheat-sheet duplication — each with the fix.>
 
 ## Open questions
 

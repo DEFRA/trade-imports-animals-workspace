@@ -264,6 +264,12 @@ if detect_gds; then
     best_practices+=("docs/best-practices/node/testing/frontend.md")
 fi
 
+# Sonar way rules apply to all Java/JS repos (CI SonarCloud + IDE plugin)
+if file_exists "pom.xml" || file_exists "package.json"; then
+    technologies+=("sonar")
+    best_practices+=("docs/best-practices/sonar/common-rules.md")
+fi
+
 # ============================================
 # Output JSON
 # ============================================
