@@ -10,9 +10,9 @@
       "issue": "Response table claims 'not JSON' is rejected with 400, but the controller's consumes=application/json means a non-JSON Content-Type is rejected with 415 Unsupported Media Type; 400 only covers a missing or malformed body sent as JSON",
       "fix": "Split the row: 400 for missing/malformed JSON body, 415 for a non-JSON Content-Type (or reword the 400 condition to 'body is missing or malformed JSON' and add a 415 row)",
       "file": "README.md",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "f98f4d1"
     },
     {
       "id": 2,
@@ -22,9 +22,9 @@
       "issue": "The 'Start just infrastructure' flow implies running the service natively against the emulator, but the local profile's placeholder connection string (application-local.yml) points at local.servicebus.windows.net without UseDevelopmentEmulator=true, so a native 'mvn spring-boot:run -Dspring-boot.run.profiles=local' will fail every send with 502 instead of reaching the emulator",
       "fix": "Document the export needed for native-against-emulator runs (AZURE_SERVICE_BUS_CONNECTION_STRING=\"Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;\") or state explicitly that the local profile defaults do not connect to the emulator",
       "file": "README.md",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "170d293"
     },
     {
       "id": 3,
@@ -34,9 +34,9 @@
       "issue": "servicebus-emulator uses the unpinned :latest tag while the sibling localstack service is pinned to 3.0.2 — an upstream emulator release can silently break every developer's local stack",
       "fix": "Pin the image to a specific version tag (e.g. mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2), matching the pinned-localstack pattern in this file",
       "file": "compose.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6e6dadb"
     },
     {
       "id": 4,
@@ -46,9 +46,9 @@
       "issue": "Gateway depends_on servicebus-emulator with condition: service_started and the emulator has no healthcheck, so the app can start before the emulator accepts AMQP connections (mssql gets service_healthy; the emulator does not)",
       "fix": "Add a healthcheck to servicebus-emulator (e.g. TCP probe on 5672 or the emulator's documented readiness check) and change the gateway dependency to condition: service_healthy",
       "file": "compose.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6e6dadb"
     },
     {
       "id": 5,
@@ -59,9 +59,9 @@
       "fix": "Import com.azure:azure-sdk-bom in dependencyManagement (alongside the existing AWS BOM) and drop the explicit version from azure-messaging-servicebus",
       "best_practice": "java/spring-boot.md",
       "file": "pom.xml",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9c9e1fe"
     },
     {
       "id": 6,
@@ -72,9 +72,9 @@
       "fix": "Keep the <testcontainers.version>1.21.4</testcontainers.version> property override and remove the explicit <version> elements from both testcontainers dependencies so they resolve via the Boot-managed testcontainers BOM",
       "best_practice": "java/spring-boot.md",
       "file": "pom.xml",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9c9e1fe"
     },
     {
       "id": 7,
@@ -84,9 +84,9 @@
       "issue": "ServiceBusClientBuilder uses the default AMQP-over-TCP transport (port 5671), which bypasses the CDP egress proxy ProxyConfig sets via ProxySelector/system properties — the Azure SDK only honours a proxy with AMQP_WEB_SOCKETS, so the sender works locally and against the emulator ITs but cannot connect to ASB from a deployed CDP environment (breaks the send-to-ASB AC there)",
       "fix": "Add .transportType(AmqpTransportType.AMQP_WEB_SOCKETS) to the builder so AMQP is tunnelled over 443 and the default ProxySelector from ProxyConfig is honoured (or pass explicit ProxyOptions built from cdp.proxyUrl)",
       "file": "src/main/java/uk/gov/defra/cdp/dynamicsgateway/configuration/AzureServiceBusClientConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "2eff326"
     },
     {
       "id": 8,
@@ -108,9 +108,9 @@
       "issue": "Record auto-generates toString() that includes the full SAS connectionString, so any future logging of the config bean (or a framework error report rendering it) would leak the SharedAccessKey",
       "fix": "Override toString() in the record to redact connectionString (e.g. print queue only, mask the connection string)",
       "file": "src/main/java/uk/gov/defra/cdp/dynamicsgateway/configuration/AzureServiceBusConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "1b91009"
     },
     {
       "id": 10,
@@ -121,9 +121,9 @@
       "fix": "Add @Timed(\"events.publish\") to publishEvent, matching the per-endpoint metric convention",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/cdp/dynamicsgateway/events/EventsSendController.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8669866"
     },
     {
       "id": 11,
@@ -147,9 +147,9 @@
       "fix": "Add a handleException(Exception ex) handler that logs at error level and returns 500 with the same body shape (\"An unexpected error occurred\"), matching the documented GlobalExceptionHandler pattern",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/cdp/dynamicsgateway/exceptions/GlobalExceptionHandler.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "28624e5"
     },
     {
       "id": 13,
@@ -160,9 +160,9 @@
       "fix": "Capture the argument (ArgumentCaptor<JsonNode> or eq(objectMapper.readTree(...))) and assert the published JsonNode equals the posted JSON",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/EventsSendControllerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "be76720"
     },
     {
       "id": 14,
@@ -173,9 +173,9 @@
       "fix": "Add verifyNoInteractions(queueMessageSender) (or verify(queueMessageSender, never()).publish(any())) to each rejection test",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/EventsSendControllerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "be76720"
     },
     {
       "id": 15,
@@ -186,9 +186,9 @@
       "fix": "Add // Given / // When & Then comment blocks to each test method",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/EventsSendControllerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "be76720"
     },
     {
       "id": 16,
@@ -199,9 +199,9 @@
       "fix": "In publish_sendsMessageToServiceBus, capture the message and assert sent.getBody().toString() equals the input JSON (e.g. {\"key\":\"value\"}) instead of verify(...).sendMessage(any(...))",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/QueueMessageSenderTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "dc75305"
     },
     {
       "id": 17,
@@ -212,9 +212,9 @@
       "fix": "Add // Given / // When / // Then comment blocks to each test (// When & Then may be combined for the exception test)",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/QueueMessageSenderTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "dc75305"
     },
     {
       "id": 18,
@@ -225,9 +225,9 @@
       "fix": "Rename to publish_shouldSendMessageToServiceBus, publish_shouldSetContentTypeAndMessageId, publish_shouldThrowGatewayException_whenSendFails",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/events/QueueMessageSenderTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "dc75305"
     },
     {
       "id": 19,
@@ -238,9 +238,9 @@
       "fix": "Rename to handleUnreadableBody_shouldReturn400WithErrorMessage and handleGatewayException_shouldReturn502WithErrorMessage",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e75fbe2"
     },
     {
       "id": 20,
@@ -251,9 +251,9 @@
       "fix": "Add // Given / // When / // Then (or combined // When & Then) comment blocks to both test methods",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e75fbe2"
     },
     {
       "id": 21,
@@ -263,9 +263,9 @@
       "issue": "AC says a missing/malformed body 'is rejected with a 4xx response and is not sent to ASB' — both 400 tests assert only the status/body, never that nothing reached Service Bus, and no other test (unit or IT) pins that clause",
       "fix": "In post_returnsBadRequest_forMissingBody and post_returnsBadRequest_forMalformedJson add Mockito.verifyNoInteractions(senderClient) (or assert the queue is empty) after the status assertion",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/EventsSendControllerIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8a73022"
     },
     {
       "id": 22,
@@ -275,9 +275,9 @@
       "issue": "receiveMessage() builds the receiver in the default PEEK_LOCK mode and never settles the received message, so after the lock expires the message returns to the shared static queue and can be redelivered into later tests/classes as the suite grows",
       "fix": "Add .receiveMode(ServiceBusReceiveMode.RECEIVE_AND_DELETE) to the receiver builder (or call receiver.complete(received) before returning)",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/EventsSendControllerIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8a73022"
     },
     {
       "id": 23,
@@ -287,9 +287,9 @@
       "issue": "Happy-path test asserts the received body merely contains 'NotificationSubmitted' — a substring check would still pass if the gateway wrapped or mangled the payload, so it doesn't pin the AC's 'sends that content' forwarding fidelity",
       "fix": "Assert the exact forwarded body (isEqualTo the posted JSON) and the message content type (received.getRawAmqpMessage()/getContentType() == application/json) which QueueMessageSender sets",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/EventsSendControllerIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8a73022"
     },
     {
       "id": 24,
@@ -300,9 +300,9 @@
       "fix": "Add // Given, // When, // Then comments to each test method",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/EventsSendControllerIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8a73022"
     },
     {
       "id": 25,
@@ -313,9 +313,9 @@
       "fix": "Rename tests to the should-form, e.g. post_shouldReturnAccepted_andMessageLandsInQueue, post_shouldReturnBadGateway_whenSendFails",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/EventsSendControllerIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8a73022"
     },
     {
       "id": 26,
@@ -326,9 +326,9 @@
       "fix": "Pin both images to specific tags, e.g. mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2 and mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/IntegrationBase.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "562503a"
     },
     {
       "id": 27,
@@ -339,9 +339,9 @@
       "fix": "Rename to customSslContext_shouldBeTlsAndWiredBySpring to match the subject_shouldDoWhat convention",
       "best_practice": "java/modern-java.md",
       "file": "src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/TrustStoreConfigurationIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "562503a"
     }
   ]
 }
