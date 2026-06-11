@@ -8,6 +8,10 @@
 #
 # Exits 0 on success, 1 on failure or timeout.
 # Uses gh CLI for authentication — no env vars required.
+#
+# Polls `gh run view` rather than `gh run watch`: watch has no timeout
+# flag (current gh CLIs reject --timeout), and polling tolerates
+# transient API errors instead of dying mid-wait.
 
 set -e
 
@@ -31,15 +35,38 @@ if [[ "$RUN_ID" == http* ]]; then
 fi
 
 TIMEOUT="${3:-600}"
+INTERVAL=10
 
 echo "Waiting for run ${RUN_ID} in ${REPO} (timeout: ${TIMEOUT}s)..."
 
-# gh run watch exits 0 on success, non-zero on failure
-if gh run watch --repo "$REPO" "$RUN_ID" --interval 10 --timeout "$TIMEOUT" --exit-status; then
-    echo "Run completed successfully."
-    exit 0
-else
-    EXIT_CODE=$?
-    echo "Run did not complete successfully (exit code: ${EXIT_CODE})."
-    exit 1
-fi
+ELAPSED=0
+CONSECUTIVE_FAILURES=0
+while true; do
+    if STATE=$(gh run view --repo "$REPO" "$RUN_ID" --json status,conclusion \
+        --jq '.status + "/" + (.conclusion // "")' 2>/dev/null); then
+        CONSECUTIVE_FAILURES=0
+        case "$STATE" in
+            completed/success)
+                echo "Run completed successfully."
+                exit 0
+                ;;
+            completed/*)
+                echo "Run completed with conclusion: ${STATE#completed/}."
+                exit 1
+                ;;
+        esac
+    else
+        CONSECUTIVE_FAILURES=$((CONSECUTIVE_FAILURES + 1))
+        if [ "$CONSECUTIVE_FAILURES" -ge 3 ]; then
+            echo "Cannot read run ${RUN_ID} in ${REPO} (3 consecutive failures)."
+            exit 1
+        fi
+    fi
+
+    if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+        echo "Timed out after ${TIMEOUT}s (last status: ${STATE%%/*})."
+        exit 1
+    fi
+    sleep "$INTERVAL"
+    ELAPSED=$((ELAPSED + INTERVAL))
+done

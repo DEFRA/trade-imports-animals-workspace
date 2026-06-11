@@ -97,5 +97,16 @@ Per-ticket review clones under `workareas/` are pinned automatically by
 `tools/review/prepare-review.sh` (and self-healed on refresh by
 `tools/review/refresh/pull-repos.sh`).
 
+The dev repos under `repos/` are handled for you: `make setup` /
+`tim workspace setup` clone with the exclusion in place
+(`--single-branch`, pin the refspec, then a widening fetch), and
+`make update` / `tim workspace update` heal any clone still on the
+default refspec exactly once — pin, refetch, then `git gc --prune=now`
+to reclaim the gh-pages packs already on disk. Expect that first update
+to take a few minutes per large clone; every later run skips the heal.
+Local branches, stashes and uncommitted files are untouched. The
+tooling also copes with `gh-pages` being absent on the remote (the
+truncate job deletes and re-creates it).
+
 
 
