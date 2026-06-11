@@ -12,26 +12,11 @@ Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via 
 
 ---
 
-## Bash call hygiene
+## Conventions
 
-**Rule: one command per Bash call.** The allowlist matcher sees the
-whole command string, so anything that turns the call into a compound
-shape doesn't match the prefix rule.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or `npm
-  --prefix <dir>`.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...`.
-- No `/Users/<you>/git/...` either — type `~/`, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the
-  workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Codebase search → the Grep tool (not Bash `grep -r`).
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## Boundaries
 

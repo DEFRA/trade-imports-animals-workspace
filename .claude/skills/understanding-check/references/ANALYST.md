@@ -18,23 +18,11 @@ You receive these parameters in your spawn prompt:
   `analysis.{repo}.json`.
 - `Ticket summary file` — absolute path to `ticket.md`.
 
-## Path conventions
+## Conventions
 
-Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals-workspace/...`. Bash expands `~`.
-Skill-internal references stay relative to the skill folder.
-
-## Bash call hygiene
-
-The rule: **one command per Bash call**.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal
-  `~/git/defra/trade-imports-animals-workspace/...`.
-- No `/Users/<you>/git/...` — type the `~/` form.
-- No `python3 -c` for JSON — use `jq` or the helper scripts.
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## Output contract
 

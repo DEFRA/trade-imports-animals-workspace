@@ -1,6 +1,6 @@
 # Phase 2 Manager — Changelog Analysis and Planning
 
-**Bash hygiene:** one command per Bash call. Full rules in `SKILL.md` → "Bash call hygiene".
+**Bash hygiene:** one command per Bash call. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 **Job:** Spawn `general-purpose` Task subagents following
 `references/VERSION_PLANNER.md`, one per unplanned version across every

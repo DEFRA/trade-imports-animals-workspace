@@ -1,6 +1,6 @@
 ---
 name: ticket-refiner
-description: 'Assess whether a Jira ticket is READY for team refinement and estimation, producing a READY / NEEDS WORK / SPIKE REQUIRED verdict in ~/git/defra/trade-imports-animals-workspace/workareas/ticket-refinement/EUDPA-X/review.md. Use when the user asks to validate a ticket''s description, AC, repos, dependencies and sizing BEFORE refinement (triggers: "is ticket EUDPA-X ready", "pre-refinement", "refine EUDPA-X", "refinement check"). NOT for authoring brand-new tickets (use the ticket-creator skill: "assess existing ticket readiness" vs "create new"). NOT for planning or implementing an already-refined ticket (use the ticket skill: "assess readiness" vs "plan/implement").'
+description: 'Assess whether a Jira ticket is ready for team refinement, producing a READY / NEEDS WORK / SPIKE REQUIRED verdict. Triggers: "is ticket EUDPA-X ready", "pre-refinement", "refine EUDPA-X", "refinement check". NOT for creating tickets (ticket-creator) or planning/implementing refined tickets (ticket).'
 ---
 
 Role: Review tickets before refinement to assess readiness for team
@@ -16,36 +16,11 @@ truth for "what makes a good EUDPA ticket":
 Read both at session start; assess against the same standards
 `ticket-creator` authors to.
 
-## Path conventions
+## Conventions
 
-Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
-`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
-your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
-Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
-by name via the Task tool.
-
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## When to use
 

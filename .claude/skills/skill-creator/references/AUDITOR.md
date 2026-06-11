@@ -5,25 +5,11 @@ Your spawn prompt names a target skill, its `SKILL.md` path, and
 the output plan path. Walk the checklist; produce the plan. Do not
 make in-place edits to the target skill.
 
-## Bash call hygiene
+## Conventions
 
-**Rule: one command per Bash call.** The allowlist matcher sees
-the whole command string; chains and pipes don't match the prefix
-rule even when each piece would.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls.
-- No `cd <dir> && cmd` — use `cmd -C <dir>` (git), full paths to
-  binaries, or `--prefix` / `-f` flags.
-- No `find ... -exec` — use Glob + Read.
-- No `$VAR` in LLM-typed Bash — use literal
-  `~/git/defra/trade-imports-animals-workspace/...` paths.
-- No `/Users/<you>/git/...` resolved form — type the `~/` form.
-- No `python3 -c` for JSON — use `jq`.
-- No `awk` / `sed -n` / `grep -n` for file inspection — use Read
-  with offset+limit.
-
-Full rule table:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## Inputs
 
@@ -111,14 +97,16 @@ violations:
 
 Each violation: cite `file:line` and the corrected form.
 
-### 5. Hygiene block inside worker personas
+### 5. Hygiene pointer inside worker personas
 
 For each `references/<NAME>.md`:
 
 - Determine if it's spawned via Task `general-purpose` (fan-out)
   or parent-loaded.
-- Fan-out workers MUST have a `## Bash call hygiene` block at
-  the top.
+- Fan-out workers MUST carry the short `## Conventions` pointer
+  (one command per Bash call; literal `~/git/...` paths; full rules
+  in `docs/agent-skills.md`). Do NOT inline the full rule table —
+  it lives once in `docs/agent-skills.md`.
 - Parent-loaded references MAY omit it (inherit SKILL.md). Don't
   flag absence — it's optional.
 

@@ -1,6 +1,6 @@
 ---
 name: govuk-upgrade
-description: 'Upgrade the govuk-frontend package across every EUDP Live Animals Node.js repo that consumes it. A four-stage workflow driven by canonical per-repo JSON state (`versions.{repo}.json`): Phase 1 = `start-upgrade.sh` (ticket → branch → discover repos → seed state + pre-bake CHANGELOG sections + best-practices bundle), Phase 2 = fan-out one `general-purpose` Task subagent per pending version following `references/VERSION_PLANNER.md` (uses `version-classify.sh` + `version-add-change.sh`), optional Walker = batch triage of pending plans following `references/PLAN_WALKER.md`, Phase 3 = strict-semver-order `apply-version.sh` per `todo` version (package.json + npm install + npm test + commit + state transition), then E2E once at the end. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend", "walk govuk EUDPA-XXX", "start-upgrade.sh". NOT for non-govuk-frontend npm bumps — use `npm-upgrade`.'
+description: 'Upgrade the govuk-frontend package across every Node.js repo that consumes it: changelog-driven, per-version planning and strict-semver-order application. Triggers: "upgrade govuk-frontend", "govuk upgrade", "bump govuk-frontend", "walk govuk EUDPA-X". NOT for other npm bumps (npm-upgrade).'
 ---
 
 Upgrade `govuk-frontend` across the Node.js repos that consume it. The
@@ -8,36 +8,11 @@ workflow walks every intermediate semver between current and target,
 plans per-repo code changes from each release's CHANGELOG, and applies
 them in strict order with a commit per version.
 
-## Path conventions
+## Conventions
 
-Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
-`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
-your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
-Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
-by name via the Task tool.
-
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## When to use
 

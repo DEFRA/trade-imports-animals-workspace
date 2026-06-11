@@ -56,8 +56,8 @@ skill directories under `.claude/skills/<name>/` and
 - `prebake` — see pattern 3. `true` triggers a
   `prepare-<name>.sh` stub.
 - `fanout.enabled` — see pattern 5. `true` requires at least one
-  worker name; each becomes a `references/<NAME>.md` stub with a
-  Bash-hygiene block at the top.
+  worker name; each becomes a `references/<NAME>.md` stub with the
+  short `## Conventions` pointer at the top (see `docs/agent-skills.md`).
 - `walker` — see pattern 7. Only valid when `state_shape == "json"`
   and there is a list of N items to triage. Validation in
   `interview-add-answer.sh`.

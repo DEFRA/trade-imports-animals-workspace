@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: 'Meta-skill for authoring new workspace skills and auditing existing ones against the 8-pattern checklist. Two modes — CREATE scaffolds a new skill end-to-end (SKILL.md + references/ + tools/<name>/ + assets/ + .claude/settings.json allowlist), AUDIT walks an existing skill (or fans out across all skills) and produces a plan document under workareas/skills-audit/<name>.md. Use when the user wants to add a workspace skill or assess an existing one (triggers: "scaffold skill <name>", "skill-create <name>", "new workspace skill <name>", "audit skill <name>", "audit skills", "review skill <name> against patterns"). Disambiguated from Claude Code''s built-in /init (which scaffolds CLAUDE.md, not workspace skills). NOT for editing skills you already understand — open the SKILL.md and edit directly.'
+description: 'Meta-skill: CREATE scaffolds a new workspace skill end-to-end; AUDIT reviews existing skills against the pattern checklist and writes an improvement plan. Triggers: "scaffold skill <name>", "new workspace skill", "audit skill <name>", "audit skills". NOT for direct edits to skills you already understand.'
 ---
 
 The meta-skill. Captures the 8-pattern checklist for workspace
@@ -16,19 +16,11 @@ Stops at audit. Improvement work is judgment-heavy; the user
 resolves Open Questions on the plan and hand-writes the
 implementer prompt.
 
-## Path conventions
+## Conventions
 
-Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
-`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash
-expands `~` automatically. Skill-internal references stay
-relative (`references/<NAME>.md`, `assets/<NAME>.md`).
-
-**Bash call hygiene** — one command per Bash call, no `&&`
-chains, no `$VAR` expansion in workspace paths. Full rule table:
-[`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash
-call hygiene".
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## Session start — Read these references
 
@@ -78,7 +70,7 @@ Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/s
 
 `general-purpose` carries `Tools: *` so the worker can Read /
 Write / Bash freely — required because the AUDITOR doesn't see
-this SKILL.md (it has its own hygiene block at the top of
+this SKILL.md (it has its own Conventions pointer at the top of
 `AUDITOR.md`).
 
 ## Step 0: Dispatch

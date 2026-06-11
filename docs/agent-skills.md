@@ -113,6 +113,17 @@ each piece would individually. Symptoms:
 
 The skill prose models this in every example — follow the model.
 
+**In-skill pointer:** skills and fan-out worker references do NOT inline
+these rules. They carry a short `## Conventions` block instead:
+
+```markdown
+## Conventions
+
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
+```
+
 Worker personas are addressed by an absolute `references/<NAME>.md` path
 inside the spawn prompt — see "Worker references" below.
 

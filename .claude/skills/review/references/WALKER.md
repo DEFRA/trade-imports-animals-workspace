@@ -12,18 +12,11 @@ Items schema: `assets/items-table.md`.
 
 ---
 
-## Bash call hygiene
+## Conventions
 
-**Rule: one command per Bash call.** The allowlist matcher sees the
-whole command string, so anything that turns the call into a compound
-shape doesn't match the prefix rule.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use the literal `~/git/defra/trade-imports-animals-workspace/...` form.
-- No `/Users/<you>/git/...` — type `~/`, don't resolve it.
-
----
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## Step 1: Load the work list
 

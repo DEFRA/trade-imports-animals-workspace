@@ -1,6 +1,6 @@
 ---
 name: understanding-check
-description: 'Verify that the developer who authored a PR actually understands it, before merge. Analyses the diff against the ticket, generates 8-12 evidence-anchored questions with categorical PASS/PARTIAL/FAIL rubrics, presents the question set for approval (the in-skill plan gate), conducts a terminal Q&A, scores answers by quoting back the rubric clause that fired, and emits a deterministic verdict (pass / needs-review / high-risk) with a paste-ready PR comment. Coaching aid, not a merge gate. Use when the user says "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X", "verify I understand EUDPA-X". NOT a code review (use the `review` skill) and NOT a style review (use `code-style`) — those judge the code; this judges the author''s grasp of it.'
+description: 'Verify the developer who authored a PR understands it: evidence-anchored questions, terminal Q&A, rubric scoring, pass / needs-review / high-risk verdict with paste-ready PR comment. Coaching aid, not a merge gate. Triggers: "interview EUDPA-X", "check understanding EUDPA-X", "verify I understand EUDPA-X". NOT a code or style review (review / code-style) — those judge the code; this judges the author''s grasp of it.'
 ---
 
 Pre-merge understanding check for an EUDP Live Animals ticket: surface
@@ -9,36 +9,11 @@ about them, score answers against categorical rubrics, and produce a
 coaching report. Designed for PRs completed with AI assistance, where
 local code-edit fluency outpaces understanding.
 
-## Path conventions
+## Conventions
 
-Cross-workspace paths use the literal home-relative form —
-`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
-`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash expands `~` to
-your home directory automatically. Scripts under `tools/` hardcode the workspace path as
-`$HOME/git/defra/trade-imports-animals-workspace/...` — no env var needed.
-Skill-internal references stay relative
-(`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
-by name via the Task tool.
-
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+One command per Bash call; literal `~/git/defra/trade-imports-animals-workspace/...`
+paths (never `$VAR`, never resolved `/Users/...`); prefer Read/Glob/`jq` over
+`awk`/`sed`/`find`. Full rules: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
 
 ## What this skill is for
 
