@@ -164,7 +164,7 @@ the workspace root, auto-discovered by Claude Code (and Cursor). See
 
 | Skill | Triggers | Purpose |
 |---|---|---|
-| `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
+| `ticket-creator` | "create ticket", "raise ticket", "new ticket", "file a bug", "flesh out ticket" | Create a new Jira ticket end-to-end (Bug/Story/Task). |
 | `ticket-refiner` | "is ticket ready", "pre-refinement", "refinement check" | Assess whether a ticket is READY / NEEDS WORK / SPIKE REQUIRED. |
 | `ticket` | "plan EUDPA-", "implement EUDPA-", "refactor", "tidy up" | Plan / implement / refactor an existing ticket. |
 | `review` | "review EUDPA-", "re-review", "walk review", "implement review" | Code review across all languages and repos (correctness, security, tests). |
@@ -369,6 +369,16 @@ workareas/skill-creator/<name>/                    → decisions.json (CREATE-mo
 workareas/skills-audit/<name>.md                   → AUDIT-mode plan document (per skill)
 workareas/understanding-checks/EUDPA-X/            → .interview-meta.json, ticket.md, analysis.{repo}.json, questions.json, transcript.json, report.md, .diffs/{repo}.diff, best-practices/{repo}.md
 ```
+
+## SonarCloud integration
+
+`trade-imports-animals-frontend`, `-admin`, `-backend`, and `-dynamics-gateway` each have a SonarCloud Claude Code integration committed to `.claude/` and `.mcp.json`. This provides:
+
+- **Secrets scanning** — `UserPromptSubmit` and `PreToolUse` hooks block prompts/reads containing API keys or tokens
+- **MCP server** — query SonarCloud issues and rules via the `sonarqube` MCP server
+- **End-of-turn analysis** — a `Stop` hook runs `sonar analyze agentic` after each turn when uncommitted changes exist; any BLOCKER or CRITICAL findings are injected back as context so they can be addressed before the next response
+
+**Before committing code changes:** run `sonar analyze --staged` (requires `sonar` CLI installed and `sonar auth login` completed) and fix any BLOCKER or CRITICAL findings before committing. Also run it when encountering CI failures, test failures, or unexpected behaviour. The MCP server can also be queried directly to fetch existing issues for a project.
 
 ## Conventions
 

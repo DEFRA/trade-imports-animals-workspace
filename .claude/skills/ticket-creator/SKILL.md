@@ -1,6 +1,6 @@
 ---
 name: ticket-creator
-description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
+description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket", "flesh out ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
 ---
 
 Role: Help create well-structured, actionable Jira tickets.
@@ -57,10 +57,11 @@ session:
 
 0. Refresh prereqs and Read the rules (above)
 1. Gather information
-2. Determine type and fields
-3. Draft ticket to `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md`
-4. Iterate on draft with user
-5. Create ticket from final draft
+2. Either create a placeholder ticket, continue a placeholder ticket, or create with a new ticket. If creating a placeholder ticket, get a title that encapsulates the work and a parent epic, then create the ticket without gathering more information, and skip the remaining steps. If continuing a placeholder ticket, get the ticket key from the user, refresh the draft from JIRA, and continue with the remaining steps. 
+3. Determine type and fields
+4. Draft ticket to `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md`
+5. Iterate on draft with user
+6. Create ticket from final draft
 
 `<slug>` is a short kebab-case identifier derived from the summary (e.g.
 `commodity-code-validation`). If the ticket is in response to an existing
