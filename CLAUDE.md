@@ -15,7 +15,7 @@ The workspace must live at `~/git/defra/trade-imports-animals-workspace`. If you
 | `repos/trade-imports-stub` | DEFRA/trade-imports-stub | Stub of upstream trade-imports services | Java / Spring Boot |
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
 | `repos/trade-imports-defra-id-stub` | DEFRA/trade-imports-defra-id-stub | Stub of the Defra ID (OIDC) sign-in service | Node.js |
-| `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Gateway to Dynamics | Java / Spring Boot |
+| `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Centralised gateway forwarding events to Azure Service Bus (ADR-EUDP-001 Option B) | Java / Spring Boot |
 
 ## How to navigate
 
@@ -74,6 +74,7 @@ is covered by tim — the JSON envelope is schema-versioned and stable.
 | `make start-frontend` | Start frontend dev server from source (outside Docker) |
 | `make start-backend` | Start backend from source (outside Docker) |
 | `make start-admin` | Start admin dev server from source (outside Docker) |
+| `make start-gateway` | Start dynamics gateway from source (outside Docker) |
 
 ## Common workflows
 
@@ -126,7 +127,7 @@ git push origin my-feature
 
 `scripts/stack/run-stack.sh` brings up the full stack from Dockerhub.
 Supports `-b <branch>` (probe for branch-tagged images), `-d/--dev` (build
-the 5 repo-backed services from local source under `repos/`),
+the 6 repo-backed services from local source under `repos/`),
 `-e <service>` (exclude one so you can run it natively), and
 `--profile <name>` (run only a subset of tiers). `bounce-backend.sh` picks
 up edited Java source in `--dev` mode.

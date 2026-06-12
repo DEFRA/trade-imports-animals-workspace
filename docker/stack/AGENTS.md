@@ -9,7 +9,7 @@ alongside `make docker-compose-*` while we evaluate.
 ```bash
 ./scripts/stack/run-stack.sh                                # all services on :latest
 ./scripts/stack/run-stack.sh -b feat/EUDPA-123              # branch tag where published, latest elsewhere
-./scripts/stack/run-stack.sh -d                             # build the 5 repo-backed services from local source
+./scripts/stack/run-stack.sh -d                             # build the 6 repo-backed services from local source
 ./scripts/stack/run-stack.sh -e backend                     # run backend in IntelliJ / npm; rest in docker
 ./scripts/stack/run-stack.sh --profile frontend --profile infrastructure --profile database
                                                             # only those profiles; intended for "running other tiers natively"
@@ -33,9 +33,9 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 | `database.compose.yml` | `mongodb` | `database` |
 | `infrastructure.compose.yml` | `localstack`, `localstack-init`, `redis`, `cdp-uploader` | `infrastructure` |
 | `stubs.compose.yml` | `trade-imports-defra-id-stub`, `trade-imports-stub` | `stubs` |
-| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-reference-data` | `backend` |
+| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data` | `backend` |
 | `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin` | `frontend` |
-| `dev.compose.yml` (--dev only) | build/target/volumes overlay for the 5 repo-backed services | — |
+| `dev.compose.yml` (--dev only) | build/target/volumes overlay for the 6 repo-backed services | — |
 
 ## Choosing between `-d`, `-e`, and `--profile`
 
@@ -54,13 +54,13 @@ compose freely.
 
 ## `--exclude` (`-e`) labels
 
-Repeatable. Valid: `frontend`, `backend`, `admin`, `stub`, `reference-data`.
+Repeatable. Valid: `frontend`, `backend`, `admin`, `stub`, `reference-data`, `gateway`.
 Excluded services skip the Dockerhub probe and stay out of the stack — start
 them yourself; the rest of the stack reaches them via
 `host.docker.internal:<port>`.
 
 Ports for host-side runs: frontend 3000, admin 3001, backend 8085, stub 8087,
-reference-data 8086.
+reference-data 8086, gateway 8088.
 
 ## `--profile` semantics (strict)
 
@@ -106,6 +106,8 @@ the right one. Errors out if neither is up.
 - Java stub and reference-data: their Dockerfiles only have an `AS development`
   stage (pre-built JAR, no source mount). `--dev` rebuilds the image but does
   not hot-reload. A `dev-run` stage in those repos would unlock that.
+- Java gateway: has a `dev-run` stage and is wired to it in `--dev` mode with
+  a source mount, so source changes are picked up on restart like the backend.
 
 ## Hostname rules — no `/etc/hosts` edits required
 
