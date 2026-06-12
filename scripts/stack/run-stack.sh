@@ -30,6 +30,10 @@ valid_profiles=("${ALL_PROFILES[@]}")
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
 
+# shellcheck source=lib/init-scripts.sh
+source "$LIB_DIR/init-scripts.sh"
+stage_init_scripts "$branch"
+
 [ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
 [ "$dev" -eq 1 ] && compose_files_add_dev
 
