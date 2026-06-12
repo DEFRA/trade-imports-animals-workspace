@@ -78,7 +78,29 @@ are configured:
 
 This checks Jira, Confluence, and GitHub authentication.
 
-### 4. Keep git fetches light (gh-pages exclusion)
+### 4. SonarCloud (Claude Code integration)
+
+The four main repos (`frontend`, `admin`, `backend`, `dynamics-gateway`) have a SonarCloud Claude Code integration committed to `.claude/`. It provides secrets-scanning hooks, an MCP server for querying SonarCloud, and an end-of-turn analysis hook that surfaces BLOCKER/CRITICAL findings automatically.
+
+#### Install the `sonar` CLI
+
+```bash
+curl -o- https://raw.githubusercontent.com/SonarSource/sonarqube-cli/refs/heads/master/user-scripts/install.sh | bash
+```
+
+Then restart your terminal (or `source ~/.zshrc`) so `sonar` is on your `PATH`.
+
+#### Authenticate
+
+```bash
+sonar auth login
+```
+
+Sign in with your SonarCloud account when prompted. Authentication is stored in `~/.sonar/` — no env vars needed.
+
+Once done, the hooks activate automatically when you open Claude Code in any of the four repos.
+
+### 5. Keep git fetches light (gh-pages exclusion)
 
 The product repos' `gh-pages` branches hold published artifacts and are
 enormous (17 GB object graph on the frontend vs 7 MB for main), and the
