@@ -7,7 +7,7 @@ CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 
 .PHONY: setup link update reset status install lint test \
-        start-frontend start-backend start-admin \
+        start-frontend start-backend start-admin start-gateway \
         docker-local-branches docker-compose-up docker-compose-dev docker-compose-down docker-compose-bounce docker-logs docker-restart-backend clean help
 
 # --- Help ---
@@ -201,4 +201,7 @@ start-backend: ## Start backend from source
 
 start-admin: ## Start admin dev server from source
 	PORT=3001 npm --prefix $(REPOS_DIR)/trade-imports-animals-admin run dev
+
+start-gateway: ## Start dynamics gateway from source
+	SPRING_PROFILES_ACTIVE=local mvn -f $(REPOS_DIR)/trade-imports-dynamics-gateway/pom.xml spring-boot:run
 

@@ -2,8 +2,9 @@
 # files can mount one stable path whether or not repos/ is cloned.
 #
 # Ownership (EUDPA-178): the backend repo owns the localstack provisioning
-# script, the tests repo owns the mongo seed fixtures, and the workspace owns
-# the mongo replica-set init. Locally the scripts come from repos/<repo>/;
+# script, the tests repo owns the mongo seed fixtures, the dynamics-gateway
+# repo owns the Azure Service Bus emulator config, and the workspace owns the
+# mongo replica-set init. Locally the scripts come from repos/<repo>/;
 # in CI (where only the workspace repo is checked out) they are sparse-fetched
 # from GitHub — the requested branch first, the default branch as fallback.
 #
@@ -73,7 +74,7 @@ stage_source() {
 stage_init_scripts() {
   local ref="${1:-}"
   rm -rf "$STAGED_DIR"
-  mkdir -p "$STAGED_DIR/mongodb" "$STAGED_DIR/localstack"
+  mkdir -p "$STAGED_DIR/mongodb" "$STAGED_DIR/localstack" "$STAGED_DIR/servicebus"
 
   # Workspace-owned: mongo replica-set init
   cp "$STACK_DIR/scripts/mongodb/10-database-setup.js" "$STAGED_DIR/mongodb/"
@@ -83,4 +84,7 @@ stage_init_scripts() {
 
   # Backend-owned: localstack resource provisioning
   stage_source trade-imports-animals-backend "$ref" compose/start-localstack.sh "$STAGED_DIR/localstack"
+
+  # Dynamics-gateway-owned: Azure Service Bus emulator entity config
+  stage_source trade-imports-dynamics-gateway "$ref" servicebus/servicebus-config.json "$STAGED_DIR/servicebus"
 }

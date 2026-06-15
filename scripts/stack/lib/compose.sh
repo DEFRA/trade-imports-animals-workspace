@@ -12,7 +12,7 @@ COMPOSE_FILES=(
   -f "$STACK_DIR/frontend.compose.yml"
 )
 
-ALL_PROFILES=(database infrastructure stubs backend frontend)
+ALL_PROFILES=(database infrastructure servicebus stubs backend frontend)
 
 compose_files_add_dev() {
   COMPOSE_FILES+=(-f "$STACK_DIR/dev.compose.yml")

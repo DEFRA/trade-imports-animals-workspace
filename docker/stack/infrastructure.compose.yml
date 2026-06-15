@@ -63,6 +63,39 @@ services:
       # Staged from the backend repo (the canonical localstack init) by
       # scripts/stack/lib/init-scripts.sh
       - ./.staged/localstack:/scripts
+  mssql:
+    profiles: [servicebus]
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'YourStrong@Passw0rd'
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" -b -No']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  servicebus-emulator:
+    profiles: [servicebus]
+    # Pinned to match the dynamics-gateway Testcontainers integration tests
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
+    platform: linux/amd64
+    depends_on:
+      mssql:
+        condition: service_healthy
+    environment:
+      ACCEPT_EULA: 'Y'
+      SQL_SERVER: mssql
+      MSSQL_SA_PASSWORD: 'YourStrong@Passw0rd'
+    volumes:
+      # Staged from the dynamics-gateway repo (the canonical ASB entity config)
+      # by scripts/stack/lib/init-scripts.sh
+      - ./.staged/servicebus/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+    ports:
+      - '5672:5672'
+
   redis:
     profiles: [infrastructure]
     healthcheck:
