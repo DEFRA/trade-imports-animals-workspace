@@ -13,7 +13,13 @@ source "$LIB_DIR/compose.sh"
 # shellcheck source=lib/init-scripts.sh
 source "$LIB_DIR/init-scripts.sh"
 
-# Re-stage so a reseed picks up locally edited seed fixtures
+# Local dev aid for iterating on mongo structure: re-stage the init scripts then
+# force-recreate the mongo volume so the next start reseeds from scratch.
+#
+# The re-stage exists so a reseed picks up locally edited seed fixtures. With no
+# local edits under repos/ it adds nothing new; in CI (no repos/ checkout) it
+# sparse-fetches the fixtures from GitHub — so the re-stage is never a literal
+# no-op, just often a quiet one when run locally with an unchanged tree.
 stage_init_scripts
 
 printf '%sBouncing mongo (wipes volume, re-runs init scripts)...%s\n' "$COLOUR_BOLD" "$COLOUR_RESET"
