@@ -9,9 +9,8 @@ Project baseline: Playwright with TypeScript, Allure reporting, multiple config 
 ```
 repos/trade-imports-animals-tests/
 ├── playwright.config.ts        ← base config
-├── playwright.config.local.ts  ← local docker compose run
+├── playwright.config.local.ts  ← local workspace-stack run
 ├── playwright.config.local-fast.ts  ← local without Allure
-├── playwright.config.github.ts ← GitHub Actions CI
 ├── tests/
 │   ├── journeys/               ← full user journey tests
 │   │   └── notification.spec.ts
@@ -33,7 +32,7 @@ Tags used in this project:
 | Tag | Purpose |
 |-----|---------|
 | `@agent` | Agent-driven tests |
-| `@compose` | Requires full docker compose stack |
+| `@compose` | Requires full workspace stack |
 | `@integration` | Integration-level tests |
 
 ---

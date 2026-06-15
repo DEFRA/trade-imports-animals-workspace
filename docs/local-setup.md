@@ -71,7 +71,7 @@ Tear down and wipe volumes (mongo data, localstack state):
 
 ## Option 2 — Full stack from source (recommended for cross-service development)
 
-Builds the five repo-backed services from their local source under `repos/`
+Builds the six repo-backed services from their local source under `repos/`
 and starts the full stack with volume mounts. Node services get hot-reload on
 `src/` changes; the backend runs `mvn spring-boot:run`.
 
@@ -109,7 +109,7 @@ The backend does **not** hot-reload — recreate the container after changing Ja
 ## Option 3 — One service natively, the rest in the stack
 
 Exclude the service you're developing from the stack and run it from source.
-Valid exclude labels: `frontend`, `backend`, `admin`, `stub`, `reference-data`.
+Valid exclude labels: `frontend`, `backend`, `admin`, `stub`, `defra-id-stub`, `reference-data`, `gateway`.
 
 ```bash
 # Terminal 1 — everything except the backend
