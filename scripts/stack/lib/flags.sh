@@ -8,7 +8,7 @@ Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [--profil
                          \`defradigital/<svc>:<sanitised>\` runs that image;
                          otherwise falls back to \`:latest\`.
   -e, --exclude <label>  Omit a repo-backed service from the stack. Repeatable.
-                         Valid labels: frontend, backend, admin, stub, reference-data, gateway.
+                         Valid labels: frontend, backend, admin, stub, defra-id-stub, reference-data, gateway.
                          Excluded services skip the Dockerhub probe and show
                          'excluded' in the summary. Useful when running that
                          service from source (IntelliJ / npm) — other services
@@ -19,7 +19,7 @@ Usage: $(basename "$0") [-b|--branch <name>] [-e|--exclude <label>]... [--profil
                          Strict — passing only a subset may leave \`depends_on\`
                          unmet; use this when intentionally running a
                          dependency natively (e.g. backend in IntelliJ).
-  -d, --dev              Build the 6 repo-backed services from local source
+  -d, --dev              Build the 7 repo-backed services from local source
                          under repos/ and mount source volumes. Node services
                          hot-reload via nodemon; Java services need
                          scripts/stack/bounce-backend.sh after source changes.

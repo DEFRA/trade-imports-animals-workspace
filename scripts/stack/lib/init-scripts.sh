@@ -13,6 +13,10 @@
   print_error "internal error: lib/init-scripts.sh requires STACK_DIR to be set"
   exit 70
 }
+[ -n "${WORKSPACE_ROOT:-}" ] || {
+  print_error "internal error: lib/init-scripts.sh requires WORKSPACE_ROOT to be set"
+  exit 70
+}
 
 REPOS_DIR="$WORKSPACE_ROOT/repos"
 STAGED_DIR="$STACK_DIR/.staged"
@@ -23,22 +27,26 @@ STAGED_DIR="$STACK_DIR/.staged"
 fetch_repo_path() {
   local repo="$1" ref="$2" path="$3" dest="$4"
   local url="https://github.com/DEFRA/${repo}.git"
+  local resolved_ref
   local tmp
   tmp="$(mktemp -d)"
   # shellcheck disable=SC2064
   trap "rm -rf '$tmp'" RETURN
 
-  if [ -z "$ref" ] || ! git clone --quiet --depth 1 --filter=blob:none --sparse \
+  if [ -n "$ref" ] && git clone --quiet --depth 1 --filter=blob:none --sparse \
         --branch "$ref" "$url" "$tmp/clone" 2>/dev/null; then
+    resolved_ref="$ref"
+  else
     git clone --quiet --depth 1 --filter=blob:none --sparse "$url" "$tmp/clone" || {
       print_error "error: cannot clone $url — offline? Run 'make setup' to clone repos/ instead."
       return 1
     }
+    resolved_ref="the default branch"
   fi
   git -C "$tmp/clone" sparse-checkout set --no-cone "/$path" >/dev/null
 
   if [ ! -e "$tmp/clone/$path" ]; then
-    print_error "error: $repo: path '$path' not found on ${ref:-the default branch} or the default branch"
+    print_error "error: $repo: path '$path' not found in ${repo}@${resolved_ref}"
     return 1
   fi
 
