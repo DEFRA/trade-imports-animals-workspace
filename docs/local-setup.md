@@ -18,23 +18,25 @@ Playwright tests (no port) ──▶ Frontend + Admin
 
 ### Key wiring
 
-| Env var | Set to (in compose) | Purpose |
-|---------|---------------------|---------|
-| `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://trade-imports-animals-backend:8085` | Frontend → Backend |
-| `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://trade-imports-animals-backend:8085` | Admin → Backend |
-| `DEFRA_ID_OIDC_CONFIGURATION_URL` | `http://trade-imports-defra-id-stub:3007/...` | OIDC discovery |
-| `REDIS_HOST` | `redis` | Session cache |
-| `MONGO_URI` | `mongodb://mongodb:27017` | Backend → MongoDB |
+| Env var | Set to (in the stack) | Purpose |
+|---------|-----------------------|---------|
+| `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://host.docker.internal:8085` | Frontend → Backend |
+| `TRADE_IMPORTS_ANIMALS_BACKEND_URL` | `http://host.docker.internal:8085` | Admin → Backend |
+| `DEFRA_ID_OIDC_CONFIGURATION_URL` | `http://host.docker.internal:3007/...` | OIDC discovery |
+| `REDIS_HOST` | `host.docker.internal` | Session cache |
+| `MONGO_URI` | `mongodb://host.docker.internal:27017` | Backend → MongoDB |
+
+All compose definitions live in the workspace stack (`docker/stack/`), driven
+by the wrappers in `scripts/stack/`. See `docker/stack/AGENTS.md` for the full
+flag reference and file layout. The `make docker-compose-*` targets delegate
+to the same wrappers.
 
 ---
 
 ## Option 1 — Full stack from Docker Hub images (quickest)
 
-The `trade-imports-animals-tests` repo has a `compose.yml` that pulls all published images and wires them together. This is the canonical way to run the full stack.
-
 ```bash
-cd repos/trade-imports-animals-tests
-docker compose up
+./scripts/stack/run-stack.sh      # or: make docker-compose-up
 ```
 
 Services started:
@@ -45,81 +47,40 @@ Services started:
 | Backend | 8085 | `defradigital/trade-imports-animals-backend:latest` |
 | Admin | 3001 | `defradigital/trade-imports-animals-admin:latest` |
 | Defra ID stub | 3007 | `defradigital/trade-imports-defra-id-stub` |
+| Trade imports stub | 8087 | `defradigital/trade-imports-stub` |
+| Reference data | 8086 | `defradigital/trade-imports-reference-data` |
+| cdp-uploader | 7337 | `defradigital/cdp-uploader` |
 | MongoDB | 27017 | `mongo:7.0` |
 | Redis | 6379 | `redis:7` |
 | LocalStack | 4566 | `localstack/localstack` |
 
-To pin specific image versions (e.g. to test a release candidate):
+To run images published from a feature branch (falls back to `:latest` per
+service when no branch-tagged image exists):
+
 ```bash
-TRADE_IMPORTS_ANIMALS_FRONTEND=1.2.3 \
-TRADE_IMPORTS_ANIMALS_BACKEND=1.2.3 \
-TRADE_IMPORTS_ANIMALS_ADMIN=1.2.3 \
-docker compose up
+./scripts/stack/run-stack.sh --branch feature/EUDPA-123-my-change
 ```
 
-To also run the Playwright tests:
-```bash
-docker compose --profile tests up
-```
+Tear down and wipe volumes (mongo data, localstack state):
 
-**Note:** Admin has `AUTH_ENABLED=false` in this stack — it's configured for testing, not real auth flows.
+```bash
+./scripts/stack/stop-stack.sh     # or: make docker-compose-down
+```
 
 ---
 
-## Option 2 — Individual services from source
+## Option 2 — Full stack from source (recommended for cross-service development)
 
-Each repo has its own `compose.yml` for running that service in isolation with local infra (MongoDB, Redis, LocalStack). Use this when actively developing a single service.
-
-### Frontend from source
-
-```bash
-cd repos/trade-imports-animals-frontend
-docker compose up --build -d
-# or: npm run dev (port 3000)
-```
-
-Starts: frontend + Redis + LocalStack + MongoDB + Defra ID stub.
-Backend is **commented out** in this compose — it's expected to be running separately on `localhost:8085`.
-
-### Backend from source
+Builds the six repo-backed services from their local source under `repos/`
+and starts the full stack with volume mounts. Node services get hot-reload on
+`src/` changes; the backend runs `mvn spring-boot:run`.
 
 ```bash
-cd repos/trade-imports-animals-backend
-
-# Infrastructure only
-docker compose --profile infra up -d        # MongoDB, Redis, LocalStack
-
-# Then run app directly (recommended for fast iteration)
-mvn spring-boot:run
-
-# Or full stack
-docker compose --profile services up --build -d
+./scripts/stack/run-stack.sh -d   # or: make docker-compose-dev
+make docker-logs                  # tail frontend + admin + backend logs (Ctrl-C to stop)
 ```
 
-Runs on port **8085**. Swagger UI at `http://localhost:8085/swagger-ui.html`.
-
-### Admin from source
-
-```bash
-cd repos/trade-imports-animals-admin
-npm run dev
-# or: docker compose up --build -d
-```
-
-Runs on port **3000** (direct) or **3001** (in compose alongside frontend).
-
----
-
-## Option 4 — Full stack from source via Docker (recommended for cross-service development)
-
-Builds frontend, admin and backend from their local source directories and starts the full stack in Docker with volume mounts. Node services get webpack `--watch` (hot-reload on `src/` changes); the backend runs `mvn spring-boot:run`.
-
-```bash
-make docker-compose-dev   # build images + start stack (takes a few minutes first time)
-make docker-logs          # tail frontend + admin + backend logs (Ctrl-C to stop)
-```
-
-After the stack is up, the services are available at the same ports as Option 1. Run the E2E tests against it:
+After the stack is up, run the E2E tests against it:
 
 ```bash
 cd repos/trade-imports-animals-tests
@@ -132,41 +93,62 @@ Node source changes are picked up automatically via webpack `--watch`. No action
 
 ### Backend changes (Java)
 
-The backend does **not** hot-reload — you must restart the container after changing Java source:
+The backend does **not** hot-reload — recreate the container after changing Java source:
 
 ```bash
-make docker-restart-backend
+./scripts/stack/bounce-backend.sh   # or: make docker-restart-backend
 ```
-
-This restarts the container, which re-runs `mvn spring-boot:run` and picks up changes in `repos/trade-imports-animals-backend/src/`.
 
 ### Switching between source and image builds
 
-`make docker-compose-dev` adds the `docker/local.dev.compose.yml` override on top of `docker/local.compose.yml`. To revert to published images for a service, just run `make docker-compose-up` instead (no dev override).
+`-d` is the only switch. To revert to published images, run
+`./scripts/stack/run-stack.sh` (or `make docker-compose-up`) without it.
 
 ---
 
-## Option 3 — Mixed: infra from tests compose, services from source
+## Option 3 — One service natively, the rest in the stack
 
-Run the shared infra from the tests repo compose, then start each service directly.
-Useful when you want to develop multiple services simultaneously.
+Exclude the service you're developing from the stack and run it from source.
+Valid exclude labels: `frontend`, `backend`, `admin`, `stub`, `defra-id-stub`, `reference-data`, `gateway`.
 
 ```bash
-# Terminal 1 — shared infra
-cd repos/trade-imports-animals-tests
-docker compose up mongodb redis localstack trade-imports-defra-id-stub
+# Terminal 1 — everything except the backend
+./scripts/stack/run-stack.sh -e backend
 
-# Terminal 2 — backend
+# Terminal 2 — backend from source
 cd repos/trade-imports-animals-backend
 SPRING_PROFILES_ACTIVE=local mvn spring-boot:run
+```
 
-# Terminal 3 — frontend
+The same pattern works for the Node services (`npm run dev`), e.g.:
+
+```bash
+./scripts/stack/run-stack.sh -e frontend
 cd repos/trade-imports-animals-frontend
 TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://localhost:8085 npm run dev
+```
 
-# Terminal 4 — admin (optional)
-cd repos/trade-imports-animals-admin
-TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://localhost:8085 npm run dev
+For infrastructure only (MongoDB, Redis, LocalStack, cdp-uploader, stubs),
+limit the stack to the relevant profiles:
+
+```bash
+./scripts/stack/run-stack.sh --profile database --profile infrastructure --profile stubs
+```
+
+---
+
+## Reseeding the database
+
+The mongo init scripts are staged by `run-stack.sh` from their owning repos:
+the workspace owns the replica-set init, the tests repo owns the notification
+seed fixtures (`seeds/mongodb/` in `trade-imports-animals-tests`), and the
+backend owns the localstack provisioning (`compose/start-localstack.sh`).
+
+To wipe and reseed mongo without restarting the rest of the stack:
+
+```bash
+./scripts/stack/bounce-mongo.sh
+# or, from the tests repo: npm run database:reseed
 ```
 
 ---
@@ -195,6 +177,9 @@ If running services inside Docker and the auth redirect needs to hit `localhost:
 | Admin | 3001 |
 | Defra ID stub | 3007 |
 | Backend | 8085 |
+| Reference data | 8086 |
+| Trade imports stub | 8087 |
+| cdp-uploader | 7337 |
 | LocalStack | 4566 |
 | MongoDB | 27017 |
 | Redis | 6379 |

@@ -123,18 +123,23 @@ git checkout -b my-feature
 git push origin my-feature
 ```
 
-## Workspace stack (alongside `make docker-compose-*`)
+## Workspace stack (what `make docker-compose-*` delegates to)
 
-`scripts/stack/run-stack.sh` brings up the full stack from Dockerhub.
-Supports `-b <branch>` (probe for branch-tagged images), `-d/--dev` (build
-the 6 repo-backed services from local source under `repos/`),
-`-e <service>` (exclude one so you can run it natively), and
-`--profile <name>` (run only a subset of tiers). `bounce-backend.sh` picks
-up edited Java source in `--dev` mode.
+`scripts/stack/run-stack.sh` brings up the full stack from Dockerhub — the
+only compose stack in the workspace and all 8 repos. Supports `-b <branch>`
+(probe for branch-tagged images), `-d/--dev` (build the 6 repo-backed
+services from local source under `repos/`), `-e <service>` (exclude one so
+you can run it natively), and `--profile <name>` (run only a subset of
+tiers). `bounce-backend.sh` picks up edited Java source in `--dev` mode.
+
+Init scripts are staged from their owning repos on every stack start
+(backend: localstack init; tests repo: mongo seed fixtures; dynamics-gateway:
+ASB emulator config) — locally from `repos/`, in CI via sparse fetch.
+`docker/stack/.staged/` is generated; never edit it.
 
 See `docker/stack/AGENTS.md` for the full index — flag reference, file
-layout (5 role overlays + dev overlay), env knobs that must use
-`host.docker.internal`, and the running-E2E recipe.
+layout (role overlays + dev overlay), init-script ownership/staging, env
+knobs that must use `host.docker.internal`, and the running-E2E recipe.
 
 ## Docs
 

@@ -11,6 +11,7 @@ services=(
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
   "admin|trade-imports-animals-admin|TRADE_IMPORTS_ANIMALS_ADMIN"
   "stub|trade-imports-stub|TRADE_IMPORTS_STUB"
+  "defra-id-stub|trade-imports-defra-id-stub|TRADE_IMPORTS_DEFRA_ID_STUB"
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
   "gateway|trade-imports-dynamics-gateway|TRADE_IMPORTS_DYNAMICS_GATEWAY"
 )
@@ -30,6 +31,10 @@ valid_profiles=("${ALL_PROFILES[@]}")
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
+
+# shellcheck source=lib/init-scripts.sh
+source "$LIB_DIR/init-scripts.sh"
+stage_init_scripts "$branch"
 
 [ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
 [ "$dev" -eq 1 ] && compose_files_add_dev

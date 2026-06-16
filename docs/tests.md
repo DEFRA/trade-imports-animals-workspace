@@ -16,7 +16,7 @@ End-to-end browser test suite for the trade imports animals service. Tests run a
 
 ## Infrastructure dependencies
 
-Requires a running instance of the full stack (frontend + backend + dependencies) to test against. For local runs, use `docker compose` from the workspace root first.
+Requires a running instance of the full stack (frontend + backend + dependencies) to test against. For local runs, start the workspace stack first: `./scripts/stack/run-stack.sh` from the workspace root.
 
 ## How to run
 
@@ -24,8 +24,7 @@ Requires a running instance of the full stack (frontend + backend + dependencies
 npm install
 npx playwright install chromium    # first time only
 
-npm run test:local                 # run against local docker compose stack
-npm run test:github                # GitHub Actions config
+npm run test:local                 # run against the local workspace stack
 npm test                           # CDP Portal config
 ```
 
