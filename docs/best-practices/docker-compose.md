@@ -7,8 +7,8 @@ workspace root, driven by the `scripts/stack/` wrappers (`run-stack.sh`,
 `compose.yml`.
 
 Init scripts are owned by the service that needs them and staged into the
-stack by `scripts/stack/lib/init-scripts.sh`: the backend owns the localstack
-provisioning (`compose/start-localstack.sh`), the tests repo owns the mongo
+stack by `scripts/stack/lib/init-scripts.sh`: the backend owns the Floci
+provisioning (`compose/start-floci.sh`), the tests repo owns the mongo
 seed fixtures (`seeds/mongodb/`), and the workspace owns the mongo
 replica-set init.
 
@@ -38,7 +38,7 @@ Apply this to **every** URL and host. Apply it to credentials too, with empty de
 
 ## 2. Healthchecks for slow-starting dependencies
 
-A `depends_on: cdp-uploader` only waits for the container to *exist*, not for the service inside to be ready. Services that take more than ~5 seconds to start (Mongo, LocalStack, cdp-uploader, OAuth mocks) need a `healthcheck` so dependents can wait on `condition: service_healthy`.
+A `depends_on: cdp-uploader` only waits for the container to *exist*, not for the service inside to be ready. Services that take more than ~5 seconds to start (Mongo, Floci, cdp-uploader, OAuth mocks) need a `healthcheck` so dependents can wait on `condition: service_healthy`.
 
 ```yaml
 services:
@@ -107,7 +107,7 @@ command -v awslocal >/dev/null 2>&1 || {
 | Stack tier | Pinning |
 |------------|---------|
 | Production deploy manifests | Exact digest — `mongo@sha256:abc...` |
-| Local dev compose | Major-version float — `mongo:7`, `localstack/localstack:3` |
+| Local dev compose | Major-version float — `mongo:7`, `floci/floci:latest` |
 | Third-party we don't control (e.g. `cdp-uploader:latest`) | Document the trade-off in a `# tracked: …` comment so reviewers don't churn on it |
 
 ```yaml
@@ -123,20 +123,19 @@ If the team has decided `:latest` is acceptable for a service, the comment makes
 
 ## 5. Network port surface — narrow what you publish
 
-`ports: ["4510-4559:4510-4559"]` exposes 50 ports to the host so any LocalStack service is reachable. Publish only the ports the host needs to talk to; let services-talking-to-services use the compose network directly.
+Publish only the ports the host needs to talk to; let services-talking-to-services use the compose network directly.
 
 ```yaml
-# Wide — anything on the host can hit any LocalStack service
+# Wide — exposes every port in a range (LocalStack legacy pattern — avoid)
 ports:
   - "4510-4559:4510-4559"
 
 # Narrow — only the ports the dev tooling needs are exposed
 ports:
-  - "4566:4566"   # LocalStack edge
-  - "4571:4571"   # if S3-specific tooling is used
+  - "4566:4566"   # Floci edge (also the LocalStack-compat port)
 ```
 
-Backend services in the same compose network can still reach LocalStack on `http://localstack:4566` regardless of which ports are published to the host.
+Backend services in the same compose network can still reach Floci on `http://floci:4566` regardless of which ports are published to the host.
 
 ---
 

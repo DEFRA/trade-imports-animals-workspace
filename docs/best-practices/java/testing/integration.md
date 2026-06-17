@@ -44,7 +44,7 @@ HealthCheckConfigIT extends IntegrationBase
 EcsLoggingIT extends IntegrationBase
 ProxyConfigIT extends IntegrationBase
 TrustStoreConfigurationIT extends IntegrationBase
-DocumentIT extends IntegrationBase  (also owns its own LocalStack container)
+DocumentIT extends IntegrationBase  (also owns its own Floci container)
 ```
 
 ### Containers
@@ -57,11 +57,11 @@ Three containers start once in `IntegrationBase`, shared across all IT classes v
 | `OAUTH_CONTAINER` | `ghcr.io/navikt/mock-oauth2-server:2.1.10` | JWT token generation |
 | `MOCK_SERVER_CONTAINER` | `mockserver/mockserver` | Stub external HTTP services (cdp-uploader etc.) |
 
-IT classes that need additional infrastructure start their own containers as static fields and register their URLs via a second `@DynamicPropertySource` on the subclass. Example: `DocumentIT` adds a LocalStack S3 container:
+IT classes that need additional infrastructure start their own containers as static fields and register their URLs via a second `@DynamicPropertySource` on the subclass. Example: `DocumentIT` adds a Floci S3 container:
 
 | Container | Image | Purpose | Owner |
 |-----------|-------|---------|-------|
-| `LOCAL_STACK_CONTAINER` | `localstack/localstack:3` | Real S3 for file upload/download | `DocumentIT` |
+| `FLOCI_CONTAINER` | `floci/floci:latest` | Real S3 for file upload/download | `DocumentIT` |
 
 Containers are started in parallel:
 ```java

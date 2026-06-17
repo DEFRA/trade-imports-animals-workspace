@@ -18,7 +18,7 @@ jobs:
 
 The reusable workflow:
 
-- Spins up the workspace stack via `scripts/stack/run-stack.sh --branch <name>` so the same branch tag drives all linked service images. `run-stack.sh` also stages the repo-owned init scripts (backend localstack init, tests-repo mongo seeds), sparse-fetching them from GitHub on the same branch (falling back to `main`) since CI checks out only the workspace repo.
+- Spins up the workspace stack via `scripts/stack/run-stack.sh --branch <name>` so the same branch tag drives all linked service images. `run-stack.sh` also stages the repo-owned init scripts (backend Floci init, tests-repo mongo seeds), sparse-fetching them from GitHub on the same branch (falling back to `main`) since CI checks out only the workspace repo.
 - Shards Playwright × 3, merges blob reports, publishes the HTML report to `gh-pages` at `e2e/<branch-tag>/`.
 - Outputs `report-url` so the caller can comment on the PR.
 
