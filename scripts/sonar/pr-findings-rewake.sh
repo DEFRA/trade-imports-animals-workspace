@@ -14,8 +14,9 @@
 #
 # Exit codes: 0 = nothing to report (or could not check); 2 = findings present,
 # wake the model with the summary printed to stdout.
-
-set -u
+#
+# Targets bash 3.2 (macOS stock): no associative arrays, no mapfile, no `set -u`
+# (empty indexed-array expansion is unsafe there) — guard everything explicitly.
 
 ROOT="${CLAUDE_PROJECT_DIR:-$HOME/git/defra/trade-imports-animals}"
 
@@ -71,26 +72,29 @@ done
 
 # Resolve each candidate to the PR whose latest analyzed commit equals the pushed
 # HEAD, polling until SonarCloud catches up or we hit the wait ceiling. Holds
-# "project<TAB>prKey<TAB>headSha".
+# "project<TAB>prKey<TAB>headSha". Uses plain indexed arrays (no associative
+# arrays / mapfile) so it runs under macOS's stock bash 3.2.
 resolved=()
-declare -A done_idx=()
+pending=("${candidates[@]}")
 waited=0
-while :; do
-  for i in "${!candidates[@]}"; do
-    [ -n "${done_idx[$i]:-}" ] && continue
-    IFS=$'\t' read -r project branch head_sha <<<"${candidates[$i]}"
+while [ "${#pending[@]}" -gt 0 ]; do
+  still=()
+  for c in "${pending[@]}"; do
+    IFS=$'\t' read -r project branch head_sha <<<"$c"
 
-    pr_json=$(sonar api get "/api/project_pull_requests/list?project=${project}" 2>/dev/null) || continue
+    pr_json=$(sonar api get "/api/project_pull_requests/list?project=${project}" 2>/dev/null)
     pr_key=$(printf '%s' "$pr_json" | jq -r --arg b "$branch" --arg sha "$head_sha" \
       'first(.pullRequests[]? | select(.branch == $b and .commit.sha == $sha) | .key) // empty' 2>/dev/null)
 
     if [ -n "$pr_key" ]; then
       resolved+=("${project}	${pr_key}	${head_sha}")
-      done_idx[$i]=1
+    else
+      still+=("$c")
     fi
   done
 
-  [ "${#resolved[@]}" -eq "${#candidates[@]}" ] && break
+  pending=("${still[@]}")
+  [ "${#pending[@]}" -eq 0 ] && break
   [ "$waited" -ge "$MAX_WAIT_SECONDS" ] && break
   sleep "$POLL_INTERVAL"
   waited=$((waited + POLL_INTERVAL))
