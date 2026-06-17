@@ -100,6 +100,99 @@ Sign in with your SonarCloud account when prompted. Authentication is stored in 
 
 Once done, the hooks activate automatically when you open Claude Code in any of the four repos.
 
+#### Workspace-level MCP (running Claude Code from the workspace root)
+
+Each repo's `.mcp.json` is only loaded when Claude Code runs **inside that repo**. When you
+launch from the **workspace root** (the usual case here), those per-repo files aren't read, so
+the SonarCloud MCP tools don't appear. The committed **workspace-root `.mcp.json`** closes that
+gap — it registers all four projects as separate servers, so a root session can query any of
+them:
+
+| server name | SonarCloud project key |
+|---|---|
+| `sonar-frontend` | `DEFRA_trade-imports-animals-frontend` |
+| `sonar-admin` | `DEFRA_trade-imports-animals-admin` |
+| `sonar-backend` | `DEFRA_trade-imports-animals-backend` |
+| `sonar-gateway` | `DEFRA_trade-imports-dynamics-gateway` |
+
+Tools are namespaced per server, e.g. `mcp__sonar-frontend__*`. The only prerequisite is the
+`sonar` CLI installed + authed (above) so bare `sonar` is on your `PATH` — there's no
+machine-specific path in the config, so it's portable.
+
+Because `.mcp.json` is committed (a shared/project-scope MCP config), Claude Code asks you to
+approve each server the first time you launch — approve them at the startup prompt or via
+`/mcp`. To skip that prompt for everyone, commit an approval allowlist to
+`.claude/settings.json`:
+
+```json
+"enabledMcpjsonServers": ["sonar-frontend", "sonar-admin", "sonar-backend", "sonar-gateway"]
+```
+
+Verify with `claude mcp list` — all four `sonar-*` servers should show **Connected**.
+
+#### Workspace-level hooks
+
+The per-repo sonar integration also ships Claude Code hooks in each repo's
+`.claude/`, but — like the MCP servers — they only load when Claude Code runs
+**inside** that repo. Two are worth re-wiring at the workspace root. Add them to
+`.claude/settings.json` (committed, so the whole team inherits them):
+
+**1. Secrets scanning (works locally today).** Content-based detection that
+complements the path-based `Read` deny rules. Merge these into `hooks`:
+
+```json
+"PreToolUse": [
+  { "matcher": "Read", "hooks": [
+    { "type": "command", "command": "if command -v sonar >/dev/null 2>&1; then sonar hook claude-pre-tool-use; fi", "timeout": 60 }
+  ] }
+],
+"UserPromptSubmit": [
+  { "matcher": "*", "hooks": [
+    { "type": "command", "command": "if command -v sonar >/dev/null 2>&1; then sonar hook claude-prompt-submit; fi", "timeout": 60 }
+  ] }
+]
+```
+
+**2. PR findings after a push.** This org has **Agentic Analysis disabled**, so
+`sonar analyze` produces no code findings locally — issues only appear after the
+"Check Pull Request" GitHub Action runs the server-side scan (~3 min post-push).
+Two cooperating hooks bridge that gap without any long-lived process (an earlier
+async-`git push` hook that polled for CI was abandoned — Claude Code reaps async
+hooks when the session goes idle, so the multi-minute wait never completed):
+
+- `scripts/sonar/sonar-record-push.sh` — on `git push`, records a pending check
+  (`{project, sha}`) for each sonar repo at its pushed HEAD, then exits instantly.
+- `scripts/sonar/sonar-check-pending.sh` — on `UserPromptSubmit` and `SessionStart`,
+  does one fast, non-blocking query per pending commit: if SonarCloud has analyzed
+  it, inject any new BLOCKER/CRITICAL via `additionalContext` (each commit surfaced
+  once); if clean, clear it; if not analyzed yet, leave it (dropped after 45 min).
+
+So findings appear the **next time you interact** after CI's scan lands — Claude
+Code can't reliably wake a truly idle session minutes later, so this is the
+robust shape. Add to `hooks`:
+
+```json
+"PostToolUse": [
+  { "matcher": "Bash", "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-record-push.sh\"", "if": "Bash(git push*)", "timeout": 10 }
+  ] }
+],
+"UserPromptSubmit": [
+  { "matcher": "*", "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-check-pending.sh\" UserPromptSubmit", "timeout": 15 }
+  ] }
+],
+"SessionStart": [
+  { "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-check-pending.sh\" SessionStart", "timeout": 15 }
+  ] }
+]
+```
+
+(The `UserPromptSubmit` array also carries the secrets hook from step 1 — merge,
+don't replace.) There is deliberately **no** local end-of-turn `sonar analyze`
+hook (as the repos ship): with Agentic Analysis off it would always 403.
+
 ### 5. Keep git fetches light (gh-pages exclusion)
 
 The product repos' `gh-pages` branches hold published artifacts and are
