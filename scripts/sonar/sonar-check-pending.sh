@@ -15,7 +15,8 @@
 # so additionalContext is attributed to the firing event.
 
 EVENT="${1:-UserPromptSubmit}"
-STATE_DIR="${TMPDIR:-/tmp}/sonar-checks"
+ROOT="${CLAUDE_PROJECT_DIR:-$HOME/git/defra/trade-imports-animals}"
+STATE_DIR="$ROOT/.sonar-checks" # must match sonar-record-push.sh
 EXPIRY=2700 # 45 min — stop waiting on a SHA that never gets analyzed
 
 command -v sonar >/dev/null 2>&1 || exit 0

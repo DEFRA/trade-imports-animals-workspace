@@ -12,7 +12,10 @@
 # Targets bash 3.2 (macOS stock): no associative arrays, no `set -u`.
 
 ROOT="${CLAUDE_PROJECT_DIR:-$HOME/git/defra/trade-imports-animals}"
-STATE_DIR="${TMPDIR:-/tmp}/sonar-checks"
+# Deterministic, gitignored workspace-local state so the record hook and the
+# check hook always agree (a per-session $TMPDIR can differ between launch
+# contexts). Survives reboots.
+STATE_DIR="$ROOT/.sonar-checks"
 
 # repo dir (under $ROOT/repos) -> SonarCloud project key. The gateway key has no
 # "animals" segment.
