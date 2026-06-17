@@ -130,6 +130,49 @@ approve each server the first time you launch — approve them at the startup pr
 
 Verify with `claude mcp list` — all four `sonar-*` servers should show **Connected**.
 
+#### Workspace-level hooks
+
+The per-repo sonar integration also ships Claude Code hooks in each repo's
+`.claude/`, but — like the MCP servers — they only load when Claude Code runs
+**inside** that repo. Two are worth re-wiring at the workspace root. Add them to
+`.claude/settings.json` (committed, so the whole team inherits them):
+
+**1. Secrets scanning (works locally today).** Content-based detection that
+complements the path-based `Read` deny rules. Merge these into `hooks`:
+
+```json
+"PreToolUse": [
+  { "matcher": "Read", "hooks": [
+    { "type": "command", "command": "if command -v sonar >/dev/null 2>&1; then sonar hook claude-pre-tool-use; fi", "timeout": 60 }
+  ] }
+],
+"UserPromptSubmit": [
+  { "matcher": "*", "hooks": [
+    { "type": "command", "command": "if command -v sonar >/dev/null 2>&1; then sonar hook claude-prompt-submit; fi", "timeout": 60 }
+  ] }
+]
+```
+
+**2. PR findings after a push.** This org has **Agentic Analysis disabled**, so
+`sonar analyze` produces no code findings locally — issues only appear after the
+"Check Pull Request" GitHub Action runs the server-side scan (~3 min post-push).
+`scripts/sonar/pr-findings-rewake.sh` bridges that: as an async hook on `git push`
+it waits for SonarCloud to analyze the pushed commit, pulls any new
+BLOCKER/CRITICAL via `sonar list issues`, and wakes the session with them. Add to
+the `PreToolUse` array:
+
+```json
+{ "matcher": "Bash", "hooks": [
+  { "type": "command",
+    "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/pr-findings-rewake.sh\"",
+    "if": "Bash(git push*)", "async": true, "asyncRewake": true,
+    "rewakeSummary": "SonarCloud PR findings", "timeout": 600 }
+] }
+```
+
+There is deliberately **no** local end-of-turn `sonar analyze` hook (as the repos
+ship): with Agentic Analysis off it would always return 403 and surface nothing.
+
 ### 5. Keep git fetches light (gh-pages exclusion)
 
 The product repos' `gh-pages` branches hold published artifacts and are
