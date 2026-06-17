@@ -41,7 +41,7 @@ mvn spring-boot:run          # requires MongoDB running locally
 Docker (infrastructure only):
 
 ```bash
-docker compose --profile infra up -d     # MongoDB, Redis, LocalStack
+docker compose --profile infra up -d     # MongoDB, Redis, Floci
 ```
 
 Docker (full stack):
