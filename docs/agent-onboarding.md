@@ -156,22 +156,42 @@ complements the path-based `Read` deny rules. Merge these into `hooks`:
 **2. PR findings after a push.** This org has **Agentic Analysis disabled**, so
 `sonar analyze` produces no code findings locally — issues only appear after the
 "Check Pull Request" GitHub Action runs the server-side scan (~3 min post-push).
-`scripts/sonar/pr-findings-rewake.sh` bridges that: as an async hook on `git push`
-it waits for SonarCloud to analyze the pushed commit, pulls any new
-BLOCKER/CRITICAL via `sonar list issues`, and wakes the session with them. Add to
-the `PreToolUse` array:
+Two cooperating hooks bridge that gap without any long-lived process (an earlier
+async-`git push` hook that polled for CI was abandoned — Claude Code reaps async
+hooks when the session goes idle, so the multi-minute wait never completed):
+
+- `scripts/sonar/sonar-record-push.sh` — on `git push`, records a pending check
+  (`{project, sha}`) for each sonar repo at its pushed HEAD, then exits instantly.
+- `scripts/sonar/sonar-check-pending.sh` — on `UserPromptSubmit` and `SessionStart`,
+  does one fast, non-blocking query per pending commit: if SonarCloud has analyzed
+  it, inject any new BLOCKER/CRITICAL via `additionalContext` (each commit surfaced
+  once); if clean, clear it; if not analyzed yet, leave it (dropped after 45 min).
+
+So findings appear the **next time you interact** after CI's scan lands — Claude
+Code can't reliably wake a truly idle session minutes later, so this is the
+robust shape. Add to `hooks`:
 
 ```json
-{ "matcher": "Bash", "hooks": [
-  { "type": "command",
-    "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/pr-findings-rewake.sh\"",
-    "if": "Bash(git push*)", "async": true, "asyncRewake": true,
-    "rewakeSummary": "SonarCloud PR findings", "timeout": 600 }
-] }
+"PostToolUse": [
+  { "matcher": "Bash", "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-record-push.sh\"", "if": "Bash(git push*)", "timeout": 10 }
+  ] }
+],
+"UserPromptSubmit": [
+  { "matcher": "*", "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-check-pending.sh\" UserPromptSubmit", "timeout": 15 }
+  ] }
+],
+"SessionStart": [
+  { "hooks": [
+    { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/sonar/sonar-check-pending.sh\" SessionStart", "timeout": 15 }
+  ] }
+]
 ```
 
-There is deliberately **no** local end-of-turn `sonar analyze` hook (as the repos
-ship): with Agentic Analysis off it would always return 403 and surface nothing.
+(The `UserPromptSubmit` array also carries the secrets hook from step 1 — merge,
+don't replace.) There is deliberately **no** local end-of-turn `sonar analyze`
+hook (as the repos ship): with Agentic Analysis off it would always 403.
 
 ### 5. Keep git fetches light (gh-pages exclusion)
 
