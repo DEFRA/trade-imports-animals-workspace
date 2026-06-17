@@ -100,6 +100,36 @@ Sign in with your SonarCloud account when prompted. Authentication is stored in 
 
 Once done, the hooks activate automatically when you open Claude Code in any of the four repos.
 
+#### Workspace-level MCP (running Claude Code from the workspace root)
+
+Each repo's `.mcp.json` is only loaded when Claude Code runs **inside that repo**. When you
+launch from the **workspace root** (the usual case here), those per-repo files aren't read, so
+the SonarCloud MCP tools don't appear. The committed **workspace-root `.mcp.json`** closes that
+gap — it registers all four projects as separate servers, so a root session can query any of
+them:
+
+| server name | SonarCloud project key |
+|---|---|
+| `sonar-frontend` | `DEFRA_trade-imports-animals-frontend` |
+| `sonar-admin` | `DEFRA_trade-imports-animals-admin` |
+| `sonar-backend` | `DEFRA_trade-imports-animals-backend` |
+| `sonar-gateway` | `DEFRA_trade-imports-dynamics-gateway` |
+
+Tools are namespaced per server, e.g. `mcp__sonar-frontend__*`. The only prerequisite is the
+`sonar` CLI installed + authed (above) so bare `sonar` is on your `PATH` — there's no
+machine-specific path in the config, so it's portable.
+
+Because `.mcp.json` is committed (a shared/project-scope MCP config), Claude Code asks you to
+approve each server the first time you launch — approve them at the startup prompt or via
+`/mcp`. To skip that prompt for everyone, commit an approval allowlist to
+`.claude/settings.json`:
+
+```json
+"enabledMcpjsonServers": ["sonar-frontend", "sonar-admin", "sonar-backend", "sonar-gateway"]
+```
+
+Verify with `claude mcp list` — all four `sonar-*` servers should show **Connected**.
+
 ### 5. Keep git fetches light (gh-pages exclusion)
 
 The product repos' `gh-pages` branches hold published artifacts and are
