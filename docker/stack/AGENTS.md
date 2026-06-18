@@ -117,7 +117,7 @@ gitignored, never edit it — from `repos/<repo>/` when present, sparse-fetching
 the paths from GitHub when not (CI checks out only the workspace repo; the
 fetch tries the `--branch` ref first, then the default branch). The compose
 files mount `./.staged/mongodb` (flat — the mongo image only executes
-top-level init files) and `./.staged/servicebus`.
+top-level init files), `./.staged/floci`, and `./.staged/servicebus`.
 
 ## `--dev` caveats
 
