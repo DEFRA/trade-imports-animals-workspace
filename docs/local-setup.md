@@ -155,8 +155,7 @@ To wipe and reseed mongo without restarting the rest of the stack:
 
 ## Auth (Defra ID stub)
 
-All environments use `defradigital/trade-imports-defra-id-stub` as a local OIDC provider. It runs on port 3007 and
-accepts any username with a configurable password (set via `AUTH_PASSWORD` — see the stub image docs for the default).
+All environments use `defradigital/trade-imports-defra-id-stub` as a local OIDC provider. It runs on port 3007 and accepts any username with a configurable password (set via `AUTH_PASSWORD` — see the stub image docs for the default).
 
 The OIDC discovery URL is:
 
@@ -164,9 +163,7 @@ The OIDC discovery URL is:
 http://localhost:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
 ```
 
-If running services inside Docker and the auth redirect needs to hit `localhost:3007` from the browser, add to
-`/etc/hosts`:
-
+If running services inside Docker and the auth redirect needs to hit `localhost:3007` from the browser, add to `/etc/hosts`:
 ```
 127.0.0.1 host.docker.internal
 ```
