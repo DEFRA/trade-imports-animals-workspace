@@ -565,8 +565,7 @@ class S3StorageServiceIT extends IntegrationBase {
 
     @DynamicPropertySource
     static void flociProperties(DynamicPropertyRegistry registry) {
-        registry.add("app.aws.endpoint-override",
-                () -> floci.getEndpointOverride().toString());
+        registry.add("app.aws.endpoint-override", floci::getEndpoint);
         registry.add("app.aws.region", floci::getRegion);
     }
 

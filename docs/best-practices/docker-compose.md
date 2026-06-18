@@ -107,8 +107,8 @@ command -v awslocal >/dev/null 2>&1 || {
 | Stack tier | Pinning |
 |------------|---------|
 | Production deploy manifests | Exact digest — `mongo@sha256:abc...` |
-| Local dev compose | Major-version float — `mongo:7`, `floci/floci:latest` |
-| Third-party we don't control (e.g. `cdp-uploader:latest`) | Document the trade-off in a `# tracked: …` comment so reviewers don't churn on it |
+| Local dev compose | Major-version float — `mongo:7` |
+| Third-party / no stable releases (e.g. `cdp-uploader:latest`, `floci/floci:latest`) | Document the trade-off in a `# tracked: …` comment so reviewers don't churn on it |
 
 ```yaml
 services:
