@@ -140,9 +140,9 @@ limit the stack to the relevant profiles:
 ## Reseeding the database
 
 The mongo init scripts are staged by `run-stack.sh` from their owning repos:
-the workspace owns the replica-set init and the floci provisioning
-(`docker/stack/scripts/floci/10-setup-buckets.sh`), and the tests repo owns
-the notification seed fixtures (`seeds/mongodb/` in `trade-imports-animals-tests`).
+the workspace owns the replica-set init, the backend owns the Floci
+provisioning (`compose/start-floci.sh`), and the tests repo owns the
+notification seed fixtures (`seeds/mongodb/` in `trade-imports-animals-tests`).
 
 To wipe and reseed mongo without restarting the rest of the stack:
 
