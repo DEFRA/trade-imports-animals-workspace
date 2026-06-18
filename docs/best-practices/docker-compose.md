@@ -1,8 +1,18 @@
 # Docker Compose — Best Practices
 
-Used in `trade-imports-animals-frontend`, `-backend`, and `-tests` for local development. Each repo carries its own `compose.yml` plus a shared workspace stack at the workspace root (`make docker-compose-up` / `make docker-compose-dev`).
+All compose definitions live in the workspace stack — `docker/stack/` at the
+workspace root, driven by the `scripts/stack/` wrappers (`run-stack.sh`,
+`run-stack.sh -d`, `stop-stack.sh`, `bounce-backend.sh`) or the
+`make docker-compose-*` targets that delegate to them. No repo carries its own
+`compose.yml`.
 
-The patterns below recur across all four repos — they're not language-specific.
+Init scripts are owned by the service that needs them and staged into the
+stack by `scripts/stack/lib/init-scripts.sh`: the backend owns the localstack
+provisioning (`compose/start-localstack.sh`), the tests repo owns the mongo
+seed fixtures (`seeds/mongodb/`), and the workspace owns the mongo
+replica-set init.
+
+The patterns below apply to the stack's overlay files — they're not language-specific.
 
 ---
 
@@ -164,8 +174,12 @@ depends_on:
     condition: service_healthy
 ```
 
-**2. Forgetting to update both `compose.yml` and the workspace-level stack**
-A new env var or service added to one repo's compose must also be added to the workspace stack (`docker/compose.yml` at the repo root) or `make docker-compose-up` will diverge from `cd repos/<x>/ && docker compose up`. Cross-check both.
+**2. Bypassing the wrappers with hand-assembled `-f` chains**
+The stack is split across overlay files under `docker/stack/` and the wrappers
+compose them (plus profile flags and the staged init scripts) in one place.
+A hand-built `docker compose -f docker/stack/compose.yml ...` chain silently
+drops overlays or staging. Always go through `scripts/stack/` (or the
+`make docker-compose-*` targets).
 
 **3. Using `latest` and `:1.2` versions side-by-side**
 A mix produces unpredictable startup ordering on first pull. Pick one strategy per stack tier (see §4).

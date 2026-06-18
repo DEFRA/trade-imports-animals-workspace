@@ -55,12 +55,14 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
-    entrypoint: bash /scripts/10-setup-buckets.sh
+    entrypoint: ['bash', '-c', 'for f in /scripts/*.sh; do echo "Running $f"; bash "$f"; done']
     env_file:
       - ./shared.env
     image: localstack/localstack:3.0.2
     volumes:
-      - ./scripts/localstack:/scripts
+      # Staged from the backend and gateway repos by
+      # scripts/stack/lib/init-scripts.sh
+      - ./.staged/localstack:/scripts
   mssql:
     profiles: [servicebus]
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -77,7 +79,8 @@ services:
 
   servicebus-emulator:
     profiles: [servicebus]
-    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    # Pinned to match the dynamics-gateway Testcontainers integration tests
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2
     platform: linux/amd64
     depends_on:
       mssql:
@@ -87,7 +90,9 @@ services:
       SQL_SERVER: mssql
       MSSQL_SA_PASSWORD: 'YourStrong@Passw0rd'
     volumes:
-      - ./scripts/servicebus/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+      # Staged from the dynamics-gateway repo (the canonical ASB entity config)
+      # by scripts/stack/lib/init-scripts.sh
+      - ./.staged/servicebus/servicebus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
     ports:
       - '5672:5672'
 

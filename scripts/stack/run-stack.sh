@@ -11,6 +11,7 @@ services=(
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
   "admin|trade-imports-animals-admin|TRADE_IMPORTS_ANIMALS_ADMIN"
   "stub|trade-imports-stub|TRADE_IMPORTS_STUB"
+  "defra-id-stub|trade-imports-defra-id-stub|TRADE_IMPORTS_DEFRA_ID_STUB"
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
   "gateway|trade-imports-dynamics-gateway|TRADE_IMPORTS_DYNAMICS_GATEWAY"
 )
@@ -30,6 +31,10 @@ valid_profiles=("${ALL_PROFILES[@]}")
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
 parse_run_stack_flags "$@"
+
+# shellcheck source=lib/init-scripts.sh
+source "$LIB_DIR/init-scripts.sh"
+stage_init_scripts "$branch"
 
 [ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
 [ "$dev" -eq 1 ] && compose_files_add_dev
@@ -112,6 +117,30 @@ if [ -n "$branch" ]; then
   printf '%sProbing Dockerhub for branch tag: %s%s\n' "$COLOUR_CYAN" "$sanitised" "$COLOUR_RESET"
 fi
 
+# Fan out the branch-tag probes concurrently. docker manifest inspect is a
+# network round-trip per service; running them in parallel turns 7 sequential
+# round-trips into one wall-clock round-trip. Each job touches a marker file on
+# success; the print loop below reads the markers so all env-var exports still
+# happen in this (parent) shell. bash-3.2 safe (macOS default) and Linux-CI safe:
+# only mktemp -d, background jobs, and a bare wait barrier are used.
+probe_tmpdir=""
+if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
+  probe_tmpdir="$(mktemp -d)"
+  probe_pids=()
+  for entry in "${services[@]}"; do
+    IFS='|' read -r label image _ <<< "$entry"
+    is_excluded "$label" && continue
+    in_active=0
+    for s in ${active_services[@]+"${active_services[@]}"}; do
+      [ "$s" = "$image" ] && { in_active=1; break; }
+    done
+    [ "$in_active" -eq 0 ] && continue
+    ( probe "$image" "$sanitised" && : > "$probe_tmpdir/$label" ) &
+    probe_pids+=("$!")
+  done
+  [ ${#probe_pids[@]} -gt 0 ] && wait ${probe_pids[@]+"${probe_pids[@]}"} 2>/dev/null || true
+fi
+
 for entry in "${services[@]}"; do
   IFS='|' read -r label image env_var <<< "$entry"
   if is_excluded "$label"; then
@@ -127,7 +156,7 @@ for entry in "${services[@]}"; do
   if [ "$dev" -eq 1 ]; then
     unset "$env_var" 2>/dev/null
     printf '  %-16s %sbuilt (source)%s\n' "$label:" "$COLOUR_GREEN" "$COLOUR_RESET"
-  elif [ -n "$sanitised" ] && probe "$image" "$sanitised"; then
+  elif [ -n "$sanitised" ] && [ -f "$probe_tmpdir/$label" ]; then
     export "$env_var=$sanitised"
     printf '  %-16s %sbranch  (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
   else
@@ -137,6 +166,8 @@ for entry in "${services[@]}"; do
 done
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
+
+[ -n "$probe_tmpdir" ] && rm -rf "$probe_tmpdir"
 
 up_args=(up --wait --detach --pull always)
 [ "$dev" -eq 1 ] && up_args+=(--build)

@@ -9,9 +9,8 @@ Project baseline: Playwright with TypeScript, Allure reporting, multiple config 
 ```
 repos/trade-imports-animals-tests/
 ├── playwright.config.ts        ← base config
-├── playwright.config.local.ts  ← local docker compose run
+├── playwright.config.local.ts  ← local workspace-stack run
 ├── playwright.config.local-fast.ts  ← local without Allure
-├── playwright.config.github.ts ← GitHub Actions CI
 ├── tests/
 │   ├── journeys/               ← full user journey tests
 │   │   └── notification.spec.ts
@@ -33,7 +32,7 @@ Tags used in this project:
 | Tag | Purpose |
 |-----|---------|
 | `@agent` | Agent-driven tests |
-| `@compose` | Requires full docker compose stack |
+| `@compose` | Requires full workspace stack |
 | `@integration` | Integration-level tests |
 
 ---
@@ -570,9 +569,8 @@ npx playwright show-trace trace.zip
 npm install
 npx playwright install chromium    # first time — install browser binary
 
-npm run test:local    # against local docker compose stack
+npm run test:local    # against the local workspace stack
 npm run test:local-fast  # local without Allure (faster feedback)
-npm run test:github   # GitHub Actions config
 npm test              # CDP Portal config
 ```
 
@@ -585,10 +583,11 @@ Environment variables:
 | `TEST_PASSWORD` | OIDC password for auth |
 | `ALLURE_RESULTS_DIR` | Output dir for Allure results |
 
-For `@compose` tagged tests, the full docker compose stack must be running first:
+For `@compose` tagged tests, the full workspace stack must be running first:
 ```bash
 cd /path/to/workspace
-docker compose up -d
+./scripts/stack/run-stack.sh
+cd repos/trade-imports-animals-tests
 npm run test:local
 ```
 
