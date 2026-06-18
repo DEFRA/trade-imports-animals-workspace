@@ -126,7 +126,8 @@ If the team has decided `:latest` is acceptable for a service, the comment makes
 Publish only the ports the host needs to talk to; let services-talking-to-services use the compose network directly.
 
 ```yaml
-# Wide — exposes every port in a range (LocalStack legacy pattern — avoid)
+# Wide — LocalStack legacy: each AWS service had its own port (S3=4572, SQS=4576, …)
+# so teams exposed the whole range. Floci multiplexes everything through 4566 — avoid this.
 ports:
   - "4510-4559:4510-4559"
 
