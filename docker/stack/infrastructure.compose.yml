@@ -55,12 +55,12 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
-    entrypoint: bash /scripts/start-localstack.sh
+    entrypoint: ['bash', '-c', 'for f in /scripts/*.sh; do echo "Running $f"; bash "$f"; done']
     env_file:
       - ./shared.env
     image: localstack/localstack:3.0.2
     volumes:
-      # Staged from the backend repo (the canonical localstack init) by
+      # Staged from the backend and gateway repos by
       # scripts/stack/lib/init-scripts.sh
       - ./.staged/localstack:/scripts
   mssql:
