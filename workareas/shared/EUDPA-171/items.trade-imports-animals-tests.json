@@ -1,0 +1,45 @@
+{
+  "ticket": "EUDPA-171",
+  "repo": "trade-imports-animals-tests",
+  "items": [
+    {
+      "id": 1,
+      "line": 8,
+      "severity": "Major",
+      "category": "test-isolation",
+      "issue": "beforeAll shares mutable referenceNumber across tests, violating test isolation. Tests at lines 24-30 depend on this shared state, but tests at lines 34-111 create their own data.",
+      "fix": "Move the submitNotification() into beforeEach() for the nested describe at line 19, removing the beforeAll. For the remaining tests (lines 34, 57, 73), they already create their own data correctly.",
+      "best_practice": "playwright/BEST_PRACTICES.md",
+      "file": "tests/e2e/features/notification-amend.spec.ts",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "line": 143,
+      "severity": "Major",
+      "category": "completeness",
+      "issue": "notificationCard.actions is missing amend action. The notificationCard.actions object includes copyAsNew and view, but the newly-added btnAmend should also be exposed here for API consistency and discoverability.",
+      "fix": "Add 'amend: card.getByRole(\"button\", { name: /Amend/ })' to the actions object in notificationCard() method (line ~158)",
+      "best_practice": "playwright/BEST_PRACTICES.md",
+      "file": "ui/page-objects/notification/notification-dashboard-page.ts",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "line": 92,
+      "severity": "Minor",
+      "category": "locator-selector",
+      "issue": "Status tag uses CSS class selector '.govuk-tag' which may break if styling changes; no Playwright role for badges but consider using getByText() for better resilience",
+      "fix": "Consider replacing '.govuk-tag' with page.getByText('Amend', { exact: true }) if the text is unique on the page, or use a data-testid attribute on the tag in the frontend code for more stable selection",
+      "best_practice": "playwright/BEST_PRACTICES.md",
+      "file": "ui/page-objects/notification/notification-view-page.ts",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}

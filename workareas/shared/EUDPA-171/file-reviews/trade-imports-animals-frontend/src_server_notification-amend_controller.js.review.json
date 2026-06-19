@@ -1,0 +1,40 @@
+{
+  "file": "src/server/notification-amend/controller.js",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "9b2c9696c11c6d20e7c7e7cdacc4fa6d792ddcf8",
+  "pr": 138,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-19T12:02:22Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "POST endpoint missing required route validation for the referenceNumber parameter and CSRF protection; these are significant security and validation gaps for a mutation endpoint.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 15,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "Route has a path parameter {referenceNumber} but no format validation; malformed IDs reach the handler unchecked",
+      "fix": "Add validate.params with Joi schema to index.js route config to reject malformed reference numbers at the routing layer before the handler runs",
+      "best_practice": "node/hapi.md"
+    },
+    {
+      "id": 2,
+      "line": 9,
+      "severity": "Major",
+      "category": "security",
+      "issue": "POST endpoint lacks CSRF protection via crumb option; similar POST endpoints in the codebase (notification-delete) use crumb: { restful: true }",
+      "fix": "Add options object with crumb CSRF configuration to the controller export to protect against cross-site request forgery",
+      "best_practice": "node/hapi.md"
+    },
+    {
+      "id": 3,
+      "line": 14,
+      "severity": "Minor",
+      "category": "error-handling",
+      "issue": "amendNotification is called but its exceptions are not specifically logged with context; the error message is generic and doesn't surface whether the failure was a 404 or other error to help debugging",
+      "fix": "Log the error with request context or referenceNumber before falling through to error view, or improve the generic error message to distinguish failure modes",
+      "best_practice": "node/hapi.md"
+    }
+  ],
+  "reconciled_at": "2026-06-19T12:18:09Z"
+}

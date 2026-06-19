@@ -1,0 +1,4689 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "SNYK-JS-BABELCORE-17342497",
+      "title": "Directory Traversal",
+      "CVSSv3": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:L/I:N/A:N",
+      "credit": [
+        "Teodor-Cristian Radoi"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<7.29.6",
+          ">=8.0.0-alpha.0 <8.0.0-rc.6"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "7.29.6",
+        "8.0.0-rc.6"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "low",
+      "cvssScore": 2.1,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "@babel/core",
+      "references": [
+        {
+          "url": "https://github.com/babel/babel/security/advisories/GHSA-4x5r-pxfx-6jf8",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/babel/babel/commit/99f498a9b9fa0b900d603fbe8f6601bb3b9e42bb",
+          "title": "GitHub Commit"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:L/AC:L/AT:P/PR:N/UI:N/VC:N/VI:N/VA:N/SC:L/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "low",
+          "baseScore": 2.1,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-16T10:18:35.202993Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:C/C:L/I:N/A:N",
+          "assigner": "Snyk",
+          "severity": "low",
+          "baseScore": 3.2,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-16T10:18:35.202993Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Directory Traversal via the `inputSourceMap` function. An attacker can access arbitrary files by crafting malicious input source code containing a `#sourceMappingURL` comment that references a specific source map file path.\n\n**Note:**\n\nThis is only exploitable if all these conditions are met: the attacker controls the input source code, can read the output source code, and knows the path of the source map file they want to read.\n\n## Workaround \n\nThis vulnerability can be mitigated by setting `inputSourceMap: false` in the Babel options or by manually extracting and validating the `#sourceMappingURL` comment before processing.\n\n## Details\n\nA Directory Traversal attack (also known as path traversal) aims to access files and directories that are stored outside the intended folder. By manipulating files with \"dot-dot-slash (../)\" sequences and its variations, or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system, including application source code, configuration, and other critical system files.\n\nDirectory Traversal vulnerabilities can be generally divided into two types:\n\n- **Information Disclosure**: Allows the attacker to gain information about the folder structure or read the contents of sensitive files on the system.\n\n`st` is a module for serving static files on web pages, and contains a [vulnerability of this type](https://snyk.io/vuln/npm:st:20140206). In our example, we will serve files from the `public` route.\n\nIf an attacker requests the following URL from our server, it will in turn leak the sensitive private key of the root user.\n\n```\ncurl http://localhost:8080/public/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/root/.ssh/id_rsa\n```\n**Note** `%2e` is the URL encoded version of `.` (dot).\n\n- **Writing arbitrary files**: Allows the attacker to create or replace existing files. This type of vulnerability is also known as `Zip-Slip`. \n\nOne way to achieve this is by using a malicious `zip` archive that holds path traversal filenames. When each filename in the zip archive gets concatenated to the target extraction folder, without validation, the final path ends up outside of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily.\n\nThe following is an example of a `zip` archive with one benign file and one malicious file. Extracting the malicious file will result in traversing out of the target folder, ending up in `/root/.ssh/` overwriting the `authorized_keys` file:\n\n```\n2018-04-15 22:04:29 .....           19           19  good.txt\n2018-04-15 22:04:42 .....           20           20  ../../../../../../root/.ssh/authorized_keys\n```\n\n## Remediation\nUpgrade `@babel/core` to version 7.29.6, 8.0.0-rc.6 or higher.\n## References\n- [GitHub Advisory](https://github.com/babel/babel/security/advisories/GHSA-4x5r-pxfx-6jf8)\n- [GitHub Commit](https://github.com/babel/babel/commit/99f498a9b9fa0b900d603fbe8f6601bb3b9e42bb)\n",
+      "epssDetails": {
+        "percentile": "0.02168",
+        "probability": "0.00013",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-49356"
+        ],
+        "CWE": [
+          "CWE-22"
+        ],
+        "GHSA": [
+          "GHSA-4x5r-pxfx-6jf8"
+        ]
+      },
+      "packageName": "@babel/core",
+      "proprietary": false,
+      "creationTime": "2026-06-16T10:18:34.914921Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-15T17:14:14Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-16T10:18:35.093367Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-16T10:18:35.202993Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "low",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@babel/core@7.29.0"
+      ],
+      "upgradePath": [
+        false,
+        "@babel/core@7.29.6"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "@babel/core",
+      "version": "7.29.0",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/@babel/core/package.json",
+      "parentDepType": "extraneous"
+    },
+    {
+      "id": "SNYK-JS-HAPIINERT-17337031",
+      "title": "Directory Traversal",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "credit": [
+        "Soomin Shin"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<7.1.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "7.1.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.2,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "@hapi/inert",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/inert/security/advisories/GHSA-rcvq-m9j9-6f4g",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/inert/commit/bcceb761a43b9d1178eb6bd553e4ad2bb70494d9",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/inert/pull/176",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.2,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-14T12:32:02.315488Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.9,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-14T12:32:02.315488Z"
+        }
+      ],
+      "description": "## Overview\n[@hapi/inert](https://www.npmjs.org/package/@hapi/inert) is a Static file and directory handlers plugin for hapi.js\n\nAffected versions of this package are vulnerable to Directory Traversal via the `confine` option. An unauthenticated remote attacker can access files outside the intended directory by crafting requests that exploit sibling directories with similar name prefixes.\n\n**Note:** This is only exploitable if a sibling directory exists whose name starts with the same characters as the served directory.\n\n## Workaround \n\nThis vulnerability can be mitigated by ensuring that the directory served does not have a sibling whose name starts with the same characters, such as by renaming or relocating the sibling directory.\n\n## Details\n\nA Directory Traversal attack (also known as path traversal) aims to access files and directories that are stored outside the intended folder. By manipulating files with \"dot-dot-slash (../)\" sequences and its variations, or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system, including application source code, configuration, and other critical system files.\n\nDirectory Traversal vulnerabilities can be generally divided into two types:\n\n- **Information Disclosure**: Allows the attacker to gain information about the folder structure or read the contents of sensitive files on the system.\n\n`st` is a module for serving static files on web pages, and contains a [vulnerability of this type](https://snyk.io/vuln/npm:st:20140206). In our example, we will serve files from the `public` route.\n\nIf an attacker requests the following URL from our server, it will in turn leak the sensitive private key of the root user.\n\n```\ncurl http://localhost:8080/public/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/root/.ssh/id_rsa\n```\n**Note** `%2e` is the URL encoded version of `.` (dot).\n\n- **Writing arbitrary files**: Allows the attacker to create or replace existing files. This type of vulnerability is also known as `Zip-Slip`. \n\nOne way to achieve this is by using a malicious `zip` archive that holds path traversal filenames. When each filename in the zip archive gets concatenated to the target extraction folder, without validation, the final path ends up outside of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily.\n\nThe following is an example of a `zip` archive with one benign file and one malicious file. Extracting the malicious file will result in traversing out of the target folder, ending up in `/root/.ssh/` overwriting the `authorized_keys` file:\n\n```\n2018-04-15 22:04:29 .....           19           19  good.txt\n2018-04-15 22:04:42 .....           20           20  ../../../../../../root/.ssh/authorized_keys\n```\n\n## Remediation\nUpgrade `@hapi/inert` to version 7.1.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/inert/security/advisories/GHSA-rcvq-m9j9-6f4g)\n- [GitHub Commit](https://github.com/hapijs/inert/commit/bcceb761a43b9d1178eb6bd553e4ad2bb70494d9)\n- [GitHub PR](https://github.com/hapijs/inert/pull/176)\n",
+      "epssDetails": {
+        "percentile": "0.19644",
+        "probability": "0.00062",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48049"
+        ],
+        "CWE": [
+          "CWE-22"
+        ],
+        "GHSA": [
+          "GHSA-rcvq-m9j9-6f4g"
+        ]
+      },
+      "packageName": "@hapi/inert",
+      "proprietary": false,
+      "creationTime": "2026-06-14T12:32:01.991742Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T17:10:15Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-14T12:32:02.184177Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-14T12:32:02.315488Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@hapi/inert@7.1.0"
+      ],
+      "upgradePath": [
+        false,
+        "@hapi/inert@7.1.1"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "@hapi/inert",
+      "version": "7.1.0",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/@hapi/inert/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-JOI-17317897",
+      "title": "Uncaught Exception",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "credit": [
+        "Shreehari B Deshpande"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<17.13.4",
+          ">=18.0.0 <18.2.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "17.13.4",
+        "18.2.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "joi",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/pull/3113",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncaught Exception through the link validation. An attacker can cause the application to crash or become unresponsive by submitting deeply nested input that triggers an unhandled `RangeError` exception. This is only exploitable if input validation is performed without proper exception handling (such as missing try/catch blocks).\n## Remediation\nUpgrade `joi` to version 17.13.4, 18.2.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74)\n- [GitHub PR](https://github.com/hapijs/joi/pull/3113)\n",
+      "epssDetails": {
+        "percentile": "0.12098",
+        "probability": "0.00039",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48038"
+        ],
+        "CWE": [
+          "CWE-248"
+        ],
+        "GHSA": [
+          "GHSA-q7cg-457f-vx79"
+        ]
+      },
+      "packageName": "joi",
+      "proprietary": false,
+      "creationTime": "2026-06-12T10:18:57.835125Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T13:27:32Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T10:18:58.033338Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T12:01:48.674076Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@defra/cdp-auditing@0.6.0",
+        "joi@18.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "@defra/cdp-auditing@0.6.1"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "joi",
+      "version": "18.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/joi/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-JOI-17317897",
+      "title": "Uncaught Exception",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "credit": [
+        "Shreehari B Deshpande"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<17.13.4",
+          ">=18.0.0 <18.2.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "17.13.4",
+        "18.2.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "joi",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/pull/3113",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncaught Exception through the link validation. An attacker can cause the application to crash or become unresponsive by submitting deeply nested input that triggers an unhandled `RangeError` exception. This is only exploitable if input validation is performed without proper exception handling (such as missing try/catch blocks).\n## Remediation\nUpgrade `joi` to version 17.13.4, 18.2.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74)\n- [GitHub PR](https://github.com/hapijs/joi/pull/3113)\n",
+      "epssDetails": {
+        "percentile": "0.12098",
+        "probability": "0.00039",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48038"
+        ],
+        "CWE": [
+          "CWE-248"
+        ],
+        "GHSA": [
+          "GHSA-q7cg-457f-vx79"
+        ]
+      },
+      "packageName": "joi",
+      "proprietary": false,
+      "creationTime": "2026-06-12T10:18:57.835125Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T13:27:32Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T10:18:58.033338Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T12:01:48.674076Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@hapi/bell@13.1.0",
+        "joi@17.13.3"
+      ],
+      "upgradePath": [
+        false,
+        "@hapi/bell@13.1.0",
+        "joi@17.13.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "joi",
+      "version": "17.13.3",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/@hapi/bell/node_modules/joi/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-JOI-17317897",
+      "title": "Uncaught Exception",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "credit": [
+        "Shreehari B Deshpande"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<17.13.4",
+          ">=18.0.0 <18.2.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "17.13.4",
+        "18.2.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "joi",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/pull/3113",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncaught Exception through the link validation. An attacker can cause the application to crash or become unresponsive by submitting deeply nested input that triggers an unhandled `RangeError` exception. This is only exploitable if input validation is performed without proper exception handling (such as missing try/catch blocks).\n## Remediation\nUpgrade `joi` to version 17.13.4, 18.2.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74)\n- [GitHub PR](https://github.com/hapijs/joi/pull/3113)\n",
+      "epssDetails": {
+        "percentile": "0.12098",
+        "probability": "0.00039",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48038"
+        ],
+        "CWE": [
+          "CWE-248"
+        ],
+        "GHSA": [
+          "GHSA-q7cg-457f-vx79"
+        ]
+      },
+      "packageName": "joi",
+      "proprietary": false,
+      "creationTime": "2026-06-12T10:18:57.835125Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T13:27:32Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T10:18:58.033338Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T12:01:48.674076Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@hapi/catbox-redis@7.0.2",
+        "joi@17.13.3"
+      ],
+      "upgradePath": [
+        false,
+        "@hapi/catbox-redis@7.0.2",
+        "joi@17.13.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "joi",
+      "version": "17.13.3",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/@hapi/catbox-redis/node_modules/joi/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-JOI-17317897",
+      "title": "Uncaught Exception",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "credit": [
+        "Shreehari B Deshpande"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<17.13.4",
+          ">=18.0.0 <18.2.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "17.13.4",
+        "18.2.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "joi",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/pull/3113",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncaught Exception through the link validation. An attacker can cause the application to crash or become unresponsive by submitting deeply nested input that triggers an unhandled `RangeError` exception. This is only exploitable if input validation is performed without proper exception handling (such as missing try/catch blocks).\n## Remediation\nUpgrade `joi` to version 17.13.4, 18.2.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74)\n- [GitHub PR](https://github.com/hapijs/joi/pull/3113)\n",
+      "epssDetails": {
+        "percentile": "0.12098",
+        "probability": "0.00039",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48038"
+        ],
+        "CWE": [
+          "CWE-248"
+        ],
+        "GHSA": [
+          "GHSA-q7cg-457f-vx79"
+        ]
+      },
+      "packageName": "joi",
+      "proprietary": false,
+      "creationTime": "2026-06-12T10:18:57.835125Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T13:27:32Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T10:18:58.033338Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T12:01:48.674076Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "@hapi/jwt@3.2.3",
+        "joi@17.13.3"
+      ],
+      "upgradePath": [
+        false,
+        "@hapi/jwt@3.2.3",
+        "joi@17.13.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "joi",
+      "version": "17.13.3",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/@hapi/jwt/node_modules/joi/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-JOI-17317897",
+      "title": "Uncaught Exception",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "credit": [
+        "Shreehari B Deshpande"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<17.13.4",
+          ">=18.0.0 <18.2.1"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "17.13.4",
+        "18.2.1"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "joi",
+      "references": [
+        {
+          "url": "https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/hapijs/joi/pull/3113",
+          "title": "GitHub PR"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T12:01:48.674076Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncaught Exception through the link validation. An attacker can cause the application to crash or become unresponsive by submitting deeply nested input that triggers an unhandled `RangeError` exception. This is only exploitable if input validation is performed without proper exception handling (such as missing try/catch blocks).\n## Remediation\nUpgrade `joi` to version 17.13.4, 18.2.1 or higher.\n## References\n- [GitHub Advisory](https://github.com/hapijs/joi/security/advisories/GHSA-q7cg-457f-vx79)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/2392713d3e9dd91ba752ac0c96e0eaf3d24b9a11)\n- [GitHub Commit](https://github.com/hapijs/joi/commit/97bd51de94d595a2d8949eb3bec0dbdd2f8a7a74)\n- [GitHub PR](https://github.com/hapijs/joi/pull/3113)\n",
+      "epssDetails": {
+        "percentile": "0.12098",
+        "probability": "0.00039",
+        "modelVersion": "v2025.03.14"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-48038"
+        ],
+        "CWE": [
+          "CWE-248"
+        ],
+        "GHSA": [
+          "GHSA-q7cg-457f-vx79"
+        ]
+      },
+      "packageName": "joi",
+      "proprietary": false,
+      "creationTime": "2026-06-12T10:18:57.835125Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T13:27:32Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T10:18:58.033338Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T12:01:48.674076Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "hapi-pulse@3.0.1",
+        "joi@17.9.2"
+      ],
+      "upgradePath": [
+        false,
+        "hapi-pulse@4.0.0",
+        "joi@18.2.3"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "joi",
+      "version": "17.9.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/hapi-pulse/node_modules/joi/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-calc@10.1.1",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-calc@10.1.1",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-discard-comments@7.0.6",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-discard-comments@7.0.8",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-rules@7.0.8",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-rules@7.0.11",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-minify-selectors@7.0.6",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-minify-selectors@7.1.2",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-unique-selectors@7.0.5",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-unique-selectors@7.0.7",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-calc@10.1.1",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-calc@10.1.1",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-discard-comments@7.0.6",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-discard-comments@7.0.8",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-longhand@7.0.5",
+        "stylehacks@7.0.8",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-longhand@7.0.7",
+        "stylehacks@7.0.11",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-rules@7.0.8",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-merge-rules@7.0.11",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-minify-selectors@7.0.6",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-minify-selectors@7.1.2",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-unique-selectors@7.0.5",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-unique-selectors@7.0.7",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+      "title": "Uncontrolled Recursion",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+      "credit": [
+        "bx33661 Bpple"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.1.3",
+          ">=7.0.0 <7.1.2"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "6.1.3",
+        "7.1.2"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "postcss-selector-parser",
+      "references": [
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+          "title": "GitHub Gist"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+          "title": "Vulnerable Code"
+        },
+        {
+          "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+          "title": "Vulnerable Code"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "NVD",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "cvssV3BaseScore": 4.3,
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-15T15:56:58.017598Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "NVD",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-05-27T01:19:33.912131Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 4.3,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-13T06:42:22.713685Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+      "epssDetails": {
+        "percentile": "0.33645",
+        "probability": "0.00424",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9358"
+        ],
+        "CWE": [
+          "CWE-674"
+        ]
+      },
+      "packageName": "postcss-selector-parser",
+      "proprietary": false,
+      "creationTime": "2026-05-24T12:27:38.150369Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-05-24T07:39:24Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-05-24T12:27:38.649044Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-15T15:56:58.017598Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.12",
+        "postcss-merge-longhand@7.0.5",
+        "stylehacks@7.0.8",
+        "postcss-selector-parser@7.1.1"
+      ],
+      "upgradePath": [
+        false,
+        "cssnano@7.1.4",
+        "cssnano-preset-default@7.0.17",
+        "postcss-merge-longhand@7.0.7",
+        "stylehacks@7.0.11",
+        "postcss-selector-parser@7.1.4"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "postcss-selector-parser",
+      "version": "7.1.1",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/postcss-selector-parser/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-TMP-17315641",
+      "title": "Directory Traversal",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N/E:P",
+      "credit": [
+        "tonghuaroot"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<0.2.7"
+        ]
+      },
+      "exploit": "Proof of Concept",
+      "fixedIn": [
+        "0.2.7"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.7,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "tmp",
+      "references": [
+        {
+          "url": "https://github.com/raszi/node-tmp/security/advisories/GHSA-7c78-jf6q-g5cm",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/raszi/node-tmp/commit/ce787f37aaacccad921ae90990c9da33481fe59c",
+          "title": "GitHub Commit"
+        }
+      ],
+      "cvssDetails": [],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:H/VA:N/SC:N/SI:N/SA:N/E:P",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.7,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-16T15:22:58.848253Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N/E:P",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-16T15:22:58.848253Z"
+        }
+      ],
+      "description": "## Overview\n\nAffected versions of this package are vulnerable to Directory Traversal due to the improper sanitization of non-string values in the `prefix`, `postfix`, or `dir` parameters during path construction. An attacker can create files outside the intended temporary directory, potentially overwriting or placing files in sensitive locations, by supplying crafted values containing traversal sequences or absolute paths.\r\n\r\n**Note:**\r\n\r\nThis issue is due to an incomplete fix for [CVE-2026-44705](https://security.snyk.io/vuln/SNYK-JS-TMP-16881240). Added `_assertPath` as a guard does not account for non-string values.\n\n## Details\n\nA Directory Traversal attack (also known as path traversal) aims to access files and directories that are stored outside the intended folder. By manipulating files with \"dot-dot-slash (../)\" sequences and its variations, or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system, including application source code, configuration, and other critical system files.\n\nDirectory Traversal vulnerabilities can be generally divided into two types:\n\n- **Information Disclosure**: Allows the attacker to gain information about the folder structure or read the contents of sensitive files on the system.\n\n`st` is a module for serving static files on web pages, and contains a [vulnerability of this type](https://snyk.io/vuln/npm:st:20140206). In our example, we will serve files from the `public` route.\n\nIf an attacker requests the following URL from our server, it will in turn leak the sensitive private key of the root user.\n\n```\ncurl http://localhost:8080/public/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/root/.ssh/id_rsa\n```\n**Note** `%2e` is the URL encoded version of `.` (dot).\n\n- **Writing arbitrary files**: Allows the attacker to create or replace existing files. This type of vulnerability is also known as `Zip-Slip`. \n\nOne way to achieve this is by using a malicious `zip` archive that holds path traversal filenames. When each filename in the zip archive gets concatenated to the target extraction folder, without validation, the final path ends up outside of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily.\n\nThe following is an example of a `zip` archive with one benign file and one malicious file. Extracting the malicious file will result in traversing out of the target folder, ending up in `/root/.ssh/` overwriting the `authorized_keys` file:\n\n```\n2018-04-15 22:04:29 .....           19           19  good.txt\n2018-04-15 22:04:42 .....           20           20  ../../../../../../root/.ssh/authorized_keys\n```\n\n## Remediation\nUpgrade `tmp` to version 0.2.7 or higher.\n## References\n- [GitHub Advisory](https://github.com/raszi/node-tmp/security/advisories/GHSA-7c78-jf6q-g5cm)\n- [GitHub Commit](https://github.com/raszi/node-tmp/commit/ce787f37aaacccad921ae90990c9da33481fe59c)\n",
+      "epssDetails": {
+        "percentile": "0.34391",
+        "probability": "0.00433",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-49982"
+        ],
+        "CWE": [
+          "CWE-22"
+        ],
+        "GHSA": [
+          "GHSA-7c78-jf6q-g5cm"
+        ]
+      },
+      "packageName": "tmp",
+      "proprietary": false,
+      "creationTime": "2026-06-12T09:50:48.204065Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-11T19:14:41Z",
+      "exploitDetails": {
+        "sources": [
+          "Snyk"
+        ],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Proof of Concept",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Proof of Concept",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-12T09:51:22.520800Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-16T15:22:58.848253Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "tmp@0.2.6"
+      ],
+      "upgradePath": [
+        false,
+        "tmp@0.2.7"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "tmp",
+      "version": "0.2.6",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/tmp/package.json",
+      "parentDepType": "extraneous"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372609",
+      "title": "Improper Certificate Validation",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:L/A:N",
+      "credit": [
+        "tonghuaroot (童话)"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=7.23.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-vmh5-mc38-953g",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/04201f89",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/42d49559",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "high",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+          "cvssV3BaseScore": 7.4,
+          "modificationTime": "2026-06-18T05:38:51.575899Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:03:35.520259Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:L/A:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 5.9,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:03:35.520259Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N",
+          "assigner": "Red Hat",
+          "severity": "high",
+          "baseScore": 7.4,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:38:51.575899Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Improper Certificate Validation in the `ProxyAgent` when configured with a SOCKS5 proxy URI, which causes the `requestTls` option to be silently dropped. An attacker can intercept and tamper with HTTPS traffic by exploiting the fallback to the default trust store, thereby bypassing user-configured TLS restrictions. \r\n\r\n**Note:** This is only exploitable if the application uses a SOCKS5 proxy and relies on `requestTls` for TLS scope restriction.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by routing traffic through an HTTP-proxy ProxyAgent instead of SOCKS5, where `requestTls` is honored correctly.\n## Remediation\nUpgrade `undici` to version 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-vmh5-mc38-953g)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/04201f89)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/42d49559)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.09762",
+        "probability": "0.00199",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9697"
+        ],
+        "CWE": [
+          "CWE-295"
+        ],
+        "GHSA": [
+          "GHSA-vmh5-mc38-953g"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T10:45:26.480897Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:20:16Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T10:45:26.652375Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:03:35.520259Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372611",
+      "title": "Allocation of Resources Without Limits or Throttling",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "credit": [
+        "Strickland"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.7,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-38rv-x7px-6hhq",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/b4c287b3",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "cvssV3BaseScore": 5.9,
+          "modificationTime": "2026-06-19T05:48:05.672935Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.7,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-19T05:48:06.114029Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-19T05:48:06.114029Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 5.9,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-19T05:48:05.672935Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling via the handling of fragmented WebSocket messages. An attacker can cause unbounded memory growth and exhaust system resources by sending numerous small fragments that individually pass validation but collectively exceed the intended payload size limit.\n## Remediation\nUpgrade `undici` to version 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-38rv-x7px-6hhq)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/b4c287b3)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.19973",
+        "probability": "0.00284",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9675"
+        ],
+        "CWE": [
+          "CWE-770"
+        ],
+        "GHSA": [
+          "GHSA-38rv-x7px-6hhq"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T10:46:43.830365Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:21:22Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T10:46:43.996216Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-19T05:48:06.114029Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372658",
+      "title": "CRLF Injection",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:L",
+      "credit": [
+        "ByunSuyoung"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.27.0",
+          ">=7.0.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "6.27.0",
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "critical",
+      "cvssScore": 9.2,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-p88m-4jfj-68fv",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/25efa447",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/5655ea43",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/d0574cc4",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v6.27.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "cvssV3BaseScore": 5.9,
+          "modificationTime": "2026-06-18T05:38:21.446807Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:H/VA:L/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "critical",
+          "baseScore": 9.2,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:03:35.519837Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:L",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.7,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:03:35.519837Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:H/A:N",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 5.9,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:38:21.446807Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to CRLF Injection in the `parseSetCookie`. An attacker can inject arbitrary HTTP headers by supplying specially crafted percent-encoded values in the Set-Cookie header, which are improperly decoded and then forwarded into response headers. This can enable actions such as session fixation, open redirect, or cache poisoning. \r\n\r\n**Note:** This is only exploitable if the application parses Set-Cookie headers using the affected function and then forwards the parsed value into a response header without proper sanitization.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by sanitizing the values returned by the affected cookie parsing functions to strip or reject CR, LF, NUL, ;, and = bytes before forwarding them into response headers.\n## Remediation\nUpgrade `undici` to version 6.27.0, 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-p88m-4jfj-68fv)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/25efa447)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/5655ea43)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/d0574cc4)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v6.27.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.10515",
+        "probability": "0.00205",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9679"
+        ],
+        "CWE": [
+          "CWE-93"
+        ],
+        "GHSA": [
+          "GHSA-p88m-4jfj-68fv"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T10:54:52.700289Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:21:27Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T10:54:52.865199Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:03:35.519837Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "critical",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372667",
+      "title": "Origin Validation Error",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "credit": [
+        "Nikita Skovoroda"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=7.23.0 <7.28.0",
+          ">=8.0.0 <8.2.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "7.28.0",
+        "8.2.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 7.7,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-hm92-r4w5-c3mj",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/3805b8f8",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/a516f870",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "high",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+          "cvssV3BaseScore": 7.5,
+          "modificationTime": "2026-06-18T05:39:08.154809Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.7,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:54:17.212580Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:54:17.212580Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+          "assigner": "Red Hat",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:39:08.154809Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Origin Validation Error in the `Socks5ProxyAgent`. An attacker can intercept or redirect sensitive data, including credentials and request payloads, to unintended origins by exploiting improper verification of origin matching when reusing connection pools. This may also result in responses from incorrect origins being trusted and can lead to silent downgrading of HTTPS requests to HTTP. \r\n\r\n**Note:** This is only exploitable if the application uses `Socks5ProxyAgent` (directly or via `setGlobalDispatcher`) and makes requests to more than one origin.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by using a separate `Socks5ProxyAgent` instance per origin or by avoiding the use of `Socks5ProxyAgent` with multiple origins.\n## Remediation\nUpgrade `undici` to version 7.28.0, 8.2.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-hm92-r4w5-c3mj)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/3805b8f8)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/a516f870)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.04283",
+        "probability": "0.00147",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-6734"
+        ],
+        "CWE": [
+          "CWE-346"
+        ],
+        "GHSA": [
+          "GHSA-hm92-r4w5-c3mj"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T10:58:50.642213Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:21:33Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T10:58:50.809173Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:54:17.212580Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.2.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372697",
+      "title": "Use of Cache Containing Sensitive Information",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N",
+      "credit": [
+        "Unknown"
+      ],
+      "semver": {
+        "vulnerable": [
+          ">=7.0.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.9,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-pr7r-676h-xcf6",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/85a24055",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/cb105d7c",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "cvssV3BaseScore": 5.9,
+          "modificationTime": "2026-06-18T05:38:32.530338Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:N/VA:N/SC:H/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.9,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:53:53.663111Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:N/A:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.8,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:53:53.663111Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N",
+          "assigner": "Red Hat",
+          "severity": "medium",
+          "baseScore": 5.9,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:38:32.530338Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Use of Cache Containing Sensitive Information in the cache interceptor. An attacker can obtain another user's authenticated response data by exploiting whitespace-padded field names in the `Cache-Control` header, causing the cache to incorrectly store and serve private data to subsequent callers, including unauthenticated users.\r\n\r\n**Note:** This is only exploitable if the cache interceptor is explicitly enabled in shared mode, Authorization headers are forwarded upstream, and cacheable responses with non-canonical qualified private or no-cache directives are received.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by disabling shared-cache mode for traffic that includes Authorization headers, avoiding caching responses to authenticated requests, or adding Vary: Authorization upstream.\n## Remediation\nUpgrade `undici` to version 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-pr7r-676h-xcf6)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/85a24055)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/cb105d7c)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.13480",
+        "probability": "0.00229",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-9678"
+        ],
+        "CWE": [
+          "CWE-524"
+        ],
+        "GHSA": [
+          "GHSA-pr7r-676h-xcf6"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T11:01:36.387317Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:21:38Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T11:01:36.559508Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:53:53.663111Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372752",
+      "title": "Time-of-check Time-of-use (TOCTOU) Race Condition",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+      "credit": [
+        "Unknown"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.27.0",
+          ">=7.0.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "6.27.0",
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "medium",
+      "cvssScore": 6.3,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-35p6-xmwp-9g52",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/6ea54ef8",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/ea8930cf",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/f4c31d60",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v6.27.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://hackerone.com/reports/3582376",
+          "title": "HackerOne Report"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "low",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "cvssV3BaseScore": 3.7,
+          "modificationTime": "2026-06-18T05:39:04.509837Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.3,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:53:33.473503Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 4.8,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:53:33.473503Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "assigner": "Red Hat",
+          "severity": "low",
+          "baseScore": 3.7,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:39:04.509837Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Time-of-check Time-of-use (TOCTOU) Race Condition in the HTTP/1.1 client when an attacker-controlled upstream server injects an unsolicited response onto an idle keep-alive socket after a request completes. An attacker can cause responses to be delivered to the wrong requests by sending crafted HTTP responses through a compromised or malicious upstream server. \r\n\r\n**Note:** This is only exploitable if the upstream HTTP/1.1 server is attacker-controlled or compromised and keep-alive connection reuse is enabled.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by disabling keep-alive connection reuse by setting `keepAliveTimeout: 0` on the Client or Pool.\n## Remediation\nUpgrade `undici` to version 6.27.0, 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-35p6-xmwp-9g52)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/6ea54ef8)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/ea8930cf)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/f4c31d60)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v6.27.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [HackerOne Report](https://hackerone.com/reports/3582376)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.07389",
+        "probability": "0.00177",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-6733"
+        ],
+        "CWE": [
+          "CWE-367"
+        ],
+        "GHSA": [
+          "GHSA-35p6-xmwp-9g52"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T11:05:14.712666Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:21:43Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T11:05:14.899159Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:53:33.473503Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "medium",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372754",
+      "title": "Allocation of Resources Without Limits or Throttling",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+      "credit": [
+        "Nadav"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.26.0",
+          ">=7.0.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "6.26.0",
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.7,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-vxpw-j846-p89q",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/32dbf0b3",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/8cb10f98",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/b7f252e7",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v6.27.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "high",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "cvssV3BaseScore": 7.5,
+          "modificationTime": "2026-06-18T05:38:58.234006Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.7,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:53:19.712866Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:53:19.712866Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+          "assigner": "Red Hat",
+          "severity": "high",
+          "baseScore": 7.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:38:58.234006Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling via the handling of WebSocket message fragments. An attacker can cause unbounded memory growth and exhaust system resources by streaming a large number of small or empty continuation frames from a malicious WebSocket server.\n## Remediation\nUpgrade `undici` to version 6.26.0, 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-vxpw-j846-p89q)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/32dbf0b3)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/8cb10f98)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/b7f252e7)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v6.27.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.19973",
+        "probability": "0.00284",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-12151"
+        ],
+        "CWE": [
+          "CWE-770"
+        ],
+        "GHSA": [
+          "GHSA-vxpw-j846-p89q"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T11:07:08.566966Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:22:10Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T11:07:08.757250Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:53:19.712866Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    },
+    {
+      "id": "SNYK-JS-UNDICI-17372758",
+      "title": "Permissive List of Allowed Inputs",
+      "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:L/A:N",
+      "credit": [
+        "Unknown"
+      ],
+      "semver": {
+        "vulnerable": [
+          "<6.27.0",
+          ">=7.0.0 <7.28.0",
+          ">=8.0.0 <8.5.0"
+        ]
+      },
+      "exploit": "Not Defined",
+      "fixedIn": [
+        "6.27.0",
+        "7.28.0",
+        "8.5.0"
+      ],
+      "patches": [],
+      "insights": {
+        "triageAdvice": null
+      },
+      "language": "js",
+      "severity": "high",
+      "cvssScore": 8.3,
+      "functions": [],
+      "malicious": false,
+      "isDisputed": false,
+      "moduleName": "undici",
+      "references": [
+        {
+          "url": "https://github.com/nodejs/undici/security/advisories/GHSA-g8m3-5g58-fq7m",
+          "title": "GitHub Advisory"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/25efa447",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/5655ea43",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/commit/d0574cc4",
+          "title": "GitHub Commit"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v6.27.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v7.28.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://github.com/nodejs/undici/releases/tag/v8.5.0",
+          "title": "GitHub Release"
+        },
+        {
+          "url": "https://cna.openjsf.org/security-advisories.html",
+          "title": "Vendor Advisory"
+        }
+      ],
+      "cvssDetails": [
+        {
+          "assigner": "Red Hat",
+          "severity": "low",
+          "cvssV3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "cvssV3BaseScore": 3.7,
+          "modificationTime": "2026-06-18T05:38:48.336687Z"
+        }
+      ],
+      "cvssSources": [
+        {
+          "type": "primary",
+          "vector": "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:N/SC:N/SI:N/SA:N",
+          "assigner": "Snyk",
+          "severity": "high",
+          "baseScore": 8.3,
+          "cvssVersion": "4.0",
+          "modificationTime": "2026-06-18T14:03:47.185221Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:L/A:N",
+          "assigner": "Snyk",
+          "severity": "medium",
+          "baseScore": 6.5,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T14:03:47.185221Z"
+        },
+        {
+          "type": "secondary",
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+          "assigner": "Red Hat",
+          "severity": "low",
+          "baseScore": 3.7,
+          "cvssVersion": "3.1",
+          "modificationTime": "2026-06-18T05:38:48.336687Z"
+        }
+      ],
+      "description": "## Overview\n[undici](https://www.npmjs.org/package/undici) is an An HTTP/1.1 client, written from scratch for Node.js\n\nAffected versions of this package are vulnerable to Permissive List of Allowed Inputs via permissive substring matching in the `Set-Cookie` attribute parsing. An attacker can weaken cookie SameSite enforcement by crafting a response with a non-standard SameSite value that is interpreted as a more permissive setting, potentially allowing cookies to be sent in cross-site requests. \r\n\r\n**Note:** This is only exploitable if the application consumes Set-Cookie headers from server responses (for example via undici's fetch or proxy code paths) and then forwards or relies on the parsed sameSite attribute.\r\n\r\n## Workaround \r\n\r\nThis vulnerability can be mitigated by validating that the parsed sameSite attribute is exactly 'Strict', 'Lax', or 'None' (case-insensitive) before relying on or forwarding it.\n## Remediation\nUpgrade `undici` to version 6.27.0, 7.28.0, 8.5.0 or higher.\n## References\n- [GitHub Advisory](https://github.com/nodejs/undici/security/advisories/GHSA-g8m3-5g58-fq7m)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/25efa447)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/5655ea43)\n- [GitHub Commit](https://github.com/nodejs/undici/commit/d0574cc4)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v6.27.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v7.28.0)\n- [GitHub Release](https://github.com/nodejs/undici/releases/tag/v8.5.0)\n- [Vendor Advisory](https://cna.openjsf.org/security-advisories.html)\n",
+      "epssDetails": {
+        "percentile": "0.09610",
+        "probability": "0.00197",
+        "modelVersion": "v2026.06.15"
+      },
+      "identifiers": {
+        "CVE": [
+          "CVE-2026-11525"
+        ],
+        "CWE": [
+          "CWE-183"
+        ],
+        "GHSA": [
+          "GHSA-g8m3-5g58-fq7m"
+        ]
+      },
+      "packageName": "undici",
+      "proprietary": false,
+      "creationTime": "2026-06-18T11:16:13.940701Z",
+      "functions_new": [],
+      "alternativeIds": [],
+      "disclosureTime": "2026-06-17T18:22:58Z",
+      "exploitDetails": {
+        "sources": [],
+        "maturityLevels": [
+          {
+            "type": "secondary",
+            "level": "Not Defined",
+            "format": "CVSSv3"
+          },
+          {
+            "type": "primary",
+            "level": "Not Defined",
+            "format": "CVSSv4"
+          }
+        ]
+      },
+      "packageManager": "npm",
+      "publicationTime": "2026-06-18T11:16:14.136307Z",
+      "severityBasedOn": "CVSS",
+      "modificationTime": "2026-06-18T14:03:47.185221Z",
+      "socialTrendAlert": false,
+      "severityWithCritical": "high",
+      "from": [
+        "trade-imports-animals-frontend@0.0.0",
+        "undici@8.0.2"
+      ],
+      "upgradePath": [
+        false,
+        "undici@8.5.0"
+      ],
+      "isUpgradable": true,
+      "isPatchable": false,
+      "name": "undici",
+      "version": "8.0.2",
+      "__filename": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend/node_modules/undici/package.json",
+      "parentDepType": "prod"
+    }
+  ],
+  "ok": false,
+  "dependencyCount": 259,
+  "org": "ami-nav",
+  "policy": "# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.\nversion: v1.25.1\nignore: {}\npatch: {}\n",
+  "isPrivate": true,
+  "licensesPolicy": {
+    "severities": {},
+    "orgLicenseRules": {
+      "AGPL-1.0": {
+        "licenseType": "AGPL-1.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "AGPL-3.0": {
+        "licenseType": "AGPL-3.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "Artistic-1.0": {
+        "licenseType": "Artistic-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "Artistic-2.0": {
+        "licenseType": "Artistic-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "CDDL-1.0": {
+        "licenseType": "CDDL-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "CPOL-1.02": {
+        "licenseType": "CPOL-1.02",
+        "severity": "high",
+        "instructions": ""
+      },
+      "EPL-1.0": {
+        "licenseType": "EPL-1.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "GPL-2.0": {
+        "licenseType": "GPL-2.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "GPL-3.0": {
+        "licenseType": "GPL-3.0",
+        "severity": "high",
+        "instructions": ""
+      },
+      "LGPL-2.0": {
+        "licenseType": "LGPL-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "LGPL-2.1": {
+        "licenseType": "LGPL-2.1",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "LGPL-3.0": {
+        "licenseType": "LGPL-3.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MPL-1.1": {
+        "licenseType": "MPL-1.1",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MPL-2.0": {
+        "licenseType": "MPL-2.0",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "MS-RL": {
+        "licenseType": "MS-RL",
+        "severity": "medium",
+        "instructions": ""
+      },
+      "SimPL-2.0": {
+        "licenseType": "SimPL-2.0",
+        "severity": "high",
+        "instructions": ""
+      }
+    }
+  },
+  "packageManager": "npm",
+  "ignoreSettings": {
+    "adminOnly": false,
+    "reasonRequired": false,
+    "disregardFilesystemIgnores": false
+  },
+  "summary": "28 vulnerable dependency paths",
+  "remediation": {
+    "unresolved": [
+      {
+        "id": "SNYK-JS-POSTCSSSELECTORPARSER-16873882",
+        "title": "Uncontrolled Recursion",
+        "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+        "credit": [
+          "bx33661 Bpple"
+        ],
+        "semver": {
+          "vulnerable": [
+            "<6.1.3",
+            ">=7.0.0 <7.1.2"
+          ]
+        },
+        "exploit": "Proof of Concept",
+        "fixedIn": [
+          "6.1.3",
+          "7.1.2"
+        ],
+        "patches": [],
+        "insights": {
+          "triageAdvice": null
+        },
+        "language": "js",
+        "severity": "medium",
+        "cvssScore": 6.9,
+        "functions": [],
+        "malicious": false,
+        "isDisputed": false,
+        "moduleName": "postcss-selector-parser",
+        "references": [
+          {
+            "url": "https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a",
+            "title": "GitHub Commit"
+          },
+          {
+            "url": "https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9",
+            "title": "GitHub Gist"
+          },
+          {
+            "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L46",
+            "title": "Vulnerable Code"
+          },
+          {
+            "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js%23L66",
+            "title": "Vulnerable Code"
+          },
+          {
+            "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js%23L327-L328",
+            "title": "Vulnerable Code"
+          },
+          {
+            "url": "https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js%23L10-L17",
+            "title": "Vulnerable Code"
+          }
+        ],
+        "cvssDetails": [
+          {
+            "assigner": "NVD",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+            "cvssV3BaseScore": 4.3,
+            "modificationTime": "2026-05-27T01:19:33.912131Z"
+          },
+          {
+            "assigner": "Red Hat",
+            "severity": "medium",
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+            "cvssV3BaseScore": 4.3,
+            "modificationTime": "2026-06-13T06:42:22.713685Z"
+          }
+        ],
+        "cvssSources": [
+          {
+            "type": "primary",
+            "vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N/E:P",
+            "assigner": "Snyk",
+            "severity": "medium",
+            "baseScore": 6.9,
+            "cvssVersion": "4.0",
+            "modificationTime": "2026-06-15T15:56:58.017598Z"
+          },
+          {
+            "type": "secondary",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L/E:P",
+            "assigner": "Snyk",
+            "severity": "medium",
+            "baseScore": 5.3,
+            "cvssVersion": "3.1",
+            "modificationTime": "2026-06-15T15:56:58.017598Z"
+          },
+          {
+            "type": "secondary",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+            "assigner": "NVD",
+            "severity": "medium",
+            "baseScore": 4.3,
+            "cvssVersion": "3.1",
+            "modificationTime": "2026-05-27T01:19:33.912131Z"
+          },
+          {
+            "type": "secondary",
+            "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
+            "assigner": "Red Hat",
+            "severity": "medium",
+            "baseScore": 4.3,
+            "cvssVersion": "3.1",
+            "modificationTime": "2026-06-13T06:42:22.713685Z"
+          }
+        ],
+        "description": "## Overview\n\nAffected versions of this package are vulnerable to Uncontrolled Recursion via the `toString` function in the AST Serialization. An attacker can cause uncontrolled recursion by providing specially crafted input, potentially resulting in resource exhaustion and application unavailability.\n## Remediation\nUpgrade `postcss-selector-parser` to version 6.1.3, 7.1.2 or higher.\n## References\n- [GitHub Commit](https://github.com/postcss/postcss-selector-parser/commit/e37c5b0b785b165e27508d2489fdec8e0f18b10a)\n- [GitHub Gist](https://gist.github.com/bx33661/581e3a38134601c04e19b4dfc9b459b9)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L46)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/processor.js#L66)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/container.js#L327-L328)\n- [Vulnerable Code](https://github.com/postcss/postcss-selector-parser/blob/master/src/selectors/pseudo.js#L10-L17)\n",
+        "epssDetails": {
+          "percentile": "0.33645",
+          "probability": "0.00424",
+          "modelVersion": "v2026.06.15"
+        },
+        "identifiers": {
+          "CVE": [
+            "CVE-2026-9358"
+          ],
+          "CWE": [
+            "CWE-674"
+          ]
+        },
+        "packageName": "postcss-selector-parser",
+        "proprietary": false,
+        "creationTime": "2026-05-24T12:27:38.150369Z",
+        "functions_new": [],
+        "alternativeIds": [],
+        "disclosureTime": "2026-05-24T07:39:24Z",
+        "exploitDetails": {
+          "sources": [
+            "Snyk"
+          ],
+          "maturityLevels": [
+            {
+              "type": "secondary",
+              "level": "Proof of Concept",
+              "format": "CVSSv3"
+            },
+            {
+              "type": "primary",
+              "level": "Proof of Concept",
+              "format": "CVSSv4"
+            }
+          ]
+        },
+        "packageManager": "npm",
+        "publicationTime": "2026-05-24T12:27:38.649044Z",
+        "severityBasedOn": "CVSS",
+        "modificationTime": "2026-06-15T15:56:58.017598Z",
+        "socialTrendAlert": false,
+        "packagePopularityRank": 99,
+        "from": [
+          "trade-imports-animals-frontend@0.0.0",
+          "cssnano@7.1.4",
+          "cssnano-preset-default@7.0.12",
+          "postcss-merge-longhand@7.0.5",
+          "stylehacks@7.0.8",
+          "postcss-selector-parser@7.1.1"
+        ],
+        "upgradePath": [
+          false,
+          "cssnano@7.1.4",
+          "cssnano-preset-default@7.0.17",
+          "postcss-merge-longhand@7.0.7",
+          "stylehacks@7.0.11",
+          "postcss-selector-parser@7.1.4"
+        ],
+        "isUpgradable": true,
+        "isPatchable": false,
+        "isPinnable": false,
+        "isRuntime": false,
+        "name": "postcss-selector-parser",
+        "version": "7.1.1",
+        "severityWithCritical": "medium"
+      }
+    ],
+    "upgrade": {
+      "@babel/core@7.29.0": {
+        "upgradeTo": "@babel/core@7.29.6",
+        "upgrades": [
+          "@babel/core@7.29.0"
+        ],
+        "vulns": [
+          "SNYK-JS-BABELCORE-17342497"
+        ]
+      },
+      "@defra/cdp-auditing@0.6.0": {
+        "upgradeTo": "@defra/cdp-auditing@0.6.1",
+        "upgrades": [
+          "joi@18.0.2"
+        ],
+        "vulns": [
+          "SNYK-JS-JOI-17317897"
+        ]
+      },
+      "@hapi/inert@7.1.0": {
+        "upgradeTo": "@hapi/inert@7.1.1",
+        "upgrades": [
+          "@hapi/inert@7.1.0"
+        ],
+        "vulns": [
+          "SNYK-JS-HAPIINERT-17337031"
+        ]
+      },
+      "hapi-pulse@3.0.1": {
+        "upgradeTo": "hapi-pulse@4.0.0",
+        "upgrades": [
+          "joi@17.9.2"
+        ],
+        "vulns": [
+          "SNYK-JS-JOI-17317897"
+        ]
+      },
+      "tmp@0.2.6": {
+        "upgradeTo": "tmp@0.2.7",
+        "upgrades": [
+          "tmp@0.2.6"
+        ],
+        "vulns": [
+          "SNYK-JS-TMP-17315641"
+        ]
+      },
+      "undici@8.0.2": {
+        "upgradeTo": "undici@8.5.0",
+        "upgrades": [
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2",
+          "undici@8.0.2"
+        ],
+        "vulns": [
+          "SNYK-JS-UNDICI-17372609",
+          "SNYK-JS-UNDICI-17372611",
+          "SNYK-JS-UNDICI-17372658",
+          "SNYK-JS-UNDICI-17372697",
+          "SNYK-JS-UNDICI-17372752",
+          "SNYK-JS-UNDICI-17372754",
+          "SNYK-JS-UNDICI-17372758",
+          "SNYK-JS-UNDICI-17372667"
+        ]
+      }
+    },
+    "patch": {},
+    "ignore": {},
+    "pin": {}
+  },
+  "filesystemPolicy": false,
+  "filtered": {
+    "ignore": [],
+    "patch": []
+  },
+  "uniqueCount": 13,
+  "projectName": "trade-imports-animals-frontend",
+  "displayTargetFile": "package.json",
+  "hasUnknownVersions": false,
+  "path": "/Users/aminav/Documents/Dev/EqualExperts/trade-imports-animals-workspace/repos/trade-imports-animals-frontend"
+}

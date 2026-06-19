@@ -1,0 +1,110 @@
+{
+  "ticket": "EUDPA-171",
+  "repo": "trade-imports-animals-frontend",
+  "items": [
+    {
+      "id": 1,
+      "line": 56,
+      "severity": "Major",
+      "category": "logging",
+      "issue": "Log message uses string concatenation instead of structured object; violates static message pattern",
+      "fix": "Change to: logger.info({ referenceNumber }, 'Notification moved to amend')",
+      "best_practice": "node/pino-logging.md",
+      "file": "src/server/common/helpers/notification-helpers.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "line": 59,
+      "severity": "Major",
+      "category": "logging",
+      "issue": "Error log passes only err.message instead of full error object; loses stack trace and type information",
+      "fix": "Change to: logger.error({ err, referenceNumber }, 'Failed to amend notification')",
+      "best_practice": "node/pino-logging.md",
+      "file": "src/server/common/helpers/notification-helpers.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "line": 15,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "Route has a path parameter {referenceNumber} but no format validation; malformed IDs reach the handler unchecked",
+      "fix": "Add validate.params with Joi schema to index.js route config to reject malformed reference numbers at the routing layer before the handler runs",
+      "best_practice": "node/hapi.md",
+      "file": "src/server/notification-amend/controller.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "line": 9,
+      "severity": "Major",
+      "category": "security",
+      "issue": "POST endpoint lacks CSRF protection via crumb option; similar POST endpoints in the codebase (notification-delete) use crumb: { restful: true }",
+      "fix": "Add options object with crumb CSRF configuration to the controller export to protect against cross-site request forgery",
+      "best_practice": "node/hapi.md",
+      "file": "src/server/notification-amend/controller.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "line": 14,
+      "severity": "Minor",
+      "category": "error-handling",
+      "issue": "amendNotification is called but its exceptions are not specifically logged with context; the error message is generic and doesn't surface whether the failure was a 404 or other error to help debugging",
+      "fix": "Log the error with request context or referenceNumber before falling through to error view, or improve the generic error message to distinguish failure modes",
+      "best_practice": "node/hapi.md",
+      "file": "src/server/notification-amend/controller.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 6,
+      "line": 13,
+      "severity": "Critical",
+      "category": "missing-mock",
+      "issue": "Missing config.js mock — every controller test must mock both get-oidc-config.js and config.js per best-practices",
+      "fix": "Add vi.mock('../../config/config.js', ...) with mockAuthConfig helper as shown in notification-view controller test",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/notification-amend/controller.test.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 7,
+      "line": 64,
+      "severity": "Major",
+      "category": "weak-assertion",
+      "issue": "Uses expect.anything() for request and logger arguments instead of asserting structure — passes even if critical arguments are malformed",
+      "fix": "Replace first two expect.anything() with expect.objectContaining() to assert request and logger shapes match what amendNotification needs",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/notification-amend/controller.test.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 8,
+      "line": 15,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "Path parameter 'referenceNumber' lacks route-level format validation; should be validated via Joi schema in options.validate.params",
+      "fix": "Add options object with validate.params Joi schema to match the {referenceNumber} pattern, similar to notificationView route (notification-view/index.js)",
+      "best_practice": "node/hapi.md",
+      "file": "src/server/notification-amend/index.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}

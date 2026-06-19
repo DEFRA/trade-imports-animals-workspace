@@ -1,0 +1,94 @@
+{
+  "ticket": "EUDPA-171",
+  "repo": "trade-imports-animals-backend",
+  "items": [
+    {
+      "id": 1,
+      "line": 95,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "Call to notificationService.amendNotification() which does not exist in NotificationService",
+      "fix": "Implement amendNotification() method in NotificationService that transitions notification from SUBMITTED to AMEND status and appends outbox event",
+      "best_practice": "java/spring-boot.md",
+      "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java",
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "False positive: NotificationService.amendNotification() exists at line 146 (verified in clone). Reviewer didn't read the service file."
+    },
+    {
+      "id": 2,
+      "line": 82,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "AMEND status is used in endpoint but NotificationStatus enum only defines DRAFT, SUBMITTED, DELETED; AC3 requires AMEND status",
+      "fix": "Add AMEND value to NotificationStatus enum to support the amend workflow per AC3",
+      "best_practice": "java/spring-boot.md",
+      "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java",
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "False positive: AMEND is in NotificationStatus enum line 4 (DRAFT, SUBMITTED, AMEND, DELETED), verified in clone."
+    },
+    {
+      "id": 3,
+      "line": 67,
+      "severity": "Major",
+      "category": "correctness",
+      "issue": "submit endpoint description no longer accurately reflects the sole source state; updated description mentions both DRAFT and AMEND but should clarify the state machine",
+      "fix": "Update description to: 'Transitions notification status from DRAFT or AMEND to SUBMITTED' for clarity",
+      "best_practice": "rest-api/rest-api.md",
+      "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "line": 349,
+      "severity": "Major",
+      "category": "test-completeness",
+      "issue": "Test amend_shouldPassTraceIdAsCorrelationId only verifies the service was called; it lacks assertions on the response body to verify behaviour",
+      "fix": "Add body assertions like in test 1: .andExpect(jsonPath(\"$.referenceNumber\").value(REF_1)) and .andExpect(jsonPath(\"$.status\").value(\"AMEND\"))",
+      "best_practice": "java/testing/unit.md",
+      "file": "src/test/java/uk/gov/defra/trade/imports/animals/notification/NotificationControllerTest.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "line": 168,
+      "severity": "Minor",
+      "category": "style",
+      "issue": "Missing comment block before invocation of appendEvent in new amend test",
+      "fix": "Add // When comment block before line 168 for consistency with other tests",
+      "file": "src/test/java/uk/gov/defra/trade/imports/animals/outbox/OutboxServiceTest.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 6,
+      "line": 156,
+      "severity": "Minor",
+      "category": "style",
+      "issue": "New test missing explicit // When comment block between setup and invocation",
+      "fix": "Add // When comment on line 167 before the outboxService.appendEvent() call for consistency with other tests in this class",
+      "file": "src/test/java/uk/gov/defra/trade/imports/animals/outbox/OutboxServiceTest.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 7,
+      "line": 177,
+      "severity": "Minor",
+      "category": "style",
+      "issue": "Second new test also missing explicit // When comment block",
+      "fix": "Add // When comment before line 199 (outboxService.appendEvent() call) for consistency with established test pattern",
+      "file": "src/test/java/uk/gov/defra/trade/imports/animals/outbox/OutboxServiceTest.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}

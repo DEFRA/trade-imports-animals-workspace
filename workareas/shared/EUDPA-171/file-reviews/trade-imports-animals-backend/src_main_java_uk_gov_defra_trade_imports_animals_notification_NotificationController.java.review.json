@@ -1,0 +1,40 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "e2ce89cec2ffa9f630c89feb60db071901cee072",
+  "pr": 50,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-19T12:01:20Z",
+  "verdict": "RISKY",
+  "verdict_reason": "Controller endpoint calls non-existent service method and references missing AMEND status enum value required by AC3; implementation is incomplete.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 95,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "Call to notificationService.amendNotification() which does not exist in NotificationService",
+      "fix": "Implement amendNotification() method in NotificationService that transitions notification from SUBMITTED to AMEND status and appends outbox event",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 82,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "AMEND status is used in endpoint but NotificationStatus enum only defines DRAFT, SUBMITTED, DELETED; AC3 requires AMEND status",
+      "fix": "Add AMEND value to NotificationStatus enum to support the amend workflow per AC3",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 3,
+      "line": 67,
+      "severity": "Major",
+      "category": "correctness",
+      "issue": "submit endpoint description no longer accurately reflects the sole source state; updated description mentions both DRAFT and AMEND but should clarify the state machine",
+      "fix": "Update description to: 'Transitions notification status from DRAFT or AMEND to SUBMITTED' for clarity",
+      "best_practice": "rest-api/rest-api.md"
+    }
+  ],
+  "reconciled_at": "2026-06-19T12:18:08Z"
+}
