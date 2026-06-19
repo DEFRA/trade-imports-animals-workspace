@@ -84,6 +84,20 @@ jobs:
             artifacts/allure-results/
           retention-days: 14
 
+      # Capture stack service logs before teardown so failures caused by a
+      # service (not the test) are diagnosable. Runs only on failure.
+      - name: Capture stack logs
+        if: failure()
+        run: docker compose -p trade-imports-animals logs --no-color --timestamps > stack-logs.txt 2>&1 || true
+
+      - name: Upload stack logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack-logs-shard-${{ matrix.shardIndex }}
+          path: stack-logs.txt
+          retention-days: 14
+
       - name: Tear down stack
         if: always()
         run: docker compose -p trade-imports-animals down
