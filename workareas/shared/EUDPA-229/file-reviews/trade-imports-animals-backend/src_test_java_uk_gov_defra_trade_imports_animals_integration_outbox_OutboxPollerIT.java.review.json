@@ -1,0 +1,49 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/animals/integration/outbox/OutboxPollerIT.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "4b73a20b313d707925157ad47b1782f571e5d237",
+  "pr": 49,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-19T08:41:17Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Critical resource leak in static SnsClient initialization and incomplete AC coverage for aggregateVersion ordering requirement.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 66,
+      "severity": "Critical",
+      "category": "resource-leak",
+      "issue": "SnsClient created in static block is never closed, causing a resource leak",
+      "fix": "Store the SnsClient as a static field or close it in a static cleanup block",
+      "best_practice": "java/aws-sdk-v2.md"
+    },
+    {
+      "id": 2,
+      "line": 245,
+      "severity": "Major",
+      "category": "null-safety",
+      "issue": "messages() can return null; receiveMessages() should handle this case to avoid NPE",
+      "fix": "Change '.messages()' to '.messages() != null ? .messages() : Collections.emptyList()'",
+      "best_practice": "sonar/common-rules.md"
+    },
+    {
+      "id": 3,
+      "line": 48,
+      "severity": "Minor",
+      "category": "duplication",
+      "issue": "String literal 'trace-outbox-it-' appears 3+ times across test constants and test methods (S1192)",
+      "fix": "Extract as a private static final constant: TRACE_PREFIX = 'trace-outbox-it-'",
+      "best_practice": "sonar/common-rules.md"
+    },
+    {
+      "id": 4,
+      "line": 171,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "Test publishUnpublishedEvents_shouldPublishAggregateVersionsInOrder does not assert message ordering by aggregateVersion as required by AC",
+      "fix": "Add assertion to verify aggregateVersion fields in payload: firstPayload.get('aggregateVersion').asInt() < secondPayload.get('aggregateVersion').asInt()",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-06-19T08:45:47Z"
+}

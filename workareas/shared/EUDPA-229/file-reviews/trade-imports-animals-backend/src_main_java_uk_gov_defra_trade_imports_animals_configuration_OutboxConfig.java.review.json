@@ -1,0 +1,49 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/animals/configuration/OutboxConfig.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "4b73a20b313d707925157ad47b1782f571e5d237",
+  "pr": 49,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-19T08:41:23Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Configuration lacks Bean Validation constraints on nested records and critical fields; defaults silently allow invalid values that would cause runtime failures.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 15,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "Nested record fields (poller and sns) lack @Valid and @NotNull constraints; inconsistent with sibling config classes like CdpConfig",
+      "fix": "Add @Valid @NotNull annotations to poller and sns fields to enforce validation of nested record fields, matching CdpConfig pattern (line 35-36)",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 37,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "Poller compact constructor does not validate intervalMs > 0; allows zero or negative values which would break scheduling",
+      "fix": "Add validation after intervalMs reassignment: if (intervalMs <= 0) throw new IllegalArgumentException(...) or use @Positive annotation",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 3,
+      "line": 41,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "batchSize lacks validation; allows zero or negative values which would cause OutboxPublishService.publishUnpublishedEvents() to fail",
+      "fix": "Add validation: if (batchSize <= 0) batchSize = 10; then add constraint annotation @Positive",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 4,
+      "line": 25,
+      "severity": "Minor",
+      "category": "config",
+      "issue": "Empty string default for topicArn (line 26) allows silent configuration misses; should be validated to prevent runtime surprises in SNS publishing",
+      "fix": "Add @NotBlank constraint to Sns.topicArn() to validate at bootstrap and fail fast if not configured",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-06-19T08:45:47Z"
+}
