@@ -97,9 +97,10 @@ stage_init_scripts() {
   # Both repos name their script start-localstack.sh so stage to a temp path and rename.
   local gw_tmp
   gw_tmp="$(mktemp -d)"
-  stage_source trade-imports-dynamics-gateway "$ref" servicebus/start-localstack.sh "$gw_tmp"
+  trap "rm -rf '$gw_tmp'" RETURN
+  stage_source trade-imports-dynamics-gateway "$ref" servicebus/start-localstack.sh "$gw_tmp" \
+    || { print_error "Failed to stage gateway notification pipeline script"; return 1; }
   mv "$gw_tmp/start-localstack.sh" "$STAGED_DIR/localstack/setup-notification-pipeline.sh"
-  rm -rf "$gw_tmp"
 
   # Dynamics-gateway-owned: Azure Service Bus emulator entity config
   stage_source trade-imports-dynamics-gateway "$ref" servicebus/servicebus-config.json "$STAGED_DIR/servicebus"
