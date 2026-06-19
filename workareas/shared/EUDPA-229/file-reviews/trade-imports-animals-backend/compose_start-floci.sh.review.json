@@ -1,0 +1,21 @@
+{
+  "file": "compose/start-floci.sh",
+  "repo": "trade-imports-animals-backend",
+  "commit": "3545d53434315edb8ffd802d1ad0629091d3bfe1",
+  "pr": 49,
+  "mode": "FRESH",
+  "reviewed_at": "2026-06-19T15:16:06Z",
+  "verdict": "RISKY",
+  "verdict_reason": "Critical issue: the new SNS topic creation command uses 'awslocal' instead of the 'aws' wrapper function, breaking the established pattern and potentially causing endpoint/credential configuration to fail.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 37,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "Line 37 calls 'awslocal sns create-topic' but should use the 'aws' wrapper function defined at line 14, which applies endpoint override and credentials. This breaks the pattern established for all other AWS CLI calls in the file (s3, s3api, sqs).",
+      "fix": "Change 'awslocal sns create-topic' to 'aws sns create-topic' to match the wrapper function pattern used throughout."
+    }
+  ],
+  "reconciled_at": "2026-06-19T15:17:44Z"
+}
