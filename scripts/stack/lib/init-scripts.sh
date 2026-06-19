@@ -93,14 +93,14 @@ stage_init_scripts() {
   # Backend-owned: Floci resource provisioning
   stage_source trade-imports-animals-backend "$ref" compose/start-floci.sh "$STAGED_DIR/floci"
 
-  # Gateway-owned: localstack notification pipeline (SNS FIFO → SQS FIFO with DLQ).
+  # Gateway-owned: floci notification pipeline (SNS FIFO → SQS FIFO with DLQ).
   # Both repos name their script start-localstack.sh so stage to a temp path and rename.
   local gw_tmp
   gw_tmp="$(mktemp -d)"
   trap "rm -rf '$gw_tmp'" RETURN
   stage_source trade-imports-dynamics-gateway "$ref" servicebus/start-localstack.sh "$gw_tmp" \
     || { print_error "Failed to stage gateway notification pipeline script"; return 1; }
-  mv "$gw_tmp/start-localstack.sh" "$STAGED_DIR/localstack/setup-notification-pipeline.sh"
+  mv "$gw_tmp/start-localstack.sh" "$STAGED_DIR/floci/setup-notification-pipeline.sh"
 
   # Dynamics-gateway-owned: Azure Service Bus emulator entity config
   stage_source trade-imports-dynamics-gateway "$ref" servicebus/servicebus-config.json "$STAGED_DIR/servicebus"
