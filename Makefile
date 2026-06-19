@@ -162,7 +162,7 @@ docker-compose-up: ## Start full stack from published images (scripts/stack/run-
 docker-compose-dev: ## Start stack built from local source (hot-reload; scripts/stack/run-stack.sh -d)
 	./scripts/stack/run-stack.sh -d
 
-docker-compose-down: ## Stop stack and wipe volumes (mongo data, localstack state) for a clean slate
+docker-compose-down: ## Stop stack and wipe volumes (mongo data, floci state) for a clean slate
 	./scripts/stack/stop-stack.sh
 
 docker-compose-bounce: docker-compose-down docker-compose-dev ## Wipe and restart the dev stack (down + dev up)

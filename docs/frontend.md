@@ -28,7 +28,7 @@ User-facing web application that guides users through a multi-step form wizard f
 | Redis | Distributed session cache |
 | MongoDB | Data store (accessed via backend API) |
 | Backend API | All business logic; frontend is a thin UI layer |
-| AWS (S3, SQS) | File/message handling via backend; LocalStack in dev |
+| AWS (S3, SQS) | File/message handling via backend; floci in dev |
 | Defra ID (OIDC) | Authentication |
 
 ## How to run

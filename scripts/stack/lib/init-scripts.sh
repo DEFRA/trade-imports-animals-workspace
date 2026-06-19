@@ -1,7 +1,7 @@
 # Stages repo-owned init scripts into docker/stack/.staged/ so the compose
 # files can mount one stable path whether or not repos/ is cloned.
 #
-# Ownership (EUDPA-178): the backend repo owns the localstack provisioning
+# Ownership (EUDPA-178/EUDPA-165): the backend repo owns the Floci provisioning
 # script, the tests repo owns the mongo seed fixtures, the dynamics-gateway
 # repo owns the Azure Service Bus emulator config, and the workspace owns the
 # mongo replica-set init. Locally the scripts come from repos/<repo>/;
@@ -82,7 +82,7 @@ stage_source() {
 stage_init_scripts() {
   local ref="${1:-}"
   rm -rf "$STAGED_DIR"
-  mkdir -p "$STAGED_DIR/mongodb" "$STAGED_DIR/localstack" "$STAGED_DIR/servicebus"
+  mkdir -p "$STAGED_DIR/mongodb" "$STAGED_DIR/floci" "$STAGED_DIR/servicebus"
 
   # Workspace-owned: mongo replica-set init
   cp "$STACK_DIR/scripts/mongodb/10-database-setup.js" "$STAGED_DIR/mongodb/"
@@ -90,8 +90,8 @@ stage_init_scripts() {
   # Tests-repo-owned: mongo notification seed fixtures
   stage_source trade-imports-animals-tests "$ref" seeds/mongodb "$STAGED_DIR/mongodb"
 
-  # Backend-owned: localstack resource provisioning
-  stage_source trade-imports-animals-backend "$ref" compose/start-localstack.sh "$STAGED_DIR/localstack"
+  # Backend-owned: Floci resource provisioning
+  stage_source trade-imports-animals-backend "$ref" compose/start-floci.sh "$STAGED_DIR/floci"
 
   # Dynamics-gateway-owned: Azure Service Bus emulator entity config
   stage_source trade-imports-dynamics-gateway "$ref" servicebus/servicebus-config.json "$STAGED_DIR/servicebus"

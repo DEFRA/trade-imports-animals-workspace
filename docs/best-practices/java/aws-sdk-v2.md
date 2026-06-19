@@ -98,7 +98,7 @@ public class AwsConfig {
                 .region(Region.of(appConfig.aws().region()))
                 .credentialsProvider(DefaultCredentialsProvider.create());
 
-        // LocalStack override for local dev
+        // Floci override for local dev
         if (appConfig.aws().endpointOverride() != null
                 && !appConfig.aws().endpointOverride().isBlank()) {
             builder.endpointOverride(URI.create(appConfig.aws().endpointOverride()));
@@ -116,7 +116,7 @@ public class AwsConfig {
         if (appConfig.aws().endpointOverride() != null
                 && !appConfig.aws().endpointOverride().isBlank()) {
             builder.endpointOverride(URI.create(appConfig.aws().endpointOverride()))
-                   .forcePathStyle(true);  // required for LocalStack S3
+                   .forcePathStyle(true);  // required for Floci S3 (path-style URLs)
         }
 
         return builder.build();
@@ -138,7 +138,7 @@ public class AwsConfig {
 }
 ```
 
-Disable AWS clients when running tests without LocalStack:
+Disable AWS clients when running tests without Floci:
 
 ```java
 @Bean
@@ -193,9 +193,9 @@ The project creates a `StsClient` inline (try-with-resources) to call `GetCaller
 
 ---
 
-## 5. LocalStack configuration
+## 5. Floci configuration
 
-LocalStack runs AWS services locally. Override the endpoint in `application-local.yml`:
+Floci runs AWS services locally (LocalStack-compatible). Override the endpoint in `application-local.yml`:
 
 ```yaml
 # application-local.yml
@@ -205,7 +205,7 @@ app:
     region: eu-west-2
 ```
 
-**Note:** LocalStack config is not yet in this project's `application-local.yml` — add it when S3/SQS/SNS are wired up.
+**Note:** Floci config is not yet in this project's `application-local.yml` — add it when S3/SQS/SNS are wired up.
 
 Profile-based endpoint override (from config class):
 
@@ -220,7 +220,7 @@ public record AppConfig(AwsConfig aws) {
 }
 ```
 
-S3 with LocalStack requires `forcePathStyle(true)` — LocalStack doesn't support virtual-hosted-style bucket URLs.
+S3 with Floci requires `forcePathStyle(true)` — Floci doesn't support virtual-hosted-style bucket URLs.
 
 ---
 
@@ -552,7 +552,7 @@ class S3StorageServiceTest {
 }
 ```
 
-**LocalStack with Testcontainers** — extend the project's `IntegrationBase` pattern:
+**Floci with Testcontainers** — extend the project's `IntegrationBase` pattern:
 
 ```java
 @SpringBootTest
@@ -560,15 +560,13 @@ class S3StorageServiceTest {
 class S3StorageServiceIT extends IntegrationBase {
 
     @Container
-    static LocalStackContainer localstack = new LocalStackContainer(
-            DockerImageName.parse("localstack/localstack:3"))
-            .withServices(LocalStackContainer.Service.S3);
+    static FlociContainer floci = new FlociContainer(
+            DockerImageName.parse("floci/floci:latest"));
 
     @DynamicPropertySource
-    static void localstackProperties(DynamicPropertyRegistry registry) {
-        registry.add("app.aws.endpoint-override",
-                () -> localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        registry.add("app.aws.region", localstack::getRegion);
+    static void flociProperties(DynamicPropertyRegistry registry) {
+        registry.add("app.aws.endpoint-override", floci::getEndpoint);
+        registry.add("app.aws.region", floci::getRegion);
     }
 
     @BeforeEach
@@ -587,11 +585,11 @@ From `AwsConfig.java`:
 - `StsClient` is created inline (not as a Spring bean) when obtaining web identity tokens
 - The project uses STS to get a JWT for passing downstream to IPAFFS APIs (not for assuming an S3 role)
 - `cognitoidentityprovider` dependency is declared but usage is evolving
-- No LocalStack config yet in `application-local.yml` — add the `endpoint-override` property when S3/SQS are integrated
+- No Floci config yet in `application-local.yml` — add the `endpoint-override` property when S3/SQS are integrated
 
 Pattern for adding a new AWS service:
 1. Add the Maven dependency (no version — managed by BOM)
 2. Add a `@Bean` in `AwsConfig.java` with endpoint override support
 3. Add `aws.{service}.{config}` properties to `application.yml` and `application-local.yml`
 4. Add `@ConditionalOnProperty(name = "aws.enabled", ...)` if the service is optional
-5. Add Testcontainers LocalStack setup in `IntegrationBase`
+5. Add Testcontainers Floci setup in `IntegrationBase`
