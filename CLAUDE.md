@@ -66,11 +66,11 @@ is covered by tim — the JSON envelope is schema-versioned and stable.
 | `make lint` | Lint all Node repos |
 | `make test` | Run tests across all repos |
 | `make docker-compose-up` | Start full stack from published Docker Hub images |
-| `make docker-compose-dev` | Start full stack built from local source (hot-reload for Node, volume mount for Java) |
+| `make docker-compose-dev` | Start full stack built from local source (hot-reload for Node and Java backend/stub/reference-data) |
 | `make docker-compose-down` | Stop the stack and wipe all volumes (mongo data, floci state) for a clean slate |
 | `make docker-compose-bounce` | Wipe and restart the dev stack (`docker-compose-down` then `docker-compose-dev`) |
 | `make docker-logs` | Tail frontend + admin + backend logs (`Ctrl-C` to stop) |
-| `make docker-restart-backend` | Restart backend container after Java source changes |
+| `make docker-restart-backend` | Fallback container recreate — Java source hot-reloads via DevTools in `--dev` mode; only needed for `pom.xml`/dependency changes |
 | `make start-frontend` | Start frontend dev server from source (outside Docker) |
 | `make start-backend` | Start backend from source (outside Docker) |
 | `make start-admin` | Start admin dev server from source (outside Docker) |
@@ -100,8 +100,9 @@ make status   # check for anything uncommitted
 ```bash
 make docker-compose-dev   # build + start all services from local source
 make docker-logs          # tail logs (Ctrl-C to stop)
-# After changing Java source:
-make docker-restart-backend
+# Java source edits hot-reload via DevTools; only a pom.xml/dependency
+# change needs a rebuild:
+make docker-compose-dev
 ```
 
 **Run the E2E tests:**
@@ -130,7 +131,9 @@ only compose stack in the workspace and all 8 repos. Supports `-b <branch>`
 (probe for branch-tagged images), `-d/--dev` (build the 6 repo-backed
 services from local source under `repos/`), `-e <service>` (exclude one so
 you can run it natively), and `--profile <name>` (run only a subset of
-tiers). `bounce-backend.sh` picks up edited Java source in `--dev` mode.
+tiers). In `--dev` mode the Java backend, stub and reference-data hot-reload
+edited source via Spring Boot DevTools; `bounce-backend.sh` is a fallback that
+recreates the backend container (e.g. after a `pom.xml`/dependency change).
 
 Init scripts are staged from their owning repos on every stack start
 (backend: localstack init; tests repo: mongo seed fixtures; dynamics-gateway:

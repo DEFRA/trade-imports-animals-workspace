@@ -170,7 +170,7 @@ docker-compose-bounce: docker-compose-down docker-compose-dev ## Wipe and restar
 docker-logs: ## Follow logs for frontend, admin, and backend (Ctrl-C to stop)
 	docker compose -p trade-imports-animals logs -f trade-imports-animals-frontend trade-imports-animals-admin trade-imports-animals-backend
 
-docker-restart-backend: ## Recreate backend container to pick up Java changes in dev mode (scripts/stack/bounce-backend.sh)
+docker-restart-backend: ## Fallback recreate of the backend container (Java source hot-reloads via DevTools in dev mode; use this for pom.xml/dependency changes — scripts/stack/bounce-backend.sh)
 	./scripts/stack/bounce-backend.sh
 
 docker-local-branches: ## Build local/* Docker images for repos not on the default branch
