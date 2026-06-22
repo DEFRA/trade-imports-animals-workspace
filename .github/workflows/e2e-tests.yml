@@ -68,14 +68,10 @@ jobs:
             -v ${{ github.workspace }}/artifacts/blob-report:/app/blob-report \
             -v ${{ github.workspace }}/artifacts/test-results:/app/test-results \
             -v ${{ github.workspace }}/artifacts/allure-results:/app/allure-results \
-            --entrypoint npx \
+            --entrypoint npm \
             defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
-            playwright test \
-              --config=playwright.local.fast.config.ts \
-              --grep-invert "@agent|@a11y" \
-              --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} \
-              --retries=1 \
-              --reporter=blob,list,allure-playwright
+            run test:docker-compose:ci -- \
+              --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - name: Upload shard artifacts
         if: always()
@@ -86,6 +82,20 @@ jobs:
             artifacts/blob-report/
             artifacts/test-results/
             artifacts/allure-results/
+          retention-days: 14
+
+      # Capture stack service logs before teardown so failures caused by a
+      # service (not the test) are diagnosable. Runs only on failure.
+      - name: Capture stack logs
+        if: failure()
+        run: docker compose -p trade-imports-animals logs --no-color --timestamps > stack-logs.txt 2>&1 || true
+
+      - name: Upload stack logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack-logs-shard-${{ matrix.shardIndex }}
+          path: stack-logs.txt
           retention-days: 14
 
       - name: Tear down stack
