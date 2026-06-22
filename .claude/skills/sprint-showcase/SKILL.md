@@ -1,17 +1,17 @@
 ---
 name: sprint-showcase
-description: 'Generate a non-technical Google Slides showcase of a sprint''s completed (Done) work, built around audience themes — new features, improvements, reliability fixes, and quality/velocity wins — rather than one slide per ticket. Resolves the sprint from the Jira board (falling back to a date range), fans out one agent per completed ticket to research and categorise it, then synthesises a themed deck that sells how the product is developing and how fixes and technical work benefit stakeholders. Use when the user wants a stakeholder-facing sprint review deck (triggers: "sprint showcase", "sprint showcase EUDPA", "create sprint slideshow", "build sprint showcase", "sprint showcase deck", "showcase this sprint", "what did we ship this sprint deck"). Distinct from Claude Code''s built-in /init (CLAUDE.md scaffolding). NOT for a personal day/week achievement summary — use what-have-i-achieved. NOT for a whole-contract CV dossier — use career-evidence.'
+description: 'Generate a non-technical slide deck showcasing a sprint''s completed (Done) work, built around audience themes — new features, improvements, reliability fixes, and quality/velocity wins — rather than one slide per ticket. Resolves a date-range window (this board has no Jira sprints), fans out one agent per completed ticket to research and categorise it, then synthesises a themed deck as an editable .pptx (built with pptxgenjs, no auth) that opens natively in Google Slides. Use when the user wants a stakeholder-facing sprint review deck (triggers: "sprint showcase", "sprint showcase EUDPA", "create sprint slideshow", "build sprint showcase", "sprint showcase deck", "showcase this sprint", "what did we ship this sprint deck"). Distinct from Claude Code''s built-in /init (CLAUDE.md scaffolding). NOT for a personal day/week achievement summary — use what-have-i-achieved. NOT for a whole-contract CV dossier — use career-evidence.'
 ---
 
-Builds a non-technical **Google Slides** deck of a sprint's
-**completed (Done)** work for a stakeholder audience. The deck is
-organised by audience theme, not by ticket: one section per
-category (new features, improvements, reliability fixes,
-quality/velocity), with small tickets aggregated. The work-list is
-the sprint's Done tickets across the trade-imports-animals
-workspace and its `repos/`; each is researched and categorised by a
-fan-out agent, and the parent synthesises the deck from those
-analyses. State lands at
+Builds a non-technical **`.pptx`** deck (opens natively in Google
+Slides) of a sprint's **completed (Done)** work for a stakeholder
+audience. The deck is organised by audience theme, not by ticket:
+one section per category (new features, improvements, reliability
+fixes, quality/velocity), with small tickets aggregated. The
+work-list is the Done-in-window tickets across the
+trade-imports-animals workspace and its `repos/`; each is researched
+and categorised by a fan-out agent, and the parent synthesises the
+deck from those analyses. State lands at
 `~/git/defra/trade-imports-animals-workspace/workareas/sprint-showcase/<id>/`.
 
 ## Path conventions
@@ -64,25 +64,21 @@ Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/s
 Context bundle: ~/git/defra/trade-imports-animals-workspace/workareas/sprint-showcase/<id>/context/EUDPA-XXXX/
 ```
 
-## Step 0: Start — resolve the sprint window + seed completed tickets
-
-```bash
-~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/start-sprint-showcase.sh --sprint "Sprint 23"
-```
-
-or, when the board has no sprint or you want an explicit window:
+## Step 0: Start — resolve the date window + seed completed tickets
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/start-sprint-showcase.sh --from 2026-06-09 --to 2026-06-22
 ```
 
-The dispatcher: resolves the window (Jira board sprint → date-range
-fallback), finds the Done tickets in it, cross-references git
-commits across the workspace + `repos/`, and seeds `state.json`
-(`scope`, `repos`, `tickets[]` with `category: null`). First stdout
-line is `MODE: SPRINT` or `MODE: DATE_RANGE` and it prints the
-resolved `--run-id <id>`. Branch nothing on the mode beyond
-reporting which window was used.
+Omit the flags to default to the last 14 days. This board does **not**
+use Jira sprints (`sprint is not EMPTY` returns nothing), so the
+window is a plain date range — there is no `--sprint` flag and no
+mode branching. The dispatcher finds the tickets that transitioned to
+`Done` in the window (`status changed TO Done DURING (…)`, team-wide),
+cross-references git commits across the workspace + `repos/`, seeds
+`state.json` (`scope`, `repos`, `tickets[]` with analyst fields null,
+`narrative` null), and prints the resolved `--run-id <id>`, the
+window, and the ticket count.
 
 ## Step 1: Pre-bake per-ticket context
 
@@ -123,53 +119,53 @@ Read the analysed tickets grouped by category:
 ~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/tickets-list.sh --run-id <id> --by-category
 ```
 
-Compose the deck narrative (this is the parent's judgment, not a
-worker's):
+Compose the deck narrative — the parent's judgment, not a worker's —
+and store it (it feeds the summary slide):
 
-- **Opening slide** — the sprint window + a one-line "what we
-  delivered" headline.
-- **One section per non-empty category**, in this order:
-  `NEW_FEATURE` → `IMPROVEMENT` → `BUG_FIX` → `QUALITY_OR_VELOCITY`.
-  Lead each with the audience framing from the schema. Promote the
-  high-confidence, high-impact tickets to their own bullet;
-  aggregate small / `low`-confidence ones into a count ("plus 6
-  further reliability fixes").
-- **A velocity & quality summary slide** — counts per category, the
-  reliability + quality/velocity story told as stakeholder value.
-- **Closing slide** — what it sets up next (optional; only if the
-  tickets support it — no speculation).
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/deck-set-narrative.sh --run-id <id> --intro "..." --velocity-summary "..." [--closing "..."]
+```
 
-Preview the deck as markdown before pushing:
+The render then assembles the deck deterministically: an opening
+slide (window + `intro`), one section per non-empty category in fixed
+order `NEW_FEATURE → IMPROVEMENT → BUG_FIX → QUALITY_OR_VELOCITY`
+(each with the schema's audience lead; high/medium-confidence tickets
+become bullets, low-confidence and overflow roll into an
+`aggregate_note` like "plus 6 further reliability fixes"), and a
+summary slide (counts + `velocity_summary` + optional `closing`).
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/render-sprint-showcase.sh --run-id <id>
 ```
 
-Iterate with the user on the markdown until they're happy. This is
-where editing happens before anything reaches Google Slides.
+This writes `deck.md` (eyeball this) and `deck-spec.json`. Iterate
+with the user on the wording — re-run `deck-set-narrative.sh` /
+`ticket-set-analysis.sh` and re-render — before building the deck.
 
-## Step 5: Push to Google Slides
+## Step 5: Build the deck (.pptx)
 
 ```bash
-~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/push-to-slides.sh --run-id <id>
+~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/build-deck.sh --run-id <id>
 ```
 
-Creates the deck in Google Drive and prints the share URL. The user
-does final manual edits in Slides — the deck is theirs to polish.
+Bridges `deck-spec.json` into a `.pptx` via `tim deck generate`
+(pptxgenjs — no auth, no Slides API). Prints the `deck.pptx` path.
+The user uploads it to Google Drive and opens it with Google Slides
+to polish wording / branding — the deck is theirs to finish.
 
 ## Completion output
 
 ```
 sprint-showcase complete for <id>.
 
-Window: <from> → <to> (<sprint|date-range>)
+Window: <from> → <to>
 Completed tickets showcased: <N>
   NEW_FEATURE: a   IMPROVEMENT: b   BUG_FIX: c   QUALITY_OR_VELOCITY: d
 
-Deck: <google-slides-url>
+Deck: ~/git/defra/trade-imports-animals-workspace/workareas/sprint-showcase/<id>/deck.pptx
 Preview: ~/git/defra/trade-imports-animals-workspace/workareas/sprint-showcase/<id>/deck.md
 
-Next: open the deck in Google Slides and polish wording / branding.
+Next: upload deck.pptx to Google Drive, open with Google Slides, polish.
 ```
 
 ## Scripts cheat-sheet
@@ -178,9 +174,10 @@ All under `~/git/defra/trade-imports-animals-workspace/tools/sprint-showcase/`:
 
 | Script | Purpose |
 |---|---|
-| `start-sprint-showcase.sh` | Resolve sprint→date-range window, find Done tickets + their commits, seed `state.json`. Emits `MODE: SPRINT`/`DATE_RANGE` + `--run-id`. |
+| `start-sprint-showcase.sh` | Resolve the date window (`--from`/`--to`, default last 14 days), find Done-in-window tickets + their commits, seed `state.json` + print `--run-id`. |
 | `prepare-sprint-showcase.sh` | Pre-bake per-ticket context bundles (Jira + commits) for the analysts. |
 | `ticket-set-analysis.sh` | Worker mutation — set one ticket's category + headline + user benefit + evidence + confidence (atomic). |
 | `tickets-list.sh` | List/filter tickets (`--status unanalyzed`, `--by-category`, `--json`) — also the coverage gate. |
-| `render-sprint-showcase.sh` | Render `state.json` as the markdown deck preview grouped by category. |
-| `push-to-slides.sh` | Create the deck in Google Slides via the Slides API; print the share URL. |
+| `deck-set-narrative.sh` | Parent mutation — store the deck's `intro` / `velocity_summary` / optional `closing`. |
+| `render-sprint-showcase.sh` | Render `state.json` into `deck.md` (preview) + `deck-spec.json`, grouped by category. |
+| `build-deck.sh` | Bridge `deck-spec.json` → `.pptx` via `tim deck generate` (pptxgenjs, no auth); print the path. |

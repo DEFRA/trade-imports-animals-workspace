@@ -9,9 +9,13 @@ Generate a non-technical Google Slides showcase of a sprint's completed (Done) w
 
 **Design note (2026-06-22):** the slide unit is the *category theme*, not the ticket — one slide per ticket reads as a dull technical changelog to a non-technical audience. The fan-out unit stays the ticket (each agent researches + categorises one); the deck is grouped by category with small tickets aggregated. Categories: NEW_FEATURE / IMPROVEMENT / BUG_FIX / QUALITY_OR_VELOCITY (see `assets/sprint-showcase-schema.md`).
 
+**Window decision (2026-06-22, investigated):** this board does NOT use Jira sprints — `project = EUDPA AND sprint is not EMPTY` returns 0 issues while the project has 200+. So the window is a plain date range (`--from`/`--to`, default last 14 days); there is no sprint-resolution path and no FRESH/REFRESH mode branching.
+
+**Deck-output decision (2026-06-22):** the Google Slides API + OAuth was a blocker for MVP. Instead the deck is built as a `.pptx` via `pptxgenjs` in a new `tim deck generate` command (library-first, no auth, behaviourally tested) — a `.pptx` uploads to Google Drive and opens natively in Google Slides for editing. `render-sprint-showcase.sh` emits `deck-spec.json`; `build-deck.sh` bridges it to `tim deck`.
+
 ## 2. State shape
 
-**Choice:** json — per-ticket analysis records (category + headline + user benefit + evidence). Consumed by render + push-to-slides (a real downstream query, so JSON is justified, not anti-pattern A2). The deck grouping is derived, not stored.
+**Choice:** json — per-ticket analysis records (category + headline + user benefit + evidence) plus a parent-authored `narrative` object. Consumed by `render-sprint-showcase.sh` → `deck-spec.json` → `build-deck.sh`/`tim deck` (a real downstream query, so JSON is justified, not anti-pattern A2). The deck grouping is derived, not stored.
 **Pattern reference:** docs/best-practices/skills/patterns.md §1
 
 ## 3. Dispatcher
@@ -37,12 +41,15 @@ Generate a non-technical Google Slides showcase of a sprint's completed (Done) w
 
 ## 7. Helpers introduced
 
-- start-sprint-showcase — resolve sprint→date window, seed Done tickets + commits
+- start-sprint-showcase — resolve the date window, seed Done-in-window tickets + commits
 - prepare-sprint-showcase — pre-bake per-ticket context bundles
-- ticket-set-analysis — single mutator of the analyst-owned fields (pattern 6; one mutation helper, avoids A3 sprawl)
+- ticket-set-analysis — sole mutator of the analyst-owned fields (pattern 6; avoids A3 sprawl)
 - tickets-list — read-only query + coverage gate (`--status unanalyzed`, `--by-category`)
-- render-sprint-showcase — derived markdown deck preview grouped by category
-- push-to-slides — create the Google Slides deck via the Slides API
+- deck-set-narrative — sole mutator of the `narrative` object (distinct field set from analyst fields, so not A3)
+- render-sprint-showcase — derive `deck.md` (preview) + `deck-spec.json` from state, grouped by category
+- build-deck — bridge `deck-spec.json` → `.pptx` via `tim deck generate` (pptxgenjs, no auth)
+
+Plus a Node command in the `tim` CLI: `tim deck generate <spec> --out <file>` (`tim/src/commands/deck/`).
 
 ## 8. Triggers
 
