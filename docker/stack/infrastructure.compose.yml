@@ -56,7 +56,10 @@ services:
     depends_on:
       floci:
         condition: service_healthy
-    entrypoint: ['bash', '-c', 'for f in /scripts/*.sh; do echo "Running $$f"; bash "$$f"; done']
+    # Init scripts are self-contained and order-independent: each provisions its own
+    # resources and idempotently creates the shared SNS topic, so glob order is safe.
+    # set -e aborts the container on the first failed script rather than masking it.
+    entrypoint: ['bash', '-c', 'set -e; for f in /scripts/*.sh; do echo "Running $$f"; bash "$$f"; done']
     env_file:
       - ./shared.env
     image: amazon/aws-cli
