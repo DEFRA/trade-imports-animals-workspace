@@ -56,24 +56,30 @@ poller crashes after the SNS publish but before marking `publishedAt`) carry the
 property: **the dedup id must be stable across retries**, which a persisted id is
 and a freshly-generated one is not.
 
-## The gateway → ASB caveat (EUDPA-208 review item 8 — Won't Fix)
+## The gateway → ASB MessageId (EUDPA-208 review item 8)
 
-`QueueMessageSender.publish()` sets the ASB `MessageId` to a **fresh
-`UUID.randomUUID()` per call**. If ASB `RequiresDuplicateDetection` were ever
-enabled, that would **defeat** dedup (ASB dedupes on `MessageId`, and a fresh one
-per send never matches a retry).
+`NotificationSqsListener` reads the inbound SQS `MessageDeduplicationId` (the
+backend outbox `eventId`) from the `Sqs_Msa_MessageDeduplicationId` header and
+passes it to `QueueMessageSender.publish(body, sessionId, messageId)`, which sets
+it as the ASB `MessageId`. When the id is absent it falls back to a fresh
+`UUID.randomUUID()`.
 
-Resolved as **Won't Fix** because:
+This keeps the dedup key **consistent end-to-end** — backend `eventId` → SNS
+`MessageDeduplicationId` → ASB `MessageId` — so ASB duplicate detection would work
+**without any code change** if `RequiresDuplicateDetection` is ever enabled. It is
+off today (defaults to false, immutable after queue creation, PIMS-owned), so the
+id currently doubles as a stable trace/correlation id.
 
-- ASB `RequiresDuplicateDetection` defaults to **false**, is **immutable after
-  queue creation**, the local emulator config has it `false`, and nothing in the
-  service enables it.
-- So the ASB `MessageId` here serves only as a **trace id**, for which a random
-  UUID is correct.
+Verified end-to-end by `NotificationSqsListenerIT` (localstack SQS + ASB emulator):
+a known SQS `MessageDeduplicationId` arrives as the ASB `MessageId`.
 
-**If PIMS ever enables ASB duplicate detection**, this becomes a real bug — fix it
-by deriving the ASB `MessageId` from a stable event identifier (mirror the backend
-outbox pattern above), not a per-call random UUID.
+> Why not read the id from the message body? The body carries only the domain
+> payload (`NotificationSubmittedData`) — it has no unique event id; the only
+> identifier in it is `referenceNumber`, which is the aggregate/group key shared
+> across an aggregate's events, so using it would wrongly dedupe distinct events.
+> The unique id travels as the SQS dedup attribute, which is why the listener reads
+> it from the header. (The HTTP `EventsSendController` path has no upstream id and
+> uses the two-arg `publish` overload, which generates a fresh MessageId.)
 
 ## Local ↔ dev parity
 
