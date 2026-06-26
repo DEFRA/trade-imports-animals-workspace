@@ -168,7 +168,7 @@ Best-practices (load when the changelog warrants):
 
 Scripts (`~/git/defra/trade-imports-animals-workspace/tools/govuk/`):
 
-- `start-upgrade.sh` — Phase 1 dispatcher: `.run-meta.json`, branch setup, version discovery.
+- `start-upgrade.sh` — Phase 1 dispatcher: `.run-meta.json`, branch setup, version discovery, security pre-flight (`npm audit` per repo).
 - `discover-repos.sh` — write run-level `.run-meta.json` (in-scope repos).
 - `discover-versions.sh` — seed `versions.{repo}.json` + cache CHANGELOG + pre-bake per-version sections + best-practices bundle.
 - `setup-branch.sh` — idempotent `git checkout` for one repo + branch.

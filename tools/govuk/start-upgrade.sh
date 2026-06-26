@@ -13,6 +13,7 @@
 #   1. discover-repos.sh        → writes .run-meta.json (in-scope repos)
 #   2. setup-branch.sh per repo → ensures every in-scope repo is on the branch
 #   3. discover-versions.sh per repo → seeds versions.{repo}.json + pre-bakes
+#   4. security pre-flight      → npm audit per repo, surface HIGH/CRITICAL
 #
 # Prints `PHASE: 1` on stdout so the caller can branch.
 
@@ -112,6 +113,35 @@ done
 echo
 echo "=== START COMPLETE ==="
 "$HOME/git/defra/trade-imports-animals-workspace/tools/govuk/list-plans.sh" --run-id "$RUN_ID"
+
+# Step 4: security pre-flight. Surface HIGH/CRITICAL npm advisories per
+# repo before any upgrade work. Report-and-warn only — `npm audit fix`
+# alone won't clear a direct-dep HIGH (e.g. undici), and `--force` makes
+# breaking changes, so remediation is a deliberate operator decision
+# (see the npm-upgrade skill), not something this dispatcher automates.
+# A repo whose pre-commit hook runs `npm audit` (e.g. admin) will block
+# the upgrade commit until its HIGH/CRITICAL advisories are cleared.
+echo
+echo "=== SECURITY PRE-FLIGHT (npm audit, HIGH/CRITICAL) ==="
+preflight_flagged=0
+for repo in "${REPOS[@]}"; do
+    repo_path="$HOME/git/defra/trade-imports-animals-workspace/repos/$repo"
+    audit_json=$(npm --prefix "$repo_path" audit --json 2>/dev/null || true)
+    high=$(printf '%s' "$audit_json" | jq -r '.metadata.vulnerabilities.high // 0' 2>/dev/null || echo 0)
+    critical=$(printf '%s' "$audit_json" | jq -r '.metadata.vulnerabilities.critical // 0' 2>/dev/null || echo 0)
+    if [[ "${critical:-0}" -gt 0 || "${high:-0}" -gt 0 ]]; then
+        echo "  [WARN] $repo: $critical critical, $high high — resolve before/alongside the upgrade"
+        preflight_flagged=1
+    else
+        echo "  [ok]   $repo: no high/critical advisories"
+    fi
+done
+if [[ "$preflight_flagged" -eq 1 ]]; then
+    echo
+    echo "  Clear flagged advisories before Phase 3 (direct-dep bump or an"
+    echo "  'overrides' entry — see the npm-upgrade skill), or proceed knowing"
+    echo "  the upgrade commit may be blocked by a repo's pre-commit audit."
+fi
 
 echo
 echo "Next: Phase 2 — spawn VERSION_PLANNER per unplanned version (see PHASE_2_MANAGER.md)."

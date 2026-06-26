@@ -33,3 +33,11 @@ first. Stop.
 
 Report verbatim, then ask: "Phase 1 complete. Proceed to Phase 2
 (changelog analysis)?"
+
+`start-upgrade.sh` also prints a `=== SECURITY PRE-FLIGHT ===` section
+(`npm audit` per in-scope repo). If any repo is flagged `[WARN]` with
+HIGH/CRITICAL advisories, surface it explicitly at this gate — a repo
+whose pre-commit hook runs `npm audit` (e.g. admin) will block the
+Phase 3 upgrade commit until those are cleared (direct-dep bump or an
+`overrides` entry — see the `npm-upgrade` skill). It is report-and-warn,
+not a blocker: the user decides whether to fix first or proceed.

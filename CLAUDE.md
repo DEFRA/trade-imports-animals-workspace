@@ -302,7 +302,7 @@ Shared shell scripts called by skills via
 | `tools/npm/upgrade-one-package.sh` | --run-id TICKET --repo R --package PKG | Phase 2 internal: install + test + commit + rollback |
 | `tools/npm/run-manual-upgrade.sh` | --run-id TICKET --repo R --package PKG | Phase 3 per-package manual runner (spawned by WALKER) |
 | **govuk** | | |
-| `tools/govuk/start-upgrade.sh` | --ticket EUDPA-X \| --branch B [--target V] | Phase 1 dispatcher: `.run-meta.json` + branch setup + version discovery |
+| `tools/govuk/start-upgrade.sh` | --ticket EUDPA-X \| --branch B [--target V] | Phase 1 dispatcher: `.run-meta.json` + branch setup + version discovery + security pre-flight (`npm audit`) |
 | `tools/govuk/discover-repos.sh` | --run-id TICKET [--branch B] [--target V] [--json] | Phase 1: write run-level `.run-meta.json` (in-scope repos) |
 | `tools/govuk/setup-branch.sh` | --branch B --repo R | Phase 1: idempotent `git checkout` for one repo |
 | `tools/govuk/discover-versions.sh` | repo-path --run-id TICKET [--target V] [--json] [--force] | Phase 1: seed `versions.{repo}.json` + cache CHANGELOG + pre-bake per-version sections + best-practices bundle |
