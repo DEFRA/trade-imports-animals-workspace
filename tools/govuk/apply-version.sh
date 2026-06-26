@@ -50,6 +50,13 @@ TOOLS="$HOME/git/defra/trade-imports-animals-workspace/tools/govuk"
 REPO_DIR="$HOME/git/defra/trade-imports-animals-workspace/repos/$REPO"
 [[ -d "$REPO_DIR/.git" ]] || { echo "Not a git repo: $REPO_DIR" >&2; exit 1; }
 
+# `npm --prefix` through the trade-imports-animals-workspace symlink
+# corrupts the lockfile (npm resolves the prefix oddly and writes a
+# package-lock.json that `npm ci` later rejects as out of sync). Resolve
+# REPO_DIR to its real, non-symlinked path for all npm operations. Git
+# operations can stay on REPO_DIR — git follows the symlink fine.
+REPO_DIR_REAL=$(cd "$REPO_DIR" && pwd -P)
+
 STATE_FILE="$HOME/git/defra/trade-imports-animals-workspace/workareas/govuk-upgrades/$RUN_ID/$REPO/versions.${REPO}.json"
 [[ -f "$STATE_FILE" ]] || { echo "Versions file not found: $STATE_FILE" >&2; exit 1; }
 
@@ -109,7 +116,7 @@ mv "$PKG.tmp" "$PKG"
 echo "Running npm install..."
 ts=$(date -u +"%Y%m%dT%H%M%SZ")
 install_log="/tmp/govuk-install-${REPO}-${VERSION}-${ts}.txt"
-if ! npm --prefix "$REPO_DIR" install >"$install_log" 2>&1; then
+if ! npm --prefix "$REPO_DIR_REAL" install >"$install_log" 2>&1; then
     reason="npm install failed — see $install_log"
     echo "$reason" >&2
     "$TOOLS/version-mark-failed.sh" --run-id "$RUN_ID" --repo "$REPO" --version "$VERSION" --reason "$reason"
@@ -120,7 +127,7 @@ echo "  install log: $install_log"
 # npm test (unit only — Decision 3).
 echo "Running npm test..."
 test_log="/tmp/govuk-test-${REPO}-${VERSION}-${ts}.txt"
-if ! npm --prefix "$REPO_DIR" test >"$test_log" 2>&1; then
+if ! npm --prefix "$REPO_DIR_REAL" test >"$test_log" 2>&1; then
     reason="npm test failed — see $test_log"
     echo "$reason" >&2
     "$TOOLS/version-mark-failed.sh" --run-id "$RUN_ID" --repo "$REPO" --version "$VERSION" --reason "$reason"
