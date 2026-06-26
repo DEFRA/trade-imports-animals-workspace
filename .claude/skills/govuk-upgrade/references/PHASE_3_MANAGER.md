@@ -104,12 +104,46 @@ versions.{repo}.json failure_reason field.}
 
 ## Step 4: E2E (only after the last commit lands)
 
-Per Decision 3: run E2E once after the final version commit. From the
-workspace:
+Per Decision 3: run E2E once after the final version commit.
+
+### 4a. Rebuild the stack from local source
+
+E2E runs against the running workspace stack. A stack started before
+this run (or from Dockerhub `:latest`) does **not** contain the upgrade
+— its frontend/admin/stub containers are stale. You must rebuild the
+six repo-backed services from local source so the changes are actually
+under test. Dev mode wipes the mongo/floci volumes; that's fine —
+`test:docker-compose` reseeds the DB itself (4b).
+
+This is destructive to the user's running stack (tears it down, wipes
+volumes). Confirm before doing it if the user has a live stack they
+care about.
+
+Two `tim` commands (one per Bash call — no chaining):
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:local
+tim docker down
 ```
+
+```bash
+tim docker dev
+```
+
+`tim docker dev` is a multi-minute build — run it in the background and
+wait for completion before 4b. (`tim docker dev` == `make
+docker-compose-dev` == `scripts/stack/run-stack.sh -d`.)
+
+### 4b. Run E2E
+
+From the tests repo, run the docker-compose suite (reseeds the DB,
+cleans, then runs Playwright against the dockerised stack):
+
+```bash
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:docker-compose
+```
+
+(There is no `test:local` script — the local E2E entry point is
+`test:docker-compose`.)
 
 On E2E failure, halt and prompt the user — don't auto-revert across N
 commits.
