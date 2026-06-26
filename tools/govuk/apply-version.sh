@@ -13,9 +13,11 @@
 #   - on success: git add -A, commit, mark implemented (LAST action)
 #   - on failure: mark failed with reason, exit non-zero
 #
-# Noop versions (classification == "noop") are short-circuited: no
-# package.json mutation, no install, no test, no commit — just a
-# version-mark-implemented.sh call.
+# Intermediate noop versions (classification == "noop", not the final
+# target) are short-circuited: no package.json mutation, no install, no
+# test, no commit — just a version-mark-implemented.sh call. The final
+# target version always bumps package.json and commits, even when noop,
+# so the upgrade actually lands in the manifest.
 
 set -e
 
@@ -74,7 +76,10 @@ if [[ "$VERSION" == "$target_version" ]]; then
     FINAL=true
 fi
 
-if [[ "$classification" == "noop" ]]; then
+# Intermediate noop versions are short-circuited (no per-version commit
+# needed). The final target version always bumps package.json even when
+# noop, otherwise the upgrade never lands in the manifest.
+if [[ "$classification" == "noop" && "$FINAL" != "true" ]]; then
     echo "Version $VERSION classified as noop — recording completion without commit."
     "$TOOLS/version-mark-implemented.sh" --run-id "$RUN_ID" --repo "$REPO" --version "$VERSION"
     exit 0
