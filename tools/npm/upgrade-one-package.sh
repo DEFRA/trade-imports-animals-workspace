@@ -23,7 +23,7 @@
 # Steps 3 and 5 are SKIPPED. The tests repo has no unit-test suite
 # (it IS the test suite — a Playwright runner against the live stack).
 # Per-package installs commit straight through; the orchestrating
-# runner (run-automated-upgrades.sh) runs `npm run test:local` ONCE
+# runner (run-automated-upgrades.sh) runs `npm run test:docker-compose` ONCE
 # after all upgrades land, as the end-of-batch integration gate.
 #
 # Exit codes:
@@ -70,13 +70,13 @@ REPO_PATH=$(cd "$REPO_PATH" && pwd -P)
 
 # Tests-repo has no unit-test suite — it IS the E2E suite. Skip the
 # per-package npm-test gating; run-automated-upgrades.sh runs
-# `npm run test:local` once at the end of the batch instead.
+# `npm run test:docker-compose` once at the end of the batch instead.
 SKIP_NPM_TEST=0
 [[ "$REPO_NAME" == "trade-imports-animals-tests" ]] && SKIP_NPM_TEST=1
 
 echo "========================================="
 echo "Package: $PACKAGE | $CURRENT → $TARGET | classification: $CLASSIFICATION"
-[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; test:local runs at end of batch)"
+[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; test:docker-compose runs at end of batch)"
 echo "========================================="
 
 set_status() {
