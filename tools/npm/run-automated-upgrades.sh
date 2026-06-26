@@ -143,19 +143,21 @@ echo
 
 # Tests-repo end-of-batch gate: per-package npm test is skipped (the
 # tests repo has no unit suite — it IS the E2E suite). If any
-# upgrades landed, run the standard test:local script once now as
-# the integration gate. A failure here doesn't roll back individual
-# upgrades — the operator needs to investigate, since the failure
-# could be in any of $SUCCESS packages.
+# upgrades landed, run the standard test:docker-compose script once
+# now as the integration gate (full Playwright suite against the
+# running docker-compose stack the operator brought up separately).
+# A failure here doesn't roll back individual upgrades — the operator
+# needs to investigate, since the failure could be in any of $SUCCESS
+# packages.
 if [[ "$REPO_NAME" == "trade-imports-animals-tests" ]] && [[ $SUCCESS -gt 0 ]]; then
     echo "==========================================="
-    echo "End-of-batch E2E gate (npm run test:local)"
+    echo "End-of-batch E2E gate (npm run test:docker-compose)"
     echo "==========================================="
-    E2E_LOG="/tmp/test-local-$(date +%Y%m%d-%H%M%S).log"
-    if npm --prefix "$REPO_PATH" run test:local > "$E2E_LOG" 2>&1; then
-        echo "✓ test:local pass — $SUCCESS upgrade(s) integration-verified"
+    E2E_LOG="/tmp/test-docker-compose-$(date +%Y%m%d-%H%M%S).log"
+    if npm --prefix "$REPO_PATH" run test:docker-compose > "$E2E_LOG" 2>&1; then
+        echo "✓ test:docker-compose pass — $SUCCESS upgrade(s) integration-verified"
     else
-        echo "✗ test:local FAILED after $SUCCESS upgrade(s)" >&2
+        echo "✗ test:docker-compose FAILED after $SUCCESS upgrade(s)" >&2
         echo "  Log: $E2E_LOG" >&2
         echo "  Read structured failures: $REPO_PATH/test-results/*/error-context.md" >&2
         echo "  Upgrades are committed — operator must investigate which one caused the regression." >&2
