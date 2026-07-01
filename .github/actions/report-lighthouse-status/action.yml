@@ -9,6 +9,14 @@ inputs:
     description: 'URL to the deployed Lighthouse report (may be empty)'
     required: false
     default: ''
+  flagged-audits-path:
+    description: 'Path to a flagged-audits.json produced by the Lighthouse parsing step. When set, the PR comment includes a per-page table of failing/warning audits.'
+    required: false
+    default: ''
+  max-flagged-per-category:
+    description: 'Maximum number of flagged audits to render per category per page in the PR comment (worst-scoring first).'
+    required: false
+    default: '5'
 
 runs:
   using: composite
@@ -88,8 +96,12 @@ runs:
 
     - name: Post or update PR comment
       uses: actions/github-script@v7
+      env:
+        FLAGGED_AUDITS_PATH: ${{ inputs.flagged-audits-path }}
+        MAX_FLAGGED_PER_CATEGORY: ${{ inputs.max-flagged-per-category }}
       with:
         script: |
+          const fs = require('fs');
           const result = '${{ inputs.lighthouse-result }}';
           const reportUrl = '${{ inputs.report-url }}';
           const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
@@ -98,13 +110,67 @@ runs:
           const icon = icons[result] || '❌';
           const status = result === 'pending' ? 'in progress' : result;
 
+          const flaggedPath = process.env.FLAGGED_AUDITS_PATH;
+          const maxPerCategory = Number(process.env.MAX_FLAGGED_PER_CATEGORY) || 5;
+          let flaggedSection = '';
+          if (flaggedPath && fs.existsSync(flaggedPath)) {
+            const flagged = JSON.parse(fs.readFileSync(flaggedPath, 'utf8'));
+            const pages = Array.isArray(flagged.pages) ? flagged.pages : [];
+            const pagesWithFindings = pages.filter(p => Array.isArray(p.audits) && p.audits.length > 0);
+            if (pagesWithFindings.length === 0) {
+              flaggedSection = '\n\n_No flagged audits in performance, accessibility or best-practices._';
+            } else {
+              const totalCount = pagesWithFindings.reduce((n, p) => n + p.audits.length, 0);
+              const pageBlocks = pagesWithFindings.map(page => {
+                const byCategory = {};
+                for (const a of page.audits) {
+                  (byCategory[a.category] ||= []).push(a);
+                }
+                const rows = [];
+                for (const category of Object.keys(byCategory).sort()) {
+                  const audits = byCategory[category]
+                    .slice()
+                    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0))
+                    .slice(0, maxPerCategory);
+                  for (const a of audits) {
+                    const score = a.score === null || a.score === undefined ? 'n/a' : Math.round(a.score * 100);
+                    const titleCell = a.reportAnchor ? `[${a.title}](${a.reportAnchor})` : a.title;
+                    rows.push(`| ${category} | ${titleCell} | ${score} | \`${a.auditId}\` |`);
+                  }
+                  const hidden = byCategory[category].length - audits.length;
+                  if (hidden > 0) {
+                    rows.push(`| ${category} | _… ${hidden} more (see report)_ | | |`);
+                  }
+                }
+                return [
+                  `<details><summary><strong>${page.pageUrl}</strong> — ${page.audits.length} flagged</summary>`,
+                  '',
+                  '| Category | Audit | Score | ID |',
+                  '| --- | --- | ---: | --- |',
+                  ...rows,
+                  '',
+                  '</details>',
+                ].join('\n');
+              });
+              flaggedSection = [
+                '',
+                '',
+                `#### 🔎 Flagged audits (${totalCount})`,
+                '',
+                'Failing or warning audits in performance, accessibility, and best-practices. SEO is excluded.',
+                '',
+                ...pageBlocks,
+              ].join('\n');
+            }
+          }
+
           const body = [
             marker,
             `### ${icon} Lighthouse CI: ${status}`,
             '',
             reportUrl ? `📊 [Lighthouse Report](${reportUrl})` : '',
             `🔗 [Workflow Run](${runUrl})`,
-          ].filter(Boolean).join('\n');
+          ].filter(Boolean).join('\n') + flaggedSection;
 
           const prs = context.payload.workflow_run.pull_requests;
           for (const pr of prs) {
