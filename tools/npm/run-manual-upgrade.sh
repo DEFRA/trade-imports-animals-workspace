@@ -53,13 +53,13 @@ REPO_PATH="$HOME/git/defra/trade-imports-animals-workspace/repos/$REPO_NAME"
 REPO_PATH=$(cd "$REPO_PATH" && pwd -P)
 
 # Tests-repo has no unit-test suite. Skip the per-package npm-test
-# gating; the WALKER runs `npm run test:local` once at end of batch.
+# gating; the WALKER runs `npm run test:docker-compose` once at end of batch.
 SKIP_NPM_TEST=0
 [[ "$REPO_NAME" == "trade-imports-animals-tests" ]] && SKIP_NPM_TEST=1
 
 echo "========================================="
 echo "Manual upgrade: $PACKAGE | $CURRENT → $TARGET (repo: $REPO_NAME)"
-[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; walker runs test:local at end of batch)"
+[[ "$SKIP_NPM_TEST" == "1" ]] && echo "(tests repo — npm test gating skipped; walker runs test:docker-compose at end of batch)"
 echo "========================================="
 
 set_status() {
@@ -98,7 +98,7 @@ if ! npm --prefix "$REPO_PATH" install "$PACKAGE@$TARGET" >/tmp/install-manual.l
 fi
 echo "✓ Installed"
 
-# Test (skipped for tests repo — walker runs test:local at end of batch).
+# Test (skipped for tests repo — walker runs test:docker-compose at end of batch).
 if [[ "$SKIP_NPM_TEST" == "0" ]]; then
     echo "Testing..."
     if ! npm --prefix "$REPO_PATH" test >/tmp/upgrade-manual.log 2>&1; then
