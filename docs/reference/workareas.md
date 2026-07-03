@@ -22,4 +22,5 @@ workareas/shared/EUDPA-X/                          → review handoff artifacts 
 workareas/skill-creator/<name>/                    → decisions.json (CREATE-mode interview state)
 workareas/skills-audit/<name>.md                   → AUDIT-mode plan document (per skill)
 workareas/understanding-checks/EUDPA-X/            → .interview-meta.json, ticket.md, analysis.{repo}.json, questions.json, transcript.json, report.md, .diffs/{repo}.diff, best-practices/{repo}.md
+workareas/test-stack-analysis/<run-id>/            → .run-meta.json, ticket.md | description.md | confluence-N.md, inventory.{repo}.md, report.md
 ```

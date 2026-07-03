@@ -135,3 +135,6 @@ Shared shell scripts called by skills via
 | `tools/understanding-check/verify-coverage.sh` | EUDPA-X [--json] | Step 7 gate — every question scored, every finding has evidence |
 | `tools/understanding-check/finalize-verdict.sh` | EUDPA-X [--json] | Step 7 — apply deterministic counting rule, stamp verdict + exit code |
 | `tools/understanding-check/render-report.sh` | EUDPA-X [--preview] | Plan-gate preview (Step 4) or full report (Step 7) |
+| **test-stack-analysis** | | |
+| `tools/test-stack-analysis/start-test-stack-analysis.sh` | --run-id ID [--ticket EUDPA-X \| --description "..." \| --url URL ...] | Step 0 dispatcher — validate args, create workarea, hand off to prepare script |
+| `tools/test-stack-analysis/prepare-test-stack-analysis.sh` | (same flags) | Resolve input (fetch ticket/Confluence page(s)), seed `.run-meta.json` with in-scope repos |

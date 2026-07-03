@@ -24,6 +24,7 @@ artifacts that downstream `tools/` scripts consume.
 | `understanding-check` | `references/ANALYST.md` | Per-repo diff analyst — emits `analysis.{repo}.json` (one per repo, parallel) |
 | `understanding-check` | `references/QUESTION_GENERATOR.md` | One-shot — combines all per-repo analyses into `questions.json` |
 | `understanding-check` | `references/SCORER.md` | Per-question scorer — must quote the rubric clause that fired (one per question, parallel) |
+| `test-stack-analysis` | `references/REPO_TEST_DISCOVERER.md` | Per-repo test inventory + tentative classification (one per repo, parallel, all 8) |
 
 Cursor reads `.claude/skills/` natively (per
 <https://cursor.com/docs/context/skills>). It has no parallel subagent

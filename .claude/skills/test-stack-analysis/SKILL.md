@@ -1,0 +1,230 @@
+---
+name: test-stack-analysis
+description: 'Given a feature description, Jira ticket, or Confluence URL, finds every related test file across the 8 EUDP Live Animals repos, classifies each by pyramid level (unit/integration/E2E) and concern type, and reports coverage gaps and cross-level duplication with file:line evidence — so a developer knows where to add or remove test coverage before writing new tests. Triggers: "test-stack-analysis EUDPA-X", "find test gaps EUDPA-X", "test pyramid analysis EUDPA-X", "analyse test coverage EUDPA-X", "check test pyramid for <feature>". One-shot, report-only — makes no code changes. NOT for correctness/style review of existing code (use `review` or `code-style`), NOT for verifying a PR author understands their own change (use `understanding-check`), NOT for scaffolding CLAUDE.md (Claude Code'\''s built-in `/init`).'
+---
+
+For anyone about to write E2E tests for a feature, or auditing
+whether a flow's test pyramid is shaped right. Given a feature
+description, a Jira ticket (EUDPA-X), or one or more Confluence page
+URLs, this skill searches all 8 repos for related test files, tags
+each by pyramid level and by which kind of concern it verifies, then
+reports two things: gaps (a concern with no coverage at its correct
+home level) and duplication (a concern re-asserted at a higher level
+than it needs to be). The output is a single markdown report under
+`workareas/test-stack-analysis/<run-id>/report.md` — the skill
+recommends actions but makes no code changes itself.
+
+## Path conventions
+
+Cross-workspace paths use the literal home-relative form —
+`~/git/defra/trade-imports-animals-workspace/tools/<domain>/`,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/`,
+`~/git/defra/trade-imports-animals-workspace/workareas/`. Bash
+expands `~` automatically. Skill-internal references stay
+relative (`references/<NAME>.md`, `assets/<NAME>.md`).
+
+**Bash call hygiene** — one command per Bash call. Full rule
+table: [`docs/agent-skills.md`](../../../docs/agent-skills.md)
+→ "Bash call hygiene".
+
+## When to use
+
+| Trigger | What to follow |
+|---------|----------------|
+| "test-stack-analysis EUDPA-X" | Step 0 — resolve `EUDPA-X` as `--ticket` |
+| "find test gaps EUDPA-X" | Step 0 — resolve `EUDPA-X` as `--ticket` |
+| "test pyramid analysis EUDPA-X" | Step 0 — resolve `EUDPA-X` as `--ticket` |
+| "analyse test coverage EUDPA-X" | Step 0 — resolve `EUDPA-X` as `--ticket` |
+| "check test pyramid for `<feature>`" | Step 0 — resolve free text as `--description` |
+
+NOT for correctness, security, or style findings on existing code —
+use the `review` or `code-style` skills. NOT for checking whether a
+PR's author understands their own change — use `understanding-check`.
+NOT for scaffolding `CLAUDE.md` — that's Claude Code's built-in
+`/init`, unrelated to workspace skills entirely.
+
+## Worker references
+
+| Persona | Used in | Artifact |
+|---|---|---|
+| `references/REPO_TEST_DISCOVERER.md` | Step 1 (one per repo, parallel, all 8) | `workareas/test-stack-analysis/<run-id>/inventory.<repo>.md` |
+
+Spawn idiom — Task tool, `subagent_type: general-purpose`,
+prompt begins:
+
+```
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/test-stack-analysis/references/<NAME>.md.
+
+<per-spawn context>
+```
+
+
+## Step 0: Start
+
+Pick a `--run-id` (the ticket ID for `--ticket` input; a short
+kebab-case slug you choose for `--description`/`--url` input, same
+convention as `ticket-creator`'s slugs). Exactly one input flag is
+required; `--url` may repeat for multiple Confluence pages.
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/test-stack-analysis/start-test-stack-analysis.sh --run-id EUDPA-X --ticket EUDPA-X
+```
+
+```bash
+~/git/defra/trade-imports-animals-workspace/tools/test-stack-analysis/start-test-stack-analysis.sh --run-id notification-sort --description "Notification dashboard sorting: default arrivalDate desc, four sort options, NULL arrivalDate last"
+```
+
+This is a one-shot skill — there is no FRESH/REFRESH distinction to
+branch on. The script creates
+`workareas/test-stack-analysis/<run-id>/`, resolves the input (fetches
+the ticket or Confluence page(s) if given), determines in-scope repos
+(always all 8 — a repo with nothing relevant simply reports no
+findings from Step 1), and seeds `.run-meta.json`. Re-running the same
+`--run-id` overwrites prior output; there is no state to carry
+forward between runs.
+
+**Before your first run, or after changing the taxonomy/classification
+logic:** sanity-check against the two known-answer fixtures in
+`assets/concern-type-taxonomy.md`'s "Verification fixtures" section
+(the notification-dashboard-sorting example, and `trade-imports-stub`'s
+own untested fixture-serving behaviour) before trusting results against
+an unfamiliar ticket — both have a known-correct expected result, so
+any deviation is unambiguously a logic bug, not a judgment call.
+
+## Step 1: Fan out discovery, one worker per repo
+
+Before spawning: if the input was `--ticket` or `--url`, read the
+cached `ticket.md`/`confluence-N.md` and extract a clean, plain-text
+summary of the AC/flow text yourself — Jira and Confluence content is
+cached as raw rich-text markup (literal `<p>`, `<b>`, `<span>` tags),
+not plain prose. Embed your cleaned summary in each spawn prompt below,
+not the raw cached file content — workers should never have to parse
+HTML tags out of their own input.
+
+Spawn 8 parallel `general-purpose` Task subagents, one per repo,
+following `references/REPO_TEST_DISCOVERER.md`. Spawn prompt begins:
+
+```
+Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/test-stack-analysis/references/REPO_TEST_DISCOVERER.md.
+
+**Repo:** <repo-name>
+**Repo path:** ~/git/defra/trade-imports-animals-workspace/repos/<repo-name>
+**Flow/feature under analysis:** <resolved input text — ticket AC, Confluence content, or free-text description>
+**Taxonomy reference:** ~/git/defra/trade-imports-animals-workspace/.claude/skills/test-stack-analysis/assets/concern-type-taxonomy.md
+**Output path:** ~/git/defra/trade-imports-animals-workspace/workareas/test-stack-analysis/<run-id>/inventory.<repo-name>.md
+```
+
+Wait for all 8 workers to complete (the harness notifies on
+completion — do not poll).
+
+## Step 2: Cross-repo concern-type analysis (parent session — do not fan this out)
+
+This step stays in the parent session, not a subagent, because the
+gap/duplication judgment needs the combined cross-repo picture for
+one flow — fanning it out per-repo would fragment exactly the
+cross-cutting view it depends on (a single flow's coverage routinely
+spans backend unit + backend IT + frontend controller + Playwright
+E2E at once).
+
+1. Read every `inventory.<repo>.md` written in Step 1.
+2. Read `assets/concern-type-taxonomy.md` in full if not already in
+   context.
+3. Decompose the flow/feature under analysis into individual
+   concerns, using the taxonomy's "signal in flow/AC text" column.
+   One AC bullet routinely yields multiple concerns across different
+   levels — do not classify at whole-AC granularity (see the
+   taxonomy's "Granularity" section and its worked reference case).
+4. For each concern: look up its natural home level (and, for HTTP/
+   message concerns, the per-repo convention table). Check the
+   relevant repo's inventory for a matching test at that level.
+   - No match at the home level → **gap**.
+   - A match exists at the home level, AND an equivalent-strength
+     match (including the failure path) also exists at a higher
+     level → **duplication** candidate.
+5. Do not evaluate "promote to E2E for cross-service confidence" —
+   this skill explicitly does not attempt that judgment call (see the
+   taxonomy's "Known limitation" section). Only report gaps and
+   duplication as defined above.
+
+## Step 3: Write the report
+
+Write `workareas/test-stack-analysis/<run-id>/report.md` directly
+(prose-canonical — no JSON state, no render helper). Sections, in
+this order: Gaps, Duplication, Notes (optional), Known limitation
+(standing, always present):
+
+```markdown
+# Test-stack analysis — <run-id>
+
+<one-line description of the flow/feature analysed>
+
+## Gaps
+
+### <flow/concern name>
+
+- **Concern type:** <taxonomy category>
+- **Belongs at:** <natural home level>
+- **Evidence of absence:** <what was searched, e.g. "no unit test in
+  trade-imports-animals-backend asserts default sort fallback">
+
+## Duplication
+
+### <flow/concern name>
+
+- **Concern type:** <taxonomy category>
+- **Already proven at:** <repo>/<file>:<line> — <what it asserts>
+- **Also asserted at:** <repo>/<file>:<line> — <higher level,
+  redundant assertion>
+- **Recommended action:** delete or demote the higher-level
+  assertion — <one-line reason>
+
+## Notes
+
+<optional — for findings that don't cleanly fit Gaps or Duplication,
+e.g. a concern nominally home to one level (per the taxonomy) that
+turns out to also have confident, legitimate coverage at another level
+without being true duplication (a concrete case: navigation/timing
+logic that's genuinely isolable and unit-testable, even though the
+taxonomy defaults that concern type to E2E-only). State the concern,
+where it's actually covered, and why it doesn't count as a gap or
+duplication — don't force it into either bucket just to avoid this
+section. Omit the section entirely if nothing qualifies; unlike Gaps/
+Duplication, this one doesn't need an explicit "none" statement since
+its absence is unremarkable.>
+
+## Known limitation
+
+This report does not evaluate whether adequately-covered flows should
+additionally get E2E coverage for cross-service confidence (mocked
+lower-level tests can drift from the real upstream contract). That is
+a risk-tolerance judgment call outside this skill's scope.
+```
+
+If Gaps or Duplication has no findings, keep the heading and state
+that explicitly ("No gaps found.") rather than omitting the section —
+an empty section is itself a result, not a missing step. Notes is the
+one exception — omit it entirely when nothing qualifies (see above).
+
+## Completion output
+
+```
+test-stack-analysis complete for <run-id>.
+
+Summary:
+- <N> gap(s) found
+- <M> duplication finding(s)
+
+Report: ~/git/defra/trade-imports-animals-workspace/workareas/test-stack-analysis/<run-id>/report.md
+
+Next: review the report and act on each recommendation manually —
+this skill makes no code changes itself.
+```
+
+## Scripts cheat-sheet
+
+All under `~/git/defra/trade-imports-animals-workspace/tools/test-stack-analysis/`:
+
+| Script | Purpose |
+|---|---|
+| `start-test-stack-analysis.sh` | Step 0 — validate args, create the workarea, hand off to `prepare-test-stack-analysis.sh` |
+| `prepare-test-stack-analysis.sh` | Step 0 — resolve input (fetch ticket/Confluence page(s) if given), seed `.run-meta.json` with in-scope repos |
