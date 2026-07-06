@@ -50,9 +50,17 @@ sanitise_branch() {
   printf '%s' "$t"
 }
 
+# Probe Dockerhub for a branch tag and print a stable fingerprint of its
+# manifest on stdout, returning 0 if the tag exists. Returns 1 (empty stdout)
+# when the tag is absent. The fingerprint is a content hash of the full
+# `docker manifest inspect` output (cksum — POSIX, present on macOS and Linux
+# CI, no jq needed): any re-push to the same branch changes the manifest and so
+# flips the fingerprint. This lets the post-healthy re-check tell a brand-new
+# branch tag apart from a re-pushed one. bash-3.2 safe.
 probe() {
-  local image="$1" tag="$2"
-  docker manifest inspect "defradigital/${image}:${tag}" >/dev/null 2>&1
+  local image="$1" tag="$2" manifest
+  manifest="$(docker manifest inspect "defradigital/${image}:${tag}" 2>/dev/null)" || return 1
+  printf '%s' "$manifest" | cksum | awk '{ print $1 "-" $2 }'
 }
 
 is_excluded() {
@@ -124,6 +132,12 @@ fi
 # happen in this (parent) shell. bash-3.2 safe (macOS default) and Linux-CI safe:
 # only mktemp -d, background jobs, and a bare wait barrier are used.
 probe_tmpdir=""
+# The marker directory holds one file per service that resolved to the branch
+# tag; its contents are the first-probe manifest fingerprint. It must survive
+# until the post-healthy re-check below, so clean it up on any exit rather than
+# inline before the compose up.
+cleanup_probe_tmpdir() { [ -n "$probe_tmpdir" ] && rm -rf "$probe_tmpdir"; return 0; }
+trap cleanup_probe_tmpdir EXIT
 if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
   probe_tmpdir="$(mktemp -d)"
   probe_pids=()
@@ -135,7 +149,9 @@ if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
       [ "$s" = "$image" ] && { in_active=1; break; }
     done
     [ "$in_active" -eq 0 ] && continue
-    ( probe "$image" "$sanitised" && : > "$probe_tmpdir/$label" ) &
+    # Record the branch resolution (file exists) and its manifest fingerprint
+    # (file contents) so the re-check can spot a flip or a re-push.
+    ( fp="$(probe "$image" "$sanitised")" && printf '%s' "$fp" > "$probe_tmpdir/$label" ) &
     probe_pids+=("$!")
   done
   [ ${#probe_pids[@]} -gt 0 ] && wait ${probe_pids[@]+"${probe_pids[@]}"} 2>/dev/null || true
@@ -167,9 +183,67 @@ done
 
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
-[ -n "$probe_tmpdir" ] && rm -rf "$probe_tmpdir"
-
 up_args=(up --wait --detach --pull always)
 [ "$dev" -eq 1 ] && up_args+=(--build)
 
-exec docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+# Bring the stack up and block until healthy. This used to `exec`; it no longer
+# does so the script can run one post-healthy re-check below. A failure here
+# still aborts under `set -e` with the compose exit code, preserving the old
+# signal/exit-code propagation.
+docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+
+# Post-healthy re-check (branch mode only; --dev never probes Dockerhub).
+# Stack startup takes 1-2 minutes to reach healthy — long enough for a slower
+# repo pipeline to publish or re-push its branch image after the initial probe.
+# Run the probe once more and, for any non-excluded service whose resolution
+# flipped latest->branch or whose branch-tag manifest fingerprint changed,
+# re-export its tag and recreate just that service with `--pull always`. One
+# re-check, not a poll loop: it covers the race window without complicating the
+# script, and mitigates rather than eliminates the race — an image that lands
+# well after healthy still needs a manual restart.
+if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
+  printf '%sRe-checking Dockerhub for branch images now the stack is healthy: %s%s\n' "$COLOUR_CYAN" "$sanitised" "$COLOUR_RESET"
+  recheck_services=()
+  for entry in "${services[@]}"; do
+    IFS='|' read -r label image env_var <<< "$entry"
+    is_excluded "$label" && continue
+    in_active=0
+    for s in ${active_services[@]+"${active_services[@]}"}; do
+      [ "$s" = "$image" ] && { in_active=1; break; }
+    done
+    [ "$in_active" -eq 0 ] && continue
+
+    # First-probe state: marker present => resolved to branch, contents => its
+    # fingerprint; marker absent => resolved to latest.
+    first_branch=0
+    first_fp=""
+    if [ -f "$probe_tmpdir/$label" ]; then
+      first_branch=1
+      first_fp="$(cat "$probe_tmpdir/$label")"
+    fi
+
+    # Re-probe now.
+    now_fp="$(probe "$image" "$sanitised")" && now_branch=1 || now_branch=0
+
+    if [ "$now_branch" -eq 0 ]; then
+      # Still no branch tag — nothing published, nothing to do.
+      printf '  %-16s no change\n' "$label:"
+    elif [ "$first_branch" -eq 0 ]; then
+      # Flipped latest -> branch: the image landed during startup.
+      export "$env_var=$sanitised"
+      recheck_services+=("$image")
+      printf '  %-16s %sswitched to branch (%s)%s\n' "$label:" "$COLOUR_GREEN" "$sanitised" "$COLOUR_RESET"
+    elif [ "$now_fp" != "$first_fp" ]; then
+      # Same branch tag, new digest: a re-push during startup.
+      export "$env_var=$sanitised"
+      recheck_services+=("$image")
+      printf '  %-16s %sdigest updated%s\n' "$label:" "$COLOUR_GREEN" "$COLOUR_RESET"
+    else
+      printf '  %-16s no change\n' "$label:"
+    fi
+  done
+
+  if [ ${#recheck_services[@]} -gt 0 ]; then
+    docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${recheck_services[@]}"
+  fi
+fi
