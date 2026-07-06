@@ -1,6 +1,9 @@
 ---
 name: understanding-check
 description: 'Verify that the developer who authored a PR actually understands it, before merge. Analyses the diff against the ticket, generates 8-12 evidence-anchored questions with categorical PASS/PARTIAL/FAIL rubrics, presents the question set for approval (the in-skill plan gate), conducts a terminal Q&A, scores answers by quoting back the rubric clause that fired, and emits a deterministic verdict (pass / needs-review / high-risk) with a paste-ready PR comment. Coaching aid, not a merge gate. Use when the user says "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X", "verify I understand EUDPA-X". NOT a code review (use the `review` skill) and NOT a style review (use `code-style`) — those judge the code; this judges the author''s grasp of it.'
+context: fork
+allowed-tools: [Bash, Read, Glob, Grep, Task]
+argument-hint: 'EUDPA-XXXXX'
 ---
 
 Pre-merge understanding check for an EUDP Live Animals ticket: surface
