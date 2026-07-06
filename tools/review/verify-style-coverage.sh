@@ -2,8 +2,8 @@
 # Verify code style review coverage for a ticket
 # Usage: ./verify-style-coverage.sh EUDPA-XXXXX [--json]
 #
-# Checks that every .js file changed in the PR has a .style.json review
-# with a non-null verdict. Reads .style-meta.json from
+# Checks that every reviewable source file changed in the PR has a
+# .style.json review with a non-null verdict. Reads .style-meta.json from
 # workareas/code-style-reviews/EUDPA-XXXXX/
 
 set -e
@@ -21,7 +21,7 @@ fi
 if [[ -z "$TICKET" ]]; then
     echo "Usage: ./verify-style-coverage.sh EUDPA-XXXXX [--json]"
     echo ""
-    echo "Verifies all changed .js files have .style.json reviews with verdict set."
+    echo "Verifies all changed source files have .style.json reviews with verdict set."
     exit 1
 fi
 
@@ -50,9 +50,9 @@ error() {
 [[ -f "$META_FILE" ]] || error ".style-meta.json not found. Run CODE_STYLE_REVIEWER step 3 first."
 [[ -d "$FILE_REVIEWS_DIR" ]] || error "file-reviews directory not found."
 
-# Read js_files from meta
-js_files_json=$(jq '.js_files' "$META_FILE")
-total_files=$(echo "$js_files_json" | jq 'length')
+# Read source_files from meta
+source_files_json=$(jq '.source_files' "$META_FILE")
+total_files=$(echo "$source_files_json" | jq 'length')
 
 # Collect status
 all_repos=()
@@ -62,8 +62,8 @@ pending_list=()
 reviewed_count=0
 
 for ((i=0; i<total_files; i++)); do
-    repo=$(echo "$js_files_json" | jq -r ".[$i].repo")
-    filepath=$(echo "$js_files_json" | jq -r ".[$i].path")
+    repo=$(echo "$source_files_json" | jq -r ".[$i].repo")
+    filepath=$(echo "$source_files_json" | jq -r ".[$i].path")
 
     safe_path=$(echo "$filepath" | tr '/' '_')
     review_file="$FILE_REVIEWS_DIR/$repo/${safe_path}.style.json"
@@ -107,11 +107,11 @@ verification_file="$FILE_REVIEWS_DIR/_STYLE_VERIFICATION.md"
     echo ""
     echo "**Ticket:** $TICKET"
     echo "**Last Verified:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    echo "**Total JS files changed:** $total_files"
+    echo "**Total source files changed:** $total_files"
     echo "**Files reviewed:** $reviewed_count"
     echo "**Coverage:** $coverage_status"
     echo ""
-    echo "## JS Files Checklist"
+    echo "## Source Files Checklist"
     echo ""
     echo "| # | Repository | File | Status |"
     echo "|---|------------|------|--------|"
@@ -132,7 +132,7 @@ verification_file="$FILE_REVIEWS_DIR/_STYLE_VERIFICATION.md"
     echo "## Verification Result"
     echo ""
     if [[ "$is_complete" == "true" ]]; then
-        echo "- [x] **CONFIRMED: All JS files have been style-reviewed**"
+        echo "- [x] **CONFIRMED: All source files have been style-reviewed**"
     else
         echo "- [ ] **INCOMPLETE: ${pending_count} file(s) pending style review**"
         echo ""
@@ -173,7 +173,7 @@ else
     echo ""
 
     if [[ "$is_complete" == "true" ]]; then
-        echo "✅ All JS files style-reviewed"
+        echo "✅ All source files style-reviewed"
     else
         echo "⏳ Pending $pending_count style review(s):"
         for entry in "${pending_list[@]}"; do

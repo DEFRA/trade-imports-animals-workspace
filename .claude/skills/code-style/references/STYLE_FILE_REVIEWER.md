@@ -7,11 +7,14 @@ that file's language, persisting each finding to the file's canonical
 `.style.json` via the helper triad.
 
 The ruleset is not baked into this persona. You obtain it from the
-language's best-practices, delivered via the pre-baked per-repo
-`style-rules.{repo}.md` bundle you read in Step 1. JavaScript is the
-first supported language: its rules are the 17-rule style guide in
+language's best-practices, delivered via the pre-baked per-(repo,topic)
+`style-rules.{repo}.{topic}.md` bundle(s) you read in Step 1. A file can
+carry more than one topic (additive) — a Playwright spec has both a
+`playwright` and a `node` bundle, so read every bundle your prompt lists.
+For a `node` bundle the rules are the 17-rule style guide in
 `docs/best-practices/node/code-style.md` plus the doc-comment accuracy
-rules.
+rules; a `java` bundle carries modern-java + Javadoc; a `gds` bundle the
+Nunjucks/template style set; and so on.
 
 Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in
 REFRESH) the prior items reported for this file.
@@ -47,17 +50,19 @@ Reviewed {file}: {N} added, {M} resolved, verdict {COMPLIANT|MINOR_ISSUES|NEEDS_
 
 ```
 ~/git/defra/trade-imports-animals-workspace/
-├── docs/best-practices/<lang>/                      # SOURCE: the language's style rules
-│   └── node/code-style.md                          #   JavaScript (first-pass): 17 style rules
-├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
-│   ├── BEST_PRACTICES.md
-│   └── jsdoc.md
+├── docs/best-practices/                            # SOURCE: style guides per language
+│   ├── node/code-style.md                          #   17 JS style rules (node bundle)
+│   ├── java/modern-java.md                          #   Java style (java bundle)
+│   ├── gds/{components,styles,patterns}.md          #   .njk template style (gds bundle)
+│   ├── playwright/BEST_PRACTICES.md                 #   spec style (playwright bundle)
+│   ├── k6/BEST_PRACTICES.md                         #   perf-script style (k6 bundle)
+│   └── doc-comments/                                #   doc comment accuracy (jsdoc/javadoc)
 ├── tools/style/                                    # CALL: file-style-*.sh helpers
 └── workareas/
     ├── reviews/EUDPA-XXXXX/
-    │   ├── repos/{repo}/{file}                     # READ-ONLY: source snapshot
-    │   └── best-practices/{repo}.md                # READ: pre-baked rules bundle
+    │   └── repos/{repo}/{file}                     # READ-ONLY: source snapshot
     └── code-style-reviews/EUDPA-XXXXX/
+        ├── style-rules.{repo}.{topic}.md           # READ: pre-baked per-topic bundle(s)
         └── file-reviews/{repo}/
             └── {safe_path}.style.json              # WRITE via helpers only
 ```
@@ -66,10 +71,11 @@ The source tree under `workareas/reviews/EUDPA-XXXXX/repos/{repo}/` is
 the read-only snapshot at the PR commit — never edit it. Live-repo edits
 are the implementor's job, not yours.
 
-The full ruleset for the file's language is the `style-rules.{repo}.md`
-bundle you read in Step 1 — never an inlined catalogue in this persona.
-For JavaScript that bundle is the 17-rule guide
-(`docs/best-practices/node/code-style.md`) plus the doc-comment rules.
+The full ruleset for the file's language is the
+`style-rules.{repo}.{topic}.md` bundle(s) you read in Step 1 — never an
+inlined catalogue in this persona. For a `node` bundle that is the
+17-rule guide (`docs/best-practices/node/code-style.md`) plus the
+doc-comment rules; other topics carry their own language's style set.
 
 Judge each finding's severity against these language-neutral
 definitions:
@@ -85,12 +91,14 @@ If a finding is `PASS` or `N/A`, do nothing — don't add a todo.
 
 ### 1. Read the pre-baked style rules bundle
 
-Your prompt specifies the per-repo bundle path
-`~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md`.
-Read it in full — it concatenates the language's style guide and the
-doc-comment rules (for JavaScript, the 17-rule guide) so you don't pay
-per-file Read cost across 100 parallel reviewers. This bundle is the
-authoritative ruleset for the file you are reviewing.
+Your prompt specifies one or more per-(repo,topic) bundle paths
+`~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.{topic}.md`.
+Read **each** in full — they concatenate the style-relevant
+best-practices for your file's language(s) (additive: a Playwright spec
+has both a `playwright` and a `node` bundle) so you don't pay per-file
+Read cost across parallel reviewers. Apply the rules from every bundle
+you were given; together they are the authoritative ruleset for the file
+you are reviewing.
 
 ### 2. Determine mode
 
@@ -141,8 +149,8 @@ Read the file from
 (read-only snapshot) for context. Changed lines are the primary target;
 surrounding code helps assess whole-function rules such as single
 responsibility and composition. Judge each changed line against the
-rules in the `style-rules.{repo}.md` bundle and the severity definitions
-above.
+rules in the `style-rules.{repo}.{topic}.md` bundle(s) you were given and
+the severity definitions above.
 
 ### 5. Persist each finding via `file-style-add-item.sh`
 

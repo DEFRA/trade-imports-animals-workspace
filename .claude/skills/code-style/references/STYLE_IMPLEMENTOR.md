@@ -87,6 +87,11 @@ If `applicable_items` is empty (every item is already fixed):
 
 ## Step 2: Pre-Check Tests
 
+> Note: the `npm` test commands below are for the Node repos
+> (frontend/admin/tests). For a `.java` file in a Java repo, substitute
+> the repo's Maven test (`mvn -f ~/git/defra/trade-imports-animals-workspace/repos/{repo} test`)
+> and skip the E2E `test:local` step unless the change is behavioural.
+
 Run unit tests in the relevant repo:
 
 ```bash
@@ -122,14 +127,22 @@ fix anything not in the input list. Don't reformat unrelated code.
 The common per-rule fix patterns and the ordering rule (shape-changing
 fixes before renames) live in the sibling cheat-sheet:
 `~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/assets/style-implementor-cheat-sheet.md`.
-Consult `~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for the
-full rule text.
+Those patterns are **JS/Node examples — illustrative, not universal law**.
+Consult the best-practices file for your file's language for the full
+rule text, e.g.
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for JS,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/java/modern-java.md` for Java.
 
-After all edits, run Prettier to avoid pre-commit hook failures:
+After all edits, format the file. **Prettier applies to JS/`.njk` files
+only — never run a `.java` file through Prettier.** For a
+`.js`/`.mjs`/`.cjs`/`.jsx`/`.njk`/spec file:
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
+
+For a `.java` file, skip Prettier — the repo's own build/format step
+(e.g. Spotless via `mvn`) owns formatting; do not reformat by hand.
 
 ---
 
@@ -182,7 +195,8 @@ Items: #{id1}, #{id2}, #{id3}
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-If the pre-commit hook fails due to Prettier:
+If the pre-commit hook fails due to Prettier (JS/`.njk` only — a `.java`
+file is never Prettier-formatted):
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
