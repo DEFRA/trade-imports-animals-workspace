@@ -5,7 +5,7 @@
 # Creates workareas/code-style-reviews/EUDPA-XXXXX/ with:
 #   - .style-meta.json (state for other scripts)
 #   - file-reviews/{repo}/{safe_path}.style.json placeholders
-#   - style-rules.{repo}.md per-repo rules bundle
+#   - style-rules.{repo}.{topic}.md per-(repo,topic) rules bundles
 #
 # Piggybacks on the standard review workspace at
 # workareas/reviews/EUDPA-XXXXX/ for cloned repos and PR diff cache —
@@ -20,6 +20,7 @@ PREPARE_REVIEW="$ROOT/tools/review/prepare-review.sh"
 PR_DETAILS="$ROOT/tools/github/pr-details.sh"
 FILE_STYLE_INIT="$SCRIPT_DIR/file-style-init.sh"
 BAKE_BUNDLE="$SCRIPT_DIR/bake-rules-bundle.sh"
+FILE_TOPICS="$SCRIPT_DIR/file-topics.sh"
 
 TICKET=""
 JSON_OUTPUT=false
@@ -61,11 +62,14 @@ fi
 log "Creating code-style workspace..."
 mkdir -p "$STYLE_DIR/file-reviews"
 
-# ---- Step 3: discover .js files from review-meta.json --------------
+# ---- Step 3: discover reviewable source files from review-meta.json ---
+# A file is reviewable iff file-topics.sh maps it to >= 1 topic. Each entry
+# records the additive topic list so the spawn prompt can name the right
+# per-topic style-rules bundle(s).
 
-log "Discovering .js files..."
-js_files_json="[]"
-total_js=0
+log "Discovering reviewable source files..."
+source_files_json="[]"
+total_source=0
 
 while IFS= read -r pr_meta; do
     [[ -z "$pr_meta" ]] && continue
@@ -77,23 +81,27 @@ while IFS= read -r pr_meta; do
 
     while IFS= read -r filepath; do
         [[ -z "$filepath" ]] && continue
-        [[ "$filepath" == *.js ]] || continue
+
+        topics=$("$FILE_TOPICS" "$filepath")
+        [[ -z "$topics" ]] && continue
+        topics_json=$(printf '%s\n' "$topics" | jq -Rn '[inputs | select(length > 0)]')
 
         entry=$(jq -nc \
             --arg repo "$repo" \
             --arg path "$filepath" \
             --argjson pr "$pr_number" \
             --arg commit "$commit" \
-            '{repo: $repo, path: $path, pr: $pr, commit: $commit}')
-        js_files_json=$(jq --argjson e "$entry" '. + [$e]' <<<"$js_files_json")
-        total_js=$((total_js + 1))
+            --argjson topics "$topics_json" \
+            '{repo: $repo, path: $path, pr: $pr, commit: $commit, topics: $topics}')
+        source_files_json=$(jq --argjson e "$entry" '. + [$e]' <<<"$source_files_json")
+        total_source=$((total_source + 1))
     done <<<"$files"
 done < <(jq -c '.prs[]' "$REVIEW_META")
 
-if [[ "$total_js" -eq 0 ]]; then
-    log "No .js files found across any PR."
+if [[ "$total_source" -eq 0 ]]; then
+    log "No reviewable source files found across any PR."
     # Still write .style-meta.json so subsequent commands have a stable
-    # workspace shape (empty js_files).
+    # workspace shape (empty source_files).
 fi
 
 # ---- Step 4: write .style-meta.json -----------------------------
@@ -102,8 +110,8 @@ now=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 jq -n \
     --arg id "$TICKET" \
     --arg created "$now" \
-    --argjson js_files "$js_files_json" \
-    '{id: $id, created: $created, js_files: $js_files}' > "$STYLE_META.tmp"
+    --argjson source_files "$source_files_json" \
+    '{id: $id, created: $created, source_files: $source_files}' > "$STYLE_META.tmp"
 mv "$STYLE_META.tmp" "$STYLE_META"
 
 # ---- Step 5: init per-file placeholders -------------------------
@@ -129,17 +137,22 @@ while IFS= read -r entry; do
         --repo "$repo" --file "$path" --commit "$commit" \
         --pr "$pr" --mode FRESH > /dev/null
     created_files=$((created_files + 1))
-done < <(jq -c '.js_files[]' "$STYLE_META")
+done < <(jq -c '.source_files[]' "$STYLE_META")
 
-# ---- Step 6: bake per-repo style-rules bundle ------------------
+# ---- Step 6: bake per-(repo, topic) style-rules bundles --------
+# One bundle per distinct (repo, topic) actually present across the discovered
+# source files. A file's spawn prompt lists the bundle(s) for each of its
+# topics (additive).
 
-log "Baking per-repo style-rules bundles..."
-bundle_repos=()
-while IFS= read -r repo; do
-    [[ -z "$repo" ]] && continue
-    "$BAKE_BUNDLE" "$TICKET" "$repo" > /dev/null
-    bundle_repos+=("$repo")
-done < <(jq -r '.js_files[].repo' "$STYLE_META" | sort -u)
+log "Baking per-(repo, topic) style-rules bundles..."
+bundles=()
+while IFS= read -r pair; do
+    [[ -z "$pair" ]] && continue
+    repo="${pair%%$'\t'*}"
+    topic="${pair##*$'\t'}"
+    "$BAKE_BUNDLE" "$TICKET" "$repo" "$topic" > /dev/null
+    bundles+=("style-rules.${repo}.${topic}.md")
+done < <(jq -r '.source_files[] | .repo as $r | .topics[] | [$r, .] | @tsv' "$STYLE_META" | sort -u)
 
 # ---- Output ----------------------------------------------------------
 
@@ -154,14 +167,14 @@ else
     echo "Created:"
     echo "  ✓ .style-meta.json"
     echo "  ✓ file-reviews/ ($created_files placeholders)"
-    if [[ ${#bundle_repos[@]} -gt 0 ]]; then
-        for r in "${bundle_repos[@]}"; do
-            echo "  ✓ style-rules.${r}.md"
+    if [[ ${#bundles[@]} -gt 0 ]]; then
+        for b in "${bundles[@]}"; do
+            echo "  ✓ $b"
         done
     fi
     echo
-    if [[ "$total_js" -eq 0 ]]; then
-        echo "Note: no .js files in this PR — no code-style review needed."
+    if [[ "$total_source" -eq 0 ]]; then
+        echo "Note: no reviewable source files in this PR — no code-style review needed."
     else
         echo "Next: spawn STYLE_FILE_REVIEWER subagents (FRESH Step 4)."
     fi
