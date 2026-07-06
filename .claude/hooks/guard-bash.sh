@@ -5,8 +5,8 @@
 # Incident that started this (2026-06-10): a denied `node scan.mjs` was re-run by
 # copying the script into an allowlisted scripts/** path and chmod +x-ing it.
 #
-# Checks (each emits a deny + exit 0; a clean command exits 0 with no output and
-# falls through to the normal allow/deny rules):
+# Checks (each emits a deny/ask + exit 0; a clean command exits 0 with no output
+# and falls through to the normal allow/deny rules):
 #   1. chmod in command position (any path form; behind sudo/timeout/etc; and via
 #      find -exec / xargs) — adding execute bits is how a fresh file becomes runnable.
 #   2. Path-invoked executables (./x, ~/x, /abs/x, dir/x) must be committed at HEAD
@@ -15,6 +15,17 @@
 #   3. Secret-file reads by common readers (jq/grep/awk/file/cut/tr/strings/...) —
 #      defence-in-depth for paths the Read() deny doesn't cover at the Bash layer.
 #      (The OS sandbox is the real fix for this; this is a backstop.)
+#   4. [EUDPA-221] git commit --no-verify — deny (bypasses pre-commit hooks/gates).
+#   5. [EUDPA-221] git commit --amend when HEAD is already on a remote branch —
+#      deny (rewriting pushed history).
+#   6. [EUDPA-221] Foot-gun NUDGES via permissionDecision "ask" (recoverable — the
+#      user gets a prompt naming the sanctioned alternative, not a hard block):
+#        - a literal /Users/<user>/ path (use ~/ — the matcher treats them differently)
+#        - raw `npx playwright test` (use `npm run test:local`)
+#        - `npm --prefix` over the workspace symlink (canonicalize with cd && pwd -P)
+#        - `&&` command chaining (one command per Bash call)
+#      Force-push to main, chmod and rm -rf are already handled by settings.json's
+#      deny list, so they are NOT re-implemented here (avoid duplicate/conflicting rules).
 #
 # Crucially, checks 1 and 2 are also applied INSIDE command substitutions
 # ($(...) and backticks), which the permission rules and a naive segment split
@@ -23,7 +34,7 @@
 # Exemptions for check 2: node_modules (installed artifacts) and system prefixes.
 # Bare commands (node, npm, git...) are left to the normal rules.
 #
-# stdin: PreToolUse hook JSON. Deny via hookSpecificOutput JSON, exit 0.
+# stdin: PreToolUse hook JSON. Deny/ask via hookSpecificOutput JSON, exit 0.
 
 set -uf
 
@@ -36,6 +47,14 @@ CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty')
 deny() {
   jq -n --arg reason "$1" \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
+  exit 0
+}
+
+# ask() — a recoverable nudge: surfaces a prompt naming the sanctioned alternative
+# rather than hard-blocking. Used for the EUDPA-221 foot-gun redirects.
+ask() {
+  jq -n --arg reason "$1" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
   exit 0
 }
 
@@ -117,6 +136,45 @@ check_segment() {
 # --- chmod via launcher indirection (find -exec chmod, xargs chmod), whole string -
 if printf '%s' "$CMD" | grep -Eq -- '-(exec|execdir|ok|okdir)[[:space:]]+[^[:space:]]*chmod|xargs([[:space:]]+-[^[:space:]]+)*[[:space:]]+[^[:space:]]*chmod'; then
   deny "chmod (via find -exec / xargs) is blocked by policy (write-then-execute guard). If genuinely needed, the user runs it: ! chmod ..."
+fi
+
+# --- [EUDPA-221] destructive git guards (whole-string, DENY) ---------------------
+# git commit --no-verify — skips pre-commit hooks / quality gates.
+if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+commit\b[^|;&]*--no-verify'; then
+  deny "git commit --no-verify bypasses the pre-commit hooks. Fix what the hook flags rather than skipping it; if a hook is genuinely wrong, the user runs the commit themselves."
+fi
+
+# git commit --amend when HEAD is already published (on a remote-tracking branch)
+# — amending rewrites a commit others may have pulled. Only denies when pushed.
+if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+commit\b[^|;&]*--amend'; then
+  if git -C "$CWD" branch -r --contains HEAD 2>/dev/null | grep -q .; then
+    deny "git commit --amend rewrites HEAD, but HEAD is already on a remote branch (pushed). Make a NEW commit instead of amending published history."
+  fi
+fi
+
+# --- [EUDPA-221] foot-gun nudges (whole-string, ASK — recoverable) ---------------
+# Literal /Users/<user>/ path — the permission matcher treats ~/ and /Users/ as
+# different prefixes, so literal /Users/ triggers avoidable prompts.
+if printf '%s' "$CMD" | grep -Eq '/Users/[A-Za-z0-9._-]+/'; then
+  ask "Use ~/ instead of a literal /Users/<user>/ path — the permission matcher treats them as different prefixes, so /Users/ triggers avoidable prompts."
+fi
+
+# Raw `npx playwright test` — skips the project wrapper's setup.
+if printf '%s' "$CMD" | grep -Eq 'npx[[:space:]].*playwright[[:space:]]+test'; then
+  ask "Use the project wrapper 'npm run test:local' rather than raw 'npx playwright test' — the wrapper does setup the raw invocation skips."
+fi
+
+# npm --prefix over the workspace symlink — can corrupt the lockfile.
+if printf '%s' "$CMD" | grep -Eq 'npm[[:space:]].*--prefix[[:space:]]+[^[:space:]]*trade-imports-animals-workspace'; then
+  ask "npm --prefix across the workspace symlink can corrupt the lockfile. Canonicalize first (cd <path> && pwd -P) and run npm install on the real path."
+fi
+
+# `&&` command chaining — one command per Bash call (exit codes come back in the
+# tool result). NOTE: ';' and '|' are intentionally NOT guarded here — ';' is used
+# by legitimate for/while loops and '|' by ordinary pipes, so guarding them would
+# fire on nearly every command. Add them below only if you want the stricter rule.
+if printf '%s' "$CMD" | grep -Eq '&&'; then
+  ask "Prefer one command per Bash call — this chains commands with '&&'. Split into separate Bash calls; the tool result already carries each command's exit code."
 fi
 
 # --- pull out command-substitution bodies: $( ... ) and ` ... ` -----------------
