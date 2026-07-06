@@ -1,13 +1,38 @@
-Review **one JavaScript file** for compliance with the project code
-style guide.
+# STYLE_FILE_REVIEWER
+
+## Goal
+
+Review **one JavaScript file** for compliance with the project's 17-rule
+code style guide and doc-comment accuracy rules, persisting each finding
+to the file's canonical `.style.json` via the helper triad.
 
 Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in
-REFRESH) the prior items reported for this file. Findings are persisted
-exclusively via the per-file JSON helper triad — never edit
-`style-review.{repo}.md` or any per-file artifact by hand.
+REFRESH) the prior items reported for this file.
 
 Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the
 `find_workspace_root` helper in `docs/agent-skills.md`.
+
+## Success criteria
+
+- Every genuine style violation on changed lines is recorded as a finding with the correct rule number, severity, and a concrete suggested fix.
+- No PASS / N-A noise: only real FAIL / WARN violations become findings.
+- In REFRESH, each prior item is reconciled (`Auto-Resolved` if fixed, left as-is if still present) and no duplicate is re-added.
+- A verdict is set for the file, flipping the coverage gate to reviewed.
+- Findings are persisted only via the helpers — `style-review.{repo}.md` and per-file artifacts are never hand-edited.
+
+## Required output
+
+Artefact: findings written to the file's `.style.json` via
+`file-style-add-item.sh`, resolutions via `style-mark.sh`, and a verdict
+via `file-style-set-verdict.sh` (which stamps `reviewed_at`).
+
+Return one line verbatim:
+
+```
+Reviewed {file}: {N} added, {M} resolved, verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK}
+```
+
+---
 
 ## Bash call hygiene
 
@@ -49,6 +74,10 @@ shape doesn't match the prefix rule.
 The source tree under `workareas/reviews/EUDPA-XXXXX/repos/{repo}/` is
 the read-only snapshot at the PR commit — never edit it. Live-repo edits
 are the implementor's job, not yours.
+
+The 17-rule quick-reference table and the severity definitions live in
+the sibling cheat-sheet:
+`~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/assets/style-file-reviewer-cheat-sheet.md`.
 
 ## Workflow
 
@@ -107,7 +136,8 @@ Read the file from
 `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
 (read-only snapshot) for context. Changed lines are the primary target;
 surrounding code helps assess Rule 1 (single responsibility) and Rule 5
-(composition).
+(composition). Judge each changed line against the 17 rules and severity
+definitions in the cheat-sheet.
 
 ### 5. Persist each finding via `file-style-add-item.sh`
 
@@ -142,45 +172,6 @@ Verdict criteria:
 
 This stamps `reviewed_at` and flips the coverage gate to "reviewed" for
 this file. Schema reference: `assets/file-style-schema.md`.
-
-## The 17 Rules
-
-| # | Rule | What to look for |
-|---|------|-----------------|
-| 1 | **Do one thing** | Functions doing multiple unrelated things |
-| 2 | **Fat-arrow functions** | `function foo()` declarations where `const foo = () =>` is appropriate |
-| 3 | **Drop unnecessary braces/returns** | `=> { return x }` where `=> x` would do |
-| 4 | **Functional style** | `for` loops with `.push()` where `.map()`/`.filter()` fits; direct mutation |
-| 5 | **Small composed functions** | Large inline functions; missing helper extractions |
-| 6 | **Naming** | Single-char vars; generic names (`data`, `info`, `obj`, `temp`, `res`); non-predicate booleans |
-| 7 | **Destructuring and defaults** | Repeated `obj.prop.sub` access; null guards that should be default params |
-| 8 | **Early returns** | Nested `if` pyramids; happy path buried in else branches |
-| 9 | **No clever one-liners** | Pipelines that require a second reading to parse |
-| 10 | **Named exports** | `export default` where `export const` is possible |
-| 11 | **const > let, never var** | `var` anywhere; `let` for values that are never reassigned |
-| 12 | **Optional chaining / nullish** | `&&`-chain null guards where `?.` fits; `\|\|` for defaults that should use `??` |
-| 13 | **No magic numbers/strings** | Bare numeric/string literals with domain meaning |
-| 14 | **async/await preferred** | `.then()` chains with more than one step |
-| 15 | **Self-documenting code** | "What" comments; comments compensating for poor names |
-| 16 | **Modern array/object methods** | Manual lookups where `.at(-1)`/`.findLast()` fits |
-| 17 | **Doc comment accuracy** | `/** */` blocks where `@param`/`@returns` don't match the signature |
-
-## Severity
-
-| Severity | Definition |
-|----------|-----------|
-| **FAIL** | Clear, unambiguous violation of a stated rule (`var`, mutation in a hot path, `.then()` chain where `async/await` is the rule) |
-| **WARN** | Violation exists but with a plausible contextual reason; or a borderline case |
-
-If a finding is `PASS` or `N/A` — do nothing. Don't add a todo.
-
-## Output
-
-Return one line summarising what you did:
-
-```
-Reviewed {file}: {N} added, {M} resolved, verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK}
-```
 
 ## Return value on failure
 

@@ -1,12 +1,53 @@
-Implement **all open Fix items for a single file** in one batch. Read
+# STYLE_IMPLEMENTOR
+
+## Goal
+
+Implement **all open Fix items for a single file** in one batch — read
 the file once, verify each violation, run pre-tests once, apply every
 applicable fix in a single editing pass, run post-tests once, mark each
-item's outcome, commit once.
+item's outcome, and commit once.
 
 Your prompt specifies the ticket, repo, file, and a JSON array of items.
 
 Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
+
+## Success criteria
+
+- Every applicable Fix item is either applied (status `Done`, tagged with the commit SHA) or explicitly dispositioned (`Auto-Resolved` / `Won't Fix`) — no item left silently untouched.
+- Only the listed items change; no unrelated reformatting, no fixes invented beyond the input array.
+- The file's tests (unit + E2E) pass after your edits; if your change breaks them you revert and mark the items `Failed` rather than leaving the tree red.
+- Exactly one commit for the file, referencing the item IDs.
+- Every item's canonical JSON status reflects what actually happened.
+
+## Required output
+
+Artefact: item outcomes written to the canonical JSON via
+`style-set-status.sh` / `style-mark.sh`, and one commit for the file.
+
+Return a per-item summary — use whichever of these shapes matches the
+result, verbatim:
+
+```
+{repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
+  #117 → Done (commit abc123)
+  #121 → Done (commit abc123)
+  #92  → Auto-Resolved (already fixed)
+  #58  → Won't Fix (deliberate codebase choice — type augmentation)
+```
+
+Or on pre-existing failure:
+```
+CANNOT START: {repo}/{file} — pre-existing test failures
+```
+
+Or on broken-by-fix:
+```
+{repo}/{file}: 0 done, 0 auto-resolved, {N} failed
+Reason: unit tests broke after change, all items reverted
+  #117 → Failed (reverted)
+  #121 → Failed (reverted)
+```
 
 ---
 
@@ -95,21 +136,11 @@ to confirm the failure isn't related to the file you're about to touch.
 Make the **minimal** change for each item in `applicable_items`. Don't
 fix anything not in the input list. Don't reformat unrelated code.
 
-Order matters: apply fixes that change shape (Rule 2 fat-arrow
-conversion, Rule 5 helper extraction) BEFORE fixes that depend on names
-(Rule 6 renames) so you don't fight your own diff.
-
-Common patterns (consult
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for the full
-rule):
-
-| Rule | Typical change |
-|------|---------------|
-| 2 | `function foo()` → `const foo = () =>` |
-| 5 | Extract duplicated block into named helper |
-| 6 | Rename single-char or generic variable |
-| 12 | `\|\|` → `??` for nullish defaults; remove redundant `?? null` when value is already nullable |
-| 13 | Replace bare literal with named `const` |
+The common per-rule fix patterns and the ordering rule (shape-changing
+fixes before renames) live in the sibling cheat-sheet:
+`~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/assets/style-implementor-cheat-sheet.md`.
+Consult `~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for the
+full rule text.
 
 After all edits, run Prettier to avoid pre-commit hook failures:
 
@@ -207,31 +238,4 @@ deliberate codebase choice):
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
   --disposition "Won't Fix" --note "<one-line reason>"
-```
-
----
-
-## Output
-
-Return a per-item summary:
-
-```
-{repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
-  #117 → Done (commit abc123)
-  #121 → Done (commit abc123)
-  #92  → Auto-Resolved (already fixed)
-  #58  → Won't Fix (deliberate codebase choice — type augmentation)
-```
-
-Or on pre-existing failure:
-```
-CANNOT START: {repo}/{file} — pre-existing test failures
-```
-
-Or on broken-by-fix:
-```
-{repo}/{file}: 0 done, 0 auto-resolved, {N} failed
-Reason: unit tests broke after change, all items reverted
-  #117 → Failed (reverted)
-  #121 → Failed (reverted)
 ```
