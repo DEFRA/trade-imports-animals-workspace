@@ -1,6 +1,9 @@
 ---
 name: ticket
 description: 'Plan, implement, or refactor work for an existing Jira ticket (EUDPA-XXXXX) end-to-end. Use when the user asks to scope, plan, build, follow a plan for, refactor, tidy up, or clean code for a specific ticket (triggers: "plan EUDPA-", "how should I implement EUDPA-", "implement EUDPA-", "build EUDPA-", "follow the plan", "refactor", "tidy up", "clean"). Covers the full plan -> implement -> refactor cycle for one existing ticket. NOT for creating new tickets (use ticket-creator), NOT for assessing whether a ticket is ready for refinement (use ticket-refiner), NOT for reviewing an existing PR (use review or code-style).'
+context: inline
+allowed-tools: [Bash, Read, Edit, Write, Glob, Grep]
+argument-hint: 'EUDPA-XXXXX'
 ---
 
 Plan, implement, or refactor work for an existing Jira ticket. Three
