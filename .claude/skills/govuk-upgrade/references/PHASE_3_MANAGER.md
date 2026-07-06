@@ -1,6 +1,6 @@
 # Phase 3 Manager — Implementation
 
-**Bash hygiene:** one command per Bash call. Full rules in `SKILL.md` → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 **Job:** Apply every `todo`-classified version per repo in strict semver
 ascending order. Stop a repo on first failure.

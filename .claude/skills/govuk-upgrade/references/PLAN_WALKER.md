@@ -12,16 +12,7 @@ underlying JSON: `assets/version-state-schema.md`.
 
 ---
 
-## Bash call hygiene
-
-**Rule: one command per Bash call.** Full rules in `SKILL.md`.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` or full paths.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/...` form.
-- No `/Users/<you>/git/...` — type `~/`, don't resolve it.
-
----
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Step 1: Load the work list
 
