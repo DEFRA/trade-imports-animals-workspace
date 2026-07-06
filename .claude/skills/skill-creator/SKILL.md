@@ -29,10 +29,7 @@ Cross-workspace paths use the literal home-relative form —
 expands `~` automatically. Skill-internal references stay
 relative (`references/<NAME>.md`, `assets/<NAME>.md`).
 
-**Bash call hygiene** — one command per Bash call, no `&&`
-chains, no `$VAR` expansion in workspace paths. Full rule table:
-[`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash
-call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Session start — Read these references
 

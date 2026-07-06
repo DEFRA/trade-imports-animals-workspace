@@ -20,11 +20,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — this skill makes only 1-2 Bash calls (parent
-epic preflight, create-ticket). One command per Bash call, no
-`cd && cmd` chains, no `$VAR` expansion in workspace paths. Full rule
-table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) →
-"Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Step 0: Session start
 
