@@ -105,11 +105,3 @@ applies to the repo being worked on.
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/best-practices/<repo>.md` | `prepare-plan.sh` writes — concatenated best-practices bundle per repo |
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.implement-meta.json` | `prepare-implement.sh` writes — re-validated tech + cached PR diffs |
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.diffs/<repo>.diff` | `prepare-implement.sh` writes — cached PR diff (when a prior PR exists) |
-
-## Skill-level don'ts
-
-- Don't create new tickets — that's `ticket-creator`.
-- Don't assess refinement readiness — that's `ticket-refiner`.
-- Don't review someone else's PR — that's `review` / `code-style`.
-- Don't skip tests.
-- Don't proceed with red on main.
