@@ -181,3 +181,25 @@ Return one line summarising what you did:
 ```
 Reviewed {file}: {N} added, {M} resolved, verdict {COMPLIANT|MINOR_ISSUES|NEEDS_WORK}
 ```
+
+## Return value on failure
+
+If you cannot complete the review — the source snapshot is missing, the
+file-diff cache is empty, or a `file-style-*` helper rejects every call —
+do **not** return an empty or silent result. A silently-empty return (no
+findings, no verdict, zero resolved) is indistinguishable from a clean
+`COMPLIANT` pass, and the downstream style coverage gate
+(`verify-style-coverage.sh`) will block the parent with no clue why.
+
+Every termination MUST use the success shape above **or** this explicit
+failure shape — never a bare, empty return:
+
+```
+FAILED: {file} — {what failed}; tried: {channels}; coverage gate will block.
+```
+
+Example:
+
+```
+FAILED: src/routes/home/controller.js — snapshot missing under workareas/reviews/EUDPA-XXXXX/repos/{repo}; tried: file-diff cache, snapshot read; coverage gate will block.
+```

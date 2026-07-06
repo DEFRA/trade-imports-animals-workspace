@@ -176,3 +176,34 @@ the changelog field accepts "Not found"):
 ```
 PARTIAL: {package} → classified manual (risk=HIGH); changelog not located, treating conservatively
 ```
+
+---
+
+## Return value on failure
+
+The `PARTIAL` shape above is a **graceful degradation**, not a failure
+return: hydration failed for every channel, but you still wrote a
+`classification: manual` row, so the coverage gate is satisfied. Prefer it
+whenever you can still classify conservatively.
+
+Reserve the failure shape below for when you genuinely cannot write a
+classification at all — the context bundle directory is missing, or
+`packages-set-classification.sh` rejects every call. Do **not** return an
+empty or silent result: a silently-empty return leaves `classification`
+null, which is indistinguishable from an unprocessed package, and the
+classification coverage gate (`verify-classification-coverage.sh`, which
+fails iff any `classification == null`) will block the parent with no clue
+why.
+
+Every termination MUST use `DONE`, `PARTIAL`, or this explicit failure
+shape — never a bare, empty return:
+
+```
+FAILED: {package} — {what failed}; tried: {channels}; coverage gate will block.
+```
+
+Example:
+
+```
+FAILED: @hapi/hapi — context bundle directory missing under .context/@hapi__hapi; tried: bundle read, npm registry WebFetch, packages-set-classification.sh; coverage gate will block.
+```

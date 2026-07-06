@@ -241,3 +241,25 @@ Headline gap: <one-line summary>
 ```
 
 The parent session aggregates this into the audit summary table.
+
+## Return value on failure
+
+If you cannot produce the plan — the target `SKILL.md` is unreadable, the
+reference files are missing, or the output path can't be written — do
+**not** return an empty or silent result. A silently-empty return (no plan
+path, no pattern-gap count) is indistinguishable from a clean audit that
+found nothing, and the parent's audit summary table will carry a silent
+hole for this skill.
+
+Every termination MUST use the success shape above **or** this explicit
+failure shape — never a bare, empty return:
+
+```
+FAILED: {skill} — {what failed}; tried: {channels}; audit summary row will be missing.
+```
+
+Example:
+
+```
+FAILED: govuk-upgrade — SKILL.md unreadable at expected path; tried: Read on SKILL.md, Glob on references/; audit summary row will be missing.
+```
