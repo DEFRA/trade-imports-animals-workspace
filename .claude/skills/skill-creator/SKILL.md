@@ -154,6 +154,8 @@ the JSON payload's `targets[]`.
 Spawn `general-purpose` Task subagents in parallel (up to one per
 target). Each spawn prompt:
 
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
+
 ```
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/skill-creator/references/AUDITOR.md.
 

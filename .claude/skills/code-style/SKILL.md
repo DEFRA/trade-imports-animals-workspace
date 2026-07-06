@@ -121,6 +121,8 @@ And stop.
 **MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 100 in
 parallel via the Task tool with `subagent_type: general-purpose`.
 
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
+
 ### Spawn prompt template
 
 ```markdown
@@ -250,6 +252,8 @@ Spawn `general-purpose` Task subagents in parallel (up to 100), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
 `Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.`
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 ### Spawn prompt — REFRESH (List A)
 
