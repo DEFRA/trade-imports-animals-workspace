@@ -147,6 +147,9 @@ knobs that must use `host.docker.internal`, and the running-E2E recipe.
 ## Docs
 
 - `docs/` — project documentation. Architecture notes, ADRs, runbooks.
+- [`docs/adr/`](docs/adr/) — architecture decision records. See
+  [`docs/adr/0001-consolidate-workspace-docs-under-docs.md`](docs/adr/0001-consolidate-workspace-docs-under-docs.md)
+  for why `docs/` is the single canonical documentation root.
 - [`docs/agent-skills.md`](docs/agent-skills.md) — agentskills.io
   conventions used in this workspace (path conventions,
   `find_workspace_root` helper, subagent format, cross-host notes).
