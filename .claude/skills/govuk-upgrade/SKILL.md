@@ -119,6 +119,8 @@ Phase 2 delegates per-version analysis to `general-purpose` Task
 subagents following `references/VERSION_PLANNER.md` — one instance per
 version stub, parallel fan-out.
 
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
+
 Present its report verbatim. **Gate:** "Phase 2 complete. Walk the
 plans before Phase 3?"
 

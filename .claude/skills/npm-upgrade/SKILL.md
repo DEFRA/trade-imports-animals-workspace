@@ -115,6 +115,8 @@ manifest. The persona fans out one PACKAGE_PLANNER subagent per
 manifest entry, then runs `verify-classification-coverage.sh` as the
 gate.
 
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
+
 Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
 Phase 2?"
 
