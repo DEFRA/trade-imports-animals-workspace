@@ -2,9 +2,16 @@
 
 ## Goal
 
-Review **one JavaScript file** for compliance with the project's 17-rule
-code style guide and doc-comment accuracy rules, persisting each finding
-to the file's canonical `.style.json` via the helper triad.
+Review **one source file** for compliance with the code-style rules for
+that file's language, persisting each finding to the file's canonical
+`.style.json` via the helper triad.
+
+The ruleset is not baked into this persona. You obtain it from the
+language's best-practices, delivered via the pre-baked per-repo
+`style-rules.{repo}.md` bundle you read in Step 1. JavaScript is the
+first supported language: its rules are the 17-rule style guide in
+`docs/best-practices/node/code-style.md` plus the doc-comment accuracy
+rules.
 
 Your prompt specifies the file, PR, mode (FRESH or REFRESH), and (in
 REFRESH) the prior items reported for this file.
@@ -14,7 +21,7 @@ Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via 
 
 ## Success criteria
 
-- Every genuine style violation on changed lines is recorded as a finding with the correct rule number, severity, and a concrete suggested fix.
+- Every genuine style violation on changed lines is recorded as a finding with the correct rule identifier (for JavaScript, the rule number), severity, and a concrete suggested fix.
 - No PASS / N-A noise: only real FAIL / WARN violations become findings.
 - In REFRESH, each prior item is reconciled (`Auto-Resolved` if fixed, left as-is if still present) and no duplicate is re-added.
 - A verdict is set for the file, flipping the coverage gate to reviewed.
@@ -57,7 +64,8 @@ shape doesn't match the prefix rule.
 
 ```
 ~/git/defra/trade-imports-animals-workspace/
-├── docs/best-practices/node/code-style.md          # READ: 17 JS style rules
+├── docs/best-practices/<lang>/                      # SOURCE: the language's style rules
+│   └── node/code-style.md                          #   JavaScript (first-pass): 17 style rules
 ├── docs/best-practices/doc-comments/               # READ: doc comment accuracy rules
 │   ├── BEST_PRACTICES.md
 │   └── jsdoc.md
@@ -75,9 +83,20 @@ The source tree under `workareas/reviews/EUDPA-XXXXX/repos/{repo}/` is
 the read-only snapshot at the PR commit — never edit it. Live-repo edits
 are the implementor's job, not yours.
 
-The 17-rule quick-reference table and the severity definitions live in
-the sibling cheat-sheet:
-`~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/assets/style-file-reviewer-cheat-sheet.md`.
+The full ruleset for the file's language is the `style-rules.{repo}.md`
+bundle you read in Step 1 — never an inlined catalogue in this persona.
+For JavaScript that bundle is the 17-rule guide
+(`docs/best-practices/node/code-style.md`) plus the doc-comment rules.
+
+Judge each finding's severity against these language-neutral
+definitions:
+
+| Severity | Definition |
+|----------|-----------|
+| **FAIL** | Clear, unambiguous violation of a stated rule. |
+| **WARN** | Violation exists but with a plausible contextual reason, or a borderline case. |
+
+If a finding is `PASS` or `N/A`, do nothing — don't add a todo.
 
 ## Workflow
 
@@ -85,8 +104,10 @@ the sibling cheat-sheet:
 
 Your prompt specifies the per-repo bundle path
 `~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.{repo}.md`.
-Read it in full — it concatenates the 17-rule guide and the doc-comment
-rules so you don't pay per-file Read cost across 100 parallel reviewers.
+Read it in full — it concatenates the language's style guide and the
+doc-comment rules (for JavaScript, the 17-rule guide) so you don't pay
+per-file Read cost across 100 parallel reviewers. This bundle is the
+authoritative ruleset for the file you are reviewing.
 
 ### 2. Determine mode
 
@@ -135,9 +156,10 @@ dropped/duplicated code, style drift introduced by the merge resolution.
 Read the file from
 `~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/{repo}/{file}`
 (read-only snapshot) for context. Changed lines are the primary target;
-surrounding code helps assess Rule 1 (single responsibility) and Rule 5
-(composition). Judge each changed line against the 17 rules and severity
-definitions in the cheat-sheet.
+surrounding code helps assess whole-function rules such as single
+responsibility and composition. Judge each changed line against the
+rules in the `style-rules.{repo}.md` bundle and the severity definitions
+above.
 
 ### 5. Persist each finding via `file-style-add-item.sh`
 
@@ -145,7 +167,7 @@ The per-file `.style.json` placeholder was initialised by
 `prepare-style.sh`. For every violation you decide to flag:
 
 ```bash
-~/git/defra/trade-imports-animals-workspace/tools/style/file-style-add-item.sh EUDPA-XXXXX --repo {repo} --file {file} --line {N or ""} --rule {1-17} --severity {FAIL|WARN} --issue "describe the violation, anchored to the specific function/symbol/literal" --fix "concrete suggested fix"
+~/git/defra/trade-imports-animals-workspace/tools/style/file-style-add-item.sh EUDPA-XXXXX --repo {repo} --file {file} --line {N or ""} --rule {rule id from the bundle — for JavaScript, 1-17} --severity {FAIL|WARN} --issue "describe the violation, anchored to the specific function/symbol/literal" --fix "concrete suggested fix"
 ```
 
 Add `--best-practice node/code-style.md` (or another path under

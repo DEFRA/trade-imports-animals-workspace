@@ -6,7 +6,12 @@ allowed-tools: [Bash, Read, Glob, Grep, Task]
 argument-hint: 'EUDPA-XXXXX'
 ---
 
-JS code-style review and remediation for EUDP Live Animals tickets.
+Code-style review and remediation for EUDP Live Animals tickets.
+JavaScript is the first supported language. The per-file reviewer
+persona (`references/STYLE_FILE_REVIEWER.md`) is written
+language-neutrally and takes its ruleset from the pre-baked per-repo
+`style-rules.{repo}.md` bundle rather than an inlined catalogue; the
+file-discovery and rule-bundling pipeline is JavaScript-only today.
 
 Per-repo state lives in
 `~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXX/items.{repo}.json`
