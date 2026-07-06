@@ -39,6 +39,7 @@ Skills live at `.claude/skills/<name>/SKILL.md` and are auto-discovered. Route b
 | `govuk-upgrade` | "upgrade govuk-frontend", "govuk upgrade", "walk govuk EUDPA-X", "implement govuk EUDPA-X" | Per-version govuk-frontend upgrade with CHANGELOG-driven plans (JSON-state, dispatcher, walker). |
 | `skill-creator` | "scaffold skill `<name>`", "skill-create `<name>`", "new workspace skill `<name>`", "audit skill `<name>`", "audit skills" | Meta-skill — CREATE scaffolds a new workspace skill; AUDIT walks an existing skill against the 8-pattern checklist. |
 | `understanding-check` | "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X" | Pre-merge author-understanding check on an AI-assisted PR. |
+| `test-stack-analysis` | "test-stack-analysis EUDPA-X", "find test gaps EUDPA-X", "test pyramid analysis EUDPA-X", "analyse test coverage EUDPA-X", "check test pyramid for `<feature>`" | Given a feature description, ticket, or Confluence URL, finds test-pyramid gaps and cross-level duplication across all 8 repos with file:line evidence. One-shot, report-only. |
 
 Per-skill fan-out worker personas are catalogued in [`docs/reference/worker-references.md`](docs/reference/worker-references.md).
 
