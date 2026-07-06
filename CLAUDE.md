@@ -2,7 +2,7 @@
 
 This is a local workspace aggregating 8 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
-The volatile catalogues (make targets, common workflows, the `tools/` index, worker references, the workareas map) live as topic files under [`.claude/rules/`](.claude/rules/) and are pulled into context via `@import` at the bottom of this file. The load-bearing rules below are kept **inline** so they never depend on import resolution.
+The load-bearing rules that agents must always honour are kept **inline** below. The volatile reference catalogues (make targets, common workflows, the `tools/` index, worker references, the workareas map) live as topic files under [`docs/reference/`](docs/reference/) — see the [Reference catalogues](#reference-catalogues) pointer near the foot of this file.
 
 ## Load-bearing rules
 
@@ -40,7 +40,7 @@ Skills live at `.claude/skills/<name>/SKILL.md` and are auto-discovered. Route b
 | `skill-creator` | "scaffold skill `<name>`", "skill-create `<name>`", "new workspace skill `<name>`", "audit skill `<name>`", "audit skills" | Meta-skill — CREATE scaffolds a new workspace skill; AUDIT walks an existing skill against the 8-pattern checklist. |
 | `understanding-check` | "interview EUDPA-X", "check understanding EUDPA-X", "understanding-check EUDPA-X" | Pre-merge author-understanding check on an AI-assisted PR. |
 
-Per-skill fan-out worker personas are catalogued in [`.claude/rules/worker-references.md`](.claude/rules/worker-references.md).
+Per-skill fan-out worker personas are catalogued in [`docs/reference/worker-references.md`](docs/reference/worker-references.md).
 
 ## Repo map
 
@@ -135,12 +135,12 @@ knobs that must use `host.docker.internal`, and the running-E2E recipe.
 
 **Before committing code changes:** run `sonar analyze --staged` (requires `sonar` CLI installed and `sonar auth login` completed) and fix any BLOCKER or CRITICAL findings before committing. Also run it when encountering CI failures, test failures, or unexpected behaviour. The MCP server can also be queried directly to fetch existing issues for a project.
 
-## Reference topics (imported)
+## Reference catalogues
 
-The volatile catalogues live as topic files under `.claude/rules/` and are pulled into context via `@import`. Each is one focused topic; edit the topic file, not this list.
+The volatile catalogues live as topic files under [`docs/reference/`](docs/reference/) — read the relevant one on demand; edit the topic file, not this list:
 
-@.claude/rules/make-targets.md
-@.claude/rules/workflows.md
-@.claude/rules/tools-index.md
-@.claude/rules/worker-references.md
-@.claude/rules/workareas.md
+- [`docs/reference/make-targets.md`](docs/reference/make-targets.md) — every `make` target and what it does.
+- [`docs/reference/workflows.md`](docs/reference/workflows.md) — common workflows (setup, daily update, running the stack, tests).
+- [`docs/reference/tools-index.md`](docs/reference/tools-index.md) — the full `tools/` script index (args + purpose).
+- [`docs/reference/worker-references.md`](docs/reference/worker-references.md) — per-skill fan-out worker personas.
+- [`docs/reference/workareas.md`](docs/reference/workareas.md) — the `workareas/` runtime-cache map.

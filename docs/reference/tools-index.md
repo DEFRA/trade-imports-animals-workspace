@@ -14,7 +14,7 @@ Shared shell scripts called by skills via
 | **jira** | | |
 | `tools/jira/ticket.sh` | EUDPA-X [full\|summary\|json] | Get ticket |
 | `tools/jira/comments.sh` | EUDPA-X | Get comments |
-| `tools/jira/create-ticket.sh` | [-t Type][-p Parent][-P Priority][-l Label][-a] "Summary" | Create ticket |
+| `tools/jira/create-ticket.sh` | [-t Type][-p Parent][-P Priority][-l Label][-a] "Summary" | Create ticket.<br>e.g. `tools/jira/create-ticket.sh -t Task -p EUDPA-215 "Add boundary notes"`<br>Boundary: performs the live Jira creation (vs `ticket-creator/prepare-ticket-creation.sh`, which only pre-caches epics/capabilities beforehand). |
 | `tools/jira/add-subtask.sh` | EUDPA-X "Summary" ["Desc"] | Add subtask |
 | `tools/jira/add-comment.sh` | EUDPA-X "Comment" | Add comment |
 | `tools/jira/update-ticket.sh` | EUDPA-X field=value | Update fields |
@@ -50,15 +50,15 @@ Shared shell scripts called by skills via
 | `tools/review/file-review-init.sh` | EUDPA-X --repo R --file F --commit SHA --pr N --mode M | Initialise per-file `.review.json` placeholder |
 | `tools/review/file-review-add-item.sh` | EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..." [--best-practice PATH] | Append a finding to a per-file JSON |
 | `tools/review/file-review-set-verdict.sh` | EUDPA-X --repo R --file F --verdict V [--reason "..."] | Set verdict (marks file as reviewed) |
-| `tools/review/aggregate-file-reviews.sh` | EUDPA-X --repo R [--write-items] [--section ...] [--json] | Populate `items.{repo}.json` + emit File Analysis Summary / Items markdown |
+| `tools/review/aggregate-file-reviews.sh` | EUDPA-X --repo R [--write-items] [--section ...] [--json] | Populate `items.{repo}.json` + emit File Analysis Summary / Items markdown.<br>e.g. `tools/review/aggregate-file-reviews.sh EUDPA-1 --repo backend --write-items`<br>Boundary: without `--write-items` it only emits markdown to stdout; `--write-items` (re)writes `items.{repo}.json` and renumbers IDs — FRESH population only, prior dispositions/status not preserved. |
 | `tools/review/review-items.sh` | EUDPA-X [--repo R] [--filter ...] [--status ...] [--json] | List items from `## Items` table |
-| `tools/review/review-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition (auto-sets Status) |
-| `tools/review/review-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only |
+| `tools/review/review-mark.sh` | EUDPA-X --repo R --item N --disposition V [--note "..."] | Set Disposition (auto-sets Status).<br>e.g. `tools/review/review-mark.sh EUDPA-1 --repo backend --item 3 --disposition Fix`<br>Boundary: sets Disposition and lets it drive Status (vs `review-set-status.sh`, which sets Status alone). |
+| `tools/review/review-set-status.sh` | EUDPA-X --repo R --item N --status V [--note "..."] | Set Status only.<br>e.g. `tools/review/review-set-status.sh EUDPA-1 --repo backend --item 3 --status Done`<br>Boundary: sets Status directly and leaves Disposition untouched (vs `review-mark.sh`, which sets Disposition and derives Status). |
 | `tools/review/review-add-item.sh` | EUDPA-X --repo R --file F --line L --severity S --category C --issue "..." --fix "..." | Append new item; prints new ID |
 | `tools/review/review-counts.sh` | EUDPA-X [--repo R] [--json] | Summary by Disposition+Status |
 | `tools/review/render-items.sh` | EUDPA-X --repo R | Render `items.{repo}.json` as the `## Items` markdown view |
-| `tools/review/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh: pull + diff + lists A/B/C/D |
-| `tools/review/refresh/reconcile.sh` | EUDPA-X --repo R [--dry-run] [--json] [--force] | Refresh Step R5 — fold `.review.json` findings into items.json + emit Fix+Done spot-check advisory |
+| `tools/review/refresh/scope.sh` | EUDPA-X [--repo R] [--no-pull] [--write-snapshot] [--human] | Refresh: pull + diff + lists A/B/C/D.<br>e.g. `tools/review/refresh/scope.sh EUDPA-1 --write-snapshot`<br>Boundary: read-only — classifies files into the refresh work-lists (vs `reconcile.sh`, which mutates `items.{repo}.json`). |
+| `tools/review/refresh/reconcile.sh` | EUDPA-X --repo R [--dry-run] [--json] [--force] | Refresh Step R5 — fold `.review.json` findings into items.json + emit Fix+Done spot-check advisory.<br>e.g. `tools/review/refresh/reconcile.sh EUDPA-1 --repo backend`<br>Boundary: runs after `scope.sh` and appends new findings into `items.{repo}.json` (vs `scope.sh`, which only lists them). |
 | `tools/review/refresh/pull-repos.sh` | EUDPA-X [--repo R] [--json] | Refresh helper |
 | `tools/review/refresh/list-merge-resolved.sh` | REPO_DIR PRIOR_SHA HEAD_SHA [--tsv\|--json] | Refresh helper |
 | `tools/review/refresh/list-coverage-gaps.sh` | REVIEW_DIR REPO PR_NUM [--tsv\|--json] | Refresh helper |
@@ -104,17 +104,17 @@ Shared shell scripts called by skills via
 | `tools/govuk/version-mark-failed.sh` | --run-id TICKET --repo R --version V --reason "..." | Phase 3: mark version failed |
 | `tools/govuk/render-version-plan.sh` | --run-id TICKET --repo R --version V | Markdown view of one version's plan |
 | `tools/govuk/list-plan-summaries.sh` | --run-id TICKET [--repo R] [--json] | PLAN_WALKER: one summary row per pending version |
-| `tools/govuk/list-plans.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Filterable Phase 1/2 status |
-| `tools/govuk/upgrade-status.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Combined Phase 1/2/3 status (delegates to list-plans.sh) |
+| `tools/govuk/list-plans.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Filterable Phase 1/2 status.<br>e.g. `tools/govuk/list-plans.sh --run-id EUDPA-1 --filter todo`<br>Boundary: Phase 1/2 planning/classification view only (vs `upgrade-status.sh`, which also folds in the Phase 3 implementation view). |
+| `tools/govuk/upgrade-status.sh` | --run-id TICKET [--repo R] [--filter F] [--sort-semver] [--json] | Combined Phase 1/2/3 status (delegates to list-plans.sh).<br>e.g. `tools/govuk/upgrade-status.sh --run-id EUDPA-1 --filter done`<br>Boundary: combined planning + Phase 3 implementation view (vs `list-plans.sh`, which stops at Phase 1/2 classification). |
 | **refine** | | |
-| `tools/refine/prepare-refinement.sh` | EUDPA-X [--json] | Fetch Jira ticket + comments + Confluence links, seed `.refinement-meta.json` (verdict=null), stub `review.md` |
-| `tools/refine/refine-finalize.sh` | EUDPA-X --verdict V [--reason "..."] | Stamp verdict (READY \| NEEDS WORK \| SPIKE REQUIRED) + `completed_at` onto `.refinement-meta.json` |
+| `tools/refine/prepare-refinement.sh` | EUDPA-X [--json] | Fetch Jira ticket + comments + Confluence links, seed `.refinement-meta.json` (verdict=null), stub `review.md`.<br>e.g. `tools/refine/prepare-refinement.sh EUDPA-1`<br>Boundary: Step 1 setup — fetches inputs and seeds verdict=null (vs `refine-finalize.sh`, which stamps the verdict at Step 5). |
+| `tools/refine/refine-finalize.sh` | EUDPA-X --verdict V [--reason "..."] | Stamp verdict (READY \| NEEDS WORK \| SPIKE REQUIRED) + `completed_at` onto `.refinement-meta.json`.<br>e.g. `tools/refine/refine-finalize.sh EUDPA-1 --verdict READY`<br>Boundary: Step 5 — stamps the final verdict after `review.md` is filled (vs `prepare-refinement.sh`, which does the Step 1 setup). |
 | **ticket** | | |
 | `tools/ticket/prepare-plan.sh` | EUDPA-X [--repos r1,r2] [--json] | Pre-bake `ticket.md` + `.plan-meta.json` + per-repo `best-practices/<repo>.md` for PLANNER |
 | `tools/ticket/prepare-implement.sh` | EUDPA-X [--repo R] [--json] | Assert plan, re-validate detect-tech, cache prior PR diff, emit `.implement-meta.json` |
 | `tools/ticket/setup-branch.sh` | EUDPA-X --repo R --slug S [--base B] | Fetch → checkout base → pull → checkout -b `feature/EUDPA-X-<slug>` in one dispatch |
 | **ticket-creator** | | |
-| `tools/ticket-creator/prepare-ticket-creation.sh` | [--board ID] [--cap-page ID] | Refresh `workareas/ticket-creation/.prereqs/` with active EUDPA epics + EUDP capability codes |
+| `tools/ticket-creator/prepare-ticket-creation.sh` | [--board ID] [--cap-page ID] | Refresh `workareas/ticket-creation/.prereqs/` with active EUDPA epics + EUDP capability codes.<br>e.g. `tools/ticket-creator/prepare-ticket-creation.sh`<br>Boundary: only refreshes the prereqs cache for the interview; creates nothing (vs `jira/create-ticket.sh`, which actually creates the ticket in Jira). |
 | **skill-creator** | | |
 | `tools/skill-creator/start-skill-creator.sh` | "<trigger phrase>" | Step 0 dispatcher — parses trigger, emits `MODE: CREATE` / `MODE: AUDIT_ONE` / `MODE: AUDIT_ALL` + JSON payload |
 | `tools/skill-creator/interview-add-answer.sh` | --run-id NAME --field PATH --value JSON | CREATE — atomic mutation of `decisions.json` (one shape question per call) |
