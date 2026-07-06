@@ -319,7 +319,7 @@ while IFS= read -r helper; do
     cat > "$sh.tmp" <<EOF
 #!/bin/bash
 # TODO — one-line purpose of this helper.
-# Boundary: TODO — when to use this vs its sibling helper(s).
+# Boundary (only if this helper has a sibling) — TODO: when to use this vs that sibling.
 #
 # Usage:
 #   $helper.sh --run-id <id> [TODO other flags]
