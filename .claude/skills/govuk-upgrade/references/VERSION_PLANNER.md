@@ -158,3 +158,27 @@ After your last helper call, the version entry in
 
 Print a one-line confirmation in your final message:
 `Classified {version}: {todo|noop} ({N} files)`.
+
+---
+
+## Return value on failure
+
+If you cannot classify the version — the pre-baked changelog file is
+missing, the repo scan cannot run, or the `version-*` helpers reject every
+call — do **not** return an empty or silent result. A silently-empty
+return (no classification, no changes) is indistinguishable from a clean
+`noop`, and the downstream classification coverage gate will block the
+parent with no clue why.
+
+Every termination MUST use the success confirmation above **or** this
+explicit failure shape — never a bare, empty return:
+
+```
+FAILED: {version} — {what failed}; tried: {channels}; coverage gate will block.
+```
+
+Example:
+
+```
+FAILED: 5.4.0 — pre-baked changelog file missing under workareas/govuk-upgrades/{run-id}/{repo-name}; tried: changelog read, best-practices bundle; coverage gate will block.
+```
