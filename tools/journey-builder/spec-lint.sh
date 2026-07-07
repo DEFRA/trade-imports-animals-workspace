@@ -48,6 +48,12 @@ jq -e . "$conflicts" > /dev/null || { echo "ERROR: $conflicts is not valid JSON"
 if [[ "$FORMAT" == true ]]; then
     jq '.' "$spec" > "$spec.tmp" && mv "$spec.tmp" "$spec"
     jq '.' "$conflicts" > "$conflicts.tmp" && mv "$conflicts.tmp" "$conflicts"
+    # The spec lives in the frontend repo, whose pre-commit hook runs
+    # prettier --check; finish with prettier so the two formatters agree.
+    worktree_root="$(jq -r '.worktree' "$meta")"
+    if [[ -x "$worktree_root/node_modules/.bin/prettier" ]]; then
+        "$worktree_root/node_modules/.bin/prettier" --log-level warn --write "$spec" "$conflicts"
+    fi
 fi
 
 # --- obligation ids: unique + path-safe -----------------------------------
