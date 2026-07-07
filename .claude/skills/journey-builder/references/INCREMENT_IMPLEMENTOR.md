@@ -28,6 +28,11 @@ you need is on disk; do not ask questions.
 - NEVER author a page/section `gate:` — gates derive from collects (T11).
   An authored gate is only for a flow-level fact the model cannot express,
   and that decision belongs to a design gate, not you.
+- Changes under `engine/`, `flow/` (except flow.js) or `lib/` are
+  exceptional: only when the spec's declared semantics need it, kept
+  backwards compatible, unit-tested, AND recorded as a new entry in the
+  prototype's `DESIGN-DELTA.md` in the same commit. If the change would
+  alter existing behaviour, STOP and report instead.
 - `mandate.enforcedAt`: `submit` → the field may be left blank on Save and
   Continue (obligation stays `required: true` for status roll-up; the
   controller treats blank as "not answered yet", not a validation error).
