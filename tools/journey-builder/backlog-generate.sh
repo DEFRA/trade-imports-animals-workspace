@@ -79,7 +79,21 @@ jq -n \
                 ( (.item // [])[] | $byId[.] | select(. != null) | .modelGap // empty ) )
         ] | unique;
 
-    [ $spec.sections[] as $sec | $sec.pages[] | {section: $sec.id, page: .} ] as $pages
+    # A section containing a collection page folds its empty-collects sibling
+    # pages into that increment as entryPages (they are the collection entry
+    # sub-pages — e.g. species select / details / identification under
+    # commodityLines); they are not independent increments.
+    [ $spec.sections[] as $sec
+      | ([ $sec.pages[] | select([ obs(.collects)[] | select(.kind == "collection") ] | length > 0) ]) as $collPages
+      | ([ $sec.pages[] | select(.collects == []) | {id, slug, title} ]) as $emptyPages
+      | $sec.pages[]
+      | . as $pg
+      | if ($collPages | length) > 0 and ([ obs($pg.collects)[] | select(.kind == "collection") ] | length) > 0
+          then {section: $sec.id, page: $pg, entryPages: $emptyPages}
+        elif ($collPages | length) > 0 and ($pg.collects == [])
+          then empty
+        else {section: $sec.id, page: $pg, entryPages: []} end
+    ] as $pages
     | [ $pages[]
         | . as $p
         | (directGaps($p.page.collects)) as $direct
@@ -88,14 +102,16 @@ jq -n \
             section: $p.section, page: $p.page.id, slug: $p.page.slug,
             obligations: $p.page.collects,
             directGaps: $direct, deferredNested: $nested }
+          + (if ($p.entryPages | length) > 0 then {entryPages: $p.entryPages} else {} end)
       ] as $pageIncs
 
     # step 1: gap-free pages (nested-only gaps ride along with a deferral note)
     | [ $pageIncs[] | select(.directGaps | length == 0)
         | { type, section, page, slug, obligations,
             milestone: (if .section == "origin" then "M0" else "M1" end) }
+          + (if (.entryPages // [] | length) > 0 then { entryPages } else {} end)
           + (if (.deferredNested | length) > 0
-             then { deferredNested, note: ("Implement WITHOUT nested collection(s) " + (.deferredNested | join(", ")) + " — they arrive in M2 behind the model-extension gate.") }
+             then { deferredNested, note: ("Implement WITHOUT nested collection(s) " + (.deferredNested | join(", ")) + " — they arrive in M2 behind the model-extension gate. Entry sub-pages that exist only for the deferred collection (e.g. animal identification) also wait for M2.") }
              else {} end)
       ] as $step1
 
