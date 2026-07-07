@@ -58,13 +58,14 @@ jq -n \
     | ($spec.obligations | map({key: .id, value: .}) | from_entries) as $byId
     # transitive obligation closure for a page: collects + item members (depth 2)
     | def closure($ids):
-        [ $ids[] as $id
-          | $byId[$id]
-          | ., (.item // [])[] as $m | $byId[$m]
-          | ., ((.item // [])[] as $mm | $byId[$mm])
-        ] | map(select(. != null)) | unique_by(.id);
+        [ $ids[]
+          | $byId[.]
+          | select(. != null)
+          | ., ( (.item // [])[] | $byId[.] | select(. != null)
+                 | ., ( (.item // [])[] | $byId[.] | select(. != null) ) )
+        ] | unique_by(.id);
     # flatten pages in section order
-    | [ $spec.sections[] as $sec | $sec.pages[] | {section: $sec.id, page: .} ] as $pages
+    [ $spec.sections[] as $sec | $sec.pages[] | {section: $sec.id, page: .} ] as $pages
     | [ $pages[]
         | . as $p
         | (closure($p.page.collects)) as $obs
