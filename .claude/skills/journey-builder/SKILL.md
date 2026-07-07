@@ -1,6 +1,6 @@
 ---
 name: journey-builder
-description: Build the real live-animals journey prototype (prototypes/standalone/live-animals in trade-imports-animals-frontend) on the obligations-v2 page-owned-spine model. Digest mode (available now) distils the requirement sources — Confluence "Live Animals Data Fields V4", the src/server skeleton journey, the interaction-design canvas — into a canonical machine-readable spec (journey-spec.json + conflicts.json) reviewed at a spec gate. Build modes (scaffold / add-page / add-field / add-collection / backlog / build loop) arrive with Phase 3 once the obligations-v2-spike refactor settles. Use when the user asks to digest journey requirements, build/refresh the live-animals journey spec, or run the journey-builder loop (triggers: "digest journey requirements", "journey spec", "journey-builder", "build the live-animals prototype"). NOT for the car-insurance spike itself or for generic ticket work.
+description: Build the real live-animals journey prototype (prototypes/standalone/live-animals in trade-imports-animals-frontend) on the obligations-v2 page-owned-spine model. Digest mode distils the requirement sources — Confluence "Live Animals Data Fields V4", the src/server skeleton journey, the interaction-design canvas — into a canonical machine-readable spec (journey-spec.json + conflicts.json) reviewed at a spec gate. Backlog mode derives ordered increments from the spec; build mode runs the serial implementor loop (one INCREMENT_IMPLEMENTOR subagent per increment, parent re-verifies, commit-or-rollback), halting at model-extension gates and milestone walk-throughs. Use when the user asks to digest journey requirements, regenerate the backlog, run/resume the build loop, or verify the prototype (triggers: "digest journey requirements", "journey spec", "journey-builder", "build the live-animals prototype", "run the loop"). NOT for the car-insurance spike itself or for generic ticket work.
 ---
 
 # journey-builder
@@ -38,17 +38,42 @@ Programme plan: `~/.claude/plans/so-in-the-frontend-reflective-yeti.md`.
    inline comments, provisional copy). Commit on the spec branch only
    after Sam approves.
 
-## Modes: scaffold / add-page / add-field / add-collection / backlog / build / verify
+## Mode: backlog
 
-Not yet built — Phase 3 of the programme plan. The vendored baseline
-lives at `prototypes/standalone/live-animals/` (full copy of the spike
-@1d0a904 incl. the car-insurance domain as working baseline — see its
-`PROVENANCE.md`). The deterministic touch-lists come from the vendored
-`docs/add-a-page.md`, `docs/add-a-field.md`, `docs/add-a-collection.md`
-(the former EXTENDING.md, split post-refactor). Verify with
-`npm run test:live-animals`; note the T11 rule: never author page/section
-gates — they derive from collects; authored `gate:` is the exception for
-flow-level facts only.
+`tools/journey-builder/backlog-generate.sh EUDPA-X` derives
+`workareas/journey-builder/EUDPA-X/backlog.json` from the spec:
+one increment per page in section order (add-page / add-collection),
+model-extension increments (`gate: "sam"`, born blocked) before the first
+page needing each modelGap, then the car-domain removal tail
+(remove-car-section per baseline section + repoint-test-fixtures) — the
+vendored baseline ships the car domain to keep the engine-test net green;
+see `prototypes/standalone/live-animals/PROVENANCE.md`. Idempotent —
+re-running preserves statuses. Inspect with `backlog-counts.sh` /
+`jq` over the file.
+
+## Mode: build (the loop)
+
+Serial by design — increments edit shared files (registry, flow, hub, CYA).
+
+1. `tools/journey-builder/next-increment.sh EUDPA-X --claim` — pops the
+   first runnable todo (deps done) and marks it inprogress; exit 3 = dry.
+2. If the increment has `gate: "sam"` or closes a milestone → STOP, present
+   to Sam (model-extension design panel / milestone walk-through).
+3. Spawn ONE `general-purpose` Task subagent:
+   "Follow ~/git/defra/trade-imports-animals-workspace/.claude/skills/journey-builder/references/INCREMENT_IMPLEMENTOR.md
+   for run-id EUDPA-X, increment <id>." The persona owns the touch-lists
+   (vendored `docs/add-a-{page,field,collection}.md`), the enforcedAt
+   semantics, the never-author-gates rule (T11), and commit/rollback.
+4. Parent re-verifies: `tools/journey-builder/verify-increment.sh EUDPA-X`
+   — never trust the worker's green. Mismatch → rollback + failed.
+5. Loop to 1. Halt early on 3 consecutive failures (systemic signal).
+6. Per completed section run `verify-increment.sh EUDPA-X --e2e`; per
+   milestone: full E2E + Sam walk-through.
+
+## Mode: verify
+
+`tools/journey-builder/verify-increment.sh EUDPA-X [--e2e]` — unit suite +
+prettier + eslint over the prototype (log at `<workarea>/.verify.log`).
 
 ## Tools
 
