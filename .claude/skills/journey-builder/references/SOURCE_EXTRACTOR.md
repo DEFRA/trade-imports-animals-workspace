@@ -49,10 +49,12 @@ For every data row emit a `field` item:
 - `--json values='[...]'` when Conditions/Values enumerates options
 - `--field conditionsRaw="..."` when Conditions/Values holds prose conditions
 - Composite rows (a row whose Conditions/Values cell lists sub-fields, e.g.
-  Responsible Person for Load): emit the parent with `--field composite=true`
+  Responsible Person for Load): emit the parent with `--json composite=true`
   AND one field per sub-entry with `--field compositeOf=<parentId>`.
 - Address Block rows: emit with `--field fieldGroup=address`.
-- Out of Scope rows: emit with `--field outOfScope=true` and `--field descopedNote=` + `--field descopedDate=`.
+- Out of Scope rows: emit with `--json outOfScope=true` and `--field descopedNote=` + `--field descopedDate=`.
+- Booleans ALWAYS go via `--json K=true`, never `--field` (which produces
+  the string "true").
 - Unresolved inline comments (`inline-comment-marker` spans): attach the
   commented text to the relevant field as `--field inlineCommentContext="..."`,
   or a standalone `note` item if you cannot tie it to a field.
@@ -68,7 +70,7 @@ session keys in `common/constants/session-keys.js`; payload assembly in
   summarising the Joi schema, `--field sessionKey=`, `--field payloadPath=`
   from the notification payload shape)
 - per-species dynamic inputs (`noOfAnimals-{value}` etc.): one field with
-  `--field dynamicPerSpecies=true`
+  `--json dynamicPerSpecies=true`
 - provenance = repo-relative file path (add `:line` where useful)
 
 ### ixd-canvas (behaviour brief)

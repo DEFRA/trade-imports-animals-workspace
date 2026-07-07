@@ -44,7 +44,9 @@ consumable by the add-page skill and by `spec-lint.sh`'s coverage assert.
   notification-level collection. Wire `item` with `--json item='["id",...]'`.
 - **Conditionality**: conditionsRaw like "only when X = Yes" →
   `--json activatedBy='{"obligation":"x","equals":"yes"}'` +
-  `--field wipeOnExit=true` as the default proposal (wipe-vs-retain is an
+  `--json wipeOnExit=true` as the default proposal (booleans ALWAYS go via
+  `--json`, never `--field` — `--field` produces strings and spec-lint
+  rejects string booleans) (wipe-vs-retain is an
   open gate question — where a source implies retain, record a conflict).
 - **fieldGroups**: the Address Block is ONE fieldGroup (`spec-add-fieldgroup.sh`)
   plus per-usage obligations (consignor/destination/contact...) each with

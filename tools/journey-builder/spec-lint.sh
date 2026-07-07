@@ -108,6 +108,13 @@ coverage=$(jq -r '
       else empty end' "$spec")
 [[ -n "$coverage" ]] && while read -r c; do fail "$c"; done <<< "$coverage"
 
+# --- boolean facts must be real booleans ------------------------------------
+string_bools=$(jq -r '
+    [paths(type == "string" and (. == "true" or . == "false")) as $p
+     | select($p[-1] | IN("wipeOnExit","composite","outOfScope","renderOnly","system","provisionalCopy","dynamicPerSpecies"))
+     | $p | join(".")] | .[]' "$spec")
+[[ -n "$string_bools" ]] && while read -r s; do fail "string boolean at $s (use --json, not --field)"; done <<< "$string_bools"
+
 # --- activatedBy cycles -----------------------------------------------------
 cycle=$(jq -r '
     def prune:
