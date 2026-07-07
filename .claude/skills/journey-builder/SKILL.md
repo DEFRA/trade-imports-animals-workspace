@@ -40,9 +40,15 @@ Programme plan: `~/.claude/plans/so-in-the-frontend-reflective-yeti.md`.
 
 ## Modes: scaffold / add-page / add-field / add-collection / backlog / build / verify
 
-Not yet built — Phase 3 of the programme plan (blocked on the
-obligations-v2-spike refactor settling, then vendor-copy of the engine).
-The deterministic touch-lists come from the spike's `EXTENDING.md`.
+Not yet built — Phase 3 of the programme plan. The vendored baseline
+lives at `prototypes/standalone/live-animals/` (full copy of the spike
+@1d0a904 incl. the car-insurance domain as working baseline — see its
+`PROVENANCE.md`). The deterministic touch-lists come from the vendored
+`docs/add-a-page.md`, `docs/add-a-field.md`, `docs/add-a-collection.md`
+(the former EXTENDING.md, split post-refactor). Verify with
+`npm run test:live-animals`; note the T11 rule: never author page/section
+gates — they derive from collects; authored `gate:` is the exception for
+flow-level facts only.
 
 ## Tools
 
