@@ -1,22 +1,24 @@
 #!/bin/bash
 # Derive backlog.json (typed, ordered increments) from journey-spec.json.
 #
-# Rules (encoded here, not left to agent judgment):
-#   - one increment per spec page, in section order (linear dependsOn chain —
-#     increments edit shared files so the loop is serial by design)
-#   - type add-collection when the page collects a collection obligation,
-#     else add-page
-#   - milestone: M0 = the origin section's first page; M2 = pages whose
-#     obligations (incl. transitive collection members) carry modelGap;
-#     M1 = everything else
-#   - a model-extension increment (gate: sam) precedes the first page that
-#     needs each distinct modelGap
-#   - after all spec pages: one remove-car-section increment per baseline
-#     car-insurance section (vendored obligations-v2 domain), then a final
-#     repoint-test-fixtures increment (see PROVENANCE.md)
+# Ordering (M0-gate ruling 2026-07-07: model-extension gates go LAST so M1
+# churns unattended; commodityLines lands without its nested unit-level
+# identifiers):
+#   1. one increment per spec page in section order, EXCEPT pages any of
+#      whose directly-collected obligations (or their non-collection item
+#      fields) carry modelGap — those are deferred to step 4. A collection
+#      page whose gaps come only from NESTED collection members is included
+#      here with deferredNested listing what to leave out.
+#   2. remove-car-section per baseline car section (vendored obligations-v2
+#      domain — see live-animals/PROVENANCE.md)
+#   3. repoint-test-fixtures at the live-animals domain
+#   4. model-extension increments (gate: sam, born blocked), then the
+#      deferred gap pages and one add-nested-collection per deferredNested
+#   — all in one linear dependsOn chain (increments edit shared files).
 #
-# Idempotent: statuses/commits of existing increments are preserved by id;
-# regeneration only adds/updates definitions.
+# Milestones: origin page = M0; steps 1-3 = M1; step 4 = M2.
+# Idempotent: status/commit preserved by CONTENT key (type + subject),
+# not position — re-ordering must not resurrect or orphan statuses.
 #
 # Usage:
 #   backlog-generate.sh EUDPA-X [--json]
@@ -41,8 +43,7 @@ meta="$WORKAREA/.digest-meta.json"
 spec="$(jq -r '.spec_dir' "$meta")/journey-spec.json"
 target="$WORKAREA/backlog.json"
 
-# Baseline car-insurance sections to remove once the spec journey is in —
-# the section ids in the vendored flow/flow.js (see live-animals/PROVENANCE.md).
+# Section ids in the vendored flow/flow.js belonging to the car domain.
 CAR_SECTIONS='["email","about-you-and-your-vehicle","your-driving-and-cover","add-to-your-policy","named-driver","modifications","protected-ncd","get-your-quote"]'
 
 existing='{"increments":[]}'
@@ -56,56 +57,76 @@ jq -n \
     '
     $s[0] as $spec
     | ($spec.obligations | map({key: .id, value: .}) | from_entries) as $byId
-    # transitive obligation closure for a page: collects + item members (depth 2)
-    | def closure($ids):
-        [ $ids[]
-          | $byId[.]
-          | select(. != null)
-          | ., ( (.item // [])[] | $byId[.] | select(. != null)
-                 | ., ( (.item // [])[] | $byId[.] | select(. != null) ) )
-        ] | unique_by(.id);
-    # flatten pages in section order
+    | def obs($ids): [ $ids[] | $byId[.] | select(. != null) ];
+    def directGaps($ids):
+        [ obs($ids)[]
+          | .modelGap // empty,
+            ( (.item // [])[] | $byId[.] | select(. != null and .kind != "collection") | .modelGap // empty )
+        ] | unique;
+    def nestedGapCollections($ids):
+        [ obs($ids)[] | (.item // [])[] | $byId[.]
+          | select(. != null and .kind == "collection")
+          | select(
+              (.modelGap != null)
+              or ([ (.item // [])[] | $byId[.] | select(. != null) | .modelGap ] | any(. != null)) )
+          | .id
+        ] | unique;
+    def allGaps($ids):
+        [ obs($ids)[]
+          | .modelGap // empty,
+            ( (.item // [])[] | $byId[.] | select(. != null)
+              | .modelGap // empty,
+                ( (.item // [])[] | $byId[.] | select(. != null) | .modelGap // empty ) )
+        ] | unique;
+
     [ $spec.sections[] as $sec | $sec.pages[] | {section: $sec.id, page: .} ] as $pages
     | [ $pages[]
         | . as $p
-        | (closure($p.page.collects)) as $obs
-        | ($obs | map(select(.modelGap != null) | .modelGap) | unique) as $gaps
-        | {
-            type: (if ($obs | any(.kind == "collection")) then "add-collection" else "add-page" end),
-            section: $p.section,
-            page: $p.page.id,
-            slug: $p.page.slug,
+        | (directGaps($p.page.collects)) as $direct
+        | (nestedGapCollections($p.page.collects)) as $nested
+        | { type: (if (obs($p.page.collects) | any(.kind == "collection")) then "add-collection" else "add-page" end),
+            section: $p.section, page: $p.page.id, slug: $p.page.slug,
             obligations: $p.page.collects,
-            gaps: $gaps,
-            milestone: (if $p.section == "origin" then "M0" elif ($gaps | length) > 0 then "M2" else "M1" end)
-          }
+            directGaps: $direct, deferredNested: $nested }
       ] as $pageIncs
-    # inject model-extension increments before first user of each gap
-    | ( [ $pageIncs[] | .gaps[] ] | unique ) as $allGaps
-    | [ $pageIncs[]
-        | . as $inc
-        | ( if ($inc.gaps | length) > 0 then
-              [ $inc.gaps[] | {type: "model-extension", gap: ., milestone: "M2", gate: "sam"} ] + [$inc]
-            else [$inc] end )
-        | .[]
-      ]
-    # dedupe model-extension by gap, keeping first occurrence
-    | reduce .[] as $inc ([]; if $inc.type == "model-extension" and ([.[] | select(.type == "model-extension" and .gap == $inc.gap)] | length) > 0 then . else . + [$inc] end)
-    # car-domain removal tail
-    + [ $carSections[] | {type: "remove-car-section", section: ., milestone: "M1", gate: null} ]
-    + [ {type: "repoint-test-fixtures", milestone: "M1",
-         detail: "Re-point engine/test-support fixtures (seedNamedDriver etc.) and root model tests at the live-animals domain (commodityLines/animalIdentifiers)."} ]
-    # number + linear chain + merge preserved status
-    | to_entries
+
+    # step 1: gap-free pages (nested-only gaps ride along with a deferral note)
+    | [ $pageIncs[] | select(.directGaps | length == 0)
+        | { type, section, page, slug, obligations,
+            milestone: (if .section == "origin" then "M0" else "M1" end) }
+          + (if (.deferredNested | length) > 0
+             then { deferredNested, note: ("Implement WITHOUT nested collection(s) " + (.deferredNested | join(", ")) + " — they arrive in M2 behind the model-extension gate.") }
+             else {} end)
+      ] as $step1
+
+    # step 4: extensions + deferred pages + deferred nested collections
+    | ( [ $pageIncs[] | select(.directGaps | length > 0) ] ) as $gapPages
+    | ( [ ($gapPages[] | .directGaps[]),
+          ($pageIncs[] | .deferredNested[] as $n | allGaps([$n])[] )
+        ] | unique ) as $gaps
+    | ( [ $gaps[] | {type: "model-extension", gap: ., milestone: "M2", gate: "sam"} ] ) as $extensions
+    | ( [ $gapPages[] | {type, section, page, slug, obligations, milestone: "M2"} ] ) as $deferredPages
+    | ( [ $pageIncs[] | . as $p | .deferredNested[]
+          | {type: "add-nested-collection", collection: ., page: $p.page, section: $p.section, milestone: "M2"} ] | unique ) as $nestedIncs
+
+    | ( $step1
+        + [ $carSections[] | {type: "remove-car-section", section: ., milestone: "M1"} ]
+        + [ {type: "repoint-test-fixtures", milestone: "M1",
+             detail: "Re-point engine/test-support fixtures and root model tests at the live-animals domain (commodityLines etc.) per PROVENANCE.md."} ]
+        + $extensions + $deferredPages + $nestedIncs )
+
+    # number + linear chain + preserve status by content key
+    | def ckey: "\(.type):\(.page // .gap // .collection // .section // "tail")";
+    to_entries
     | map(
         (.key + 1) as $n
         | ("inc-" + ($n | tostring | if length < 3 then ("0" * (3 - length)) + . else . end)) as $id
         | .value
         + { id: $id,
             dependsOn: (if .key == 0 then [] else ["inc-" + (($n - 1) | tostring | if length < 3 then ("0" * (3 - length)) + . else . end)] end) }
-        | (first($existing.increments[]? | select(.id == $id)) // null) as $prev
+        | . as $inc
+        | (first($existing.increments[]? | select((. | "\(.type):\(.page // .gap // .collection // .section // "tail")") == ($inc | ckey))) // null) as $prev
         | . + { status: ($prev.status // "todo"), commit: ($prev.commit // null), failure_reason: ($prev.failure_reason // null) }
-        # a gated increment starts blocked until the gate is cleared
         | if (.gate == "sam" and .status == "todo") then .status = "blocked" else . end
       )
     | { schema_version: 1, run_id: $run_id, increments: . }
@@ -115,5 +136,5 @@ if [[ "$AS_JSON" == true ]]; then
     cat "$target"
 else
     jq -r '.increments | group_by(.milestone) | map("\(.[0].milestone): \(length) increments") | join(", ")' "$target"
-    jq -r '.increments[] | "\(.id) [\(.milestone)] \(.type) \(.page // .section // .gap // "") (\(.status))"' "$target"
+    jq -r '.increments[] | "\(.id) [\(.milestone)] \(.type) \(.page // .collection // .section // .gap // "") (\(.status))"' "$target"
 fi
