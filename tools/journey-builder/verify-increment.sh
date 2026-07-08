@@ -32,8 +32,10 @@ fail() { tail -30 "$log"; echo "VERIFY FAIL: $1 (full log: $log)"; exit 1; }
 echo "== verify $(date -u +%H:%M:%SZ) ==" > "$log"
 
 npm run --prefix "$worktree" test:live-animals >> "$log" 2>&1 || fail "unit tests"
-"$worktree/node_modules/.bin/prettier" --check "$worktree/prototypes/standalone/live-animals/**/*.{js,json,md}" >> "$log" 2>&1 || fail "prettier"
-"$worktree/node_modules/.bin/eslint" "$worktree/prototypes/standalone/live-animals" >> "$log" 2>&1 || fail "eslint"
+# eslint v9 flat config + prettier globs resolve from cwd, so run these from
+# the worktree root, not by passing an absolute path from wherever the caller sits.
+( cd "$worktree" && ./node_modules/.bin/prettier --check "prototypes/standalone/live-animals/**/*.{js,json,md}" ) >> "$log" 2>&1 || fail "prettier"
+( cd "$worktree" && ./node_modules/.bin/eslint "prototypes/standalone/live-animals" ) >> "$log" 2>&1 || fail "eslint"
 
 if [[ "$E2E" == true ]]; then
     npm run --prefix "$worktree" test:prototype -- live-animals >> "$log" 2>&1 || fail "e2e"
