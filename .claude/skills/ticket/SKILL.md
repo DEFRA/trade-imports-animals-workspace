@@ -1,6 +1,9 @@
 ---
 name: ticket
 description: 'Plan, implement, or refactor work for an existing Jira ticket (EUDPA-XXXXX) end-to-end. Use when the user asks to scope, plan, build, follow a plan for, refactor, tidy up, or clean code for a specific ticket (triggers: "plan EUDPA-", "how should I implement EUDPA-", "implement EUDPA-", "build EUDPA-", "follow the plan", "refactor", "tidy up", "clean"). Covers the full plan -> implement -> refactor cycle for one existing ticket. NOT for creating new tickets (use ticket-creator), NOT for assessing whether a ticket is ready for refinement (use ticket-refiner), NOT for reviewing an existing PR (use review or code-style).'
+context: inline
+allowed-tools: [Bash, Read, Edit, Write, Glob, Grep]
+argument-hint: 'EUDPA-XXXXX'
 ---
 
 Plan, implement, or refactor work for an existing Jira ticket. Three
@@ -31,24 +34,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Phases
 
@@ -105,11 +91,3 @@ applies to the repo being worked on.
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/best-practices/<repo>.md` | `prepare-plan.sh` writes — concatenated best-practices bundle per repo |
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.implement-meta.json` | `prepare-implement.sh` writes — re-validated tech + cached PR diffs |
 | `~/git/defra/trade-imports-animals-workspace/workareas/ticket-planning/EUDPA-X/.diffs/<repo>.diff` | `prepare-implement.sh` writes — cached PR diff (when a prior PR exists) |
-
-## Skill-level don'ts
-
-- Don't create new tickets — that's `ticket-creator`.
-- Don't assess refinement readiness — that's `ticket-refiner`.
-- Don't review someone else's PR — that's `review` / `code-style`.
-- Don't skip tests.
-- Don't proceed with red on main.

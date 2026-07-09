@@ -1,6 +1,9 @@
 ---
 name: review
 description: 'Code review for correctness, security, error handling, performance, best-practices and test coverage across all languages and repos (Java, Node.js, frontend, tests) for EUDP Live Animals tickets. Handles fresh first-pass review, refresh (re-review after further work, merge conflicts or coverage gaps), interactive walker that triages findings one item at a time, and batched implementor that applies queued fixes. Fans out per-file reviews, per-repo consistency analysis and per-item fixes to `general-purpose` Task subagents that follow worker personas under `references/`. Use when the user says "review EUDPA-XXX", "code review", "re-review EUDPA-XXX", "refresh review", "check fixes", "walk review EUDPA-XXX", "triage review", "implement review EUDPA-XXX", or "apply review fixes". NOT for JS lint/format/style findings — use the code-style skill for those.'
+context: fork
+allowed-tools: [Bash, Read, Glob, Grep, Task]
+argument-hint: 'EUDPA-XXXXX'
 ---
 
 Pre-merge code review for EUDP Live Animals tickets across all repos and
@@ -18,24 +21,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## What this skill is for
 
@@ -128,6 +114,8 @@ Proceed to Step 2.
 
 Spawn up to **100 in parallel** via the Task tool with
 `subagent_type: general-purpose`.
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 #### Spawn prompt template
 
@@ -422,6 +410,8 @@ Spawn `general-purpose` Task subagents in parallel (up to 100), one per
 entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
 `Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/review/references/FILE_REVIEWER.md.`
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 ### Spawn prompt — REFRESH (List A)
 

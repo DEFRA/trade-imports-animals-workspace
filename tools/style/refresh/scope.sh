@@ -1,9 +1,10 @@
 #!/bin/bash
 # Build the four refresh work-lists (A/B/C/D) for an EUDPA code-style review
-# in one shot, filtered to `.js` files. Mirrors review-side scope.sh but writes
-# snapshots to .style-meta.json#re_reviews[] and reuses review-side helpers
-# for git plumbing (the cloned repos live under workareas/reviews/$TICKET/repos
-# regardless of which review surface is being refreshed).
+# in one shot, filtered to reviewable source files (any path that file-topics.sh
+# maps to >= 1 topic). Mirrors review-side scope.sh but writes snapshots to
+# .style-meta.json#re_reviews[] and reuses review-side helpers for git plumbing
+# (the cloned repos live under workareas/reviews/$TICKET/repos regardless of
+# which review surface is being refreshed).
 #
 # Usage:
 #   scope.sh EUDPA-XXXXX [--repo R] [--no-pull] [--write-snapshot] [--human]
@@ -11,10 +12,10 @@
 # JSON output to stdout (default). With --human, prints a readable summary.
 #
 # Lists:
-#   A — changed `.js` files (re-review with file reviewer)
+#   A — changed source files (re-review with file reviewer)
 #   B — items in items.{repo}.json that are open AND in unchanged files
-#   C — `.js` files merge-resolved in window
-#   D — `.js` files in PR with no `.style.json` (coverage gap)
+#   C — source files merge-resolved in window
+#   D — source files in PR with no `.style.json` (coverage gap)
 #
 # `prior_sha` per repo = current_commit of the most recent .style-meta.json
 # re_reviews snapshot. Falls back to .review-meta.json#prs[].commit on the
@@ -28,6 +29,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REVIEW_REFRESH_DIR="$HOME/git/defra/trade-imports-animals-workspace/tools/review/refresh"
 PULL_SH="$REVIEW_REFRESH_DIR/pull-repos.sh"
 MERGE_SH="$REVIEW_REFRESH_DIR/list-merge-resolved.sh"
+FILE_TOPICS="$SCRIPT_DIR/../file-topics.sh"
 
 TICKET=""
 REPO_FILTER=""
@@ -83,11 +85,11 @@ fi
 
 # ---- Step 2: per-repo scope --------------------------------------------
 
-# Discover repos: union of .style-meta.json#js_files[].repo and
+# Discover repos: union of .style-meta.json#source_files[].repo and
 # .review-meta.json#prs[].repo (style metadata is the source of truth for which
-# repos have JS coverage, but PR/commit comes from review meta).
+# repos have reviewable coverage, but PR/commit comes from review meta).
 repos=()
-while IFS= read -r repo; do repos+=( "$repo" ); done < <(jq -r '.js_files[].repo' "$STYLE_META" | sort -u)
+while IFS= read -r repo; do repos+=( "$repo" ); done < <(jq -r '.source_files[].repo' "$STYLE_META" | sort -u)
 
 repos_json="[]"
 total_a=0; total_b=0; total_c=0; total_d=0
@@ -135,25 +137,37 @@ for repo in "${repos[@]}"; do
         no_changes=false
     fi
 
-    # Filter to .js files only
-    changed_js=$(printf '%s\n' "$changed_files" | awk '/\.js$/ && !/^[[:space:]]*$/' || true)
+    # Filter to mapped source files only (>= 1 topic via file-topics.sh)
+    changed_source=""
+    while IFS= read -r cf; do
+        [[ -z "$cf" ]] && continue
+        [[ -n "$("$FILE_TOPICS" "$cf")" ]] || continue
+        changed_source="${changed_source}${cf}"$'\n'
+    done <<<"$changed_files"
 
-    # Merge-resolved (.js only, filter from full output)
+    # Merge-resolved (mapped source only, filter from full output)
     if [[ "$no_changes" == "true" ]]; then
-        merge_resolved_js=""
+        merge_resolved_source=""
     else
         merge_resolved_full=$("$MERGE_SH" "$repo_dir" "$prior_sha" "$current_sha" --tsv || true)
-        merge_resolved_js=$(printf '%s\n' "$merge_resolved_full" | awk -F'\t' '$2 ~ /\.js$/ && $2 != ""' || true)
+        merge_resolved_source=""
+        while IFS= read -r mrow; do
+            [[ -z "$mrow" ]] && continue
+            mfile="${mrow#*$'\t'}"
+            [[ -z "$mfile" ]] && continue
+            [[ -n "$("$FILE_TOPICS" "$mfile")" ]] || continue
+            merge_resolved_source="${merge_resolved_source}${mrow}"$'\n'
+        done <<<"$merge_resolved_full"
     fi
 
-    # Coverage gaps: PR `.js` files lacking a `.style.json`. Inline check (no
+    # Coverage gaps: PR source files lacking a `.style.json`. Inline check (no
     # equivalent of list-coverage-gaps.sh — review uses .review.json, style uses
     # .style.json under file-reviews/{repo}/).
     coverage_gaps=""
     if pr_files=$(gh pr view "$pr_number" --repo "DEFRA/$repo" --json files --jq '.files[].path' 2>/dev/null); then
         while IFS= read -r f; do
             [[ -z "$f" ]] && continue
-            [[ "$f" == *.js ]] || continue
+            [[ -n "$("$FILE_TOPICS" "$f")" ]] || continue
             underscored=${f//\//_}
             json_file="$STYLE_DIR/file-reviews/$repo/${underscored}.style.json"
             if [[ ! -f "$json_file" ]] || [[ "$(jq -r '.verdict // "null"' "$json_file" 2>/dev/null)" == "null" ]]; then
@@ -177,8 +191,8 @@ for repo in "${repos[@]}"; do
         repo_items_json="[]"
     fi
 
-    # List C — merge-resolved .js files (with prior items per file)
-    list_c_json=$(printf '%s\n' "$merge_resolved_js" \
+    # List C — merge-resolved source files (with prior items per file)
+    list_c_json=$(printf '%s\n' "$merge_resolved_source" \
         | jq -Rn --arg prior "$prior_sha" --arg cur "$current_sha" --argjson items "$repo_items_json" '
             [inputs | select(length > 0) | split("\t")
                 | . as $row
@@ -186,9 +200,9 @@ for repo in "${repos[@]}"; do
                    prior_items: [$items[] | select(.file == $row[1])]}]
         ')
 
-    # List A — changed .js files minus merge-resolved (with prior items per file)
-    merge_files=$(printf '%s' "$merge_resolved_js" | awk -F'\t' '{print $2}' | sort -u)
-    list_a_files=$(comm -23 <(printf '%s\n' "$changed_js" | sort -u | grep -v '^$' || true) \
+    # List A — changed source files minus merge-resolved (with prior items per file)
+    merge_files=$(printf '%s' "$merge_resolved_source" | awk -F'\t' '{print $2}' | sort -u)
+    list_a_files=$(comm -23 <(printf '%s\n' "$changed_source" | sort -u | grep -v '^$' || true) \
                             <(printf '%s\n' "$merge_files" | grep -v '^$' || true) || true)
     list_a_json=$(printf '%s\n' "$list_a_files" \
         | jq -Rn --arg prior "$prior_sha" --arg cur "$current_sha" --argjson items "$repo_items_json" '
@@ -197,7 +211,7 @@ for repo in "${repos[@]}"; do
                    prior_items: [$items[] | select(.file == $f)]}]
         ')
 
-    # List D — coverage gaps (.js files lacking a .style.json verdict)
+    # List D — coverage gaps (source files lacking a .style.json verdict)
     # No prior_items by definition — these are first-time reviews of files
     # already in the PR but never covered.
     list_d_json=$(printf '%s' "$coverage_gaps" | jq -Rn '[inputs | select(length > 0) | {file: .}]')
@@ -281,7 +295,7 @@ fi
 
 if [[ "$HUMAN" == "true" ]]; then
     echo "Style refresh scope for $TICKET (generated $generated)"
-    echo "  Totals:  A=$total_a (changed .js)  B=$total_b (open inline)  C=$total_c (merge)  D=$total_d (gaps)"
+    echo "  Totals:  A=$total_a (changed source)  B=$total_b (open inline)  C=$total_c (merge)  D=$total_d (gaps)"
     echo
     jq -r '.repos[] | "  \(.repo): A=\(.lists.A|length)  B=\(.lists.B|length)  C=\(.lists.C|length)  D=\(.lists.D|length)  prior=\(.prior_sha[0:7])..current=\(.current_sha[0:7])"' <<<"$output"
 else

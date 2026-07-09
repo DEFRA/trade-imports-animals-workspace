@@ -1,6 +1,9 @@
 ---
 name: govuk-upgrade
-description: 'Upgrade the govuk-frontend package across every EUDP Live Animals Node.js repo that consumes it. A four-stage workflow driven by canonical per-repo JSON state (`versions.{repo}.json`): Phase 1 = `start-upgrade.sh` (ticket → branch → discover repos → seed state + pre-bake CHANGELOG sections + best-practices bundle), Phase 2 = fan-out one `general-purpose` Task subagent per pending version following `references/VERSION_PLANNER.md` (uses `version-classify.sh` + `version-add-change.sh`), optional Walker = batch triage of pending plans following `references/PLAN_WALKER.md`, Phase 3 = strict-semver-order `apply-version.sh` per `todo` version (package.json + npm install + npm test + commit + state transition), then E2E once at the end. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend", "walk govuk EUDPA-XXX", "start-upgrade.sh". NOT for non-govuk-frontend npm bumps — use `npm-upgrade`.'
+description: 'Upgrade the govuk-frontend package across every EUDP Live Animals Node.js repo that consumes it. A four-stage workflow driven by canonical per-repo JSON state (`versions.{repo}.json`): Phase 1 = `start-upgrade.sh` (ticket → branch → discover repos → seed state + pre-bake CHANGELOG sections + best-practices bundle), Phase 2 = fan-out one `general-purpose` Task subagent per pending version following `references/VERSION_PLANNER.md` (uses `version-classify.sh` + `version-add-change.sh`), optional Walker = batch triage of pending plans following `references/PLAN_WALKER.md`, Phase 3 = strict-semver-order `apply-version.sh` per `todo` version (package.json + npm install + npm test + commit + state transition), then E2E once at the end. Stays inside the govuk-frontend toolbox — Nunjucks macros, govuk-* utility classes, no custom CSS or hand-rolled components. Triggers: "upgrade govuk-frontend", "govuk upgrade", "govuk-frontend upgrade", "bump govuk-frontend", "walk govuk EUDPA-XXX", "start-upgrade.sh". NOT for non-govuk-frontend npm bumps — use `npm-upgrade`. NOT for raising the tracking ticket itself — use `ticket-creator`.'
+context: fork
+allowed-tools: [Bash, Read, Glob, Grep, Task]
+argument-hint: 'EUDPA-XXXXX [--target X.Y.Z]'
 ---
 
 Upgrade `govuk-frontend` across the Node.js repos that consume it. The
@@ -20,24 +23,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## When to use
 
@@ -118,6 +104,8 @@ Follow references/PHASE_2_MANAGER.md. Run ID: {run-id}
 Phase 2 delegates per-version analysis to `general-purpose` Task
 subagents following `references/VERSION_PLANNER.md` — one instance per
 version stub, parallel fan-out.
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 Present its report verbatim. **Gate:** "Phase 2 complete. Walk the
 plans before Phase 3?"

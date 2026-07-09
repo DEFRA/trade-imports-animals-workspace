@@ -9,25 +9,7 @@ helper in `docs/agent-skills.md`.
 
 ---
 
-## Bash call hygiene
-
-**Rule: one command per Bash call.** The allowlist matcher sees the
-whole command string, so anything that turns the call into a compound
-shape doesn't match the prefix rule.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Source-code search → Grep tool (ripgrep semantics), not `grep -r` from Bash.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Boundaries
 
@@ -158,3 +140,27 @@ After your last helper call, the version entry in
 
 Print a one-line confirmation in your final message:
 `Classified {version}: {todo|noop} ({N} files)`.
+
+---
+
+## Return value on failure
+
+If you cannot classify the version — the pre-baked changelog file is
+missing, the repo scan cannot run, or the `version-*` helpers reject every
+call — do **not** return an empty or silent result. A silently-empty
+return (no classification, no changes) is indistinguishable from a clean
+`noop`, and the downstream classification coverage gate will block the
+parent with no clue why.
+
+Every termination MUST use the success confirmation above **or** this
+explicit failure shape — never a bare, empty return:
+
+```
+FAILED: {version} — {what failed}; tried: {channels}; coverage gate will block.
+```
+
+Example:
+
+```
+FAILED: 5.4.0 — pre-baked changelog file missing under workareas/govuk-upgrades/{run-id}/{repo-name}; tried: changelog read, best-practices bundle; coverage gate will block.
+```

@@ -1,6 +1,9 @@
 ---
 name: ticket-creator
 description: 'Create a new Jira ticket (Bug/Story/Task) end-to-end — gathers requirements via GDS plain-English questions, drafts the ticket to ~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/<slug>/draft.md for user iteration, then creates it in Jira via the shared create-ticket script. Use when the user wants to raise, file, log, open or otherwise create a new Jira ticket from scratch (triggers: "create ticket", "raise ticket", "new ticket", "file a bug", "log a story", "open a ticket", "flesh out ticket"). NOT for working an existing ticket (use the ticket skill) and NOT for assessing whether an existing ticket is refinement-ready (use the ticket-refiner skill).'
+context: inline
+allowed-tools: [Bash, Read, Write, Edit]
+argument-hint: '[optional one-line summary]'
 ---
 
 Role: Help create well-structured, actionable Jira tickets.
@@ -17,11 +20,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — this skill makes only 1-2 Bash calls (parent
-epic preflight, create-ticket). One command per Bash call, no
-`cd && cmd` chains, no `$VAR` expansion in workspace paths. Full rule
-table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) →
-"Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Step 0: Session start
 

@@ -79,17 +79,19 @@ This is workspace-wide; the full rule table lives in
 [`docs/agent-skills.md`](../../agent-skills.md) → "Bash call
 hygiene". Skill prose must comply; AUDIT mode flags violations.
 
-## 5. Hygiene block inside worker personas
+## 5. Hygiene pointer inside worker personas
 
 **Question:** Does the skill fan out workers via `general-purpose`
 Task subagents that follow `references/<NAME>.md`? If yes, every
-worker reference file needs its own `## Bash call hygiene` block at
-the top — subagents only read their reference file, not the parent
-`SKILL.md`.
+worker reference file needs a one-line pointer to the canonical
+source ([`docs/agent-skills.md`](../../agent-skills.md) → "Bash
+call hygiene") — subagents only read their reference file, not the
+parent `SKILL.md`. Point, don't inline: the full rule table lives
+once, canonically, so copies can't drift.
 
 **Pattern-fit trap:** if the skill has no fan-out (parent session
-follows the reference inline), the block is optional. Generate it by
-default; skip only for very small single-file references.
+follows the reference inline), even the pointer is optional. Add it
+by default; skip only for very small single-file references.
 
 ## 6. Idempotent + atomic helpers
 
@@ -148,8 +150,9 @@ Trim categories to scan for:
   from ...", "used to live at ..."). Commit log owns the rationale.
 - Workspace-wide content duplicated per skill — collapse to a one-
   line reference to `docs/agent-skills.md`.
-- Hygiene block placement: workers spawned as `general-purpose`
-  subagents need a full block; parent-loaded references inherit
+- Hygiene pointer placement: workers spawned as `general-purpose`
+  subagents need the one-line pointer to `docs/agent-skills.md`
+  (never a re-inlined full block); parent-loaded references inherit
   `SKILL.md`.
 - Over-defensive bullets making the same point.
 - Verbose rationale ("why" beyond a single phrase) — belongs in

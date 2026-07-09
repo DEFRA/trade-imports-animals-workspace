@@ -175,7 +175,10 @@ if [[ ${#ADD_LABELS[@]} -gt 0 ]]; then
         "$BASE_URL/rest/api/2/issue/$TICKET?fields=labels")
 
     if echo "$existing" | jq -e '.fields.labels' > /dev/null 2>&1; then
-        mapfile -t EXISTING_LABELS < <(echo "$existing" | jq -r '.fields.labels[]')
+        # bash 3.2 (macOS default) has no mapfile/readarray, so read line-by-line
+        while IFS= read -r line; do
+            EXISTING_LABELS+=("$line")
+        done < <(echo "$existing" | jq -r '.fields.labels[]')
     fi
 fi
 

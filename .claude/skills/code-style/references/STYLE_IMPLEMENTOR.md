@@ -1,33 +1,57 @@
-Implement **all open Fix items for a single file** in one batch. Read
+# STYLE_IMPLEMENTOR
+
+## Goal
+
+Implement **all open Fix items for a single file** in one batch — read
 the file once, verify each violation, run pre-tests once, apply every
 applicable fix in a single editing pass, run post-tests once, mark each
-item's outcome, commit once.
+item's outcome, and commit once.
 
 Your prompt specifies the ticket, repo, file, and a JSON array of items.
 
 Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via the `find_workspace_root`
 helper in `docs/agent-skills.md`.
 
+## Success criteria
+
+- Every applicable Fix item is either applied (status `Done`, tagged with the commit SHA) or explicitly dispositioned (`Auto-Resolved` / `Won't Fix`) — no item left silently untouched.
+- Only the listed items change; no unrelated reformatting, no fixes invented beyond the input array.
+- The file's tests (unit + E2E) pass after your edits; if your change breaks them you revert and mark the items `Failed` rather than leaving the tree red.
+- Exactly one commit for the file, referencing the item IDs.
+- Every item's canonical JSON status reflects what actually happened.
+
+## Required output
+
+Artefact: item outcomes written to the canonical JSON via
+`style-set-status.sh` / `style-mark.sh`, and one commit for the file.
+
+Return a per-item summary — use whichever of these shapes matches the
+result, verbatim:
+
+```
+{repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
+  #117 → Done (commit abc123)
+  #121 → Done (commit abc123)
+  #92  → Auto-Resolved (already fixed)
+  #58  → Won't Fix (deliberate codebase choice — type augmentation)
+```
+
+Or on pre-existing failure:
+```
+CANNOT START: {repo}/{file} — pre-existing test failures
+```
+
+Or on broken-by-fix:
+```
+{repo}/{file}: 0 done, 0 auto-resolved, {N} failed
+Reason: unit tests broke after change, all items reverted
+  #117 → Failed (reverted)
+  #121 → Failed (reverted)
+```
+
 ---
 
-## Bash call hygiene
-
-**Rule: one command per Bash call.** The allowlist matcher sees the
-whole command string, so anything that turns the call into a compound
-shape doesn't match the prefix rule.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Inputs (from spawn prompt)
 
@@ -63,6 +87,11 @@ If `applicable_items` is empty (every item is already fixed):
 
 ## Step 2: Pre-Check Tests
 
+> Note: the `npm` test commands below are for the Node repos
+> (frontend/admin/tests). For a `.java` file in a Java repo, substitute
+> the repo's Maven test (`mvn -f ~/git/defra/trade-imports-animals-workspace/repos/{repo} test`)
+> and skip the E2E `test:local` step unless the change is behavioural.
+
 Run unit tests in the relevant repo:
 
 ```bash
@@ -95,27 +124,25 @@ to confirm the failure isn't related to the file you're about to touch.
 Make the **minimal** change for each item in `applicable_items`. Don't
 fix anything not in the input list. Don't reformat unrelated code.
 
-Order matters: apply fixes that change shape (Rule 2 fat-arrow
-conversion, Rule 5 helper extraction) BEFORE fixes that depend on names
-(Rule 6 renames) so you don't fight your own diff.
+The common per-rule fix patterns and the ordering rule (shape-changing
+fixes before renames) live in the sibling cheat-sheet:
+`~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/assets/style-implementor-cheat-sheet.md`.
+Those patterns are **JS/Node examples — illustrative, not universal law**.
+Consult the best-practices file for your file's language for the full
+rule text, e.g.
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for JS,
+`~/git/defra/trade-imports-animals-workspace/docs/best-practices/java/modern-java.md` for Java.
 
-Common patterns (consult
-`~/git/defra/trade-imports-animals-workspace/docs/best-practices/node/code-style.md` for the full
-rule):
-
-| Rule | Typical change |
-|------|---------------|
-| 2 | `function foo()` → `const foo = () =>` |
-| 5 | Extract duplicated block into named helper |
-| 6 | Rename single-char or generic variable |
-| 12 | `\|\|` → `??` for nullish defaults; remove redundant `?? null` when value is already nullable |
-| 13 | Replace bare literal with named `const` |
-
-After all edits, run Prettier to avoid pre-commit hook failures:
+After all edits, format the file. **Prettier applies to JS/`.njk` files
+only — never run a `.java` file through Prettier.** For a
+`.js`/`.mjs`/`.cjs`/`.jsx`/`.njk`/spec file:
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
+
+For a `.java` file, skip Prettier — the repo's own build/format step
+(e.g. Spotless via `mvn`) owns formatting; do not reformat by hand.
 
 ---
 
@@ -168,7 +195,8 @@ Items: #{id1}, #{id2}, #{id3}
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
-If the pre-commit hook fails due to Prettier:
+If the pre-commit hook fails due to Prettier (JS/`.njk` only — a `.java`
+file is never Prettier-formatted):
 ```bash
 ~/git/defra/trade-imports-animals-workspace/repos/{repo}/node_modules/.bin/prettier --write ~/git/defra/trade-imports-animals-workspace/repos/{repo}/{file}
 ```
@@ -207,31 +235,4 @@ deliberate codebase choice):
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/style/style-mark.sh EUDPA-XXXXX --repo {repo} --item {id} \
   --disposition "Won't Fix" --note "<one-line reason>"
-```
-
----
-
-## Output
-
-Return a per-item summary:
-
-```
-{repo}/{file}: {N_done} done, {N_skipped} auto-resolved, {N_failed} failed
-  #117 → Done (commit abc123)
-  #121 → Done (commit abc123)
-  #92  → Auto-Resolved (already fixed)
-  #58  → Won't Fix (deliberate codebase choice — type augmentation)
-```
-
-Or on pre-existing failure:
-```
-CANNOT START: {repo}/{file} — pre-existing test failures
-```
-
-Or on broken-by-fix:
-```
-{repo}/{file}: 0 done, 0 auto-resolved, {N} failed
-Reason: unit tests broke after change, all items reverted
-  #117 → Failed (reverted)
-  #121 → Failed (reverted)
 ```

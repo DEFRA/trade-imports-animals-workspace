@@ -44,11 +44,11 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 |---|---|
 | Run the full stack from published Dockerhub images | `run-stack.sh` (no flags) |
 | Pull a published branch tag for one or more repos | `run-stack.sh -b feat/X` |
-| Edit source and see changes (Node hot-reload, Java needs `bounce-backend.sh`) | `run-stack.sh -d` |
+| Edit source and see changes (Node + Java backend/stub/reference-data hot-reload) | `run-stack.sh -d` |
 | Run one repo-backed service natively from your IDE, rest in docker | `run-stack.sh -e backend` |
 | Run a whole tier natively (e.g. backend on the host, mongo + frontend in docker) | `run-stack.sh --profile frontend --profile infrastructure --profile database` |
 | Reseed mongo before E2E | `bounce-mongo.sh` |
-| Pick up edited Java source under `--dev` | `bounce-backend.sh` |
+| Pick up a Java `pom.xml`/dependency change under `--dev` (source edits hot-reload automatically) | `run-stack.sh -d` (rebuilds; `bounce-backend.sh` only recreates the container) |
 
 `--branch` and `--dev` are mutually exclusive (hard error). The other flags
 compose freely.
@@ -123,13 +123,22 @@ top-level init files), `./.staged/floci`, and `./.staged/servicebus`.
 
 - Node services (frontend, admin): hot-reload via nodemon on the bind mount
   of `src/`. Just save and refresh.
-- Java backend: recompiles on container start. After editing Java source run
-  `./scripts/stack/bounce-backend.sh` to pick up the change (~30-45s).
-- Java stub and reference-data: their Dockerfiles only have an `AS development`
-  stage (pre-built JAR, no source mount). `--dev` rebuilds the image but does
-  not hot-reload. A `dev-run` stage in those repos would unlock that.
-- Java gateway: has a `dev-run` stage and is wired to it in `--dev` mode with
-  a source mount, so source changes are picked up on restart like the backend.
+- Java backend, stub and reference-data: hot-reload via Spring Boot DevTools.
+  Each `dev-run` image runs `docker/dev-run.sh`, an mtime-poll loop that
+  recompiles `src/ → target/classes` on save, then touches a trigger file so
+  DevTools restarts the Spring context in ~1-2s. (We poll mtimes rather than
+  use inotify because inotify events don't cross the macOS Docker bind mount,
+  but mtimes do.) Just save — no `bounce-backend.sh` for routine `.java` edits.
+  - `bounce-backend.sh` recreates the container but does **not** rebuild, so a
+    `pom.xml`/dependency change still needs `run-stack.sh -d` (the
+    `dependency:go-offline` layer is baked at image-build time). Edits outside
+    the watched source tree are likewise not picked up in place.
+  - DevTools is scoped `optional` in each pom and excluded from the repackaged
+    jar, so the published `development`/`production` images never carry it.
+- Java gateway: has a `dev-run` stage with a source mount but no recompile
+  loop, so source edits are only picked up on a container restart. Wiring it to
+  the same `docker/dev-run.sh` pattern is a follow-up (out of scope for the
+  three services above).
 
 ## Hostname rules — no `/etc/hosts` edits required
 

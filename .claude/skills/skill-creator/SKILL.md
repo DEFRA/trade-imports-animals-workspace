@@ -1,6 +1,10 @@
 ---
 name: skill-creator
-description: 'Meta-skill for authoring new workspace skills and auditing existing ones against the 8-pattern checklist. Two modes — CREATE scaffolds a new skill end-to-end (SKILL.md + references/ + tools/<name>/ + assets/ + .claude/settings.json allowlist), AUDIT walks an existing skill (or fans out across all skills) and produces a plan document under workareas/skills-audit/<name>.md. Use when the user wants to add a workspace skill or assess an existing one (triggers: "scaffold skill <name>", "skill-create <name>", "new workspace skill <name>", "audit skill <name>", "audit skills", "review skill <name> against patterns"). Disambiguated from Claude Code''s built-in /init (which scaffolds CLAUDE.md, not workspace skills). NOT for editing skills you already understand — open the SKILL.md and edit directly.'
+description: 'Meta-skill for authoring new workspace skills and auditing existing ones against the 8-pattern checklist. Two modes — CREATE scaffolds a new skill end-to-end (SKILL.md + references/ + tools/<name>/ + assets/ + .claude/settings.json allowlist), AUDIT walks an existing skill (or fans out across all skills) and produces a plan document under workareas/skills-audit/<name>.md. Use when the user wants to add a workspace skill or assess an existing one (triggers: "scaffold skill <name>", "skill-create <name>", "new workspace skill <name>", "audit skill <name>", "audit skills", "review skill <name> against patterns"). Disambiguated from Claude Code''s built-in /init (which scaffolds CLAUDE.md, not workspace skills). NOT for editing skills you already understand — open the SKILL.md and edit directly. NOT for reviewing code correctness/security — use `review`; NOT for JS lint/style review — use `code-style` (AUDIT mode assesses a skill''s own structure against the 8-pattern checklist, not the code a skill produces).'
+# context: inline — CREATE runs an interactive interview + scaffolds files in-session with the user (needs Edit/Write in the parent); AUDIT still fans out to Task workers.
+context: inline
+allowed-tools: [Bash, Read, Glob, Grep, Task, Edit, Write]
+argument-hint: '<trigger phrase including skill name>'
 ---
 
 The meta-skill. Captures the 8-pattern checklist for workspace
@@ -25,10 +29,7 @@ Cross-workspace paths use the literal home-relative form —
 expands `~` automatically. Skill-internal references stay
 relative (`references/<NAME>.md`, `assets/<NAME>.md`).
 
-**Bash call hygiene** — one command per Bash call, no `&&`
-chains, no `$VAR` expansion in workspace paths. Full rule table:
-[`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash
-call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Session start — Read these references
 
@@ -153,6 +154,8 @@ the JSON payload's `targets[]`.
 
 Spawn `general-purpose` Task subagents in parallel (up to one per
 target). Each spawn prompt:
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 ```
 Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/skill-creator/references/AUDITOR.md.

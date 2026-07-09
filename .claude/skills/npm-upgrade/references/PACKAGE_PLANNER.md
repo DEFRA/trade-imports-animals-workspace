@@ -9,25 +9,7 @@ Paths anchored on `~/git/defra/trade-imports-animals-workspace` — compute via 
 
 ---
 
-## Bash call hygiene
-
-**Rule: one command per Bash call.** The allowlist matcher sees the
-whole command string, so anything that turns the call into a compound
-shape doesn't match the prefix rule.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Codebase search → the Grep tool (not Bash `grep -r`).
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Boundaries
 
@@ -175,4 +157,35 @@ the changelog field accepts "Not found"):
 
 ```
 PARTIAL: {package} → classified manual (risk=HIGH); changelog not located, treating conservatively
+```
+
+---
+
+## Return value on failure
+
+The `PARTIAL` shape above is a **graceful degradation**, not a failure
+return: hydration failed for every channel, but you still wrote a
+`classification: manual` row, so the coverage gate is satisfied. Prefer it
+whenever you can still classify conservatively.
+
+Reserve the failure shape below for when you genuinely cannot write a
+classification at all — the context bundle directory is missing, or
+`packages-set-classification.sh` rejects every call. Do **not** return an
+empty or silent result: a silently-empty return leaves `classification`
+null, which is indistinguishable from an unprocessed package, and the
+classification coverage gate (`verify-classification-coverage.sh`, which
+fails iff any `classification == null`) will block the parent with no clue
+why.
+
+Every termination MUST use `DONE`, `PARTIAL`, or this explicit failure
+shape — never a bare, empty return:
+
+```
+FAILED: {package} — {what failed}; tried: {channels}; coverage gate will block.
+```
+
+Example:
+
+```
+FAILED: @hapi/hapi — context bundle directory missing under .context/@hapi__hapi; tried: bundle read, npm registry WebFetch, packages-set-classification.sh; coverage gate will block.
 ```

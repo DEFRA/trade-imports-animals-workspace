@@ -5,25 +5,7 @@ Your spawn prompt names a target skill, its `SKILL.md` path, and
 the output plan path. Walk the checklist; produce the plan. Do not
 make in-place edits to the target skill.
 
-## Bash call hygiene
-
-**Rule: one command per Bash call.** The allowlist matcher sees
-the whole command string; chains and pipes don't match the prefix
-rule even when each piece would.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls.
-- No `cd <dir> && cmd` — use `cmd -C <dir>` (git), full paths to
-  binaries, or `--prefix` / `-f` flags.
-- No `find ... -exec` — use Glob + Read.
-- No `$VAR` in LLM-typed Bash — use literal
-  `~/git/defra/trade-imports-animals-workspace/...` paths.
-- No `/Users/<you>/git/...` resolved form — type the `~/` form.
-- No `python3 -c` for JSON — use `jq`.
-- No `awk` / `sed -n` / `grep -n` for file inspection — use Read
-  with offset+limit.
-
-Full rule table:
-`~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md`.
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Inputs
 
@@ -111,16 +93,18 @@ violations:
 
 Each violation: cite `file:line` and the corrected form.
 
-### 5. Hygiene block inside worker personas
+### 5. Hygiene pointer inside worker personas
 
 For each `references/<NAME>.md`:
 
 - Determine if it's spawned via Task `general-purpose` (fan-out)
   or parent-loaded.
-- Fan-out workers MUST have a `## Bash call hygiene` block at
-  the top.
-- Parent-loaded references MAY omit it (inherit SKILL.md). Don't
-  flag absence — it's optional.
+- Fan-out workers MUST carry the one-line pointer to
+  `docs/agent-skills.md` → "Bash call hygiene" — not a full inline
+  block. The rules live once, canonically; copies drift. Flag any
+  worker that re-inlines the block instead of pointing to it.
+- Parent-loaded references MAY omit even the pointer (inherit
+  SKILL.md). Don't flag absence — it's optional.
 
 ### 6. Idempotent + atomic helpers
 
@@ -241,3 +225,25 @@ Headline gap: <one-line summary>
 ```
 
 The parent session aggregates this into the audit summary table.
+
+## Return value on failure
+
+If you cannot produce the plan — the target `SKILL.md` is unreadable, the
+reference files are missing, or the output path can't be written — do
+**not** return an empty or silent result. A silently-empty return (no plan
+path, no pattern-gap count) is indistinguishable from a clean audit that
+found nothing, and the parent's audit summary table will carry a silent
+hole for this skill.
+
+Every termination MUST use the success shape above **or** this explicit
+failure shape — never a bare, empty return:
+
+```
+FAILED: {skill} — {what failed}; tried: {channels}; audit summary row will be missing.
+```
+
+Example:
+
+```
+FAILED: govuk-upgrade — SKILL.md unreadable at expected path; tried: Read on SKILL.md, Glob on references/; audit summary row will be missing.
+```

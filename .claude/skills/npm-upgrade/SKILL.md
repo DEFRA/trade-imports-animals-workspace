@@ -1,6 +1,9 @@
 ---
 name: npm-upgrade
 description: 'Upgrade (non-govuk-frontend) npm packages across the EUDP Live Animals repos via a three-phase workflow plus interactive walker — discover outdated packages, classify each as auto (no code changes) or manual (breaking changes), run automated upgrades with rollback safety, produce a handoff manifest for the remaining manual work, then walk the manual list keystroke-by-keystroke and spawn a per-package implementor worker on demand. Per-package classification and implementation state lives in canonical JSON (`packages.{repo}.json`) — no markdown plan files on disk. Fans out per-package research in Phase 1 to `general-purpose` Task subagents following `references/PACKAGE_PLANNER.md`, and per-package implementation from the walker to subagents following `references/MANUAL_UPGRADE_IMPLEMENTOR.md`. Use when the user asks to bring npm packages up to date across repos (triggers: "upgrade npm deps", "upgrade npm dependencies", "upgrade dependencies", "run npm upgrades", "walk upgrade EUDPA-XXX", "triage upgrade EUDPA-XXX", "implement upgrade EUDPA-XXX"). NOT for one-off `npm install <pkg>` work, and NOT for govuk-frontend specifically — use the `govuk-upgrade` skill for that (single package, changelog-driven, per-version sequencing).'
+context: fork
+allowed-tools: [Bash, Read, Glob, Grep, Task]
+argument-hint: 'EUDPA-XXXXX [--repo R] [--phase 1|2|3]'
 ---
 
 Three-phase npm dependency upgrade workflow for EUDP Live Animals. Phase
@@ -19,24 +22,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Worker references
 
@@ -114,6 +100,8 @@ runs discovery, pre-bakes per-package context, and emits a JSON spawn
 manifest. The persona fans out one PACKAGE_PLANNER subagent per
 manifest entry, then runs `verify-classification-coverage.sh` as the
 gate.
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 Present its report verbatim. **Gate:** "Phase 1 complete. Proceed to
 Phase 2?"

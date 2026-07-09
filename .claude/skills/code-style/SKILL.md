@@ -1,9 +1,20 @@
 ---
 name: code-style
-description: 'JS code-style/lint review (formatting, conventions, style rules) and remediation for EUDP Live Animals PRs (EUDPA-*). Lints `.js` files against the project''s 17-rule style guide and JSDoc accuracy rules; supports fresh review, refresh review (re-review after new commits), interactive walker that triages findings one item at a time, and batched implementor that applies queued style fixes. Fans out per-file review and per-file implementation to `general-purpose` Task subagents that follow worker personas under `references/`. Use when the user asks for JavaScript style/lint review or to apply agreed style fixes (triggers: "style review EUDPA-", "code style review", "re-style review", "style refresh", "walk style EUDPA-", "triage style", "fix style EUDPA-", "implement style fixes", "lint review"). NOT for correctness/design review across languages or for Java/test-quality review — use the `review` skill for those.'
+description: 'Multi-language code-style/lint review (formatting, conventions, style rules) and remediation for EUDP Live Animals PRs (EUDPA-*). Reviews Java, GDS/Nunjucks (.njk), Playwright specs, k6 and Node source files, each against its context-appropriate best-practices bundle (Java modern-java + Javadoc; GDS components/styles/patterns; Playwright; k6; Node 17-rule style guide + JSDoc). Supports fresh review, refresh review (re-review after new commits), interactive walker that triages findings one item at a time, and batched implementor that applies queued style fixes. Fans out per-file review and per-file implementation to `general-purpose` Task subagents that follow worker personas under `references/`. Use when the user asks for code style/lint review or to apply agreed style fixes (triggers: "style review EUDPA-", "code style review", "re-style review", "style refresh", "walk style EUDPA-", "triage style", "fix style EUDPA-", "implement style fixes", "lint review"). NOT for correctness/design review across languages or for test-quality review — use the `review` skill for those.'
+context: fork
+allowed-tools: [Bash, Read, Glob, Grep, Task]
+argument-hint: 'EUDPA-XXXXX'
 ---
 
-JS code-style review and remediation for EUDP Live Animals tickets.
+Multi-language code-style review and remediation for EUDP Live Animals
+tickets (Java, GDS/Nunjucks, Playwright, k6, Node). The per-file reviewer
+persona (`references/STYLE_FILE_REVIEWER.md`) is written
+language-neutrally and takes its ruleset from the pre-baked
+per-(repo,topic) `style-rules.{repo}.{topic}.md` bundle(s) rather than an
+inlined catalogue. Discovery and rule-bundling route each file through
+`tools/style/file-topics.sh` — a pure path→topic router (java, node, gds,
+playwright, k6; additive, so a Playwright spec gets both playwright and
+node) that is the single source of truth for the file-type mapping.
 
 Per-repo state lives in
 `~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXX/items.{repo}.json`
@@ -25,24 +36,7 @@ Skill-internal references stay relative
 (`references/<NAME>.md`, `assets/<NAME>.md`); subagents are addressed
 by name via the Task tool.
 
-**Bash call hygiene** — the rule: **one command per Bash call**.
-The allowlist matcher sees the whole command string, so a chain or
-pipe doesn't match even when each piece would. Specifically:
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal `~/git/defra/trade-imports-animals-workspace/...` (the `$VAR` trips Claude Code's expansion check).
-- No `/Users/<you>/git/...` either — the matcher treats `~/git/...` and `/Users/<you>/git/...` as different prefixes. Type the `~/` form, don't resolve it.
-- No `python3 -c` / ad-hoc tools for JSON — use `jq` or the workspace helpers under `tools/`.
-
-**Prefer LLM-native tools over Bash combos:**
-
-- File inspection → Read (with `offset` / `limit`), not `awk`/`sed`/`grep -n`.
-- File location → Glob, not `find -exec`.
-- Output filtering → script flag (`--file`, `--filter`, `--repo`), not `| awk`.
-
-Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
+**Bash call hygiene** — one command per Bash call. Full rule table: [`docs/agent-skills.md`](../../../docs/agent-skills.md) → "Bash call hygiene".
 
 ## Workflow modes
 
@@ -105,21 +99,24 @@ Bash tool auto-backgrounds it, **wait for the harness's
 
 - `~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/`
   with `.style-meta.json`, per-repo `file-reviews/{repo}/` subtrees,
-  per-file `.style.json` placeholders, and per-repo `style-rules.{repo}.md`
-  bundles.
+  per-file `.style.json` placeholders, and per-(repo,topic)
+  `style-rules.{repo}.{topic}.md` bundles.
 
-If `.style-meta.json#js_files` is empty, output:
+If `.style-meta.json#source_files` is empty, output:
 
 ```
-No JavaScript files found in this PR. No JavaScript code style review needed.
+No reviewable source files found in this PR. No code style review needed.
 ```
 
 And stop.
 
 ## Step 2: Review Each File
 
-**MANDATORY:** Review EVERY `.js` file. No exceptions. Spawn up to 100 in
-parallel via the Task tool with `subagent_type: general-purpose`.
+**MANDATORY:** Review EVERY source file in `.style-meta.json#source_files`.
+No exceptions. Spawn up to 100 in parallel via the Task tool with
+`subagent_type: general-purpose`.
+
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
 
 ### Spawn prompt template
 
@@ -128,11 +125,13 @@ Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/s
 
 **Mode: FRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style rules bundle:** ~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo-name].md
+**Style rules bundle(s):** (one per topic in this file's `.style-meta.json#source_files[].topics`; a Playwright spec lists both its playwright and node bundle)
+- ~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo-name].[topic].md
 
 **Your assigned file:**
 - Repository: [repo-name]
 - Path: [file-path]
+- Topics: [comma-separated topics for this file]
 - PR: #[pr-number]
 - Snapshot path (read-only): ~/git/defra/trade-imports-animals-workspace/workareas/reviews/EUDPA-XXXXX/repos/[repo-name]/[file-path]
 ```
@@ -153,7 +152,7 @@ coverage.**
 
 ## Step 4: Aggregate to items.{repo}.json + render
 
-For each repo with `.js` files:
+For each repo with source files:
 
 ```bash
 ~/git/defra/trade-imports-animals-workspace/tools/style/aggregate-file-reviews.sh EUDPA-XXXXX --repo {repo} --write-items
@@ -181,7 +180,7 @@ Skeleton:
 
 **Ticket:** EUDPA-XXXXX
 **PR:** #{pr-number}
-**JS Files Reviewed:** {count}
+**Files Reviewed:** {count}
 **Verdict:** [VERDICT — see Verdict Guidelines]
 
 <!-- paste output of `aggregate-file-reviews.sh ... --section file-summary` here -->
@@ -221,10 +220,10 @@ emitted a JSON object on stdout. Read it from there.
 Each `repos[]` entry has `prior_sha`, `current_sha`, `no_changes`,
 and `lists.{A,B,C,D}`:
 
-- **List A** — `[{ file, old_sha, new_sha, prior_items }]` — `.js` file changed in window, not merge-resolved
+- **List A** — `[{ file, old_sha, new_sha, prior_items }]` — source file changed in window, not merge-resolved
 - **List B** — `[{ id, file, line, rule, severity, ... }]` — open items whose file did *not* change
-- **List C** — `[{ file, merge_sha, old_sha, new_sha, prior_items }]` — hand-resolved merge files (`.js` only)
-- **List D** — `[{ file }]` — PR `.js` files lacking a `.style.json` verdict
+- **List C** — `[{ file, merge_sha, old_sha, new_sha, prior_items }]` — hand-resolved merge files (mapped source only)
+- **List D** — `[{ file }]` — PR source files lacking a `.style.json` verdict
 
 If totals are all zero across all repos: report the branch is unchanged
 since the last refresh and stop.
@@ -251,6 +250,8 @@ entry in List A (Mode=REFRESH), List C (Mode=MERGE_RESOLVED), and List D
 (Mode=FRESH; coverage gap). Each spawn prompt begins with
 `Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/skills/code-style/references/STYLE_FILE_REVIEWER.md.`
 
+Emit ALL Task calls in a single assistant response — do NOT spawn one, await the result, then spawn the next. Parallelism only works when calls are batched in one turn.
+
 ### Spawn prompt — REFRESH (List A)
 
 ```markdown
@@ -258,11 +259,13 @@ Follow the instructions in ~/git/defra/trade-imports-animals-workspace/.claude/s
 
 **Mode: REFRESH**
 **Ticket:** EUDPA-XXXXX - [Ticket Summary]
-**Style rules bundle:** ~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo].md
+**Style rules bundle(s):** (one per topic in this file's `.style-meta.json#source_files[].topics`; a Playwright spec lists both its playwright and node bundle)
+- ~/git/defra/trade-imports-animals-workspace/workareas/code-style-reviews/EUDPA-XXXXX/style-rules.[repo].[topic].md
 
 **Your assigned file:**
 - Repository: [repo]
 - Path: [entry.file]
+- Topics: [comma-separated topics for this file]
 - PR: #[pr]
 - Previous commit: [entry.old_sha]
 - Current commit: [entry.new_sha]
@@ -483,8 +486,9 @@ All under `~/git/defra/trade-imports-animals-workspace/tools/style/`:
 | Script | Purpose |
 |---|---|
 | `start-style.sh` | Step 0 — detect FRESH/REFRESH and exec the appropriate setup script |
-| `prepare-style.sh` | Fresh Step 1 workspace setup; init `.style.json` placeholders; bake per-repo rules bundles |
-| `bake-rules-bundle.sh` | Concatenate `docs/best-practices/` files into `style-rules.{repo}.md` |
+| `prepare-style.sh` | Fresh Step 1 workspace setup; init `.style.json` placeholders; bake per-(repo,topic) rules bundles |
+| `file-topics.sh` | Pure path→topic router (java/node/gds/playwright/k6, additive); single source of truth for the file-type mapping |
+| `bake-rules-bundle.sh` | Concatenate `docs/best-practices/` files into per-(repo,topic) `style-rules.{repo}.{topic}.md` |
 | `aggregate-file-reviews.sh` | Fresh Step 4 — write `items.{repo}.json` from per-file `.style.json` files; emit File Analysis Summary / Items markdown |
 | `render-items.sh` | Render `items.{repo}.json` as the `## Items` markdown view |
 | `style-items.sh` | Walker / implementor / refresh — list items with filters |

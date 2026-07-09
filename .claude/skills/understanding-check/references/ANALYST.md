@@ -24,17 +24,7 @@ Cross-workspace paths use the literal home-relative form —
 `~/git/defra/trade-imports-animals-workspace/...`. Bash expands `~`.
 Skill-internal references stay relative to the skill folder.
 
-## Bash call hygiene
-
-The rule: **one command per Bash call**.
-
-- No `&&` / `;` / `|` between commands — separate Bash calls instead.
-- No `cd <dir> && cmd ...` — use `cmd -C <dir>` (for git) or full paths.
-- No `find ... -exec cmd ...` — use Glob + Read for find-then-read.
-- No `$TRADE_IMPORTS_WORKSPACE/...` — use literal
-  `~/git/defra/trade-imports-animals-workspace/...`.
-- No `/Users/<you>/git/...` — type the `~/` form.
-- No `python3 -c` for JSON — use `jq` or the helper scripts.
+**Bash call hygiene** — one command per Bash call. Full rule table: `~/git/defra/trade-imports-animals-workspace/docs/agent-skills.md` → "Bash call hygiene".
 
 ## Output contract
 
