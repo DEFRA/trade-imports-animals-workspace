@@ -39,8 +39,8 @@ services:
     depends_on:
       floci-init:
         condition: service_completed_successfully
-      servicebus-emulator:
-        condition: service_started
+      toxiproxy:
+        condition: service_healthy
         required: false
     env_file:
       - ./shared.env
@@ -54,7 +54,7 @@ services:
       - NOTIFICATION_SQS_ARN=${NOTIFICATION_SQS_ARN:-arn:aws:sqs:eu-west-2:000000000000:trade_imports_animals_eu_notifications_gateway.fifo}
       - NOTIFICATION_SQS_DLQ_URL=${NOTIFICATION_SQS_DLQ_URL:-http://host.docker.internal:4566/000000000000/trade_imports_animals_eu_notifications_gateway-deadletter.fifo}
       - NOTIFICATION_SQS_DLQ_ARN=${NOTIFICATION_SQS_DLQ_ARN:-arn:aws:sqs:eu-west-2:000000000000:trade_imports_animals_eu_notifications_gateway-deadletter.fifo}
-      - AZURE_SERVICE_BUS_CONNECTION_STRING=${AZURE_SERVICE_BUS_CONNECTION_STRING:-Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;EntityPath=local-queue}
+      - AZURE_SERVICE_BUS_CONNECTION_STRING=${AZURE_SERVICE_BUS_CONNECTION_STRING:-Endpoint=sb://toxiproxy;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;EntityPath=local-queue}
       - AZURE_SERVICE_BUS_QUEUE
     healthcheck:
       interval: 5s
