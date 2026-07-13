@@ -145,13 +145,27 @@ E2E at once).
    this skill explicitly does not attempt that judgment call (see the
    taxonomy's "Known limitation" section). Only report gaps and
    duplication as defined above.
+6. When scoping tests for new, unimplemented work (as opposed to
+   auditing an existing suite), do not silently recommend building
+   every automated test a gap analysis turns up. Flag an
+   **automation-scope** finding instead whenever: the same underlying
+   concern surfaces as a gap at more than one tier (e.g. an
+   integration-tier test AND a full-stack test both proposed for the
+   same AC — note whether the higher tier proves anything the lower
+   one structurally can't); the technique/cost looks disproportionate
+   to what it proves; or the concern looks better suited to a manual/
+   periodic check than to any automated tier at all (see the
+   taxonomy's "Known limitation #2" for all three). Leave the
+   build-or-skip-or-manual decision to the requester — this is the
+   same category of judgment call as bullet 5, just about proposed
+   rather than existing tests.
 
 ## Step 3: Write the report
 
 Write `workareas/test-stack-analysis/<run-id>/report.md` directly
 (prose-canonical — no JSON state, no render helper). Sections, in
-this order: Gaps, Duplication, Notes (optional), Known limitation
-(standing, always present):
+this order: Gaps, Duplication, Automation-scope flags (optional),
+Notes (optional), Known limitation (standing, always present):
 
 ```markdown
 # Test-stack analysis — <run-id>
@@ -178,6 +192,20 @@ this order: Gaps, Duplication, Notes (optional), Known limitation
 - **Recommended action:** delete or demote the higher-level
   assertion — <one-line reason>
 
+## Automation-scope flags
+
+<optional — for any of the three judgment calls in the taxonomy's
+"Known limitation #2" that a proposed (not-yet-built) test raises:
+(1) the same concern proposed as a gap at more than one tier — name
+it, list the tiers proposed, state whether the higher tier(s) prove
+anything the lower one structurally can't; (2) a proposed technique
+whose cost looks disproportionate to what it proves, or that isn't
+how this class of test is conventionally scoped; (3) a concern that
+looks better suited to manual/periodic verification than to any
+automated tier. Do not recommend build-or-skip-or-manual yourself;
+flag it for the requester to decide. Omit the section entirely if
+nothing qualifies — same as Notes, its absence is unremarkable.>
+
 ## Notes
 
 <optional — for findings that don't cleanly fit Gaps or Duplication,
@@ -196,14 +224,17 @@ its absence is unremarkable.>
 
 This report does not evaluate whether adequately-covered flows should
 additionally get E2E coverage for cross-service confidence (mocked
-lower-level tests can drift from the real upstream contract). That is
-a risk-tolerance judgment call outside this skill's scope.
+lower-level tests can drift from the real upstream contract), nor
+does it decide build-or-skip-or-manual on the automation-scope flags
+above. All are risk-tolerance/convention judgment calls outside this
+skill's scope.
 ```
 
 If Gaps or Duplication has no findings, keep the heading and state
 that explicitly ("No gaps found.") rather than omitting the section —
-an empty section is itself a result, not a missing step. Notes is the
-one exception — omit it entirely when nothing qualifies (see above).
+an empty section is itself a result, not a missing step.
+Automation-scope flags and Notes are the exception — omit either
+entirely when nothing qualifies (see above).
 
 ## Completion output
 
@@ -213,6 +244,7 @@ test-stack-analysis complete for <run-id>.
 Summary:
 - <N> gap(s) found
 - <M> duplication finding(s)
+- <P> automation-scope flag(s)
 
 Report: ~/git/defra/trade-imports-animals-workspace/workareas/test-stack-analysis/<run-id>/report.md
 

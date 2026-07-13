@@ -56,6 +56,48 @@ contract. That is a risk-tolerance judgment call, not a fact
 derivable from the test inventory, and this skill does not attempt
 it. Only report true gaps and true duplication as defined above.
 
+## Known limitation #2 — automation scope: which tier, and whether at all
+
+The Gaps/Duplication rules above only compare against an *existing*
+test inventory — they say nothing about **proposed, not-yet-built**
+tests (this comes up when a run is used to scope tests for new,
+unimplemented work, not just to audit an existing suite). Scoping
+proposed tests needs three kinds of judgment, none of which this
+skill can supply mechanically:
+
+1. **Does a higher-tier proposal prove anything a lower-tier one for
+   the same concern structurally can't?** (UI rendering, cross-service
+   auth/secret wiring, real broker/config behaviour distinct from what
+   a mock already covers). If not — if it would just re-prove the same
+   mechanism with equivalent strength — flag it as a duplication
+   candidate, the same way an *existing* higher-level test would be
+   flagged above.
+2. **Is the technique/cost proportionate to what's gained, and does it
+   match how this class of test is conventionally scoped?** (e.g.
+   fault-injection for a retry/DLQ proof is standard practice via a
+   mock at the integration tier; driving the same proof via a real
+   severed connection at the full-stack tier is a much rarer, heavier
+   pattern usually reserved for concerns a mock structurally can't
+   reach.)
+3. **Does this concern make sense to automate at all, at any tier — or
+   is manual/periodic verification the industry-standard answer
+   instead?** (e.g. a rare, expensive-to-drive real-infra scenario
+   where a lower tier already gives adequate confidence via a mock,
+   and the only way to gain more is a real, high-cost, low-frequency
+   check better done by hand than kept as a routine automated test —
+   this is what a "Manual" verification step captures, alongside
+   Unit/Integration/E2E, not a gap in automated coverage.)
+
+All three are genuinely risk-tolerance/convention judgments, not facts
+derivable from an inventory — same category as the "promote to E2E"
+limitation above. When a run surfaces any of these — multiple tiers
+proposed for one concern, a disproportionate technique, or a concern
+that looks better suited to manual verification than to any automated
+tier — **flag it**, don't silently recommend building everything (or
+demote/cut anything unilaterally). Name the concern, what was
+proposed, and which of the three questions applies. Leave the
+build-or-skip-or-manual call to the requester.
+
 ## Pyramid-level classification, per repo
 
 ### Node (`trade-imports-animals-frontend`, `trade-imports-animals-admin`)
