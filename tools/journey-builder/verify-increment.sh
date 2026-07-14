@@ -3,6 +3,11 @@
 # + prettier-check on the prototype dir). Exit code is the loop's signal.
 # Output is written to a log; only the tail is echoed.
 #
+# --e2e adds the full Playwright suite (npm run test:prototype): the demo
+# journeys AND the persistence-parity compare against Mongo. Parity needs the
+# workspace stack up (scripts/stack/run-stack.sh); the suite says so and exits
+# fast if it is down.
+#
 # Usage:
 #   verify-increment.sh EUDPA-X [--e2e]
 
@@ -38,7 +43,11 @@ npm run --prefix "$worktree" test:live-animals >> "$log" 2>&1 || fail "unit test
 ( cd "$worktree" && ./node_modules/.bin/eslint "prototypes/standalone/live-animals" ) >> "$log" 2>&1 || fail "eslint"
 
 if [[ "$E2E" == true ]]; then
-    npm run --prefix "$worktree" test:prototype -- live-animals >> "$log" 2>&1 || fail "e2e"
+    # The WHOLE suite, unfiltered: both Playwright projects — the demo journeys
+    # (stub server) and the persistence-parity compare against Mongo (real-mode
+    # server, needs the workspace stack up). A filename filter here would skip
+    # parity, which is how a persistence bug once hid behind two green suites.
+    npm run --prefix "$worktree" test:prototype >> "$log" 2>&1 || fail "e2e"
 fi
 
 grep -E "Test Files|Tests " "$log" | head -4
