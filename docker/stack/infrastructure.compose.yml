@@ -98,6 +98,22 @@ services:
     ports:
       - '5672:5672'
 
+  toxiproxy:
+    profiles: [servicebus]
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    depends_on:
+      servicebus-emulator:
+        condition: service_started
+    healthcheck:
+      interval: 5s
+      retries: 6
+      start_period: 5s
+      test: ['CMD', '/toxiproxy-cli', 'list']
+    volumes:
+      - ./toxiproxy/toxiproxy.json:/etc/toxiproxy/toxiproxy.json
+    command: ['-host=0.0.0.0', '-config=/etc/toxiproxy/toxiproxy.json']
+    ports:
+      - '8474:8474'
 
   redis:
     profiles: [infrastructure]

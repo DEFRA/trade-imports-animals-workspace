@@ -32,7 +32,7 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 | `compose.yml` | (`name:` only) | — |
 | `database.compose.yml` | `mongodb` | `database` |
 | `infrastructure.compose.yml` | `floci`, `floci-init`, `redis`, `cdp-uploader` | `infrastructure` |
-| `infrastructure.compose.yml` | `mssql`, `servicebus-emulator` (Azure Service Bus emulator the dynamics-gateway talks to) | `servicebus` |
+| `infrastructure.compose.yml` | `mssql`, `servicebus-emulator` (Azure Service Bus emulator the dynamics-gateway talks to), `toxiproxy` (sits in front of servicebus-emulator; lets you sever/restore the gateway's ASB connection for DLQ testing) | `servicebus` |
 | `stubs.compose.yml` | `trade-imports-defra-id-stub`, `trade-imports-stub` | `stubs` |
 | `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data` | `backend` |
 | `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin` | `frontend` |
@@ -79,6 +79,32 @@ in docker:
 ./scripts/stack/run-stack.sh --profile frontend --profile infrastructure --profile database --profile stubs
 # ... then in IntelliJ: run trade-imports-animals-backend with SPRING_PROFILES_ACTIVE=local
 ```
+
+## Simulating an ASB outage (notification DLQ testing)
+
+`trade-imports-dynamics-gateway`'s `AZURE_SERVICE_BUS_CONNECTION_STRING` points at
+`toxiproxy`, not `servicebus-emulator`, directly — a thin AMQP proxy
+(`docker/stack/toxiproxy/toxiproxy.json` defines the single `servicebus` proxy,
+`5672 → servicebus-emulator:5672`). Disabling the proxy severs the gateway's live
+connection instantly (no emulator restart, no reconnect delay) and is the
+recommended way to drive a message into the notification DLQ locally:
+
+```bash
+# sever — existing connections drop, new ones refuse
+curl -X POST http://localhost:8474/proxies/servicebus -H 'Content-Type: application/json' -d '{"enabled": false}'
+
+# restore
+curl -X POST http://localhost:8474/proxies/servicebus -H 'Content-Type: application/json' -d '{"enabled": true}'
+```
+
+With the proxy disabled, `QueueMessageSender` sees connection failures classed as
+transient, so the SQS message is redelivered up to the queue's `maxReceiveCount`
+(3, set in `repos/trade-imports-dynamics-gateway/servicebus/start-localstack.sh`)
+before SQS itself moves it to the DLQ (`GET /dlq/notifications` on the gateway to
+check depth). Restoring the proxy does not auto-redeliver already-DLQ'd
+messages — call `POST /dlq/notifications/replay-all` (guarded by the
+`Trade-Imports-Animals-Admin-Secret` header) to move them back onto the source
+queue once ASB is reachable again.
 
 ## Running E2E tests against this stack
 
