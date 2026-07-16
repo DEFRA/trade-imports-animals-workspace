@@ -84,12 +84,13 @@ findings from Step 1), and seeds `.run-meta.json`. Re-running the same
 forward between runs.
 
 **Before your first run, or after changing the taxonomy/classification
-logic:** sanity-check against the two known-answer fixtures in
+logic:** sanity-check against the known-answer fixtures in
 `assets/concern-type-taxonomy.md`'s "Verification fixtures" section
-(the notification-dashboard-sorting example, and `trade-imports-stub`'s
-own untested fixture-serving behaviour) before trusting results against
-an unfamiliar ticket — both have a known-correct expected result, so
-any deviation is unambiguously a logic bug, not a judgment call.
+(the notification-dashboard-sorting example, `trade-imports-stub`'s own
+untested fixture-serving behaviour, and the ticket-agnostic severity
+calibration pair) before trusting results against an unfamiliar ticket
+— each has a known-correct expected result, so any deviation is
+unambiguously a logic bug, not a judgment call.
 
 ## Step 1: Fan out discovery, one worker per repo
 
@@ -140,7 +141,11 @@ E2E at once).
    - No match at the home level → **gap**.
    - A match exists at the home level, AND an equivalent-strength
      match (including the failure path) also exists at a higher
-     level → **duplication** candidate.
+     level → **duplication** candidate. When that higher level is E2E,
+     don't treat it as automatically exempt — apply the taxonomy's
+     sharper per-sub-concern test (a fact only trustworthy because a
+     real caller supplied it, vs. an already-proven single-service
+     fact) before deciding.
 5. Do not evaluate "promote to E2E for cross-service confidence" —
    this skill explicitly does not attempt that judgment call (see the
    taxonomy's "Known limitation" section). Only report gaps and
@@ -159,6 +164,12 @@ E2E at once).
    build-or-skip-or-manual decision to the requester — this is the
    same category of judgment call as bullet 5, just about proposed
    rather than existing tests.
+7. For each gap, add a one-line risk read per the taxonomy's "Gap
+   severity is not uniform" section: **Blocking** if it has a
+   plausible production consequence, **Advisory** if it's a
+   completeness/pyramid nit with no material risk identified. This is
+   a suggested triage, not a verdict — the requester makes the final
+   call on what's blocking.
 
 ## Step 3: Write the report
 
@@ -180,6 +191,10 @@ Notes (optional), Known limitation (standing, always present):
 - **Belongs at:** <natural home level>
 - **Evidence of absence:** <what was searched, e.g. "no unit test in
   trade-imports-animals-backend asserts default sort fallback">
+- **Risk if unaddressed:** <Blocking | Advisory> — <one-line reason:
+  a plausible production consequence (e.g. "nothing currently stops
+  X, which the feature's own rationale says causes Y"), or why this
+  is just a completeness/pyramid nit with no material risk>
 
 ## Duplication
 
@@ -226,8 +241,9 @@ This report does not evaluate whether adequately-covered flows should
 additionally get E2E coverage for cross-service confidence (mocked
 lower-level tests can drift from the real upstream contract), nor
 does it decide build-or-skip-or-manual on the automation-scope flags
-above. All are risk-tolerance/convention judgment calls outside this
-skill's scope.
+above. The Blocking/Advisory risk read attached to each gap is a
+suggested triage, not a verdict. All are risk-tolerance/convention
+judgment calls outside this skill's scope.
 ```
 
 If Gaps or Duplication has no findings, keep the heading and state
@@ -242,7 +258,7 @@ entirely when nothing qualifies (see above).
 test-stack-analysis complete for <run-id>.
 
 Summary:
-- <N> gap(s) found
+- <N> gap(s) found (<B> blocking, <A> advisory)
 - <M> duplication finding(s)
 - <P> automation-scope flag(s)
 

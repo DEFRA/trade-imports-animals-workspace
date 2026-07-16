@@ -5,7 +5,7 @@ changes; do not delete entries.
 
 ## 1. Purpose
 
-Given a feature description or ticket/Confluence URL, find every related test file across the workspace repos, classify each by pyramid level and concern type, and report gaps and duplication so a developer knows where to add or remove coverage before writing new tests.
+Given a feature description or ticket/Confluence URL, find every related test file across the workspace repos, classify each by pyramid level and concern type, and report gaps and duplication — each gap tagged Blocking or Advisory by plausible production consequence, not just pyramid completeness — so a developer knows where to add or remove coverage before writing new tests, and what's actually urgent versus a nit.
 
 ## 2. State shape
 
