@@ -1,0 +1,550 @@
+{
+  "slug": "accompanying-documents",
+  "name": "Accompanying documents",
+  "url": "/notification/vnet/protected/notifications/:draftId/documents/page-1",
+  "pageTitle": "Documents - Import and export applications - GOV.UK",
+  "caption": "Documents",
+  "heading": "Accompanying documents",
+  "bodyCopy": [
+    {
+      "text": "A phytosanitary certificate must be attached to the notification or your consignment will be rejected",
+      "confidence": "legacy",
+      "component": "govuk-inset-text wrapping govuk/warningText",
+      "conditionalOn": "CHED-PP only — rendered inside {{#if isChedpp}} at the top of the form, above the documents table. No trace captured it (bodyCopy was empty from the rendered pass).",
+      "evidence": "legacy — ipaffs-frontend-notification/service/src/views/importer/documents.html:76-81. This is the on-page statement of the CHED-PP phytosanitary-certificate mandatoriness that the submit-time validators (phytosanitary.required / phytosanitary.attachment.required) enforce."
+    }
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to hub",
+    "Add attachment",
+    "Add another document",
+    "Download",
+    "Remove attachment"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full (an empty govuk-grid-column-two-thirds govuk-!-padding-0 div precedes it and renders nothing — the content region is full width, unusual for a GOV.UK question page)",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Documents",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Accompanying documents",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "form",
+      "text": "POST to page-1; hidden inputs: crumb (CSRF), etag (optimistic concurrency), is-additional-document-row-shown=true, current-page-number=1",
+      "govukComponent": "-"
+    },
+    {
+      "element": "empty-caption",
+      "text": "",
+      "govukComponent": "div.additional-documents__caption.govuk-heading-m, id=additional-documents-header — renders EMPTY on CHED-PP"
+    },
+    {
+      "element": "table-header-row",
+      "text": "Document type | Document reference | Date of issue (Day Month Year) | Attachments (optional)",
+      "govukComponent": "NONE — div-based fake table (additional-documents__grid-row additional-documents__headers)"
+    },
+    {
+      "element": "saved-document-row",
+      "text": "Read-only row, repeated per saved document. Cells: Document type value / Document reference value / Date of issue value formatted 'D MMMM YYYY' (e.g. '4 December 2025') / attachment filename as a link.",
+      "govukComponent": "NONE — divs (additional-documents__grid-row additional-document-info; ids additional-document-{type,reference,date,attachment}-{heading,value}-N)"
+    },
+    {
+      "element": "saved-row-action-links",
+      "text": "Download | Remove attachment",
+      "govukComponent": "govuk-link + link-button (submit button styled as a link)"
+    },
+    {
+      "element": "entry-row",
+      "text": "Blank input row: Document type select, Document reference text input, Document issue date (Day/Month/Year + Choose date picker), Add attachment button",
+      "govukComponent": "govuk-form-group / govuk-select / govuk-input / govuk-fieldset / govuk-date-input"
+    },
+    {
+      "element": "button",
+      "text": "Add attachment",
+      "govukComponent": "NONE — link-button no-wrap (type=submit, name=add-attachment)"
+    },
+    {
+      "element": "button",
+      "text": "Add another document",
+      "govukComponent": "NONE — link-button additional-documents__add-another-document (type=submit, name=add-additional-document)"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button, data-prevent-double-click=true)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button, data-prevent-double-click=true)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to hub",
+      "govukComponent": "govuk-body > govuk-link, href /notification/vnet/protected/notifications/:draftId/overview"
+    },
+    {
+      "element": "success-banner",
+      "text": "INFERRED — NOT OBSERVED IN ANY TRACE. An ARIA region with accessible name 'Success' containing the text 'document uploaded', rendered on return from the document-upload page. The QA page object exposes it (locatorSuccessBanner = getByRole('region', { name: 'Success' })) and one test asserts it contains 'document uploaded' — but ONLY on the CHED-P branch. The CHED-PP branch of that same parameterised test asserts the attachment LINK is visible instead, so whether this banner renders on CHED-PP is unestablished. Almost certainly a govuk-notification-banner--success (which renders role=region + aria-label 'Success' by default).",
+      "govukComponent": "Notification banner (govuk-notification-banner, --success modifier) — INFERRED from the role/name signature only; the class was never seen in a snapshot. LEGACY CONFIRMS THE COMPONENT AND THAT IT IS NOT CHED-PP-GATED: the template renders {{> govuk/notificationBanner classes='govuk-notification-banner--success' title=banner.title text=banner.message}} inside a plain {{#if banner.display}} at ipaffs-frontend-notification/service/src/views/importer/documents.html:13-21 — shared across all CHED types, so it CAN render on CHED-PP when banner.display is set. The exact copy is server-supplied (banner.title / banner.message) and not in the template."
+    },
+    {
+      "element": "render-state: after-upload",
+      "text": "INFERRED — the page has at least TWO distinct render states that the QA suite treats as separate surfaces worth checking independently: the blank entry state and the post-upload state (one saved row + a fresh blank row). The CHED-PP accessibility spec scans BOTH, naming them 'Accompanying Documents Page' and 'Accompanying Documents Page (after upload)' (tests/accessibility/ched-pp-accessibility-tests.spec.ts:130 and :139). CHED-A additionally names '(second document)' and '(after second upload)' states (a11y-test.log:10678, 10694). This is the QA suite independently confirming the round-trip-and-return flow described under the add-attachment field.",
+      "govukComponent": "n/a — a page state, not a component"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Document type — 17 options (1 placeholder + 16 real). Per-entry-row, one per blank row.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot). Corroborated: the QA page object locates it by getByLabel('Document type') and drives it with selectOption at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AccompanyingDocumentsPage.ts:7-9. NOTE ON HOW selectOption RESOLVES: the tests pass documentType.* constants, which types/document-type.ts maps to LABEL strings ('Phytosanitary certificate'), not the camelCase wire values the trace shows in the option value attributes. Playwright's selectOption matches value first then label, so these calls are resolving BY LABEL — meaning the QA suite is coupled to the rendered copy, not the wire contract. Worth knowing before anyone 'tidies' the option labels in the rebuild: it would break the legacy suite."
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-input--width-2",
+        "govuk-input--width-4"
+      ],
+      "count": 4,
+      "usage": "Document reference (unmodified width) plus the three date-input parts (width-2 day, width-2 month, width-4 year)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot). Corroborated: all four located as getByRole('textbox', { name: ... }) — 'Document reference', 'Day', 'Month', 'Year' — at AccompanyingDocumentsPage.ts:11-25. Note the page object must use ROLE+accessible-name because there are no <label> elements to target."
+    },
+    {
+      "component": "Date input",
+      "govukClass": "govuk-date-input",
+      "modifiers": [
+        "date-input--picker",
+        "short-date-input",
+        "govuk-date-input__item",
+        "govuk-date-input__input"
+      ],
+      "count": 1,
+      "usage": "Document issue date. id=document-issue-date, data-module=\"accessible-datepicker\". Inputs are type=text with inputmode=numeric and maxlength 2/2/4.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot). Corroborated: fillDocumentDate() fills day/month/year as three separate textboxes at AccompanyingDocumentsPage.ts:47-51 — no test ever opens the date picker, confirming it is optional progressive enhancement."
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-visually-hidden"
+      ],
+      "count": 1,
+      "usage": "Wraps the date input with role=\"group\". Legend text 'Document issue date' is VISUALLY HIDDEN — the visible column header says 'Date of issue' instead, so the accessible name and the visible label differ.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "Save and return to hub; Save and continue. Both type=submit with data-module=govuk-button and data-prevent-double-click=true.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot). 'Save and continue' corroborated at AccompanyingDocumentsPage.ts:43-45. 'Save and return to hub' has NO page-object locator and is never driven by any test."
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [
+        "govuk-!-margin-bottom-0"
+      ],
+      "count": 6,
+      "usage": "Wraps each control. Only 3 of the 6 carry govuk-!-margin-bottom-0 — the margin is zeroed on the entry-row cells so they line up as table cells rather than stacking; the other 3 keep the default margin.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot). VERIFIED ON THE ADVERSARIAL PASS: main .govuk-form-group = 6, of which .govuk-!-margin-bottom-0 = 3. The earlier count of 5 (and the claim that the modifier was on 'each') was wrong."
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "ellipsis",
+        "link-button"
+      ],
+      "count": 3,
+      "usage": "Cancel and return to hub; View <filename> (opens attachment in a new tab, target=_blank rel=noopener noreferrer); Download <filename> (?dl=1)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 59 (before snapshot). The 'View <filename>' link is corroborated as a REQUIREMENT by assertion: locatorAttachmentLink(filename) = getByRole('link', { name: `View ${filename}` }) at AccompanyingDocumentsPage.ts:31-33, asserted toBeVisible for CHED-PP across 6 file types at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/document/document-upload-valid-commercial-invoice.spec.ts:68. 'Download' and 'Cancel and return to hub' have no locator and are never exercised."
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Documents' above the H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-m"
+      ],
+      "count": 2,
+      "usage": "govuk-heading-xl = the H1. govuk-heading-m is on the additional-documents__caption div, which renders EMPTY on CHED-PP.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot)"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 1,
+      "usage": "The date fieldset legend",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "additional-documents-table / additional-documents__grid-row / additional-documents__grid-column-15 / -35 / -50 / -doc-date / additional-documents__headers / additional-documents__table-header",
+      "whatItDoes": "A bespoke div-based grid emulating a table with editable cells. Column headers are plain divs, not <th>. Rows are divs, not <tr>. Percentage-named custom grid columns (15/35/50) sit outside the GOV.UK 12-column grid.",
+      "concern": "It is a data table that is not a table — no semantic header/cell association, so screen-reader users get no column context for the inputs. The percentage grid classes are a parallel layout system to govuk-grid-*. The saved rows duplicate the headers inside each cell (additional-documents__content-heading) purely to compensate for this on small screens — evidence that the fake table does not reflow. NOTE THE AXE BLIND SPOT (see the aria-label pattern below): because these are divs and not a malformed <table>, automated testing cannot see this at all — axe reports zero violations on this page. The absence of a table is precisely what makes the missing table semantics invisible to tooling.",
+      "govukAlternative": "The GOV.UK 'Add another thing' pattern: capture ONE document per page with properly labelled Select / Text input / Date input, then list saved documents in a Summary list (or Table) with Change/Remove actions. That is the Design System's answer to exactly this problem and removes the whole custom grid.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 + 59 (main.html / table59.html)"
+    },
+    {
+      "pattern": "aria-label=\"Document type\" / aria-label=\"Document reference\" / aria-label=\"Day\" / aria-label=\"Month\" / aria-label=\"Year\" — with NO <label> element anywhere in main",
+      "whatItDoes": "Every control is labelled only by an aria-label attribute. The visible text that appears to label them is the column-header div, which is not programmatically associated with any input.",
+      "concern": "HIGH VALUE FINDING. There is not a single <label> on this page. This breaks the GOV.UK Design System contract (every input has a <label> or a fieldset legend), loses the click-target-grows-label behaviour, and means visible label text and accessible name can drift — they already have: the visible header reads 'Date of issue' while the accessible name is 'Document issue date'. CORROBORATED BY THE TEST CODE: every locator in AccompanyingDocumentsPage.ts:7-25 is forced to use getByLabel/getByRole+name against the aria-label, because there is no visible label to target. The page object is a direct fossil of this defect. CRITICAL NEW CONTEXT — THIS PAGE PASSES AXE WITH ZERO VIOLATIONS: the CHED-PP accessibility spec runs a real axe-core scan on this page twice (tests/accessibility/ched-pp-accessibility-tests.spec.ts:130, :139) at WCAG 2.0/2.1 A+AA, and the committed run log records 'no violations' for both states on the CHED-PP draft (a11y-test.log:10756, 10787; a11y-rerun.log:186, 205). That is NOT a contradiction of this finding — aria-label fully satisfies axe's label rule, and the visible-name/accessible-name mismatch (WCAG 2.5.3 Label in Name) is not reliably auto-detectable. The point is defensive: someone WILL cite the green a11y suite as proof this page is fine. It is not. Automated checks are blind to every defect listed here, which is exactly why the rebuild must not treat 'axe passes' as the bar. NOTE — an earlier pass claimed the a11y gate 'has no teeth'; that is RETRACTED as false (the gate is an auto-fixture with maxViolations: 0 and would fail on any violation — see openQuestions). The page clears a genuinely strict gate and is still not accessible. That is the finding, not a caveat to it.",
+      "govukAlternative": "Real <label class=\"govuk-label\" for=\"...\"> per input, and a <legend> for the date group. Falls out naturally if the page moves to one-document-per-page.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 — main.html contains zero <label> elements; corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AccompanyingDocumentsPage.ts:7-25; axe result corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/utils/accessibility-utils.ts:114-120 (the scan config) and a11y-test.log:10756,10787"
+    },
+    {
+      "pattern": "defra-datepicker / date-picker__container / date-picker__dialog / date-picker__date-table / date-picker__reveal__icon / date-picker__button__{previous-month,next-month,close} / date-picker__heading / aria-live-message, driven by data-module=\"accessible-datepicker\"",
+      "whatItDoes": "A bespoke calendar-picker widget bolted onto the standard govuk-date-input. Renders a 'Choose date' icon button that opens a role=dialog aria-modal calendar with month navigation and a Cancel button. Its <table> uses role=\"presentation\".",
+      "concern": "Third-party/in-house JS component with no Design System equivalent at the time. It is progressive enhancement over a working date input, so it degrades safely — but it is a whole widget to own, test and keep accessible. Note the picker's DIALOG markup was absent from the action-59 snapshot, i.e. it is injected by JS after load, so it is not present without JavaScript. PRECISED ON THE ADVERSARIAL PASS: it is only the injected dialog that is absent — the data-module=\"accessible-datepicker\" hook itself IS server-rendered and present in BOTH snapshots (verified at action 52 and action 59). At action 52 the injected markup is present (.date-picker__date-table, role=presentation, plus four type=button controls with accessible names 'Choose date', 'Previous month', 'Next month', 'Cancel'); at action 59 — a freshly POST-rendered page — .date-picker__container is absent and main contains ZERO tables, i.e. the snapshot caught the page before the JS enhanced it. So the progressive-enhancement conclusion stands, but the earlier phrasing ('the picker markup was absent') overstated it: the server always emits the hook, and the picker is exactly one <table role=presentation> when enhanced. Corroboration that it is genuinely optional: NOT ONE test in the QA suite opens the picker — every one of them types into the three text inputs (AccompanyingDocumentsPage.ts:47-51). The picker earns no requirement from either source. It is also never exercised by the axe scan in an OPEN state (the scans at ched-pp-accessibility-tests.spec.ts:130,139 run with the dialog closed), so the picker's own accessibility is unverified by every source we have.",
+      "govukAlternative": "Plain govuk-date-input (Day/Month/Year) with no picker — this is the Design System's standing recommendation for a date someone knows (a document issue date is known, not chosen from a calendar). GOV.UK has since published a Date picker in the Design System backlog, but for a known past date the three-field input is the right call and the picker can simply be dropped.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (main.html)"
+    },
+    {
+      "pattern": "link-button (+ no-wrap, text-align-left)",
+      "whatItDoes": "type=submit buttons styled to look like links: 'Add attachment', 'Add another document', 'Remove attachment'. Each posts the form with a distinct name so the server can branch (add-attachment, add-additional-document, remove-attachment).",
+      "concern": "Buttons disguised as links — a known GOV.UK anti-pattern (the affordance says 'navigates', the behaviour says 'submits and mutates state'). The multi-submit-button form is also why the page needs the is-additional-document-row-shown and current-page-number hidden fields to reconstruct its own state on every POST. Meanwhile 'Download' is the reverse: a real <a> given the link-button class. Telling detail: the QA page object locates 'Add attachment' as getByRole('BUTTON') (AccompanyingDocumentsPage.ts:39-41) — the test author had to know it is really a button despite looking like a link.",
+      "govukAlternative": "govuk-button--secondary for real actions, or the Summary list's built-in Change/Remove action links for row-level operations. The new app should use one action per POST rather than name-multiplexed submits.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 + 59"
+    },
+    {
+      "pattern": "sr-only / ellipsis / no-wrap / additional-documents__date-of-issue-hint(__day|__month|__year)",
+      "whatItDoes": "sr-only duplicates govuk-visually-hidden (both are in use on the same page). ellipsis truncates long filenames. no-wrap stops button text wrapping. The date-of-issue-hint spans render the words 'Day Month Year' inside the column header as pseudo-hints positioned over the three inputs.",
+      "concern": "Two visually-hidden utilities coexisting shows two CSS lineages merged without reconciliation. The Day/Month/Year 'hint' is doing the job a real <label> per date part should do — it is presentational text aligned by custom CSS, not associated with anything. Filename truncation via CSS ellipsis means the full name is only in the title attribute.",
+      "govukAlternative": "govuk-visually-hidden only; govuk-hint for genuine hints; real per-part labels inside the date input (the Design System's date input already renders Day/Month/Year labels correctly).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (main.html)"
+    },
+    {
+      "pattern": "<div class=\"govuk-grid-row\" id=\"veterinary-health-certificate\">",
+      "whatItDoes": "The wrapper div for the whole CHED-PP documents page carries the id 'veterinary-health-certificate'.",
+      "concern": "Minor but telling: the CHED-PP page reuses the markup of the CHED-A/CHED-P veterinary-health-certificate page. The template is shared across all four CHED types and branches internally. CORROBORATED BY THE TEST SUITE SHAPE: one single AccompanyingDocumentsPage page object serves all four CHED journeys (ched-a/ched-d/ched-p/ched-pp-workflows.ts all drive the identical locators), which is only possible because one template serves all four. THE SIBLING PAGE IS NOW IDENTIFIED, AND THE id IS NOT VESTIGIAL — IT IS A FOSSIL OF A REAL PAGE THAT STILL EXISTS: CHED-P (and CHED-A) have a SEPARATE 'Latest health certificate' page at URL /notifications/:draftId/latest-certificate, with its own page object (pages.latestHealthCertificate — ched-p-workflows.ts:341-353) exposing the SAME control set as this page (inputDocumentReference, fillHealthCertificateDate, btnAddAttachment, btnSaveAndContinue) but with NO document type select, because the type is fixed to the veterinary health certificate. So this page and /latest-certificate are two renders of one template: this page is the general 'any document type' variant, /latest-certificate is the 'type is pinned' variant. Decisive tell that the locators are genuinely interchangeable: the CHED-A accessibility spec drives the ACCOMPANYING DOCUMENTS page object against the /latest-certificate URL (ched-a-accessibility-tests.spec.ts:75-78 fills reference+date with no type select, and a11y-test.log:10656 records the resulting scan at .../latest-certificate). CHED-PP HAS NO /latest-certificate PAGE AT ALL — the plant equivalent (the phytosanitary certificate) is just one option in this page's Document type list. The new CHED-PP-only app should carry neither the id, the branching, nor the pinned-type variant.",
+      "govukAlternative": "n/a — remove.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (main.html); corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-a-workflows.ts:340, ched-d-workflows.ts:240, ched-p-workflows.ts:357, ched-pp-workflows.ts:451 — same locators, four journeys. Sibling page: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-p-workflows.ts:341-353 and tests/accessibility/ched-a-accessibility-tests.spec.ts:75-78; a grep for latestHealthCertificate across workflows/ returns hits ONLY in ched-p-workflows.ts, confirming CHED-PP and CHED-D have no such page."
+    },
+    {
+      "pattern": "Empty <div class=\"govuk-grid-column-two-thirds govuk-!-padding-0\"></div> and empty <div class=\"additional-documents__caption govuk-heading-m\" id=\"additional-documents-header\"></div>",
+      "whatItDoes": "Two elements that render nothing on CHED-PP.",
+      "concern": "Dead markup from the shared template — the caption is populated for other CHED types. Confirms the template is doing double duty. Also note the real content sits in govuk-grid-column-full, not two-thirds, so the page ignores the GOV.UK reading-width guidance (because the fake table needs the width).",
+      "govukAlternative": "govuk-grid-column-two-thirds with a one-question-per-page layout.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (main.html)"
+    },
+    {
+      "pattern": "#inspector-documents-table — the SAME page reused for a second, INSPECTOR-facing audience",
+      "whatItDoes": "NEW FINDING FROM SOURCE 2 — invisible to the trace corpus. The same AccompanyingDocumentsPage page object also drives a documents page reached by a B2B INSPECTOR (not the notifier), via decisionDashboard > notification details > decisionHub 'Attachments' link, against an already-SUBMITTED notification. In that context the page renders an additional container with id 'inspector-documents-table' wrapping the attachment links, which the notifier-facing variant does not have — the tests need a distinct locator scoped to it precisely because the two variants differ.",
+      "concern": "The template is doing double duty on a SECOND axis: not just across the four CHED types, but across two AUDIENCES (notifier pre-submission vs inspector post-submission) with different permissions, different entry points, and at least one structurally different table. That is a hidden dimension of the page's complexity that the notifier-journey traces cannot show at all. The inspector variant is genuinely exercised for CHED-PP across all six valid file types (document-upload-valid-inspector.spec.ts:52-68), and the inspector writes REAL data through this page — selecting document type 'Other', reference 'INS-UPLOAD'/'INS-IMPORT' and today's date. So this is not a read-only view: a second audience CREATES documents on a SUBMITTED notification. Whoever scopes the rebuild must decide explicitly whether the new CHED-PP app owns the inspector document-attachment surface or whether it stays in IPAFFS — this is a scope question, not a styling one.",
+      "govukAlternative": "n/a — a scoping decision, not a component swap. If both audiences are in scope they should be two separate pages/routes in the new app, not one template branching on role.",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AccompanyingDocumentsPage.ts:35-37 (locatorInspectorAttachmentLink scopes to '#inspector-documents-table'); driven at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/shared/document-workflows.ts:6-11 and :22 (decisionHub.linkAttachments), writing document type 'Other' at :7,:31; asserted for CHED-PP at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/document/document-upload-valid-inspector.spec.ts:52-68. INFERRED — no trace in our corpus rendered the inspector variant."
+    }
+  ],
+  "fields": [
+    {
+      "name": "document-type",
+      "label": "Document type",
+      "hint": null,
+      "control": "select",
+      "required": true,
+      "options": [
+        "Select document type",
+        "Air waybill",
+        "Commercial invoice",
+        "Cargo Manifest",
+        "Inspection certificate",
+        "Phytosanitary certificate",
+        "Import permit",
+        "Origin certificate",
+        "Letter of authority (Directive 2008/61/EC)",
+        "Heat treatment certificate",
+        "Container manifest",
+        "Sea Waybill",
+        "Rail waybill",
+        "Customs declaration",
+        "Bill of lading",
+        "Conformity certificate",
+        "Other"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 17,
+      "observedValues": [
+        "Phytosanitary certificate"
+      ],
+      "conditionalOn": "Always shown on the blank entry row — EXCEPT on the /latest-certificate sibling render of this template (CHED-A/CHED-P only), where the type is pinned and the select is absent. Not applicable to CHED-PP, which has no such page. Required only once the row is 'started' — see validationMessages trigger notes.",
+      "requiredEvidence": "legacy — required once the row is started. In documents_validation.js the document-type Joi key is Joi.string().valid(...).required() with STRING_EMPTY / ANY_REQUIRED / ANY_VALID all mapping to DOCUMENT_TYPE ('Select a document type') — ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/documents_validation.js:46-52. This required branch is only entered when shouldValidateAdditionalDocument(payload) is true (documents_validation.js:44), i.e. the 'started row' rule below is CONFIRMED from source, not a hypothesis. This is the old system's policy; the rebuild may choose a different model (e.g. one-document-per-page where type is always required on submit).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot); option VALUES: ''=Select document type, airWaybill, commercialInvoice, cargoManifest, inspectionCertificate, phytosanitaryCertificate, importPermit, originCertificate, letterOfAuthority, heatTreatmentCertificate, containerManifest, seaWaybill, railwayBill, customsDeclaration, billOfLading, conformityCertificate, other. This exact 16-item list is CHED-PP-specific (CHEDPP_DOCUMENT_TYPES). CORROBORATED BY SOURCE 2: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/document-type.ts is a 27-entry ALL-CHED vocabulary; the 16 CHED-PP labels observed in the trace are all present in it, and the casing anomalies are reproduced there independently — seaWaybill:'Sea waybill' AND seaWaybillCapitalW:'Sea Waybill' BOTH exist (document-type.ts:25-26), a dedicated key invented purely to model the Title-Case variant this page renders; cargoManifest:'Cargo Manifest' (line 6) is likewise Title Case while airWaybill:'Air waybill' (line 4) is sentence case; railwayBill:'Rail waybill' (line 23) reproduces the value/label mismatch. The QA repo has fossilised the reference data's inconsistency rather than fixed it — independent confirmation that these are real rendered strings, not a trace-reading error. Values NOT offered on CHED-PP but present in the vocabulary (healthCertificate, veterinaryHealthCertificate, packingList, processingStatement, proofOfStorage, listOfIngredients, laboratorySamplingResults*, roadConsignmentNote, certificateOfOrigin) belong to the other three CHED types. VALUES SELECTED ON A CHED-PP NOTIFICATION BY THE SUITE (inferred, only 'Phytosanitary certificate' appears in a trace): 'Phytosanitary certificate' is DEFAULT_CONFIG.documentType for every notifier journey (ched-pp-workflows.ts:172 / :451) and is used by the CHED-PP a11y spec (tests/accessibility/ched-pp-accessibility-tests.spec.ts:126); 'Other' is selected by the INSPECTOR on a CHED-PP notification (workflows/shared/document-workflows.ts:7,31 driven from document-upload-valid-inspector.spec.ts:52-68). No other option in the 16 is ever selected on CHED-PP by any source — 14 of 16 options are entirely unexercised."
+    },
+    {
+      "name": "document-reference",
+      "label": "Document reference",
+      "hint": null,
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — REQUIRED for CHED-PP once the row is started, and the earlier \"required\": false was the inverted 'isChedp trap' reading. getReferenceValidation(isChedp) returns Joi.string().optional().allow('') when isChedp is true, else Joi.string().required() — ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/documents_validation.js:123-130. isChedp === (notification.type === CVEDP) === CHED-P (documents.js:102), so for CHED-PP isChedp is FALSE and the required() branch is taken. Empty-value message = requiredMessage(REFERENCE, A) = 'Enter a reference' (messages/en.js:31-33; labels/en.js:2 A='a', :45 REFERENCE='Reference'). This flips the field from the prior unverified 'false'. NOTE: legacy mandatoriness — a policy the rebuild may revisit; and it is CONDITIONAL (fires only once the row is started, per shouldValidateAdditionalDocument at documents_validation.js:30-33,44,53).",
+      "observedValues": [
+        "REF-124"
+      ],
+      "conditionalOn": "Always shown on the blank entry row. Required once the row is 'started' (any of type/reference/day/month/year non-empty, or an Add button pressed).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 60. REQUIREDNESS UNVERIFIED — \"required\": false above is an unverified default, NOT a finding. It was originally set from legacy source that this file's governance has since withdrawn, and that reading was in any case a misread of the isChedp flag (isChedp means CHED-P, not CHED-PP; our draft banner reads 'CHEDPP' at action 52). Read the wrong way it says optional; read correctly the same code says REQUIRED. Both admissible sources are silent — every QA journey fills this field, so nothing demonstrates optionality. STRUCTURAL CONFIRMATION THAT THE SUITE CANNOT ANSWER THIS: in ChedPPNotificationConfig the field is optional (`documentReference?: string`, ched-pp-workflows.ts:112-113) so a test COULD override it — but DEFAULT_CONFIG is typed `Required<ChedPPNotificationConfig>` (ched-pp-workflows.ts:135) and hardcodes 'REF-124', and the workflow fills it unconditionally at :452 with no branch that would skip it. There is no code path in the suite that leaves this field blank. See openQuestions. CORROBORATED BY SOURCE 2: 'REF-124' is DEFAULT_CONFIG.documentReference at ched-pp-workflows.ts:172 — i.e. the trace value IS the test-suite default, which is why it is the only value the corpus shows. Other values the suite drives through this same field (inferred, not in a CHED-PP trace): 'INS-UPLOAD' and 'INS-IMPORT' on the inspector variant of a CHED-PP notification (/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/shared/document-workflows.ts:8,32), 'REF-COPY-123' on CHED-D copy-as-new (ched-d-workflows.ts:628), 'REF-125' as a SECOND document on CHED-A (ched-a-workflows.ts:994). No test ever supplies a >100-character reference, so the maxLength rule is unexercised by BOTH sources."
+    },
+    {
+      "name": "document-issue-date-day / document-issue-date-month / document-issue-date-year",
+      "label": "Date of issue",
+      "hint": "Day Month Year",
+      "control": "date",
+      "required": true,
+      "requiredEvidence": "legacy — REQUIRED for CHED-PP once the row is started; the prior \"required\": false was the inverted 'isChedp trap' reading. documents_validation.js calls dateValidator.dateValidation({ label: 'Date of issue', path: 'document-issue-date', required: !isChedp }) — ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/documents_validation.js:99-107. isChedp is CHED-P (documents.js:102), so for CHED-PP !isChedp === true and the date is REQUIRED. The empty-date message is DATE_MISSING_ERROR('Date of issue') = 'Enter a date of issue' (validation_messages.js:13). Trigger for this required check: type OR reference filled, OR an Add button pressed (documents_validation.js:97-98). NO past/future restriction is applied — dateValidation is called without checkIsInPast/checkIsInFuture, so the date_validator's past/future branches (date_validator.js:88-93) never run for this field; that settles the 'is there a date-range rule?' open question in the negative for the legacy system. Legacy mandatoriness is a policy the rebuild may revisit.",
+      "observedValues": [
+        "04 / 12 / 2025"
+      ],
+      "conditionalOn": "Always shown on the blank entry row. Required once the row is 'started'.",
+      "confidence": "confirmed",
+      "evidence": "REQUIREDNESS UNVERIFIED — \"required\": false above is an unverified default, NOT a finding, and rests on the same withdrawn-and-misread source as document-reference (the isChedp trap: isChedp means CHED-P, so for CHED-PP the legacy date validator is actually invoked with required: true). Same structural point as document-reference: `documentDate?: DateInput` is overridable (ched-pp-workflows.ts:114-115) but DEFAULT_CONFIG is `Required<>` and the workflow fills it unconditionally (:453) — no suite path leaves it blank. See openQuestions. RENDERING IS CONFIRMED: trace 219b882ee3b4fbe040b824d146d38991d6b70149 actions 53-55 (fill '04', '12', '2025'). Rendered back on the saved row as '4 December 2025' (action 59). Visible column header = 'Date of issue'; visually-hidden fieldset legend = 'Document issue date'; the aria-labels on the three inputs are 'Day', 'Month', 'Year'. The 'Day Month Year' hint is presentational spans (additional-documents__date-of-issue-hint__*), NOT a govuk-hint. Inputs are type=text, inputmode=numeric, maxlength 2/2/4. CORROBORATED BY SOURCE 2: '04/12/2025' is DEFAULT_CONFIG.documentDate at ched-pp-workflows.ts:173-177 — again the trace value is the suite default. IMPORTANT SIGNAL ON DATE RANGE: the copy-as-new workflow issues getRelativeDateTime(-30) — a date 30 days in the PAST (ched-pp-workflows.ts:876), the a11y spec uses getRelativeDateTime() = today (tests/accessibility/ched-pp-accessibility-tests.spec.ts:128-129), and the INSPECTOR variant also uses getRelativeDateTime() = today (workflows/shared/document-workflows.ts:9,33). No test anywhere supplies a FUTURE issue date. Combined with the hardcoded 04/12/2025 default (which was a future date when written and is now past, yet the suite still passes), this suggests there is NO future-date restriction on document issue date — but that is an argument from silence, not a rule anyone stated. See openQuestions."
+    },
+    {
+      "name": "add-attachment",
+      "label": "Add attachment",
+      "hint": null,
+      "control": "file",
+      "required": false,
+      "conditionalOn": "Always shown on the blank entry row. Column header is 'Attachments (optional)'.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 56. NOT a file input on this page — there is NO <input type=file> in main (verified via the control inventory at action 52). It is a type=submit button (name=add-attachment) that POSTs the form and hands off to the separate document-upload page; the actual <input type=\"file\"> lives there (action 57 sets input files, action 58 clicks 'Next'), after which the user returns to this page. Modelled as control=file because that is the user-facing intent. CORROBORATED BY SOURCE 2 — and the round trip is confirmed as a REQUIREMENT, not an accident: the page object splits cleanly across two objects (AccompanyingDocumentsPage.btnAddAttachment at AccompanyingDocumentsPage.ts:39-41, then DocumentUploadPage.inputFile / btnNext at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DocumentUploadPage.ts:22-24,6-8), and every CHED journey drives exactly that sequence (ched-pp-workflows.ts:457-462). The CHED-PP a11y spec independently treats the return leg as a distinct page state worth scanning ('Accompanying Documents Page (after upload)', tests/accessibility/ched-pp-accessibility-tests.spec.ts:139). ALSO NOTE THE UPLOAD PAGE IS A DIFFERENT ORIGIN/SERVICE: the a11y log shows this page at /0/dev/... but the document-upload page at /5/dev/protected/upload/... (a11y-test.log:10644 vs the Document Upload Page entries) — a different route prefix, i.e. the upload surface is a separate mount. Relevant to the rebuild's integration scope. Note DocumentUploadPage.btnNextOrContinue (DocumentUploadPage.ts:14-16) matches /^(Next|Continue)$/ — the upload page's primary button is inconsistently labelled 'Next' or 'Continue' depending on entry route, itself a finding for whoever owns document-upload."
+    },
+    {
+      "name": "add-additional-document",
+      "label": "Add another document",
+      "hint": null,
+      "control": "button",
+      "required": false,
+      "conditionalOn": "Always shown below the entry row.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 (before snapshot, ref e92). type=submit, name=add-additional-document, class link-button. Never clicked in either trace — the traces only ever add ONE document. Commits the current entry row and renders a fresh blank one. SOURCE 2 CONFIRMS THE GAP IS REAL, NOT A SAMPLING ACCIDENT: there is NO locator for this control anywhere in AccompanyingDocumentsPage.ts, and a grep for 'Add another document' / 'add-additional-document' across the entire QA repo (tests, page-objects, workflows) returns ZERO hits. So the multi-document flow is unexercised by BOTH sources. Notably CHED-A DOES add a second document (ched-a-workflows.ts:340-349, 605-619, 992-1004) WITHOUT ever clicking this button — it just fills the fresh blank row that appears after the first Save/upload round trip, and the CHED-A a11y run scans the resulting two-row page ('Accompanying Documents Page (second document)', a11y-test.log:10678). That is indirect evidence the blank row auto-regenerates and the button is a convenience path, but it is not proof — and no CHED-PP journey ever adds a second document at all."
+    },
+    {
+      "name": "remove-attachment",
+      "label": "Remove attachment",
+      "hint": null,
+      "control": "button",
+      "required": false,
+      "conditionalOn": "Shown on a saved row only when that row has an attachment.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 59 (before snapshot). type=submit, name=remove-attachment, value=<attachment uuid>, aria-label='Remove attachment example.png'. Never clicked in either trace. SOURCE 2 CONFIRMS THE GAP: no locator in AccompanyingDocumentsPage.ts, and zero hits for 'Remove attachment' / 'remove-attachment' across the whole QA repo. Neither source has ever exercised removal — nobody has evidence of what it does."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) CSRF token",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 — <input name=\"crumb\" type=\"hidden\">. Standard hapi crumb CSRF."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) optimistic-concurrency token",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 — <input name=\"etag\" type=\"hidden\" value=\"\\\"0000000000BD29E5\\\"\">. The draft's version token, round-tripped on every save so concurrent edits are detected. A real requirement for the new app if two users/tabs can edit one draft. NOTE: source 2 raises the stakes here — the inspector variant (document-workflows.ts:6-11) means a NOTIFIER and an INSPECTOR can both touch a notification's documents, and the DoA tests show a third principal (an AGENT acting for an organisation) drafting through this same page (tests/auth/DoA/doa-importer-access.spec.ts:39-47). So concurrent edits are not a hypothetical."
+    },
+    {
+      "name": "is-additional-document-row-shown",
+      "label": "(hidden) whether the blank entry row is rendered",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 — value=\"true\". UI state pushed through the form so the server can rebuild the page. An artefact of the multi-submit-button design; should not survive the rebuild."
+    },
+    {
+      "name": "current-page-number",
+      "label": "(hidden) documents pagination cursor",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52 — value=\"1\", matching the /documents/page-1 URL. Implies the documents list PAGINATES beyond some number of documents, but no trace exercised page-2, so the page size and the pagination controls are unobserved. SOURCE 2 CONFIRMS THE GAP: no test in the QA repo ever adds enough documents to paginate (the most any journey adds is two, on CHED-A), and no page object exposes a pagination control. Unexercised by both sources."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select a document type",
+      "field": "document-type",
+      "trigger": "The entry row has been 'started' — i.e. any of document-type, document-reference, day, month or year is non-empty, OR 'Add another document'/'Add a document' was clicked (add-additional-document in payload), OR 'Add attachment' was clicked (add-attachment === '') — but no document type is selected. This started-row rule is now CONFIRMED from legacy source (shouldValidateAdditionalDocument). Also fires when a value not in the CHED-PP document-type vocabulary is submitted (Joi .valid(...) → ANY_VALID maps to the same message).",
+      "confidence": "legacy",
+      "evidence": "legacy — LEGACY SOURCE NOW AUTHORISED, upgraded gap->legacy. Message string DOCUMENT_TYPE='Select a document type' at ipaffs-frontend-notification/service/src/validation/messages/en.js:71; wired as the STRING_EMPTY/ANY_REQUIRED/ANY_VALID message on a Joi.string().valid(...).required() key at .../validation/routes/handlers/importer/documents_validation.js:46-52; the required branch is gated by shouldValidateAdditionalDocument(payload) at documents_validation.js:30-33,44, which IS the 'started row' trigger. Still NOT observed in any trace and NOT asserted by any QA test (grep for 'Select a document type' across the QA repo returns zero hits; AccompanyingDocumentsPage.ts has no error locator) — but the legacy application source is authoritative for the copy and the rule."
+    },
+    {
+      "message": "Enter a reference",
+      "field": "document-reference",
+      "trigger": "CHED-PP only: the row is 'started' but Document reference is left blank. On CHED-P the field is optional and this does not fire.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW, MISSED BY THE RENDERED PASS (no trace captured an error state). For CHED-PP the reference is REQUIRED: getReferenceValidation(false) → Joi.string().required(), with STRING_EMPTY/ANY_REQUIRED both mapping to requiredMessage(REFERENCE, A) = 'Enter a reference' — ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/documents_validation.js:53,123-130; message builder messages/en.js:31-33 ('Enter ' + article + ' ' + label.toLowerCase()); labels/en.js:2 (A='a'), :45 (REFERENCE='Reference'). isChedp=CHED-P (documents.js:102), so CHED-PP takes the required() branch. Legacy mandatoriness the rebuild may revisit."
+    },
+    {
+      "message": "Document reference must be 100 characters or fewer",
+      "field": "document-reference",
+      "trigger": "Document reference longer than 100 characters.",
+      "confidence": "legacy",
+      "evidence": "legacy — LEGACY SOURCE NOW AUTHORISED, upgraded gap->legacy. maxLengthMessage(DOCUMENT_REFERENCE, 100) = 'Document reference must be 100 characters or fewer' — builder at ipaffs-frontend-notification/service/src/validation/messages/en.js:3-5, label DOCUMENT_REFERENCE='Document reference' at labels/en.js:44, wired on the STRING_MAX branch of the reference Joi key (.max(100)) at .../documents_validation.js:73-77,123-129. Applies to BOTH the required (CHED-PP) and optional (CHED-P) reference branches — the .max(100) is shared. Still not exercised by any trace or test (no QA test supplies an over-length reference), but the legacy source is authoritative for the 100-char cap and the copy."
+    },
+    {
+      "message": "Enter a date of issue",
+      "field": "document-issue-date",
+      "trigger": "CHED-PP only: the required date check fires (type OR reference filled, or an Add button pressed) and all three date parts are blank.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW, and it CORRECTS the withdrawn 'Enter a complete date of issue' entry below. The documents date path calls dateValidator.dateValidation (documents_validation.js:99-107), NOT validateDate/validateIncomplete, so the all-blank message is DATE_MISSING_ERROR(label) = 'Enter a ' + label.toLowerCase() = 'Enter a date of issue' (validation_messages.js:13, invoked via dateValidation → validateRequiredFields at date_validator.js:84,99-105). The required check only runs for CHED-PP (required: !isChedp, documents_validation.js:106) and is gated at documents_validation.js:97-98. Not observed in any trace/test; legacy source authoritative."
+    },
+    {
+      "message": "Date of issue must include a day",
+      "field": "document-issue-date",
+      "trigger": "Month and year entered, day blank.",
+      "confidence": "legacy",
+      "evidence": "legacy — upgraded gap->legacy. DAY_MISSING_ERROR(label) = label + ' must include a day' at ipaffs-frontend-notification/service/src/validation/validation_messages.js:14, emitted by dateValidation → validateIncompleteness (date_validator.js:108-127, dayMissing branch :115) with label='Date of issue' (documents_validation.js:103). Not asserted by any test — ched-pp-date-validation.spec.ts validates arrival dates, never the document date."
+    },
+    {
+      "message": "Date of issue must include a month",
+      "field": "document-issue-date",
+      "trigger": "Day and year entered, month blank.",
+      "confidence": "legacy",
+      "evidence": "legacy — MONTH_MISSING_ERROR(label) at validation_messages.js:15, date_validator.js:116 (monthMissing). label='Date of issue'."
+    },
+    {
+      "message": "Date of issue must include a year",
+      "field": "document-issue-date",
+      "trigger": "Day and month entered, year blank.",
+      "confidence": "legacy",
+      "evidence": "legacy — YEAR_MISSING_ERROR(label) at validation_messages.js:16, date_validator.js:117 (yearMissing). label='Date of issue'."
+    },
+    {
+      "message": "Date of issue must include a day and month",
+      "field": "document-issue-date",
+      "trigger": "Year only entered.",
+      "confidence": "legacy",
+      "evidence": "legacy — DAY_AND_MONTH_MISSING_ERROR(label) at validation_messages.js:17, date_validator.js:114 (dayAndMonthMissing = !day && !month && year). label='Date of issue'."
+    },
+    {
+      "message": "Date of issue must include a month and year",
+      "field": "document-issue-date",
+      "trigger": "Day only entered.",
+      "confidence": "legacy",
+      "evidence": "legacy — MONTH_AND_YEAR_MISSING_ERROR(label) at validation_messages.js:18, date_validator.js:112 (monthAndYearMissing = day && !month && !year). label='Date of issue'."
+    },
+    {
+      "message": "Date of issue must include a day and year",
+      "field": "document-issue-date",
+      "trigger": "Month only entered.",
+      "confidence": "legacy",
+      "evidence": "legacy — DAY_AND_YEAR_MISSING_ERROR(label) at validation_messages.js:19, date_validator.js:113 (dayAndYearMissing = !day && month && !year). label='Date of issue'."
+    },
+    {
+      "message": "Day must be from 1 to 31",
+      "field": "document-issue-date-day",
+      "trigger": "A day value outside 1–31 (or non-numeric) with any date part present. Attached to the -day sub-path.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW (out-of-range check, missed by rendered pass). RANGE_VALIDATION_ERROR('Day', MIN_DAY, MAX_DAY) = 'Day must be from 1 to 31' at validation_messages.js:20, emitted by dateValidation → validateDateRange (date_validator.js:129-157, :135-137); MIN_DAY=1/MAX_DAY=31 at validation_constants.js:327-328. Error path suffixed '-day' (date_validator.js:151)."
+    },
+    {
+      "message": "Month must be from 1 to 12",
+      "field": "document-issue-date-month",
+      "trigger": "A month value outside 1–12 (or non-numeric). Attached to the -month sub-path.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW. RANGE_VALIDATION_ERROR('Month', MIN_MONTH, MAX_MONTH) = 'Month must be from 1 to 12' at validation_messages.js:20, date_validator.js:138-140; MIN_MONTH=1/MAX_MONTH=12 at validation_constants.js:329-330."
+    },
+    {
+      "message": "Year must be 4 numbers",
+      "field": "document-issue-date-year",
+      "trigger": "Year not a 4-digit number. Attached to the -year sub-path.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW. MAX_YEAR_LENGTH_VALIDATION_ERROR('Year') = 'Year must be 4 numbers' at validation_messages.js:21, via date_validator.js validateYear (:159-165)."
+    },
+    {
+      "message": "Year must be later than 1969",
+      "field": "document-issue-date-year",
+      "trigger": "Year is a 4-digit number but <= 1969. Attached to the -year sub-path.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW. MIN_YEAR_VALIDATION_ERROR('Year', MIN_YEAR) = 'Year must be later than 1969' at validation_messages.js:22; MIN_YEAR=1969 at validation_constants.js:331; date_validator.js validateYear (:167-169)."
+    },
+    {
+      "message": "Date of issue must be a real date",
+      "field": "document-issue-date",
+      "trigger": "All three parts in range but they do not form a real calendar date (e.g. 31/02/2025).",
+      "confidence": "legacy",
+      "evidence": "legacy — upgraded gap->legacy. INVALID_DATE_ERROR(label) = label + ' must be a real date' at validation_messages.js:23, emitted by dateValidation → validateValidDate (date_validator.js:174-181). label='Date of issue'. No past/future restriction is applied on this field (dateValidation called without checkIsInPast/checkIsInFuture)."
+    },
+    {
+      "message": "Enter a complete date of issue",
+      "field": "document-issue-date",
+      "trigger": "SUPERSEDED — this string is NOT wired to this page.",
+      "confidence": "legacy",
+      "evidence": "legacy — CORRECTED. This string (DATE_INCOMPLETE(label) = 'Enter a complete ' + label.toLowerCase(), messages/en.js:66) belongs to the OTHER date helper (validateDateWithArgs → validateIncomplete, date_validator.js:34,54-60), which the documents page does NOT call — documents_validation.js:99 uses dateValidation. On this page a partial date yields the specific 'must include a …' messages above and an all-blank required date yields 'Enter a date of issue', so 'Enter a complete date of issue' never fires here. Retained (not deleted) so the correction is traceable; do NOT implement it on this page."
+    },
+    {
+      "message": "The selected file must be a DOC, JPEG, PDF, PNG or XLS | The selected file is empty | The selected file must be smaller than 10MB",
+      "field": "add-attachment (fires on the DOCUMENT-UPLOAD page, not this one)",
+      "trigger": "Reached from THIS page via 'Add attachment'. Fires on the separate document-upload page when the chosen file is the wrong type (.zip, .txt), zero-length, or over 10MB. Rendered into that page's error summary (role=alert), NOT into this page.",
+      "confidence": "inferred",
+      "evidence": "ASSERTED BY TEST FOR CHED-PP SPECIFICALLY — the strongest validation evidence available for anything reachable from this page: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/document/document-upload-invalid-commercial-invoice.spec.ts:8-13 (the three message strings) and :63-76 (the CHED-PP describe block asserting each against pages.documentUpload.locatorErrorSummary). Error-summary locator = getByRole('alert') at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DocumentUploadPage.ts:26-28. Complementary positive assertion: the permitted set is jpg, png, doc, docx, xls, pdf (document-upload-valid-commercial-invoice.spec.ts:8), all six asserted to upload successfully on CHED-PP (:63-70) and all six also asserted on the CHED-PP INSPECTOR variant (document-upload-valid-inspector.spec.ts:52-68). LISTED HERE ONLY AS A CROSS-REFERENCE — these belong to the document-upload page spec and should not be implemented on this page. Note the copy says 'DOC, JPEG, PDF, PNG or XLS' but the suite proves DOCX and XLSX are also accepted (document-workflows.ts:36 uploads example.xlsx) — the error message under-states the real permitted set."
+    },
+    {
+      "message": "Add a phytosanitary certificate",
+      "field": "accompanyingDocuments (notification-level, CHED-PP)",
+      "trigger": "SUBMIT-TIME, not per-page. Fires when the consignment has at least one commodity whose regulatory_authority is PHSI or JOINT but NO accompanying document of type Phytosanitary certificate has been added. This is the mandatoriness the on-page inset warning ('A phytosanitary certificate must be attached … or your consignment will be rejected') refers to. NOTE the property value carries an 'ACCOMPANYING_DOCUMENTS:' anchor prefix that routes the summary error to this page.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW, invisible to traces/tests (no error state captured). Backend message key ...partone.veterinaryinformation.accompanyingdocuments.phytosanitary.required = 'ACCOMPANYING_DOCUMENTS:Add a phytosanitary certificate' at ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:143. Enforced by @PhytosanitaryCertificateRequired(groups = PhytosanitaryCertificateRequiredValidation.class) on PartOne — ipaffs-imports-notification-schema/notification-schema-java/.../representation/PartOne.java:123 — whose validator requires a PHYTOSANITARY_CERTIFICATE document only when a commodity's regulatory_authority is PHSI or JOINT (.../validation/annotations/PhytosanitaryCertificateRequiredValidator.java isValid/hasPhsiOrJoint/hasPhytosanitaryCertificate). Legacy CHED-PP policy; conditional on commodity regulatory authority."
+    },
+    {
+      "message": "Phytosanitary certificate attachment",
+      "field": "accompanyingDocuments[].attachment (notification-level, CHED-PP)",
+      "trigger": "SUBMIT-TIME, not per-page. Fires when an accompanying document of type Phytosanitary certificate has been added but has NO file attachment. i.e. the phytosanitary certificate row must carry an uploaded attachment, not just type+reference+date.",
+      "confidence": "legacy",
+      "evidence": "legacy — NEW, invisible to traces/tests. Backend message key ...phytosanitary.attachment.required = 'Phytosanitary certificate attachment' at ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:144. Enforced by @PhytosanitaryCertificateAttachmentRequired(groups = NotificationChedppFieldValidation.class) on AccompanyingDocument — ipaffs-imports-notification-schema/notification-schema-java/.../representation/AccompanyingDocument.java:29 (validator: PhytosanitaryCertificateAttachmentRequiredValidator). This is why the phytosanitary certificate is not merely selectable but must be uploaded for CHED-PP."
+    }
+  ],
+  "confidence": "inferred",
+  "openQuestions": [
+    "NO ERROR STATE WAS EVER CAPTURED FOR THIS PAGE — AND NOW CONFIRMED UNEXERCISED BY BOTH SOURCES. Both evidence traces (219b882ee3b4fbe040b824d146d38991d6b70149 and e10b7cd5117799d60c1e0fbeddc3322eefde1572) are clean happy paths. Source 2 corroborates the hole rather than filling it: no test in the QA repo asserts ANY validation message on this page, AccompanyingDocumentsPage.ts exposes no error-summary/error-message locator at all, and ched-pp-date-validation.spec.ts — despite its name — never touches the document date. ACTION CHANGED SINCE THE TRACE PASS: every date/type/reference validationMessage above has been DOWNGRADED to 'gap', because its only support was legacy application source, which is out of scope for requirements. The rendered error copy, the summary heading, the inline prefixes and even WHETHER these rules exist are all unverified. This needs a human or a deliberate manual pass against the real service. It is the single biggest hole in this spec.",
+    "IS ANYTHING ON THIS PAGE ACTUALLY MANDATORY FOR CHED-PP? Unresolved, and the earlier framing of this question was BACKWARDS — see the next entry before reasoning about it. The trace pass asserted (from legacy source) that CHED-PP makes Document reference and Date of issue optional, leaving only Document type mandatory-once-started — so a CHED-PP user could Save and continue on a wholly blank documents page. That claim rested on out-of-scope source AND, independently, on a misreading of that source (the 'isChedp' trap below). It CANNOT be corroborated from traces or tests, and the fourth pass established WHY structurally: although documentType/documentReference/documentDate are all optional in the ChedPPNotificationConfig interface (ched-pp-workflows.ts:110-115), DEFAULT_CONFIG is typed Required<> (:135) and the workflow fills all three unconditionally at :451-453 BEFORE the stopAtAccompanyingDocuments early-return at :455 — so even the tests that deliberately STOP on this page fill it in first. There is not one code path in the entire suite that submits this page blank or partial. Both admissible sources are silent on requiredness by construction, not by accident. This must be answered by a human before the rebuild — getting it wrong in either direction is expensive. Note the field-level \"required\": false values on document-reference and document-issue-date-* below are NOT positive evidence of optionality; they are unverified defaults inherited from the withdrawn claim, and if anything the legacy code points the other way.",
+    "'isChedp' IN THE LEGACY SOURCE MEANS CHED-P, NOT CHED-PP — A TRAP THE EARLIER PASS FELL INTO. Flagging prominently because it inverts the previous conclusion. In the legacy code isChedp === (notification.type === CVEDP), and CVEDP === 'CVEDP' === CHED-P (products of animal origin). CHED-PP's notification type is the SEPARATE constant CHEDPP === 'CHEDPP'. Our own trace confirms which we are on: the draft banner reads 'DRAFT.GB.2026.1525990 - CHEDPP' (trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 52). So for CHED-PP, isChedp is FALSE, and every isChedp-gated branch resolves the OPPOSITE way to what the earlier pass recorded: Document reference takes the required() branch rather than optional(), the date validator is called with required: true, and the attachment cap is MAX_ATTACHMENTS (10) rather than MULTI_DOC_UPLOAD_MAX_ATTACHMENTS (100). I am deliberately NOT promoting any of that to a requirement — legacy application source remains out of scope, and this file's own governance withdraws it. The point is narrower and worth a human's attention on its own terms: the previous 'CHED-PP makes these optional' hypothesis is not merely unsupported, it is probably inverted, so it must not be allowed to stand as the default assumption anyone rebuilds against. Anyone who does go back to the legacy source to settle the requiredness question should read isChedp as 'is CHED-P' or they will reach the same wrong answer.",
+    "DO NOT TREAT THE GREEN ACCESSIBILITY SUITE AS EVIDENCE THIS PAGE IS ACCESSIBLE — NEW, AND IT CUTS AGAINST THIS SPEC'S BIGGEST FINDING. The CHED-PP accessibility spec runs a genuine axe-core scan on this page in both its states (tests/accessibility/ched-pp-accessibility-tests.spec.ts:130, :139) at WCAG 2.0/2.1 A+AA, and the committed run logs record ZERO violations on the CHED-PP draft (a11y-test.log:10756, 10787; a11y-rerun.log:186, 205). Yet this page has no <label> elements at all, a data table made of divs, and a visible-name/accessible-name mismatch. Both facts are true: aria-label satisfies axe's label rule, divs-that-aren't-tables have no table semantics for axe to check, and WCAG 2.5.3 Label in Name is not reliably auto-detectable. Someone will inevitably cite the green suite to argue the page is fine and the nonStandardPatterns above are academic. They are not. FOR A HUMAN: confirm the rebuild's a11y bar is the Design System contract and manual/AT testing, not 'axe is green'. RETRACTED ON THE ADVERSARIAL PASS — THE EARLIER CLAIM THAT 'THE GATE HAS NO TEETH' WAS FALSE, AND THE ACCUSATION AGAINST THE QA SUITE IS WITHDRAWN. The previous pass asserted that assertAccessibilityThreshold is never called and that these tests therefore cannot fail on a violation. That rested on a grep scoped to tests/ only, which missed fixtures/. The gate is real and it is strict: assertAccessibilityThreshold IS called at fixtures/accessibility.ts:32, inside an `auto: true` fixture (_accessibilityAutoCheck, fixtures/accessibility.ts:19-36) whose TEARDOWN asserts the threshold whenever any violation was collected; ched-pp-accessibility-tests.spec.ts:1 imports `test` from '@fixtures/accessibility', so the auto fixture applies to this very spec; and the default threshold is maxViolations: 0 (utils/accessibility-utils.ts:21). So a single axe violation on this page WOULD fail the test. The eslint-disable on spec line 13 covers setAccessibilityConfig only — unused because the spec relies on the default zero-tolerance config — NOT checkPageAccessibility, which is used throughout. CONSEQUENCE FOR THIS SPEC: the 'zero violations' result is not merely an incidental observation, it IS load-bearing — this page genuinely passes a zero-tolerance axe gate. That STRENGTHENS rather than weakens the finding above: the page has no <label> elements at all, a data table made of divs, and a visible-name/accessible-name mismatch, and it still clears a strict automated gate. That is precisely the point — axe cannot see these defects, so 'the a11y suite is green AND strict' must not be read as 'the page is accessible'.",
+    "SUCCESS BANNER — NEW, AND INCONSISTENT ACROSS CHED TYPES. AccompanyingDocumentsPage.ts:27-29 exposes locatorSuccessBanner = getByRole('region', { name: 'Success' }), and document-upload-valid-commercial-invoice.spec.ts:53 asserts it contains 'document uploaded' — but ONLY in the CHED-P branch. The CHED-PP branch of the same parameterised test (:68) asserts the attachment link instead, and CHED-A (:23) and CHED-D (:38) also assert the link. So: does a success banner render on CHED-PP after an upload, or is it CHED-P only? No trace shows one (the action-59 snapshot after upload has no banner in it, which leans towards 'not on CHED-PP' — but the snapshot was not taken to answer this question). If the banner IS meant to render, its absence from the CHED-PP post-upload snapshot is a live BUG in the legacy service. Needs a human. The full banner copy is unknown either way — 'document uploaded' is a toContainText substring, not the whole string.",
+    "SECOND AUDIENCE — IS THE INSPECTOR DOCUMENTS PAGE IN SCOPE FOR THE REBUILD? The same page object drives an inspector-facing variant of this page (#inspector-documents-table), reached post-submission via decisionHub > Attachments, and it is exercised for CHED-PP across all six valid file types (document-upload-valid-inspector.spec.ts:52-68; workflows/shared/document-workflows.ts:6-11,25-42). The notifier-journey traces cannot see this at all. Sharpened on the fourth pass: this is NOT a read-only inspector view — the inspector WRITES a document through this page (type 'Other', reference 'INS-UPLOAD'/'INS-IMPORT', today's date, plus an attachment) against an ALREADY-SUBMITTED notification, and those values are then asserted to appear on View details (document-access.spec.ts:42-44 and elsewhere). So the page supports post-submission mutation by a different principal. Does the new CHED-PP app own the inspector attachment surface, or does that stay in IPAFFS? This is a scoping decision that materially changes the size of the rebuild and should be settled early. See nonStandardPatterns.",
+    "THIRD PRINCIPAL — DELEGATED AUTHORITY (AGENT) ACCESS. NEW, minor but worth one line. Beyond notifier and inspector, the DoA test suite shows an AGENT acting on behalf of an organisation ('Carol Clark, agent for Plant Org 1') creating a CHED-PP draft and stopping on this very page (tests/auth/DoA/doa-importer-access.spec.ts:39-47), with the test then asserting which OTHER org members can and cannot see the resulting draft. This page itself has no visible role-specific behaviour in that test — it is used only as a stopping point — so there is no requirement here beyond the obvious: whatever authorisation model the new app adopts has to cover agent-acting-for-org on the documents surface, not just notifier and inspector. No evidence either way that the page renders differently for an agent.",
+    "The 'started row' rule (validation fires only once any of type/reference/day/month/year is non-empty, or an add button was pressed) came from legacy source and is NOT corroborated by traces or tests. If real it is subtle — a user who types only a reference would get 'Select a document type', a user who touches nothing gets no errors. Worth a human deciding this explicitly rather than the new app reimplementing it by accident. Currently: unsupported hypothesis.",
+    "NO EDIT AND NO DELETE FOR A SAVED DOCUMENT ROW — GAP CONFIRMED ON BOTH SIDES. The saved row (action 59) renders as read-only text with only 'Download' and 'Remove attachment' — no Change link, no 'Remove document'. Source 2 adds nothing but confirms the blind spot: the QA repo has ZERO hits for 'Remove attachment'/'remove-attachment' and no locator for either control, so no test has ever removed anything. Is a saved document genuinely uneditable and undeletable, or does a remove control appear under a condition neither source hit? A human needs to answer. Either way the new app should use Summary list Change/Remove actions.",
+    "'ADD ANOTHER DOCUMENT' IS NEVER CLICKED BY ANY TRACE OR ANY TEST (zero hits across the whole QA repo). Yet CHED-A demonstrably adds a SECOND document (ched-a-workflows.ts:340-349, 605-619, 992-1004) by simply filling the fresh blank row that appears after the first upload round trip — never touching the button — and the CHED-A a11y run scans the resulting two-row page (a11y-test.log:10678). So either the button is redundant with the auto-regenerating blank row, or it does something subtly different. NO CHED-PP JOURNEY EVER ADDS A SECOND DOCUMENT AT ALL, so the multi-document CHED-PP page has never been rendered by any source we have — the two-saved-row CHED-PP state is completely unobserved. If the new app adopts the GOV.UK 'Add another' pattern this question dissolves — but confirm nobody depends on the current behaviour first.",
+    "PAGINATION IS UNEXERCISED BY BOTH SOURCES. The URL is /documents/page-1 with a hidden current-page-number=1, implying documents paginate. No trace reached page-2; no test ever adds enough documents to paginate (max two, on CHED-A); no page object exposes a pagination control. Page size, control markup, and Save-and-continue interaction all unobserved. Likely irrelevant to the rebuild (a Summary list of N documents needs no pagination) but flagged so the omission is deliberate.",
+    "MAXIMUM NUMBER OF DOCUMENTS is unknown — no cap observed in the DOM and no test approaches one.",
+    "IS THERE A DATE RANGE RULE ON DOCUMENT ISSUE DATE? No test anywhere supplies a FUTURE issue date: the copy-as-new workflow uses getRelativeDateTime(-30) (30 days past, ched-pp-workflows.ts:876), the a11y spec uses today (ched-pp-accessibility-tests.spec.ts:128), the inspector variant uses today (document-workflows.ts:9,33), and DEFAULT_CONFIG hardcodes 04/12/2025 (ched-pp-workflows.ts:173-177) — which was a future date when authored and is now past, yet the suite still passes. That last detail is the interesting one: if a future-date restriction existed, the suite would have STARTED passing at some point rather than always having passed, and nobody would have noticed. Weak evidence for NO future-date restriction, but an argument from silence. A document issue date is inherently a past-or-today date; ask a human whether the new app should enforce that (the legacy app's behaviour here is genuinely unknown from admissible sources).",
+    "ATTACHMENT CONSTRAINTS — NOW LARGELY ANSWERED, BUT THEY BELONG TO THE DOCUMENT-UPLOAD PAGE. Permitted: jpg, png, doc, docx, xls, pdf (asserted for CHED-PP, document-upload-valid-commercial-invoice.spec.ts:8,63-70, and again on the CHED-PP inspector variant, document-upload-valid-inspector.spec.ts:52-68). Rejected: wrong type ('The selected file must be a DOC, JPEG, PDF, PNG or XLS'), empty file, >10MB (document-upload-invalid-commercial-invoice.spec.ts:8-13,63-76). Note the error copy UNDER-STATES reality — it omits DOCX and XLSX, yet the suite uploads example.xlsx successfully (document-workflows.ts:36); that is a copy bug worth fixing in the new app. Also note the upload page is mounted on a DIFFERENT route prefix from this page (/5/dev/protected/upload/... vs /0/dev/protected/notifications/...; a11y-test.log Document Upload Page entries) — i.e. a separate service or mount, which matters for the rebuild's integration scope. Still unknown: virus scanning, max attachments per document. Confirm whoever owns the document-upload page spec is mining these — this page only contributes the 'Attachments (optional)' column header.",
+    "The visible column header 'Date of issue' and the visually-hidden fieldset legend 'Document issue date' disagree. Pick ONE for the new app — recommend 'Date of issue' as it is the visible copy. (The trace pass also cited a legacy label constant agreeing with 'Date of issue'; that citation is withdrawn as out-of-scope, but the visible copy is confirmed from the trace regardless.) Note this mismatch is a candidate WCAG 2.5.3 (Label in Name) failure that the green axe run does not catch — see the accessibility question above.",
+    "The saved-row date renders as '4 December 2025' (D MMMM YYYY, no leading zero) while the input took '04'/'12'/'2025'. Confirm the display format for the new app.",
+    "DOCUMENT TYPE REFERENCE DATA IS INCONSISTENT — AND THE QA REPO HAS FOSSILISED THE INCONSISTENCY RATHER THAN FIXED IT. Independent confirmation from source 2: types/document-type.ts carries BOTH seaWaybill:'Sea waybill' and seaWaybillCapitalW:'Sea Waybill' (lines 25-26) — a key invented solely to model the Title-Case variant this page renders — plus cargoManifest:'Cargo Manifest' (Title Case) alongside airWaybill:'Air waybill' (sentence case), and railwayBill:'Rail waybill' (value/label mismatch). NEW AND IMPORTANT IF YOU PLAN TO FIX THE CASING: document-type.ts maps its keys to LABEL strings, not to the camelCase wire values the trace shows in the option value attributes, and Playwright's selectOption resolves value-then-label — so every selectOption call in the suite is matching BY RENDERED LABEL. Correcting 'Sea Waybill' to 'Sea waybill' in the new app would therefore break the legacy suite's locators, and the two seaWaybill keys exist precisely because someone hit this. If the new app sources these from a reference-data service, that service should fix the casing to GDS sentence case — BUT the VALUES are the wire contract with the backend and must not be changed without checking downstream consumers. Also worth asking: are 'Origin certificate' (offered on CHED-PP) and 'Certificate of origin' (document-type.ts:7, offered elsewhere) the same thing under two names? SCALE OF THE UNEXERCISED SURFACE: only 2 of the 16 real options are ever selected on a CHED-PP notification by any source — 'Phytosanitary certificate' (notifier) and 'Other' (inspector). The other 14 are unexercised, so nothing verifies they are all genuinely valid for CHED-PP.",
+    "This page's template is shared across all four CHED types AND across two audiences (notifier / inspector) AND across two URL variants. Source 2 corroborates the CHED-type sharing structurally: ONE page object serves all four journeys with identical locators (ched-a/-d/-p/-pp-workflows.ts). NEW ON THE FOURTH PASS — THE 'veterinary-health-certificate' WRAPPER id IS NOT DEAD MARKUP, IT NAMES A REAL SIBLING PAGE: CHED-P (and CHED-A) have a 'Latest health certificate' page at /notifications/:draftId/latest-certificate that is the SAME template with the document type pinned and the select removed (ched-p-workflows.ts:341-353 via pages.latestHealthCertificate; CHED-A's a11y spec drives the accompanyingDocuments page object against that URL at ched-a-accessibility-tests.spec.ts:75-78, and a11y-test.log:10656 records the scan there). A grep for latestHealthCertificate across workflows/ hits ONLY ched-p-workflows.ts — CHED-PP and CHED-D have no such page. So for CHED-PP the phytosanitary certificate is just one option in this page's list, whereas the animal/product journeys promote their certificate to a page of its own. The 16-option list IS CHED-PP-specific. The new CHED-PP-only app should carry none of that branching — but whoever reads the legacy template should know the id is load-bearing for a page CHED-PP does not have, not leftover cruft.",
+    "DOWNSTREAM DATA CONTRACT — what this page captures must survive to View details. tests/notification/ched-pp/ched-pp-manipulation.spec.ts:43-47 asserts document TYPE, REFERENCE and ATTACHMENT FILENAME all render on the View details page (via ViewDetailsPage.ts:50-59 locatorChedHealthDocumentType / -Reference / -Attachment). Date of issue is NOT asserted there. The inspector path asserts the same three through a different locator (viewDetails.locatorAccompanyingDocumentsTable contains 'Other' / 'INS-IMPORT' / 'example.xlsx' — document-access.spec.ts:42-44, 72-74, 102-104, 132-134 and document-rejection-access.spec.ts:123-125). So THREE of the four captured values have an asserted downstream consumer and the issue date has NONE, from either source. That is a real requirement on this page's output and a strong hint that type/reference/filename matter downstream while the date may be write-only — worth confirming with a human what consumes the issue date at all, because if nothing does, the date field's requiredness question (above) partly answers itself."
+  ]
+}

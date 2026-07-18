@@ -1,0 +1,573 @@
+{
+  "slug": "commodity-additional-details",
+  "name": "Consignment details — Additional details (total gross weight / gross volume)",
+  "url": "/notification/vnet/protected/notifications/:draftId/consignment/details?commodityDetailsPage=1",
+  "pageTitle": "Consignment Details - Import and export applications - GOV.UK",
+  "caption": "Description of the goods",
+  "heading": "Additional details",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to hub"
+  ],
+  "layout": "govuk-grid-row#consignment-details-page > govuk-grid-column-two-thirds; nested govuk-grid-row > (govuk-grid-column-two-thirds [gross volume] + govuk-grid-column-one-third [unit])",
+  "urlEvidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 request 995 — GET https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/consignment/details?commodityDetailsPage=1 (200, text/html). Request 1011 is the matching POST (302) to the same URL. The page form has NO action attribute and method=POST, so it self-posts to this URL. Confirmed.",
+  "entryPoints": [
+    {
+      "route": "Linear (manual commodity entry)",
+      "description": "Reached by 'Save and continue' from the Commodity extended description page, immediately after the commodity lines are applied. This is journey position 15.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:380-382 — commodityExtendedDescription.btnSaveAndContinue.click() then inputTotalGrossWeightinKgs.fill(totalGrossWeightInKgs) at :381 then btnSaveAndContinue.click(). VERIFIED: :381 confirmed to be the fill call."
+    },
+    {
+      "route": "Notification hub link",
+      "description": "Reached directly from the hub via a control whose text is exactly 'Additional details' — corroborates the H1 and confirms this page is an independently addressable hub task, not only a linear step. This is the CSV-upload branch's entry.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:290 — pages.notificationHub.linkAdditionalDetails.click(); page-objects/notification/NotificationHubPage.ts:6-8 — getByText('Additional details', { exact: true }). BOTH RE-VERIFIED EXACT in this review. CAVEAT ADDED IN THIS REVIEW: despite the getter being named linkAdditionalDetails, the locator is getByText, NOT getByRole('link') — contrast the sibling getter linkCommodity at NotificationHubPage.ts:10-12, which DOES use getByRole('link', { name: 'Commodity' }). So the page object proves only that some element on the hub carries the exact text 'Additional details'; it does NOT prove that element is a link. The hub page itself is out of this page's scope, and no trace of the hub was examined here, so the element type is unconfirmed. The text match, however, is exact and independently corroborates this page's H1. Corroborated by trace 9a918b862ad1b3599fc13659f757c25aaec78ada (the CSV spec), whose gross-weight fill at action 38 has source ched-pp-workflows.ts:292 — i.e. the CSV branch reaches this page via the hub link at :290. RE-VERIFIED: ched-pp-workflows.ts:287-293 reads aboutTheConsignment.radioInternalMarket.check() (:287) -> btnSaveAndContinue.click() (:288) -> `// Additional Details Page` (:289) -> notificationHub.linkAdditionalDetails.click() (:290) -> `// Commodity Extended Description Page` (:291) -> inputTotalGrossWeightinKgs.fill(totalGrossWeightInKgs) (:292) -> btnSaveAndContinue.click() (:293). Note the test authors' own comments at :289/:291 disagree with each other about which page the fill is on — further evidence of the page-object blurring recorded in openQuestions."
+    },
+    {
+      "route": "Copy as new",
+      "description": "When an existing CHED-PP is copied to a new draft, the user reaches this page again (via the hub 'Commodity' link, not the linear flow — trace ea99a3b5 action 100). The route itself is CONFIRMED. What is rendered in the gross weight field on this route is value=\"\" — also confirmed. The INTERPRETATION previously attached to that (\"copy does not carry the gross weight over\") is DOWNGRADED TO inferred IN THIS REVIEW and is CONFOUNDED — see confounds below. Do not treat the non-prefill as an established fact about the copy operation.",
+      "confidence": "confirmed",
+      "confounds": "THE NON-PREFILL CLAIM IS NOT SAFE (established in this review by re-deriving the action timeline). Between entering the copied draft and this page rendering, the test MUTATES every commodity line: trace ea99a3b5 action 101 Check on getByRole('checkbox', { name: 'Select all' }), then actions 102-108 overwrite packages ('2'), quantity ('2'), net weight ('10' — up from the original draft's '1') and the dropdowns, then action 109 Click 'Apply' and action 110 Click 'Save and continue', which lands here. So the field's emptiness at action 111 is observed AFTER a commodity mutation, not on a pristine copied draft. Two consequences. (1) The Total table at action 111 reads 'Net weight of the consignment (kg) 20' and 'Number of packages of the consignment 4' — these are the TEST'S OWN re-entered values (10 and 2) applied across two commodity lines by Select all, NOT values carried over by the copy. The previous revision's supporting argument ('copying reproduces the commodity lines — the Total table repopulates — but drops the gross weight') therefore misreads its own evidence: the repopulated numbers are the test's. (The 2x multiple does independently suggest the copied draft arrived with two commodity lines for Select all to act on, which is the one part of that argument that survives.) (2) A competing explanation is at least as plausible and arguably more so: the original draft's gross weight was '12' (action 43) and the mutated net total is 20, so the carried-over gross weight would VIOLATE the GROSS_WEIGHT_GREATER rule (gross must be > net). IPAFFS clearing a now-invalid gross weight on commodity change would produce exactly the observed value=\"\". Distinguishing the two requires a trace that copies a draft and reaches this page WITHOUT touching the commodity lines. No such trace exists in the corpus. This is a question for a human, not something the corpus can settle.",
+      "evidence": "trace ea99a3b59448073a9924eb56cbc947df8ba082c2 (ched-pp-copy-as-new.spec.ts:15 › CHED-PP copy as new flows › should validate copied CHED-PP after B2C notifier submission and B2B inspection). The gross weight field is filled TWICE in this single trace: action 43 Fill '12' (the original draft) and action 111 Fill '100' (the copied draft), both on internal:role=textbox[name=\"Total gross weight (kg)\"s]. At action 111 the locator resolved to <input value=\"\" ...> — RE-VERIFIED in this review. The empty value attribute is CONFIRMED; the non-prefill INFERENCE drawn from it is not (see confounds). Source of the second fill: ched-pp-workflows.ts:848 via ched-pp-copy-as-new.spec.ts:27. (This trace reports 1 error, but it is at action 155, a Click on 'Record PHSI checks' on a later page — NOT this page. It yields no validation evidence here.) NEW CORROBORATION FROM THE TESTS (this review): the copy route has its OWN config block, separate from DEFAULT_CONFIG — ChedPPCopyAsNewConfig declared at ched-pp-workflows.ts:743 (CORRECTED IN THIS REVIEW: the previous revision cited :745-772; grep puts the interface declaration at :743) and DEFAULT_COPY_CONFIG at :777, whose totalGrossWeightInKgs is '100' (:784, RE-VERIFIED). That is exactly the value seen in the six '100' traces, closing the loop on where that value comes from. The copy workflow's own inline comment at ched-pp-workflows.ts:847 reads `// Commodity Additional Details - gross weight` immediately above the fill at :848 (VERIFIED) — an independent statement by the test authors that this fill lands on THIS page, despite the CommodityExtendedDescriptionPage object being used to drive it. Note also DEFAULT_COPY_CONFIG.netWeightInKgs = '10' (:782) against gross '100', consistent with the gross-greater-than-net rule. Exit on this route differs from the linear one: the copy workflow goes straight from this page's Save and continue to Transport details (:850-852), with no GMS declaration step."
+    },
+    {
+      "route": "Review / cloning (change) route",
+      "description": "Reached from the Review notification page via 'Change commodity details', and NOT directly — the change route lands first on a CHED-PP commodity BULK details page, whose 'Save and continue' then brings the user here. On this route the primary button reads 'Save and review' instead of 'Save and continue' — it returns the user to the review page rather than advancing the linear journey. NOT observed in any trace, and this review established WHY (see below) — it is not a sampling accident.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:931 (export async function submitClonedChedPPNotification) — VERIFIED. The three-step approach into this page is :985 pages.reviewNotification.changeCommodityDetails() -> :986 pages.chedppCommodityBulkDetails.updateIntendedUseAndSaveAndContinue() -> :988 pages.commodityAdditionalDetails.enterGrossWeightAndSaveAndReview(fullConfig.grossWeight). CORRECTED IN THIS REVIEW: the previous revision cited :986 and :987 for the first two calls and asserted 'ALL LINE NUMBERS RE-VERIFIED EXACT'; grep puts them at :985 and :986. The :988 citation was correct. The intermediate bulk-details hop at :987 is NEW IN THIS REVIEW — a previous revision described the route as landing here straight from review, which is wrong. page-objects/notification/CommodityAdditionalDetailsPage.ts:22-24 — btnSaveAndReview = getByRole('button', { name: 'Save and review' }); :26-29 — enterGrossWeightAndSaveAndReview, which fills inputTotalGrossWeight (the NON-exact locator at :14-16) then clicks btnSaveAndReview. ALL LINE NUMBERS RE-VERIFIED EXACT in this review. Driven by tests/notification/ched-pp/ched-pp-cloning.spec.ts:10 ('B2C Importer Submits Valid Cloned CHEDPP Notification', tags @release @chedPP @chedPPClone @clone @dynamics) via submitClonedChedPPNotification(pages) at :15 — VERIFIED. WHY IT IS UNTRACED (new, and confirmed on the wire): the corpus DOES contain three traces of this spec — ebd5a5d267ae02ba27210c7c670bbba60a9ff667, 470cd3de7b53a52e16aeb10ef4a69fb1a6a06655 and 7d0bf2f642f2d4eb480f71757b174b90516c49fe — and ALL THREE FAIL EARLY, at the same action: a Click on getByRole('button', { name: 'Clone' }) that times out after 30.0s (ebd5a5d2 action 22; 470cd3de action 24; 7d0bf2f6 action 24 — each opened and re-verified individually in this review). The cloning search never completes, so the run never reaches the Review notification page, let alone this one. The 'Save and review' variant therefore has ZERO rendered evidence anywhere in the corpus for an identifiable reason: the CHED-PP cloning journey is RED in this test run. See openQuestions."
+    }
+  ],
+  "structure": [
+    {
+      "element": "back-link",
+      "text": "Back",
+      "govukComponent": "Back link (govuk-back-link back-link--next-to-breadcrumbs, id=back-link) — href=\"#\", i.e. JS-driven, NOT a real target. See nonStandardPatterns.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Template: consignmentDetails.html:5 ({{> common/backLink}})."
+    },
+    {
+      "element": "reference-number-header",
+      "text": "DRAFT.GB.2026.1526011 - CHEDPP",
+      "govukComponent": "NOT a Design System component — bespoke span.heading-tertiary containing the draft reference number and the CHED type. Shared chrome rendered above the caption on every notification page.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — leaf <span> with text '- CHEDPP' inside PARENT span.heading-tertiary; body innerText reads 'Back / DRAFT.GB.2026.1526011 - CHEDPP / Description of the goods / Additional details'. Template: consignmentDetails.html:9 ({{> common/referenceNumberHeaderDiv referenceNumber=... status=... version=... type=...}})."
+    },
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Additional details",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "h2",
+      "text": "Total",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "table",
+      "text": "Totals for Consignment Details (visually-hidden caption) / Net weight of the consignment (kg) = 1 / Number of packages of the consignment = 2",
+      "govukComponent": "Table (govuk-table presentation-table) — read-only computed totals, row headers scope=row. Wrapped in div.table-responsive."
+    },
+    {
+      "element": "text-input",
+      "text": "Total gross weight (kg)",
+      "govukComponent": "Text input (govuk-input govuk-!-width-one-half)"
+    },
+    {
+      "element": "text-input",
+      "text": "Total gross volume (optional)",
+      "govukComponent": "Text input (govuk-input)"
+    },
+    {
+      "element": "select",
+      "text": "Unit",
+      "govukComponent": "Select (govuk-select)"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=save-and-return-button, name=save-and-return-button, value='Save and return to hub', data-module=govuk-button, data-prevent-double-click=true)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=button-save-and-continue, name=button-save-and-continue, value='Save and continue', data-module=govuk-button, data-prevent-double-click=true). On the review/cloning entry route this button instead reads 'Save and review' — inferred, ched-pp-workflows.ts:988 + CommodityAdditionalDetailsPage.ts:22-24.",
+      "exitRoute": "WHERE 'Save and continue' LEADS (new in this review; inferred from the tests, never asserted). On the linear route the next page is CONDITIONAL: ched-pp-workflows.ts:383-386 — `if (gmsDeclaration === yesNo.yes) { await pages.gmsDeclaration.radioConfirmAboveStatement.check(); await pages.gmsDeclaration.btnSaveAndContinue.click(); }` — so a GMS declaration page is interposed when the config opts in; otherwise the journey falls straight through to Transport details at :388-389. DEFAULT_CONFIG.gmsDeclaration = yesNo.no (ched-pp-workflows.ts:159, verified), so the DEFAULT path — and therefore almost every trace — skips GMS and goes to Transport details. On the copy-as-new route there is no GMS branch at all: ched-pp-workflows.ts:849-852 goes from this page's Save and continue directly to Transport details. On the review/cloning route the button is 'Save and review' and returns to the Review notification page (ched-pp-workflows.ts:988-990). All line numbers verified. The exit is therefore three-way and entry-point-dependent — a decision the rebuild must make explicitly."
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Link (govuk-link) inside p.govuk-body — href /notification/vnet/protected/notifications/:draftId/overview. Confirmed: href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/overview\"."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Description of the goods' above the H1",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <span class=\"govuk-caption-xl\" id=\"page-secondary-title\">Description of the goods</span>. Re-verified."
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-m"
+      ],
+      "count": 2,
+      "usage": "H1 'Additional details' (xl) and H2 'Total' (m)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <h1 class=\"govuk-heading-xl \" id=\"page-primary-title\">Additional details</h1> and <h2 class=\"govuk-heading-m\">Total</h2>. Re-verified. H1 corroborated by the hub link text 'Additional details' (exact) at page-objects/notification/NotificationHubPage.ts:6-8."
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "'Back' link above the reference-number header. Carries a bespoke non-govuk modifier class and href=\"#\" — see nonStandardPatterns.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-table__header",
+        "govuk-table__cell",
+        "govuk-visually-hidden",
+        "presentation-table"
+      ],
+      "count": 1,
+      "usage": "Read-only 'Total' summary of net weight + package count, computed from the commodities already entered. Uses th scope=row for each label. Caption is visually hidden.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <div class=\"table-responsive\"><table class=\"govuk-table presentation-table\"><caption class=\"govuk-visually-hidden\">Totals for Consignment Details</caption>... Re-verified."
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-!-width-one-half"
+      ],
+      "count": 2,
+      "usage": "Total gross weight (kg) at one-half width; Total gross volume (optional) at full column width",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — control inventory returns INPUT type=text name=gross-weight maxlength=16 class='govuk-input govuk-!-width-one-half' and INPUT type=text name=gross-volume maxlength=16 class='govuk-input'. Re-verified. Gross weight label corroborated exactly by the test locator getByRole('textbox', { name: 'Total gross weight (kg)', exact: true }) — page-objects/notification/CommodityExtendedDescriptionPage.ts:55-57 (verified exact)."
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--m"
+      ],
+      "count": 3,
+      "usage": "Medium labels on gross weight, gross volume and unit",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — exactly 3 <label> elements, all class 'govuk-label govuk-label--m', texts 'Total gross weight (kg)', 'Total gross volume (optional)', 'Unit'. Re-verified."
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Unit of measurement for the gross volume",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — SELECT name=gross-volume-unit id=gross-volume-unit class=govuk-select. Re-verified."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "Two submit buttons WITHIN THE PAGE FORM, both rendered as PRIMARY (no govuk-button--secondary): 'Save and return to hub' and 'Save and continue'. Both carry data-prevent-double-click=true and data-module=govuk-button. (The page also contains two further govuk-button instances that are site chrome, not page controls: the cookie-banner 'Accept Cookies' button and the footer 'Cookies' button — excluded from this count.) A third variant label, 'Save and review', replaces 'Save and continue' when the page is entered from the Review notification page (inferred — never traced).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — full outerHTML of both buttons re-verified character by character. 'Save and review' variant: page-objects/notification/CommodityAdditionalDetailsPage.ts:22-24, driven for CHED-PP at workflows/notification/ched-pp-workflows.ts:988."
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Wraps each of the three controls",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41; consignmentDetails.html:47,59,68"
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": [
+        "govuk-grid-column-two-thirds",
+        "govuk-grid-column-one-third"
+      ],
+      "count": 2,
+      "usage": "Page column is two-thirds; a nested grid row puts gross volume (two-thirds) beside its unit select (one-third)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — grid inventory returns exactly: DIV.govuk-grid-row#consignment-details-page ; DIV.govuk-grid-column-two-thirds ; DIV.govuk-grid-row ; DIV.govuk-grid-column-two-thirds ; DIV.govuk-grid-column-one-third. Re-verified."
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-body"
+      ],
+      "count": 1,
+      "usage": "'Cancel and return to hub' escape link below the buttons, inside a p.govuk-body",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <a class=\"govuk-link\" href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/overview\">Cancel and return to hub</a>, parent P.govuk-body. Re-verified."
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [
+        "govuk-error-summary__title",
+        "govuk-error-summary__list",
+        "govuk-list"
+      ],
+      "count": 0,
+      "renderedInTrace": false,
+      "confidence": "inferred",
+      "usage": "Would render at the top of the two-thirds column when validation fails. CONFIRMED ABSENT from the rendered page in the traced happy path — document.querySelectorAll('.govuk-error-summary').length === 0 at trace e10b7cd5 action 41. The component's existence and markup are read from the template ONLY. No test in the QA repo drives this page into an error state either, so the rendered error copy remains unverified from both admissible sources. count is 0 because count records what was OBSERVED; the count-1 form of this entry in the previous revision wrongly implied it rendered.",
+      "evidence": "ABSENCE confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — .govuk-error-summary count = 0. EXISTENCE inferred: ipaffs-frontend-notification/service/src/views/importer/consignmentDetails.html:14 ({{> common/validationSummary}}) -> partials/common/validationSummary.html:2 (<div class=\"govuk-error-summary\" data-module=\"govuk-error-summary\">), gated by {{#isErrors errors}} at :1. Both verified."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "presentation-table",
+      "whatItDoes": "IPAFFS-specific class applied alongside govuk-table on the 'Total' table. Suppresses the standard GOV.UK table styling so the table reads as a key/value presentation block rather than a data grid.",
+      "concern": "Bespoke CSS outside the Design System. It is using a Table to render what is semantically a list of name/value pairs, then restyling it to not look like a table.",
+      "govukAlternative": "Summary list (govuk-summary-list) with no action links — that is the Design System's dedicated component for read-only name/value pairs, and needs no custom CSS.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <table class=\"govuk-table presentation-table\">; consignmentDetails.html:21. Both verified."
+    },
+    {
+      "pattern": "table-responsive",
+      "whatItDoes": "Custom wrapper div around the table, presumably giving it horizontal overflow scrolling on narrow viewports.",
+      "concern": "Bespoke responsive shim. Unnecessary for a two-column key/value table, and it is not part of govuk-frontend.",
+      "govukAlternative": "Not needed if the table is replaced by a Summary list, which is responsive by default.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <div class=\"table-responsive\"> wrapping the table; consignmentDetails.html:20. Both verified."
+    },
+    {
+      "pattern": "Back link with href=\"#\" (JavaScript-driven)",
+      "whatItDoes": "The 'Back' link has no real destination — href is literally '#', with id=back-link, so navigation is wired up in client-side JS (history.back() or similar).",
+      "concern": "Breaks entirely without JavaScript — the link renders but does nothing, which fails GOV.UK's progressive-enhancement baseline. It also gives no meaningful target for 'open in new tab' or for assistive tech announcing the destination. The Design System's Back link guidance is that it should be a real link to the previous page's URL where possible.",
+      "govukAlternative": "Render the Back link with a real server-known href to the previous step, and let JS enhance it if desired. In a linear CHED-PP journey the previous page's URL is always derivable server-side.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Newly identified in this review; missing from the previous revision, which recorded only backLink: 'Back' with no analysis."
+    },
+    {
+      "pattern": "back-link--next-to-breadcrumbs bespoke modifier",
+      "whatItDoes": "A non-govuk modifier class on the Back link, positioning it relative to a breadcrumbs region.",
+      "concern": "Bespoke CSS coupling a Design System component to a layout concern. Note the page renders exactly one breadcrumb-ish container, so the modifier's premise is a layout the new app need not reproduce.",
+      "govukAlternative": "Standard govuk-back-link with no modifier; handle placement with the standard page template's back-link slot.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — class=\"govuk-back-link back-link--next-to-breadcrumbs\"; one element matching [class*=breadcrumb] present on the page. Newly identified in this review."
+    },
+    {
+      "pattern": "span.heading-tertiary reference-number header",
+      "whatItDoes": "Renders 'DRAFT.GB.2026.1526011 - CHEDPP' — the draft reference and the CHED type — above the page caption, in a bespoke heading class rather than a Design System component.",
+      "concern": "Bespoke class named for a heading level ('tertiary') that does not correspond to any govuk-heading-* size, applied to a span rather than a real heading element. Carries load-bearing context (which draft am I editing, what type is it) in markup with no semantic heading role, so it is invisible to heading navigation.",
+      "govukAlternative": "If this context must persist across the journey, use the caption pattern (govuk-caption-l/xl) already present on the page, or a real heading element at the correct level. The new app should decide deliberately whether a per-page draft-reference banner is needed at all.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — leaf <span> with text '- CHEDPP' whose parent is span.heading-tertiary; body innerText 'Back / DRAFT.GB.2026.1526011 - CHEDPP / Description of the goods / Additional details'. Template: consignmentDetails.html:9. Newly identified in this review."
+    },
+    {
+      "pattern": "Error summary title = \"Please fix the following errors\"",
+      "whatItDoes": "Default heading text of the IPAFFS validationSummary partial when no headerText is passed.",
+      "concern": "Deviates from GOV.UK Design System copy, which specifies 'There is a problem' as the Error summary title. Do not carry this wording into the new app.",
+      "govukAlternative": "Error summary with the standard title 'There is a problem'.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/partials/common/validationSummary.html:8 — literal 'Please fix the following errors' in the {{else}} branch of {{#if headerText}}; consignmentDetails.html:14 invokes {{> common/validationSummary}} with no headerText argument. Both verified. NOT observed rendered — see openQuestions."
+    },
+    {
+      "pattern": "Two primary govuk-button submits side by side",
+      "whatItDoes": "'Save and return to hub' and 'Save and continue' are both plain govuk-button with no --secondary modifier, so two equal-weight primary buttons sit next to each other.",
+      "concern": "Design System guidance is one primary action per page; a secondary action should use govuk-button--secondary or be a link. As rendered there is no visual hierarchy between the two.",
+      "govukAlternative": "govuk-button--secondary on 'Save and return to hub', or a Button group (govuk-button-group) with the secondary action as a link.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — both buttons' full outerHTML re-verified: class=\"govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4\" on each, no --secondary modifier on either. Spacing is done with margin utility classes rather than govuk-button-group."
+    },
+    {
+      "pattern": "type=\"text\" on numeric quantity inputs",
+      "whatItDoes": "gross-weight and gross-volume are type=text with maxlength=16, validated server-side as Joi.number().",
+      "concern": "No inputmode/numeric affordance; mobile users get an alphabetic keyboard. Length is capped by maxlength rather than by a validation rule, so the cap is silent.",
+      "govukAlternative": "Text input with inputmode=\"numeric\" (Design System guidance for number entry — it deliberately advises against type=number), plus a server-side max-length rule that produces a real error message.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — control inventory confirms both inputs are type=text, maxlength=16, and neither carries an inputmode or pattern attribute; consignmentDetails.html:52,64. Verified."
+    },
+    {
+      "pattern": "Label text carries the optionality — \"Total gross volume (optional)\"",
+      "whatItDoes": "Marks the optional field inline in the label.",
+      "concern": "This IS the GOV.UK convention, so it is correct — noted only because the corollary is inconsistent: 'Total gross weight (kg)' carries no '(optional)' suffix yet is ALSO optional in the validator (Joi.number().allow('')). The page therefore implies gross weight is mandatory when it is not.",
+      "govukAlternative": "Either mark gross weight '(optional)' too, or make it genuinely required — the new app should pick one deliberately.",
+      "evidence": "consignmentDetails.html:49,61; validation/routes/handlers/importer/consignment_details.js:36,121. Rendered labels re-verified in trace e10b7cd5 action 41: exactly 'Total gross weight (kg)' and 'Total gross volume (optional)'. Neither input carries a required attribute (control inventory: required=false on both)."
+    },
+    {
+      "pattern": "One route + template serving four CHED types with mutually exclusive controls",
+      "whatItDoes": "The same page renders storage-temperature ('Ambient') and commodity-purpose ('Feedingstuff') radios for CHED-P / CHED-D, but neither for CHED-PP; CHED-PP instead gets the gross volume + unit pair, which the other types do not show. The template branches on isChedpp / isChedp / isNewJourneyChedD throughout, including inside label text.",
+      "concern": "The shared page object exposes the union of all four variants' controls, and the tests pick per type. This is heavy runtime branching behind one URL — exactly the architecture the CHED-PP rebuild is meant to avoid. The branching reaches into individual words of copy (see the (kg{{#unless isChedpp}}/units{{/unless}}) label conditionals), which is the most brittle form of it.",
+      "govukAlternative": "A CHED-PP-only page with only CHED-PP's controls and CHED-PP's literal copy. No fieldConfig/variant gating, no conditionals inside label text.",
+      "evidence": "page-objects/notification/CommodityAdditionalDetailsPage.ts:6-12 (radioAmbient, radioFeedingstuff) — driven ONLY by workflows/notification/ched-p-workflows.ts:336,717,895 and ched-d-workflows.ts:235-236,622-623; referenced by NO CHED-PP workflow or spec. types/temperature.ts:2 defines ambient='Ambient' as a storage temperature. Template branching verified at consignmentDetails.html:16 ({{#if (and commodityData.totalNetWeight (not (or isNewJourneyChedD isChedp)))}}), :25 and :49 (in-label {{#unless isChedpp}}), :44 ({{#if (and showTotalGrossWeight (not (or isNewJourneyChedD isChedp)))}}). CONFIRMED for CHED-PP: the rendered control inventory at trace e10b7cd5 action 41 contains ZERO radio inputs."
+    }
+  ],
+  "fields": [
+    {
+      "name": "gross-weight",
+      "label": "Total gross weight (kg)",
+      "labelIsVariantConditional": true,
+      "control": "text",
+      "required": false,
+      "requiredOnSubmit": true,
+      "requiredOnSubmitEvidence": "legacy — MANDATORY for CHED-PP at the submit/backend layer even though the page form leaves it optional. ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:72-80 carries @NotNull(groups={NotificationChedppFieldValidation.class, NotificationSingleCedValidation.class}) on `private BigDecimal totalGrossWeight`, message chedpp.totalgrossweight.not.null='Add the total gross weight' (ValidationMessages.properties:84). This directly ANSWERS openQuestion #2: a CHED-PP is NOT submittable with no total gross weight — the frontend Joi.number().allow('') permits blank on THIS page (confirmed: no `required` attribute in the rendered DOM), but the notification-schema @NotNull blocks submission. Two-layer split (page optional, submit required) — recorded in discrepancies; the rebuild should decide deliberately where to enforce it. Mandatoriness is 'as the old system had it' and may be revisited.",
+      "observedValues": [
+        "12",
+        "100",
+        "3000"
+      ],
+      "observedValueTally": "UNVERIFIED CENSUS — DOWNGRADED IN THIS REVIEW. The previous revision stated 'Across all 65 CHED-PP journeys: 12 x59, 100 x6, 3000 x1' as though it were a confirmed count. It does not reconcile and could not be reproduced here: (a) 59+6+1 = 66, against a stated 65 journeys; (b) the unit is wrong — the copy-as-new traces contain TWO gross-weight fills each (e.g. ea99a3b5 action 43 Fill '12' for the original draft AND action 111 Fill '100' for the copy), so fills do not map 1:1 to journeys; (c) the three cloning traces contain ZERO gross-weight fills (verified — `trace actions --grep gross` returns nothing for ebd5a5d2), so they contribute no value at all. What IS confirmed is the SET of observed values — '12', '100', '3000' — each verified at a named action below. Treat the per-value counts as indicative only, or re-derive them mechanically before relying on them.",
+      "testConfigValues": [
+        "12",
+        "100",
+        "3000",
+        "1001"
+      ],
+      "testConfigValueSources": "ALL FOUR TRACED TO SOURCE IN THIS REVIEW. '12' = DEFAULT_CONFIG.totalGrossWeightInKgs, ched-pp-workflows.ts:160 (the linear/default journey). '100' = DEFAULT_COPY_CONFIG.totalGrossWeightInKgs, ched-pp-workflows.ts:784 (the copy-as-new journey — a SECOND config block, ChedPPCopyAsNewConfig at :745-772, that a previous revision did not know existed; this is why '100' appears in six traces). '3000' = an inline override in tests/notification/ched-pp/ched-pp-notification-csv.spec.ts:17 (the CSV branch). '1001' = DEFAULT_CHEDPP_CLONING_CONFIG.grossWeight, ched-pp-workflows.ts:928 — note this one is typed `grossWeight?: number` (:906) rather than a string like the other three, and is coerced with String(grossWeight) at CommodityAdditionalDetailsPage.ts:27 before the fill. '1001' is the ONLY one of the four never observed in a trace, because all three cloning traces fail at the 'Clone' button before reaching this page (see entryPoints). The a11y suite also hardcodes '12' at tests/accessibility/ched-pp-accessibility-tests.spec.ts:96 rather than reading DEFAULT_CONFIG. Every value across every config is a whole number greater than its journey's net weight (12>1, 100>10, 3000>?, 1001>?) — consistent with the GROSS_WEIGHT_GREATER rule, and the reason the decimal-places rule is entirely unexercised.",
+      "confidence": "confirmed",
+      "evidence": "TRACE (confirmed): trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 (Fill '12'; locator resolved to <input value=\"\" type=\"text\" maxlength=\"16\" id=\"gross-weight\" name=\"gross-weight\" class=\"govuk-input govuk-!-width-one-half\">); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 38 (Fill '3000', CSV branch, identical resolved element); trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 33 (Fill '12'). ALL THREE POINTERS INDEPENDENTLY RE-VERIFIED in this review — each is a Fill on internal:role=textbox[name=\"Total gross weight (kg)\"s] on the Additional details page. Optionality from validation/routes/handlers/importer/consignment_details.js:36,121 — Joi.number().allow('').greater(totalNetWeight); no `required` attribute on the input (control inventory: required=false). maxlength=16, type=text. LABEL VARIANCE (new in this review): the template renders 'Total gross weight (kg{{#unless isChedpp}}/units{{/unless}})' at consignmentDetails.html:49 — so '(kg)' is the CHED-PP rendering and other CHED types get '(kg/units)'. The rendered CHED-PP label is confirmed as exactly 'Total gross weight (kg)'. TESTS (inferred, corroborating): this is the ONLY field on this page any CHED-PP test drives. Label matched exactly by getByRole('textbox', { name: 'Total gross weight (kg)', exact: true }) at page-objects/notification/CommodityExtendedDescriptionPage.ts:55-57 (verified exact; note the CHED-PP workflows reach this page's field through the CommodityExtendedDescriptionPage object, not CommodityAdditionalDetailsPage — see openQuestions). Values: '12' = DEFAULT_CONFIG.totalGrossWeightInKgs (ched-pp-workflows.ts:160, verified, matching the traces); '3000' = tests/notification/ched-pp/ched-pp-notification-csv.spec.ts:17 (verified, matching the CSV-branch trace). CORRECTION MADE IN THIS REVIEW: a previous revision recorded '100' as a test-config value 'never observed in a trace'. THAT IS WRONG — '100' IS observed, in six CHED-PP traces (ea99a3b59448073a9924eb56cbc947df8ba082c2, ce99464ed0d8763438a8a37a5a846f03a484b997, 25ec3d44c20d24de0e40cb61d5103b1de487dc3f, ba928f75ee4f0a9d0311662302c08c35d7d6ce2f, 84dfe524b36d3f51d4f129488b4434e9b676bf0c, 45e0b11177abd2d16a681dbb5db79d217cb91a03). Verified directly at trace ea99a3b59448073a9924eb56cbc947df8ba082c2 action 111 — Fill '100' on internal:role=textbox[name=\"Total gross weight (kg)\"s], locator resolved to the same <input id=\"gross-weight\" maxlength=\"16\" class=\"govuk-input govuk-!-width-one-half\">, source ched-pp-workflows.ts:848 via ched-pp-copy-as-new.spec.ts:27. These are the COPY-AS-NEW route (see entryPoints), which the earlier revision did not know reached this page. '1001' = DEFAULT_CHEDPP_CLONING_CONFIG.grossWeight (ched-pp-workflows.ts:928) remains test-config only — not observed in any trace."
+    },
+    {
+      "name": "gross-volume",
+      "label": "Total gross volume (optional)",
+      "control": "text",
+      "required": false,
+      "requiredOnSubmit": false,
+      "requiredOnSubmitEvidence": "legacy — genuinely OPTIONAL at every layer for CHED-PP, confirming the '(optional)' label. Commodities.java:231 `private BigDecimal totalGrossVolume;` carries NO @NotNull annotation in any validation group, and the backend ValidationMessages.properties has no gross-volume message at all. The only conditional-required rule is the frontend gross-volume/unit pairing (consignment_details.js:216-224); the notification schema imposes nothing.",
+      "observedValues": [],
+      "conditionalOn": "Rendered for all CHED-PP notifications ({{#or isChedpp commodityData.totalGrossVolume}}). Becomes REQUIRED if the unit select is set — Joi .and('gross-volume','gross-volume-unit') pairs the two.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — INPUT type=text name=gross-volume id=gross-volume maxlength=16 class=govuk-input, required=false. RENDERED PRESENCE re-verified in this review (present in the control inventory and its label 'Total gross volume (optional)' present in main innerText); never filled in any trace. Template consignmentDetails.html:60-64. Conditional-required rule: validation/routes/handlers/importer/consignment_details.js:216-224. CORROBORATION FROM TESTS (negative): ChedPPNotificationConfig exposes no gross-volume option and no CHED-PP page object has a locator for it — grep -rni 'grossvolume' across the QA repo's page-objects/, workflows/, tests/ and types/ returns ZERO hits (RE-VERIFIED in this review). So the second source confirms the traces' silence: this field is rendered but is exercised by nothing, and its paired-required rule has never been executed in automation."
+    },
+    {
+      "name": "gross-volume-unit",
+      "label": "Unit",
+      "control": "select",
+      "required": false,
+      "requiredOnSubmit": false,
+      "requiredOnSubmitEvidence": "legacy — no model-level mandatoriness. Commodities.java:233 `private String totalGrossVolumeUnit;` carries no @NotNull in any group, and the backend has no gross-volume-unit validation message. Required only conditionally by the frontend when gross-volume is entered (consignment_details.js:203,217).",
+      "options": [
+        "Select unit",
+        "litres",
+        "metres cubed"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 3,
+      "observedValues": [],
+      "conditionalOn": "Rendered alongside gross-volume for all CHED-PP. Becomes REQUIRED if gross-volume is entered.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41. OPTION LIST RE-VERIFIED EXHAUSTIVELY in this review by enumerating #gross-volume-unit option: exactly three options, {value:\"\", text:\"Select unit\"}, {value:\"litres\", text:\"litres\"}, {value:\"metres cubed\", text:\"metres cubed\"} — value == text for the latter two; the placeholder 'Select unit' has value=\"\". No fourth option. Hardcoded in consignmentDetails.html:74-76 (verified) — NOT reference data. Conditional-required: consignment_details.js:203,216-217. CORROBORATION FROM TESTS (negative): no locator, config option or type constant for a gross-volume unit exists anywhere in the QA repo — types/ has quantity-type.ts and package-type.ts but no volume-unit vocabulary. Untested surface."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) CSRF token",
+      "control": "hidden",
+      "alwaysPresent": true,
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <input name=\"crumb\" type=\"hidden\"> as the first child of the page form (consignmentDetails.html:41). Value [REDACTED]. NOTE (corrected in this review): the previous revision recorded required: true; the element carries NO `required` attribute (control inventory: required=false). It is unconditionally rendered rather than 'required' in the HTML-constraint sense — alwaysPresent captures that accurately. A second, unrelated crumb input exists in the footer cookies form; it is not a field of this page. Platform concern; the new app supplies its own CSRF."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) optimistic-concurrency ETag",
+      "control": "hidden",
+      "alwaysPresent": true,
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 — <input name=\"etag\" type=\"hidden\" value=\"&quot;0000000000BD2B60&quot;\">, second child of the page form (consignmentDetails.html:42). Carries the draft's version for lost-update detection on POST. NOTE (corrected in this review): required: true in the previous revision was wrong in the same way as crumb — no `required` attribute is present; the field is unconditionally rendered. A real requirement to consider, not chrome."
+    },
+    {
+      "name": "commodity-intended-for",
+      "label": "Commodity intended for:",
+      "hint": "You'll find this on the health or phytosanitary certificate (also known as the 'official certificate') if you have one.",
+      "control": "radio",
+      "legacyMandatoriness": "legacy — CORROBORATES the out-of-CHED-PP-scope inference from the model side. Commodities.java:221-229 annotates `commodityIntendedFor` with @NotNull only for NotificationHighRiskEuCedFieldValidation and NotificationSingleCedValidation groups — NOT NotificationChedppFieldValidation. So the notification schema does not require commodity intention for CHED-PP, consistent with this control not rendering on the CHED-PP page (zero radios in the trace) and the internal-market question being asked upstream on 'About the consignment'. There IS a generic message commodityintendedfor.not.null='Add what the commodity is intended for' (ValidationMessages.properties:88), but it is wired only to the non-CHED-PP groups.",
+      "conditionalOn": "Config-driven — rendered by the dynamic_fields/customRadioButtonGroup partial only when fieldConfig makes the 'internalMarket' query available. Did NOT render in any of the three CHED-PP traces. LIKELY NOT PART OF THE CHED-PP JOURNEY: for CHED-PP the equivalent question is asked on a separate, earlier page ('About the consignment'), which suggests the internalMarket gate is closed on this page for CHED-PP.",
+      "confidence": "inferred",
+      "evidence": "consignmentDetails.html:83-94 (partial invocation with label='Commodity intended for:', queries='internalMarket', insetText as above). STRENGTHENED IN THIS REVIEW: the rendered control inventory at trace e10b7cd5 action 41 contains ZERO radio inputs of any kind — so this radio is positively confirmed ABSENT from the CHED-PP rendering of this page, not merely un-clicked. EVIDENCE FROM TESTS: every CHED-PP journey answers the internal-market question upstream on the About the consignment page — workflows/notification/ched-pp-workflows.ts:287,324 call pages.aboutTheConsignment.radioInternalMarket.check() BEFORE reaching this page (page-objects/notification/AboutTheConsignmentPage.ts:10-12, option label 'Internal market'); corroborated in the trace timeline itself, where action 29 is Check on getByRole('radio', { name: 'Internal market' }) — twelve actions BEFORE the gross-weight fill at 41, on an earlier page. The field entry stays `inferred` because the LABEL AND HINT COPY above are read from the template and have never been observed rendered anywhere; the absence claim, however, is now confirmed."
+    },
+    {
+      "name": "storage-temperature (CHED-P / CHED-D only — NOT CHED-PP)",
+      "label": "Ambient (radio option)",
+      "control": "radio",
+      "conditionalOn": "Variant-only. Rendered on this route for CHED-P and CHED-D. Never rendered in any CHED-PP trace and never driven by any CHED-PP test. Recorded here ONLY to document that this shared route carries it — it is OUT OF SCOPE for the CHED-PP rebuild.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/CommodityAdditionalDetailsPage.ts:6-8 — radioAmbient = getByRole('radio', { name: 'Ambient' }) (VERIFIED exact, including line numbers). Driven only at workflows/notification/ched-p-workflows.ts:336,717,895 and ched-d-workflows.ts:236,623, and tests/accessibility/ched-p-accessibility-tests.spec.ts:81, ched-d-accessibility-tests.spec.ts:65. types/temperature.ts:2 — ambient: 'Ambient' (a storage-temperature vocabulary). Zero CHED-PP references. Absence from the CHED-PP rendering confirmed by the zero-radio control inventory at trace e10b7cd5 action 41. EXHAUSTIVELY RE-VERIFIED IN THIS REVIEW: a single grep for all references to the commodityAdditionalDetails page object across workflows/ and tests/ returns exactly 18 hits — every one is ched-p or ched-d (radios + btnSaveAndContinue) EXCEPT the lone CHED-PP hit at ched-pp-workflows.ts:988, which is the enterGrossWeightAndSaveAndReview cloning call. So the whole CHED-PP surface of this shared page object is one method, and the radios are conclusively out of scope."
+    },
+    {
+      "name": "commodity-purpose (CHED-D only — NOT CHED-PP)",
+      "label": "Feedingstuff (radio option)",
+      "control": "radio",
+      "conditionalOn": "Variant-only. Rendered on this route for CHED-D. Never rendered in any CHED-PP trace and never driven by any CHED-PP test. OUT OF SCOPE for the CHED-PP rebuild; documented to explain the shared page object's surface.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/CommodityAdditionalDetailsPage.ts:10-12 — radioFeedingstuff = getByRole('radio', { name: 'Feedingstuff' }) (VERIFIED exact, including line numbers). Driven only at workflows/notification/ched-d-workflows.ts:235,622 and tests/accessibility/ched-d-accessibility-tests.spec.ts:64. Zero CHED-PP references. Absence from the CHED-PP rendering confirmed by the zero-radio control inventory at trace e10b7cd5 action 41."
+    },
+    {
+      "name": "animal-certified-as (Animals fieldConfig only — NOT CHED-PP)",
+      "label": "What are the animals certified for?",
+      "control": "radio",
+      "conditionalOn": "Config-driven — rendered by the dynamic_fields/customRadioButtonGroup partial only when fieldConfig makes the 'animalCertified' query available for page='Animals'. This is an animal-journey (CHED-A) control, not CHED-PP. Never rendered in any CHED-PP trace (zero radios in the control inventory) and never driven by any CHED-PP test. Documented ONLY to record the full surface of this shared template — OUT OF SCOPE for the CHED-PP rebuild.",
+      "legacyMandatoriness": "legacy — no CHED-PP mandatoriness. This control is gated on page='Animals' fieldConfig, which is closed for CHED-PP, so no CHED-PP @NotNull group applies.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/consignmentDetails.html:109-118 — customRadioButtonGroup partial with page='Animals', queries='animalCertified', elementName='animal-certified-as', labelText='What are the animals certified for?', hintText=animalCertifiedHintText. Confirmed ABSENT from the CHED-PP rendering by the zero-radio control inventory at trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41. Newly recorded from the template in this legacy pass; the copy above is read from the template and has never been observed rendered."
+    },
+    {
+      "name": "including-non-ablacted (Animals fieldConfig only — NOT CHED-PP)",
+      "label": "Does the consignment contain any unweaned animals?",
+      "control": "radio",
+      "conditionalOn": "Config-driven — rendered by the dynamic_fields/customRadioButtonGroup partial only when fieldConfig makes the 'includingNonAblacted' query available for page='Animals'. An animal-journey (CHED-A) control, not CHED-PP. Never rendered in any CHED-PP trace and never driven by any CHED-PP test. Documented ONLY to record the full surface of this shared template — OUT OF SCOPE for the CHED-PP rebuild.",
+      "legacyMandatoriness": "legacy — no CHED-PP mandatoriness. Gated on page='Animals' fieldConfig, closed for CHED-PP, so no CHED-PP @NotNull group applies.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/consignmentDetails.html:120-129 — customRadioButtonGroup partial with page='Animals', queries='includingNonAblacted', elementName='including-non-ablacted', labelText='Does the consignment contain any unweaned animals?', hintText=unweanedAnimalHintText. There is ALSO a CVEDP/CED-only 'Temperature' govuk/radios block at consignmentDetails.html:95-107 (name='temperature'), gated on notification.type being CVEDP or CED — the template source of the CHED-P/CHED-D 'Ambient' storage-temperature radio recorded above; not CHED-PP. Confirmed ABSENT from the CHED-PP rendering by the zero-radio control inventory at trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41. Newly recorded from the template in this legacy pass; never observed rendered."
+    },
+    {
+      "name": "(computed) totalNetWeight",
+      "label": "Net weight of the consignment (kg)",
+      "labelIsVariantConditional": true,
+      "control": "read-only table row",
+      "required": false,
+      "observedValues": [
+        "1",
+        "2837"
+      ],
+      "conditionalOn": "Read-only display, not an input. The whole Total table renders only when commodityData.totalNetWeight is set AND the type is not CHED-D-new-journey/CHED-P; this row additionally requires showTotalGrossWeight. Label is '(kg)' for CHED-PP only — other CHED types render '(kg/units)'.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 (value 1 — main innerText 'Net weight of the consignment (kg)\\t1'); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 38 (value 2837, CSV branch — 'Net weight of the consignment (kg)\\t2837'). BOTH RE-VERIFIED in this review. Template: consignmentDetails.html:25-30 — <th class=\"govuk-table__header\" scope=\"row\">Net weight of the consignment (kg{{#unless isChedpp}}/units{{/unless}})</th>, verified, confirming the (kg) vs (kg/units) variance claim; gating verified at :16 and :23. NOTE the previous revision's control was 'text', which wrongly implied an input — this is a th/td pair, not a form control. Summed from the commodity lines already captured. CORROBORATION: the traced value 1 is exactly DEFAULT_CONFIG.netWeightInKgs = '1' entered per-commodity on the previous page (ched-pp-workflows.ts:154, filled at :371 — CORRECTED IN THIS REVIEW: the previous revision cited :159 for netWeightInKgs, but grep puts netWeightInKgs at :154; :159 is gmsDeclaration. The :371 fill citation was correct) — confirms this row is the sum of the commodity-line net weights, not an independent input."
+    },
+    {
+      "name": "(computed) numberOfPackages",
+      "label": "Number of packages of the consignment",
+      "control": "read-only table row",
+      "required": false,
+      "observedValues": [
+        "2",
+        "5"
+      ],
+      "conditionalOn": "Read-only display, not an input. Unlike the net-weight row, this row is NOT gated on showTotalGrossWeight — it renders whenever the Total table renders.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 41 (value 2); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 38 (value 5, CSV branch). BOTH RE-VERIFIED in this review via main innerText. Template: consignmentDetails.html:32-35 — <th class=\"govuk-table__header\" scope=\"row\">Number of packages of the consignment</th>, verified, and confirmed to sit OUTSIDE the {{#if showTotalGrossWeight}} block that wraps the net-weight row. NOTE the previous revision's control was 'text', which wrongly implied an input. CORROBORATION: the traced value 2 is exactly DEFAULT_CONFIG.numberOfPackages = '2' entered on the previous page (ched-pp-workflows.ts:150, filled at :367 — CORRECTED IN THIS REVIEW: the previous revision cited :155 for numberOfPackages; grep puts it at :150. The :367 fill citation was correct). In trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 33 is preceded by Fill '2' on 'Number of packages' at action 33's own upstream page — consistent."
+    }
+  ],
+  "downstreamAssertions": [
+    {
+      "assertion": "Total gross weight (kg) 12 Kg",
+      "where": "View details page (post-submission read-only view of the notification)",
+      "meaning": "The value entered in this page's gross weight field persists to submission and is redisplayed with a 'Kg' unit suffix. Confirms (a) the field's value is carried through to the submitted notification, and (b) the label 'Total gross weight (kg)' is reused downstream. The new app needs an equivalent read-back. Note the downstream suffix is 'Kg' (capital K) while this page's label uses '(kg)' — an internal inconsistency worth not reproducing.",
+      "confidence": "inferred",
+      "evidence": "tests/notification/ched-pp/ched-pp-manipulation.spec.ts:35 — await expect(pages.viewDetails.locatorNetWeight).toContainText(/\\s*Total gross weight \\(kg\\)\\s*12 Kg\\s*/i); VERIFIED exact, including the line number. The '12' is DEFAULT_CONFIG.totalGrossWeightInKgs (ched-pp-workflows.ts:160, verified). Not observed rendered in any trace in our corpus. Caveat: the assertion regex carries the /i flag, so it does NOT actually pin the 'Kg' capitalisation — the casing claim above is drawn from the literal test source, not from an enforced assertion."
+    }
+  ],
+  "accessibilityCoverage": {
+    "checked": true,
+    "confidence": "inferred",
+    "note": "This page IS covered by an automated axe check in the CHED-PP accessibility suite, but under a MISLEADING label — the suite calls it 'Commodity Extended Description Page (gross weight)', which is the name of the PREVIOUS page. The check runs after filling gross weight and before Save and continue, so it is unambiguously this page.",
+    "evidence": "tests/accessibility/ched-pp-accessibility-tests.spec.ts:95-98 — VERIFIED verbatim: `// Commodity Extended Description Page (gross weight)` / `await pages.commodityExtendedDescription.inputTotalGrossWeightinKgs.fill('12');` / `await checkPageAccessibility(pages.page, 'Commodity Extended Description Page (gross weight)');` / `await pages.commodityExtendedDescription.btnSaveAndContinue.click();`. The preceding line (:93) is a btnSaveAndContinue.click() that lands on this page, which is what makes the attribution unambiguous."
+  },
+  "validationMessages": [
+    {
+      "message": "Total gross weight must be greater than the net weight",
+      "field": "gross-weight",
+      "trigger": "gross-weight is entered and is less than or equal to the computed total net weight of the consignment",
+      "confidence": "inferred",
+      "evidence": "validation/messages/en.js:89 — VERIFIED verbatim: `GROSS_WEIGHT_GREATER: 'Total gross weight must be greater than the net weight',` (a literal string, not template-assembled). Wired at validation/routes/handlers/importer/consignment_details.js:36-40 via Joi.number().greater(totalNetWeight), applied to CHEDPP at :121. Not observed in a trace — all three traces passed, and .govuk-error-summary count is 0 in the traced render. NOT asserted by any test either: no CHED-PP spec drives an invalid gross weight. Rendered copy remains unverified. NOTE the test data is consistent with this rule — DEFAULT_CONFIG gross weight 12 (ched-pp-workflows.ts:160) > net weight 1 (:154) — CORRECTED IN THIS REVIEW: the previous revision cited the pair as ':159-160', but :159 is gmsDeclaration, not netWeightInKgs. This is circumstantial support for the rule's existence but not evidence of its message."
+    },
+    {
+      "message": "Total gross weight must be a number",
+      "field": "gross-weight",
+      "trigger": "gross-weight is entered but is not numeric",
+      "confidence": "inferred",
+      "evidence": "ASSEMBLED, not a literal — typeMessage(TOTAL_GROSS_WEIGHT, NUMBER). Template VERIFIED at validation/messages/en.js:27-29: `const typeMessage = (label, type) => { return `${label} must be a ${type}` }`. Constants VERIFIED: labels/en.js:102 TOTAL_GROSS_WEIGHT='Total gross weight', labels/en.js:71 NUMBER='number'. Substitution therefore yields exactly the message above. Wired at consignment_details.js:38. No test asserts this string; never observed rendered."
+    },
+    {
+      "message": "Gross weight decimal places must be 5 characters or fewer",
+      "field": "gross-weight-decimal",
+      "trigger": "The decimal portion of gross-weight exceeds 5 characters. gross-weight-decimal is derived server-side from gross-weight (consignment_details.js:33), so the error names a field the user never sees.",
+      "confidence": "inferred",
+      "evidence": "ASSEMBLED, not a literal — maxLengthMessage(TOTAL_GROSS_WEIGHT_DECIMAL_PLACES, 5). Template VERIFIED at messages/en.js:3-5: `const maxLengthMessage = (label, maxLength) => { return `${label} must be ${maxLength} characters or fewer` }`. Constant VERIFIED: labels/en.js:103 TOTAL_GROSS_WEIGHT_DECIMAL_PLACES='Gross weight decimal places'. Substitution yields exactly the message above. Wired at consignment_details.js:47-49, applied to CHEDPP at :122. No test asserts this string; every test value is a whole number (12, 3000, 100, 1001), so the decimal path is entirely unexercised."
+    },
+    {
+      "message": "Enter the total gross volume",
+      "field": "gross-volume",
+      "trigger": "gross-volume-unit is selected but gross-volume is left blank",
+      "confidence": "inferred",
+      "evidence": "ASSEMBLED, not a literal — requiredMessage(TOTAL_GROSS_VOLUME, THE). Template VERIFIED at messages/en.js:31-33: `const requiredMessage = (label, article) => { return `Enter ${article} ${label.toLowerCase()}` }`. Constants VERIFIED: labels/en.js:101 TOTAL_GROSS_VOLUME='Total gross volume', labels/en.js:99 THE='the'. Note the .toLowerCase() — substitution yields 'Enter the total gross volume' (lowercase 'total'), exactly as stated. Wired at consignment_details.js:218-219. No test asserts this string and no test ever touches gross volume — see openQuestions."
+    },
+    {
+      "message": "Total gross volume must be a number",
+      "field": "gross-volume",
+      "trigger": "gross-volume is entered but is not numeric",
+      "confidence": "inferred",
+      "evidence": "ASSEMBLED — typeMessage(TOTAL_GROSS_VOLUME, NUMBER); templates and constants verified as above (messages/en.js:27-29; labels/en.js:101,71). No .toLowerCase() in typeMessage, so the label keeps its capital T. Wired at consignment_details.js:220. No test asserts this string."
+    },
+    {
+      "message": "Select a unit type",
+      "field": "gross-volume-unit",
+      "trigger": "gross-volume is entered but no unit is selected",
+      "confidence": "inferred",
+      "evidence": "validation/messages/en.js:155 — VERIFIED verbatim: `UNIT_TYPE_REQUIRED: 'Select a unit type',` (a literal string). Wired at consignment_details.js:203,217 via grossVolumeUnitRequiredSchema. No test asserts this string; never observed rendered."
+    },
+    {
+      "message": "Add the total gross weight",
+      "field": "gross-weight",
+      "trigger": "Backend / submit-time validation: total gross weight is null/absent for a CHED-PP notification. This is the SUBMIT-layer mandatoriness the frontend Joi does NOT enforce — Joi.number().allow('') permits blank on this page, but the notification schema requires it to submit a CHED-PP.",
+      "layer": "backend (ipaffs-notification-microservice / notification-schema @NotNull)",
+      "confidence": "legacy",
+      "evidence": "ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:84 — `uk.gov.defra.tracesx.notificationschema.representation.partone.commodities.chedpp.totalgrossweight.not.null=Add the total gross weight`. Wired to the model at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:72-80 — @NotNull(groups={NotificationChedppFieldValidation.class, NotificationSingleCedValidation.class}) on `private BigDecimal totalGrossWeight`. A DIFFERENT copy string and a DIFFERENT layer from the frontend page-level rules above; this is the message the CHED-PP submit path raises when gross weight is missing. Never observed rendered (no trace reaches an error state). Mandatoriness is 'as the old system had it' — the rebuild may deliberately revisit whether gross weight must be mandatory."
+    },
+    {
+      "message": "Total gross weight is less than the total net weight",
+      "field": "gross-weight",
+      "trigger": "Backend / submit-time validation: total gross weight is less than the total net weight for a CHED-PP (also CED/CVEDP) notification.",
+      "layer": "backend (ipaffs-notification-microservice / notification-schema @MinCommoditiesGrossWeight)",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:83 — `...commodities.totalgrossweight.min.message=Total gross weight is less than the total net weight`. Wired at Commodities.java:45-54 — @MinCommoditiesGrossWeight(groups={NotificationCedOrCvedpFieldValidation.class, NotificationChedppFieldValidation.class, ...}). This is the BACKEND equivalent of the frontend page-level GROSS_WEIGHT_GREATER rule already recorded above ('Total gross weight must be greater than the net weight', validation/messages/en.js:89). Same underlying rule (gross must exceed net), two layers, two different copy strings — recorded in discrepancies. Never observed rendered."
+    },
+    {
+      "message": "Add the total net weight",
+      "field": "(computed) totalNetWeight",
+      "trigger": "Backend / submit-time validation: total net weight is null/absent for a CHED-PP notification. Net weight is entered per-commodity on the previous page and summed into this page's Total table; this is the CHED-PP mandatory check on that value.",
+      "layer": "backend (ipaffs-notification-microservice / notification-schema @NotNull)",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:85 — `...commodities.chedpp.totalnetweight.not.null=Add the total net weight`. Wired at Commodities.java:91-99 — @NotNull(groups={NotificationChedppFieldValidation.class, NotificationSingleCedValidation.class}) on `private BigDecimal totalNetWeight`. Included because this page's Total table DISPLAYS totalNetWeight; the error itself would surface against the commodity-lines input on the previous page, not against a control on this page. Never observed rendered."
+    },
+    {
+      "message": "Confirm that CDS has asked you to make a GMS application",
+      "field": "(gms-declaration — separate interstitial page)",
+      "trigger": "Backend / submit-time validation: the CHED-PP GMS declaration constraint is not satisfied. This message is CHED-PP-scoped at the model layer, but the control it guards is the GMS declaration radio on the separate GMS-declaration interstitial page (interposed on this page's linear exit when gmsDeclaration is Yes — see the Save and continue exitRoute), NOT a control on the Additional details page itself. Recorded here because the constraint lives on the same Commodities model whose weight/volume fields this page owns, and this page's exit routes into the GMS step.",
+      "layer": "backend (ipaffs-notification-microservice / notification-schema @ChedppGmsDeclaration)",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:90 — `...commodities.gmsdeclarationaccepted.message=Confirm that CDS has asked you to make a GMS application`. Wired at Commodities.java:55-59 — @ChedppGmsDeclaration(groups = NotificationChedppFieldValidation.class). CHED-PP-only (single group). Never observed rendered — DEFAULT_CONFIG.gmsDeclaration is 'No' (ched-pp-workflows.ts:159), so the GMS step is skipped in nearly every trace. Mandatoriness is 'as the old system had it' — the rebuild may revisit whether a GMS declaration step is needed at all."
+    },
+    {
+      "message": "Please fix the following errors",
+      "field": "(error summary title)",
+      "trigger": "Any validation failure on this page — rendered as the govuk-error-summary__title",
+      "confidence": "inferred",
+      "evidence": "partials/common/validationSummary.html:8 — VERIFIED verbatim as the {{else}} branch of {{#if headerText}}, inside <h2 class=\"govuk-error-summary__title\">. consignmentDetails.html:14 invokes {{> common/validationSummary}} with no headerText argument (verified), so the default fires. Deviates from the Design System's 'There is a problem'. No test asserts this string; the summary did not render in any trace (count 0 at e10b7cd5 action 41)."
+    }
+  ],
+  "confidence": "inferred",
+  "discrepancies": [
+    "GROSS WEIGHT MANDATORINESS — page vs submit. The rendered DOM (confirmed) shows gross-weight with NO `required` attribute and the frontend validator allows blank (Joi.number().allow(''), consignment_details.js:36,121), so on THIS page the field is optional. But the notification schema marks it @NotNull for the CHED-PP group (Commodities.java:72-80, message 'Add the total gross weight', ValidationMessages.properties:84), so a CHED-PP cannot be SUBMITTED without it. Not a rendered-vs-legacy contradiction so much as a two-layer split: page-optional, submit-required. The rebuild must decide where the requirement lives. Rendered value kept (required:false at the page level); requiredOnSubmit:true added from legacy.",
+    "GROSS-WEIGHT-GREATER-THAN-NET rule — two copy strings for one rule. The frontend page-level message is 'Total gross weight must be greater than the net weight' (validation/messages/en.js:89, GROSS_WEIGHT_GREATER). The backend submit-level message for the same rule is 'Total gross weight is less than the total net weight' (ValidationMessages.properties:83, @MinCommoditiesGrossWeight on the CHED-PP group). Neither was ever observed rendered, so there is no confirmed value to prefer — both are legacy. Recorded so Reconcile can pick ONE canonical wording for the rebuild rather than inheriting the divergence."
+  ],
+  "openQuestions": [
+    "No trace in the CHED-PP corpus caught this page in an error state (the error summary is positively confirmed ABSENT from the traced render — .govuk-error-summary count 0), AND no test in the QA automation repo drives it into one — both admissible sources are silent. So EVERY validation message above is `inferred`. Two of the seven are literal strings in the catalogue (GROSS_WEIGHT_GREATER, UNIT_TYPE_REQUIRED) and are high-confidence; the other five are ASSEMBLED at runtime from a template function plus label constants, and while this review verified each template and constant and re-derived each substitution by hand, the exact rendered text should still be confirmed against a real error render before the new app copies it. This page has ZERO negative-path test coverage — worth flagging to the team on its own merits.",
+    "Gross weight is NOT required by the validator (Joi.number().allow('')) and the input carries no `required` attribute (confirmed in the rendered DOM), yet the label has no '(optional)' suffix while the sibling gross-volume field does. Every trace fills it, and every test config supplies a value (no test omits it). Is a CHED-PP submittable with no total gross weight, or is it enforced later (e.g. at the review/submit step, or by the backend)? This is a decision the new app must make explicitly.",
+    "'Commodity intended for:' — a radio group with inset hint text ('You'll find this on the health or phytosanitary certificate...') is invoked on this template (consignmentDetails.html:83-94) but rendered in NONE of the three traces. THIS REVIEW HARDENS THE ABSENCE CLAIM: the rendered control inventory contains zero radio inputs of any kind, so the radio is confirmed not to render for CHED-PP — it is not merely un-clicked. The internal-market question is answered on an EARLIER page ('About the consignment' — visible in the trace timeline itself at action 29, twelve actions before this page's fill at action 41), which explains why the internalMarket gate is closed here. Remaining question is narrow: is the gate closed for ALL CHED-PP configurations, or only the ones traced? A human should confirm; if confirmed, the field drops from the rebuild's scope.",
+    "The gross-weight-decimal validation rule invents a server-side field derived from gross-weight, so its error message ('Gross weight decimal places must be 5 characters or fewer') references a field with no control on the page and no anchor for the error summary link to focus. Likely an accessibility defect in IPAFFS; the new app should express this as a decimal-places rule on the gross weight field itself. Note no test uses a decimal gross weight, so this path is unexercised in automation as well as untraced.",
+    "The unit list ('litres', 'metres cubed') is hardcoded in the template, not reference data (verified at consignmentDetails.html:74-76). Note 'metres cubed' is used as both the option value and its display text (verified by enumerating the rendered options), so the stored value is a human-readable string rather than a code (e.g. m3). The new app should decide whether to persist a code instead. The QA repo has no volume-unit vocabulary in types/ (unlike quantity-type.ts / package-type.ts), which is consistent with this being template-hardcoded rather than reference data.",
+    "GROSS VOLUME IS COMPLETELY UNEXERCISED BY BOTH SOURCES. It renders for every CHED-PP (traced) but no trace fills it and the QA repo has no locator, no config option and no test for it (zero hits for 'grossvolume' across page-objects/, workflows/, tests/ and types/ — re-verified in this review). So we know the control exists and nothing more: not whether users actually use it, not whether the paired gross-volume/unit required rule works, not what its error states look like. Does CHED-PP genuinely need total gross volume, or is this dead surface inherited from the shared template? A human/BA answer would let the rebuild drop two controls.",
+    "The 'Total' table shows net weight and package count computed from the commodity lines, but no gross-weight-derived total. The page's URL carries ?commodityDetailsPage=1 (confirmed on both the GET and the POST — trace e10b7cd5 requests 995 and 1011), implying pagination of commodity details — unclear whether a multi-page commodity set changes what this totals table aggregates. Not exercised: all traces had a single page of commodities, and the tests cap out at three commodities (ched-pp-workflows.ts:347-388), which evidently still fits one page.",
+    "DOES COPY AS NEW CARRY THE GROSS WEIGHT OVER? STILL OPEN — AND THE PREVIOUS REVISION'S ANSWER WAS WITHDRAWN IN THIS REVIEW. It asserted as CONFIRMED that 'copy as new does not carry the gross weight over', reasoning that the copied draft's gross weight input is empty while the Total table repopulates. Re-deriving the timeline refutes the reasoning. At trace ea99a3b59448073a9924eb56cbc947df8ba082c2 the test first checks 'Select all' (action 101) and overwrites EVERY commodity line — packages '2', quantity '2', net weight '10' (up from the original draft's '1') — then clicks Apply (109) and Save and continue (110), landing here at 111. So: (i) the Total table's '20' and '4' are the test's own values applied across two lines, NOT copied values — the repopulation argument reads the test's input back as if it were the app's output; (ii) the empty gross weight is observed only AFTER a commodity mutation, never on a pristine copied draft; (iii) the original gross weight ('12', action 43) would be INVALID against the new net total of 20 under the GROSS_WEIGHT_GREATER rule, so 'IPAFFS cleared a now-invalid gross weight' explains the evidence at least as well as 'the copy dropped it'. The corpus cannot separate the two — no trace copies a draft and reaches this page without touching the commodities. The underlying question is real and worth a BA's time (which fields survive a copy, and does changing a commodity silently clear the gross weight?), but it must be asked, not answered from these traces. The one part of the old argument that survives: the 2x multiple implies the copied draft did arrive with two commodity lines for Select all to act on, so commodity lines ARE carried over.",
+    "The hidden `etag` field implements optimistic concurrency on the draft. Whether the new app needs equivalent lost-update protection is a design decision worth surfacing, not an IPAFFS implementation detail to discard by default.",
+    "The two computed rows have DIFFERENT render gates: the net-weight row sits inside {{#if showTotalGrossWeight}} (consignmentDetails.html:23) while the package-count row does not. So there is a template-reachable state where the Total table shows ONLY a package count and no net weight. Never traced (showTotalGrossWeight was true in all three). Is that state reachable for CHED-PP, and is a lone package-count total meaningful? Newly identified in this review.",
+    "The Back link is href=\"#\" and therefore JavaScript-driven (see nonStandardPatterns). No trace clicks it, so where it actually goes — the previous linear step, or the hub when entered from the hub — is unknown. Since this page has THREE entry points (linear, hub link, review/change), 'back' is genuinely ambiguous here and the new app must decide the rule explicitly rather than inheriting history.back(). Newly identified in this review.",
+    "CORRECTION TO A PREVIOUS FINDING (was: 'the page object's Save and review button belongs to the CHED-D/CHED-P variants'). That is WRONG for the button. A CHED-PP workflow DOES use it: submitClonedChedPPNotification calls commodityAdditionalDetails.enterGrossWeightAndSaveAndReview (ched-pp-workflows.ts:988 — verified), i.e. when this page is entered from the Review notification page via 'Change commodity details', the primary button reads 'Save and review' and returns to review instead of advancing. No trace in our corpus captured this variant. The rest of that finding STANDS and is now positively corroborated: radioAmbient/radioFeedingstuff (CommodityAdditionalDetailsPage.ts:6-12) are driven ONLY by ched-p/ched-d workflows and never by CHED-PP, and zero radios render for CHED-PP. So: the button-label variance is a REAL CHED-PP requirement the rebuild must decide on (does a change-from-review flow return to review?); the radios are genuinely out of scope.",
+    "THE CHED-PP CLONING JOURNEY IS RED IN THIS TEST RUN, AND THAT IS WHY THE 'Save and review' VARIANT OF THIS PAGE HAS NO RENDERED EVIDENCE. Newly established in this review. The corpus contains three traces of ched-pp-cloning.spec.ts:10 (ebd5a5d267ae02ba27210c7c670bbba60a9ff667, 470cd3de7b53a52e16aeb10ef4a69fb1a6a06655, 7d0bf2f642f2d4eb480f71757b174b90516c49fe — the latter two are retries). All three fail identically: a Click on getByRole('button', { name: 'Clone' }) times out after 30.0s, so the run dies on the cloning summary page and never reaches Review notification, never reaches this page. Two consequences worth separating. (1) FOR THIS SPEC: the review/change entry route, the 'Save and review' button label, and the 1001 gross-weight value are all `inferred` for a KNOWN reason rather than an unknown one — no amount of re-reading the corpus will confirm them, and a human must either fix the cloning test or answer the question directly. (2) FOR THE TEAM, independently of the rebuild: three consecutive failures on a @release-tagged spec is a broken journey or a broken test, and it means the whole 'change something from the review page' pattern — not just on this page — is unverified in this run. Worth raising on its own merits.",
+    "This page's exit is THREE-WAY and depends on the entry route: linear -> GMS declaration if gmsDeclaration is Yes (ched-pp-workflows.ts:383-386) else Transport details (:388); copy-as-new -> always Transport details, no GMS branch (:849-852); review/change -> back to Review notification via 'Save and review' (:988-990). Newly identified in this review. DEFAULT_CONFIG.gmsDeclaration is 'No' (:159), so the GMS interstitial is skipped in nearly every trace and we have almost no evidence about it from this page's vantage point. Combined with the Back link being href=\"#\" (see nonStandardPatterns), BOTH directions of navigation from this page are route-dependent and neither is expressed in the markup — the new app must make both explicit rather than inheriting them.",
+    "The CHED-PP tests drive THIS page's gross weight field through the CommodityExtendedDescriptionPage object (inputTotalGrossWeightinKgs — CommodityExtendedDescriptionPage.ts:55-57), not through CommodityAdditionalDetailsPage, except on the cloning route. The accessibility suite likewise labels this page 'Commodity Extended Description Page (gross weight)'. The QA repo has therefore blurred two adjacent pages into one page object. This is a note for whoever reads the test suite as documentation — it is a mislabelling in the tests, NOT evidence that the two pages are one. The traces are unambiguous that 'Additional details' is its own page with its own URL (.../consignment/details?commodityDetailsPage=1, verified on the wire) and its own H1 ('Additional details', verified in the DOM). Consequence worth noting: CommodityAdditionalDetailsPage.inputTotalGrossWeight uses a NON-exact locator (name: 'Total gross weight') while CommodityExtendedDescriptionPage.inputTotalGrossWeightinKgs uses exact: true with '(kg)' — two locators for one field, only one of which pins the label. SHARPENED IN THIS REVIEW: the blurring is visible inside a single seven-line block — ched-pp-workflows.ts:289 comments `// Additional Details Page`, then :291 comments `// Commodity Extended Description Page` immediately above the gross-weight fill at :292. The test authors contradict themselves about which page they are on. Countervailing evidence that they DO know: the copy-as-new workflow's comment at :847 reads `// Commodity Additional Details - gross weight` above the same fill — correctly attributing it to this page while still using the wrong page object. So the page object choice is a known shortcut, not a misunderstanding.",
+    "COPY-AS-NEW HAS ITS OWN CONFIG BLOCK WITH DIFFERENT DEFAULTS, AND NOBODY HAS SAID WHY. Newly identified in this review. ChedPPCopyAsNewConfig / DEFAULT_COPY_CONFIG (ched-pp-workflows.ts:745-792) sets totalGrossWeightInKgs '100' against netWeightInKgs '10', where the linear DEFAULT_CONFIG sets '12' against '1'. Both satisfy gross>net, so neither is testing a boundary. The divergence looks incidental rather than meaningful, but if it IS meaningful — e.g. a copied consignment is expected to be re-weighed at a realistic scale — that is a requirement nobody has written down. Cheap question for the QA author; the answer decides whether the rebuild's copy flow needs distinct test data at all."
+  ]
+}

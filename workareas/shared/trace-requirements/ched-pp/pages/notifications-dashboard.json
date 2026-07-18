@@ -1,0 +1,1117 @@
+{
+  "slug": "notifications-dashboard",
+  "name": "Your import notifications (dashboard)",
+  "url": "/notification/vnet/protected/notifications",
+  "urlPattern": "/{appName}/{env}/protected/notifications — appName='notification', env is deployment-specific (vnet/dev/tst). Local proxy uses /{slot}/{env}/protected/notifications with slot='0'. Confidence: inferred — ~/git/defra/ipaffs/ipaffs-qa-automation/config/areas.ts:29 (AREA_CONFIG.notification) and :46 (buildDashboardUrlPattern). CONFIRMED absolute host for this corpus: https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications — trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 10 (navigate params).",
+  "pageTitle": "Your import notifications - Import and export applications - GOV.UK",
+  "heading": "Your import notifications",
+  "doaObservations": [
+    {
+      "surface": "Trade Partner badge (delegated-authority marker on the result card)",
+      "finding": "NEW CONFIRMED SURFACE the base spec did not cover. A notification created by a delegated agent on behalf of an organisation carries a second badge, 'Trade Partner', rendered directly beneath the CHED status on the result card. It is a teal govuk-tag: class 'govuk-tag tag--fixed-width govuk-tag--teal govuk-!-margin-top-1'. The 'CHED status' definition then contains TWO strong/tag elements — the status ('New' blue, or 'Draft CHEDPP' grey) and 'Trade Partner' (teal). Render condition (legacy source ipaffs-frontend-notification/service/src/views/partials/common/notificationList.html:28-30): type == 'CHEDPP' AND agencyOrganisationId is set. An own-org notification (no agencyOrganisationId) shows NO badge.",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94 (refs e322-e325) — 'New' + 'Trade Partner'",
+        "2c16ad659671044cd9b138be5a71b21c658af3b8 action 93 — teal tag beneath 'New'",
+        "545412266caaec96b0aae12262fecfee3e099888 action 90 (refs e344-e352) — 'Draft CHEDPP' + 'Trade Partner'"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "surface": "Current-organisation context switcher",
+      "finding": "NEW CONFIRMED SURFACE. Above the 'Your import notifications' h1, an org member's (and agent's) dashboard renders a 'Current Organisation:' combobox with a 'Change' button, scoping which organisation's notifications the list shows. Isabel Irwin's switcher options were 'IPAFFS Plant Organisation 1' [selected] and 'Shad Price'. Visibility of agent-submitted notifications is tied to viewing the owning organisation's context. The base spec's account bar (Address book | Manage account | Manage trade partners | Sign out) is unchanged; this switcher is ADDITIONAL chrome that the main-run (single-org) trace did not render.",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94 (refs e187-e189)",
+        "b701cc405623fb2d2e2b2dedcf2bec3d10dfb954 snap 66 (lines 241-245)",
+        "2c16ad659671044cd9b138be5a71b21c658af3b8 action 93"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "surface": "Cross-organisation visibility on the dashboard search",
+      "finding": "NEW CONFIRMED behaviour. The dashboard keyword search returns (or hides) notifications per the delegated-authority ownership model — full rules in authorization-rules.md. Confirmed legs: (a) agent submits FOR a delegated org → a member of that org finds it and gets full row actions (e9b5e36b, 2c16ad65); (b) same-org co-member sees another member's submission (065de8c5); (c) agent submits for OWN org → other-org member's search returns '0 results / No notifications have been found', view-details hidden (5dd87b7f action 91); (d) agent DRAFTS for a delegated org → org member's search for the DRAFT.* reference returns nothing (b701cc40 action 65-67). So visibility keys on the owning organisation and on submitted-vs-draft state, not on authorship.",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94",
+        "065de8c56896cc607da83498efba9c11575a7438 action 90",
+        "5dd87b7fee11881f5706c26e17617e68b19247d1 action 91",
+        "b701cc405623fb2d2e2b2dedcf2bec3d10dfb954 action 65-67"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "surface": "Result-card row actions for org members / co-members",
+      "finding": "A visible notification (agent-submitted for the org, or a same-org co-member's submission) is fully actionable by the viewing member: the row exposes 'Copy as new', 'View details', 'Amend' (all button.govuk-link) and 'Show notification' (PDF link at /notifications/{ref}/certificate/pdf) — the SAME action set the author would see, with no read-only downgrade for non-authors. Confirmed for a delegated-org member (Isabel Irwin, e9b5e36b actions 93-95; 2c16ad65 action 93) and for a same-org co-member (David D, 065de8c5 action 90: view-details-CHEDPP.GB.2026.1525737, copy-as-new-*, amend-details-*).",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 actions 93-95",
+        "065de8c56896cc607da83498efba9c11575a7438 action 90",
+        "2c16ad659671044cd9b138be5a71b21c658af3b8 action 93"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "surface": "Consignee = owning organisation on the result card",
+      "finding": "The result card's Consignee column resolves to the notification's owning organisation, confirming org-level ownership: 'IPAFFS Plant Organisation 1' for the delegated route (e9b5e36b, 2c16ad65, 545412266), 'Test Org Ltd' for a same-org member submission (065de8c5). The Consignor ('Linus George Ltd') is the hand-entered party. Full card field set observed (e9b5e36b snap 94): Reference number, Commodity 06011010, Arrival at BCP or POE '18 July 2026', CHED status 'New' + 'Trade Partner', Consignee, Consignor 'Linus George Ltd', Origin France, Inspection 'Required'.",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94",
+        "065de8c56896cc607da83498efba9c11575a7438 action 90"
+      ],
+      "confidence": "confirmed"
+    }
+  ],
+  "isPostLoginLandingPage": true,
+  "isPostLoginLandingPageEvidence": "inferred — after login the tests assert the browser is already on the notification dashboard URL without navigating there: ~/git/defra/ipaffs/ipaffs-qa-automation/tests/bcp/InServiceMessaging.spec.ts:146 and :178 (`await expect(pages.page).toHaveURL(pages.notificationDashboard.expectedUrl)` immediately after `pages.login.login(...)`). This dashboard is the service's landing page, not just a section index.",
+  "bodyCopy": [
+    "155442 results",
+    "Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed.",
+    "30557 consignments must go to your chosen BCP for inspection"
+  ],
+  "backLink": "",
+  "continueLabel": "Create a new notification",
+  "secondaryActions": [
+    "Clone a certificate",
+    "Search",
+    "Clear",
+    "Update sort",
+    "Recover notifications from archive",
+    "View consignments to be inspected",
+    "Review these notifications",
+    "Copy as new",
+    "View details",
+    "Amend",
+    "Show notification",
+    "Today",
+    "Tomorrow",
+    "Next seven days",
+    "Clear date range",
+    "Choose date",
+    "Dismiss this message",
+    "Extra information",
+    "View all",
+    "Address book",
+    "Manage account",
+    "Manage trade partners",
+    "Sign out",
+    "Skip to content",
+    "Accept Cookies",
+    "Cookie Settings",
+    "feedback"
+  ],
+  "secondaryActionsNotes": [
+    "'Address book' — confidence: CONFIRMED (corrected: a previous revision of this spec asserted 'NOT observed in either trace', which is false). It IS in the DOM of both evidence traces, in the account/utility bar above <main>, not in the main content: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), link ref e43 -> /notification/vnet/protected/notifications/address-book. DOM corroboration: `document.querySelectorAll('a[href*=address-book]').length === 1`. Test corroboration for the click path remains ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/address-book/address-book-workflows.ts:41, and the locator at ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/NotificationDashboardPage.ts:32.",
+    "'Manage trade partners' — confidence: CONFIRMED (corrected: previously mis-tagged 'inferred / NOT observed'). Present in the same account bar: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), link ref e45 -> /notification/vnet/protected/notifications/trade-partners/filter. DOM corroboration: `a[href*=trade-partners]` count 1. It is therefore NOT role-conditional in the way previously conjectured — this trace's user is a B2C importer (ched-pp-article72.spec.ts:15, 'B2C Importer (Not Agent)'), not a DoA agent, and still sees the link. The earlier role-conditionality hypothesis is withdrawn.",
+    "'Manage account' (ref e44 -> /notification/vnet/protected/manage?returnUrl=%2Fprotected%2Fnotifications) and 'Sign out' (ref e46 -> /protected/logout) complete the account bar. Both confirmed, trace 219b... action 8 (before). Neither appeared in the previous revision of this spec.",
+    "The account bar renders as a single paragraph (ref e42): '<username> | Address book | Manage account | Manage trade partners | Sign out', with the signed-in user's display name first ('Michael Scott' in this trace — test-data). Confirmed, trace 219b... action 8 (before).",
+    "'Yesterday' — confidence: gap. NOT in the DOM of either evidence trace: `document.body.innerText.includes('Yesterday') === false` on trace 219b... action 8 (before). Removed from the action list above (a previous revision listed it alongside confirmed actions). NotificationDashboardPage.ts:56 defines `btnSearchByYesterday` (getByRole('button', { name: 'Yesterday' })), but NO notification-dashboard test exercises it and its only caller is a commented-out RECORD CONTROL dashboard test (~/git/defra/ipaffs/ipaffs-qa-automation/tests/dashboard/dashboard-search.spec.ts:477-509, disabled with 'Need to investigate if these tests are failing due a bug or different behaviour to the other dashboards'). Most likely copy-paste carry-over into this page object. See openQuestions."
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full, with govuk-grid-column-two-thirds / govuk-grid-column-one-third splits inside the search panel and the notification-list rows. 7 govuk-grid-row elements on the page (confirmed by count).",
+  "structure": [
+    {
+      "element": "cookie-banner",
+      "text": "GOV.UK uses cookies which are essential for the site to work...",
+      "govukComponent": "(pre-Design-System cookie banner)",
+      "confidence": "confirmed",
+      "note": "Renders above everything: paragraph ref e6 'GOV.UK uses cookies which are essential for the site to work. We also use non-essential cookies to help us improve government digital services. Any data collected is anonymised. By continuing to use this site, you agree to our use of cookies.' + button 'Accept Cookies' (ref e9) + link 'Cookie Settings' (ref e11) -> /notification/vnet/protected/notifications/cookies?returnUrl=%2Fprotected%2Fnotifications. NOTE the 'By continuing to use this site, you agree' framing is implied consent, which is not compliant with the current GOV.UK cookie-banner pattern. Not in the previous revision of this spec. Evidence: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)."
+    },
+    {
+      "element": "phase-banner",
+      "text": "Beta",
+      "govukComponent": "Phase banner + Tag",
+      "confidence": "confirmed",
+      "note": "strong 'Beta' (a govuk-tag — it is one of the 40 tags counted on the page) + 'This is a new service – your feedback will help us to improve it.' with link 'feedback' -> https://www.smartsurvey.co.uk/s/7YJV5/ (refs e36-e39). Evidence: trace 219b... action 8 (before)."
+    },
+    {
+      "element": "account-bar",
+      "text": "Michael Scott | Address book | Manage account | Manage trade partners | Sign out",
+      "govukComponent": "(bespoke — plain paragraph of pipe-separated links)",
+      "confidence": "confirmed",
+      "note": "paragraph ref e42. Links: 'Address book' (e43), 'Manage account' (e44), 'Manage trade partners' (e45), 'Sign out' (e46). This is the service's primary navigation and it is a bare paragraph with literal '|' text nodes between links — no nav landmark, no list. Evidence: trace 219b... action 8 (before). See nonStandardPatterns."
+    },
+    {
+      "element": "notification-banner",
+      "text": "Alert",
+      "govukComponent": "Notification banner",
+      "confidence": "confirmed",
+      "note": "role=alert variant (notification-banner--alert), heading 'Alert' level 2 (ref e52). Contains N service-wide broadcast messages, each with an audience line ('For all import types' / 'For imports of live animals'), a message body, an 'Extra information' / 'More Information' link and a 'Dismiss this message' link (e.g. refs e54-e59; dismiss href /notification/vnet/protected/notifications/messages/{messageId}/{n}/dismiss). 18 alert messages present in the observed snapshot. DOM contract corroborated: each message is a div with id starting 'message-alert-' containing the body in a <p> and a dismiss <a> whose id ends '-dismiss' — inferred, ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/decision/DecisionDashboardPage.ts:276-280 and :291. Evidence: trace 219b... action 8 (before), alert ref e50."
+    },
+    {
+      "element": "notification-banner",
+      "text": "Information",
+      "govukComponent": "Notification banner",
+      "confidence": "confirmed",
+      "note": "Same message-list structure as Alert, INFORMATION severity. Heading ref e164. 2 messages observed. Severity is an authored property with exactly these two values — inferred, ~/git/defra/ipaffs/ipaffs-qa-automation/tests/bcp/InServiceMessaging.spec.ts:105-126 creates an 'INFORMATION' message and :138 an 'ALERT' one via the BCP admin 'Manage messages' screens."
+    },
+    {
+      "element": "notification-banner",
+      "text": "Chosen for inspection",
+      "govukComponent": "Notification banner",
+      "confidence": "confirmed",
+      "note": "Heading ref e180. Body (paragraph ref e182): '30557 consignments must go to your chosen BCP for inspection' + link 'View consignments to be inspected' (ref e184) -> /notification/vnet/protected/notifications/consignments-to-be-inspected. Evidence: trace 219b... action 8 (before)."
+    },
+    {
+      "element": "notification-banner",
+      "text": "Important - CHEDPP",
+      "govukComponent": "Notification banner",
+      "confidence": "legacy",
+      "note": "MISSED CONDITIONAL SURFACE no trace rendered. A CHED-PP-specific outage banner shown only when `showDelegationServiceDownBanner` is set: title 'Important - CHEDPP', body 'Unfortunately due to a system problem you cannot create a notification for a trade partner. Try again later.', id 'delegation-service-down-banner'. Directly relevant to the CHED-PP delegated-authority (Trade Partner) journey — it degrades gracefully when the delegation service is down. Legacy — ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/home.html:11-18. Neither evidence trace hit this state; happy-path only."
+    },
+    {
+      "element": "org-context-switcher",
+      "text": "Current Organisation:",
+      "govukComponent": "(bespoke — organisationChange partial)",
+      "confidence": "legacy",
+      "note": "Corroborates the CONFIRMED doaObservation 'Current-organisation context switcher'. Rendered only when the signed-in user belongs to MORE THAN ONE organisation: `{{#gt userOrganisations.length 1}}{{> common/organisationChange}}{{/gt}}` (home.html:64-66). So the switcher is population-conditional, which is why the single-org main-run trace never rendered it and the multi-org agent traces (e9b5e36b, b701cc40) did. Legacy — ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/home.html:64-66."
+    },
+    {
+      "element": "h1",
+      "text": "Your import notifications",
+      "govukComponent": "govuk-heading-xl",
+      "confidence": "confirmed",
+      "note": "heading level 1, ref e185. Evidence: trace 219b... action 8 (before). Matches the page title 'Your import notifications - Import and export applications - GOV.UK'."
+    },
+    {
+      "element": "link-styled-as-button",
+      "text": "Create a new notification",
+      "govukComponent": "Button",
+      "confidence": "confirmed",
+      "note": "<a class='govuk-button notification-button' id='create-notification'> (ref e187) -> /notification/vnet/protected/notifications/consignment/page-1?source=dashboard. Surfaces in the a11y tree as a LINK, not a button. This is the CHED-PP journey entry point — action 8 of the evidence trace is precisely this click, and the next action checks the radio 'Plants, plant products and...'. Corroborated: NotificationDashboardPage.ts:13 locates it by '#create-notification' and :44 by role link name 'Create a new notification'; first step of the CHED-PP a11y walk (~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:22) and of the create workflow (~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:253)."
+    },
+    {
+      "element": "link-styled-as-button",
+      "text": "Clone a certificate",
+      "govukComponent": "Button",
+      "confidence": "confirmed",
+      "note": "<a class='govuk-button notification-button'> (ref e188) -> /notification/vnet/protected/notifications/cloning/type. Corroborated as a LINK role: NotificationDashboardPage.ts:17 (getByRole('link', { name: 'Clone a certificate' })), driven by ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:937."
+    },
+    {
+      "element": "info-summary",
+      "text": "My alerts",
+      "govukComponent": "(non-standard — see nonStandardPatterns)",
+      "confidence": "confirmed",
+      "note": "generic ref e189; h2 'My alerts' (ref e190) + govuk-list (ref e192) of per-status alert count links, verbatim: 'View all' (?type=ALL), '250 notifications awaiting amendment' (?type=AMEND), '43 notifications changed to In Progress in the last 24 hours' (?type=IN_PROGRESS), '96 notifications changed to Valid in the last 24 hours' (?type=VALID), '10 notifications changed to Rejected in the last 24 hours' (?type=REJECTED), '1 notification changed to Cancelled in the last 24 hours' (?type=CANCELLED), '4 notifications changed to Replaced in the last 24 hours' (?type=REPLACED). Each links to /notification/vnet/protected/notifications/alerts?type=... Note the count-1 item is correctly singularised ('1 notification changed'). Evidence: trace 219b... action 8 (before)."
+    },
+    {
+      "element": "h3",
+      "text": "Search notifications by",
+      "govukComponent": "govuk-heading-m",
+      "confidence": "confirmed",
+      "note": "heading level 3, ref e213 — inside the collapsible search panel (div.search-panel, ref e209). Preceded in the DOM by input[type=submit].button.search-hidden (value='hidden-search'), the toggle control, which surfaces as button ref e210. NOTE the heading level jumps h1 -> h3 with no h2 between them in the main content (the h2s on the page are the banner headings and 'My alerts'), so this is a heading-order irregularity."
+    },
+    {
+      "element": "form",
+      "text": "search filter form",
+      "govukComponent": "(form.search-filter-form)",
+      "confidence": "confirmed",
+      "note": "Contains exactly 17 controls (confirmed by DOM inventory): 1 hidden crumb, 1 submit toggle, and the 15 user-facing filter controls enumerated in fields[] (10 filters, of which the two date ranges are 3 inputs each, plus orderBy). Laid out in govuk-grid-rows."
+    },
+    {
+      "element": "button",
+      "text": "Search",
+      "govukComponent": "Button",
+      "confidence": "confirmed",
+      "note": "ref e306. Corroborated: NotificationDashboardPage.ts:96 (getByRole('button', { name: 'Search', exact: true })). Search is submit-driven — every test re-clicks Search to refresh results (e.g. NotificationDashboardPage.ts:149 polls by re-clicking). The dashboard does NOT live-update; there is no polling or websocket refresh, which is why the page object wraps status checks in a click-and-retry loop with timeouts up to 120s (NotificationDashboardPage.ts:138) and up to 780s in the autoclear test (~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-notification.spec.ts:42)."
+    },
+    {
+      "element": "link",
+      "text": "Clear",
+      "govukComponent": "Link",
+      "confidence": "confirmed",
+      "note": "a.clear-link (ref e307) -> /notification/vnet/protected/notifications?searchClear=true. Sits beside the Search button (shared parent ref e305)."
+    },
+    {
+      "element": "link",
+      "text": "Recover notifications from archive",
+      "govukComponent": "Link",
+      "confidence": "confirmed",
+      "note": "ref e309 -> /notification/vnet/protected/notifications/archived-notifications."
+    },
+    {
+      "element": "error-summary",
+      "text": "There is a problem",
+      "govukComponent": "Error summary",
+      "confidence": "confirmed",
+      "note": "alert ref e311; heading 'There is a problem' level 2 ref e312. NOT a validation error. Used as a persistent customs-mismatch warning: strong (ref e315) 'Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed.' + list item link 'Review these notifications' (ref e318) -> /notification/vnet/protected/notifications/no-match-results. See nonStandardPatterns."
+    },
+    {
+      "element": "paragraph",
+      "text": "155442 results",
+      "govukComponent": "govuk-heading-s",
+      "confidence": "confirmed",
+      "note": "CORRECTED — a previous revision called this govuk-body and inferred the markup from the page object. The markup is now directly confirmed from the DOM: `<p class=\"govuk-heading-s govuk-!-margin-bottom-2\"><span id=\"notification-count\">155442</span><span id=\"results\">results</span></p>` (paragraph ref e319). So it is a <p> carrying a HEADING class, the count is in span#notification-count and the word 'results' is its OWN element (span#results) — the previous guess of a bare ' results' text node was wrong. #notification-count's textContent is the BARE INTEGER '155442', which matches the tests asserting `toBe('1')` / `toBe('0')` (~/git/defra/ipaffs/ipaffs-qa-automation/tests/dashboard/dashboard-search.spec.ts:94, :122). The same id is reused on the decision and control dashboards (DecisionDashboardPage.ts:182, ControlDashboardPage.ts:79). DISCREPANCY (rendered-inference vs legacy — legacy wins for this fact): the trace observed only the plural branch (count 155442) and INFERRED 'results is never singularised — a count of 1 renders 1 results'. The legacy template CONTRADICTS that inference: searchAndFilter.html:251-258 wraps the word in `{{#eq notificationCount 1}}<span id=\"result\">result</span>{{else}}<span id=\"results\">results</span>{{/eq}}` — so at count 1 it renders '1 result' inside span#result (a DIFFERENT id), not '1 results' inside span#results. The rendered value '155442 results' stays confirmed and correct; only the never-singularises inference was wrong. The per-row test id assumption `#results` therefore breaks at count 1 (the span becomes `#result`). Legacy — ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/searchAndFilter.html:251-258."
+    },
+    {
+      "element": "select",
+      "text": "Sort by:",
+      "govukComponent": "Select",
+      "confidence": "confirmed",
+      "note": "combobox ref e322 + 'Update sort' button (ref e323, govuk-button--secondary). Sort is submit-driven, not onchange. The label text includes the trailing colon ('Sort by:'). CORRECTED — two previous revisions asserted this label 'is a plain generic (ref e321), not a govuk-label'. That is FALSE and was contradicted by the spec's own label count. Read directly from the DOM: `<label for=\"orderBy\" class=\"govuk-label govuk-!-display-inline-block\">Sort by:</label>` — it IS a govuk-label, and a correctly `for`-associated one. The a11y tree renders it as a generic node, which is what misled the earlier revisions; the a11y tree is not authoritative about markup. The only real copy defect here is the trailing colon, which GDS style omits."
+    },
+    {
+      "element": "notification-list",
+      "text": "Results list — 25 rows per page",
+      "govukComponent": "(non-standard — bespoke card list, see nonStandardPatterns)",
+      "confidence": "confirmed",
+      "note": "25 .notification-list__row-container elements confirmed by count. Each is a dl of 8 term/definition pairs plus an action column. Fields: Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin, Inspection. 'Inspection' is present only on some rows (absent on DRAFT rows). Actions per row: 'Copy as new', 'View details', 'Amend' (all button.govuk-link), and link 'Show notification' -> /notifications/{ref}/certificate/pdf. PER-ROW DOM CONTRACT corroborated (inferred, NotificationDashboardPage.ts:224-241): the list lives inside a container with id 'notifications-page' (confirmed present in the DOM); each row exposes index-suffixed ids 'reference-number-{i}', 'status-{i}', 'inspection-status-{i}', 'arrival-date-{i}' (0-based); and action controls carry REFERENCE-suffixed ids 'view-details-{ref}', 'copy-as-new-{ref}', 'amend-details-{ref}' (NotificationDashboardPage.ts:101, :105, :129). Note the id scheme is inconsistent — data cells key by row INDEX, actions key by CHED REFERENCE.",
+      "perRowIdContract": {
+        "ids": [
+          "reference-number-{i}",
+          "commodity-id-{i}",
+          "arrival-date-{i}",
+          "status-{i}",
+          "consignee-{i}",
+          "consignor-{i}",
+          "origin-{i}",
+          "inspection-status-{i}"
+        ],
+        "confidence": "confirmed",
+        "note": "CORRECTED CONFIDENCE (inferred -> confirmed). A previous revision tagged this 'inferred' and argued at length that 'this is not a trace and not code inference' because it had only axe-core's log as evidence. That reasoning is now moot: all 8 ids are DIRECTLY READABLE from the trace DOM and have been read. The full set maps 1:1 onto the 8 dl term/definition pairs the trace observed, in DOM order: Reference number -> reference-number-{i}, Commodity -> commodity-id-{i}, Arrival at BCP or POE -> arrival-date-{i}, CHED status -> status-{i}, Consignee -> consignee-{i}, Consignor -> consignor-{i}, Origin -> origin-{i}, Inspection -> inspection-status-{i}. Note 'commodity-id' is the odd one out — every other id names its concept plainly; this one carries an '-id' suffix while rendering a commodity code/description. ALSO CORRECTED: there is a FOURTH reference-keyed action id the previous revision never named — `show-certificate-{ref}` (the 'Show notification' PDF link), alongside copy-as-new-{ref}, view-details-{ref} and amend-details-{ref}.",
+        "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — enumerating `[id]` within the first .notification-list__row-container returns exactly: reference-number-0, commodity-id-0, arrival-date-0, status-0, consignee-0, consignor-0, origin-0, inspection-status-0, then the four reference-keyed action ids copy-as-new-CHEDA.GB.2026.1525878, view-details-CHEDA.GB.2026.1525878, amend-details-CHEDA.GB.2026.1525878, show-certificate-CHEDA.GB.2026.1525878. (Row 0 is a CHED-A row — this dashboard is shared across all 9 types, so the reference-keyed ids carry whatever type the row is.) Independently corroborated by axe-core's dump of the rendered DOM at ~/git/defra/ipaffs/ipaffs-qa-automation/a11y-test.log:88-178, which lists the same eight for rows 0, 1 and 2. Corroborating detail: rows 0 AND 1 both carry inspection-status, so the 'absent on DRAFT rows' rule is about row data, not row position."
+      }
+    },
+    {
+      "element": "pagination",
+      "text": "Next page : 2 of 4000",
+      "govukComponent": "(non-standard — bespoke pagination, see nonStandardPatterns)",
+      "confidence": "confirmed",
+      "note": "nav.pagination with ul.pagination-list. innerText on page 1 is 'Next page' / ':' / '2 of 4000' as three separate nodes -> ?page=2#existing-notifications. Only a next link — no previous, no numbered pages. 4000 pages x 25 = ~100k of the 155442 results reachable. Corroboration attempt: no test in the QA repo paginates at all — every test narrows to a single result by filling Keywords with an exact CHED reference and clicking Search (e.g. NotificationDashboardPage.ts:109, workflows/shared/common-workflows.ts:69). That silence is itself evidence that paging is not a real access path."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Service navigation",
+      "govukClass": "govuk-service-navigation",
+      "modifiers": [
+        "govuk-service-navigation__container",
+        "govuk-service-navigation__service-name",
+        "govuk-service-navigation__link"
+      ],
+      "count": 1,
+      "countVerified": true,
+      "usage": "NEWLY ADDED — missed entirely by every previous revision, which instead recorded (in openQuestions) that this page 'appears not to' render a service navigation. It does. A `<section class=\"govuk-service-navigation\" aria-label=\"Service information\" data-module=\"govuk-service-navigation\">` carrying ONLY the service-name link 'Import of products, animals, food and feed service' -> /notification/vnet/protected/notifications. Renders with ZERO navigation items (.govuk-service-navigation__item count 0, .govuk-service-navigation__list count 0) for this B2C importer. Note it is a <section>, not a <nav> — the single <nav> on the page is the bespoke pagination.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-service-navigation` count 1, outerHTML read directly; `.govuk-service-navigation__item` count 0"
+    },
+    {
+      "component": "Header",
+      "govukClass": "govuk-header",
+      "modifiers": [],
+      "count": 1,
+      "countVerified": true,
+      "usage": "NEWLY ADDED — missed by every previous revision. Present but renders NO text (innerText is the empty string), i.e. the GOV.UK crown/logo band only. The service name lives in the service navigation below it, not in the header.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-header` count 1, innerText ''"
+    },
+    {
+      "component": "Footer",
+      "govukClass": "govuk-footer",
+      "modifiers": [],
+      "count": 1,
+      "countVerified": true,
+      "usage": "NEWLY ADDED — missed by every previous revision, which never mentioned a footer at all. Present on the page. Its link inventory has not been enumerated — see openQuestions.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-footer` count 1"
+    },
+    {
+      "component": "Skip link",
+      "govukClass": "govuk-skip-link",
+      "modifiers": [],
+      "count": 1,
+      "countVerified": true,
+      "usage": "NEWLY ADDED to govukComponents (the copy 'Skip to content' was listed under secondaryActions but the component was never recorded). Standard GOV.UK skip link.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-skip-link` textContent 'Skip to content'"
+    },
+    {
+      "component": "Phase banner",
+      "govukClass": "govuk-phase-banner",
+      "modifiers": [
+        "govuk-phase-banner__content",
+        "govuk-phase-banner__content__tag"
+      ],
+      "count": 1,
+      "countVerified": true,
+      "usage": "NEWLY ADDED to govukComponents (it was described in structure[] but never catalogued here). 'Beta' renders as `<strong class=\"govuk-tag govuk-phase-banner__content__tag\">` — confirming the structure[] claim that the Beta tag is one of the 40 counted govuk-tags, and that it is the only one with no colour modifier.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — phase-banner innerText 'BetaThis is a new service – your feedback will help us to improve it.'; Beta tag element read as STRONG.govuk-tag.govuk-phase-banner__content__tag"
+    },
+    {
+      "component": "Notification banner",
+      "govukClass": "govuk-notification-banner",
+      "modifiers": [
+        "notification-banner--alert",
+        "notification-banner__content--full-width"
+      ],
+      "count": 3,
+      "countVerified": true,
+      "usage": "Alert / Information broadcast message groups, and the 'Chosen for inspection' prompt",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `document.querySelectorAll('.govuk-notification-banner').length === 3`"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-button--secondary",
+        "govuk-button-group",
+        "govuk-!-margin-0",
+        "govuk-!-margin-bottom-0",
+        "notification-button"
+      ],
+      "count": 6,
+      "countVerified": true,
+      "usage": "CORRECTED from 4. The six .govuk-button elements are: 'Accept Cookies' (<button>), 'Cookie Settings' (<a>), 'Create a new notification' (<a>), 'Clone a certificate' (<a>), 'Search' (<button>), 'Update sort' (<button>, secondary). The previous revision counted only the main-content four and omitted the two cookie-banner controls. Note 4 of the 6 are <a> or in the banner — only 'Search' and 'Update sort' are true in-form buttons.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — enumerated via eval over '.govuk-button'"
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [
+        "govuk-!-margin-bottom-6"
+      ],
+      "count": 1,
+      "countVerified": true,
+      "usage": "Persistent customs-declaration mismatch warning — NOT form validation",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "component": "Tag",
+      "govukClass": "govuk-tag",
+      "modifiers": [
+        "govuk-tag--blue",
+        "govuk-tag--green",
+        "govuk-tag--grey",
+        "govuk-tag--orange",
+        "govuk-tag--red",
+        "govuk-tag--yellow",
+        "tag--fixed-width"
+      ],
+      "count": 40,
+      "countVerified": true,
+      "usage": "CORRECTED from 50. 40 .govuk-tag elements, of which ONE is the phase-banner 'Beta' tag (no colour modifier) and 39 are CHED status / Inspection status tags across the 25 result rows. Confirmed colour mappings (exhaustive for the observed data): govuk-tag--blue = 'New', govuk-tag--grey = 'Draft CHEDP', govuk-tag--yellow = 'Amend', govuk-tag--orange = 'Check GVMS', govuk-tag--green = 'Not required', govuk-tag--red = 'Required'.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 10 (after) — text/modifier pairs enumerated via eval; count independently reproduced as 40 on trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": [],
+      "count": 5,
+      "countVerified": true,
+      "usage": "BCP or POE, Status, Country of origin, Notification type, Sort by",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-select` count 5; ids bcp, certificate-status, country-of-origin, certificate-type, orderBy"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-input--width-2",
+        "govuk-input--width-4",
+        "govuk-!-width-full",
+        "govuk-!-width-three-quarters"
+      ],
+      "count": 10,
+      "countVerified": true,
+      "usage": "CORRECTED from 9 (which contradicted this entry's own usage list: 4 named inputs + 6 date parts = 10). Keywords, Commodity, Consignee/Importer, Microchip number, and the 6 date-part inputs.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-input` count 10"
+    },
+    {
+      "component": "Date input",
+      "govukClass": "govuk-date-input",
+      "modifiers": [
+        "govuk-date-input__item",
+        "govuk-date-input__input",
+        "govuk-date-input__label"
+      ],
+      "count": 2,
+      "countVerified": true,
+      "usage": "Start date range and End date range — each Day/Month/Year, wrapped by the bespoke defra-datepicker",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-fieldset__legend--s"
+      ],
+      "count": 3,
+      "countVerified": true,
+      "usage": "Grouping for 'Arrival / Import date range', 'Start date range', 'End date range' — confirmed as a11y groups at refs e253, e262, e284",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 2,
+      "countVerified": true,
+      "usage": "Hints under Keywords (ref e218) and Commodity (ref e223)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--s",
+        "govuk-date-input__label",
+        "govuk-!-display-inline-block"
+      ],
+      "count": 15,
+      "countVerified": true,
+      "usage": "CORRECTED from 11. Filter field labels including the 6 date-part Day/Month/Year labels. Corroborated as the accessible-name source for Status and Country of origin — the tests select by label (page.getByLabel('Status'), page.getByLabel('Country of origin')): NotificationDashboardPage.ts:265, :270. CORRECTED — a previous revision claimed 'Sort by:' is NOT a govuk-label. It IS one (`<label for=\"orderBy\" class=\"govuk-label govuk-!-display-inline-block\">`), and the 15 govuk-labels are exactly the 15 <label> elements on the page: the 8 named filters + 6 date parts + orderBy. The previous claim was internally inconsistent — had it been true, a 15th govuk-label would have had to exist somewhere else, and none does. Modifier list also CORRECTED: govuk-date-input__label and govuk-!-display-inline-block were both missing.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-label` count 15"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-link--no-visited-state"
+      ],
+      "count": 116,
+      "countVerified": true,
+      "usage": "CORRECTED from 80. 'Clear', 'Recover notifications from archive', 'Show notification', dismiss links, alert-count links, account-bar links — AND the per-row 'Copy as new' / 'View details' / 'Amend' <button> elements styled as links.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-link` count 116"
+    },
+    {
+      "component": "List",
+      "govukClass": "govuk-list",
+      "modifiers": [],
+      "count": 2,
+      "countVerified": true,
+      "usage": "CORRECTED from 3, and the previous usage note was wrong. The only two .govuk-list elements are the 'My alerts' list (class 'govuk-list info-summary__list') and the error-summary list (class 'govuk-list govuk-error-summary__list govuk-!-margin-bottom-2'). The pagination list is NOT a govuk-list — it is the bespoke ul.pagination-list, which is precisely part of the pagination finding in nonStandardPatterns.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — enumerated via eval over '.govuk-list' with parent class names"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 18,
+      "countVerified": true,
+      "usage": "CORRECTED from 12. Wrapper for each filter control, and for the search panel itself.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-form-group` count 18"
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": [
+        "govuk-grid-column-full",
+        "govuk-grid-column-two-thirds",
+        "govuk-grid-column-one-third"
+      ],
+      "count": 7,
+      "countVerified": true,
+      "usage": "CORRECTED from 12. Page and search-panel layout.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-grid-row` count 7"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 2,
+      "countVerified": true,
+      "usage": "CORRECTED from 6. Only 2 .govuk-visually-hidden elements. Separately there are 4 .sr-only elements doing the same job with a different (Bootstrap-derived) class — see nonStandardPatterns; the two utilities together account for the screen-reader-only labelling on pagination and the date pickers.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — `.govuk-visually-hidden` count 2, `.sr-only` count 4"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "defra-datepicker / date-picker__dialog / date-picker__date-table / date-picker__button__next-month / date-picker__button__previous-month / date-picker__button__close / date-picker__reveal__icon / date-picker__heading / date-picker__container / date-input--picker / date-picker-day|month|year",
+      "whatItDoes": "A bespoke DEFRA calendar-picker widget wrapping each govuk-date-input. Renders a 'Choose date' reveal button (refs e278, e300), a month-grid dialog (h2 'July 2026'), 'Previous month' / 'Next month' / 'Cancel' buttons, and '❮ ❯' text glyphs. Present on both Start date range and End date range.",
+      "concern": "The GOV.UK Design System has no date picker component — this is a hand-rolled widget with its own dialog, focus management and a11y contract, and it is a known accessibility risk area. It is also a maintenance burden (custom JS + CSS outside govuk-frontend). The two '❮ ❯' glyphs sit as bare text nodes in the a11y tree, which is a smell. CORROBORATION: no test ever drives the calendar dialog — the tests bypass it entirely and read/write the underlying #start-date-day/#end-date-year text inputs directly (NotificationDashboardPage.ts:76-94), or use the Today/Tomorrow/Next-seven-days shortcut buttons. The picker is decorative as far as the automated suite is concerned, which strengthens the case for dropping it.",
+      "govukAlternative": "GOV.UK Date input (govuk-date-input) with three text fields and no calendar overlay — the Design System's explicit guidance. If a picker is genuinely needed, the MoJ Date Picker is the community-standard option, but the new app should start with the plain date input.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "pattern": "account bar as a pipe-separated paragraph of links",
+      "whatItDoes": "The service's primary navigation ('Michael Scott | Address book | Manage account | Manage trade partners | Sign out') is a single <p> (ref e42) containing four <a> elements separated by literal '|' text nodes.",
+      "concern": "Not a nav landmark and not a list, so screen-reader users get no navigation affordance and hear the pipe characters read out between items. The signed-in username is also just a bare text node with no labelling. NEW FINDING — the previous revision of this spec missed this region entirely and wrongly recorded two of its links as trace-invisible.",
+      "govukAlternative": "The GOV.UK one-login / account navigation pattern, or at minimum a <nav> containing a govuk-list with proper spacing rather than pipe glyphs.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), refs e42-e46"
+    },
+    {
+      "pattern": "implied-consent cookie banner",
+      "whatItDoes": "'...By continuing to use this site, you agree to our use of cookies.' with 'Accept Cookies' and 'Cookie Settings'.",
+      "concern": "Implied consent for non-essential cookies is not the GOV.UK cookie banner pattern (which requires an explicit accept/reject pair before non-essential cookies are set) and is a compliance risk. There is no 'Reject' control in the DOM.",
+      "govukAlternative": "GOV.UK Cookie banner component with explicit Accept / Reject / View cookies.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), refs e5-e11"
+    },
+    {
+      "pattern": "notification-list / notification-list__row-container / notification-list__row / notification-list__heading / notification-list__value / notification-list__links / notification-list__grid-column-20|25|30",
+      "whatItDoes": "The bespoke results list. Each result is a <dl> of 8 term/definition pairs (Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin, Inspection) plus an action column, laid out with custom 20/25/30 percent grid-column classes. 25 rows per page (confirmed).",
+      "concern": "This is a hand-built card/table hybrid with its own percentage grid system that bypasses the govuk-grid-* scale (which only offers full/one-half/one-third/two-thirds/one-quarter). Custom widths mean custom responsive breakpoints and custom CSS the new app would have to carry. The dl-per-row structure also makes the results set hard to scan as a table. NOTE: the page object contains a stale <table> assumption ('#notifications-page tbody tr', NotificationDashboardPage.ts:245) that contradicts the rendered <dl> — see openQuestions. ESCALATED — this pattern is not merely non-standard, it is a MEASURED, SERIOUS ACCESSIBILITY DEFECT, and it is the sole cause of both axe violations on this page. The bespoke percentage-grid divs are nested INSIDE the <dl>, between the dl and its dt/dd children, which breaks the definition-list contract twice over: (1) rule 'definition-list' (serious) — 'dl element has direct children that are not allowed: div > div, div > form, div > a'; (2) rule 'dlitem' (serious) — every dt/dd 'does not have a <dl> parent element', because the grid divs intervene. Affects 25 nodes, i.e. every result row on the page. This is the strongest single argument in this spec for not porting the pattern: the custom grid and the dl semantics are mutually exclusive, so the rebuild cannot keep both. See behaviouralRequirements ('The a11y suite does NOT pass on this page') for how the legacy app lives with it.",
+      "accessibilityViolations": [
+        {
+          "rule": "definition-list",
+          "impact": "serious",
+          "description": "Ensure <dl> elements are structured correctly. 'dl element has direct children that are not allowed: div > div, div > form, div > a'. Nodes affected: 25 — one per result row, exactly matching the confirmed 25 rows per page.",
+          "confidence": "inferred",
+          "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/a11y-test.log:3-14 (dl:nth-child(1..3) and onwards) and a11y-rerun.log:4-7 ('definition-list: Ensure <dl> elements are structured correctly / Impact: serious / Nodes affected: 25'). Rendered-DOM evidence from an axe-core run, not a trace."
+        },
+        {
+          "rule": "dlitem",
+          "impact": "serious",
+          "description": "Ensure <dt> and <dd> elements are contained by a <dl>. Every per-row dt/dd is reported as having no <dl> parent, because the bespoke .notification-list__grid-row / .notification-list__grid-column-{20,25,30} divs sit between them.",
+          "confidence": "inferred",
+          "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/a11y-test.log:82-95 — node selectors spell the broken nesting out literally: 'dl:nth-child(1) > .notification-list__grid-row:nth-child(1) > .notification-list__grid-column-30 > dt'. Present in the a11y-test.log run (2 violations); absent from the a11y-rerun.log run (1 violation), so it may be data-dependent — see openQuestions."
+        }
+      ],
+      "govukAlternative": "GOV.UK Table for a scannable result set, or Summary list (govuk-summary-list) per result if the card framing is retained. Either would remove the bespoke grid classes entirely.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "pattern": "pagination / pagination-list / pagination-item / pagination-item-next / pagination-link / pagination-link-icon / pagination-link-label / pagination-link-title",
+      "whatItDoes": "Bespoke pagination nav. Observed on page 1 rendering only 'Next page : 2 of 4000' -> ?page=2#existing-notifications.",
+      "concern": "govuk-frontend has shipped a Pagination component since v4.5 — this predates it and duplicates it with custom classes (note ul.pagination-list is NOT a govuk-list, confirmed by DOM enumeration). The ' : ' separator between label and title is rendered as its own text node, which reads oddly to a screen reader. 4000 pages of 25 is a paging model no user can navigate; the real access path is the filter form.",
+      "govukAlternative": "GOV.UK Pagination (govuk-pagination) directly.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), pagination nav ref e1156"
+    },
+    {
+      "pattern": "info-summary / info-summary__title / info-summary__body / info-summary__list",
+      "whatItDoes": "The 'My alerts' panel — a bordered summary box listing per-status notification counts as links.",
+      "concern": "A bespoke box that visually mimics an error/notification summary but is neither. It is a copy of the govuk-error-summary structure (title/body/list) with a recoloured border — confirmed by the class pairing 'govuk-list info-summary__list' mirroring 'govuk-list govuk-error-summary__list'.",
+      "govukAlternative": "Inset text (govuk-inset-text) or a Notification banner, or simply a heading + govuk-list. No custom class needed.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "pattern": "govuk-error-summary used for a non-error, persistent state",
+      "whatItDoes": "Renders 'There is a problem' with the customs-mismatch warning, permanently, on page load — not in response to a failed form submission.",
+      "concern": "This is a standard component used in a non-standard way. The Design System reserves the error summary for validation errors on the page the user just submitted, and requires it to take focus. Using it as a standing data-quality banner trains users to ignore it and hijacks the error-summary focus contract. It also means a real validation error on the search form would be indistinguishable from this permanent one.",
+      "govukAlternative": "Warning text (govuk-warning-text) or a Notification banner with the 'important' variant.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), alert ref e311"
+    },
+    {
+      "pattern": "search-panel / search-filter-form / search-hidden + button 'hidden-search' + input.button",
+      "whatItDoes": "A collapsible search/filter panel. Toggled by an <input type='submit' class='button search-hidden' value='hidden-search'> which surfaces in the a11y tree as a button named 'hidden-search' (ref e210). Confirmed present in the form inventory as 'INPUT|submit||' — an unnamed submit input inside form.search-filter-form.",
+      "concern": "The toggle is a submit input with a developer-facing value string as its accessible name — 'hidden-search' is leaked implementation naming that a screen-reader user hears verbatim. It also has no name attribute at all. The show/hide is not a standard disclosure. In the observed snapshot the panel was expanded, so the collapsed state is unverified. CORROBORATION: no test in the QA repo references the toggle at all (no hit for 'search-hidden' or 'hidden-search' outside the traces) — every test assumes the panel is already open and fills the filters directly. So the collapsed state is untested as well as unobserved.",
+      "govukAlternative": "Details (govuk-details) for a disclosure, or a proper filter pattern (MoJ Filter). At minimum the toggle needs a real accessible name.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) (button ref e210); state corroborated in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 10 (after)"
+    },
+    {
+      "pattern": "button.govuk-link for 'Copy as new' / 'View details' / 'Amend'",
+      "whatItDoes": "Per-result row actions rendered as <button class='govuk-link'> — real buttons styled to look like links. Confirmed in the a11y tree as button roles (e.g. refs e355, e357, e358 for row 1).",
+      "concern": "Buttons styled as links are a recognised anti-pattern where the action navigates or mutates. 'Copy as new' and 'Amend' both start new journeys, and 'View details' navigates — link semantics would be more honest for those. The Design System offers govuk-button--secondary / --inverse for low-emphasis actions rather than restyling into links. CORROBORATION: the page object hedges on the element type, locating 'Copy as new' strictly as `button[id=\"copy-as-new-{ref}\"]` (NotificationDashboardPage.ts:101) but 'View details' with a type-agnostic `[id=\"view-details-{ref}\"]` (:105) — the QA authors could not rely on a consistent element type across the row actions.",
+      "govukAlternative": "Links (<a class='govuk-link'>) for navigation, or govuk-button--secondary for genuine actions.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 10 (after); also trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    },
+    {
+      "pattern": "link-button (Today / Tomorrow / Next seven days / Clear date range / Recover notifications from archive)",
+      "whatItDoes": "CORRECTED — a previous revision described the bespoke `link-button` class as covering exactly the four date shortcuts. It actually applies to FIVE elements, and the fifth inverts the anti-pattern: `.link-button` resolves to BUTTON 'Today', BUTTON 'Tomorrow', BUTTON 'Next seven days', BUTTON 'Clear date range' AND `<a class=\"govuk-link link-button\">Recover notifications from archive</a>`. So the same class is used both to make BUTTONS look like LINKS (the four shortcuts) and on a genuine LINK (Recover) — the class name describes no single semantic. Note structure[] records 'Recover notifications from archive' as a plain Link, which is right about its element type but omits that it carries link-button. Four date-range shortcut buttons (refs e256-e259) sit inside the 'Arrival / Import date range' group and populate the Start/End date inputs. There is NO 'Yesterday' button in the DOM. Semantics corroborated by test assertions (inferred, tests/dashboard/dashboard-search.spec.ts): 'Today' sets start == end == today and returns rows whose arrival date is today (:207-238, tolerating yesterday for timezone/execution drift, :232); 'Tomorrow' sets start == end == tomorrow and every returned row's arrival date equals it exactly (:240-271); 'Next seven days' sets a start..end span and every returned row's arrival date falls within it INCLUSIVE (:273-305, :302-303). These are true server-side filters, not just input-fillers — the row set changes.",
+      "concern": "Custom class, buttons styled as links again. Useful UX (worth keeping the behaviour), but it needs a standard implementation.",
+      "govukAlternative": "govuk-button--secondary, or links if they are client-side shortcuts.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), refs e256-e259"
+    },
+    {
+      "pattern": "tag--fixed-width",
+      "whatItDoes": "Pins all status tags to a uniform width so the results column aligns.",
+      "concern": "Minor. Overrides govuk-tag's intrinsic sizing with a custom width. Harmless but it is custom CSS on a standard component, and fixed-width tags can truncate longer status text. Sharpened by the corroboration: the Status filter offers 'Partially Rejected' and 'Split Consignment', and a test asserts the tag renders 'Partially rejected' (tests/notification/ched-pp/ched-pp-notification.spec.ts:117) — two of the longest labels in the vocabulary, in a fixed-width tag.",
+      "govukAlternative": "Let govuk-tag size naturally; align via the layout, not the tag.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 10 (after)"
+    },
+    {
+      "pattern": "sr-only, aria-live-message, notification-banner__content--full-width, notification-banner--alert, clear-link, notification-button, button, govuk-clearfix",
+      "whatItDoes": "Assorted custom utility/override classes. 'sr-only' is a Bootstrap-ism duplicating govuk-visually-hidden — CONFIRMED both are present in the same DOM (.sr-only count 4, .govuk-visually-hidden count 2). 'aria-live-message' is a live region. The notification-banner--* and notification-button classes override govuk component styling.",
+      "concern": "Class-system drift — two competing visually-hidden utilities in the same DOM, and bare generic names like 'button' that risk colliding with anything. Indicates the CSS has accreted outside the govuk-frontend scale.",
+      "govukAlternative": "govuk-visually-hidden for sr-only; govuk-* override classes (govuk-!-*) instead of bespoke ones.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "certificate-number",
+      "label": "Keywords or notification number",
+      "hint": "For example: reference, destination, consignor, transporter, documents",
+      "control": "text",
+      "domId": "#certificate-number",
+      "required": false,
+      "observedValues": [
+        "CHED reference numbers (e.g. matching /^CHEDPP\\.GB\\.\\d{4}\\.\\d{7}$/-style patterns via chedReferencePattern(chedType.chedPP))"
+      ],
+      "behaviour": "Free-text search. Filling an EXACT CHED reference and clicking Search narrows the result set to exactly one row — asserted as `expect(notificationRowCount).toBe('1')` plus the matching view-details control being visible (inferred, tests/dashboard/dashboard-search.spec.ts:90-95). This is the primary access path to a known notification and is used by essentially every CHED-PP test (e.g. workflows/shared/common-workflows.ts:69-70). The hint implies the field also matches destination / consignor / transporter / document values, but NO test exercises a non-reference keyword — that breadth is unverified.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — textbox ref e219, label ref e217 'Keywords or notification number', hint ref e218. DOM name/id 'certificate-number' confirmed by form inventory. Corroborated: NotificationDashboardPage.ts:72 locates it as getByRole('textbox', { name: 'Keywords or notification' }) — a PREFIX of the rendered label, which Playwright's non-exact role matching allows. searchByReference() at :108. REQUIREDNESS confirmed legacy — Joi `.string().allow('')` (search.js:53), i.e. optional; max 255 chars is its only constraint. Every dashboard filter is optional, as expected for a search form."
+    },
+    {
+      "name": "commodity-code-or-desc",
+      "label": "Commodity",
+      "hint": "Code or description",
+      "control": "text",
+      "domId": "#commodity-code-or-desc",
+      "required": false,
+      "observedValues": [
+        "OOOHYEAH (deliberate no-match probe)"
+      ],
+      "behaviour": "Free-text search over commodity code or description. A value matching nothing returns zero rows — asserted as `expect(notificationRowCount).toBe('0')` (inferred, tests/dashboard/dashboard-search.spec.ts:119-122). Combines with other filters: Status + Country of origin + Commodity are applied together, each Search click re-submitting the whole form (:100-112).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — textbox ref e224, label ref e222, hint ref e223. Corroborated: NotificationDashboardPage.ts:274-277 (showByCommodityCode fills getByRole('textbox', { name: 'Commodity' }) then clicks Search)."
+    },
+    {
+      "name": "bcp",
+      "label": "BCP or POE",
+      "control": "select",
+      "domId": "#bcp",
+      "required": false,
+      "optionCount": 284,
+      "optionCountVerified": true,
+      "optionsTruncated": true,
+      "options": [
+        "All",
+        "ABC Legal - UK6N3IVF",
+        "ABC Legal - ED6W6Q3U",
+        "ABC Legal - EDW0HWHB",
+        "ABC Legal - UKVTZOI8",
+        "ABC Legal - UK9M301K",
+        "ABC Legal - ED9TC77E",
+        "ABC Legal - UK0ICKBR",
+        "ABC Legal - ED0Q6TJA",
+        "ABC Legal - UKU6G5N1",
+        "ABC Legal - EDUDNXVO",
+        "ABC Legal - UKXZDFMB",
+        "ABC Legal - EDY6MKLM",
+        "ABC Legal - UKK4X46Z",
+        "ABC Legal - EDKCVZRJ",
+        "ABC Legal - UKPAK5PR",
+        "ABC Legal - EDPHNIM8",
+        "ABC Legal - UKARBQVP",
+        "ABC Legal - EDAZ87W3",
+        "ABC Legal - UKVO3L92"
+      ],
+      "conditionalOn": "",
+      "optionValues": {
+        "All": "",
+        "ABC Legal - UK6N3IVF": "UK6N3IVF-ABC Legal",
+        "ABC Legal - ED6W6Q3U": "ED6W6Q3U-ABC Legal",
+        "ABC Legal - EDW0HWHB": "EDW0HWHB-ABC Legal",
+        "ABC Legal - UKVTZOI8": "UKVTZOI8-ABC Legal",
+        "_note": "UPGRADED gap -> confirmed. A previous revision recorded 'GAP: option values' for this control, noting only the LABEL format was known. The values are in the DOM and are now read directly. The value is NOT a bare BCP code: it is the composite '<code>-<name>' (e.g. 'UK6N3IVF-ABC Legal'), i.e. the same two parts as the label but REVERSED and joined by a hyphen rather than ' - '. 'All' is the empty string, consistent with the other filter selects. Two consequences for the rebuild: (1) the delimiter is ambiguous — BCP codes and org names both contain hyphens (e.g. label 'Associated British Ports - Ayr - GBABP4PP'), so this composite value cannot be reliably split back into its parts; (2) the value embeds the org NAME, so it is not a stable identifier — renaming a BCP changes the value. The new app should filter by BCP code alone, sourced from a reference-data service."
+      },
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — combobox ref e229; option count independently verified as 284 via `document.querySelector('#bcp').options.length`. Default selected: 'All'. REFERENCE DATA — label format '<name> - <code>', value format '<code>-<name>' (both now confirmed via eval over '#bcp option' reading value + text). The first ~150 are test-data noise ('ABC Legal - <random>', 'ABCD - WQ9z7', 'Test 15:08 - 64567456', 'thisistest2kelabaal - gh123456'); real BCPs follow alphabetically (Aberdeen Harbour Board - GBAHB4PP, Heathrow Airport - GBLHR4PP, Port of Felixstowe - GBFXT1PP, Sevington BCP - GBSEV25, ...). The new app must source this from a reference-data service, not hardcode it. NOTE: no test filters the dashboard by BCP — ~/git/defra/ipaffs/ipaffs-qa-automation/types/bcp.ts exists but is consumed by the CREATE journey, not this filter."
+    },
+    {
+      "name": "certificate-status",
+      "label": "Status",
+      "control": "select",
+      "domId": "#certificate-status",
+      "required": false,
+      "optionCount": 12,
+      "optionCountVerified": true,
+      "optionsTruncated": false,
+      "options": [
+        "All",
+        "Draft",
+        "New",
+        "Submitted",
+        "Amend",
+        "In Progress",
+        "Valid",
+        "Rejected",
+        "Cancelled",
+        "Replaced",
+        "Partially Rejected",
+        "Split Consignment"
+      ],
+      "optionValues": {
+        "All": "",
+        "Draft": "DRAFT",
+        "New": "NEW",
+        "Submitted": "SUBMITTED",
+        "Amend": "AMEND",
+        "In Progress": "IN_PROGRESS",
+        "Valid": "VALIDATED",
+        "Rejected": "REJECTED",
+        "Cancelled": "CANCELLED",
+        "Replaced": "REPLACED",
+        "Partially Rejected": "PARTIALLY_REJECTED",
+        "Split Consignment": "SPLIT_CONSIGNMENT",
+        "_note": "UPGRADED gap -> confirmed. A previous revision recorded only 'New' -> 'NEW' as evidenced and CONJECTURED the other 11 from the 'My alerts' query strings. That conjecture was WRONG in two places and the values are in fact directly readable from the DOM: 'Valid' maps to VALIDATED (not the conjectured 'VALID'), and 'All' is the EMPTY STRING (not the conjectured 'ALL'). All 12 are now read straight off the option elements. Note the mismatch this exposes: the 'My alerts' links on this same page use ?type=VALID while the Status filter uses VALIDATED for the same concept — two codes for one status, in one page. That is a real defect the rebuild must not inherit."
+      },
+      "behaviour": "Selected by accessible label ('Status') then Search is clicked (NotificationDashboardPage.ts:264-267, showNewNotifications). Combines additively with the other filters (tests/dashboard/dashboard-search.spec.ts:101-102 applies Status then Country of origin).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — combobox ref e233; labels AND values enumerated via eval over '#certificate-status option' (value => textContent). Default selected: 'All'. This is the full CHED lifecycle status vocabulary — load-bearing for the rebuild."
+    },
+    {
+      "name": "country-of-origin",
+      "label": "Country of origin",
+      "control": "select",
+      "domId": "#country-of-origin",
+      "required": false,
+      "optionCount": 257,
+      "optionCountVerified": true,
+      "optionsTruncated": true,
+      "options": [
+        "All",
+        "European Union/EEA and Northern Ireland",
+        "Great Britain and Channel Islands",
+        "Rest of World",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan"
+      ],
+      "optionValues": {
+        "All": "",
+        "European Union/EEA and Northern Ireland": "EEA",
+        "Great Britain and Channel Islands": "GB-CI",
+        "Rest of World": "ROW",
+        "Afghanistan": "AF",
+        "Aland Islands": "AX",
+        "Zambia": "ZM",
+        "Zimbabwe": "ZW",
+        "England": "GB-ENG",
+        "Scotland": "GB-SCT",
+        "Wales": "GB-WLS",
+        "Northern Ireland": "GB-NIR",
+        "_note": "UPGRADED gap -> confirmed for the group pseudo-options and the UK nations. A previous revision marked these a GAP on the reasoning that they 'cannot be ISO alpha-2 country codes in the ordinary sense' — correct reasoning, but the values were sitting in the DOM. Read directly: the 3 group pseudo-options use EEA / GB-CI / ROW and the 4 appended UK nations use ISO 3166-2 subdivision codes GB-ENG / GB-SCT / GB-WLS / GB-NIR. 'All' is the empty string. Ordinary countries are ISO 3166-1 alpha-2 (AF, AX ... ZM, ZW), consistent with tests/dashboard/dashboard-search.spec.ts:102 (`showByCountryOfOrigin('AF')`) and ~/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts:2. So this one control mixes THREE code systems (alpha-2, ISO 3166-2 subdivisions, and bespoke group codes) in a flat list."
+      },
+      "behaviour": "Selected by accessible label ('Country of origin') then Search is clicked (NotificationDashboardPage.ts:269-272).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — combobox ref e237; count verified as 257; head and tail option values enumerated via eval. REFERENCE DATA. Structure: 'All', then 3 GROUP pseudo-options, then ~249 countries A-Z (Afghanistan ... Zimbabwe), then 4 UK constituent nations appended OUT of alphabetical order at the very end (England, Scotland, Wales, Northern Ireland). The group pseudo-options mixed into a flat country list is itself a smell — the new app should source countries from a reference-data service and model the groupings explicitly (optgroup or a separate control). LEGACY REFINEMENT (partial discrepancy — a11y-tree flattening, not a real conflict): the frontend template ACTUALLY emits real <optgroup>s, not a flat list, when the `isHighRiskEuImportEnabled` flag is on — `<optgroup label=\"Countries\">` (All + EEA + GB-CI + ROW), `<optgroup label=\"Country\">` (the ISO alpha-2 countries), and `<optgroup label=\"United Kingdom of Great Britain and Northern Ireland\">` (the 4 UK nations, rendered from `ukRegions`); when the flag is OFF it degrades to a flat 'All' + countries with no group pseudo-options at all. The trace enumerated a flat option list because the a11y tree / options collection flattens optgroups — the grouping the spec recommended already exists in source. Legacy — ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/searchAndFilter.html:77-121."
+    },
+    {
+      "name": "consignee",
+      "label": "Consignee / Importer",
+      "control": "text",
+      "domId": "#consignee",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — textbox ref e242. No test exercises this filter — its search semantics (exact vs partial, name vs address) are unverified."
+    },
+    {
+      "name": "certificate-type",
+      "label": "Notification type",
+      "control": "select",
+      "domId": "#certificate-type",
+      "required": false,
+      "optionCount": 9,
+      "optionCountVerified": true,
+      "optionsTruncated": false,
+      "options": [
+        "All",
+        "CHED-A",
+        "CHED-P",
+        "CHED-D",
+        "CHED-PP",
+        "Import from the EU",
+        "IMP-Animals",
+        "IMP-POAO",
+        "IMP-HRFNAO"
+      ],
+      "optionValues": {
+        "All": "",
+        "CHED-A": "CVEDA",
+        "CHED-P": "CVEDP",
+        "CHED-D": "CED",
+        "CHED-PP": "CHEDPP",
+        "Import from the EU": "IMP",
+        "IMP-Animals": "IMPA",
+        "IMP-POAO": "IMPP",
+        "IMP-HRFNAO": "IMPD",
+        "_note": "NEW — the previous revision did not record these at all. Read directly off the DOM. The values preserve the PRE-CHED legacy vocabulary (CVEDA = Common Veterinary Entry Document for Animals, CVEDP for Products, CED = Common Entry Document) behind the modern CHED-* labels. So the display vocabulary was renamed and the wire vocabulary was not. CHED-PP is the only type whose value matches its label. Directly relevant to the rebuild: any data migration or upstream integration will meet 'CHEDPP' as the type code."
+      },
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — combobox ref e246; labels and values enumerated via eval. CHED-PP is one of 9 notification types on this shared dashboard — the rebuilt CHED-PP-only app must decide whether its dashboard filters this at all, or whether the type filter disappears. No test uses this filter: CHED-PP tests isolate their notification by exact reference instead, which is further evidence that a single-type rebuild would not miss it."
+    },
+    {
+      "name": "microchip-number",
+      "label": "Microchip number (CHED-A only)",
+      "control": "text",
+      "domId": "#microchip-number",
+      "required": false,
+      "conditionalOn": "Not conditional in the DOM — always rendered, but labelled as applying to CHED-A only",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — textbox ref e250. NOT relevant to CHED-PP — carry-over from the shared multi-CHED dashboard. Should not exist in a CHED-PP-only rebuild. Corroborated as dead surface: no test in the QA repo references a microchip filter on any dashboard, including the CHED-A suite. Note the parenthetical scope hint is baked into the LABEL rather than expressed as conditional rendering — the field is present and fillable even with Notification type = CHED-PP."
+    },
+    {
+      "name": "start-date-day / start-date-month / start-date-year",
+      "label": "Start date range",
+      "control": "date",
+      "required": false,
+      "domIds": [
+        "#start-date-day",
+        "#start-date-month",
+        "#start-date-year"
+      ],
+      "behaviour": "Lower bound of the arrival/import date filter. Populated by the Today / Tomorrow / Next seven days shortcut buttons and read back by tests to assert the filter's effect on the row set (inferred, NotificationDashboardPage.ts:76-84 and :279-282; assertions at tests/dashboard/dashboard-search.spec.ts:216-237). Day and month values are read as zero-padded two-digit strings and compared against padded row dates (:229-230 via parseDayMonthYear padStart), so the shortcut buttons write '07' not '7'.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — group ref e262; three textboxes Day (e268) / Month (e272) / Year (e276), plus the bespoke 'Choose date' calendar picker button (e278). All three names/ids confirmed by form inventory. Sits inside the 'Arrival / Import date range' group (ref e253). DOM ids corroborated at NotificationDashboardPage.ts:78-80."
+    },
+    {
+      "name": "end-date-day / end-date-month / end-date-year",
+      "label": "End date range",
+      "control": "date",
+      "required": false,
+      "domIds": [
+        "#end-date-day",
+        "#end-date-month",
+        "#end-date-year"
+      ],
+      "behaviour": "Upper bound of the arrival/import date filter, INCLUSIVE — 'Next seven days' returns rows with arrival <= end date (inferred, tests/dashboard/dashboard-search.spec.ts:303). For Today/Tomorrow the shortcuts set end == start (:234-236, :267-269).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — group ref e284; textboxes Day (e290) / Month (e294) / Year (e298), 'Choose date' button (e300). Same structure as Start date range. DOM ids corroborated at NotificationDashboardPage.ts:88-90."
+    },
+    {
+      "name": "orderBy",
+      "label": "Sort by:",
+      "control": "select",
+      "domId": "#orderBy",
+      "required": false,
+      "optionCount": 2,
+      "optionCountVerified": true,
+      "optionsTruncated": false,
+      "options": [
+        "Arrival (newest to oldest)",
+        "Arrival (oldest to newest)"
+      ],
+      "optionValues": {
+        "Arrival (newest to oldest)": "arrivalDateTimeDesc",
+        "Arrival (oldest to newest)": "arrivalDateTimeAsc",
+        "_note": "NEW — the previous revision said 'the option VALUES are unverified'. They are in the DOM and are camelCase field+direction tokens, not enum codes: arrivalDateTimeDesc / arrivalDateTimeAsc. Note this is a THIRD value convention on one page (alongside UPPER_SNAKE status codes and ISO country codes). Arrival date-time is the ONLY sortable column — there is no sort by reference, status or commodity."
+      },
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — combobox ref e322; values enumerated via eval. Default selected: 'Arrival (newest to oldest)'. Applied via the 'Update sort' button (ref e323), not onchange. orderBy is a member of form.search-filter-form (confirmed by form inventory), so changing sort re-submits the whole filter set. No test exercises sorting — the sort's actual effect on row order is untested."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before). input[type=hidden][name=crumb] — count 52, independently re-verified: `document.querySelectorAll('input[name=crumb]').length === 52` and `document.querySelectorAll('form').length === 52`, so the 'one per form' contract holds exactly. Hapi crumb CSRF plugin. Not a user-facing field; recorded because the per-row action buttons are each their own POST form (25 rows x 2 button-forms + the search form + the toggle form ~= 52), which is why there are so many."
+    },
+    {
+      "name": "returnUrl",
+      "label": "(hidden — return URL)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "note": "NEWLY ADDED — missed by every previous revision, which recorded `crumb` as the page's only hidden input. `input[type=hidden][name=returnUrl]` is the last-but-one control in the page's control inventory, outside form.search-filter-form. Consistent with the cookie-banner / account links that carry ?returnUrl= query strings (e.g. Manage account -> /manage?returnUrl=%2Fprotected%2Fnotifications). Not user-facing; recorded for completeness of the DOM contract.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — full control inventory over 'input,select,textarea' returns 'INPUT|hidden|returnUrl|' as the penultimate entry"
+    },
+    {
+      "name": "fromFooterHeader",
+      "label": "(hidden — footer/header origin flag)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "note": "NEWLY ADDED — missed by every previous revision. `input[type=hidden][name=fromFooterHeader]` is the final control in the inventory. The name implies it flags whether a submission originated from the footer or header chrome (most likely the cookie-settings form). Its purpose is NOT confirmed — see openQuestions. Recorded because the previous revisions asserted a complete control inventory that in fact omitted it and returnUrl.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — full control inventory returns 'INPUT|hidden|fromFooterHeader|' as the final entry"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "There is a problem",
+      "field": "(page-level)",
+      "trigger": "Rendered persistently on page load whenever the account has consignments whose details do not match the customs declarations. NOT triggered by form validation.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — alert ref e311, heading ref e312"
+    },
+    {
+      "message": "Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed.",
+      "field": "(page-level)",
+      "trigger": "Body of the persistent customs-mismatch error summary. Accompanied by list item link 'Review these notifications' -> /notification/vnet/protected/notifications/no-match-results.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — strong ref e315, link ref e318"
+    },
+    {
+      "message": "(none — no empty-state / no-results message is evidenced)",
+      "field": "(results list)",
+      "trigger": "A search matching nothing. The only evidence is that the result count renders '0' (tests/dashboard/dashboard-search.spec.ts:122, and :163, :204 for the sibling dashboards). NO test asserts any accompanying copy such as 'No notifications found', and no trace captured a zero-result render. Whether the page shows an empty-state message at all, or just '0 results' and a blank list, is unknown. Note that if it does render bare, the copy would read '0 results' via the span#results structure.",
+      "confidence": "gap",
+      "evidence": "GAP — CONFIRMED STILL A GAP after a full sweep of the QA repo. The only zero-result test is titled 'Verify incorrect commodity code search in Create Notification Dashboard returns no results' (tests/dashboard/dashboard-search.spec.ts:115-123) — but despite the title it asserts ONLY `expect(notificationRowCount).toBe('0')` (:122) and nothing about copy. Its two sibling dashboards do the same (:156, :197). Grepping the dashboard tests and this page object for 'No notifications' / 'no results' / 'empty' returns only those three test TITLES — no locator, no assertion, no copy anywhere. So a human question stands: does a zero-result search render an empty-state message at all, or just '0 results' above a blank list? Note the rebuild needs this either way — an empty state is a GDS content requirement, and the legacy app may simply not have one. LEGACY UPDATE: the frontend template renders no empty-state copy either — searchAndFilter.html:251-258 emits only the count paragraph, and notificationList.html iterates the rows with no {{else}} empty branch. So the legacy app most likely renders bare '0 results' above an empty list. Still a content GAP the rebuild must fill."
+    },
+    {
+      "message": "\"Search\" must be 255 characters or less",
+      "field": "certificate-number (Keywords or notification number)",
+      "trigger": "Keywords field exceeds 255 characters on Search submit. NOTE the message label is the constant CERTIFICATE_NUMBER_LABEL = 'Search', NOT the field's rendered label 'Keywords or notification number' — so the error copy names a different word than the label the user filled. A copy defect the rebuild must not inherit.",
+      "confidence": "legacy",
+      "evidence": "legacy — ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/search.js:53-56 (Joi .max(255) with STRING_MAX -> MAX_LENGTH_VALIDATION_MESSAGE_FULL(CERTIFICATE_NUMBER_LABEL,255)); message template validation_constants.js:10-11 (`\"<label>\" must be <n> characters or less`); label validation_constants.js:115 (CERTIFICATE_NUMBER_LABEL='Search'). RESOLVES the standing openQuestion 'whether the search form validates anything at all' — it does."
+    },
+    {
+      "message": "\"Consignee\" must be 255 characters or less",
+      "field": "consignee (Consignee / Importer)",
+      "trigger": "Consignee / Importer filter exceeds 255 characters on Search submit.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:60-62; message template validation_constants.js:10-11; label validation_constants.js:119 (CONSIGNEE_LABEL='Consignee')."
+    },
+    {
+      "message": "\"Commodity\" must be 255 characters or less",
+      "field": "commodity-code-or-desc (Commodity)",
+      "trigger": "Commodity filter exceeds 255 characters on Search submit.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:63-65 (STRING_MAX message uses COMMODITY_CODE_OR_DESC_LABEL='Commodity', validation_constants.js:123). NOTE a source bug: the Joi `.label(CONSIGNEE_LABEL)` on this key (search.js:65) is mislabelled 'Consignee', but the explicit STRING_MAX message overrides it so the user sees 'Commodity'. The mislabel would only surface for a non-max error, of which there is none on this field."
+    },
+    {
+      "message": "\"Microchip number\" must be 255 characters or less",
+      "field": "microchip-number (Microchip number (CHED-A only))",
+      "trigger": "Microchip number filter exceeds 255 characters on Search submit. Not a CHED-PP concern (carry-over from the shared multi-CHED dashboard) but the validation is wired regardless.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:66-68 (label MICROCHIP_NUMBER_LABEL='Microchip number', validation_constants.js:125). Same `.label(CONSIGNEE_LABEL)` mislabel bug as commodity, overridden by the explicit STRING_MAX message."
+    },
+    {
+      "message": "\"Start Date\" invalid date",
+      "field": "start-date (Start date range)",
+      "trigger": "The Start date range day/month/year do not compose a valid calendar date on Search submit (e.g. 31 February). Also emitted with generic Joi range messages for a partially/incorrectly filled part — e.g. `\"Start Date Day\" must be less than or equal to 31`, `\"Start Date Day\" must be greater than or equal to 1`, `\"Start Date Month\" must be less than or equal to 12`, `\"Start Date Year\" must be a number` (labels Start Date Day/Month/Year, validation_constants.js:132-136).",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:85-91 (datetime.validateDate -> dateValidationResult.addDateValidationMessage(START_DATE_KEY, START_DATE_LABEL)); message shape date_validation_result.js:22-32 (`\"<label>\" invalid date`); label validation_constants.js:138 (START_DATE_LABEL='Start Date'); per-part Joi rules date_validation.js:42-51. This ANSWERS the openQuestion 'no test submits a malformed date ... unknown whether the search form validates' — the date parts and the composed date are both validated."
+    },
+    {
+      "message": "\"End Date\" invalid date",
+      "field": "end-date (End date range)",
+      "trigger": "The End date range day/month/year do not compose a valid calendar date on Search submit. Same per-part Joi range messages apply with the End Date Day/Month/Year labels.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:93-99; message shape date_validation_result.js:22-32; label validation_constants.js:146 (END_DATE_LABEL='End Date')."
+    },
+    {
+      "message": "Start date should be less than or equal to End date",
+      "field": "start-date / end-date (Start and End date range)",
+      "trigger": "Both dates are valid but the Start date range is AFTER the End date range on Search submit. Attached to the start-date key. This is the end-before-start check the openQuestion flagged as untested.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:101-108 (datetime.validateStartEndDate -> dateValidationResult.addStartEndDateValidationMessage(START_DATE_KEY)); message string date_validation_result.js:58-68 ('Start date should be less than or equal to End date')."
+    },
+    {
+      "message": "\"Arrival / Import date range\" must be one of [today, tomorrow, next-seven-days, clear-range]",
+      "field": "date-range (Today / Tomorrow / Next seven days / Clear date range shortcut)",
+      "trigger": "The hidden date-range value posted by a shortcut button is not one of the four allowed values. Not user-reachable through the normal UI (the buttons post fixed values) — a defensive server-side guard.",
+      "confidence": "legacy",
+      "evidence": "legacy — search.js:49 (DATE_RANGE_ALLOWED_VALUES) and :70 (Joi.valid(...).label(DATE_RANGE_LABEL)); label validation_constants.js:148 (DATE_RANGE_LABEL='Arrival / Import date range'); enum message shape validation_constants.js:5 (`\"<label>\" must be one of [<values>]`)."
+    }
+  ],
+  "behaviouralRequirements": [
+    {
+      "requirement": "Broadcast message dismissal is scoped PER USER — one user dismissing a message does not dismiss it for anyone else.",
+      "confidence": "inferred",
+      "evidence": "tests/bcp/InServiceMessaging.spec.ts:165-184 — the B2C notifier dismisses an ALERT (:174) and the B2B inspector still sees the same message on this dashboard afterwards (:180-181)."
+    },
+    {
+      "requirement": "Broadcast message dismissal is ALSO scoped PER DASHBOARD — dismissing on 'create notification' (this page) leaves the message visible on 'record decision' and 'record control' for the SAME user.",
+      "confidence": "inferred",
+      "evidence": "tests/bcp/InServiceMessaging.spec.ts:134-162 — the test name states it outright ('dismiss it there, and still see it on record decision and record control'); the dismiss happens while on this dashboard (:148-153) and the message is then re-asserted visible on the decision dashboard (:155-156) and the control dashboard (:158-159). Partially corroborated by the DOM: the dismiss href is /notification/vnet/protected/notifications/messages/{messageId}/{n}/dismiss — scoped under the /notifications path segment, consistent with a per-dashboard dismissal (confirmed, trace 219b... action 8 (before), ref e59). Product-relevant for the rebuild: a per-user-per-page dismissal is a surprising model and worth challenging."
+    },
+    {
+      "requirement": "Broadcast messages are authored externally (BCP admin -> Manage messages), carry a severity of ALERT or INFORMATION, and can expire.",
+      "confidence": "inferred",
+      "evidence": "tests/bcp/InServiceMessaging.spec.ts:105-126 (create/edit/delete an 'INFORMATION' message that 'expires quickly', with an edit step that changes text AND date-time), :111 createMessageThatExpiresQuickly, and the ALERT equivalent at :138. Corroborated in the DOM by the two severity banners rendering as separate 'Alert' and 'Information' groups (confirmed, refs e50 and e164). The dashboard is a read+dismiss surface for a feature owned elsewhere."
+    },
+    {
+      "requirement": "Each broadcast message carries an audience line, rendered as its own paragraph above the message body — observed values 'For all import types' and 'For imports of live animals'.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — paragraph refs e55, e61 ('For all import types'). Implies messages are targetable by import type, which is a product question for a CHED-PP-only rebuild: would it filter to plant-relevant messages only?"
+    },
+    {
+      "requirement": "Message dismissal takes effect asynchronously — the dismissed message does not disappear until a subsequent page refresh, and may take tens of seconds.",
+      "confidence": "inferred",
+      "evidence": "tests/bcp/InServiceMessaging.spec.ts:153 — `waitForMessageToDisappearWithRefresh('ALERT', messageId, 45)`, i.e. a refresh-and-retry loop with a 45-unit budget. Similarly messages take up to 30 refresh-cycles to APPEAR after authoring (:149). Consistent with the DOM contract: dismissal is a plain GET link (href .../dismiss), not an async client-side action. Real eventual-consistency behaviour the rebuild should decide about deliberately."
+    },
+    {
+      "requirement": "The result list is not live — status changes only appear after re-submitting the search. Waits are long: up to 120s for a row to appear/act on, and up to 780s (13 minutes) for a CHED-PP to reach 'Valid' via autoclearance.",
+      "confidence": "inferred",
+      "evidence": "NotificationDashboardPage.ts:125 (toPass timeout 120000), :138 (timeoutMs default 120000, 5s poll, re-clicking Search each cycle), and tests/notification/ched-pp/ched-pp-notification.spec.ts:19 (test.setTimeout(780000)) with :42 (`toPass({ timeout: 780000, intervals: [15000] })` re-searching until the status tag reads /valid/i)."
+    },
+    {
+      "requirement": "The accessibility suite does NOT pass cleanly on this page. It records 2 serious WCAG violations and tolerates them by RAISING THE THRESHOLD to 2 rather than fixing the markup. This page is the only one in the CHED-PP walk that fails; the journey pages that follow it score zero.",
+      "confidence": "inferred",
+      "evidence": "The harness genuinely enforces: utils/accessibility-utils.ts defaults to `maxViolations: 0, failOnViolations: true` (:20-24) and fixtures/accessibility.ts:19-35 is an `auto: true` fixture that calls assertAccessibilityThreshold at teardown, which throws (:95-103). So a11y failures are real test failures, not warnings. But the recorded runs show the threshold moved: a11y-rerun.log:8 reads '✓ Accessibility check collected: Notification Dashboard (1 violation(s), threshold: 2)' — a threshold of 2, not the default 0, on all five occurrences (:8, :15, :22, :29, :36). a11y-test.log:1 shows the unraised run finding '2 accessibility violation(s)'. CONTRAST: every subsequent CHED-PP page passes at zero — 'Import Type Page: no violations' (a11y-test.log:6338-6352), 'Country of Origin Page: no violations' (:6354-6360). The dashboard is the outlier. This ANSWERS the spec's standing open question ('either axe does not flag this or the finding is being tolerated — worth asking why'): axe DOES flag this page, and the findings ARE being tolerated, via a config threshold rather than a code fix."
+    },
+    {
+      "requirement": "Neither the 'hidden-search' accessible name nor the h1->h3 heading jump is caught by the a11y suite — because the suite's rule filter excludes the rules that would catch them. Their absence from the violation list is NOT evidence they are fine.",
+      "confidence": "inferred",
+      "evidence": "utils/accessibility-utils.ts:117 — `new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])`. axe-core tags its 'heading-order' rule as best-practice, NOT as any wcag2/21 A or AA rule, so the withTags filter silently drops it — the heading-order irregularity this spec confirms from the a11y tree could never have been reported by this suite. Likewise axe has no rule asserting that an accessible name be human-meaningful, so a button named 'hidden-search' passes every automated check while still being a real defect for a screen-reader user. Both spec findings therefore STAND despite the suite's near-clean result. Also note :117 disables 'aria-allowed-attr' outright, with an inline justification citing govuk-frontend v6 adding aria-expanded to conditional radios and ticket IMTA-20937 — a third confirmed rule exclusion, and incidentally the only place in this corpus that pins the govuk-frontend major version."
+    },
+    {
+      "requirement": "Delete is NOT a dashboard action — it lives behind 'View details'. After deletion the notification disappears from the dashboard result set.",
+      "confidence": "inferred",
+      "evidence": "tests/notification/ched-pp/ched-pp-manipulation.spec.ts:97-117 — from this dashboard the test searches by reference (:106-107), clicks View details (:108), then clicks `pages.viewDetails.linkDeleteNotification` (:110) and confirms on a separate Delete notification page (:111); returning to this dashboard and re-searching, the row is gone (:113-116). Corroborated negatively by the DOM: the only per-row controls are Copy as new / View details / Amend / Show notification — there is no delete control on this page (confirmed, trace 219b... action 8 (before))."
+    },
+    {
+      "requirement": "'Amend' is exposed in two places — as a per-row dashboard action AND as a button on the View details page.",
+      "confidence": "inferred",
+      "evidence": "Per-row: `amend-details-{ref}` (NotificationDashboardPage.ts:129) driven by workflows/notification/ched-pp-workflows.ts:733 (search then openAmendNotification, without visiting View details); the per-row button itself is confirmed in the DOM (e.g. ref e358). Via View details: tests/notification/ched-pp/ched-pp-manipulation.spec.ts:66-67 opens View details then clicks `btnAmend` (getByRole('button', { name: 'Amend' }), NotificationDashboardPage.ts:68). Two routes to the same journey — the rebuild should pick one. NOTE `btnAmend` lives on the DASHBOARD page object but is clicked while on the View details page, so that locator is misfiled; do not read it as dashboard-only evidence."
+    },
+    {
+      "requirement": "'Copy as new' is reached by searching for the source reference on this dashboard and clicking the per-row action — it does not require opening the notification first.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:828-830 (fill Keywords, click Search, openCopyAsNewNotification), backed by tests/notification/ched-pp/ched-pp-copy-as-new.spec.ts. The per-row button is confirmed in the DOM (e.g. ref e355)."
+    },
+    {
+      "requirement": "'Create a new notification' leads to the CHED type chooser, not straight into CHED-PP — the user picks 'Plants, plant products and...' on the next page.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 — action 8 clicks link 'Create a new notification' (-> /notifications/consignment/page-1?source=dashboard) and action 9 immediately checks radio 'Plants, plant products and'. A CHED-PP-only rebuild removes this chooser step entirely."
+    },
+    {
+      "requirement": "Status tag values rendered in the result list include (beyond the trace-observed set): 'New', 'In progress', 'Valid', 'Partially rejected', and inspection status 'Completed'.",
+      "confidence": "inferred",
+      "evidence": "tests/notification/ched-pp/ched-pp-notification.spec.ts:35 (`toContainText(/new|in progress/i)`), :41 (/valid/i), :45 inspection status (/completed/i), :117 (`toContainText('Partially rejected')` — case-sensitive); tests/notification/ched-pp/ched-pp-cuc.spec.ts:31-32 ('New'). Note the casing conflict against the Status filter's option labels — see openQuestions."
+    },
+    {
+      "requirement": "EVERY user role in the service can reach this dashboard, and all six land on it after login. No role is denied. The dashboard is therefore universal surface, not role-gated — although the roles differ sharply on the OTHER five areas.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/auth/user-permissions.spec.ts:17-89 — a table-driven permission matrix over six roles (b2cNotifier, b2cInspector, b2bInspector, b2bLvu, b2bAdmin, b2bReenforcement). `notificationDashboard: true` for ALL SIX (:21, :33, :45, :57, :69, :81) — the only one of the seven areas with no false. Compare decisionDashboard/controlDashboard (false for b2cNotifier), bcpAdminDashboard (true ONLY for b2bAdmin, :72), borderNotificationDashboard and checksDashboard (false for b2cNotifier and b2bLvu). The assertion for a permitted dashboard is that 'Create a new notification' is visible (:105), so that control specifically is confirmed present for all six roles. NOTE this substantially narrows the spec's standing role-conditionality gap: the traces show one role's view, but the tests prove at least the page and its primary CTA are universal."
+    },
+    {
+      "requirement": "This dashboard is the post-login landing page for EVERY role, not just the two previously evidenced — login redirects here regardless of which area the user actually has permission for.",
+      "confidence": "inferred",
+      "evidence": "tests/auth/user-permissions.spec.ts:103 — `await expect(pages.page).toHaveURL(pages.notificationDashboard.expectedUrl)` fires immediately after login for all six roles, UNCONDITIONALLY, before the permission branch at :104. The other five areas each require an explicit `goTo` (:111, :120, :129, :138, :147); this one does not. Corroborated at tests/auth/login.spec.ts:10-11 and :17-18 (post-login URL + 'Create a new notification' visible) and in the auth setup itself, which uses this dashboard's URL as the signal that login succeeded for all ten storage-state users (tests/auth/b2c.setup.ts:12-75, b2b.setup.ts:12-38). This upgrades the spec's isPostLoginLandingPage claim from a 2-role inference to a whole-service one."
+    },
+    {
+      "requirement": "An 'Access Denied' page exists as the counterpart to a permitted dashboard — but it is never reachable via THIS page, because no role lacks permission for it.",
+      "confidence": "inferred",
+      "evidence": "tests/auth/user-permissions.spec.ts:107 — the else branch asserts `pages.accessDenied.message` contains 'Access Denied'. Dead code for the notification dashboard specifically (every case is true), live for the other five areas. Page object registered at page-objects/factory.ts:249. Recorded because a CHED-PP rebuild still needs an answer for the unauthorised case even though the legacy app never exercises it here."
+    },
+    {
+      "requirement": "The per-row Arrival date renders in one of three formats, and may carry a comma-separated suffix (most likely a time) — the rebuild should pick ONE format.",
+      "confidence": "inferred",
+      "evidence": "tests/dashboard/dashboard-search.spec.ts:4-62, `parseDayMonthYear` — the helper must cope with 'DD/MM/YYYY' or 'DD-MM-YYYY' (numeric regex, :7, allowing . / or - as separator) AND 'DD Month YYYY' e.g. '7 March 2026' (:18, with a 24-entry month map at :23-49 covering both full and abbreviated month names). It first does `dateText.split(',')[0]` (:5), i.e. it discards everything after a comma, which implies the cell text is not date-only. That a QA helper needs a three-format parser plus a comma-strip to read one column is itself the finding — no test pins a single canonical format, so what the column actually renders is not settled. Related GAP in openQuestions."
+    },
+    {
+      "requirement": "The status vocabulary is NOT internally consistent: the same logical status has different codes in different places on this one page — the Status filter posts VALIDATED for 'Valid' while the 'My alerts' links use ?type=VALID.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) — '#certificate-status option[value=VALIDATED]' has label 'Valid' (read via eval); the My alerts link ref e200 has href '.../alerts?type=VALID'. Both in the same DOM. The rebuild needs ONE status code list."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "DISCREPANCY (test vs trace — trace wins, recorded per instructions): the page object models the result list as an HTML TABLE — `notificationRows` = `#notifications-page tbody tr` and `notificationRowReferenceNumber(i)` = `.nth(i).locator('td').first()` (NotificationDashboardPage.ts:244-250). The traces show a bespoke <dl> card list (notification-list__row-container, 25 of them), with no table, tbody or td. Keeping the trace. Both locators are DEAD — no test or workflow references them (verified by grep across tests/ and workflows/). Most likely fossils from an older table-based dashboard, which suggests the <dl> rewrite was a regression away from table semantics. Worth a human confirming whether the table was the earlier design.",
+    "DISCREPANCY (status label casing): the Status filter renders options 'In Progress' and 'Partially Rejected' (title case, confirmed in trace), but the result-row status tag renders 'Partially rejected' (sentence case) — asserted case-sensitively at tests/notification/ched-pp/ched-pp-notification.spec.ts:117. The filter's vocabulary and the tag's vocabulary are not the same strings. Compounded by the confirmed VALID-vs-VALIDATED code split (see behaviouralRequirements). The rebuild needs ONE canonical status vocabulary, one code list and one casing rule.",
+    "'Yesterday' date shortcut: CONFIRMED ABSENT from the rendered DOM — the date-range group contains exactly Today / Tomorrow / Next seven days / Clear date range (refs e256-e259), and `document.body.innerText.includes('Yesterday')` is false. NotificationDashboardPage.ts:56 nonetheless defines a `btnSearchByYesterday` locator for this page. Its only caller is a COMMENTED-OUT record-control-dashboard test (tests/dashboard/dashboard-search.spec.ts:477-509) whose disabling comment reads 'Need to investigate if these tests are failing due a bug or different behaviour to the other dashboards'. On the evidence the page object is simply wrong for this page (copy-paste from the control dashboard). Residual GAP only in that the button might be role- or state-conditional; a human should confirm the intended set of date shortcuts.",
+    "The 'Tomorrow' and 'Yesterday' shortcuts are KNOWN-BROKEN or divergent on the record control dashboard (tests commented out at dashboard-search.spec.ts:444-509 pending investigation). The equivalent notification-dashboard tests pass. So the shortcut semantics are not consistent across the three dashboards in the legacy app — the rebuild should define them once.",
+    "No true form-validation error state for the search filter form was captured OR asserted. Both evidence traces are zero-error happy paths, every filter control is optional (required=false on all of them; no [required] attribute in the form inventory), and no test submits a malformed date, an end-before-start range, or any other invalid filter. It remains unknown whether the search form validates anything at all. RESOLVED FROM LEGACY SOURCE: the search form DOES validate. ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/search.js validates (a) max-length 255 on certificate-number/consignee/commodity-code-or-desc/microchip-number, (b) each date part as an integer in range (day 1-31, month 1-12, year integer), (c) the composed start-date and end-date as valid calendar dates ('invalid date' messages), and (d) start<=end ('Start date should be less than or equal to End date'). date-range shortcut value is whitelisted to today/tomorrow/next-seven-days/clear-range. All seven message strings are now catalogued under validationMessages (confidence legacy). What is still un-OBSERVED is what a triggered error looks like rendered (error summary placement, per-field error styling) — the template does carry `displayErrorClass` hooks on commodity/consignee/microchip (searchAndFilter.html:32,127,152) and a validationSummary partial (searchAndFilter.html:3), but no trace captured the error state. Narrower GAP: the rendered error state, not whether validation exists.",
+    "No empty-state copy is evidenced. A no-match search is only known to render a count of '0' (dashboard-search.spec.ts:122). Whether a 'no results' message renders alongside it is unknown. GAP.",
+    "The result-count paragraph never singularises: the markup is a fixed `<span id=\"results\">results</span>`, so a single match renders '1 results'. Confirmed structurally, but not observed at count 1 (the observed count is 155442). Minor copy defect; worth a human confirming the rebuild pluralises properly. Note the 'My alerts' list DOES singularise ('1 notification changed to Cancelled...'), so the two components disagree.",
+    "BCP or POE option values: GAP NOW CLOSED (was 'not extracted — a follow-up eval over #bcp option would settle it'). Read directly from the DOM: the value is the composite '<code>-<name>' (e.g. 'UK6N3IVF-ABC Legal'), which is the label's two parts reversed and joined by a bare hyphen; 'All' is the empty string. This turns out to matter rather than being a formality. The composite is not safely splittable — both BCP codes and org names contain hyphens (label 'Associated British Ports - Ayr - GBABP4PP'), so any parser recovering the code from the value is guessing. And because the org NAME is embedded in the value, the identifier is not stable under a rename. This also makes BCP the FOURTH value convention on a single page, alongside UPPER_SNAKE status codes, ISO country codes and camelCase sort tokens. The rebuild should filter by BCP code alone, from a reference-data service. Evidence: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before), eval over '#bcp option'.",
+    "The search panel's COLLAPSED state was never observed AND is never tested — no test references the toggle (`search-hidden` / `hidden-search` have zero hits in tests/ and page-objects/). In both traces the panel was already expanded. How the collapsed state renders, whether it persists across page loads, and what the toggle's accessible name becomes when collapsed are all unverified. GAP.",
+    "RESOLVED (was: 'either axe does not flag this or the finding is being tolerated — worth asking why'). The toggle control surfaces to assistive tech as a button literally named 'hidden-search' — a developer-facing implementation string leaked as an accessible name, on an input with no name attribute at all. The a11y suite does scan this page and does NOT report this: not because it is acceptable, but because no automated rule exists for it — axe cannot judge whether an accessible name is meaningful, only whether one is present. The finding STANDS on human judgement and the rebuild must not reproduce it. No further human input needed on the 'why'.",
+    "RESOLVED (was: 'probably an axe-detectable defect on a page the a11y suite scans — same question as above'). The heading order irregularity (h1 'Your import notifications' -> h3 'Search notifications by', no intervening h2 in that branch) is real and confirmed from the a11y tree (refs e185, e213), but this suite could never have caught it: utils/accessibility-utils.ts:117 restricts axe to ['wcag2a','wcag2aa','wcag21a','wcag21aa'], and axe tags 'heading-order' as best-practice, outside all four. The suite's silence is a filter artefact, not a clean bill of health. Finding stands.",
+    "NEW / ANSWERED — the a11y suite does NOT pass on this page, and the failure is being managed by moving the goalposts. The default config is maxViolations: 0 + failOnViolations: true (accessibility-utils.ts:20-24), auto-asserted at teardown by an `auto: true` fixture that throws (fixtures/accessibility.ts:19-35). Yet a11y-rerun.log:8 records 'Notification Dashboard (1 violation(s), threshold: 2)' — the threshold has been raised to 2, exactly accommodating the 2 violations a11y-test.log:1 records. Every following CHED-PP page passes at 0. QUESTION FOR A HUMAN: is the raised threshold a deliberate, tracked waiver (like the aria-allowed-attr exclusion, which at least cites IMTA-20937) or has it quietly normalised a serious defect? Either way the rebuild starts from 0 and must not inherit the markup that needs the waiver.",
+    "NEW — DISCREPANCY BETWEEN THE TWO a11y RUNS: a11y-test.log:1 reports 2 violations (definition-list + dlitem); a11y-rerun.log:4-7 reports only 1 (definition-list, 25 nodes). The dlitem rule fired in one run and not the other, against the same page. Most likely data-dependent (row composition differs between runs — e.g. rows lacking the Inspection pair), but it could equally be a rule-evaluation order effect. GAP: a human should confirm. It does not affect the conclusion — definition-list alone, at serious impact across all 25 rows, is enough to condemn the pattern.",
+    "CORRECTED / SUBSTANTIALLY RESOLVED — a previous revision claimed 'the sibling dashboards render a govuk-service-navigation and this page appears not to', asserted 'This page's confirmed structure has no nav', and called this 'the single biggest known hole in this page's requirement set'. That was WRONG, and it was answerable from this spec's own primary trace all along. The component IS present: `document.querySelectorAll('.govuk-service-navigation').length === 1` (confirmed, trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before)). What the earlier revision described as 'a header service-name link (ref e33)' IS the govuk-service-navigation — it simply was not recognised as the component. Read from the DOM: `<section class=\"govuk-service-navigation\" aria-label=\"Service information\" data-module=\"govuk-service-navigation\">` wrapping a single `span.govuk-service-navigation__service-name` > `a.govuk-service-navigation__link` reading 'Import of products, animals, food and feed service' -> /notification/vnet/protected/notifications. CRUCIALLY it renders with ZERO navigation items: `.govuk-service-navigation__item` count 0 and `.govuk-service-navigation__list` count 0. So the earlier revision's PLAUSIBLE EXPLANATION was mechanically right even though its premise was wrong — the trace user is a B2C importer with decisionDashboard: false and controlDashboard: false (user-permissions.spec.ts:21-28), and the nav renders its chrome with an empty item list rather than not rendering at all. RESIDUAL GAP (much narrower than before): whether the __item list POPULATES for inspector/admin roles. user-permissions.spec.ts:114 and :123 assert `govuk-service-navigation__item--active` on the decision/control dashboards, which proves items exist somewhere in the service, but no notification-dashboard test asserts a nav, so this page's item list is unobserved for any role but B2C. The page is NOT 'the least-navigated version' — it is the modern component with nothing to put in it.",
+    "NEW — the page object's `linkNotificationDashboard` is BROKEN, not merely unused: `getByRole('link', { name: '#notification-dashboard-nav' })` (NotificationDashboardPage.ts:24-26) passes a CSS ID SELECTOR as an accessible NAME. It can never match anything (no link is named the literal string '#notification-dashboard-nav'). It has zero callers, so it has never failed. Its existence hints that a nav element with id 'notification-dashboard-nav' was expected on this page. Now partially settled: `document.querySelectorAll('#notification-dashboard-nav').length === 0` — that id does NOT exist in the rendered DOM for this role (confirmed, trace 219b... action 8 (before)). Combined with the service-navigation finding above (component present, zero items), the most likely reading is that the locator anticipates a per-area nav ITEM that only renders for roles with more than one permitted area. A human who knows the app should confirm.",
+    "NEW — three locators on this page object belong to a DIFFERENT page: `radioTradePartnerYes` (a 'Yes' radio, :36-38), `btnContinueButton` (:40-42) and `getTradePartnerPermissionsText` ('Manage your authorisations' heading, :252-254). tests/tradePartner/manage-trade-partner.spec.ts:6-10 shows the real sequence: from this dashboard the b2cDoaAgent clicks 'Manage trade partners' (:6) and the radio/Continue/heading are all on the pages that FOLLOW. There is no Yes/No radio and no Continue button on this dashboard — the trace's confirmed inventory has neither. Do not read these locators as dashboard surface. Same misfiling class as `btnAmend` (already noted) and `btnSearchByYesterday`.",
+    "NEW — corroborating the WITHDRAWN role-conditionality hypothesis a second time, from a second role: manage-trade-partner.spec.ts:5-6 has the b2cDoaAgent log in and click 'Manage trade partners' directly on this dashboard with no navigation. So the link is present for the DoA agent (test) as well as the B2C importer (trace ref e45). The earlier conjecture that it might be DoA-gated is now doubly dead — it is visible to the role it was supposed to be gated FOR and to one it was supposed to be hidden from.",
+    "NEW — the search-filter tests run as a DIFFERENT user from the traces. tests/dashboard/dashboard-search.spec.ts:78 declares `test.use({ storageState: AUTH_FILES.b2bAdmin })` under a describe named 'B2B Notification dashboard search'. So every corroboration of the filter form's behaviour (Status, Country of origin, Commodity, date shortcuts, result counts) is evidence for b2bAdmin, while the DOM inventory is evidence for a B2C importer. The two agree on everything observable, which is mild evidence the filter form is not role-varying — but nobody has checked that directly.",
+    "NEW — `getNotificationStatus()` and `getInspectionStatus()` read ONLY row zero: '#notifications-page #status-0' and '#inspection-status-0' (NotificationDashboardPage.ts:224-230), and `getChedReferenceStatus()` likewise (:232-234). Every status assertion in the CHED-PP suite is therefore an assertion about the FIRST row only, which is sound solely because the tests first narrow to one result by exact reference. Worth knowing when reading those citations: they are not evidence about the list, only about a list of one.",
+    "NEW — the per-row Arrival date has no single pinned format. dashboard-search.spec.ts:4-62's parser accepts DD/MM/YYYY, DD-MM-YYYY and 'DD Month YYYY' ('7 March 2026', with a month map covering full and abbreviated names, :23-49), and strips anything after a comma first (:5). GAP: what does the column actually render? A three-way parser plus a comma-strip suggests the QA authors either did not know or were defending against more than one. The rebuild should pick one format (GDS style: '7 March 2026') and pin it. The comma-suffix in particular is unexplained — probably a time, but unconfirmed.",
+    "NEW — ched-d-workflows.ts:536 clicks `pages.notificationDashboard.btnSearch.first()` while every other caller clicks `btnSearch` unqualified (e.g. ched-pp-workflows.ts:732, :829). `.first()` is only necessary when the locator is ambiguous, i.e. when more than one control is named 'Search' — but the page object declares it `exact: true` (:96-98) and the trace found exactly one Search button. GAP: does a second 'Search' render in some state (a CHED-D variant, or the collapsed search panel)? Minor, but it is a hint about the unobserved collapsed state.",
+    "Pagination was only observed on page 1, which renders a 'Next page' link alone. Whether a 'Previous page' link, numbered page links or ellipses appear on interior pages is unverified — the bespoke pagination-item-next class suggests a matching -prev variant exists but it was not in the DOM. No test paginates, so the tests cannot settle it either. GAP.",
+    "The 'Inspection' field is present on some result rows and absent on others (absent on all DRAFT.* rows observed). The rule governing when it renders is inferred from the pattern, not confirmed. Partial corroboration: the inspection status is only read AFTER a notification reaches 'Valid' (ched-pp-notification.spec.ts:41-45), consistent with it being absent pre-submission — but the exact rule is still a GAP.",
+    "A 'decision-date-{i}' per-row field is exposed for this page object (NotificationDashboardPage.ts:240-242) but NO trace rendered a Decision date in the result rows (the 8 observed row fields are Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin, Inspection), and no notification-dashboard test reads it — only the RECORD CONTROL dashboard does (dashboard-search.spec.ts:429). Probably another copy-paste into this page object, same as btnSearchByYesterday. GAP: does the notification dashboard show a decision date at all?",
+    "Observed CHED status tag colour mappings are drawn from only the statuses present in the test data: blue=New, grey=Draft CHEDP, yellow=Amend, orange=Check GVMS, green=Not required, red=Required (confirmed exhaustively for the 40 tags rendered). The Status filter offers 12 values; colours for Submitted, In Progress, Valid, Rejected, Cancelled, Replaced, Partially Rejected and Split Consignment were not observed. The tests assert status TEXT but never colour, so they cannot fill this in. GAP. Note also that 'Check GVMS', 'Not required' and 'Required' are INSPECTION-column values, not CHED statuses — the two tag vocabularies share one colour scale.",
+    "Country of origin mixes three code systems in one flat control: ISO 3166-1 alpha-2 for countries (AF...ZW), ISO 3166-2 subdivision codes for the four UK nations (GB-ENG/SCT/WLS/NIR), and bespoke group codes (EEA, GB-CI, ROW). All now confirmed from the DOM. Design question for the rebuild rather than a gap: model the groupings explicitly (optgroup or a separate 'origin type' control) instead of interleaving pseudo-options with real countries.",
+    "Notification type values preserve the pre-CHED legacy vocabulary (CVEDA/CVEDP/CED for CHED-A/P/D) while the labels are modern. Confirmed from the DOM. A human should confirm whether the CHED-PP rebuild's upstream integrations expect 'CHEDPP' (the value used here) as the type code.",
+    "This dashboard is shared across all 9 notification types (CHED-A/P/D/PP, Import from the EU, IMP-Animals, IMP-POAO, IMP-HRFNAO). Two filters are explicitly not CHED-PP concerns: 'Microchip number (CHED-A only)' and the 'Notification type' filter itself. A CHED-PP-only rebuild should drop both — but that is a product decision, not something the traces settle. Supporting evidence: neither filter is exercised by ANY test in the repo.",
+    "ROLE-CONDITIONALITY (previous hypothesis WITHDRAWN): an earlier revision of this spec claimed 'Address book' and 'Manage trade partners' were invisible to the traces and that the latter was probably DoA-agent-only. Both are in fact present in the account bar of trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 8 (before) (refs e43, e45), rendered for a B2C importer (ched-pp-article72.spec.ts:15, 'B2C Importer (Not Agent)'). So neither is DoA-gated. RESIDUAL GAP: what the account bar looks like for OTHER roles (BCP inspector, DoA agent) is still unobserved — this is one user's view. The requirement set remains a lower bound.",
+    "This dashboard is the POST-LOGIN LANDING PAGE for the whole service (InServiceMessaging.spec.ts:146, :178 assert the dashboard URL immediately after login, with no navigation). Corroborated by the DOM: the service-name link in the header (ref e33) points at this same URL. A CHED-PP-only rebuild inherits that framing decision: is the new app's landing page a notifications list, or something else?",
+    "The cookie banner uses implied consent ('By continuing to use this site, you agree to our use of cookies') with Accept / Cookie Settings and no Reject. Confirmed. Likely non-compliant with the current GOV.UK cookie pattern — flagging so the rebuild does not port it. A human should confirm whether the real production banner differs from this environment's.",
+    "Result volume is extreme in this environment — '155442 results' across '4000' pages of 25. This is test data, not a real user's caseload, so it should not be read as a scale requirement. It does show that the paging model is unusable at volume and the filter form is the real access path — corroborated by the fact that not one test in the repo paginates; all narrow by exact reference.",
+    "The Alert notification banner carried 18 broadcast messages and the Information banner 2, all of them obvious test-data noise ('ALERT - 1784170914813 type message at 1784170915894', 'Selenium test alert live message'). The broadcast-message feature itself is real and now well corroborated (severity ALERT/INFORMATION, audience-targeted, externally authored via BCP admin, expiring, per-user AND per-dashboard dismissal, eventually-consistent) — but the copy is not. Whether CHED-PP's rebuild needs service-wide broadcast messages at all is an open product question.",
+    "The dashboard is the entry point for at least ten distinct journeys — Create a new notification, Clone a certificate, Copy as new (per row), View details (per row), Amend (per row), Show notification PDF (per row), Recover notifications from archive, View consignments to be inspected, Address book, Manage trade partners — plus Manage account and Sign out in the account bar. All confirmed in the DOM. Delete is reachable but NOT on this page (see behaviouralRequirements).",
+    "Per-row actions are each their own POST form (hence 52 forms / 52 crumbs). 'Copy as new' and 'Amend' are <button> not <a>, so they cannot be opened in a new tab — a real usability constraint of the legacy design that the rebuild need not inherit.",
+    "Per-row DOM ids mix two keying schemes: data cells key by ROW INDEX ('status-0', 'arrival-date-3') while actions key by CHED REFERENCE ('view-details-CHEDPP.GB.2026.1234567'). The index-keyed ids are position-dependent and therefore unstable across re-sorts and re-searches. The rebuild should key everything by reference. Confirmed on row 0 of the primary trace, where all four action ids are reference-keyed (copy-as-new / view-details / amend-details / show-certificate) and all eight data ids are index-keyed.",
+    "NEW (adversarial review) — the govuk-footer is present on this page (count 1, confirmed) but its LINK INVENTORY has never been enumerated by any revision of this spec, and no test asserts anything about it. Standard GOV.UK footers carry licence/copyright plus service links (accessibility statement, privacy, cookies, terms). A CHED-PP rebuild needs an accessibility statement and a cookies page regardless, so a human should confirm what the legacy footer links to rather than letting the rebuild invent it. GAP.",
+    "NEW (adversarial review) — the govuk-header renders with EMPTY innerText (confirmed). So the service name is carried solely by the govuk-service-navigation section beneath it. Worth a human confirming this is intentional rather than a mis-configured header component: the GOV.UK header normally carries either the crown logo alone (valid, when a service navigation supplies the service name) or the service name itself. This looks correct-but-unusual, not broken.",
+    "NEW (adversarial review) — the purpose of the hidden `fromFooterHeader` input is unexplained. It is one of only two non-crumb hidden inputs on the page (with `returnUrl`), sits outside the search form, and no test references it. Most likely it tells the cookie-settings handler whether the user arrived from the footer link or the banner, so it can send them back. GAP — a human or the legacy source should settle it. Recorded because two prior revisions asserted a complete 17-control form inventory while omitting this and returnUrl from the page-level inventory entirely.",
+    "NEW (adversarial review) — CONFIDENCE HYGIENE NOTE for future revisions of this spec. Two of the errors corrected in this pass share one root cause: treating the ACCESSIBILITY TREE as authoritative about MARKUP. The a11y tree renders `<label class=\"govuk-label\">Sort by:</label>` as a generic node, which led two revisions to state as 'confirmed' that it is 'not a govuk-label'; and it surfaces the service-navigation section as a bare 'service-name link (ref e33)', which led to the false claim that the page has no service nav. The a11y tree is authoritative about ROLES and ACCESSIBLE NAMES only. Any claim about an element's TAG or CLASS must be read from the DOM via `-- eval`, not inferred from a snapshot ref. Both errors were also internally detectable: the label claim contradicted this spec's own verified count of 15."
+  ]
+}

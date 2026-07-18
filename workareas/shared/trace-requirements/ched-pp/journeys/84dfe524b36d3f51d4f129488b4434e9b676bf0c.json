@@ -1,0 +1,443 @@
+{
+  "hash": "84dfe524b36d3f51d4f129488b4434e9b676bf0c",
+  "title": "notification/ched-pp/ched-pp-copy-as-new.spec.ts:56 › CHED-PP copy as new flows › should copy ROW CHED-PP as new and validate after B2B inspection",
+  "outcome": "Creates a ROW CHED-PP notification end-to-end (origin AF, two commodity codes 06011010 + 06042090, bulk commodity details, BCP + transport, phytosanitary document + attachment, new consignor, declaration) and submits it as CHEDPP.GB.2026.1525999; then finds it on the dashboard, uses 'Copy as new' to seed DRAFT.GB.2026.1526008, re-enters commodity/transport/document/trader details, submits the copy as CHEDPP.GB.2026.1526008 and asserts the two references differ; finally opens the copy in the internal BIP decision app, where the test FAILS at action 155 because the 'Record PHSI checks' button never appears (30s timeout).",
+  "notes": {
+    "hosts": {
+      "trader": "https://importnotification-static-snd.azure.defra.cloud",
+      "bipDecision": "https://importnotification-int-static-snd.azure.defra.cloud"
+    },
+    "referenceNumbers": {
+      "original": "CHEDPP.GB.2026.1525999",
+      "copy": "CHEDPP.GB.2026.1526008"
+    },
+    "copyAsNewMechanism": "Dashboard button id='copy-as-new-<ref>' (name='submit-param', value=<ref>) -> POST .../duplicate -> 302 -> /notifications/DRAFT.GB.2026.1526008/overview (verified: requests.txt line 1444, action 99 nav log).",
+    "commodityCodeSearchFlow": "consignment/page-3 hosts the 'Commodity code search' tab link; entering a code and clicking Search navigates to consignment/page-4?commodity-selected-code=<code>, which is where the per-species 'Add' buttons (id='add-species-<id>') render. Verified at actions 21/22.",
+    "purposeOfConsignmentPage": "consignment/page-5 is a real, user-answered page hosting the 'Internal market' purpose radio (actions 24-25). It is reached only for the FIRST commodity; the second commodity's 'Save and continue' (action 32) goes straight to commodity/details/bulk because purpose is already set.",
+    "unexercisedSurface": "Only 'Manual entry' commodity input was exercised (action 17) — the alternative input method(s) on commodity/input-method leave no trace. Both 'Are you using the Common...' and 'Will the transport use the...' were answered 'No', so the Yes-branches are untraced. responsible-person/contact-details and nominated-contact were passed through with no field entry (pre-populated), so their fields are untraced.",
+    "error": "action 155 TimeoutError: locator.click getByRole('button', { name: 'Record PHSI checks' }) — 30000ms exceeded; source ched-pp-workflows.ts:522:47 / ched-pp-copy-as-new.spec.ts:75:5. The BIP hub rendered (load state reached at action 154) but the PHSI checks button was absent — the only error in this trace.",
+    "corrections": "This file was rewritten after verifying page attribution and select values against the trace action logs. Fixed vs the prior version: (1) consignment-origin is NOT draft-prefixed — it is /notifications/consignment-origin?type=CHEDPP; (2) action 22 is on page-4, not page-3; (3) actions 24-25 are on page-5, not page-4; (4) the prior 'page-5 auto-continues with no user action' note was false; (5) select values are now literal option values ('on'/'off'/'Finished'/'phytosanitaryCertificate') rather than paraphrased Yes/No labels.",
+    "harnessActionsOmitted": "Before Hooks, Fixture \"context\"/\"page\"/\"pages\"/\"users\"/\"request\"/\"storageState\", Create context/page/request context, Attach, Get cookies, After Hooks, Worker Cleanup"
+  },
+  "pagesVisited": [
+    {
+      "pageGuess": "Notifications dashboard (trader)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications",
+      "firstActionId": 10,
+      "lastActionId": 11
+    },
+    {
+      "pageGuess": "What are you importing? (CHED type selection) — consignment/page-1",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment/page-1?source=dashboard",
+      "firstActionId": 12,
+      "lastActionId": 13
+    },
+    {
+      "pageGuess": "Country of origin — consignment-origin",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP",
+      "firstActionId": 14,
+      "lastActionId": 15
+    },
+    {
+      "pageGuess": "Consignment details — consignment/page-2",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-2",
+      "firstActionId": 16,
+      "lastActionId": 16
+    },
+    {
+      "pageGuess": "How do you want to add commodities? — commodity/input-method",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/commodity/input-method",
+      "firstActionId": 17,
+      "lastActionId": 18
+    },
+    {
+      "pageGuess": "Commodity code search (1st commodity 06011010) — consignment/page-3",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-3?tab=commodity-code-search",
+      "firstActionId": 19,
+      "lastActionId": 21
+    },
+    {
+      "pageGuess": "Commodity search results / add species (06011010) — consignment/page-4",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-4?commodity-selected-code=06011010",
+      "firstActionId": 22,
+      "lastActionId": 23
+    },
+    {
+      "pageGuess": "Purpose of consignment (Internal market) — consignment/page-5",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-5",
+      "firstActionId": 24,
+      "lastActionId": 25
+    },
+    {
+      "pageGuess": "Notification overview / task list — overview",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/overview",
+      "firstActionId": 26,
+      "lastActionId": 26
+    },
+    {
+      "pageGuess": "Commodity details bulk edit (Add commodity) — commodity/details/bulk",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/commodity/details/bulk",
+      "firstActionId": 27,
+      "lastActionId": 27
+    },
+    {
+      "pageGuess": "Commodity code search (2nd commodity 06042090) — consignment/page-3",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-3?tab=commodity-code-search",
+      "firstActionId": 28,
+      "lastActionId": 30
+    },
+    {
+      "pageGuess": "Commodity search results / add species (06042090) — consignment/page-4",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/page-4?commodity-selected-code=06042090",
+      "firstActionId": 31,
+      "lastActionId": 32
+    },
+    {
+      "pageGuess": "Commodity details bulk edit (Select all + apply bulk values) — commodity/details/bulk",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/commodity/details/bulk",
+      "firstActionId": 33,
+      "lastActionId": 42
+    },
+    {
+      "pageGuess": "Consignment details — total gross weight — consignment/details",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignment/details?commodityDetailsPage=1",
+      "firstActionId": 43,
+      "lastActionId": 44
+    },
+    {
+      "pageGuess": "Transport before BIP (border control post, inspection premises, means of transport, arrival date/time) — transport/before-bip",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/transport/before-bip",
+      "firstActionId": 45,
+      "lastActionId": 55
+    },
+    {
+      "pageGuess": "Goods movement services (Common Transit Convention / GVMS questions) — goods-movement-services",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/goods-movement-services",
+      "firstActionId": 56,
+      "lastActionId": 58
+    },
+    {
+      "pageGuess": "Responsible person contact details (passed through, pre-populated) — responsible-person/contact-details",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/responsible-person/contact-details",
+      "firstActionId": 59,
+      "lastActionId": 59
+    },
+    {
+      "pageGuess": "Nominated contact (passed through) — nominated-contact",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/nominated-contact",
+      "firstActionId": 60,
+      "lastActionId": 60
+    },
+    {
+      "pageGuess": "Accompanying documents — documents/page-1",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/documents/page-1",
+      "firstActionId": 61,
+      "lastActionId": 66
+    },
+    {
+      "pageGuess": "Upload attachment — upload/.../notification/attach",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1525999/0/notification/attach",
+      "firstActionId": 67,
+      "lastActionId": 68
+    },
+    {
+      "pageGuess": "Accompanying documents (after attachment) — documents/page-1",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/documents/page-1",
+      "firstActionId": 69,
+      "lastActionId": 69
+    },
+    {
+      "pageGuess": "Traders (consignor / consignee / place of destination / importer) — traders",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/traders",
+      "firstActionId": 70,
+      "lastActionId": 70
+    },
+    {
+      "pageGuess": "Consignor search — traders/consignor/search",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/traders/consignor/search",
+      "firstActionId": 71,
+      "lastActionId": 71
+    },
+    {
+      "pageGuess": "Create a new consignor or exporter — traders/consignor/new",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/traders/consignor/new",
+      "firstActionId": 72,
+      "lastActionId": 81
+    },
+    {
+      "pageGuess": "Consignor created confirmation — consignor/confirmation/<uuid>?fromCreate=true",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/consignor/confirmation/90be3e17-de85-41f4-9a70-5bd4259dc16d?fromCreate=true",
+      "firstActionId": 82,
+      "lastActionId": 82
+    },
+    {
+      "pageGuess": "Traders (place of destination 'Same as consignee') — traders",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/traders",
+      "firstActionId": 83,
+      "lastActionId": 84
+    },
+    {
+      "pageGuess": "Review notification — review",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/review",
+      "firstActionId": 85,
+      "lastActionId": 85
+    },
+    {
+      "pageGuess": "Declaration — declaration",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525999/declaration",
+      "firstActionId": 86,
+      "lastActionId": 87
+    },
+    {
+      "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1525999) — confirmation",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/CHEDPP.GB.2026.1525999/confirmation",
+      "firstActionId": 88,
+      "lastActionId": 93
+    },
+    {
+      "pageGuess": "Notifications dashboard — search + Copy as new",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications?certificate-number=CHEDPP.GB.2026.1525999&orderBy=arrivalDateTimeDesc",
+      "firstActionId": 94,
+      "lastActionId": 99
+    },
+    {
+      "pageGuess": "Copied draft overview / task list (DRAFT.GB.2026.1526008) — overview",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/overview",
+      "firstActionId": 100,
+      "lastActionId": 100
+    },
+    {
+      "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/commodity/details/bulk",
+      "firstActionId": 101,
+      "lastActionId": 110
+    },
+    {
+      "pageGuess": "Consignment details — total gross weight (copy) — consignment/details",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/consignment/details?commodityDetailsPage=1",
+      "firstActionId": 111,
+      "lastActionId": 112
+    },
+    {
+      "pageGuess": "Transport before BIP (copy) — transport/before-bip",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/transport/before-bip",
+      "firstActionId": 113,
+      "lastActionId": 123
+    },
+    {
+      "pageGuess": "Goods movement services (copy) — goods-movement-services",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/goods-movement-services",
+      "firstActionId": 124,
+      "lastActionId": 126
+    },
+    {
+      "pageGuess": "Responsible person contact details (copy) — responsible-person/contact-details",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/responsible-person/contact-details",
+      "firstActionId": 127,
+      "lastActionId": 127
+    },
+    {
+      "pageGuess": "Nominated contact (copy) — nominated-contact",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/nominated-contact",
+      "firstActionId": 128,
+      "lastActionId": 128
+    },
+    {
+      "pageGuess": "Accompanying documents (copy) — documents/page-1",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/documents/page-1",
+      "firstActionId": 129,
+      "lastActionId": 134
+    },
+    {
+      "pageGuess": "Upload attachment (copy) — upload/.../notification/attach",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1526008/0/notification/attach",
+      "firstActionId": 135,
+      "lastActionId": 136
+    },
+    {
+      "pageGuess": "Accompanying documents after attachment (copy) — documents/page-1",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/documents/page-1",
+      "firstActionId": 137,
+      "lastActionId": 137
+    },
+    {
+      "pageGuess": "Traders — populate place of destination (copy) — traders",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/traders",
+      "firstActionId": 138,
+      "lastActionId": 139
+    },
+    {
+      "pageGuess": "Review notification (copy) — review",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/review",
+      "firstActionId": 140,
+      "lastActionId": 140
+    },
+    {
+      "pageGuess": "Declaration (copy) — declaration",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526008/declaration",
+      "firstActionId": 141,
+      "lastActionId": 142
+    },
+    {
+      "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1526008) — confirmation",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/CHEDPP.GB.2026.1526008/confirmation",
+      "firstActionId": 143,
+      "lastActionId": 145
+    },
+    {
+      "pageGuess": "BIP decision app — CHED notifications search",
+      "url": "https://importnotification-int-static-snd.azure.defra.cloud/decision/vnet/protected/bip-notifications",
+      "firstActionId": 148,
+      "lastActionId": 153
+    },
+    {
+      "pageGuess": "BIP decision app — CHED hub (CHEDPP.GB.2026.1526008) — where 'Record PHSI checks' was expected but never rendered",
+      "url": "https://importnotification-int-static-snd.azure.defra.cloud/decision/vnet/protected/bip-notifications/CHEDPP.GB.2026.1526008/hub",
+      "firstActionId": 154,
+      "lastActionId": 155
+    }
+  ],
+  "steps": [
+    { "actionId": 10, "kind": "navigate", "url": "/notification/vnet/protected/notifications", "pageGuess": "Notifications dashboard (trader)" },
+    { "actionId": 11, "kind": "click", "locator": "getByRole('link', { name: 'Create a new notification' })", "pageGuess": "Notifications dashboard (trader)" },
+    { "actionId": 12, "kind": "check", "locator": "getByRole('radio', { name: 'Plants, plant products and' })", "pageGuess": "What are you importing? — consignment/page-1" },
+    { "actionId": 13, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "What are you importing? — consignment/page-1" },
+    { "actionId": 14, "kind": "select", "locator": "getByLabel('Country of origin')", "value": "AF", "pageGuess": "Country of origin — consignment-origin" },
+    { "actionId": 15, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Country of origin — consignment-origin" },
+    { "actionId": 16, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Consignment details — consignment/page-2" },
+    { "actionId": 17, "kind": "check", "locator": "getByRole('radio', { name: 'Manual entry' })", "pageGuess": "How do you want to add commodities? — commodity/input-method" },
+    { "actionId": 18, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "How do you want to add commodities? — commodity/input-method" },
+    { "actionId": 19, "kind": "click", "locator": "getByRole('link', { name: 'Commodity code search' })", "pageGuess": "Commodity — consignment/page-3" },
+    { "actionId": 20, "kind": "fill", "locator": "getByRole('textbox', { name: 'Enter commodity code' })", "value": "06011010", "pageGuess": "Commodity code search — consignment/page-3?tab=commodity-code-search" },
+    { "actionId": 21, "kind": "click", "locator": "getByRole('button', { name: 'Search' })", "pageGuess": "Commodity code search — consignment/page-3?tab=commodity-code-search" },
+    { "actionId": 22, "kind": "click", "locator": "getByRole('button', { name: 'Add ' }).first()", "value": "resolved to button id='add-species-1325967'", "pageGuess": "Commodity search results — consignment/page-4?commodity-selected-code=06011010" },
+    { "actionId": 23, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Commodity search results — consignment/page-4?commodity-selected-code=06011010" },
+    { "actionId": 24, "kind": "check", "locator": "getByRole('radio', { name: 'Internal market' }).first()", "pageGuess": "Purpose of consignment — consignment/page-5" },
+    { "actionId": 25, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Purpose of consignment — consignment/page-5" },
+    { "actionId": 26, "kind": "click", "locator": "getByRole('link', { name: 'Commodity' })", "pageGuess": "Notification overview / task list — overview" },
+    { "actionId": 27, "kind": "click", "locator": "getByRole('button', { name: 'Add commodity' })", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 28, "kind": "click", "locator": "getByRole('link', { name: 'Commodity code search' })", "pageGuess": "Commodity — consignment/page-3" },
+    { "actionId": 29, "kind": "fill", "locator": "getByRole('textbox', { name: 'Enter commodity code' })", "value": "06042090", "pageGuess": "Commodity code search — consignment/page-3?tab=commodity-code-search" },
+    { "actionId": 30, "kind": "click", "locator": "getByRole('button', { name: 'Search' })", "pageGuess": "Commodity code search — consignment/page-3?tab=commodity-code-search" },
+    { "actionId": 31, "kind": "click", "locator": "getByRole('button', { name: 'Add ' }).first()", "pageGuess": "Commodity search results — consignment/page-4?commodity-selected-code=06042090" },
+    { "actionId": 32, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Commodity search results — consignment/page-4?commodity-selected-code=06042090" },
+    { "actionId": 33, "kind": "check", "locator": "getByRole('checkbox', { name: 'Select all' })", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 34, "kind": "fill", "locator": "getByRole('textbox', { name: 'Number of packages' }).first()", "value": "2", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 35, "kind": "select", "locator": "getByLabel('Select type of package')", "value": "Box", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 36, "kind": "fill", "locator": "getByRole('textbox', { name: 'Quantity', exact: true })", "value": "1", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 37, "kind": "select", "locator": "getByLabel('Select quantity type')", "value": "Bulbs", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 38, "kind": "fill", "locator": "getByRole('textbox', { name: 'Net weight (kg)' })", "value": "1", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 39, "kind": "select", "locator": "getByText('Controlled atmosphere container', { exact: true })", "value": "on", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 40, "kind": "select", "locator": "locator('[id$=\"finished-or-propagated\"]')", "value": "Finished", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 41, "kind": "click", "locator": "getByRole('button', { name: 'Apply' })", "pageGuess": "Commodity details bulk edit — commodity/details/bulk" },
+    { "actionId": 42, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Commodity details bulk edit — commodity/details/bulk?bulkValuesApplied=true" },
+    { "actionId": 43, "kind": "fill", "locator": "getByRole('textbox', { name: 'Total gross weight (kg)', exact: true })", "value": "12", "pageGuess": "Consignment details — consignment/details" },
+    { "actionId": 44, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Consignment details — consignment/details" },
+    { "actionId": 45, "kind": "select", "locator": "getByLabel('Entry border control post')", "value": "CONPNT", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 46, "kind": "select", "locator": "getByLabel('Inspection premises')", "value": "INSPBAR1", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 47, "kind": "select", "locator": "getByLabel('Choose from:')", "value": "plane", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 48, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport identification' })", "value": "F12345", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 49, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport document reference' })", "value": "certificate", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 50, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "18", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 51, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "07", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 52, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2026", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 53, "kind": "fill", "locator": "getByRole('textbox', { name: 'Hour', exact: true })", "value": "19", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 54, "kind": "fill", "locator": "getByRole('textbox', { name: 'Minutes' })", "value": "15", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 55, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Transport before BIP — transport/before-bip" },
+    { "actionId": 56, "kind": "check", "locator": "getByRole('group', { name: 'Are you using the Common' }).getByLabel('No', { exact: true })", "value": "No", "pageGuess": "Goods movement services — goods-movement-services" },
+    { "actionId": 57, "kind": "check", "locator": "getByRole('group', { name: 'Will the transport use the' }).getByLabel('No')", "value": "No", "pageGuess": "Goods movement services — goods-movement-services" },
+    { "actionId": 58, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Goods movement services — goods-movement-services" },
+    { "actionId": 59, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Responsible person contact details — responsible-person/contact-details" },
+    { "actionId": 60, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Nominated contact — nominated-contact" },
+    { "actionId": 61, "kind": "select", "locator": "getByLabel('Document type')", "value": "phytosanitaryCertificate", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 62, "kind": "fill", "locator": "getByRole('textbox', { name: 'Document reference' })", "value": "REF-124", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 63, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "04", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 64, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "12", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 65, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2025", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 66, "kind": "click", "locator": "getByRole('button', { name: 'Add attachment' })", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 67, "kind": "other", "locator": "locator('input[type=\"file\"]')", "value": "set input files (file upload)", "pageGuess": "Upload attachment — upload/.../notification/attach" },
+    { "actionId": 68, "kind": "click", "locator": "getByRole('button', { name: 'Next' })", "pageGuess": "Upload attachment — upload/.../notification/attach" },
+    { "actionId": 69, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Accompanying documents — documents/page-1" },
+    { "actionId": 70, "kind": "click", "locator": "getByRole('link', { name: 'Add a consignor or exporter' })", "pageGuess": "Traders — traders" },
+    { "actionId": 71, "kind": "click", "locator": "getByRole('link', { name: 'Create a new consignor or' })", "pageGuess": "Consignor search — traders/consignor/search" },
+    { "actionId": 72, "kind": "fill", "locator": "getByRole('textbox', { name: 'name' })", "value": "Linus George Ltd", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 73, "kind": "fill", "locator": "getByRole('textbox', { name: 'Address line 1' })", "value": "101 Main St", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 74, "kind": "fill", "locator": "getByRole('textbox', { name: 'Address line 2 (optional)' })", "value": "Suite 2", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 75, "kind": "fill", "locator": "getByRole('textbox', { name: 'Address line 3 (optional)' })", "value": "Building 2", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 76, "kind": "fill", "locator": "getByRole('textbox', { name: 'City or town' })", "value": "Springfield", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 77, "kind": "fill", "locator": "getByRole('textbox', { name: 'Postcode or ZIP code' })", "value": "10000", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 78, "kind": "fill", "locator": "getByRole('textbox', { name: 'Telephone number' })", "value": "01100100100", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 79, "kind": "select", "locator": "getByLabel('Country')", "value": "GB-ENG", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 80, "kind": "fill", "locator": "getByRole('textbox', { name: 'Email address' })", "value": "techsolutions@example.com", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 81, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Create a new consignor or exporter — traders/consignor/new" },
+    { "actionId": 82, "kind": "click", "locator": "getByRole('button', { name: 'Add to notification' })", "pageGuess": "Consignor created confirmation — consignor/confirmation/<uuid>" },
+    { "actionId": 83, "kind": "click", "locator": "getByRole('button', { name: 'Same as consignee' })", "pageGuess": "Traders — traders" },
+    { "actionId": 84, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Traders — traders" },
+    { "actionId": 85, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Review notification — review" },
+    { "actionId": 86, "kind": "check", "locator": "getByRole('checkbox', { name: 'I/We have read and understood' })", "pageGuess": "Declaration — declaration" },
+    { "actionId": 87, "kind": "click", "locator": "getByRole('button', { name: 'Submit notification' })", "pageGuess": "Declaration — declaration" },
+    { "actionId": 88, "kind": "other", "locator": "locator('#reference-number')", "value": "get text content", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1525999)" },
+    { "actionId": 92, "kind": "assert", "locator": "expect(locator('#reference-number')).toContainText", "value": "CHEDPP", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1525999)" },
+    { "actionId": 93, "kind": "other", "locator": "locator('#reference-number')", "value": "get text content", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1525999)" },
+    { "actionId": 94, "kind": "navigate", "url": "/notification/vnet/protected/notifications", "pageGuess": "Notifications dashboard (trader)" },
+    { "actionId": 95, "kind": "fill", "locator": "getByRole('textbox', { name: 'Keywords or notification' })", "value": "CHEDPP.GB.2026.1525999", "pageGuess": "Notifications dashboard (trader)" },
+    { "actionId": 96, "kind": "click", "locator": "getByRole('button', { name: 'Search', exact: true })", "pageGuess": "Notifications dashboard (trader)" },
+    { "actionId": 97, "kind": "click", "locator": "getByRole('button', { name: 'Search', exact: true })", "pageGuess": "Notifications dashboard — search results" },
+    { "actionId": 98, "kind": "other", "locator": "locator('button[id=\"copy-as-new-CHEDPP.GB.2026.1525999\"]')", "value": "wait for selector", "pageGuess": "Notifications dashboard — search results" },
+    { "actionId": 99, "kind": "click", "locator": "locator('button[id=\"copy-as-new-CHEDPP.GB.2026.1525999\"]')", "value": "button label 'Copy as new', name='submit-param' value='CHEDPP.GB.2026.1525999'", "pageGuess": "Notifications dashboard — search results (Copy as new)" },
+    { "actionId": 100, "kind": "click", "locator": "getByRole('link', { name: 'Commodity' })", "pageGuess": "Copied draft overview / task list (DRAFT.GB.2026.1526008)" },
+    { "actionId": 101, "kind": "check", "locator": "getByRole('checkbox', { name: 'Select all' })", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 102, "kind": "fill", "locator": "getByRole('textbox', { name: 'Number of packages' }).first()", "value": "2", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 103, "kind": "select", "locator": "getByLabel('Select type of package')", "value": "Box", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 104, "kind": "fill", "locator": "getByRole('textbox', { name: 'Quantity', exact: true })", "value": "2", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 105, "kind": "select", "locator": "getByLabel('Select quantity type')", "value": "Bulbs", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 106, "kind": "fill", "locator": "getByRole('textbox', { name: 'Net weight (kg)' })", "value": "10", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 107, "kind": "select", "locator": "getByText('Controlled atmosphere container', { exact: true })", "value": "off", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 108, "kind": "select", "locator": "locator('[id$=\"finished-or-propagated\"]')", "value": "Finished", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 109, "kind": "click", "locator": "getByRole('button', { name: 'Apply' })", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk" },
+    { "actionId": 110, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Commodity details bulk edit (copy) — commodity/details/bulk?bulkValuesApplied=true" },
+    { "actionId": 111, "kind": "fill", "locator": "getByRole('textbox', { name: 'Total gross weight (kg)', exact: true })", "value": "100", "pageGuess": "Consignment details (copy) — consignment/details" },
+    { "actionId": 112, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Consignment details (copy) — consignment/details" },
+    { "actionId": 113, "kind": "select", "locator": "getByLabel('Entry border control post')", "value": "CONPNT", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 114, "kind": "select", "locator": "getByLabel('Inspection premises')", "value": "INSPBAR1", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 115, "kind": "select", "locator": "getByLabel('Choose from:')", "value": "plane", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 116, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport identification' })", "value": "F12345", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 117, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport document reference' })", "value": "Phytosanitary certificate", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 118, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "18", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 119, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "07", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 120, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2026", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 121, "kind": "fill", "locator": "getByRole('textbox', { name: 'Hour', exact: true })", "value": "19", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 122, "kind": "fill", "locator": "getByRole('textbox', { name: 'Minutes' })", "value": "13", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 123, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Transport before BIP (copy) — transport/before-bip" },
+    { "actionId": 124, "kind": "check", "locator": "getByRole('group', { name: 'Are you using the Common' }).getByLabel('No', { exact: true })", "value": "No", "pageGuess": "Goods movement services (copy) — goods-movement-services" },
+    { "actionId": 125, "kind": "check", "locator": "getByRole('group', { name: 'Will the transport use the' }).getByLabel('No')", "value": "No", "pageGuess": "Goods movement services (copy) — goods-movement-services" },
+    { "actionId": 126, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Goods movement services (copy) — goods-movement-services" },
+    { "actionId": 127, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Responsible person contact details (copy) — responsible-person/contact-details" },
+    { "actionId": 128, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Nominated contact (copy) — nominated-contact" },
+    { "actionId": 129, "kind": "select", "locator": "getByLabel('Document type')", "value": "phytosanitaryCertificate", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 130, "kind": "fill", "locator": "getByRole('textbox', { name: 'Document reference' })", "value": "REF-123", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 131, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "16", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 132, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "06", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 133, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2026", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 134, "kind": "click", "locator": "getByRole('button', { name: 'Add attachment' })", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 135, "kind": "other", "locator": "locator('input[type=\"file\"]')", "value": "set input files (file upload)", "pageGuess": "Upload attachment (copy) — upload/.../notification/attach" },
+    { "actionId": 136, "kind": "click", "locator": "getByRole('button', { name: 'Next' })", "pageGuess": "Upload attachment (copy) — upload/.../notification/attach" },
+    { "actionId": 137, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Accompanying documents (copy) — documents/page-1" },
+    { "actionId": 138, "kind": "click", "locator": "locator('#populate-place-of-destination')", "pageGuess": "Traders (copy) — traders" },
+    { "actionId": 139, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Traders (copy) — traders" },
+    { "actionId": 140, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "pageGuess": "Review notification (copy) — review" },
+    { "actionId": 141, "kind": "check", "locator": "getByRole('checkbox', { name: 'I/We have read and understood' })", "pageGuess": "Declaration (copy) — declaration" },
+    { "actionId": 142, "kind": "click", "locator": "getByRole('button', { name: 'Submit notification' })", "pageGuess": "Declaration (copy) — declaration" },
+    { "actionId": 143, "kind": "assert", "locator": "expect(locator('#reference-number')).toContainText", "value": "CHEDPP", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1526008)" },
+    { "actionId": 144, "kind": "other", "locator": "locator('#reference-number')", "value": "get text content", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1526008)" },
+    { "actionId": 145, "kind": "assert", "locator": "expect(copyReference).not.toBe(originalReference)", "value": "CHEDPP.GB.2026.1526008 != CHEDPP.GB.2026.1525999", "pageGuess": "Submission confirmation (CHEDPP.GB.2026.1526008)" },
+    { "actionId": 148, "kind": "navigate", "url": "/decision/vnet/protected/bip-notifications", "pageGuess": "BIP decision app — CHED notifications search" },
+    { "actionId": 149, "kind": "other", "locator": "getByRole('textbox', { name: 'Keywords or CHED number' })", "value": "wait for selector", "pageGuess": "BIP decision app — CHED notifications search" },
+    { "actionId": 150, "kind": "fill", "locator": "getByRole('textbox', { name: 'Keywords or CHED number' })", "value": "CHEDPP.GB.2026.1526008", "pageGuess": "BIP decision app — CHED notifications search" },
+    { "actionId": 151, "kind": "click", "locator": "getByRole('button', { name: 'Search' })", "pageGuess": "BIP decision app — CHED notifications search" },
+    { "actionId": 152, "kind": "other", "locator": "getByRole('link', { name: 'CHEDPP.GB.2026.1526008' })", "value": "wait for selector", "pageGuess": "BIP decision app — CHED notifications search results" },
+    { "actionId": 153, "kind": "click", "locator": "getByRole('link', { name: 'CHEDPP.GB.2026.1526008' })", "pageGuess": "BIP decision app — CHED notifications search results" },
+    { "actionId": 154, "kind": "other", "locator": "page.waitForLoadState('load')", "pageGuess": "BIP decision app — CHED hub (CHEDPP.GB.2026.1526008)" },
+    { "actionId": 155, "kind": "click", "locator": "getByRole('button', { name: 'Record PHSI checks' })", "value": "FAILED — TimeoutError: locator.click 30000ms exceeded; button never appeared", "pageGuess": "BIP decision app — CHED hub (CHEDPP.GB.2026.1526008)" }
+  ]
+}

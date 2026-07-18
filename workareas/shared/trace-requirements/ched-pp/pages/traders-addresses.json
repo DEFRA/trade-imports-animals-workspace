@@ -1,0 +1,445 @@
+{
+  "slug": "traders-addresses",
+  "name": "Addresses / traders (consignor, consignee, place of destination)",
+  "url": "/notification/vnet/protected/notifications/:draftId/traders",
+  "pageTitle": "Addresses - Import and export applications - GOV.UK",
+  "caption": "Traders",
+  "heading": "Importer, Packer, Delivery address and Consignor",
+  "doaObservations": [
+    {
+      "finding": "IMPORTER AUTO-POPULATION FOR A DELEGATED AGENT — CONFIRMED, and it differs from the base spec's observed value. In the main run (B2C importer, not an agent) the Importer row was the signed-in account 'Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL'. For a delegated agent the Importer row is instead auto-populated with the DELEGATED ORGANISATION selected on consignment-organisation, never typed by the agent. DoA trace 2c16ad65 renders the Traders page (action 77) with Importer = 'IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT — United Kingdom of Great Britain and Northern Ireland'. This is NOT a contradiction of the base spec — it is role-dependent: the importer resolves to whichever organisation the notification is FOR (own account for a plain importer; the chosen delegated org for an agent). See authorization-rules.md rule OWN-1/AGT-3.",
+      "traces": [
+        "2c16ad659671044cd9b138be5a71b21c658af3b8 action 77 (Traders page, Importer row)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "finding": "CONSIGNEE = the acting/owning organisation, auto-populated, agent never types it. CHED-PP's traders page has no consignee section (its fourth section is Importer), but the notification's Consignee resolves to the acting org and is CONFIRMED on the dashboard result card: 'IPAFFS Plant Organisation 1' for the delegated route (e9b5e36b, 2c16ad65, 545412266), and 'Test Org Ltd' for a same-org member submission (065de8c5). The agent/member only ever enters the Consignor by hand ('Linus George Ltd'); Delivery address is set via 'Same as consignee'. See authorization-rules.md.",
+      "traces": [
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94 (Consignee 'IPAFFS Plant Organisation 1')",
+        "065de8c56896cc607da83498efba9c11575a7438 action 90 (Consignee 'Test Org Ltd')"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "finding": "AGENT-ROLE IMPORTER AFFORDANCE resolved for CHED-PP — the base spec flagged as a GAP whether an Agent-role CHED-PP user gets a Change/Add affordance on the Importer row. In the delegated trace 2c16ad65 the Importer row is pre-filled and each trader row carries a Change link, but the agent did not edit the auto-populated importer; the Packer and Delivery slots were left empty (Delivery via 'Same as consignee'), and the Consignor was hand-entered. So the agent's importer is auto-populated, consistent with the non-agent behaviour, just sourced from the delegated org rather than the signed-in account.",
+      "traces": [
+        "2c16ad659671044cd9b138be5a71b21c658af3b8 action 77"
+      ],
+      "confidence": "confirmed"
+    }
+  ],
+  "bodyCopy": [],
+  "backLink": "Back — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Rendered OUTSIDE main (in the IPAFFS service-header/breadcrumb bar); there is no govuk-back-link inside main (verified: main .govuk-back-link count = 0 at action 73). It DOES use the govuk-back-link component class, but carries a bespoke `back-link--next-to-breadcrumbs` modifier and an inert href=\"#\" (navigation is JS-driven), so it is a Design System component re-positioned and re-wired by custom CSS/JS rather than a stock back link.",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to hub",
+    "Add a packer (optional)",
+    "Same as consignee",
+    "Add a delivery address",
+    "Add a consignor or exporter",
+    "Change",
+    "Save and review (variant-only — replaces Save and continue when the page is entered from the Review notification page's Change link; inferred, never observed in a trace)"
+  ],
+  "layout": "govuk-grid-row (id=\"traders-page\") > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Traders",
+      "govukComponent": "Caption (govuk-caption-xl, id=\"page-secondary-title\")"
+    },
+    {
+      "element": "h1",
+      "text": "Importer, Packer, Delivery address and Consignor",
+      "govukComponent": "Heading (govuk-heading-xl, id=\"page-primary-title\")"
+    },
+    {
+      "element": "form",
+      "text": "action=\"traders\" method=\"POST\" — wraps all four sections and both submit buttons; hidden inputs crumb (CSRF) + etag (optimistic concurrency)",
+      "govukComponent": "-"
+    },
+    {
+      "element": "h2",
+      "text": "Importer",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "paragraph",
+      "text": "(empty — <p class=\"govuk-hint\"></p> renders with no text on CHED-PP)",
+      "govukComponent": "Hint (govuk-hint)"
+    },
+    {
+      "element": "table",
+      "text": "id=\"traders-table-importer\"; visually-hidden caption \"Addresses\"; columns: Name | Address | Country | (visually-hidden \"Change link\"). Populated row: Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL / United Kingdom of Great Britain and Northern Ireland / (empty — NO Change link)",
+      "govukComponent": "Table (govuk-table govuk-!-margin-bottom-2 trader-table)"
+    },
+    {
+      "element": "h2",
+      "text": "Packer (optional)",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "paragraph",
+      "text": "(empty govuk-hint)",
+      "govukComponent": "Hint (govuk-hint)"
+    },
+    {
+      "element": "table",
+      "text": "id=\"traders-table-packer\"; empty state renders a single placeholder row of four blank cells (first cell contains &nbsp;)",
+      "govukComponent": "Table (govuk-table govuk-!-margin-bottom-2 trader-table)"
+    },
+    {
+      "element": "link",
+      "text": "Add a packer (optional)",
+      "govukComponent": "Link (govuk-link govuk-!-font-size-19, id=\"add-packer\") -> /traders/packer/search"
+    },
+    {
+      "element": "h2",
+      "text": "Delivery address",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "paragraph",
+      "text": "(empty govuk-hint)",
+      "govukComponent": "Hint (govuk-hint)"
+    },
+    {
+      "element": "table",
+      "text": "id=\"traders-table-place-of-destination\"; empty state renders a single placeholder row of four blank cells",
+      "govukComponent": "Table (govuk-table govuk-!-margin-bottom-2 trader-table)"
+    },
+    {
+      "element": "button",
+      "text": "Same as consignee",
+      "govukComponent": "NON-STANDARD — <button class=\"link-button button-margin-right\" name=\"populate_place_of_destination\" id=\"populate-place-of-destination\" value=\"place-of-destination\">; submits the form and copies the Importer address into Delivery address. EMPTY-STATE ONLY — removed from the DOM once the slot is populated (see edit-place-of-destination below). Note it carries NO type attribute, so it defaults to type=submit; unlike the two govuk-buttons it has no data-prevent-double-click."
+    },
+    {
+      "element": "link",
+      "text": "Add a delivery address",
+      "govukComponent": "Link (govuk-link govuk-!-font-size-19, id=\"add-place-of-destination\") -> /traders/final-destination/search. EMPTY-STATE ONLY. The QA repo drives this same link through a SECOND page object, EconomicOperatorsOverviewPage.linkAddDeliveryEconomicOperator (page-objects/notification/EconomicOperatorsOverviewPage.ts:6-8), in the clone/amend flow."
+    },
+    {
+      "element": "link",
+      "text": "Change (delivery address — POPULATED STATE ONLY)",
+      "govukComponent": "Link (govuk-link — NO font-size modifier, id=\"edit-place-of-destination\") -> /traders/final-destination/search, i.e. the SAME route as the empty-state 'Add a delivery address' link. Rendered in the table's fourth (col-edit text-align-right) cell. Populating the slot swaps BOTH empty-state affordances out at once: at action 74 the count of #populate-place-of-destination + #add-place-of-destination is 0. So 'Same as consignee' is a one-shot control — once used, the only way back is this Change link into the full sub-journey. CONFIRMED at trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 74."
+    },
+    {
+      "element": "h2",
+      "text": "Consignor or exporter",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "paragraph",
+      "text": "(empty govuk-hint)",
+      "govukComponent": "Hint (govuk-hint)"
+    },
+    {
+      "element": "table",
+      "text": "id=\"traders-table-consignor\"; populated row: Linus George Ltd / 101 Main St, Suite 2, Building 2, Springfield, 10000 / England / Change",
+      "govukComponent": "Table (govuk-table govuk-!-margin-bottom-2 trader-table)"
+    },
+    {
+      "element": "link",
+      "text": "Add a consignor or exporter",
+      "govukComponent": "Link (govuk-link govuk-!-font-size-19, id=\"add-consignor\") -> /traders/consignor/search — EMPTY-STATE ONLY; replaced by an in-table \"Change\" link (id=\"edit-consignor\", govuk-link, same route) once populated. Same swap rule as the delivery address."
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=\"save-and-return-button\", name=\"save-and-return-button\", type=\"submit\", value=\"Save and return to hub\", data-module=\"govuk-button\", data-prevent-double-click=\"true\")"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=\"button-save-and-continue\", name=\"button-save-and-continue\", type=\"submit\", value=\"Save and continue\", data-module=\"govuk-button\", data-prevent-double-click=\"true\")"
+    },
+    {
+      "element": "button",
+      "text": "Save and review — VARIANT-ONLY, never observed in a trace. Inferred from the QA repo: EconomicOperatorsOverviewPage.btnSaveAndReview (page-objects/notification/EconomicOperatorsOverviewPage.ts:10-12) is clicked on this page at workflows/notification/ched-pp-workflows.ts:981, immediately after reviewNotification.changeTraders() (ched-pp-workflows.ts:975). CHED-P drives the identical control via TradersAddressesPage.btnSaveAndReview (page-objects/notification/TradersAddressesPage.ts:22-24) at workflows/notification/ched-p-workflows.ts:1340. So when the page is reached via the Review notification page's #traders-change-link (page-objects/notification/ReviewNotificationPage.ts:121-123), the primary submit is relabelled 'Save and review' and returns the user to Review rather than advancing the journey.",
+      "govukComponent": "Button (govuk-button) — inferred, class list unverified"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Body (govuk-body) wrapping Link (govuk-link) -> /notifications/:draftId/overview"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"Traders\" above the H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-xl",
+        "govuk-heading-m"
+      ],
+      "count": 5,
+      "usage": "One govuk-heading-xl H1 plus four govuk-heading-m H2s, one per trader section. Only the H1 carries an id (page-primary-title); the H2s are unidentified.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-!-margin-bottom-2",
+        "govuk-table__head",
+        "govuk-table__header",
+        "govuk-table__cell"
+      ],
+      "count": 4,
+      "usage": "One address table per trader section (importer, packer, place-of-destination, consignor). All four share the exact class list `govuk-table govuk-!-margin-bottom-2 trader-table`. Each has a visually-hidden caption \"Addresses\" and a headers= association from every cell to its column header (e.g. headers=\"packer-name\").",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "\"Save and return to hub\" and \"Save and continue\" — both type=submit with data-module=\"govuk-button\" and data-prevent-double-click=\"true\" (and a data-govuk-button-init attribute showing the GOV.UK JS module initialised). NOTE: two equal-weight primary buttons side by side is a non-standard use of the Button component (no govuk-button--secondary modifier on either). A third label, \"Save and review\", is inferred for the review-entry variant (EconomicOperatorsOverviewPage.ts:10-12) but was never rendered in a trace. The 'Same as consignee' control is NOT counted here — it is a bespoke link-button, not a govuk-button.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (per-button outerHTML eval)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 4,
+      "usage": "Four govuk-links in main in any one state, but WHICH four depends on how many trader slots are filled, and the govuk-!-font-size-19 modifier applies to only SOME of them. Verified per-link. Empty state (action 60): #add-packer, #add-place-of-destination, #add-consignor all = 'govuk-link govuk-!-font-size-19'; 'Cancel and return to hub' = 'govuk-link' (no modifier). Consignor-populated (action 73): #add-packer, #add-place-of-destination = 'govuk-link govuk-!-font-size-19'; #edit-consignor (in-table 'Change') = 'govuk-link'; Cancel = 'govuk-link'. Both-populated (action 74): #add-packer = modified; #edit-place-of-destination and #edit-consignor (both 'Change') = 'govuk-link' unmodified; Cancel = 'govuk-link'. So the rule is: 'Add a …' links are size-overridden to 19px; in-table Change links and the Cancel link are not. The 19px override on the add-links is itself a deviation — it forces body-size text on links GDS would render at inherited size.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, actions 60, 73 and 74 (per-link className+href+id evals)"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 4,
+      "usage": "One empty <p class=\"govuk-hint\"></p> per trader section. Renders with NO text on the CHED-PP journey — the slot exists in the template but is unpopulated.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (eval over main .govuk-hint returned four empty strings, and outerHTML confirms literally <p class=\"govuk-hint\"></p>)"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 8,
+      "usage": "Table captions (\"Addresses\") and the fourth column header (\"Change link\") on each of the four tables — verified as the exact sequence Addresses / Change link, four times over.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<button class=\"link-button button-margin-right\" name=\"populate_place_of_destination\" id=\"populate-place-of-destination\" value=\"place-of-destination\">Same as consignee</button>",
+      "whatItDoes": "A submit button styled by bespoke CSS to look like a link. Posts the traders form back to itself; the server copies the Importer's address into the Delivery address (place-of-destination) slot and re-renders /traders. Confirmed by comparing the Delivery address table before (empty) and after (Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL / United Kingdom of Great Britain and Northern Ireland / Change). CORROBORATED as intended behaviour by the QA suite: tests/notification/ched-pp/ched-pp-manipulation.spec.ts:51-52 asserts that after this flow BOTH the Importer and the Delivery address on the View details page read 'Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL'. The copy is a deliberate, asserted requirement — not a bug in the copy mechanism (the defect is in the label; see openQuestions).",
+      "concern": "Three problems for the rebuild. (1) `link-button` is a bespoke class with no Design System equivalent — a button dressed as a link is exactly the affordance confusion GDS warns against. It also carries no type attribute (relying on the submit default) and, unlike the two real govuk-buttons beside it, no data-prevent-double-click — so the one control that mutates state on click is the one with no double-submit guard. (2) The label says \"consignee\" but no section on this page is called consignee — it copies from the section headed \"Importer\". The label and the thing it copies do not agree, which is a live usability defect the new app must not inherit. (3) It is one-shot: populating the slot removes both it and 'Add a delivery address' from the DOM (action 74), so a user who clicks it by mistake cannot simply clear the slot — they must go through the Change link into the full address sub-journey. The QA repo carries the same naming confusion: the identical control is exposed twice, as TradersAddressesPage.btnSameAsConsignee (by accessible name, page-objects/notification/TradersAddressesPage.ts:14-16) and as TradersAddressesPage.btnPlaceOfDestinationSameAsConsignee (by id #populate-place-of-destination, TradersAddressesPage.ts:30-32), and both are used in the CHED-PP flow (ched-pp-workflows.ts:477 and :886).",
+      "govukAlternative": "Either a secondary Button (govuk-button--secondary) with an honest label such as \"Use the importer's address\", or fold the choice into the Delivery address sub-journey as a Radios question (\"Is the delivery address the same as the importer's address?\" Yes/No). The Radios route is more idiomatic, removes the copy ambiguity, and — because a radio can be changed back — fixes the one-shot problem for free.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, actions 73 (before, incl. button outerHTML) and 74 (after, incl. affordance-swap count = 0); corroborated by tests/notification/ched-pp/ched-pp-manipulation.spec.ts:51-52"
+    },
+    {
+      "pattern": "trader-table, col-name, col-address, col-country, col-edit, text-align-right",
+      "whatItDoes": "Bespoke column-width and alignment classes layered on top of govuk-table to force a fixed four-column address grid with a right-aligned Change link. Verified exact class lists on the consignor table: headers are `govuk-table__header col-{name,address,country,edit}`; cells are `govuk-table__cell col-{name,address,country}` with the edit cell alone taking `govuk-table__cell col-edit text-align-right`.",
+      "concern": "Custom CSS for layout the Design System already covers. `text-align-right` in particular fights the standard left-aligned table convention. Each class is small, but together they are a private mini-design-system the new app would have to re-create and maintain.",
+      "govukAlternative": "Drop the table entirely. A Summary list (govuk-summary-list) with a card per trader is the idiomatic GOV.UK pattern for \"a named thing with an address and a Change link\", and gives the Change action for free via govuk-summary-list__actions. If a table is genuinely wanted, govuk-table's own width utilities (govuk-!-width-one-quarter etc.) replace the col-* classes.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (per-cell className eval over #traders-table-consignor)"
+    },
+    {
+      "pattern": "<div class=\"table-responsive\">",
+      "whatItDoes": "A bespoke wrapper div around every table (verified: four .table-responsive in main, one per trader table), almost certainly applying overflow-x scrolling on narrow viewports.",
+      "concern": "A hand-rolled responsive-table shim. Suggests the four-column table does not fit on mobile — which is itself a signal the table is the wrong component for this content.",
+      "govukAlternative": "Not needed if the tables become Summary lists, which are responsive by default.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73"
+    },
+    {
+      "pattern": "Empty-state placeholder row: <td class=\"govuk-table__cell\" headers=\"packer-name\">&nbsp;</td> plus three empty <td>s",
+      "whatItDoes": "When a trader slot is unfilled, the table still renders its header row and one wholly blank body row padded with a non-breaking space. Verified verbatim on #traders-table-packer at action 73.",
+      "concern": "An empty table with a blank row is meaningless to a screen reader — it announces four column headers and then nothing. This is an accessibility defect, not just an aesthetic one. The user is told nothing about what is missing or why it matters. Note the CHED-PP accessibility suite scans this page twice (tests/accessibility/ched-pp-accessibility-tests.spec.ts:144 'Traders Addresses Page' and :172 'Traders Addresses Page (after consignor)') and passes — so whatever axe rules run there do not catch this. The empty-table defect is invisible to the current automated a11y gate. STRENGTHENED by reading the scan order: the FIRST scan (:144) runs before linkAddConsignorOrExporter is clicked (:145), i.e. on the state where THREE of the four tables (packer, place-of-destination, consignor) are empty placeholder rows — exactly the defective state — and it passes axe clean. The SECOND scan (:172) runs AFTER btnSameAsConsignee (:171), so despite its name '(after consignor)' it covers the fully-populated page with only Packer still empty. So the worst empty-table state IS directly under an axe scan and axe does not flag it. This is a concrete demonstration that automated a11y scanning is not sufficient evidence of accessibility for this pattern.",
+      "govukAlternative": "Render no table at all when the slot is empty; show the section heading and the \"Add a …\" link only. Better still, model the whole page as a Task list (govuk-task-list) or Summary list with explicit \"Not yet added\" / \"Incomplete\" statuses per trader.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 60 (packer, place-of-destination and consignor all empty) and action 73 (#traders-table-packer tbody innerHTML verbatim)"
+    },
+    {
+      "pattern": "Mini-hub-inside-a-form: <form action=\"traders\" method=\"POST\"> wrapping four sections, each with its own navigation links out to a sub-journey, plus a hidden etag",
+      "whatItDoes": "The page is simultaneously a hub (links out to /traders/{packer,final-destination,consignor}/search sub-journeys) and a POST form carrying a CSRF crumb and an etag for optimistic concurrency. Each sub-journey returns to this page and the aggregate is only persisted on Save.",
+      "concern": "Hub-and-form conflated. Navigating out via a link mid-form discards nothing visibly but the state model is implicit, and the etag reveals a read-modify-write concurrency scheme the user can hit as a lost-update error. The new app should not copy this architecture.",
+      "govukAlternative": "A plain hub page (no form) where each trader is added or changed in its own sub-journey and persisted on completion of that sub-journey — the standard GOV.UK \"add another / task list\" pattern. The Save-and-continue then only advances the journey rather than committing a batch.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (main form outerHTML: action=\"traders\" method=\"POST\" with hidden crumb + etag)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "traders-table-importer",
+      "label": "Importer",
+      "hint": "",
+      "control": "read-only address table (populated automatically; no add/change affordance rendered on this page in this journey)",
+      "required": true,
+      "requiredEvidence": "LEGACY-CONFIRMED (was UNVERIFIED). PartOne.importer carries a CHED-PP @NotNull — @NotNull(groups = {..., NotificationChedppFieldValidation.class, ...}) at PartOne.java:241-250 — so it is mandatory 'as the old system had it'. Validation message: 'Who is the importer' (generic importer.not.null key; ValidationMessages.properties:8). NOTE for the rebuild: the CHED-PP importer is auto-populated and hidden on this page (isHidden='true'), so mandatoriness is enforced by auto-population, not by a user-facing required field — the rebuild may model this as a derived value rather than an input. Rendered evidence (always populated, no '(optional)' suffix) agrees with legacy.",
+      "requiredConfidence": "legacy",
+      "observedValues": [
+        "Michael Scott | 34 GREYSTONE PARK, CREWE, CW1 2AL | United Kingdom of Great Britain and Northern Ireland",
+        "IPAFFS Plant Organisation 1 | KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT | United Kingdom of Great Britain and Northern Ireland"
+      ],
+      "observedValuesNote": "First value = B2C importer (non-agent) main run, auto-populated from the signed-in account (trace 219b882e). Second value = delegated-agent route, auto-populated from the delegated organisation chosen on consignment-organisation (DoA trace 2c16ad659671044cd9b138be5a71b21c658af3b8 action 77). The importer is always the organisation the notification is FOR — see doaObservations.",
+      "conditionalOn": "Always shown. In this trace (B2C Importer, not Agent) the row is pre-populated from the signed-in account and the Change-link cell is rendered but EMPTY — the user cannot edit the importer here. CORROBORATION: no CHED-PP workflow or spec in the QA repo ever drives an importer control on this page, consistent with it being non-editable for the b2cNotifier role. The CHED-P and CHED-D workflows DO click #populate-importer here (TradersAddressesPage.locatorPopulateImporter, page-objects/notification/TradersAddressesPage.ts:26-28; used at ched-p-workflows.ts:414, :758, :965 and ched-d-workflows.ts:280) — so an importer-populate button exists in the shared template but is not part of the CHED-PP journey. (Note: CHED-A does NOT drive #populate-importer — a grep for locatorPopulateImporter returns hits in ched-p and ched-d only. CHED-A instead drives btnSelect at ched-a-workflows.ts:353, :355, :1008, :1010.) Whether an Agent-role CHED-PP user gets that affordance remains unverified.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, actions 60 and 73; name+address corroborated by tests/notification/ched-pp/ched-pp-manipulation.spec.ts:51 (which asserts only 'Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL' — the country value is confirmed by the trace alone)"
+    },
+    {
+      "name": "traders-table-packer",
+      "label": "Packer (optional)",
+      "hint": "",
+      "control": "address table + link 'Add a packer (optional)' -> /traders/packer/search",
+      "required": false,
+      "requiredEvidence": "LEGACY-CONFIRMED optional. PartOne.packer has NO validation annotation at all — `private EconomicOperator packer;` at PartOne.java:218, with no @NotNull for any CHED type. So it is optional in the model, not merely by rendered-copy convention. This agrees with the rendered '(optional)' suffix in its H2 and add-link text.",
+      "requiredConfidence": "legacy",
+      "observedValues": [],
+      "conditionalOn": "Always shown. Explicitly optional per its heading. Never populated in this trace — the add sub-journey was not exercised. STRENGTHENED: the string 'packer' (case-insensitive) does not appear ANYWHERE in the QA automation repo — not in page-objects/, workflows/, tests/ or types/ (independently re-verified: `grep -rni packer` over those four directories returns zero matches). There is no page object for /traders/packer/search, no packerAddress field on ChedPPNotificationConfig, and no test asserts anything about it. The Packer slot has zero automated coverage in any CHED type. Its optionality is therefore attested only by the rendered '(optional)' suffix in its own heading, and its sub-journey field set is entirely unknown.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (section present and empty; id=\"add-packer\", href .../traders/packer/search); zero-coverage claim from an exhaustive grep -rni packer over page-objects/, workflows/, tests/ and types/ returning no matches"
+    },
+    {
+      "name": "traders-table-place-of-destination",
+      "label": "Delivery address",
+      "hint": "",
+      "control": "address table + (empty state) button 'Same as consignee' (#populate-place-of-destination) AND link 'Add a delivery address' (#add-place-of-destination) -> /traders/final-destination/search; (populated state) BOTH of those are removed and replaced by a single in-table 'Change' link (#edit-place-of-destination, govuk-link, same /traders/final-destination/search route)",
+      "required": true,
+      "requiredEvidence": "LEGACY-CONFIRMED (was UNVERIFIED). PartOne.placeOfDestination carries a CHED-PP-specific @NotNull — @NotNull(groups = NotificationChedppFieldValidation.class) at PartOne.java:277-281 — mandatory 'as the old system had it'. Validation message: 'Add a delivery address' (deliveryaddress.chedpp.not.null; ValidationMessages.properties:19). Rendered evidence (no '(optional)' suffix, every flow fills it) agrees. Policy note for the rebuild: because the create journey satisfies this via the one-shot 'Same as consignee' copy, 'mandatory' in practice means 'must equal importer OR a hand-entered address' — the rebuild should decide whether same-as-importer stays a reversible choice.",
+      "requiredConfidence": "legacy",
+      "observedValues": [
+        "Michael Scott | 34 GREYSTONE PARK, CREWE, CW1 2AL | United Kingdom of Great Britain and Northern Ireland (populated by clicking 'Same as consignee', which copied the Importer row)",
+        "Linus George Ltd | 101 Main St, Suite 2, Building 2, Springfield, 10000 | England (inferred — the clone/amend flow adds this via the 'Add a delivery address' link; DEFAULT_CHEDPP_CLONING_CONFIG.deliveryEconomicOperator, workflows/notification/ched-pp-workflows.ts:917-927)"
+      ],
+      "conditionalOn": "Always shown. Note the internal name is 'place-of-destination', the add-link route is 'final-destination', the visible label is 'Delivery address', and the QA repo calls the same thing an 'economic operator' (EconomicOperatorsOverviewPage / SelectEconomicOperatorPage / AddEconomicOperatorPage) — FOUR names for one concept. The 'Same as consignee' shortcut is the only route exercised in the create journey; the 'Add a delivery address' link is exercised only in the clone/amend flow (ched-pp-workflows.ts:976). AFFORDANCE SWAP (confirmed at action 74): populating the slot removes BOTH empty-state controls and leaves only #edit-place-of-destination — the shortcut cannot be undone in place. COPY-AS-NEW EVIDENCE: the delivery address is NOT carried over by 'Copy as new'. copyAsNewChedPPNotification (workflows/notification/ched-pp-workflows.ts:800-930) re-enters this page on the copied draft and must re-populate the slot via #populate-place-of-destination before saving (:886-887) — verified verbatim. Combined with the consignor being carried over silently in that same flow (see traders-table-consignor), this establishes an asymmetric copy rule: consignor persists across a copy, delivery address does not. Inferred — the copy-as-new flow is not in our trace corpus.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (empty, both affordances shown) and action 74 (populated; #edit-place-of-destination outerHTML captured; #populate-place-of-destination + #add-place-of-destination count = 0); populated value corroborated by tests/notification/ched-pp/ched-pp-manipulation.spec.ts:52"
+    },
+    {
+      "name": "traders-table-consignor",
+      "label": "Consignor or exporter",
+      "hint": "",
+      "control": "address table + link 'Add a consignor or exporter' (#add-consignor, govuk-link govuk-!-font-size-19) -> /traders/consignor/search; once populated, that link is removed and an in-table 'Change' link (#edit-consignor, govuk-link, same route) takes its place",
+      "required": true,
+      "requiredEvidence": "LEGACY-CONFIRMED (was UNVERIFIED, resting on an indirect copy-as-new argument). PartOne.consignor carries a CHED-PP-specific @NotNull — @NotNull(groups = NotificationChedppFieldValidation.class) at PartOne.java:201-204 — mandatory 'as the old system had it'. Validation message: 'Add a consignor or exporter' (consignor.chedpp.not.null; ValidationMessages.properties:17). The indirect copy-as-new inheritance argument below is now superseded by the direct model annotation. Rendered evidence (no '(optional)' suffix, always filled) agrees.",
+      "requiredConfidence": "legacy",
+      "observedValues": [
+        "Linus George Ltd | 101 Main St, Suite 2, Building 2, Springfield, 10000 | England"
+      ],
+      "conditionalOn": "Always shown. The observed row is exactly DEFAULT_CONFIG.consignorAddress (workflows/notification/ched-pp-workflows.ts:178-188, re-verified verbatim): name 'Linus George Ltd', addressLine1 '101 Main St', addressLine2 'Suite 2', addressLine3 'Building 2', cityOrTown 'Springfield', postcode '10000', telephone '01100100100', country England, email 'techsolutions@example.com'. The trace value and the test fixture agree exactly — no discrepancy. Adding a consignor is the ONLY trader sub-journey the CHED-PP create flow exercises (ched-pp-workflows.ts:464-474). COPY-AS-NEW EVIDENCE: the consignor IS carried over by 'Copy as new'. copyAsNewChedPPNotification (workflows/notification/ched-pp-workflows.ts:800-930) passes through this page WITHOUT touching any consignor control — it clicks only #populate-place-of-destination then 'Save and continue' (:886-887) — and the resulting notification still submits successfully. IF the page cannot be saved past an empty required consignor (assumed, untested), the consignor must arrive pre-populated from the copied draft. This is the closest thing in either source to indirect evidence that consignor is mandatory: the copy flow never omits it, it merely inherits it. Inferred — not observed in a trace.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 60 (empty, #add-consignor shown) and action 73 (populated, #edit-consignor 'Change' shown); fixture corroboration at workflows/notification/ched-pp-workflows.ts:178-188; presence asserted downstream at tests/notification/ched-pp/ched-pp-manipulation.spec.ts:48-50"
+    },
+    {
+      "name": "populate-importer",
+      "label": "Same as consignee (Importer section)",
+      "hint": "",
+      "control": "NON-STANDARD button — <button class=\"link-button button-margin-right\" name=\"populate_importer\" id=\"populate-importer\" value=\"importer\">Same as consignee</button>. Template twin of the delivery-address 'Same as consignee' button, but for the IMPORTER section. Copies the consignee address into the Importer slot.",
+      "required": false,
+      "observedValues": [],
+      "conditionalOn": "MISSED CONTROL — never rendered in any CHED-PP trace. The shared trader partial emits it inside `{{#and (eq type 'importer') showSameAsConsigneeLinkImporter}}` (partials/trader/overview.html:119-125), so it is gated by a route-supplied `showSameAsConsigneeLinkImporter` flag whose CHED-PP value is not established here. In the observed CHED-PP trace the Importer row was already auto-populated and hidden (isHidden='true'), so no populate button showed. CHED-P and CHED-D DO drive #populate-importer (per the QA repo, TradersAddressesPage.locatorPopulateImporter); whether an Agent-role CHED-PP user ever sees it is unverified. Legacy source establishes the control EXISTS in the shared template; its CHED-PP visibility remains a gap for a human.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/partials/trader/overview.html:119-125 (importer 'Same as consignee' populate button, flag-gated on showSameAsConsigneeLinkImporter)"
+    },
+    {
+      "name": "remove-packer",
+      "label": "Remove (Packer section)",
+      "hint": "",
+      "control": "NON-STANDARD button — <button class=\"link-button\" id=\"remove-packer\" name=\"remove-packer\" type=\"submit\">Remove</button>, rendered in the packer row's edit cell BELOW the 'Change' link once the packer slot is populated.",
+      "required": false,
+      "observedValues": [],
+      "conditionalOn": "MISSED CONTROL — never rendered in any CHED-PP trace (the packer slot was never populated). The shared trader partial emits it only for `{{#eq type 'packer'}}` inside the populated-row branch (partials/trader/overview.html:99-104). So unlike the other trader slots, a populated Packer can be CLEARED in place via this Remove button — packer is the one reversible/removable slot, consistent with it being the one optional slot. This directly answers the rebuild's 'is same-as reversible' question for at least the packer: yes, packer has an explicit Remove. Legacy — the control exists in the template but its sub-journey field set is still unmined (see openQuestions).",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/partials/trader/overview.html:99-104 (packer 'Remove' button in the populated-row edit cell)"
+    },
+    {
+      "name": "save-and-review",
+      "label": "Save and review",
+      "hint": "",
+      "control": "submit button — VARIANT-ONLY, replaces/accompanies 'Save and continue' when the page is entered from the Review notification page",
+      "required": false,
+      "observedValues": [],
+      "conditionalOn": "Rendered only when the user reaches this page via the Review notification page's Change link (#traders-change-link, page-objects/notification/ReviewNotificationPage.ts:121-123 + changeTraders()). NEVER observed in any trace in our corpus — the corpus only covers the forward create journey. Inferred from the QA repo driving it on this page in the CHED-PP clone/amend flow: reviewNotification.changeTraders() -> economicOperatorsOverview.linkAddDeliveryEconomicOperator -> selectEconomicOperator.linkCreateNew -> addEconomicOperator.fillAddress -> confirmEconomicOperator.btnAddToNotification -> economicOperatorsOverview.btnSaveAndReview.click() (workflows/notification/ched-pp-workflows.ts:975-981, re-verified verbatim), with the button defined as getByRole('button', { name: 'Save and review' }) at page-objects/notification/EconomicOperatorsOverviewPage.ts:10-12. CHED-P drives the same control on this page via TradersAddressesPage.btnSaveAndReview (page-objects/notification/TradersAddressesPage.ts:22-24) at workflows/notification/ched-p-workflows.ts:1340, which is strong evidence it is a property of the shared traders template rather than of a separate page. Whether 'Save and continue' and 'Save and return to hub' are hidden in this variant is UNKNOWN.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/EconomicOperatorsOverviewPage.ts:10-12; workflows/notification/ched-pp-workflows.ts:975-981; page-objects/notification/TradersAddressesPage.ts:22-24; workflows/notification/ched-p-workflows.ts:1340"
+    },
+    {
+      "name": "crumb",
+      "label": "(no visible label — hidden CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "[REDACTED]"
+      ],
+      "conditionalOn": "Always present inside the POST form as the form's first child. Note a second, unrelated crumb input exists in the page footer's cookies form — the control inventory returns two; only the one inside main's traders form belongs to this page's model.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (control inventory eval)"
+    },
+    {
+      "name": "etag",
+      "label": "(no visible label — hidden optimistic-concurrency token)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "\"0000000000BD2A03\""
+      ],
+      "conditionalOn": "Always present inside the POST form. Value is a quoted hex string (the quotes are part of the value, HTTP ETag style). Implies the draft is read-modify-write with lost-update detection.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 73 (control inventory eval + input[name=etag].value)"
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "traders-table-importer",
+      "message": "Who is the importer",
+      "trigger": "Importer slot empty on submit. CHED-PP importer carries a CHED-PP @NotNull (PartOne.java:241-250, group NotificationChedppFieldValidation at :244); the message key is the generic partone.importer.not.null — there is no chedpp-specific importer message. Because the CHED-PP importer is auto-populated and hidden (isHidden='true', no Change link), this fires only as a backstop if auto-population fails.",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:8 (message copy); PartOne.java:241-250 (@NotNull, CHED-PP group + generic importer.not.null key)"
+    },
+    {
+      "field": "traders-table-place-of-destination",
+      "message": "Add a delivery address",
+      "trigger": "Delivery address (placeOfDestination) slot empty on submit. CHED-PP-specific @NotNull (PartOne.java:277-281, group NotificationChedppFieldValidation) with the chedpp message key deliveryaddress.chedpp.not.null.",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:19 (message copy); PartOne.java:277-281 (@NotNull, CHED-PP group)"
+    },
+    {
+      "field": "traders-table-consignor",
+      "message": "Add a consignor or exporter",
+      "trigger": "Consignor slot empty on submit. CHED-PP-specific @NotNull (PartOne.java:201-204, group NotificationChedppFieldValidation) with the chedpp message key consignor.chedpp.not.null. Note the generic (non-CHED-PP) consignor message is different copy: 'Who is the consignor or exporter' (ValidationMessages.properties:12) — CHED-PP uses the 'Add a...' phrasing.",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:17 (message copy); PartOne.java:201-204 (@NotNull, CHED-PP group)"
+    },
+    {
+      "field": "consignee (model-level; NOT a section on the CHED-PP traders page)",
+      "message": "Who is the consignee",
+      "trigger": "Consignee slot null on submit. The PartOne model marks consignee @NotNull for CHED-PP (PartOne.java:220-229, group NotificationChedppFieldValidation at :223) EVEN THOUGH the CHED-PP traders template renders no consignee section (the fourth section is Importer — traders/overview.html:29-33). This corroborates the doaObservation that the CHED-PP consignee is auto-populated from the acting/owning organisation rather than collected on this page. Legacy mandatoriness is 'as the old system had it' — a policy the rebuild should revisit: a model-required-but-never-collected party is exactly the kind of implicit auto-population the new app must make explicit.",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:13 (message copy); PartOne.java:220-229 (@NotNull, CHED-PP group); template absence at ipaffs-frontend-notification/service/src/views/importer/traders/overview.html:29-33"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "LEGACY NOTE (fraud warning NOT shown on CHED-PP) — the shared trader partial renders a govuk-warning-text 'Providing a false address is an act of fraud' plus destination guidance copy on the place-of-destination section, but ONLY inside `{{#or isEuChedAOrEuChedDorChedP isChedD isChedA}}` (partials/trader/overview.html:8-27), which EXCLUDES CHED-PP. So CHED-PP's Delivery address section shows neither the fraud warning nor the 'must be in Great Britain' guidance that CHED-A/D and EU journeys show. Recorded as a legacy contrast — the rebuild should decide whether CHED-PP delivery addresses warrant the same fraud warning. confidence: legacy, ipaffs-frontend-notification/service/src/views/partials/trader/overview.html:8-27.",
+    "NO validation messages were observed on this page, and the QA suite does not assert any either. The trace is a clean happy path (0 errors) and both submit buttons were clicked with Packer empty and all required slots filled, so nothing fired. Corroboration attempt: no CHED-PP spec in tests/notification/ched-pp/ submits this page in an incomplete state. An exhaustive grep for 'There is a problem' / 'error-summary' / 'govuk-error' across tests/notification/ched-pp/, TradersAddressesPage.ts and EconomicOperatorsOverviewPage.ts returns ZERO matches — neither page object even exposes an error locator (independently re-verified by reading both page objects in full: TradersAddressesPage exposes 8 getters, EconomicOperatorsOverviewPage exposes 2, none error-related), so the QA suite is structurally incapable of asserting a validation message on this page. The two create paths (ched-pp-workflows.ts:464-478 fills consignor; :886-887 inherits it) both arrive at Save with consignor populated, by different means. So NEITHER source tells us what happens on 'Save and continue' with Delivery address or Consignor still empty. This remains the single biggest gap on this page. THE MANDATORY/OPTIONAL STATUS OF EVERY SLOT IS AN ASSUMPTION, NOT A FINDING: required:true on importer, delivery address and consignor is inferred from the absence of an '(optional)' suffix plus the fact that every test fills them — never from an observed or asserted validation rule. Only Packer's required:false has direct (rendered-copy) support. Each field now carries a requiredEvidence note saying so. LEGACY-RESOLVED: the IPAFFS PartOne model now provides the direct mandatoriness evidence the trace corpus lacked. For the CHED-PP validation group (NotificationChedppFieldValidation): importer @NotNull (PartOne.java:241-250 → 'Who is the importer'), placeOfDestination/delivery address @NotNull (PartOne.java:277-281 → 'Add a delivery address'), consignor @NotNull (PartOne.java:201-204 → 'Add a consignor or exporter') are all MANDATORY; packer has NO annotation (PartOne.java:218) so is OPTIONAL. Additionally consignee is @NotNull for CHED-PP at the model level (PartOne.java:220-229 → 'Who is the consignee') despite having no section on this page — evidence it is auto-populated from the acting org. Caveat: legacy mandatoriness is 'as the old system had it' and the importer/consignee requirements are satisfied by auto-population rather than user input — a policy the rebuild may deliberately revisit. See validationMessages and each field's requiredConfidence:'legacy'.",
+    "RESOLVED (was: the evidence pointer mentions an 'Add a consignee' link and a '#populate-importer' button that do not exist on the CHED-PP traders page). Both controls ARE defined on the shared page object — TradersAddressesPage.linkAddConsignee (page-objects/notification/TradersAddressesPage.ts:10-12) and TradersAddressesPage.locatorPopulateImporter (:26-28) — but are driven ONLY by the CHED-A, CHED-P and CHED-D workflows (linkAddConsignee: ched-a-workflows.ts:354, :1009; ched-p-workflows.ts:401, :752, :958; ched-d-workflows.ts:267. locatorPopulateImporter: ched-p-workflows.ts:414, :758, :965; ched-d-workflows.ts:280 — CHED-A does NOT use it). No CHED-PP workflow or spec touches either. Same for TradersAddressesPage.btnSelect (:34-36), used only by CHED-A (ched-a-workflows.ts:353, :355, :1008, :1010). The page object is shared across all four CHED types and is a superset of any one journey. The spec's original hypothesis was correct and is now confirmed by the tests: those controls belong to other CHED types, not CHED-PP. The two action ids given (60, 73) were both correct and on the right page — only the narrative description was off.",
+    "COPY DEFECT — the 'Same as consignee' button copies the address from the section headed 'Importer'. The word 'consignee' appears nowhere else on the page (verified against the full rendered main text at action 73). This is now corroborated as INTENDED behaviour, not a wiring bug: tests/notification/ched-pp/ched-pp-manipulation.spec.ts:51-52 explicitly asserts that the Importer and the Delivery address both end up as 'Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL'. Further evidence that IPAFFS conflates the two parties: the CHED-A/P/D journeys have a real 'Add a consignee' link (TradersAddressesPage.ts:10-12) which CHED-PP does not — CHED-PP's fourth section is 'Importer' instead. So the button label appears to be a leftover from the CHED-A/P/D variant of the shared template. The rebuild needs a product decision: are importer and consignee one party or two? If one, pick one name and use it everywhere. If the CHED-PP importer IS the consignee under another name, say so explicitly in the model.",
+    "FOUR NAMES FOR ONE CONCEPT — the delivery-address slot is labelled 'Delivery address', has the DOM/table id 'place-of-destination', its add-link AND its Change link both route to '/traders/final-destination/search', AND the QA automation calls it an 'economic operator' throughout the clone/amend flow (EconomicOperatorsOverviewPage.ts, SelectEconomicOperatorPage.ts, AddEconomicOperatorPage.ts; ChedPPCloningConfig.deliveryEconomicOperator at workflows/notification/ched-pp-workflows.ts:905). Notably the user-facing copy in that sub-journey is consistent — 'Create a new delivery address' and 'Delivery address name' (AddEconomicOperatorPage.ts:7-9) — so 'economic operator' is a model/QA-internal term that never reaches the screen. The new app should settle on ONE term across UI, model, route and tests.",
+    "TWO PAGE OBJECTS, ONE PAGE — the QA repo addresses this page through both TradersAddressesPage and EconomicOperatorsOverviewPage (whose linkAddDeliveryEconomicOperator, 'Add a delivery address', is the same #add-place-of-destination link the trace shows at action 73). This is a QA-side smell rather than an app defect, but it is a symptom of the same naming confusion, and it means anyone auditing coverage by page-object name will undercount this page. Worth flagging to the QA team.",
+    "ONE-SHOT SHORTCUT — populating the delivery address removes BOTH 'Same as consignee' and 'Add a delivery address' from the DOM in the same render (confirmed: at action 74 the combined count of #populate-place-of-destination and #add-place-of-destination is 0, and only #edit-place-of-destination remains). So there is no rendered affordance to CLEAR a delivery address or to re-point it at the importer after a manual entry — the user can only Change it via the full sub-journey. Whether the underlying model permits an empty delivery address after one has been set is unknown, and no test covers it. The rebuild should decide explicitly whether 'same as importer' is a reversible choice (it should be — a Radios question makes it so). GAP.",
+    "The Importer row rendered with an EMPTY change-link cell in this trace (B2C Importer, not an Agent). No CHED-PP test drives any importer control here, which is consistent with non-editable — but it is not proof, since the shared template does carry a #populate-importer button that CHED-P/D use. Whether an Agent-role CHED-PP user gets a Change or 'Add an importer' affordance in that cell is still unverified. GAP.",
+    "All four sections render an empty <p class=\"govuk-hint\"></p>. LEGACY-RESOLVED (partially): the shared trader partial has TWO hint slots — a conditional `{{#if helpText}}<p class=\"govuk-hint\">{{helpText}}</p>{{/if}}` (partials/trader/overview.html:5-7) AND an unconditional empty `<p class=\"govuk-hint\"></p>` (:29). CHED-PP passes NO helpText to any section (traders/overview.html:29-33 calls the partial with no helpText arg), so only the always-empty hint renders — the blank hint is BY DESIGN, not a missing value. By contrast the generic/EU-CHED branch DOES pass helpText per section — consignorHintText, consigneeHintText, importerHintText, podHintText (traders/overview.html:35-38) — so other CHED types show real guidance. What that guidance text says is set by the route handler (not in the template) and remains unmined. So: CHED-PP intentionally has no trader hints; the exact copy for other CHED types is still a gap.",
+    "Two equal-weight primary govuk-buttons ('Save and return to hub' and 'Save and continue') sit side by side with no secondary modifier, and a third label ('Save and review') is inferred for the review-entry variant. GOV.UK guidance is one primary action per page. Confirm the intended hierarchy for the rebuild, and confirm whether the review-entry variant shows one button or three.",
+    "PACKER IS COMPLETELY UNMINED — the /traders/packer/search sub-journey was never exercised in any trace AND has zero references anywhere in the QA automation repo (exhaustive case-insensitive grep for 'packer' over page-objects/, workflows/, tests/ and types/ returns nothing, for all four CHED types; independently re-verified). We know only that the section exists, is labelled '(optional)', and links to /traders/packer/search. Its field set, validation and purpose are unknown from both admissible sources. A human must confirm whether CHED-PP actually needs a packer at all before the rebuild carries it forward — an optional, untested, never-exercised slot is a strong candidate for deletion.",
+    "ZERO-COVERAGE CONFIRMED CONTROL — 'Save and return to hub' renders on this page (trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 73, id=\"save-and-return-button\") but NO test in the QA repo ever clicks it here, and TradersAddressesPage exposes no locator for it. A grep for 'Save and return to hub' across page-objects/ returns exactly four files — AboutTheConsignmentPage.ts, CountryOfOriginPage.ts, GoodsMovementServicesPage.ts, TransportDetailsPage.ts — and this page is not among them (independently re-verified). So a rendered, primary-weight submit button on this page has zero automated coverage on ANY CHED type. Whether 'Save and return to hub' from the traders page persists a partially-filled traders set (and if so, whether it bypasses the validation that 'Save and continue' presumably applies) is unknown from both admissible sources. This matters for the rebuild: it is a second, untested write path into the same data. GAP.",
+    "TWO 'Same as consignee' BUTTONS ON CHED-A — ched-a-workflows.ts:356-357 (and tests/accessibility/ched-a-accessibility-tests.spec.ts:110-111) drive btnSameAsConsignee.first() and .last(), i.e. the CHED-A rendering of this shared template has TWO controls with that accessible name, presumably one per copyable section. CHED-PP renders exactly one (trace action 73). CHED-P also renders exactly one (ched-p-workflows.ts:415, :759, :966, :1339 all use the bare locator with strict mode). This is further evidence that the 'Same as consignee' label is a generic template affordance stamped per-section rather than a considered piece of CHED-PP copy, and reinforces the copy-defect finding above. Not a CHED-PP requirement — recorded because it explains WHY the CHED-PP label reads wrong.",
+    "COPY-AS-NEW IS ASYMMETRIC — 'Copy as new' carries the CONSIGNOR over to the new draft but NOT the DELIVERY ADDRESS: copyAsNewChedPPNotification (workflows/notification/ched-pp-workflows.ts:800-930) re-enters this page and must re-populate the delivery address via #populate-place-of-destination (:886) while never touching a consignor control. Neither source explains the rule. Is dropping the delivery address on copy deliberate (e.g. the destination is expected to differ per consignment) or incidental? The rebuild needs an explicit, stated copy/clone rule per trader slot — including what happens to Packer, which no flow exercises at all. GAP — for a human.",
+    "NO ERROR LOCATOR EXISTS — neither TradersAddressesPage.ts nor EconomicOperatorsOverviewPage.ts defines any error/validation locator (both read in full and confirmed), and 'There is a problem' / 'error-summary' / 'govuk-error' appear nowhere in tests/notification/ched-pp/. The QA suite could not assert a validation message on this page even if one fired. Combined with the clean-happy-path trace, this means the page's validation behaviour is a total blind spot across BOTH admissible sources — not merely unobserved, but unobservable with the current test assets. If validation rules matter to the rebuild (they do — three of four slots are ASSUMED mandatory), they must come from a human or from new exploratory testing, not from this corpus.",
+    "The Delivery address sub-journey IS partially mined: the clone/amend flow walks 'Add a delivery address' -> SelectEconomicOperatorPage ('Create a new delivery address' link) -> AddEconomicOperatorPage -> ConfirmEconomicOperatorPage ('Add to notification') at workflows/notification/ched-pp-workflows.ts:976-980. AddEconomicOperatorPage exposes: Delivery address name, Address line 1, Address line 2, Address line 3, City or town, Postcode or ZIP code, Telephone number, Country (combobox), Email address, Save and continue (page-objects/notification/AddEconomicOperatorPage.ts:7-45, re-verified). Those are separate pages from this one and belong in their own specs, but the field set is now known (inferred). CAVEAT on 'identical to the Consignor creation page': the page objects use the accessible names 'Address line 2' / 'Address line 3', whereas the consignor creation page as actually rendered in the trace uses 'Address line 2 (optional)' / 'Address line 3 (optional)' (trace actions 64-65). Playwright's getByRole name matching is substring-based by default, so the page object would match either — the two field sets are therefore consistent but NOT proven identical, and the optionality of address lines 2/3 on the delivery-address page is unverified. Note the sub-journey is only reachable in our evidence via the clone flow; the forward create journey always shortcuts it with 'Same as consignee'."
+  ]
+}

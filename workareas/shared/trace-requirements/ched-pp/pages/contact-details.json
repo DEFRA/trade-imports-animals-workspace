@@ -1,0 +1,526 @@
+{
+  "slug": "contact-details",
+  "name": "Contact details (responsible person)",
+  "url": "/notification/vnet/protected/notifications/:draftId/responsible-person/contact-details",
+  "pageTitle": "Contact details - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "Contact details",
+  "doaObservations": [
+    {
+      "finding": "UPGRADE (was inferred → now confirmed for the VALUES) — the base spec's behaviour 'Pre-population for a DoA agent comes from the delegated organisation's contact, not the signed-in agent' was inferred from the QA spec + transformer. It is now CONFIRMED: DoA trace 545412266 renders the responsible-person Contact block on the Review Notification page with the delegated org's contact — Responsible person 'Isabel Irwin', Telephone '0123456789', Email 'ipaffs-plant-org-1-isabel@mailinator.com', Organisation Name 'IPAFFS Plant Organisation 1', Organisation Address 'KAINOS SOFTWARE LTD, 4-6,UPPER CRESCENT,BELFAST,BT7 1NT,GB'. The acting agent (Carol Clark) never typed these. Note: rendered on the REVIEW page (action 95), not on the contact-details page itself — the contact-details page is a pass-through for the agent (Save and continue with no field entry, confirmed in traces 851759a action 53, 5dd87b7f, 253df9dc). So confidence=confirmed for the VALUES the page carries, confirmed-on-review for their rendering.",
+      "traces": [
+        "545412266caaec96b0aae12262fecfee3e099888 action 95 (Review Notification, refs e109-e125)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "finding": "BASELINE (member create) CONFIRMED — for an ordinary org member creating in her own right (not an agent), the same block is auto-derived from the member's own identity + org. DoA trace 6e71cf94 renders it on the Review Notification page: Responsible person 'Isabel Irwin', Telephone '0123456789', Email 'ipaffs-plant-org-1-isabel@mailinator.com', Organisation Name 'IPAFFS Plant Organisation 1'. #responsible-organisation-name = 'IPAFFS Plant Organisation 1' is the org-assignment proof. There is no contact-details entry page for the member journey either — the values are the member's own.",
+      "traces": [
+        "6e71cf94f89d27e643a2c97d05b67b153700b499 action 172 (Review Notification)"
+      ],
+      "confidence": "confirmed"
+    },
+    {
+      "finding": "SOURCE-OF-VALUES rule for the rebuild: for a delegated agent the responsible contact is a MEMBER of the delegated org (Isabel Irwin is Plant Org 1's registered contact), NOT the signed-in agent. WHICH member becomes the responsible person is a business rule not shown in any trace — flagged as a gap in authorization-rules.md.",
+      "traces": [
+        "545412266caaec96b0aae12262fecfee3e099888",
+        "253df9dcdf570dfa90715630fcd0b175ae37c695"
+      ],
+      "confidence": "gap"
+    }
+  ],
+  "bodyCopy": [
+    "These are the details we have for you. Make sure they are up to date.",
+    "We will use these details if your consignment is chosen for inspection."
+  ],
+  "bodyCopyNote": "Both strings are rendered inside the fieldset-level div.govuk-hint, NOT as p.govuk-body. Listed here as the page's prose; see nonStandardPatterns for the hint-vs-body-copy deviation.",
+  "backLink": "#",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to hub"
+  ],
+  "secondaryActionsNote": "Verbatim labels as observed in the prerequisites-complete button set (the only set either trace rendered). The 'Save and review' label belongs to a variant set and is modelled separately under variantActions + buttonSets — it is NOT rendered alongside these.",
+  "variantActions": [
+    {
+      "label": "Save and review",
+      "condition": "review-amend entry (model.fromImporterReview || model.fromPartTwoOverview || model.fromPartTwoInspectorReview)",
+      "replaces": "Renders as the SOLE action — it replaces 'Save and continue' AND 'Save and return to hub', and the 'Cancel and return to hub' link disappears too.",
+      "confidence": "inferred",
+      "evidence": "Never rendered in either CHED-PP trace (both entered the page in-journey). Source settles the set: ipaffs-frontend-notification/service/src/utils/form_actions.js:66-69 returns [SAVE_AND_REVIEW_ACTION] and nothing else; rendered by views/partials/common/saveButtons.html:38-46. The label string is corroborated by a passing test that locates the button by accessible name: ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:14-16 (getByRole('button', { name: 'Save and review' })), driven at ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:973."
+    }
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "reference-number-header",
+      "text": "DRAFT.GB.2026.1525990 - CHEDPP",
+      "govukComponent": "(none — bespoke page furniture outside main)",
+      "note": "Rendered by common/referenceNumberHeaderDiv. Markup verified: span.heading-tertiary > span#reference-number + span ' - CHEDPP'. Shown for context; not part of the form.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "fieldset",
+      "text": null,
+      "govukComponent": "Fieldset",
+      "note": "Wraps the H1 and all four inputs; aria-describedby=\"responsible-person-contact-details-page-hint\". The buttons sit OUTSIDE the fieldset.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "h1",
+      "text": "Contact details",
+      "govukComponent": "Fieldset legend as page heading (legend.govuk-fieldset__legend--xl > h1.govuk-fieldset__heading)",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "hint",
+      "text": "These are the details we have for you. Make sure they are up to date.",
+      "govukComponent": "Hint (paragraph 1 of 2, inside div.govuk-hint)",
+      "note": "Hardcoded in the template at responsiblePersonContactDetails.html:33.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "hint",
+      "text": "We will use these details if your consignment is chosen for inspection.",
+      "govukComponent": "Hint (paragraph 2 of 2, inside div.govuk-hint)",
+      "note": "Dynamic — {{primaryHintText}} at responsiblePersonContactDetails.html:34, computed per notification. For CHED-PP the BCP suffix is empty; see openQuestions.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "text-input",
+      "text": "Name",
+      "govukComponent": "Text input",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "text-input",
+      "text": "Email address",
+      "govukComponent": "Text input (type=email)",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "text-input",
+      "text": "Mobile number",
+      "govukComponent": "Text input (type=tel)",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "text-input",
+      "text": "Agent",
+      "govukComponent": "Text input (CHED-PP only)",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button",
+      "note": "Rendered only in the prerequisites-complete button set — see buttonSets.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "link",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Link (a.govuk-link inside p.govuk-body, href=/notification/vnet/protected/notifications/:draftId/overview)",
+      "note": "Rendered only in the prerequisites-complete button set — see buttonSets.",
+      "confidence": "confirmed"
+    },
+    {
+      "element": "button",
+      "text": "Save and review",
+      "govukComponent": "Button",
+      "note": "VARIANT — never rendered in either CHED-PP trace; both entered the page in-journey. On a review-amend entry this button is the SOLE action. See variantActions + buttonSets.",
+      "confidence": "inferred"
+    }
+  ],
+  "buttonSets": [
+    {
+      "set": "review-amend entry",
+      "condition": "model.fromImporterReview || model.fromPartTwoOverview || model.fromPartTwoInspectorReview (query param or hidden field on the request). The concrete user route that sets this for CHED-PP is the 'Change' link against the contact-details row on the REVIEW page — #responsible-person-contact-details-change-link.",
+      "renders": [
+        "Save and review"
+      ],
+      "notes": "SOLE action. No 'Save and continue', no 'Save and return to hub', no 'Cancel and return to hub' link. Not rendered in either trace, but exercised end-to-end by the CHED-PP cloning test, which clicks 'Save and review' and then immediately operates on the review page again — behaviour consistent with the source's four-way routing (Save and review + fromImporterReview → importer review page).",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/utils/form_actions.js:66-69 (returns [SAVE_AND_REVIEW_ACTION] and nothing else — re-read verbatim this pass); rendered by views/partials/common/saveButtons.html:38-46. Never observed in a trace. QA corroboration: entry via ipaffs-qa-automation/page-objects/notification/ReviewNotificationPage.ts:130 (#responsible-person-contact-details-change-link) wrapped by changeContactDetails() at :141-143; driven in ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:972-973 inside submitClonedChedPPNotification (:931-1007), which is run by ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cloning.spec.ts:15. The button label is asserted implicitly by the role+name locator at ContactDetailsPage.ts:14-16."
+    },
+    {
+      "set": "prerequisites complete (the observed set)",
+      "condition": "prerequisitesHelper.reviewPagePrerequisitesCompleted(notification) === true and not a review-amend entry",
+      "renders": [
+        "Save and return to hub",
+        "Save and continue",
+        "Cancel and return to hub"
+      ],
+      "notes": "This is exactly what both CHED-PP traces rendered.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 and trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (button/link inventory eval, both re-run this pass). Source: prerequisitesComplete is set from prerequisitesHelper.reviewPagePrerequisitesCompleted(notification) at ipaffs-frontend-notification/service/src/utils/form_actions.js:11-13; the action set at :71-75."
+    },
+    {
+      "set": "prerequisites NOT complete",
+      "condition": "fallthrough — prerequisites incomplete and not a review-amend entry",
+      "renders": [
+        "Save and continue"
+      ],
+      "notes": "A third variant: 'Save and continue' alone — no 'Save and return to hub' and no 'Cancel and return to hub' link. Presumably the first-pass-through-the-journey state, before the draft is complete enough to have a usable hub/review. Never observed in our corpus (both traces were prerequisites-complete) and never exercised by the QA suite. NOTE: the QA suite CANNOT distinguish this set from the prerequisites-complete set, because every CHED-PP workflow interacts with this page using only getByRole('button', { name: 'Save and continue' }) — a locator that resolves in BOTH sets. So the tests would pass under either, and their green status is not evidence of which set rendered.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/utils/form_actions.js:77 (return [constants.SAVE_AND_CONTINUE_ACTION]). Never observed in a trace. Locator-cannot-discriminate point verified at ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:10-12 (btnSaveAndContinue is the only continue-path locator; there is no locator for 'Save and return to hub' or 'Cancel and return to hub' anywhere in the page object)."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-fieldset__legend--xl",
+        "govuk-fieldset__heading"
+      ],
+      "count": 1,
+      "usage": "Groups the four contact inputs under the page H1, using the standard 'legend as page heading' pattern.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (main-form outerHTML dump re-run this pass); template ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:25-30"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-!-width-two-thirds"
+      ],
+      "count": 4,
+      "usage": "Name, Email address, Mobile number, Agent. None carries a maxlength attribute and none carries a required attribute — verified directly this pass; all length/presence enforcement is server-side. NOTE: no CHED-PP test drives any of these four inputs — ContactDetailsPage.ts exposes zero input locators and neither ChedPPNotificationConfig nor ChedPPCloningConfig has a key for any of them. Every test passes straight through on the pre-populated values.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (control inventory + maxlength/required eval, both re-run this pass); corroborated absence of test coverage — ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:1-17 re-read verbatim this pass (exactly three getters, none an input), ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:39-125 (ChedPPNotificationConfig — no responsible-person contact key) and :896-929 (ChedPPCloningConfig + DEFAULT_CHEDPP_CLONING_CONFIG — likewise none)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--s"
+      ],
+      "count": 4,
+      "usage": "One small-bold label per input. All four verified with for= matching the input id.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (main-form outerHTML dump re-run this pass — for=name/email/telephone/agent all match)"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "govuk-!-margin-bottom-6"
+      ],
+      "count": 1,
+      "usage": "Fieldset-level hint holding the two explanatory paragraphs. Referenced by the fieldset's aria-describedby (id=responsible-person-contact-details-page-hint).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (hint markup verified verbatim this pass); template responsiblePersonContactDetails.html:32-35"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "OBSERVED: 'Save and return to hub' (id/name=save-and-return-button) and 'Save and continue' (id/name=button-save-and-continue). Both are plain govuk-button — the secondary action does NOT use govuk-button--secondary. Both carry data-module=govuk-button and data-prevent-double-click=true. Count 2 is specific to the prerequisites-complete button set; see buttonSets for the 1-button variants.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (button inventory + main-form outerHTML, both re-run this pass; action 49's own resolved-locator log also shows the Save and continue markup verbatim); all three button labels/classes/values defined at views/partials/common/saveButtons.html:19-46; constants at utils/constants.js:328-336. QA corroboration for the accessible names 'Save and continue' and 'Save and review': ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:10-16."
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 4,
+      "usage": "Wraps each label+input pair.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (main-form outerHTML dump re-run this pass)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Cancel and return to hub' — discards and returns to the draft overview. href verified = /notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/overview. No QA test ever clicks it — there is no locator for it in ContactDetailsPage.ts.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (href re-verified verbatim this pass); saveButtons.html:47-49; default cancel link built at utils/form_actions.js:46-48 (IMPORTER_OVERVIEW_PAGE); absence of QA coverage verified at ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:1-17"
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [],
+      "count": 0,
+      "usage": "Rendered by the common/validationSummary partial on POST validation failure (route handler re-renders the view with `errors` — routes/handlers/importer/responsible_person_contact_details.js:43-46). Not present in either snapshot (both happy-path; .govuk-error-summary and .govuk-error-message both count 0 — re-verified this pass). Corroboration attempt: the QA automation repo contains NO negative-path test for this page in any CHED journey.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:15 (inferred — never observed rendered); re-render path at ipaffs-frontend-notification/service/src/routes/handlers/importer/responsible_person_contact_details.js:43-46; absence of coverage re-verified by an exhaustive grep for contact-details references across ipaffs-qa-automation/{tests,workflows,page-objects} — the ONLY CHED-PP touchpoints are ched-pp-workflows.ts:444-445, :867-868, :972-973, tests/accessibility/ched-pp-accessibility-tests.spec.ts:118-120 and tests/auth/DoA/doa-notification-creation.spec.ts:125-137. None of them submits an invalid value."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "(none within main)",
+      "whatItDoes": "Every class in the main content region is govuk-* prefixed: govuk-body, govuk-button, govuk-fieldset(+__heading, __legend, __legend--xl), govuk-form-group, govuk-grid-column-two-thirds, govuk-grid-row, govuk-hint, govuk-input, govuk-label(--s), govuk-link, plus govuk-!- override utilities.",
+      "concern": "No concern INSIDE main. This page's form is 100% inside the GOV.UK Design System toolbox — no custom widgets, no third-party libraries (no accessible-autocomplete), no bespoke tables. It should port to govuk-frontend essentially 1:1. Independently corroborated: the CHED-PP accessibility spec runs an axe-core scan of this page with WCAG 2.0/2.1 A+AA tags and a zero-violation threshold. SCOPE CAVEAT: the eval behind this claim is scoped to `main`. The surrounding page furniture, which the rebuild also has to reproduce, is NOT clean — see the next entry.",
+      "govukAlternative": "n/a",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 — the non-govuk class filter scoped to `main` returned an empty set; independently corroborated this pass by a full main-form outerHTML dump, in which every class is govuk-*. a11y corroboration at ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:118-120 + ipaffs-qa-automation/utils/accessibility-utils.ts:114-124"
+    },
+    {
+      "pattern": "bespoke non-govuk classes in the page furniture OUTSIDE main",
+      "whatItDoes": "The chrome around the form carries hand-rolled classes: heading-tertiary (the reference-number header), application-title, navigation-links(+__divider, __left-block), information-banner(+__content), back-link--next-to-breadcrumbs, breadcrumbs--next-to-back, app-width-container--wide, global-cookie-message / global-cookie-wrapper / global-accepted-cookie-message, cookie-button(+-accept, -settings), cookie-buttons, button--cookie, footer__button-link.",
+      "concern": "The clean bill of health above stops at the <main> boundary. The reference-number header, the banner and the cookie UI are all bespoke CSS the legacy app carries. The rebuild needs a deliberate answer for each — most map to existing GOV.UK components (Cookie banner, Phase banner, Back link) rather than needing custom classes. Flagged because 'no non-govuk classes' read without the scoping caveat would understate the porting work. NOTE the back link is a hybrid: class=\"govuk-back-link back-link--next-to-breadcrumbs\" — a standard component plus a bespoke positioning class.",
+      "govukAlternative": "GOV.UK Cookie banner, Phase banner, Back link components; the reference-number header has no direct equivalent and is a genuine design decision.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (non-govuk class filter over `body *` rather than `main *`); reference-number header markup re-verified verbatim this pass: <span class=\"heading-tertiary\"><span id=\"reference-number\">DRAFT.GB.2026.1525990</span><span> - CHEDPP</span></span>; included at views/importer/responsiblePersonContactDetails.html:10; back link markup re-verified this pass (A|Back|href=#|cls=govuk-back-link back-link--next-to-breadcrumbs). NOTE the reference-number header is load-bearing for the QA suite, not just decoration: ReviewNotificationPage.ts:33-35 locates '.govuk-grid-row #reference-number' to read the reference back — so the id is a de-facto contract the rebuild should think about."
+    },
+    {
+      "pattern": "<div class=\"govuk-hint\"><p>…</p><p>…</p></div>",
+      "whatItDoes": "Two explanatory paragraphs are marked up as a single fieldset-level hint rather than as body copy (govuk-body) above the fieldset.",
+      "concern": "Minor deviation in usage rather than markup. The Design System hint is intended for short guidance attached to a field or fieldset; a multi-paragraph block of page-level explanation is normally govuk-body text. It renders grey and is announced as the fieldset's description, which is defensible but atypical. The new app should decide deliberately whether this is hint text or body copy. Note the axe scan does not flag this — it is a usage/convention issue, not a WCAG failure.",
+      "govukAlternative": "p.govuk-body above the fieldset, or keep as Hint if the guidance is genuinely field-scoped.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (markup re-verified verbatim this pass); ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:32-35"
+    },
+    {
+      "pattern": "form has no action attribute; entry-point-dependent submit button set distinguished by name/value",
+      "whatItDoes": "The form POSTs to the current URL (verified: no action attribute, method=POST, novalidate). Which buttons render is decided by getAvailableFormActions(model) and each is a submit button with a distinct name; the POST handler branches on which name is present in the payload (formActions.getAction). Routing is FOUR-way, not three: 'Save and return to hub' → importer overview (the hub); 'Save and review' + fromImporterReview → importer review page; 'Save and review' + fromPartTwoOverview or fromPartTwoInspectorReview → BIP overview page; otherwise → the next page in the journey (decorated with the entry-point query params that got you here).",
+      "concern": "Not a Design System issue but an architectural one. Two coupled requirements for the rebuild: (1) the ACTION SET is entry-point-dependent (three distinct sets — see buttonSets), and (2) the DESTINATION is a four-way branch on which button was pressed plus which entry-point flag is set. The legacy app also propagates entry-point state through hidden fields (fromImporterReview etc., saveButtons.html:1-18) and through appended query params (decorateUrl). If the rebuild keeps a hub + review model it needs an equivalent, and it should decide deliberately whether to carry that state in the URL, the session, or not at all. QA-LEVEL CORROBORATION: the cloning workflow enters via the review page's Change link, clicks 'Save and review', and its very next action operates on the review page — so at least the fromImporterReview → review-page leg of the four-way routing is behaviourally corroborated by a passing test, not source-reading alone.",
+      "govukAlternative": "n/a — standard GOV.UK Button markup, IPAFFS-specific routing semantics.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 — main-form outerHTML re-dumped this pass: <form method=\"POST\" novalidate=\"\"> with NO action attribute; button id/name = button-save-and-continue, value = \"Save and continue\"; second button id/name = save-and-return-button, value = \"Save and return to hub\". Template: ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:81 ({{> common/saveButtons model=actionsModel actions=actions}}); action set at utils/form_actions.js:66-78; four-way routing at utils/form_actions.js:97-118 (re-read verbatim this pass); entry-point hidden fields at views/partials/common/saveButtons.html:1-18. QA corroboration of the review leg: ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:972-973 (changeContactDetails() then btnSaveAndReview.click()) followed immediately by :975 (reviewNotification.changeTraders()) — i.e. the test assumes it is back on the review page."
+    }
+  ],
+  "fields": [
+    {
+      "name": "name",
+      "label": "Name",
+      "control": "text",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredLegacyNote": "MANDATORY for CHED-PP per the BACKEND schema — the strongest evidence for this field's requiredness: ContactDetails.name carries @NotNull(groups=NotificationChedppFieldValidation) at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:31-37, message key contactdetails.name.chedpp.not.null='Add your name' (ValidationMessages.properties:195). This is a DECLARED backend rule for CHED-PP, upgrading the previous fragile frontend Joi-string.empty inference (below) to `legacy`. Mandatoriness is 'as IPAFFS had it' — authoritative for what the old system enforced, but a policy the rebuild may deliberately revisit.",
+      "requiredNote": "The field's existence, label, attributes and value are `confirmed` from the DOM. Its REQUIREDNESS is not: the rendered input carries NO html `required` attribute (verified directly this pass) and the form is `novalidate`, so nothing about requiredness is observable in either trace. `required: true` is derived from the server-side Joi schema — the field is Joi.string() (optional by default, so an ABSENT key passes) but the form always submits the key, and an empty string trips string.empty. Note cleanUpPayload deletes empty email/telephone but NOT name, so '' reaches the validator. No test has ever proved this fires.",
+      "observedValues": [
+        "Michael Scott"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (same value). Attributes re-verified verbatim this pass: type=text, id=name, name=name, autocomplete=name, class='govuk-input govuk-!-width-two-thirds', no maxlength attr, no required attr. Joi rule (max 32) at ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/responsible_person_contact_details.js:26-29; cleanUpPayload at routes/handlers/importer/responsible_person_contact_details.js:84-93 (touches telephone and email only). QA corroboration: NO test fills this field — ContactDetailsPage.ts:1-17 exposes no input locator for it and neither ChedPPNotificationConfig (ched-pp-workflows.ts:39-125) nor ChedPPCloningConfig (:896-929) has a `name` key for the responsible person. Its value IS asserted downstream on the review page (#responsible-contact-name, ReviewNotificationPage.ts:41-43) at ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:132 — expected value 'Isabel Irwin' (assertion re-read verbatim this pass)."
+    },
+    {
+      "name": "email",
+      "label": "Email address",
+      "control": "text",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredLegacyNote": "Not individually required, but jointly required with telephone — CORROBORATED by the backend schema: class-level @ChedppContactDetailsEmailOrTelephoneRequired(groups=NotificationChedppFieldValidation) on ContactDetails at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:22 (message contactdetails.email.or.telephone.chedpp.not.null='Add an email address or mobile number', ValidationMessages.properties:197). The frontend .or(EMAIL, TELEPHONE) rule and this backend annotation are the SAME cross-field rule at two layers. individually optional confirmed by the absence of any per-field @NotNull on ContactDetails.email (ContactDetails.java:40).",
+      "conditionalOn": "Not individually required, but at least one of Email address / Mobile number must be supplied (Joi .or(EMAIL, TELEPHONE)). This cross-field rule is source-derived only — never observed firing, and no test exercises it.",
+      "observedValues": [
+        "test14@hghumankainos.33mail.com"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (same value). Attributes re-verified verbatim this pass: type=email, id=email, name=email, autocomplete=email, spellcheck=false, no maxlength, no required. Max 255 chars, Joi .email({ ignoreLength: true, tlds: { allow: false } }) at validation/routes/handlers/importer/responsible_person_contact_details.js:30-33; .or() rule at the same file :44-46 (both re-read verbatim this pass). Lower-cased server-side before validation at ROUTE handler routes/handlers/importer/responsible_person_contact_details.js:91 (note: a DIFFERENT file from the validator, same basename — see openQuestions). Empty value is deleted from the payload before validation (same route handler :88-90), which is what makes the .or() rule fire rather than a string.empty error. QA corroboration: no test fills or clears this field, so the .or() rule has never been exercised by the suite. Its value IS asserted downstream on the review page (#responsible-contact-email, ReviewNotificationPage.ts:45-47) at ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:133 — expected 'ipaffs-plant-org-1-isabel@mailinator.com'."
+    },
+    {
+      "name": "telephone",
+      "label": "Mobile number",
+      "control": "text",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredLegacyNote": "Not individually required, but jointly required with email — CORROBORATED by the backend schema: class-level @ChedppContactDetailsEmailOrTelephoneRequired(groups=NotificationChedppFieldValidation) on ContactDetails at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:22 (message contactdetails.email.or.telephone.chedpp.not.null='Add an email address or mobile number', ValidationMessages.properties:197). individually optional confirmed by the absence of any per-field @NotNull on ContactDetails.telephone (ContactDetails.java:39).",
+      "conditionalOn": "Not individually required, but at least one of Email address / Mobile number must be supplied (Joi .or(EMAIL, TELEPHONE)). Source-derived only — never observed firing.",
+      "observedValues": [
+        "01234566234"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (same value). Attributes re-verified verbatim this pass: type=tel, id=telephone, name=telephone, autocomplete=tel, no maxlength, no required. Max 30 chars, pattern TELEPHONE_REGEX = /^\\+?[\\d\\s]+$/ (digits and spaces, optional leading +) at ipaffs-frontend-notification/service/src/validation/regexes.js:7; applied at validation/routes/handlers/importer/responsible_person_contact_details.js:34-38. Empty value is deleted from the payload before validation at ROUTE handler routes/handlers/importer/responsible_person_contact_details.js:85-87 (different file from the validator, same basename). NOTE: the HTML name is 'telephone' but the visible label is 'Mobile number'. QA corroboration: no test fills this field. Its value IS asserted downstream on the review page (#responsible-contact-telephone, ReviewNotificationPage.ts:49-51 — note the locator uses .first(), implying the id may not be unique on the review page) at ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:134, where the expected value '0123456789' is a landline-shaped number — reinforcing that despite the 'Mobile number' label the field accepts any telephone number."
+    },
+    {
+      "name": "agent",
+      "label": "Agent",
+      "control": "text",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredLegacyNote": "OPTIONAL — CORROBORATED by the backend schema: ContactDetails.agent carries NO @NotNull for any group (ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:41 — a bare `private String agent = null;`), so it is never mandatory on any CHED path. Reinforces the 'candidate for deletion' finding in openQuestions: the field is optional at BOTH the frontend and the backend, and appears in no validation rule.",
+      "conditionalOn": "Rendered only when notification.type === 'CHEDPP'. This field is unique to the CHED-PP journey — CHED-A/P/D do not show it.",
+      "observedValues": [
+        ""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (present, value=''); corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (also empty). Attributes re-verified verbatim this pass: type=text, id=agent, name=agent, NO autocomplete (the only one of the four without it), no maxlength, no required. Conditionality confirmed at ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:70-77 ({{#eq notification.type 'CHEDPP'}} … {{/eq}}, re-read verbatim this pass); CHEDPP constant = 'CHEDPP' at utils/constants.js:31. Optional, allows '', max 32 chars (validation/routes/handlers/importer/responsible_person_contact_details.js:39-41). No hint — its purpose is undocumented in the template. QA corroboration DEEPENS the mystery rather than resolving it: the CHED-PP page object has no locator for it (ContactDetailsPage.ts:1-17), neither ChedPPNotificationConfig (ched-pp-workflows.ts:39-125) nor ChedPPCloningConfig (:896-929) has an `agent` key, no test ever fills it, and it is NOT surfaced on the review page (ReviewNotificationPage.ts:37-55 exposes locatorOrganisationName / locatorContactName / locatorContactEmail / locatorContactTelephone / locatorImporter and nothing for Agent). Note the QA repo's separate use of 'agent' — DoA (Delegation of Authority) agents acting for another organisation, ched-pp-workflows.ts:41-44 — appears unrelated to this free-text box: the DoA agent's identity is captured by organisation selection (config key organisationName), not by typing into this field, and the DoA test asserts nothing about Agent. One further source signal: the pre-population transformer only ever supplies an `agent` value from partOne.contactDetails.agent (defaulted to ''), and never from the personResponsible or cookie branches (transformers/notification_to_view/importer/responsible_person_contact_details.js:10, re-read verbatim this pass) — i.e. it can only ever echo back what a user previously typed into this same box."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden — CSRF token)",
+      "control": "hidden",
+      "required": true,
+      "requiredConfidence": "inferred",
+      "observedValues": [
+        "[REDACTED]"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (input[type=hidden][name=crumb], no id — re-verified this pass); ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:18. Platform concern (hapi crumb plugin), not a user-facing requirement; requiredness is a platform behaviour, not observed. NOTE: a second crumb input exists on the page, belonging to the cookie-preferences form (action=/notification/vnet/protected/notifications/cookies) which sits OUTSIDE main — do not confuse the two when counting controls."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden — optimistic concurrency token)",
+      "control": "hidden",
+      "required": true,
+      "requiredConfidence": "inferred",
+      "observedValues": [
+        "\"0000000000BD29DE\"",
+        "\"0000000000BD2B6C\""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (value \"0000000000BD29DE\") and trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57 (value \"0000000000BD2B6C\" — different draft, different token, both re-verified verbatim this pass); rendered with no id, type=hidden. Template: ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:19; validated via ETAG_SCHEMA at validation/routes/handlers/importer/responsible_person_contact_details.js:42. `required: true` is source-derived, not observed: ETAG_SCHEMA is Joi.string().ruleset.min(16).max(18).rule(...).required() at ipaffs-frontend-notification/service/src/validation/common_schemas.js:45-52 (read verbatim this pass — the ONLY explicit .required() on this page's schema). Carries the draft version for concurrent-edit detection — a genuine requirement to consider (or deliberately drop) in the rebuild. QA note: no test exercises a concurrency conflict on this page, so the etag-mismatch behaviour is unobserved in both sources."
+    }
+  ],
+  "outOfScopeControls": [
+    {
+      "note": "The DOM contains three further hidden inputs — a second `crumb`, `returnUrl` and `fromFooterHeader` — which belong to the cookie-preferences form (action=/notification/vnet/protected/notifications/cookies), NOT to the contact-details form. They are page furniture outside main and are not requirements of this page. Recorded so that a future control-inventory diff does not flag them as missed fields.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (form inventory eval re-run this pass: exactly two forms on the page; the contact-details form's elements are crumb, etag, name, email, telephone, agent, save-and-return-button, button-save-and-continue; the cookie form's are crumb, returnUrl='%2Fprotected%2Fnotifications%2FDRAFT.GB.2026.1525990%2Fresponsible-person%2Fcontact-details', fromFooterHeader='true')"
+    }
+  ],
+  "behaviours": [
+    {
+      "behaviour": "Pre-population precedence — and the fact that for CHED-PP the signed-in-user branch is UNREACHABLE.",
+      "detail": "transformNotification(userInfoStoredInCookie, notification) is a three-branch if/else: (1) if partOne.contactDetails exists → use it (name/telephone/email/agent, agent defaulted to ''); (2) ELSE IF notification.type === 'CHEDPP' → use partOne.personResponsible (name/phone/email — note the source key is `phone`, not `telephone`; no agent key at all); (3) else → the signed-in user's cookie (displayName/phone/email). CRITICAL: because branch 2 intercepts on type === 'CHEDPP', branch 3 can NEVER execute for a CHED-PP notification. The cookie branch is CHED-A/P/D only. Our two traces therefore exercised branch 1 or branch 2 — and the DOM cannot distinguish them, because branch 1 yields agent='' and branch 2 yields agent=undefined, which Handlebars renders identically as value=\"\".",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/transformers/notification_to_view/importer/responsible_person_contact_details.js:4-25 — read verbatim this pass; branch 1 at :5-11, branch 2 guard at :12, cookie branch at :18-23; CHEDPP constant at utils/constants.js:31. type === 'CHEDPP' independently confirmed for both traces because the Agent input rendered, which is gated on exactly that (responsiblePersonContactDetails.html:70). Which of branches 1/2 fired is NOT determinable from the traces."
+    },
+    {
+      "behaviour": "Pre-population for a DoA (Delegation of Authority) agent comes from the DELEGATED ORGANISATION's contact, not the signed-in agent.",
+      "detail": "Carol Clark (a DoA agent, auth fixture AUTH_FILES.b2cDoaAgent) creates a CHED-PP on behalf of 'IPAFFS Plant Organisation 1' via createChedPPNotification({ organisationName: 'IPAFFS Plant Organisation 1', singleCommodity: true }). The test passes through Contact details without typing anything, then re-opens the submitted notification from the dashboard and asserts on the review page that the responsible-person contact is Isabel Irwin / ipaffs-plant-org-1-isabel@mailinator.com / 0123456789 — i.e. the delegated org's contact — and that the importer is IPAFFS Plant Organisation 1 (plus the address 'KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT'). This is consistent with (and is probably explained by) the transformer above: for CHED-PP the values come off the NOTIFICATION (partOne.contactDetails or partOne.personResponsible), never off the signed-in user's cookie — so a draft created for a delegated org naturally shows that org's contact. NOTE the assertions are expect.soft, so a failure here would not halt the test — worth knowing if this test is ever cited as a guarantee.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:113-137 (assertions at :132-136 re-read verbatim this pass — all five are expect.soft); organisation selection driven via ChedPPNotificationConfig.organisationName at ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:41-44; transformer at ipaffs-frontend-notification/service/src/transformers/notification_to_view/importer/responsible_person_contact_details.js:4-25. Never observed in a trace — the assertion is made on the REVIEW page, not on this page."
+    },
+    {
+      "behaviour": "The review-amend entry point is a 'Change' link on the review page — #responsible-person-contact-details-change-link.",
+      "detail": "The review page renders a Change link with id #responsible-person-contact-details-change-link against the contact-details row; clicking it navigates to this page in review-amend mode, where 'Save and review' is the sole action and returns the user to the review page. For CHED-PP this is exercised end-to-end by the cloning journey: cloneNotification → … → changeContactDetails() → contactDetails.btnSaveAndReview.click() → changeTraders() (back on review). This matters for the rebuild because it is the ONLY evidence we have that a user can re-enter this page after the journey, and it pins the id the review page must expose.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-qa-automation/page-objects/notification/ReviewNotificationPage.ts:129-131 (linkChangeContactDetails → locator('#responsible-person-contact-details-change-link') at :130 — line number confirmed by grep this pass) and :141-143 (changeContactDetails()); driven at ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:972-973 (confirmed by grep this pass) inside submitClonedChedPPNotification (:931-1007), run by ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cloning.spec.ts:15. Not observed in any trace in our corpus — no CHED-PP trace entered the page via review-amend. (Attempted to locate a cloning trace in the corpus this pass; playwright-report/index.html does not store test titles in plain text, so a filename-level search is inconclusive either way. The absence of trace evidence is therefore asserted from the two known evidence-pointer traces only, which both entered in-journey.)"
+    },
+    {
+      "behaviour": "The page is a pass-through in every automated CHED-PP journey — no test types into it.",
+      "detail": "An exhaustive grep for contact-details references across ipaffs-qa-automation/{tests,workflows,page-objects} finds exactly four CHED-PP touchpoints, and not one of them enters data: (1) createChedPPNotification — 'Save and continue', in-journey; (2) copyAsNewChedPPNotification — 'Save and continue', in-journey (the copy-as-new flow re-walks the whole journey); (3) submitClonedChedPPNotification — 'Save and review', review-amend entry via the review page's Change link; (4) the CHED-PP accessibility spec — an axe scan then 'Save and continue'. The DoA test touches the page only implicitly (it calls createChedPPNotification) and asserts on the REVIEW page, not here. The same holds across CHED-A/P/D (ched-a-workflows.ts:448-449, :651-652; ched-p-workflows.ts:519-520, :791-792, :1000, :1335-1344; ched-d-workflows.ts:336-337, :656-657) — every one is a bare Save-and-continue or Save-and-review click. There is no negative-path test, no field-level assertion on this page, and no test of the .or(email, telephone) rule anywhere in the suite. This is a real coverage gap in the legacy suite and means the traces + tests TOGETHER are still a lower bound on this page's rules.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-qa-automation/page-objects/notification/ContactDetailsPage.ts:1-17 (re-read verbatim this pass: exactly three getters — linkChangeContactAddress :6-8, btnSaveAndContinue :10-12, btnSaveAndReview :14-16 — none an input); ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:444-445, :867-868, :972-973; ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:118-120; ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:119-122 (creates via the workflow, never touches the page directly)"
+    },
+    {
+      "behaviour": "Next page from Contact details is /nominated-contact for CHED-PP — CONFIRMED FROM TRACE, and corroborated by the QA journey order in two independent workflows.",
+      "detail": "getNextPage(notification, referenceNumber) is a three-way branch: CVEDA → ACCOMPANYING_DOCUMENTS_PAGE; EU CHED-D that is not CHED-D → ORGANISATION_BRANCH_ADDRESS; otherwise → NOMINATED_CONTACT_PAGE. CHED-PP takes the fallthrough, so → /nominated-contact. This matches the observed navigation and the QA journey order exactly. The destination is then decorated with entry-point query params by decorateUrl before redirect. Journey position in the QA suite: Goods Movement Services → Contact details → Nominated Contacts → Accompanying Documents — the same order in createChedPPNotification, in copyAsNewChedPPNotification and in the accessibility spec.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 — the action's own log, re-read verbatim this pass, records: navigated to \"https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/nominated-contact\". Source: ipaffs-frontend-notification/service/src/routes/handlers/importer/responsible_person_contact_details.js:23-30 (getNextPage) and :48-55 (pageModel + redirect via formActions.getAction); route registered at routes/routes.js:1146-1153. QA corroboration (two independent workflows): ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:442-449 and :864-871 (both show goodsMovementServices → contactDetails → nominatedContacts); same order in tests/accessibility/ched-pp-accessibility-tests.spec.ts:112-124. Trace source location also pins the driving code: ched-pp-workflows.ts:445 via ched-pp-article72.spec.ts:23."
+    },
+    {
+      "behaviour": "The page must pass an axe-core scan with zero violations against WCAG 2.0/2.1 A and AA.",
+      "detail": "checkPageAccessibility(page, 'Contact Details Page') waits for networkidle, then runs AxeBuilder with tags wcag2a, wcag2aa, wcag21a, wcag21aa and disableRules(['aria-allowed-attr']) (globally disabled for an unrelated govuk-frontend v6 issue where conditional radios gain aria-expanded at runtime — IMTA-20937). Threshold: maxViolations 0, failOnViolations true. NUANCE: violations are pushed to a collectedViolations array for DEFERRED assertion rather than thrown inline, so the failure surfaces at the end of the run, not at this page. A standing requirement for the rebuild.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:118-120; ipaffs-qa-automation/utils/accessibility-utils.ts:114 (function signature), :119 (withTags + disableRules), :124-126 (threshold computation), :128-129 (deferred collection) and :20-23 (DEFAULT_ACCESSIBILITY_CONFIG maxViolations 0 / failOnViolations true)"
+    },
+    {
+      "behaviour": "Page title is composed, not literal.",
+      "detail": "pageTitle = CONTACT_DETAILS + GENERIC_PAGE_TITLE = 'Contact details' + ' - Import and export applications - GOV.UK'. The H1 uses the same CONTACT_DETAILS constant, which is why heading and title agree.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 49 (document.title = 'Contact details - Import and export applications - GOV.UK' — re-verified verbatim this pass, and identical in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 57); composed at ipaffs-frontend-notification/service/src/routes/handlers/importer/responsible_person_contact_details.js:76-77 (read verbatim this pass: heading: CONTACT_DETAILS, pageTitle: CONTACT_DETAILS + GENERIC_PAGE_TITLE); constants at utils/constants.js:4 and :249. The H1 renders {{heading}} at responsiblePersonContactDetails.html:28."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Enter your name",
+      "field": "name",
+      "trigger": "Name submitted empty (Joi string.empty). Reachable because cleanUpPayload does not strip an empty name.",
+      "confidence": "inferred",
+      "evidence": "VERIFIED DERIVATION (independently re-derived this pass): ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/responsible_person_contact_details.js:28 — requiredMessage(labels.NAME, 'your'); template `Enter ${article} ${label.toLowerCase()}` at service/src/validation/messages/en.js:31-33 (read verbatim); labels.NAME = 'Name' at service/src/validation/labels/en.js:67 (confirmed by grep). Interpolates to exactly 'Enter your name'. Never observed rendered; no QA test asserts it either (exhaustive grep across ipaffs-qa-automation/tests finds no error-message assertion for this page)."
+    },
+    {
+      "message": "Name must be 32 characters or fewer",
+      "field": "name",
+      "trigger": "Name longer than 32 characters.",
+      "confidence": "inferred",
+      "evidence": "VERIFIED DERIVATION (independently re-derived this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:27 — maxLengthMessage(labels.NAME, 32); template `${label} must be ${maxLength} characters or fewer` at service/src/validation/messages/en.js:3-5 (read verbatim); labels.NAME = 'Name' at validation/labels/en.js:67. Never observed rendered; no QA test asserts it either."
+    },
+    {
+      "message": "Enter an email address or mobile number",
+      "field": "email / telephone (fieldset-level)",
+      "trigger": "Both Email address and Mobile number submitted empty. Both empty values are DELETED from the payload by cleanUpPayload first, which is precisely what makes Joi's object.missing fire on .or(EMAIL, TELEPHONE) rather than a per-field empty error.",
+      "confidence": "inferred",
+      "evidence": "VERIFIED VERBATIM (re-read this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:44-46 (.or(EMAIL, TELEPHONE) + OBJECT_MISSING message); EMAIL_OR_TELEPHONE literal 'Enter an email address or mobile number' at service/src/validation/messages/en.js:73 (confirmed by grep this pass — :72 is the adjacent EMAIL_CORRECT_FORMAT line; the two are easy to transpose, and both were checked); payload deletion at routes/handlers/importer/responsible_person_contact_details.js:84-93. Never observed rendered; no QA test asserts it either. This is the key cross-field rule on the page and NOTHING in either source of truth exercises it — the single most important thing to confirm with a human."
+    },
+    {
+      "message": "Enter an email address in the correct format, like name@example.com",
+      "field": "email",
+      "trigger": "Email address is not a valid email (TLD validation disabled — tlds: { allow: false }).",
+      "confidence": "inferred",
+      "evidence": "VERIFIED VERBATIM (re-read this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:32 — EMAIL_CORRECT_FORMAT; literal at service/src/validation/messages/en.js:72 (confirmed by grep). Never observed rendered; no QA test asserts it either."
+    },
+    {
+      "message": "Email address must be 255 characters or fewer",
+      "field": "email",
+      "trigger": "Email address longer than 255 characters. NOTE Joi's own length check is disabled (ignoreLength: true) and the max is enforced by the separate .max(255).",
+      "confidence": "inferred",
+      "evidence": "VERIFIED DERIVATION (independently re-derived this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:31 — maxLengthMessage(labels.EMAIL_ADDRESS, 255); labels.EMAIL_ADDRESS = 'Email address' at service/src/validation/labels/en.js:46 (confirmed by grep); template at validation/messages/en.js:3-5. Never observed rendered; no QA test asserts it either."
+    },
+    {
+      "message": "Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982",
+      "field": "telephone",
+      "trigger": "Mobile number fails /^\\+?[\\d\\s]+$/ (i.e. contains anything other than digits/spaces with an optional leading +).",
+      "confidence": "inferred",
+      "evidence": "VERIFIED VERBATIM (re-read this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:36-37 — TELEPHONE_NUMBER_CORRECT_FORMAT bound to both NUMBER_BASE and STRING_PATTERN; literal at service/src/validation/messages/en.js:110 (confirmed by grep); regex at validation/regexes.js:7. Never observed rendered; no QA test asserts it either. Sanity note: the DoA test's expected value '0123456789' (doa-notification-creation.spec.ts:134) satisfies this regex, as does the observed trace value '01234566234' — consistent, but neither is a test OF the rule."
+    },
+    {
+      "message": "Telephone number must be 30 characters or fewer",
+      "field": "telephone",
+      "trigger": "Mobile number longer than 30 characters.",
+      "confidence": "inferred",
+      "evidence": "VERIFIED DERIVATION (independently re-derived this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:35 — maxLengthMessage(labels.TELEPHONE_NUMBER, 30); labels.TELEPHONE_NUMBER = 'Telephone number' at service/src/validation/labels/en.js:98 (confirmed by grep); template at validation/messages/en.js:3-5. NOTE the copy inconsistency: the visible field label is 'Mobile number' but this error says 'Telephone number'. Never observed rendered; no QA test asserts it either."
+    },
+    {
+      "message": "Agent must be 32 characters or fewer",
+      "field": "agent",
+      "trigger": "Agent longer than 32 characters.",
+      "confidence": "inferred",
+      "evidence": "VERIFIED DERIVATION (independently re-derived this pass): validation/routes/handlers/importer/responsible_person_contact_details.js:40 — maxLengthMessage(labels.AGENT, 32); labels.AGENT = 'Agent' at service/src/validation/labels/en.js:9 (confirmed by grep); template at validation/messages/en.js:3-5. Never observed rendered; no QA test asserts it either."
+    },
+    {
+      "message": "Add your name",
+      "field": "name",
+      "trigger": "BACKEND (schema) CHED-PP validation — ContactDetails.name is null/absent when the notification is validated against the NotificationChedppFieldValidation group (submit / review-completeness). This is a SECOND validation layer distinct from the frontend inline 'Enter your name' shown on the page POST — same rule, different copy ('Add' vs 'Enter') on the CHED-PP path.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:31-37 (@NotNull groups={NotificationChedppFieldValidation}, message key contactdetails.name.chedpp.not.null); literal 'Add your name' at ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:195. The EU/non-CHEDPP group uses a DIFFERENT key contactdetails.name.not.null='Enter your name' (ContactDetails.java:25-30, properties:194). Never observed rendered."
+    },
+    {
+      "message": "Add an email address or mobile number",
+      "field": "email / telephone (fieldset-level)",
+      "trigger": "BACKEND (schema) CHED-PP validation — neither email nor telephone supplied when validated against NotificationChedppFieldValidation (class-level @ChedppContactDetailsEmailOrTelephoneRequired on ContactDetails). Second validation layer distinct from the frontend inline 'Enter an email address or mobile number' — same cross-field rule, different backend copy ('Add' vs 'Enter').",
+      "confidence": "legacy",
+      "evidence": "class-level @ChedppContactDetailsEmailOrTelephoneRequired(groups=NotificationChedppFieldValidation) at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/ContactDetails.java:22; default message key contactdetails.email.or.telephone.chedpp.not.null at .../validation/annotations/ChedppContactDetailsEmailOrTelephoneRequired.java:19-20; literal 'Add an email address or mobile number' at ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:197. The EU group's equivalent is contactdetails.email.or.telephone.not.null='Enter an email address or mobile number' (properties:196). Never observed rendered; the .or() rule is unexercised by both traces and the QA suite."
+    },
+    {
+      "message": "Check your details on the 'Contact details' page and save them to continue",
+      "field": "contactDetails (whole-page / object-level)",
+      "trigger": "BACKEND (schema) CHED-PP validation — the entire contactDetails object is null/absent (the page has never been saved) when the notification is validated against NotificationChedppFieldValidation. This is the review/task-list COMPLETENESS error for the page, not an inline field error — its wording ('save them to continue') implies it surfaces on a review/overview page directing the user back to this page. It has no frontend Joi equivalent, so it was invisible to the rendered-trace + frontend-validator passes entirely.",
+      "confidence": "legacy",
+      "evidence": "PartOne.contactDetails @NotNull(groups={NotificationChedppFieldValidation}) at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:633-638, message key contactdetails.chedpp.not.null; literal at ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:199. The EU/single-CED group uses contactdetails.not.null='Enter your contact details' (PartOne.java:626-632, properties:198). Never observed rendered — no trace or QA test reaches an unsaved-contactDetails CHED-PP review state."
+    }
+  ],
+  "validationMessagesNote": "The list now spans BOTH validation layers. The first 8 entries are the FRONTEND inline Joi field rules (`inferred`, derived from validation/messages/en.js — the copy shown on the page POST); the last 3 are the BACKEND schema rules for the CHED-PP validation group (`legacy`, from the notification-schema model + ValidationMessages.properties). The two layers give DIFFERENT copy for the same name-empty and email-or-telephone-empty rules — see the top-level `discrepancies`. Neither layer was ever observed rendered. Excluded still: the frontend platform-level messages for the etag (ETAG_REQUIRED etc., common_schemas.js:45-52) and the save-action buttons (SAVE_ACTIONS_SCHEMA, common_schemas.js:39-43) — they guard machine-supplied values a user cannot mistype. BACKING-MODEL MANDATORINESS (legacy, for the rebuild): the pre-population source `personResponsible` (a Party, the CHED-PP transformer branch 2) is itself @NotNull for CHED-PP — PartOne.personResponsible @NotNull(groups={...,NotificationChedppFieldValidation,...}) at ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:173-184, message key personResponsible.not.null='Person Responsible' (ValidationMessages.properties:3). So at the model level a CHED-PP notification must carry BOTH a personResponsible Party AND a saved contactDetails object.",
+  "discrepancies": [
+    "FRONTEND vs BACKEND validation copy diverges for the name-empty rule: the frontend inline error (shown on the contact-details page POST) is 'Enter your name' (validation/messages/en.js, spec entry #1, `inferred`) but the backend CHED-PP schema error for the same rule is 'Add your name' (ValidationMessages.properties:195, ContactDetails.java:31-37, `legacy`). Neither was observed RENDERED, so there is no `confirmed` value to arbitrate — both are kept, tagged by layer. The rebuild must pick one copy; note the CHED-PP-specific backend string ('Add …') deliberately differs from the EU string ('Enter …').",
+    "FRONTEND vs BACKEND validation copy diverges for the email-or-telephone rule: frontend inline is 'Enter an email address or mobile number' (`inferred`) vs backend CHED-PP 'Add an email address or mobile number' (`legacy`, properties:197). Same 'Add' vs 'Enter' split as the name rule — a consistent CHED-PP-path copy convention on the backend that the frontend inline layer does not follow.",
+    "BACKEND-ONLY completeness error with no frontend equivalent: 'Check your details on the \"Contact details\" page and save them to continue' (contactdetails.chedpp.not.null, properties:199, PartOne.java:633-638) fires when the whole contactDetails object is unsaved for a CHED-PP. It has no inline Joi counterpart and was invisible to every rendered-trace + frontend-validator pass; it is a genuinely new requirement surfaced only by reading the backend schema."
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "LEGACY RE-VERIFICATION PASS: the authorised IPAFFS source was re-read directly this pass and every legacy citation was confirmed accurate against the files. ContactDetails.java: name @NotNull(groups=NotificationChedppFieldValidation) at :31-37 and @NotNull(groups=NotificationContactDetailsEuFieldValidation) at :25-30; class-level @ChedppContactDetailsEmailOrTelephoneRequired(groups=NotificationChedppFieldValidation) at :22 and the EU @ContactDetailsEmailOrTelephoneRequired at :21; telephone/email/agent are bare `private String … = null;` at :39/:40/:41 with NO per-field @NotNull on any group — so agent is never mandatory and email/telephone are individually optional but jointly required. ValidationMessages.properties confirmed verbatim: :194 contactdetails.name.not.null='Enter your name', :195 contactdetails.name.chedpp.not.null='Add your name', :196 email.or.telephone.not.null='Enter an email address or mobile number', :197 email.or.telephone.chedpp.not.null='Add an email address or mobile number', :198 contactdetails.not.null='Enter your contact details', :199 contactdetails.chedpp.not.null=\"Check your details on the 'Contact details' page and save them to continue\". Template responsiblePersonContactDetails.html re-read in full (86 lines): four text inputs (name/email/telephone, plus agent gated on {{#eq notification.type 'CHEDPP'}} at :70-78), isChedD 'Contacts' caption at :21-23, both hint paragraphs at :33-34, crumb/etag hidden inputs at :18-19 — no additional CHED-PP conditional control was found that the spec had missed. No new field, validation message or discrepancy needed adding; the prior pass's legacy enrichment is complete and correct.",
+    "VERIFICATION NOTE (v20 adversarial pass): the spec was re-derived independently from both traces and from source. Every user-facing string was re-checked character by character against the rendered DOM and found EXACT — page title, H1, both hint paragraphs, all four labels ('Name', 'Email address', 'Mobile number', 'Agent'), both button labels ('Save and return to hub', 'Save and continue'), the 'Cancel and return to hub' link and its href, backLink '#', and the reference header 'DRAFT.GB.2026.1525990 - CHEDPP'. All four field values and both etag values match verbatim. The full main-form outerHTML was dumped and compared. No invented copy was found in the trace-derived claims. All eight validation messages were independently re-derived from validator + template + label and interpolate exactly as stated; every source line number cited was re-read and is accurate — including the fiddly ones (validator :26-41, messages/en.js :3-5/:31-33/:72/:73/:110, labels/en.js :9/:46/:67/:98, form_actions.js :66-78/:97-118, ReviewNotificationPage.ts :130, ched-pp-workflows.ts :972-973, doa-notification-creation.spec.ts :132-136). NOT ONE citation needed correcting; no factual claim in the previous revision was refuted. An earlier draft of this pass asserted that the EMAIL_OR_TELEPHONE citation was off by one — that assertion was itself wrong and has been withdrawn; the original :73 was correct. The control inventory was re-run and matches the field list exactly, with no missed fields and no missing controls.",
+    "STRUCTURAL CORRECTION (v20): the previous revision embedded paragraphs of meta-commentary INSIDE fields reserved for verbatim rendered copy — secondaryActions[2] and the 'Save and review' structure entry's `text` both held a caveat essay beginning 'Save and review (variant — …'. Any consumer reading those fields as labels (which is their entire purpose in a copy-pinning spec) would have got prose, not a button label. The copy fields now hold ONLY verbatim strings; the variant is modelled properly under the new `variantActions` key and in buttonSets, and per-element caveats moved to a `note` key. No factual claim was lost. Also added: explicit `confidence` on every structure element, a `bodyCopyNote` recording that the two 'body copy' strings are actually hint markup, and a `validationMessagesNote` recording that the message list is user-facing-only rather than an exhaustive schema dump.",
+    "CONFIDENCE CORRECTION (v20): the `required` flags were carried on field objects tagged `confidence: confirmed`, but requiredness is NOT observable in either trace — no input carries an html `required` attribute (verified directly) and the form is `novalidate`, so ALL presence enforcement is server-side and was never seen to fire. Each field now carries an explicit `requiredConfidence: inferred` alongside the `confirmed` tag that covers its rendering. The one genuinely explicit `.required()` in the schema is the etag (common_schemas.js:45-52); `name`'s requiredness is an emergent consequence of Joi's string.empty rather than a declared rule, which is a subtle and fragile thing for a rebuild to inherit unknowingly.",
+    "The evidence pointers are correct — both actions land on the Contact details page (the input-phase snapshot of the 'Save and continue' click), and both traces are genuinely CHED-PP (ched-pp-article72.spec.ts and ched-pp-hmi-checks.spec.ts, 0 errors each). Tooling quirk confirmed: `trace action 49` advertises snapshots 'before, input, after', but `trace snapshot 49 --name before` errors with 'No snapshot found'; the bare `trace snapshot 49` call returns the input-phase snapshot, which is what was used throughout.",
+    "NEITHER trace exercised any validation, AND NO test in the QA automation repo exercises validation on this page either — re-confirmed by an exhaustive grep over tests/, workflows/ and page-objects/. Both sources of truth are silent. Every validationMessage above is `inferred` from the Joi validator — correctly derived, but observed nowhere. If verbatim error copy matters, this page needs a deliberate negative-path test written against the legacy app before the rebuild copies the copy.",
+    "COVERAGE FINDING: this page is a pass-through in 100% of automated journeys, across ALL FOUR CHED types. ContactDetailsPage.ts exposes only three locators — btnSaveAndContinue, btnSaveAndReview, linkChangeContactAddress — and none of them is an input. Neither ChedPPNotificationConfig nor ChedPPCloningConfig has a key for name/email/telephone/agent. So no test has ever typed into this page in any CHED journey. Combined with the happy-path traces, the honest position is: we know what the page RENDERS and that it pre-populates, and we have never seen it REJECT anything.",
+    "The review-amend variant IS exercised by a real CHED-PP test. submitClonedChedPPNotification (ched-pp-workflows.ts:931-1007), run by ched-pp-cloning.spec.ts:15, enters this page via the review page's Change link (#responsible-person-contact-details-change-link, ReviewNotificationPage.ts:130) and clicks 'Save and review' (:973), then immediately operates on the review page again (:975). Three consequences: (a) the 'Save and review' button demonstrably exists and its accessible name is exactly 'Save and review' — corroborated by a green getByRole locator, not just source-reading; (b) the fromImporterReview → review-page routing leg is behaviourally corroborated; (c) we now know the concrete user route into review-amend mode, which the rebuild must provide an equivalent for. The buttonSet remains `inferred` because no trace RENDERED it — but its provenance is stronger than 'source only'.",
+    "The QA suite cannot discriminate the 'prerequisites NOT complete' button set from the 'prerequisites complete' one, so its silence is not evidence. Every CHED workflow interacts with this page via getByRole('button', { name: 'Save and continue' }), a locator that resolves in BOTH sets; there is no locator for 'Save and return to hub' or for the 'Cancel and return to hub' link anywhere in the repo. So the tests would go green under either set. A human should still confirm what 'prerequisites complete' means for CHED-PP (prerequisitesHelper.reviewPagePrerequisitesCompleted — wired in at form_actions.js:11-13) and whether the rebuild needs the distinction at all.",
+    "RESOLVED (was an open question) — 'Save and review' replaces, it does not sit alongside. getAvailableFormActions (utils/form_actions.js:66-78, re-read verbatim this pass) returns [SAVE_AND_REVIEW_ACTION] and NOTHING else when fromImporterReview / fromPartTwoOverview / fromPartTwoInspectorReview is set, and saveButtons.html renders strictly the actions in that array. So on a review-amend entry the page shows 'Save and review' as its SOLE action — 'Save and continue', 'Save and return to hub' AND the 'Cancel and return to hub' link all disappear. Still worth a human's eye on whether the REBUILD wants that behaviour, but it is no longer a question about what the legacy app does.",
+    "RESOLVED (was an open question) — the organisation-address review table is NOT part of this page, for any CHED type. The id #review-table-organisation-address is defined in views/partials/review/organisationAddress.html:20, included by views/partials/common/review.html — the REVIEW page — and is nowhere in views/importer/responsiblePersonContactDetails.html (85 lines, re-checked this pass). There is exactly ONE route and ONE template for this page, shared by all CHED types (routes/routes.js:1146-1153), gated only by isChedD (the caption) and type==='CHEDPP' (the Agent field). ContactDetailsPage.linkChangeContactAddress is simply a misfiled locator on a page object named after this page but operating on another; ched-p-workflows.ts:1342-1344 clicks it after reviewNotification.linkAddContactAddress navigates away. linkChangeContactAddress has exactly ONE caller in the whole repo, ched-p-workflows.ts:1343 — a CHED-P journey — so it is dead code from the CHED-PP point of view and should not be read as a CHED-PP requirement.",
+    "For CHED-PP the transformer's cookie branch is DEAD CODE. `else if (notification.type === CHEDPP)` intercepts before the cookie branch is ever reached. Our traces exercised branch 1 (partOne.contactDetails) or branch 2 (partOne.personResponsible) — and the DOM cannot tell us which, since branch 1 yields agent='' and branch 2 yields agent=undefined, both rendering as value=\"\". Genuine question for a human: for CHED-PP, where is partOne.contactDetails first written, and is the personResponsible fallback ever actually hit in production? The rebuild needs one clear source-of-truth answer, not three branches, one of which is unreachable. QA cannot settle this either — the DoA test observes only the OUTPUT on the review page and is consistent with both branches.",
+    "What IS the 'Agent' field for? Still unresolved, and the QA repo makes it more suspicious rather than less. It is CHED-PP-only, free-text, max 32 chars, optional, has no hint, no autocomplete (the only one of the four inputs without one — re-verified this pass) and no placeholder. No trace fills it (empty in both). No page object exposes it. No config key sets it — checked BOTH ChedPPNotificationConfig and ChedPPCloningConfig. No test asserts it. It is not shown on the review page (ReviewNotificationPage.ts:37-55 surfaces organisation/name/email/telephone/importer only). AND the pre-population transformer can only ever populate it from partOne.contactDetails.agent — i.e. from a previous submission of this same box — never from any upstream system. So it is a field that only ever echoes itself back, is never displayed anywhere else, and is never exercised. A prime candidate for deletion in the rebuild — but a human must confirm it is genuinely dead rather than something a real user relies on off the automated path. Do not assume it relates to DoA 'agents'; that concept is handled by organisation selection (ChedPPNotificationConfig.organisationName), and the DoA test asserts nothing about this field.",
+    "Copy inconsistency to resolve in the rebuild: the field is labelled 'Mobile number', its HTML name is 'telephone', and its max-length error says 'Telephone number'. Three names for one field. Pick one. Corroborating detail: the DoA test's expected value for this field is '0123456789' — a landline-shaped number — so 'Mobile' is arguably the wrong label of the three.",
+    "The Joi schema makes Name effectively required (Joi.string() is optional by default, so an ABSENT key passes; but the form always submits the key and '' trips string.empty, and cleanUpPayload does not strip an empty name the way it strips empty email/telephone). Email/Mobile are only jointly required via .or(). Worth confirming with a human that 'name always, plus at least one of email/mobile' is the intended rule and not an accident of Joi defaults — none of the three carries an HTML `required` attribute and the form is `novalidate`, so all enforcement is server-side, and no test has ever proved it fires.",
+    "The second hint paragraph is dynamic: `We will use these details if your consignment is chosen for inspection${suffix}.` where suffix = ' at a BCP' for high-risk EU CVEDA (getHintText at routes/handlers/importer/responsible_person_contact_details.js:95-98, passed to the view as primaryHintText at :78; the first paragraph is hardcoded at responsiblePersonContactDetails.html:33). For CHED-PP the suffix is empty — consistent with both observed snapshots — because the gate is euChedHelper.isHighRiskEuCveda(notification) and CVEDA is a different notification type. Low risk, but confirm no CHED-PP variant can trigger the BCP suffix. Nothing in the QA suite asserts the hint text in any journey.",
+    "MINOR — a possible id-uniqueness smell worth a glance: ReviewNotificationPage.ts:50 locates the responsible-person telephone as locator('#responsible-contact-telephone').first(), whereas the name (:42) and email (:46) locators need no .first(). Either the id is duplicated on the review page or the .first() is defensive noise. Not a requirement of THIS page, but if the rebuild reuses these ids it should not repeat a duplicate-id bug (which would also be a WCAG failure).",
+    "CITATION HAZARD for future readers/agents: there are TWO different files named responsible_person_contact_details.js — the ROUTE handler at service/src/routes/handlers/importer/ (109 lines; getNextPage, cleanUpPayload, getHintText, getViewContext) and the VALIDATOR at service/src/validation/routes/handlers/importer/ (53 lines; the Joi schema only). All citations in this spec are path-qualified. Similarly in the QA repo there are THREE contact-details-ish page objects — ContactDetailsPage (this page), TransportContactDetailsPage and BillingChangeContactDetailsPage (page-objects/factory.ts:182-194) — do not conflate them; only ContactDetailsPage is this page.",
+    "A 'Contacts' govuk-caption-xl is rendered above the H1 for CHED-D only ({{#if isChedD}} at responsiblePersonContactDetails.html:21-23, with id=page-secondary-title). CHED-PP has NO section caption — confirmed absent in both snapshots (a [class*=govuk-caption] count returned 0 this pass). Flagged because the journey position implies a caption might be expected.",
+    "Routing is FOUR-way: 'Save and return to hub' → importer overview; 'Save and review' + fromImporterReview → IMPORTER_REVIEW_PAGE; 'Save and review' + fromPartTwoOverview or fromPartTwoInspectorReview → BIP_OVERVIEW_PAGE; else → next page (decorated with entry-point query params). See form_actions.js:97-118 (re-read verbatim this pass — it is literally four sequential ifs, with fromPartTwoOverview and fromPartTwoInspectorReview as two separate branches that happen to share a destination). Only the first and the last legs are trace-confirmed; the fromImporterReview leg is QA-corroborated (see above); the BIP_OVERVIEW legs (part-two / inspector entry) are exercised by NEITHER source and remain fully unverified. The rebuild needs a deliberate decision on how much of this entry-point state it carries — the legacy app threads it through both hidden fields (saveButtons.html:1-18) and appended query params (decorateUrl, form_actions.js:124-144)."
+  ]
+}

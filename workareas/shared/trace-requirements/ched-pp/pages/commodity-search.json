@@ -1,0 +1,619 @@
+{
+  "slug": "commodity-search",
+  "name": "Search commodities (commodity code search)",
+  "url": "/notification/vnet/protected/notifications/:draftId/consignment/page-3?tab=commodity-code-search",
+  "urlEvidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee network request 88 — GET https://importnotification-int-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526075/consignment/page-3 (200 OK); request 104 — GET page-3?tab=commodity-code-search (200 OK); request 121 — POST page-3?tab=commodity-code-search (302)",
+  "pageTitle": "Search Commodities",
+  "pageTitleNote": "Verbatim document.title. NOTE: this page does NOT carry the service title suffix that the rest of the journey uses — the very next page's title is 'Select species of commodity - Import and export applications - GOV.UK'. The bare 'Search Commodities' is an inconsistency in the legacy app; the rebuild should use the standard '<page> - <service> - GOV.UK' pattern. Confirmed identical on BOTH tab renders (species render at trace 1f5b6eef action 18 also reports title 'Search Commodities').",
+  "pageTitleEvidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 (document.title === 'Search Commodities'); re-verified trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 (title 'Search Commodities', h1 'Commodity') and action 18 (species render, same title); contrast trace 1f5b6eef snapshot 21 (Page Title: 'Select species of commodity - Import and export applications - GOV.UK')",
+  "caption": "Description of the goods",
+  "heading": "Commodity",
+  "bodyCopy": [
+    "You can only add 500 commodity lines (commodity code and genus/species) to a notification. If you want to add more commodity lines, you can raise another notification."
+  ],
+  "backLink": "none — no .govuk-back-link element rendered on this page (count === 0, verified at trace e10b7cd5… action 20 and trace 1f5b6eef… action 28)",
+  "continueLabel": "Search",
+  "secondaryActions": [
+    "Commodity code search (tab link, href=page-3?tab=commodity-code-search, id=commodity-code-search-tab-link — selected on the code-search render)",
+    "Genus and species search (tab link, href=page-3?tab=species-search, id=species-search-tab-link — selected on bare page-3, which is the DEFAULT landing state)",
+    "All commodities (link, class='govuk-link all-sections-link' — href VARIES BY TAB: 'page-3?tab=commodity-code-search' on the code-search render, bare 'page-3' on the species render)",
+    "Clear (link, id=clear, class='govuk-link clear-link' — SPECIES TAB ONLY, absent from the code-search render)",
+    "Commodity tree drill-down buttons — one code button + one description button per chapter (submit buttons, name=parent_<code>, value=<code>)"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "formModel": {
+    "description": "THREE <form> elements are present in the document. This matters because an earlier reading of this page modelled the search box and the commodity tree as two SEPARATE forms — they are not.",
+    "forms": [
+      {
+        "id": "FORM0",
+        "action": "page-3?tab=commodity-code-search",
+        "method": "post",
+        "controls": ["crumb", "etag", "commodityDetailsPage"],
+        "note": "A bare form rendered BEFORE the tabs, carrying only hidden state and no visible or submitting control. LEGACY SOURCE CONFIRMS IT IS A REAL, STATIC TEMPLATE ELEMENT (v12) — it is hand-authored in consignmentSelect.html:35-39 as a standalone <form> with crumb+etag+commodityDetailsPage and NO submit control. So it is not a JS-injected artefact and not a render accident; but the template gives it no action-side wiring either, so its FUNCTIONAL purpose remains unexplained even in source — a genuine candidate for 'do not port until someone explains it'. Evidence: ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentSelect.html:35-39. Confidence: legacy."
+      },
+      {
+        "id": "FORM1",
+        "action": "page-3?tab=commodity-code-search",
+        "formId": "none — the code-search panel form carries NO id attribute (contrast the species panel form, which is id='species-search-form')",
+        "method": "post",
+        "controls": ["crumb", "etag", "selectedCommodity", "commodityDetailsPage", "commodity-text-input", "action", "parent_06 x2", "parent_07 x2", "parent_08 x2", "parent_09 x2", "parent_10 x2", "parent_12 x2", "parent_14 x2", "parent_25 x2", "parent_38 x2", "parent_84 x2", "parent_87 x2"],
+        "note": "THE page form — it is the govuk-tabs__panel form (id=commodity-code-search-tab). The code search box, the Search button AND all 22 tree drill-down buttons submit through THIS SINGLE FORM to the same action. selectedCommodity carries the current tree position (value='root' at the root view). Which behaviour fires is decided server-side by WHICH submit button's name/value arrives: action=search vs parent_<code>=<code>."
+      },
+      {
+        "id": "FORM2",
+        "action": "/notification/vnet/protected/notifications/cookies",
+        "method": "post",
+        "controls": ["crumb", "returnUrl", "fromFooterHeader", "cookies"],
+        "note": "Cookie-banner form — global page chrome, NOT part of this page's requirements."
+      }
+    ],
+    "confidence": "confirmed",
+    "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — eval over document.querySelectorAll('form') mapping each form's action/method and its full control list; govuk-tabs outerHTML confirms FORM1 opens inside .govuk-tabs__panel. Re-verified independently at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 — form action+id map returns ['page-3?tab=commodity-code-search#noid', 'page-3?tab=commodity-code-search#noid', '/notification/vnet/protected/notifications/cookies#noid'], confirming three forms, the first two both posting to the code-search action, and neither carrying an id.",
+    "tabVariantNote": "SCOPE CORRECTION (v9), EXTENDED IN v11. The forms block above describes the COMMODITY-CODE-SEARCH render only. Only ONE tab panel is ever in the DOM (panel count === 1 on both renders), so FORM1's identity CHANGES with the tab. DIFFERENCES, now enumerated completely from the species panel's outerHTML: (1) panel id — 'commodity-code-search-tab' vs 'species-search-tab'; (2) FORM ACTION — the code-search form posts to 'page-3?tab=commodity-code-search', the species form posts to BARE 'page-3'; (3) FORM ID — the species form is id='species-search-form', the code-search form has no id; (4) the text input — commodity-text-input vs species-text-input; (5) certificateType=CHEDPP is present on the species form ONLY; (6) the species panel has a HINT (#species-search-hint) and an AUTOCOMPLETE CONTAINER (#autocomplete-container); the code-search panel has neither; (7) the species panel has a 'Clear' link (#clear); the code-search panel does not; (8) on the species panel the Search button is WRAPPED IN A js-hidden DIV (div.govuk-!-margin-top-6.js-hidden), so with JS enabled the species tab shows NO Search button at all — on the code-search panel the button is unwrapped and always visible. WHAT IS GENUINELY COMMON TO BOTH: crumb, etag, selectedCommodity=root, commodityDetailsPage, the action=search submit button ITSELF (same name, value and id='commodity-search' — though wrapped differently, see (8)), and ALL 22 parent_<code> tree buttons. So THE COMMODITY TREE IS SHARED ACROSS BOTH TABS — it is not part of the code-search panel, it sits inside whichever panel is rendered, and it renders identically (11 chapters) under species search. A rebuild that models the tree as belonging to code search would be wrong, and a rebuild that models ONE uniform form for both tabs would also be wrong. Evidence: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 (species render) — #species-search-tab outerHTML captured in full; .commodity-tree > li count === 11 and all 22 parent_* buttons present, identical to the code-search render at action 28."
+  },
+  "reachedFrom": {
+    "description": "Reached from 'Description of the goods' (DescriptionOfGoodPage) by choosing the 'Manual entry' radio, clicking 'Save and continue', then clicking the 'Commodity code search' tab link. Choosing 'Upload from CSV' instead BYPASSES this page entirely — the CSV branch goes straight to a file-upload page and never renders commodity-search. This page is therefore conditional on the manual-entry route.",
+    "confidence": "confirmed",
+    "confidenceNote": "The manual-entry route is DIRECTLY OBSERVED in a trace, not merely read off the workflow source: trace 1f5b6eef action 16 = Check getByRole('radio', { name: 'Manual entry' }), action 17 = Click 'Save and continue', action 18 = Click getByRole('link', { name: 'Commodity code search' }), action 19 = Fill 'Enter commodity code'. Re-verified in v11 by dumping the full action timeline. The CSV-bypass half of this claim remains INFERRED — no trace in the evidence set takes the CSV branch.",
+    "evidence": "CONFIRMED (manual entry): trace 1f5b6eef3d110815e713ed79998cec2cb53026ee actions 16, 17, 18, 19 (action timeline re-dumped and verified in v11; action 18's own log shows it resolving <a class=\"govuk-tabs__tab\" id=\"commodity-code-search-tab-link\"> and navigating to page-3?tab=commodity-code-search). INFERRED (CSV bypass): ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:278-301 (isCSVUpload ? csvUpload branch : radioManualEntry -> searchCommodity); radios at page-objects/notification/DescriptionOfGoodPage.ts:6 (radioManualEntry) and :10 (radioUploadFromCSV)"
+  },
+  "reEntryPoints": {
+    "description": "The page is re-entered once per commodity. Second and subsequent commodities are reached from the Commodity Extended Description page via 'Add commodity' (btnAddCommodity), then the 'Commodity code search' tab link again. Tests drive up to three commodities per notification.",
+    "confidence": "confirmed",
+    "confidenceNote": "Directly observed: trace 1f5b6eef action 19 fills the FIRST commodity (06011010, source ched-pp-workflows.ts:300) and action 28 fills the SECOND (06042090, source ched-pp-workflows.ts:336) — the same page rendered twice in one trace. v11 re-dumped the timeline and confirms the full re-entry shape: action 25 = Click link 'Commodity', action 26 = Click button 'Add commodity', action 27 = Click link 'Commodity code search', action 28 = Fill '06042090'. Note the re-entry goes via a 'Commodity' LINK then 'Add commodity' — one step more than the prose above implies.",
+    "evidence": "CONFIRMED: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee actions 19, 25, 26, 27 and 28 (action-detail source lines confirm workflow line 300 then 336). Workflow: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:330-337 (second commodity) and :347-354 (third commodity, only when thirdCommodityCode is set)",
+    "reEntryConditionality": "The re-entry count is governed by two named config flags, which tells us which re-entries are the DEFAULT journey and which are variant-only. Entry 1 (workflows:299-301) is unconditional on the manual-entry route. Entry 2 (workflows:335-337) is gated on `!singleCommodity` — and singleCommodity DEFAULTS TO FALSE, so the DEFAULT CHED-PP journey visits this page TWICE, not once. Entry 3 (workflows:352-354) is gated on `thirdCommodityCode` being truthy, and it defaults to '' — so the third visit is variant-only and fires only in specs that opt in. Net: two visits is the baseline, three is the opt-in maximum, one is the singleCommodity variant. This matters for the rebuild because the trace corpus showing the page twice in one journey is not an accident of sampling — it is the configured default.",
+    "reEntryConditionalityEvidence": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:47 (`singleCommodity?: boolean` — 'Whether the notification is for a single commodity (true) or multiple commodities (false) - defaults to false'), :52 (`thirdCommodityCode?: string` — 'added only when set (default: \\'\\')'), DEFAULT_CONFIG at :138 (singleCommodity: false) and :143-145 (firstCommodityCode: commodityCode.hyacinths, secondCommodityCode: commodityCode.foliageOther, thirdCommodityCode: ''); branch guards at :331 (`if (!singleCommodity)`) and :350 (`if (thirdCommodityCode)`)",
+    "reEntryConditionalityConfidence": "inferred"
+  },
+  "sharedAcrossChedTypes": {
+    "description": "This is NOT a CHED-PP-specific page — the same SearchCommodityPage page object serves all four CHED types. IMPORTANT BEHAVIOURAL DIFFERENCE: CHED-PP and CHED-A click the 'Commodity code search' tab link BEFORE filling the input; CHED-P and CHED-D fill the input directly with no tab click. This implies the tabs (and therefore the 'Genus and species search' mode) are rendered only for the species-bearing CHED types, or that the non-PP types land on the code-search tab by default. The rebuild is CHED-PP-only, but this is evidence about what the tab is FOR.",
+    "confidence": "inferred",
+    "evidence": "shared page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:3; repo-wide grep for linkCommodityCodeSearch returns hits ONLY in ched-pp-workflows.ts:299,:335,:352, ched-a-workflows.ts:272,:951, tests/accessibility/ched-pp-accessibility-tests.spec.ts:45,:69 and tests/accessibility/ched-a-accessibility-tests.spec.ts:37 — zero hits in ched-p-workflows.ts or ched-d-workflows.ts"
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Commodity",
+      "govukComponent": "Heading (govuk-heading-xl govuk-!-margin-bottom-4)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You can only add 500 commodity lines (commodity code and genus/species) to a notification. If you want to add more commodity lines, you can raise another notification.",
+      "govukComponent": "styled with govuk-caption-m govuk-!-margin-bottom-4 — a <p> using a caption class as body copy"
+    },
+    {
+      "element": "tabs",
+      "text": "Contents / Commodity code search / Genus and species search",
+      "govukComponent": "Tabs (govuk-tabs) — h2.govuk-tabs__title 'Contents', two govuk-tabs__list-item; 'Commodity code search' carries govuk-tabs__list-item--selected on the code-search render; each tab is an a.govuk-tabs__tab with an id (commodity-code-search-tab-link / species-search-tab-link); single div.govuk-tabs__panel id=commodity-code-search-tab",
+      "note": "'Contents' does NOT appear in main innerText — h2.govuk-tabs__title is visually hidden by the govuk-tabs component's own CSS at desktop width. It IS in the DOM (verified in the .govuk-tabs outerHTML). Do not conclude from a text dump that it is absent."
+    },
+    {
+      "element": "fieldset",
+      "text": "Search commodities",
+      "govukComponent": "Fieldset (govuk-fieldset) with legend govuk-fieldset__legend--m; legend contains h2.govuk-fieldset__heading. Wrapped by div.search-panel.govuk-!-margin-bottom-6 > div.govuk-form-group"
+    },
+    {
+      "element": "text-input",
+      "text": "Enter commodity code",
+      "govukComponent": "Text input (govuk-input govuk-!-width-one-third), inputmode=numeric, wrapped in its own inner div.govuk-form-group"
+    },
+    {
+      "element": "button",
+      "text": "Search",
+      "govukComponent": "Button (govuk-button govuk-!-margin-bottom-0), submits name=action value=search, id=commodity-search. Carries data-module='govuk-button' and data-prevent-double-click='true'. Sits INSIDE div.search-panel.govuk-!-margin-bottom-6, as a sibling of the form-group — i.e. outside the fieldset."
+    },
+    {
+      "element": "h3",
+      "text": "Find the commodity in the commodity tree",
+      "govukComponent": "Heading (govuk-heading-m) — sits between the two .search-panel divs, inside the form"
+    },
+    {
+      "element": "tree-container",
+      "text": "div.search-panel > div.commodity-selection-breadcrumb — the second .search-panel, wrapping the whole tree area",
+      "govukComponent": "none — bespoke IPAFFS markup. NESTING (corrected v11): div.search-panel > div.commodity-selection-breadcrumb > nav[aria-label='Top Navigation for All commodities'], and that nav contains BOTH the a.govuk-link.all-sections-link ('All commodities') AND div.commodity-list > ul.commodity-tree. The tree is a CHILD of the nav, not a sibling of it — so the 11 nav[aria-label='Buttons section'] landmarks are NESTED INSIDE the 'Top Navigation for All commodities' landmark.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs outerHTML shows the </nav> close tag AFTER div.commodity-list closes; independently verified at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — document.querySelector('nav[aria-label=\"Top Navigation for All commodities\"] nav') is truthy (nested-nav check returns true)"
+    },
+    {
+      "element": "link",
+      "text": "All commodities",
+      "govukComponent": "a.govuk-link.all-sections-link — sits inside div.commodity-selection-breadcrumb > nav[aria-label='Top Navigation for All commodities']. href VARIES BY TAB: 'page-3?tab=commodity-code-search' on the code-search render, bare 'page-3' on the species render."
+    },
+    {
+      "element": "tree",
+      "text": "ul.commodity-tree — 11 chapter rows: 06, 07, 08, 09, 10, 12, 14, 25, 38, 84, 87. Each row is <li> > nav[aria-label='Buttons section'] > div#details-content-<code>-parent[aria-hidden='false'] > p.box-margin > strong.commodity-code-box > button.link-button + span.commodity-description-links-container > button.link-button.commodity-description-link",
+      "govukComponent": "none — bespoke IPAFFS markup"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Tabs",
+      "govukClass": "govuk-tabs",
+      "modifiers": [
+        "govuk-tabs__title",
+        "govuk-tabs__list",
+        "govuk-tabs__list-item",
+        "govuk-tabs__list-item--selected",
+        "govuk-tabs__tab",
+        "govuk-tabs__panel"
+      ],
+      "count": 1,
+      "usage": "Switches between the two commodity search modes — 'Commodity code search' and 'Genus and species search'. Only ONE govuk-tabs__panel is present in the DOM; the tabs are server-rendered links (href=page-3?tab=…), not client-side panel toggles.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs outerHTML shows h2.govuk-tabs__title 'Contents', two li, and a single div.govuk-tabs__panel#commodity-code-search-tab; .govuk-tabs__panel count === 1. Re-confirmed trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 (panelId === 'commodity-code-search-tab') and action 18 (panelId === 'species-search-tab'). Tab link corroborated as a real, driven control by page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:14-16 (linkCommodityCodeSearch — getByRole('link', { name: 'Commodity code search' }), i.e. the tests also see it as a LINK, not a tab)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-fieldset__legend--m",
+        "govuk-fieldset__heading"
+      ],
+      "count": 1,
+      "usage": "Wraps the 'Search commodities' search box; legend doubles as the h2 for the section. The species tab renders the same structure with legend 'Search genus and species of commodity'.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-fieldset__legend count === 1, textContent 'Search commodities'; h2.govuk-fieldset__heading confirmed in the tabs outerHTML. Species variant: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — sole legend is 'Search genus and species of commodity'"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-!-width-one-third"
+      ],
+      "count": 1,
+      "usage": "The 'Enter commodity code' search box.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 (locator resolved to <input value=\"\" type=\"text\" inputmode=\"numeric\" id=\"commodity-code-search\" name=\"commodity-text-input\" class=\"govuk-input govuk-!-width-one-third \">); page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:6-8"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-bottom-0"
+      ],
+      "dataAttributes": [
+        "data-module=\"govuk-button\"",
+        "data-prevent-double-click=\"true\"",
+        "data-govuk-button-init=\"\" (added at runtime by the govuk-frontend JS on init — present on the code-search render, absent on the species render where the button sits in a js-hidden wrapper)"
+      ],
+      "count": 1,
+      "countNote": "Scoped to <main>. Document-wide there are 3 .govuk-button elements — the other two ('Accept Cookies', cookie-banner submit) are page chrome outside main.",
+      "usage": "The 'Search' submit button for the commodity code search. Submits name=action value=search. NOTE data-prevent-double-click='true' — the legacy page relies on the govuk-frontend Button component's double-click guard, which implies the search POST is not idempotent-safe under rapid double submission. A rebuild should decide this deliberately rather than inherit it by accident.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — main .govuk-button count === 1; control inventory BUTTON|submit|action|search|commodity-search. VERBATIM markup captured at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 — <button class=\"govuk-button govuk-!-margin-bottom-0\" id=\"commodity-search\" name=\"action\" value=\"search\" data-module=\"govuk-button\" data-prevent-double-click=\"true\" data-govuk-button-init=\"\">Search</button>. Page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:10-12"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Label for the commodity code input — 'Enter commodity code'.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — document label count === 1, className 'govuk-label ', textContent 'Enter commodity code'"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "js-hidden"
+      ],
+      "count": 0,
+      "countNote": "ZERO on the commodity-code-search render — but ONE on the species-search render (#species-search-hint). See the species-search-hint field entry. A previous revision recorded 'no .govuk-hint element on this page' without scoping it to the tab, which read as a page-wide fact and hid real copy.",
+      "usage": "Not used on the code-search tab. Used on the species tab to give the scientific-name format.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 and trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 — .govuk-hint count === 0 on the code-search render. Contrast trace 1f5b6eef action 18 — .govuk-hint count === 1, id 'species-search-hint'"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 2,
+      "countNote": "CORRECTED v11 — an outer div.govuk-form-group wrapping the fieldset, and an inner div.govuk-form-group (class 'govuk-form-group  ') wrapping the label + input pair. A previous revision recorded count 1.",
+      "usage": "Wraps the fieldset, and again the label + input pair, inside div.search-panel.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs outerHTML shows div.search-panel.govuk-!-margin-bottom-6 > div.govuk-form-group > fieldset.govuk-fieldset > legend + div.govuk-form-group > label + input"
+    },
+    {
+      "component": "Heading / Caption",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-xl",
+        "govuk-heading-m",
+        "govuk-caption-xl",
+        "govuk-caption-m",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 4,
+      "usage": "Section caption 'Description of the goods' (govuk-caption-xl), H1 'Commodity' (govuk-heading-xl govuk-!-margin-bottom-4), H3 'Find the commodity in the commodity tree' (govuk-heading-m), and the 500-line body paragraph (govuk-caption-m govuk-!-margin-bottom-4).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — h1 count 1 (govuk-heading-xl govuk-!-margin-bottom-4 ~ 'Commodity'); h3 count 1 (govuk-heading-m ~ 'Find the commodity in the commodity tree'); .govuk-caption-xl count 1 ~ 'Description of the goods'; .govuk-caption-m count 1 ~ 'You can only add 500 commodity lines…'"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "all-sections-link",
+        "clear-link (species tab only)"
+      ],
+      "count": 1,
+      "countNote": "Scoped to <main> on the CODE-SEARCH render — exactly one, text 'All commodities'. Document-wide there are 8 .govuk-link elements; the other 7 are header/footer/cookie-banner chrome. The species render adds a second in-main govuk-link: 'Clear' (#clear).",
+      "usage": "The 'All commodities' tree-root link.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — main .govuk-link count === 1, texts === 'All commodities'; outerHTML <a class=\"govuk-link all-sections-link\" href=\"page-3?tab=commodity-code-search\">. Species variant href: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — <a class=\"govuk-link all-sections-link\" href=\"page-3\">"
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": [
+        "govuk-grid-column-full"
+      ],
+      "count": 1,
+      "usage": "Page layout — full width, not the usual two-thirds, because of the wide commodity tree.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-grid-column-full count === 1, textContent begins 'Description of the goods Commodity You can o…'"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "ul.commodity-tree / li > nav[aria-label='Buttons section'] > div#details-content-<code>-parent[aria-hidden='false'] > p.box-margin",
+      "whatItDoes": "Renders the hierarchical commodity (CN/HS) code tree. Each chapter row is a list item wrapped in its own <nav> landmark, containing a div whose id follows the pattern details-content-<code>-parent and which carries aria-hidden='false'. Drilling into a chapter is a full server round-trip (form POST on FORM1), which re-renders the tree one level deeper.",
+      "concern": "Entirely bespoke. Four specific problems: (1) every row is its own <nav> landmark named 'Buttons section' — 11 identically-named navigation landmarks on one page is an accessibility smell and misuses the landmark role; (2) STRENGTHENED IN v11 — those 11 navs are NESTED INSIDE another nav landmark ('Top Navigation for All commodities'), so the page presents a navigation landmark containing eleven identically-named navigation landmarks. Nested landmarks of the same role are harder for screen-reader users to navigate than either problem alone, and no previous revision recorded the nesting; (3) the div ids and aria-hidden attributes suggest this markup was derived from a GOV.UK Details/accordion pattern that has been hollowed out — aria-hidden is hardcoded 'false' on every node; (4) navigating the tree costs a page load per level.",
+      "govukAlternative": "There is no Design System tree component. The rebuild should reframe the interaction rather than port the widget — either an autocomplete over the flat commodity-code list (accessible-autocomplete — which THIS PAGE ALREADY USES on its species tab, see the species-text-input entry) or a progressive one-question-per-page drill-down (Radios for chapter, then heading, then code) which is the idiomatic GOV.UK pattern. The commodity tree itself is reference data and should come from a reference-data service, not be hardcoded.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — 11x nav[aria-label='Buttons section'], .commodity-tree count 1, .box-margin/.commodity-code-box/.commodity-description-links-container each count 11, .link-button count 22; first <li> outerHTML captured in full. Re-confirmed trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 (11 chapters). NESTING confirmed at trace 1f5b6eef action 18 — nav aria-label list returns ['Menu', 'Top Navigation for All commodities', then 11x 'Buttons section'] and the nested-nav selector returns true. CORROBORATION: the tree is not merely un-exercised by the traces — it is not modelled by the page object AT ALL. SearchCommodityPage exposes only three locators (input, Search button, tab link); no tree locator exists in the QA repo.",
+      "corroboration": "page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:1-17 — complete file, three locators, no tree control"
+    },
+    {
+      "pattern": "button.link-button (and button.link-button.commodity-description-link) — <button type=\"submit\" name=\"parent_06\" value=\"06\" class=\"link-button\">",
+      "whatItDoes": "A submit button visually styled as a link. Each tree node renders TWO of these with the SAME name/value pair (parent_<code> / <code>) — one for the code, one for the description — so clicking either drills into the same chapter. 22 such buttons on the root view (11 chapters x 2). They submit through the SAME form as the search box (FORM1); the server distinguishes drill-down from search by which submit name arrives (parent_<code> vs action=search).",
+      "concern": "Custom class, not govuk-*. Buttons-styled-as-links is a known GOV.UK anti-pattern where a real link would do; here it is used because drill-down is implemented as a form POST with the target chapter encoded in the button's name attribute (name=parent_06) rather than in a URL. That name-as-payload convention couples the view to the controller's field parsing and is not something to carry forward. Duplicating the same submit control twice per row also doubles the tab stops for keyboard users. Sharing one form between search and drill-down means the submitted payload always carries the other mode's fields too.",
+      "govukAlternative": "If a link is wanted, use a real <a class=\"govuk-link\"> with the chapter in the href (the sibling 'All commodities' link already does exactly this). If a button is genuinely required, govuk-button--secondary or the documented govuk-link styling on a button. Better still, remove the widget per the commodity-tree entry above.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — first tree <li> outerHTML shows both buttons carrying name=\"parent_06\" value=\"06\" (the code button class=\"link-button\", the description button class=\"link-button  commodity-description-link\"); .link-button count === 22; form mapping shows all 22 parent_* buttons inside FORM1 alongside commodity-text-input and action. Re-confirmed trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28"
+    },
+    {
+      "pattern": "govuk-tabs used as server-side navigation — only 1 x .govuk-tabs__panel in the DOM, tab items are hrefs (page-3?tab=commodity-code-search / page-3?tab=species-search)",
+      "whatItDoes": "Presents the two search modes as GOV.UK Tabs, but each tab is a link that reloads the page with a different ?tab= query param; only the selected panel is ever rendered server-side.",
+      "concern": "This is the Tabs component used in a way it is not designed for. The real GOV.UK Tabs component renders ALL panels and toggles them client-side, falling back to in-page anchors without JS. Rendering one panel means the component's JS, its progressive-enhancement story and its anchor-based no-JS fallback are all inapplicable — the markup is borrowed for its appearance only. It also means the tab state lives in a query param, which the rebuild would need to decide about deliberately.",
+      "govukAlternative": "Either use Tabs properly (render both panels, let the component's JS toggle them) or — more idiomatic for GOV.UK — drop tabs entirely and ask 'How do you want to find the commodity?' as a Radios question on its own page, routing to a dedicated code-search or species-search page. Tabs are discouraged for task-based journeys.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs__panel count === 1; .govuk-tabs outerHTML shows both tabs as <a class=\"govuk-tabs__tab\" href=\"page-3?tab=…\"> and a single panel div#commodity-code-search-tab. CORROBORATION: the page object types the tab as a LINK — getByRole('link', { name: 'Commodity code search' }) — not as a tab. The QA repo independently confirms these are navigation links wearing Tabs clothing.",
+      "corroboration": "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:14-16"
+    },
+    {
+      "pattern": "p.govuk-caption-m used for body copy (the 500-commodity-line paragraph)",
+      "whatItDoes": "Renders the '500 commodity lines' constraint message using a caption class rather than govuk-body.",
+      "concern": "Minor, but a semantic/visual mismatch: caption classes are for the small text ABOVE a heading, not for body paragraphs below it. Here it sits under the H1 and reads as body copy.",
+      "govukAlternative": "govuk-body, or govuk-inset-text if the 500-line limit is meant to stand out as a constraint.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-caption-m count === 1, className 'govuk-caption-m govuk-!-margin-bottom-4', textContent begins 'You can only add 500 commodity lines (commodity code and gen…'"
+    },
+    {
+      "pattern": "Bespoke layout/presentation classes present AT THE ROOT VIEW: commodity-selection-breadcrumb (1), all-sections-link (1), commodity-list (1), commodity-tree (1), search-panel (2), box-margin (11), commodity-code-box (11), commodity-description-links-container (11), link-button (22), clear-link (species tab only)",
+      "whatItDoes": "RESOLVED IN v11 — the two .search-panel divs are now explained rather than flagged: the FIRST is div.search-panel.govuk-!-margin-bottom-6 wrapping the search fieldset + Search button; the SECOND is a bare div.search-panel wrapping div.commodity-selection-breadcrumb (the whole tree area). They are not one-panel-per-tab; they are search-box vs tree, and both render on both tabs. commodity-selection-breadcrumb is the OUTER WRAPPER for the tree area — at the root view it contains nav[aria-label='Top Navigation for All commodities'], which itself contains a.govuk-link.all-sections-link ('All commodities') AND div.commodity-list > ul.commodity-tree. box-margin, commodity-code-box and commodity-description-links-container handle tree-row spacing and the boxed code chip.",
+      "concern": "Custom CSS outside the govuk-frontend toolbox. The spacing ones (box-margin, commodity-code-box) are replaceable with govuk-!-* spacing utilities. The naming is misleading: 'commodity-selection-breadcrumb' is a container that at root holds only the single 'All commodities' link — it presumably accrues crumbs as the user drills in, but that drilled-down state is unevidenced (no trace clicks a chapter). Do not assume from the class name alone that a full breadcrumb UI exists.",
+      "govukAlternative": "govuk-!-margin-* / govuk-!-padding-* utilities for spacing; govuk-tag or govuk-body-s for the code chip; the GOV.UK Breadcrumbs component for commodity-selection-breadcrumb if a drill-down path display is retained.",
+      "correctionNote": "CORRECTS TWO EARLIER ERRORS. (1) A revision before v8 asserted that all-sections-link, commodity-list and commodity-selection-breadcrumb 'do NOT appear in the root-level tree view observed — they belong to the drilled-down state'. That is FALSE; all three are present at root. (2) v9 and v10 BOTH left '.search-panel count === 2' flagged as deliberately unresolved, and v10 asserted it 'is NOT resolvable from the QA repo… Answering it requires the template, which is out of scope'. That was wrong — it is fully resolvable from the .govuk-tabs outerHTML already captured in the v8 evidence, which shows both divs and what each wraps. No new source was needed; the answer was already in hand.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — class counts eval: all-sections-link => 1, commodity-list => 1, commodity-selection-breadcrumb => 1, search-panel => 2, box-margin => 11, commodity-code-box => 11, commodity-description-links-container => 11, commodity-tree => 1, link-button => 22; .govuk-tabs outerHTML shows <div class=\"search-panel govuk-!-margin-bottom-6\"> (search box + Search button) and a later bare <div class=\"search-panel\"> (tree). search-panel === 2 re-confirmed on the species render at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 and the code-search render at action 28"
+    }
+  ],
+  "fields": [
+    {
+      "name": "commodity-text-input",
+      "id": "commodity-code-search",
+      "label": "Enter commodity code",
+      "control": "text",
+      "attributes": "type=text, inputmode=numeric, class='govuk-input govuk-!-width-one-third ', no maxlength, no aria-describedby/hint",
+      "required": true,
+      "requiredNote": "Was 'still unevidenced' from the trace/test corpus — no trace or test ever submits this page empty. NOW RESOLVED FROM LEGACY SOURCE (v12): the field IS mandatory when Search is clicked. The Joi schema makes commodity-text-input required-and-numeric conditional on action=search — Joi.when(action, is 'search', then Joi.number().empty('').required(), otherwise Joi.any().forbidden()). Since clicking Search is the only submit path on the code-search tab, the field is effectively required to perform a search.",
+      "requiredLegacy": "REQUIRED ON SEARCH (numeric). Enforced by the frontend Joi validator, not by a persisted data-model @NotNull.",
+      "requiredLegacyEvidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_select.js:15-22 (commoditySchema — COMMODITY_TEXT_INPUT_KEY: Joi.when(ACTION_KEY, { is: ACTION_SEARCH_VALUE, then: Joi.number().empty('').required(), otherwise: Joi.any().forbidden() })); the search-gate in the route handler ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_select.js:76-79 also independently guards `!_.isEmpty(commoditySelectedCode) && !isNaN(commoditySelectedCode)` before looking the code up",
+      "requiredLegacyConfidence": "legacy",
+      "requiredLegacyNote": "This mandatoriness is a UX search-gate ('you must type a code to search'), NOT a persisted data-model policy — CommodityComplement.commodityID in the notification schema carries NO bean-validation @NotNull (~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/CommodityComplement.java:22 is a plain `private String commodityID;`). So the rebuild is free to reframe this as it likes (e.g. an autocomplete that only submits a resolved code); the requiredness is inherent to 'search needs a query', not a rule to port verbatim.",
+      "modelMandatorinessLegacy": "NET-NEW IN v13 — the persisted-model requiredness lives at the COLLECTION level, not on this field. THREE re-verified model facts: (1) PartOne.commodities is a plain `private Commodities commodities;` with NO @NotNull (~/git/defra/ipaffs/…/representation/PartOne.java:345); (2) CommodityComplement.commodityID is a plain String, NO @NotNull (CommodityComplement.java:22); but (3) Commodities.commodityComplement carries @NotNull under NotificationLowRiskFieldValidation (Commodities.java:149-155), which is the 'A commodity must be selected' rule (see validationMessages[]). NET EFFECT: the model mandates 'the notification has at least one selected commodity', and enforces NOTHING about the individual code string. This reconciles the search-gate note above — nothing at the model layer requires THIS input specifically; the requiredness the model cares about is 'the outcome of this page (a selected commodity) exists on the notification'. A CHED-PP rebuild inherits the collection-level rule as real policy; the per-field search-gate is a UX affordance it may reshape freely.",
+      "modelMandatorinessLegacyConfidence": "legacy",
+      "hint": "none ON THE COMMODITY-CODE-SEARCH TAB — .govuk-hint count === 0 on that render, and no maxlength attribute (getAttribute returned null). inputmode=\"numeric\" is the only affordance signalling the expected format. SCOPE CORRECTION (v11): a previous revision phrased this as 'no .govuk-hint element on this page', which is false as a page-wide statement — the SPECIES tab of this same page renders a hint (#species-search-hint, see the species-search-hint entry). The absence is a property of the code-search tab only. The three trace-observed values are 8-digit CN codes, but the test suite also drives 10-digit codes through this field (see formatNote) — so the absent hint is hiding a genuinely variable-length format, and the sibling tab demonstrates the app already knows how to render a format hint here.",
+      "observedValues": [
+        "08059000",
+        "06011010",
+        "06042090"
+      ],
+      "testDrivenValues": [
+        "06011010 (hyacinths — CHED-PP workflow default firstCommodityCode)",
+        "06042090 (foliageOther — CHED-PP workflow default secondCommodityCode)",
+        "08059000 (hmiOnlyCIDAC — HMI checks spec)",
+        "14019000 (adenariaFloribunda — third commodity in multi-commodity specs)",
+        "10083000 (canarySeed — main notification + EU harmonisation specs)",
+        "09081100 (nutmeg)",
+        "0808108010 (fruitAndNuts — TEN digits, article 72 spec)",
+        "0603197090 (cutFlowers — TEN digits, date-validation + article 72 specs)",
+        "0713500010 (broadBeans — TEN digits, EU harmonisation spec)",
+        "87019510 (tractorsWheeled — chapter 87, EU harmonisation spec)",
+        "84321000 (ploughs — chapter 84, main notification spec)"
+      ],
+      "formatNote": "IMPORTANT SCOPE POINT — the three trace-observed values are all 8-digit CN codes, but that is an artefact of which traces we have, NOT a format rule. The CHED-PP test suite drives BOTH 8-digit (06011010, 84321000, 10083000) and 10-digit (0808108010, 0603197090, 0713500010) codes through this same input, and all are expected to resolve. The field therefore accepts at least 8- and 10-digit numeric codes. Any rebuild that validates a fixed length of 8 would reject codes the current service accepts. Note also that chapters 84 (ploughs) and 87 (wheeled tractors) are non-plant chapters — machinery/vehicles that carry soil-borne plant-health risk — which independently corroborates why the 11-chapter tree includes them.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — locator resolved to <input value=\"\" type=\"text\" inputmode=\"numeric\" id=\"commodity-code-search\" name=\"commodity-text-input\" class=\"govuk-input govuk-!-width-one-third \">; hint/maxlength re-verified at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 (.govuk-hint => 0, maxlength => null). Values observed: trace e10b7cd5… action 20 fill '08059000'; trace 1f5b6eef… action 19 fill '06011010', action 28 fill '06042090'. Page object: ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:6-8 (getByRole('textbox', { name: 'Enter commodity code' })) — the accessible name matches the trace label exactly.",
+      "testDrivenValuesEvidence": "vocabulary ~/git/defra/ipaffs/ipaffs-qa-automation/types/commodity-code.ts:1-21 (verified: fruitAndNuts '0808108010' L16, cutFlowers '0603197090' L17, broadBeans '0713500010' L18, tractorsWheeled '87019510' L19, ploughs '84321000' L20); CHED-PP usages tests/notification/ched-pp/ched-pp-article72.spec.ts:26,72; ched-pp-eu-harmonisation.spec.ts:23,24,54,56; ched-pp-date-validation.spec.ts:15,29,43,56,72,85,98,111,123,135; ched-pp-notification.spec.ts:24,57,89,154; ched-pp-hmi-checks.spec.ts:22; workflow defaults workflows/notification/ched-pp-workflows.ts:143-145",
+      "testDrivenValuesConfidence": "inferred"
+    },
+    {
+      "name": "action",
+      "id": "commodity-search",
+      "label": "Search",
+      "control": "submit-button",
+      "submittedValue": "search",
+      "required": false,
+      "renderedMarkup": "<button class=\"govuk-button govuk-!-margin-bottom-0\" id=\"commodity-search\" name=\"action\" value=\"search\" data-module=\"govuk-button\" data-prevent-double-click=\"true\" data-govuk-button-init=\"\">Search</button>",
+      "markupCorrectionNote": "CORRECTED v11 — FABRICATED QUOTE REMOVED. A previous revision presented this control's markup as `<button value=\"search\" type=\"submit\" name=\"action\" id=\"commodity-search\" class=\"govuk-button govuk-!-margin-bottom-0\">`. That string does not appear in the DOM. It (a) invents a `type=\"submit\"` attribute the element does not carry — the element has NO type attribute and relies on the HTML default; the control inventory reports type 'submit' because that is the resolved DOM PROPERTY, not a rendered attribute — and (b) silently drops three real attributes: data-module=\"govuk-button\", data-prevent-double-click=\"true\" and data-govuk-button-init=\"\". The dropped data-prevent-double-click is behaviourally significant (see govukComponents > Button). The verbatim markup is now in renderedMarkup above, captured by outerHTML.",
+      "conditionalOn": "Rendered on BOTH tabs with the same name, value and id — but WRAPPED DIFFERENTLY. On the commodity-code-search tab it sits unwrapped inside div.search-panel.govuk-!-margin-bottom-6 and is always visible. On the species-search tab it is wrapped in <div class=\"govuk-!-margin-top-6 js-hidden\">, so with JavaScript enabled it is HIDDEN and the autocomplete drives the search instead.",
+      "note": "The Search button is not merely a submit affordance: it contributes a named field (action=search) to the POST payload. Because the tree drill-down buttons share the SAME form (see formModel), the server discriminates 'the user searched' from 'the user drilled into a chapter' by which submit name is present — action=search vs parent_<code>=<code>. Any rebuild that reads the form model off this page must account for that discriminator, or it will mis-route the two behaviours.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory: BUTTON|submit|action|search|commodity-search; form mapping places it in FORM1 immediately after commodity-text-input. VERBATIM outerHTML captured at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28. Species-tab js-hidden wrapper: trace 1f5b6eef action 18 — #species-search-tab outerHTML shows <div class=\"govuk-!-margin-top-6 js-hidden\"> enclosing the button. Driven at trace e10b7cd5… action 21 and trace 1f5b6eef… actions 20 and 29 (Click getByRole('button', { name: 'Search' })); page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:10-12"
+    },
+    {
+      "name": "parent_<chapterCode> (e.g. parent_06, parent_07, parent_08)",
+      "label": "Commodity tree chapter drill-down — 11 chapters observed at the root, each rendering two submit buttons with the same name/value: the code (e.g. '06') and the description (e.g. 'LIVE TREES AND OTHER PLANTS; BULBS, ROOTS AND THE LIKE; CUT FLOWERS AND ORNAMENTAL FOLIAGE')",
+      "control": "submit-button",
+      "controlNote": "A revision before v8 recorded this as \"control\": \"radio\" with confidence 'confirmed'. That was wrong. These are <button type=\"submit\" name=\"parent_06\" value=\"06\" class=\"link-button\"> elements — and unlike the Search button, these DO carry an explicit type=\"submit\" attribute. There is no radio input anywhere on this page. The distinction matters: radios would be a single-select field posted with the form, whereas these are 22 individual submit buttons where only the CLICKED one contributes to the payload.",
+      "required": false,
+      "options": [
+        "06 LIVE TREES AND OTHER PLANTS; BULBS, ROOTS AND THE LIKE; CUT FLOWERS AND ORNAMENTAL FOLIAGE",
+        "07 EDIBLE VEGETABLES AND CERTAIN ROOTS AND TUBERS",
+        "08 EDIBLE FRUIT AND NUTS; PEEL OF CITRUS FRUIT OR MELONS",
+        "09 COFFEE, TEA, MATÉ AND SPICES",
+        "10 CEREALS",
+        "12 OIL SEEDS AND OLEAGINOUS FRUITS; MISCELLANEOUS GRAINS, SEEDS AND FRUIT; INDUSTRIAL OR MEDICINAL PLANTS; STRAW AND FODDER",
+        "14 VEGETABLE PLAITING MATERIALS; VEGETABLE PRODUCTS NOT ELSEWHERE SPECIFIED OR INCLUDED",
+        "25 SALT; SULPHUR; EARTHS AND STONE; PLASTERING MATERIALS, LIME AND CEMENT",
+        "38 MISCELLANEOUS CHEMICAL PRODUCTS",
+        "84 NUCLEAR REACTORS, BOILERS, MACHINERY AND MECHANICAL APPLIANCES; PARTS THEREOF",
+        "87 VEHICLES OTHER THAN RAILWAY OR TRAMWAY ROLLING STOCK, AND PARTS AND ACCESSORIES THEREOF"
+      ],
+      "optionsVerified": "RE-VERIFIED INDEPENDENTLY IN v11 — all 11 codes and descriptions re-transcribed a third time from document.querySelector('main').innerText at trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 and cross-checked character-by-character against the .govuk-tabs outerHTML button text. Exact match including the accented 'MATÉ' in chapter 09 and the semicolon punctuation throughout. Chapter count re-confirmed as 11 at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 (.commodity-tree > li => 11) and at action 18 (species render, also 11).",
+      "optionsTruncated": false,
+      "optionCount": 11,
+      "observedValues": [],
+      "conditionalOn": "Always shown, on BOTH tabs (see formModel.tabVariantNote — the tree is not code-search-specific). This is the CHED-PP-filtered chapter list — 11 CN/HS chapters, NOT the full customs tariff. It is reference data and the new app should source it from a reference-data service rather than hardcode it. NOTE: no trace in this corpus ever clicked a tree node — the control is captured from the rendered DOM only; the drill-down behaviour beyond level 1 is unevidenced.",
+      "corroborationNote": "SECOND SOURCE AGREES IT IS DEAD SURFACE: the page object does not model the tree at all — SearchCommodityPage exposes exactly three locators (input, Search button, tab link) and nothing for the tree. So the tree is un-exercised by BOTH the trace corpus and the entire QA suite. That strengthens the finding: this is the largest widget on the page and no automated coverage touches it. Separately, the chapter list is corroborated as real by the codes the tests DO drive — 84321000 lands in chapter 84 and 87019510 in chapter 87, 14019000 in chapter 14, 10083000 in chapter 10, 09081100 in chapter 09, 08059000/0808108010 in chapter 08, 0713500010 in chapter 07, 06011010/06042090/0603197090 in chapter 06. Test-driven codes cover 8 of the 11 chapters; chapters 12, 25 and 38 are driven by nothing.",
+      "chedTypeFilterCorroboration": "INDEPENDENT EVIDENCE THAT THE 11 CHAPTERS ARE A CHED-TYPE FILTER, NOT A FIXED LIST. The SAME page object serves all four CHED types, and the OTHER types drive commodity codes whose chapters DO NOT EXIST in the 11-chapter tree rendered on the CHED-PP journey: CHED-A drives hatchingEggs '05119190' → chapter 05, and CHED-P drives boneless '020130' → chapter 02 and domesticLamb '0204100010' → chapter 02 and carpFish '03019230' → chapter 03. Chapters 02, 03 and 05 are absent from the CHED-PP tree. Since the same page must resolve those codes for those types, the chapter set the tree renders MUST be filtered per certificate type server-side. This is the strongest available evidence that the tree is CHED-type-scoped reference data and must come from a reference-data service in the rebuild rather than be hardcoded as 'the 11 plant chapters'. (Note CHED-D's brokenRice '10064000' → chapter 10 DOES fall inside the PP tree — a coincidence of overlapping chapters, not a counter-example.) DIRECT DOM CORROBORATION ADDED v11: the species tab posts certificateType=CHEDPP, i.e. the page demonstrably carries the certificate type as server-side state on this very page — which is exactly the input such a filter would need.",
+      "chedTypeFilterEvidence": "vocabulary ~/git/defra/ipaffs/ipaffs-qa-automation/types/commodity-code.ts:2 (boneless '020130'), :3 (domesticLamb '0204100010'), :5 (carpFish '03019230'), :9 (hatchingEggs '05119190'), :6 (brokenRice '10064000'); driven through the SAME SearchCommodityPage at workflows/notification/ched-a-workflows.ts:952, ched-p-workflows.ts:681 and :867, ched-d-workflows.ts:207; shared page object page-objects/notification/SearchCommodityPage.ts:6-8",
+      "chedTypeFilterConfidence": "inferred",
+      "confidence": "confirmed",
+      "confidenceScope": "CONFIRMED = these buttons and these 11 labels are rendered. What a click DOES is a gap — no trace or test clicks one. The chedTypeFilter reasoning above is INFERRED, not confirmed (tagged separately as chedTypeFilterConfidence).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory lists BUTTON|submit|parent_XX|XX for each of 06,07,08,09,10,12,14,25,38,84,87 exactly twice (22 rows, re-run and counted in v11); main innerText carries the 11 code+description lines; first <li> outerHTML confirms button[type=submit][name=parent_06][value=06]. Re-confirmed trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28. Absence from page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:1-17"
+    },
+    {
+      "name": "Commodity code search (tab link)",
+      "id": "commodity-code-search-tab-link",
+      "label": "Commodity code search",
+      "control": "link",
+      "href": "page-3?tab=commodity-code-search",
+      "required": false,
+      "conditionalOn": "Clicked on EVERY entry to this page in the CHED-PP journey — the workflow never assumes the code-search tab is the default; it always clicks the link first. This is NECESSARY, not defensive: bare page-3 serves the SPECIES tab (see openQuestions). Also clicked by CHED-A, but NOT by CHED-P or CHED-D, which fill the input directly.",
+      "confidence": "confirmed",
+      "confidenceNote": "The click is DIRECTLY OBSERVED: trace 1f5b6eef action 18 = Click getByRole('link', { name: 'Commodity code search' }), immediately before the action-19 fill, and again at action 27 before the action-28 fill. The rendered anchor is also directly captured. Only the cross-CHED comparison (that P and D do not click it) remains inferred from source.",
+      "evidence": "CONFIRMED rendered: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs outerHTML: <a class=\"govuk-tabs__tab\" id=\"commodity-code-search-tab-link\" href=\"page-3?tab=commodity-code-search\">Commodity code search</a>, whose <li> carries govuk-tabs__list-item--selected. CONFIRMED clicked: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee actions 18 and 27; action 18's log records the resulting navigation to '…/consignment/page-3?tab=commodity-code-search'. INFERRED (cross-CHED): ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/SearchCommodityPage.ts:14-16 (linkCommodityCodeSearch); driven at workflows/notification/ched-pp-workflows.ts:299, :335, :352 and tests/accessibility/ched-pp-accessibility-tests.spec.ts:45, :69"
+    },
+    {
+      "name": "Genus and species search (tab link)",
+      "id": "species-search-tab-link",
+      "label": "Genus and species search",
+      "control": "link",
+      "href": "page-3?tab=species-search",
+      "required": false,
+      "conditionalOn": "Rendered on the page and NEVER deliberately followed by any test — but it is the DEFAULT SELECTED TAB on bare page-3, so its panel IS rendered and IS captured in the corpus.",
+      "confidence": "confirmed",
+      "confidenceNote": "Because bare page-3 defaults to THIS tab, its panel is fully rendered in the input-state of trace 1f5b6eef action 18 and can be read directly. What remains genuinely unknown is the tab's BEHAVIOUR (what a species search returns, what it validates) — no trace or test ever types into it or submits it. The panel's STRUCTURE is confirmed.",
+      "evidence": "CONFIRMED rendered: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-tabs outerHTML: <a class=\"govuk-tabs__tab\" id=\"species-search-tab-link\" href=\"page-3?tab=species-search\">Genus and species search</a>. CONFIRMED as the DEFAULT panel: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — document.querySelector('.govuk-tabs__panel').id === 'species-search-tab' (re-run independently in v11). NOT DRIVEN: a repo-wide grep for 'species search' / 'Genus' / 'tab=species' (case-insensitive) across page-objects/, tests/ and workflows/ in ~/git/defra/ipaffs/ipaffs-qa-automation returns ZERO hits.",
+      "evidenceRetrievalNote": "PRACTICAL NOTE FOR FUTURE MINERS — the species render is reachable via `trace snapshot 18` with NO --name flag (the default resolves to the 'input' snapshot, which is the bare page-3 DOM). `trace snapshot 18 --name before` ERRORS with 'No snapshot found for action 18' even though `trace action 18` lists before/input/after as available. Earlier revisions cite this render as the 'before-state'; the claims are correct but the retrieval recipe in those citations does not reproduce. Use the default snapshot.",
+      "note": "The link is never CLICKED by any test because the journey already lands on it — the tests click AWAY from it to reach code search."
+    },
+    {
+      "name": "species-text-input",
+      "id": "species-search",
+      "label": "Enter genus and species",
+      "control": "text",
+      "attributes": "class='govuk-input js-hidden ' — carries NO type attribute (defaults to text), unlike the code-search input which sets type=\"text\" explicitly. Also carries NO inputmode. Wrapped in <div class=\"govuk-!-width-one-third\" id=\"autocomplete-container\">.",
+      "required": true,
+      "requiredLegacy": "REQUIRED ON SEARCH. When the species tab's Search fires (action=search) the Joi speciesSchema makes species-text-input required. For CHED-PP the empty-submit error is 'Enter a genus and species'; for the non-CHED-PP variants it is 'Enter a species'.",
+      "requiredLegacyEvidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_select.js:28-47 (speciesSchema — SPECIES_TEXT_INPUT_KEY: Joi.when(ACTION, is search, then Joi.when(CERTIFICATE_TYPE, is CHEDPP, then Joi.string().empty('').required().messages({ any.required: requiredMessage(GENUS_AND_SPECIES, A) }), otherwise requiredMessage(SPECIES, A))); resolved copy via ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:31-33 (requiredMessage = `Enter ${article} ${label.toLowerCase()}`) and labels/en.js:2 (A: 'a'), :58 (GENUS_AND_SPECIES: 'Genus and Species'), :95 (SPECIES: 'Species')",
+      "requiredLegacyConfidence": "legacy",
+      "requiredLegacyNote": "As with the code field this is a search-gate requiredness, not a persisted data-model @NotNull. The species tab's behaviour is otherwise a gap (nothing types into it in the corpus); the legacy source gives us its EMPTY-SUBMIT validation copy but not what a populated species search returns.",
+      "conditionalOn": "The 'Genus and species search' tab (?tab=species-search) — which is the DEFAULT tab on bare page-3.",
+      "confidence": "confirmed",
+      "note": "THIS PAGE ALREADY IMPLEMENTS THE AUTOCOMPLETE PATTERN — UPGRADED FROM SPECULATION IN v11. v9 inferred 'near-certainly accessible-autocomplete' from the js-hidden class alone and said it was 'worth confirming against the template'. No template read is needed: the input's own wrapper is literally <div class=\"govuk-!-width-one-third\" id=\"autocomplete-container\">, and THREE sibling elements carry js-hidden in the same panel (the input, its hint, and the div wrapping the Search button). That is the complete accessible-autocomplete progressive-enhancement signature: the no-JS form controls are hidden by CSS and JS mounts an enhanced widget into #autocomplete-container. The code-search input has no js-hidden and no autocomplete container (jsHiddenCount === 0, #autocomplete-container count === 0 on that tab), so the two tabs are progressively enhanced DIFFERENTLY. CONSEQUENCE FOR THE REBUILD: the nonStandardPatterns entries recommend replacing the bespoke commodity tree with an autocomplete — this page shows the legacy app ALREADY does exactly that for genus/species, so the pattern is proven in-service and need not be designed from scratch. What the widget fetches and how it is populated is still unevidenced (a gap).",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 (default/input snapshot, bare page-3) — #species-search-tab outerHTML: <div class=\"govuk-!-width-one-third\" id=\"autocomplete-container\"><input class=\"govuk-input js-hidden \" id=\"species-search\" name=\"species-text-input\" value=\"\"></div>; label query returns exactly one label, 'Enter genus and species'; legend query returns exactly one legend, 'Search genus and species of commodity'; #autocomplete-container count === 1. Contrast trace 1f5b6eef action 28 (code-search tab): .js-hidden count === 0 and #autocomplete-container count === 0.",
+      "behaviourConfidence": "gap — the input is confirmed rendered, but nothing types into it in any trace and no test references it, so what a species search DOES, what it returns, and what it validates are all unevidenced."
+    },
+    {
+      "name": "species-search-hint",
+      "id": "species-search-hint",
+      "label": "(hint for species-text-input)",
+      "control": "hint",
+      "copy": "Use the full scientific name. This will be in Latin, for example, Prunus dulcis",
+      "attributes": "class='govuk-hint js-hidden', id='species-search-hint'",
+      "required": false,
+      "conditionalOn": "The 'Genus and species search' tab only — the commodity-code-search tab renders NO hint (.govuk-hint count === 0).",
+      "confidence": "confirmed",
+      "note": "NET-NEW IN v11 — REAL VERBATIM COPY THAT EVERY PREVIOUS REVISION MISSED. v8/v9/v10 all recorded 'no .govuk-hint element on this page (query returned 0)', a query run only against the code-search render and then generalised to the whole page. The species tab carries a hint with real user-facing copy. This is the ONLY format guidance anywhere on this page, and it is a useful precedent for the rebuild: the legacy service DOES explain the expected format for the species field (scientific/Latin name, worked example 'Prunus dulcis') while explaining NOTHING about the commodity-code format — which sharpens the existing open question about the code field's missing hint. NOTE the hint itself carries js-hidden, so with JS enabled it is hidden along with the plain input and is presumably re-presented by the autocomplete widget; the hint copy is therefore what a NO-JS user sees.",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — .govuk-hint query returns exactly one element: id 'species-search-hint', textContent 'Use the full scientific name. This will be in Latin, for example, Prunus dulcis'; #species-search-tab outerHTML shows <div class=\"govuk-hint js-hidden\" id=\"species-search-hint\"> between the label and #autocomplete-container. ABSENT on code-search: trace 1f5b6eef action 28 and trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-hint count === 0.",
+      "openQuestion": "The hint is NOT wired to the input by aria-describedby — the input carries no aria-describedby attribute despite the hint having an id that exists precisely to be referenced. If real, that is an accessibility defect in the legacy markup (screen-reader users would not hear the hint) and the rebuild must not copy it. Flagged as a gap: the no-JS state is what is captured here and the enhanced widget may wire it up at runtime."
+    },
+    {
+      "name": "Clear (link)",
+      "id": "clear",
+      "label": "Clear",
+      "control": "link",
+      "href": "/notification/vnet/protected/notifications/:draftId/consignment/page-3?tab=species-search",
+      "attributes": "class='govuk-link clear-link', id='clear'",
+      "required": false,
+      "conditionalOn": "SPECIES TAB ONLY — absent from the commodity-code-search render (#clear count === 0). Sits inside the same <div class=\"govuk-!-margin-top-6 js-hidden\"> as the species tab's Search button, so it too is hidden when JS is enabled.",
+      "confidence": "confirmed",
+      "note": "NET-NEW IN v11 — a MISSED CONTROL. No previous revision recorded it, and v9's tabVariantNote claimed to enumerate the code-search/species differences without mentioning it. Behaviourally it is a plain link back to the same tab's URL with no query state — i.e. 'reset this search' implemented as a page reload, the same trick the 'All commodities' link uses to reset the tree. Worth noting for the rebuild only as evidence of the legacy pattern (reset-by-navigation); a GOV.UK rebuild would not normally offer a Clear affordance next to a single text input.",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — document.querySelector('#clear').outerHTML === <a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1526075/consignment/page-3?tab=species-search\" id=\"clear\" class=\"govuk-link clear-link\">Clear</a>. ABSENT on code-search: trace 1f5b6eef action 28 — #clear count === 0."
+    },
+    {
+      "name": "certificateType",
+      "label": "(hidden) the CHED type this notification is for",
+      "control": "hidden",
+      "required": false,
+      "observedValue": "CHEDPP",
+      "conditionalOn": "ASYMMETRIC — present on the species-search tab's form ONLY. It is NOT rendered on the commodity-code-search tab.",
+      "confidence": "confirmed",
+      "note": "A hidden field the pre-v9 formModel missed entirely, and the asymmetry is the finding. The species-search form posts certificateType=CHEDPP; the code-search form posts no such field. That is direct evidence for the open question about this page being shared across CHED types: the species-search mode needs to know WHICH CHED type it is filtering the genus/species list for, whereas code search does not (a commodity code is self-identifying). It corroborates the inference that the tab strip is a property of the species-bearing CHED variants (PP/A) rather than of the commodity page in general. A rebuild that models one uniform form for both tabs would be wrong.",
+      "evidence": "PRESENT (species tab): trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 — #species-search-tab outerHTML: <input name=\"certificateType\" type=\"hidden\" value=\"CHEDPP\"> (re-verified independently in v11). ABSENT (code-search tab): trace 1f5b6eef action 28 — document.querySelectorAll('input[name=certificateType]').length === 0. Re-confirmed against trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20's control inventory, which likewise has no certificateType."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) CSRF token",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory: INPUT|hidden|crumb present in FORM0 and FORM1 (the page's own forms) and again in FORM2 (the cookie-banner form), i.e. 3 occurrences document-wide, 2 within this page's forms. Value is a per-session CSRF token and is deliberately NOT transcribed here."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) optimistic-concurrency etag for the draft notification",
+      "control": "hidden",
+      "required": false,
+      "observedValueShape": "a quoted hex string, e.g. \"0000000000BD2B4B\"",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory: INPUT|hidden|etag in FORM0 and FORM1 (x2, one per page form); tabs outerHTML shows <input name=\"etag\" type=\"hidden\" value=\"&quot;0000000000BD2B4B&quot;\">. A DIFFERENT etag value is carried by a different draft in trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 (\"0000000000BD3048\"), consistent with it being per-draft state rather than a constant."
+    },
+    {
+      "name": "commodityDetailsPage",
+      "label": "(hidden) commodity details page state — carried on both of the page's forms, on both tabs",
+      "control": "hidden",
+      "required": false,
+      "observedValue": "\"\" (empty on both forms at every observed render, code-search and species alike)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory: INPUT|hidden|commodityDetailsPage in FORM0 and FORM1, value empty in both. Also present and empty on the species form: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18.",
+      "note": "Never observed non-empty. Its purpose is unevidenced — like FORM0, a candidate for 'do not port until someone explains it'."
+    },
+    {
+      "name": "selectedCommodity",
+      "label": "(hidden) the current position in the commodity tree",
+      "control": "hidden",
+      "required": false,
+      "observedValue": "root",
+      "conditionalOn": "Present on FORM1 — the govuk-tabs__panel form that contains BOTH the search box and the tree buttons. Present on the species panel's form too, also value 'root'.",
+      "confidence": "confirmed",
+      "correctionNote": "CORRECTS AN EARLIER ERROR. A revision before v8 claimed this was 'Present on the commodity-tree form only (the second of the two forms on the page)', implying the tree had its own form distinct from the search form. There is no such separate form — see formModel. selectedCommodity sits in the SAME form as commodity-text-input. Its observed value 'root' is the substantive finding: tree position is carried as posted state, not in the URL, which is how the server knows which level to re-render on a parent_<code> submit.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory: INPUT|hidden|selectedCommodity|root; .govuk-tabs outerHTML shows <input name=\"selectedCommodity\" type=\"hidden\" value=\"root\"> inside the panel form; form mapping confirms it in FORM1 alongside commodity-text-input and all parent_* buttons. Value 'root' re-confirmed on re-entry at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28, and on the species render at action 18."
+    }
+  ],
+  "chromeControlsExcluded": {
+    "description": "The control inventory also returns cookie-banner chrome that is NOT part of this page's requirements: BUTTON|submit|accept-cookies ('Accept Cookies'), BUTTON|submit|cookies|id=button-cookies, and FORM2's crumb / returnUrl / fromFooterHeader. Listed here only so a future reader diffing the raw inventory against fields[] does not mistake them for missed fields. Also excluded: the page header 'Menu' navigation (links 'Create notification', 'Record decision', 'Record control') and the Beta banner.",
+    "confidence": "confirmed",
+    "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — control inventory + form mapping (FORM2 action=/notification/vnet/protected/notifications/cookies); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 18 default snapshot — a11y tree shows the banner/Service information region and navigation 'Menu'"
+  },
+  "accessibilityRequirement": {
+    "description": "THE ONLY ASSERTED REQUIREMENT THE QA SUITE MAKES ABOUT THIS PAGE. The CHED-PP accessibility spec runs an axe-core scan on this page at BOTH renders (first commodity and second commodity) and the suite fails if it reports even one violation.",
+    "rule": "The page must produce ZERO axe-core violations under tags wcag2a + wcag2aa + wcag21a + wcag21aa, with the rule 'aria-allowed-attr' globally disabled.",
+    "threshold": "maxViolations: 0, failOnViolations: true — the defaults, which apply here because the CHED-PP spec imports setAccessibilityConfig but never calls it (the import carries an eslint-disable for no-unused-vars, confirming it is dead). Violations are collected per page and asserted after the test via the fixture, so this is a soft-collect / hard-assert pattern, not a per-page throw.",
+    "whenScanned": "AFTER the 'Commodity code search' tab click and AFTER the input is filled, but BEFORE Search is clicked. So the scanned DOM is the code-search tab with a populated input and the full 11-chapter tree rendered — i.e. exactly the state this spec documents. The species-search tab is NEVER scanned (no test ever rests on it) — which means the species hint's missing aria-describedby (see the species-search-hint entry) would never be caught by this suite even if the rule that catches it were in scope.",
+    "confidence": "inferred",
+    "confidenceNote": "INFERRED, not confirmed — this is read entirely off test source. No trace in the evidence set contains an axe run or its result, so we have not OBSERVED the page passing; we have only observed that a spec asserts it must.",
+    "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:45-48 ('Search Commodity Page (first)' — tab click, fill hyacinths, checkPageAccessibility at :47, Search at :48) and :69-72 ('Search Commodity Page (second)' — same shape, foliageOther, scan at :71); rule set + disabled rule at utils/accessibility-utils.ts:118 (new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).disableRules(['aria-allowed-attr'])); defaults at utils/accessibility-utils.ts:20-24 (maxViolations 0, failOnViolations true); threshold assertion at utils/accessibility-utils.ts:89-105 (assertAccessibilityThreshold) wired in at fixtures/accessibility.ts:24 (reset) and :32 (assert); dead setAccessibilityConfig import at tests/accessibility/ched-pp-accessibility-tests.spec.ts:13",
+    "doesNotVindicateTheTree": "IMPORTANT — DO NOT READ THIS AS AN ALL-CLEAR FOR THE BESPOKE MARKUP. The scan passing does NOT clear the concerns raised in nonStandardPatterns. The chief tree complaint is 11 identically-named nav[aria-label='Buttons section'] landmarks NESTED inside a twelfth nav; the axe rule that catches that is 'landmark-unique', which is tagged best-practice / cat.semantics — NOT wcag2a/wcag2aa/wcag21a/wcag21aa — so it is OUTSIDE the tag filter this suite applies and would never fire. Likewise the duplicated tab stops (22 buttons for 11 chapters) are a usability defect no automated rule detects. The correct reading is: the page is asserted to clear automated WCAG A/AA, and the tree's accessibility problems are of a kind automated scanning does not catch. A rebuild should not cite this green scan as evidence the tree is fine.",
+    "ariaAllowedAttrCaveat": "The globally-disabled rule 'aria-allowed-attr' is disabled for a documented reason unrelated to this page (govuk-frontend v6 adds aria-expanded to conditional radio inputs at runtime — third-party, IMTA-20937). But note this page renders div#details-content-<code>-parent[aria-hidden='false'] on every tree node, which is exactly the sort of markup an aria rule might have something to say about. The suppression is global, so we cannot tell from the green scan whether this page would pass with it enabled. Flagged, not resolved."
+  },
+  "validationMessagesLegacyNote": "NET-NEW IN v12, EXTENDED IN v13 — validation copy recovered from the AUTHORISED legacy IPAFFS source. The trace/test corpus rendered ZERO error states on this page (the '(none observed)' gap entry below is retained and remains true OF THE CORPUS). The messages below were NOT observed rendering. TWO SOURCE LAYERS now, distinct in origin: (a) FRONTEND — the Joi validator (consignment_select.js) + its message/label builders and two inline route-handler errors (v12): 'Enter a commodity code', 'Commodity code must be a number', 'Invalid commodityID', 'You cannot add the same commodity code twice', 'Enter a genus and species'; (b) BACKEND — the notification-microservice ValidationMessages.properties + the schema-model @NotNull that interpolates it (v13): 'A commodity must be selected' (Commodities.commodityComplement collection min). All are 'legacy' — trustworthy as the copy the old service emits, but requiredness here is either a frontend search-gate policy or a collection-level model policy the rebuild may reframe (see the field requiredLegacyNote / modelMandatorinessLegacy entries). This substantially closes the page's headline gap: the openQuestion 'validation is completely unevidenced' was true only of the admissible TRACE/TEST sources — the application source, now authorised, DOES carry the copy.",
+  "validationMessages": [
+    {
+      "message": "Enter a commodity code",
+      "field": "commodity-text-input",
+      "trigger": "Search clicked (action=search) on the commodity-code-search tab with the code box empty. Joi: COMMODITY_TEXT_INPUT_KEY required when action=search, ANY_REQUIRED message = requiredMessage(COMMODITY_CODE, A).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_select.js:17-18 (then: Joi.number().empty('').required().messages({ [ANY_REQUIRED]: requiredMessage(COMMODITY_CODE, A) })); builder ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:31-33 (`Enter ${article} ${label.toLowerCase()}`); labels ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:2 (A: 'a'), :24 (COMMODITY_CODE: 'Commodity code') → resolves to 'Enter a commodity code'"
+    },
+    {
+      "message": "Commodity code must be a number",
+      "field": "commodity-text-input",
+      "trigger": "Search clicked (action=search) on the commodity-code-search tab with a NON-NUMERIC value in the code box. Joi: NUMBER_TYPE message = typeMessage(COMMODITY_CODE, NUMBER). NOTE the route handler independently re-guards with !isNaN(commoditySelectedCode) at consignment_select.js:77 before lookup, so a non-numeric code never reaches the commodity-code service.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_select.js:19 ({ [NUMBER_TYPE]: typeMessage(COMMODITY_CODE, NUMBER) }); builder ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:27-29 (`${label} must be a ${type}`); labels ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:24 (COMMODITY_CODE), :71 (NUMBER: 'number') → resolves to 'Commodity code must be a number'"
+    },
+    {
+      "message": "Invalid commodityID",
+      "field": "commodity",
+      "trigger": "A selected commodity code (via selectedCommodity / tree drill-down submit) that the commodity-code service does not return as a selectable commodity. Emitted directly by the route handler, not the Joi validator; the field key is the generic 'commodity'.",
+      "confidence": "legacy",
+      "legacyDefectNote": "This reads like a developer/diagnostic string ('Invalid commodityID'), NOT user-facing GDS error copy. It is a strong candidate for a legacy defect the rebuild should NOT port verbatim — if this state is reachable by a user it needs proper 'there is a problem' copy. Flagged, not fixed.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_select.js:99-103 (errors = [{ description: 'Invalid commodityID', field: ['commodity'] }] returned from handleCommoditySelected when isSearchResultSelectableAsCommodity is false)"
+    },
+    {
+      "message": "You cannot add the same commodity code twice",
+      "field": "commodity",
+      "trigger": "Selecting/searching a commodity code that is ALREADY on the notification (duplicate). Checked in getCommoditySelectedView against partOne.commodities before redirecting to the species page. This is the enforcement behind the implicit 'each commodity line is distinct' rule and was invisible to the corpus because no test adds a duplicate.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_select.js:108-114 (if commodityAlreadySelected → errors = [{ description: 'You cannot add the same commodity code twice', field: ['commodity'] }]); dup check at :144-146 (commodityComplement.find(e => e.commodityID === commodityCode))"
+    },
+    {
+      "message": "Enter a genus and species",
+      "field": "species-text-input",
+      "trigger": "Search clicked (action=search) on the GENUS-AND-SPECIES tab (certificateType=CHEDPP) with the species box empty. Species-tab validation copy — recovered for completeness; the code-search tab is the CHED-PP primary path. Non-CHED-PP variants of this shared page emit 'Enter a species' instead.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_select.js:32-39 (speciesSchema — is CHEDPP then required().messages({ [ANY_REQUIRED]: requiredMessage(GENUS_AND_SPECIES, A) })); builder messages/en.js:31-33; labels/en.js:2 (A), :58 (GENUS_AND_SPECIES: 'Genus and Species') → resolves to 'Enter a genus and species'"
+    },
+    {
+      "message": "A commodity must be selected",
+      "field": "commodities.commodityComplement (the notification's commodity collection)",
+      "trigger": "Submitting a notification whose commodity collection is empty — i.e. this page's outcome (selecting at least one commodity) was never completed. Enforced at the PERSISTED-MODEL / microservice layer, NOT by the frontend search-gate: @NotNull on Commodities.commodityComplement. This is the model-level backing for why completing this page is mandatory — the frontend messages above gate the SEARCH, this gates the NOTIFICATION.",
+      "confidence": "legacy",
+      "layerNote": "BACKEND microservice message, distinct in source from the frontend Joi copy in the other entries. NET-NEW IN v13 — every prior revision's validation copy came only from the frontend validator (ipaffs-frontend-notification consignment_select.js); this is the first entry sourced from the notification-microservice ValidationMessages.properties + the schema-model @NotNull it interpolates. The bean-validation group is NotificationLowRiskFieldValidation (NOT the explicit NotificationChedppFieldValidation group) — CHED-PP is validated as a low-risk plant notification for the commodity-collection constraint, so this message DOES apply to the CHED-PP journey, but a rebuild verifying the group mapping should note it is the LowRisk group, not a Chedpp-named one.",
+      "requiredMandatorinessNote": "This is 'as the old system had it': mandatoriness enforced at model level as 'the collection must be non-null' (at least one commodity). A rebuild is free to revisit WHERE this is enforced (page vs submit) but the substantive rule — a CHED-PP notification must carry at least one commodity — is a real policy, not an incidental legacy artefact.",
+      "evidence": "message copy: ~/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:91 (uk.gov.defra.tracesx.notificationschema.representation.partone.euimp.commodities.commodityComplement.min.message=A commodity must be selected); constraint that emits it: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:149-155 (@NotNull(groups = NotificationLowRiskFieldValidation.class, message = '{…commodities.commodityComplement.min.message}') on private List<CommodityComplement> commodityComplement)"
+    },
+    {
+      "message": "(none observed)",
+      "field": "commodity-text-input",
+      "trigger": "Unknown. No trace in this corpus submitted an empty, malformed, too-short or unknown commodity code — every observed search used a valid code that resolved first time. The .govuk-error-summary query returned 0 on every snapshot of this page. CORROBORATION OF THE GAP: the QA suite asserts NOTHING about validation on this page either — no test in tests/notification/ched-pp/ drives a bad code into this input, and the page object exposes no error locator. The only 'incorrect commodity code' tests in the repo (tests/dashboard/dashboard-search.spec.ts:115, :156, :197) target the DASHBOARD search, a different page, and are not evidence about this one.",
+      "confidence": "gap",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 20 — .govuk-error-summary count === 0; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 28 — .govuk-error-summary count === 0 (re-verified in v11). Absence from tests: no error assertion in ~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/; no error locator in page-objects/notification/SearchCommodityPage.ts:1-17",
+      "gapHardened": "THE GAP IS PROVEN, NOT MERELY UNOBSERVED. A repo-wide grep for `searchCommodity` across tests/ and workflows/ returns 39 hits and NOT ONE of them is in tests/notification/ched-pp/. Every CHED-PP functional spec reaches this page only THROUGH the workflow helper, which always fills a valid code from the vocabulary and immediately clicks Search. So no CHED-PP test can possibly assert on this page's behaviour — there is no test-side handle on it at all. The page's only direct test contact anywhere in the repo is the two accessibility scans (see accessibilityRequirement), which assert nothing about validation. Combined with the trace corpus's zero error summaries, BOTH admissible sources are not just silent but structurally incapable of speaking. No amount of further mining will recover this copy.",
+      "gapHardenedEvidence": "grep -rn 'searchCommodity' over ~/git/defra/ipaffs/ipaffs-qa-automation/tests/ and workflows/ — 39 hits, distributed across tests/accessibility/ched-{pp,a,p,d}-accessibility-tests.spec.ts, workflows/notification/ched-{pp,a,p,d}-workflows.ts and workflows/intensified-official-control/reenforced-check-workflows.ts:15; ZERO hits under tests/notification/. Additionally grep -rn for 'Search Commodities' / 'commodity code' across tests/ and page-objects/ returns only the dashboard specs (tests/dashboard/dashboard-search.spec.ts:115,:156,:197 — a DIFFERENT page), the page object's own two locators (page-objects/notification/SearchCommodityPage.ts:7,:15), and an unrelated 'Search commodities' BUTTON on page-objects/intensified-official-control/ReenforcedCheckPage.ts:15 (a different page in a different journey — do not confuse it with this page's fieldset legend of the same words)."
+    }
+  ],
+  "confidence": "gap",
+  "confidenceNote": "Top-level 'gap' reflects the page's HIGHEST-VALUE unknown (validation copy), NOT the overall evidence quality — the page's structure, copy and form model are confirmed to an unusually high standard across three independent re-derivations. Read the per-claim confidence tags, not this one.",
+  "openQuestions": [
+    "VALIDATION WAS COMPLETELY UNEVIDENCED FROM THE TRACE/TEST CORPUS — no trace submits an empty search, a malformed code, a code shorter than expected, a well-formed code that matches nothing, or a code outside the 11 CHED-PP chapters, and not one CHED-PP spec asserts an error here. SUBSTANTIALLY RESOLVED IN v12 FROM THE AUTHORISED LEGACY SOURCE: the frontend Joi validator + route handler yield the real copy — 'Enter a commodity code' (empty search), 'Commodity code must be a number' (non-numeric), 'Invalid commodityID' (unselectable selection — looks like a legacy defect, do not port verbatim) and 'You cannot add the same commodity code twice' (duplicate). See validationMessages[]. STILL GAPS even with source: (a) what a well-formed code that matches NOTHING renders — the handler falls through to pageView(commodityCode) with no explicit error when lookupCommodity returns non-definitive (consignment_select.js:87-90), so a 'no results' state may render the tree with no error at all; (b) the over-500-line error copy; (c) all species-search-tab behaviour beyond the empty-submit message. A human should confirm the no-match behaviour and the missing 'not found' copy.",
+    "The input accepts BOTH 8-digit and 10-digit commodity codes. The traces only ever showed 8-digit codes, which could easily have been mistaken for a format rule; the CHED-PP specs drive 0808108010, 0603197090 and 0713500010 (all 10 digits) through the same field and expect them to resolve. A rebuild that validates 'exactly 8 numeric digits' would reject codes the current service accepts. Confirm the full set of valid lengths with a human — CN codes are canonically 8 digits, TARIC 10, and the field appears to take both. (Note the shared vocabulary also holds 4- and 6-digit codes — liveHorses '0101', boneless '020130' — but those are driven by CHED-A/CHED-P only, not CHED-PP.)",
+    "Choosing 'Upload from CSV' on the preceding 'Description of the goods' page BYPASSES this page entirely (ched-pp-workflows.ts:278-293). This page is conditional on the 'Manual entry' route. The CSV branch is a whole alternative means of supplying commodities — out of scope for this page spec but it must be on the page/route inventory, or the rebuild will model commodity entry as mandatory-manual.",
+    "This page is SHARED across all four CHED types, and the tab behaviour differs by type — CHED-PP and CHED-A click the 'Commodity code search' tab link on arrival, CHED-P and CHED-D fill the input with no tab click at all. Does the tab strip render only for the species-bearing types (PP/A)? If so, the tabs are not a property of 'the commodity search page' but of 'the CHED-PP/CHED-A variant of it', and the rebuild — CHED-PP only — inherits them. Worth a human confirming, because it changes whether 'Genus and species search' is core or incidental.",
+    "SETTLED, AND A PRIOR INFERENCE REFUTED — bare /consignment/page-3 defaults to the GENUS AND SPECIES SEARCH tab, NOT the code-search tab. The v8 revision reasoned from response sizes (7.4K bare vs 7.3K for ?tab=commodity-code-search) that the bare URL 'strongly suggest[s] it defaults to the code-search tab', and left WHICH tab as a gap. That guess was wrong, and it is settled directly from the DOM rather than from byte counts. The input-state of trace 1f5b6eef action 18 IS the bare page-3 render (action 17 = 'Save and continue' on Description of goods, which lands on bare page-3; action 18 = the click on the 'Commodity code search' link, which is what produces the ?tab=commodity-code-search request). Querying that frozen DOM returns: the single .govuk-tabs__panel has id 'species-search-tab' (NOT 'commodity-code-search-tab'); the only legend is 'Search genus and species of commodity'; the only label is 'Enter genus and species'; the sole .govuk-hint is #species-search-hint. Re-verified independently in v11. CONSEQUENCE FOR THE REBUILD: commodity-search is NEVER the landing state. Every user arriving at page-3 lands on species search and must click a tab to reach code search — which is exactly why the workflow clicks the link unconditionally on all three entries. If the rebuild treats code search as the default entry point it will invert the legacy journey. Whether species-first is deliberate service design or legacy accident is the question for a human — but the behaviour itself is no longer in doubt.",
+    "FORM0's purpose is unknown. The page renders a third form (before the tabs) carrying crumb + etag + commodityDetailsPage and NO submitting control. It posts to the same action as FORM1. It may be vestigial, or driven by JS this corpus did not exercise. Worth a look at the template before the rebuild copies a form that does nothing. Related: commodityDetailsPage is never observed non-empty on any form on either tab — the two unknowns may share one explanation.",
+    "The commodity tree drill-down is rendered but never exercised — corroboration makes this a STRONGER finding than the traces alone showed. All 65 CHED-PP traces type a full code and click Search; not one clicks a chapter button. The QA page object does not model the tree AT ALL (three locators: input, Search, tab link). So levels 2..n of the tree, the drilled-down state of the commodity-selection-breadcrumb container, and the leaf view are unevidenced by BOTH sources. This is the single biggest piece of the page by markup volume and it has zero automated coverage anywhere. A genuine requirement the rebuild could silently drop — or dead surface nobody uses. A human must decide which.",
+    "Test-driven codes cover only 8 of the 11 tree chapters. Chapters 12 (oil seeds), 25 (salt/earths/stone) and 38 (misc chemical products) are driven by no test and appear in no trace beyond the rendered chapter list. Are they live CHED-PP chapters, or stale reference data? Worth checking against the reference-data source rather than assuming the 11 are all current.",
+    "The 500-commodity-line limit is stated in body copy but its enforcement is unevidenced — no trace approaches the limit and no test approaches it either (the workflow tops out at three commodities — ched-pp-workflows.ts:54-59). Unknown whether the limit is enforced on this page, at Add, at submit, or not at all; and unknown what the error copy is when it trips. PARTIALLY RESOLVED FROM LEGACY SOURCE (v12): (a) the '500' is not hardcoded copy — the template interpolates {{maxCommodityLines}} from constants.MAX_COMMODITY_LINES = config.maxCommodityLines (~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/constants.js:12, surfaced at consignment_select.js:205), so it is configurable reference data, not a literal; (b) enforcement is on the ADD path, NOT this search page — exceedsMaxCommodityLines / exceedsMaxCommodityLinesLegacy in ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/commodities.js:209-224 count complementParameterSet against MAX_COMMODITY_LINES when a commodity is added. The over-limit ERROR COPY was not located in this pass and remains a gap. Confidence: legacy.",
+    "Searching a full code navigates STRAIGHT to a different page — 'Select species of commodity' (confirmed: trace 1f5b6eef action 20 clicks Search, and the next snapshot's document.title is 'Select species of commodity - Import and export applications - GOV.UK'; the subsequent Add-species click navigates to page-4?commodity-selected-code=06011010) — skipping any intermediate results list. Whether a partial/ambiguous code (e.g. '0805') instead renders a results list ON this page is unevidenced by both sources: every test fills a COMPLETE code from types/commodity-code.ts and immediately clicks Search. If a partial code renders a results list, that is an unmined state of this page.",
+    "The page is completely stateless on re-entry: after adding commodity 1 and clicking 'Add commodity', the page re-renders identically — same H1 'Commodity', same title, same 11-chapter tree, empty search box, selectedCommodity back to 'root', no summary of already-added commodities, no error state. Confirmed by re-querying the DOM at trace 1f5b6eef action 28 (H1='Commodity', title='Search Commodities', chapters=11, selectedCommodity='root', error summary=0, back link=0, hint=0, maxlength=null) and diffing against the first render. The DOWNSTREAM species page renders the 'Commodity summary table', so the running list lives there, not here. Worth confirming this is intended and not a usability gap.",
+    "No back link on this page (.govuk-back-link count === 0, verified at both traces). Given the journey re-enters this page per commodity, the absence of a back link and of a visible 'cancel adding this commodity' route is notable. The downstream species page DOES have a 'Cancel' action.",
+    "The 'Genus and species search' tab's BEHAVIOUR is a double-confirmed gap — its markup is now fully captured (panel, form, hint copy, autocomplete container, Clear link, certificateType) because it is the DEFAULT render, but it is exercised by no trace AND by no test anywhere in the QA repo (repo-wide case-insensitive grep for 'species search' / 'Genus' / 'tab=species' returns zero hits). What the autocomplete fetches, what a species search returns, and what it validates are all unknown. It is an alternative entry point to the same outcome and needs its own mining or an explicit human decision to drop it.",
+    "NEW IN v11 — the species hint (#species-search-hint) has an id but the species input carries NO aria-describedby pointing at it. In the no-JS DOM the hint is therefore not programmatically associated with its input, which is a WCAG-relevant defect. It may be wired up at runtime by the autocomplete enhancement — unevidenced either way, because the accessibility suite never scans the species tab (it scans only after clicking away to code search). A human should scan the species render before the rebuild inherits either the pattern or the bug.",
+    "NEW IN v11 — the commodity-code input has inputmode=\"numeric\" but no maxlength, no hint and no aria-describedby, while the SIBLING TAB on the same page gives its input a full format hint with a worked example ('Use the full scientific name. This will be in Latin, for example, Prunus dulcis'). The asymmetry is the question: is the missing code-format hint a deliberate decision or an oversight? The tests show the format is not even a single fixed length (8 AND 10 digits both used), so there is real content for a hint to carry. If the rebuild keeps a free-text code box it needs a hint that covers both lengths; if it moves to an autocomplete this question dissolves.",
+    "This page's document.title is a bare 'Search Commodities' with no service/GOV.UK suffix (on BOTH tabs), while the very next page in the journey uses 'Select species of commodity - Import and export applications - GOV.UK'. A legacy inconsistency; the rebuild should standardise. Flagged as a defect of the old app, not a requirement to port.",
+    "THE PAGE IS ASSERTED TO PASS AXE WCAG 2.1 A/AA WITH ZERO VIOLATIONS (ched-pp-accessibility-tests.spec.ts:47, :71). This is the ONLY rule the QA suite states about this page, and it is a real requirement the rebuild inherits. But do not read the assertion as clearing the bespoke tree: the rule that would catch 11 identically-named nav landmarks nested inside a twelfth ('landmark-unique') is tagged best-practice, not wcag2a/aa, so it is outside the suite's tag filter and never fires. The question for a human: is the zero-violation bar the actual accessibility standard for the rebuild, or is it a floor that the legacy tree markup only clears because the scan is not looking for its specific defects? The rebuild should not inherit both the bar AND the markup that only passes it on a technicality.",
+    "The axe run globally disables the 'aria-allowed-attr' rule (accessibility-utils.ts:118) for a reason documented as unrelated to this page (govuk-frontend v6 conditional radios, IMTA-20937). This page renders div#details-content-<code>-parent[aria-hidden='false'] on all 11 tree nodes. We therefore CANNOT tell from the assertion whether this page's aria usage would survive with that rule enabled. Worth a human re-running axe against this page with the suppression lifted before deciding what to carry forward.",
+    "CHED-P and CHED-D fill the commodity input with NO tab click and their journeys pass (ched-p-workflows.ts:287, ched-d-workflows.ts:207, and the CHED-P accessibility spec fills directly at :42 and scans at :43). Combined with the finding that bare page-3 defaults to the SPECIES tab for CHED-PP, this is strong converging evidence that the tab strip is NOT rendered for P/D at all — because if it were, and species were the default there too, filling 'Enter commodity code' without clicking a tab would fail for those types. So: the tabs, the species-first default, and the certificateType=CHEDPP hidden field are all properties of the SPECIES-BEARING variants (PP/A), not of 'the commodity page'. The rebuild is CHED-PP-only and therefore inherits all three. A human should confirm, because it settles whether 'Genus and species search' is core to CHED-PP (likely) or incidental.",
+    "The DEFAULT CHED-PP journey visits this page TWICE, not once: singleCommodity defaults to false (workflows:138), so the second-commodity branch at :331 fires unless a spec opts out. Three visits is the opt-in maximum (thirdCommodityCode defaults to '', :145). The rebuild should treat multi-commodity as the normal case and single-commodity as the variant — which is the opposite of what a naive reading of 'add a commodity' might assume.",
+    "A naming trap for whoever mines the rest of the journey: page-objects/intensified-official-control/ReenforcedCheckPage.ts:15 exposes a BUTTON named 'Search commodities' — the exact words of THIS page's fieldset legend, but on a different page in a different journey (intensified official controls). Do not let a text-based grep merge the two.",
+    "NEW IN v11 — the Search button carries data-prevent-double-click=\"true\". The legacy page relies on the govuk-frontend Button component's client-side double-click guard, which hints the search POST is not safe under rapid double submission. Is that a real server-side constraint the rebuild must respect (e.g. duplicate commodity lines on double submit), or defensive habit? A human should say, because a JS-dependent guard on a non-idempotent POST is a gap in the no-JS path."
+  ],
+  "v11ReviewNote": {
+    "revision": "v11 — adversarial re-derivation from the three task evidence pointers, run against the raw traces before reading the existing spec's conclusions",
+    "method": "Re-opened both traces, re-dumped the action timeline, re-ran the control inventory, re-captured main innerText and the full .govuk-tabs / #species-search-tab outerHTML, and re-ran every count the spec asserts. Then diffed against v10. The IPAFFS application source (templates, routes, ValidationMessages.properties) was NOT consulted — out of scope.",
+    "v10Verdict": "v10's core HOLDS. The evidence pointers land on the right page (H1 'Commodity', title 'Search Commodities' at all three). NO INVENTED COPY was found in the confirmed strings: caption, H1, the 500-line paragraph, 'Contents', both tab labels, 'Search commodities', 'Enter commodity code', 'Search', 'Find the commodity in the commodity tree', 'All commodities' and all 11 chapter code+description pairs (including the accented 'MATÉ' and the semicolon punctuation) re-verified character-by-character and all exact. The three-form model, action=search as the search/drill-down discriminator, parent_<code> as submit buttons not radios, selectedCommodity=root, the full-width grid, the absent back link, the absent error summary, and the validation gap all re-verified. v10's copy discipline on the code-search tab was sound.",
+    "correctionsApplied": [
+      "MISSED COPY — the species tab renders a HINT with real user-facing copy: 'Use the full scientific name. This will be in Latin, for example, Prunus dulcis' (#species-search-hint). EVERY prior revision (v8, v9, v10) recorded 'no .govuk-hint element on this page (query returned 0)' — a query run only against the code-search render and then generalised to the whole page. This is the only format guidance anywhere on the page and it was invisible in the spec. Added as its own field entry; the commodity-text-input hint claim is now scoped to the code-search tab; a Hint entry was added to govukComponents recording 0 on one tab and 1 on the other.",
+      "MISSED FIELD — the 'Clear' link (id=clear, class='govuk-link clear-link') on the species tab. Unrecorded by every prior revision, and v9's tabVariantNote claimed to enumerate the code-search/species differences while omitting it.",
+      "FABRICATED QUOTE — v8/v10 presented the Search button's markup as `<button value=\"search\" type=\"submit\" name=\"action\" id=\"commodity-search\" class=\"govuk-button govuk-!-margin-bottom-0\">`. That string is not in the DOM. It invents a type=\"submit\" attribute the element does not carry (the control inventory reports type 'submit' because that is the resolved DOM PROPERTY, not a rendered attribute) and drops data-module=\"govuk-button\", data-prevent-double-click=\"true\" and data-govuk-button-init=\"\". Replaced with the verbatim outerHTML and a note; data-prevent-double-click raised as a new open question since it implies a non-idempotent POST.",
+      "WRONG NESTING — v8/v10's tree-container said the nav contains the 'All commodities' link, 'then div.commodity-list > ul.commodity-tree', implying commodity-list is a SIBLING of the nav. It is a CHILD: the 11 nav[aria-label='Buttons section'] landmarks are NESTED INSIDE nav[aria-label='Top Navigation for All commodities']. Verified by a nested-nav selector returning true and by the nav aria-label list. This STRENGTHENS the accessibility concern (a nav landmark containing eleven identically-named nav landmarks) and the nonStandardPatterns entry was updated accordingly.",
+      "FALSE 'UNRESOLVABLE' CLAIM — v9 and v10 both flagged '.search-panel count === 2' as deliberately unresolved, and v10 asserted it 'is NOT resolvable from the QA repo… Answering it requires the template, which is out of scope'. That is wrong: the .govuk-tabs outerHTML already captured in v8's own evidence plainly shows div.search-panel.govuk-!-margin-bottom-6 (search box + button) and a later bare div.search-panel (tree area). Resolved from evidence already in hand, no new source needed. Leaving a resolvable question open and declaring it unresolvable is worse than not noticing it.",
+      "WRONG COUNT — govukComponents 'Form group' count was 1. There are TWO: an outer div.govuk-form-group wrapping the fieldset and an inner one wrapping the label+input. Corrected.",
+      "UNRECORDED TAB DIFFERENCES — the species form posts to BARE 'page-3' (not page-3?tab=species-search) and carries id='species-search-form'; the code-search form posts to 'page-3?tab=commodity-code-search' and has no id. Also the species tab's Search button is wrapped in a js-hidden div, so with JS enabled the species tab has NO visible Search button. v9's tabVariantNote listed the Search button as plainly 'common to both'. All folded into tabVariantNote.",
+      "OVER-CAUTIOUS INFERENCE (confidence too LOW) — v9 speculated the species input is 'near-certainly accessible-autocomplete' and said it was 'worth confirming against the template before designing it from scratch'. No template is needed: the input's wrapper is literally id='autocomplete-container', and three sibling elements carry js-hidden. Upgraded to a confirmed structural finding. This matters because the spec elsewhere recommends autocomplete as the REPLACEMENT for the bespoke tree — the legacy app already ships that pattern on this very page.",
+      "href VARIES BY TAB — the 'All commodities' link is href='page-3?tab=commodity-code-search' on the code-search render but bare 'page-3' on the species render. v8/v10 stated the code-search href as a fixed property.",
+      "CONFIDENCE INFLATION (minor) — the parent_<code> entry was tagged 'confirmed' as a whole while containing a chedTypeFilter argument that is pure inference from test vocabulary. Split out as chedTypeFilterConfidence: inferred. Likewise accessibilityRequirement (already 'inferred') gained an explicit note that no trace observes the scan or its result — we have observed only that a spec asserts it.",
+      "RETRIEVAL NOTE — prior revisions cite the species render as 'trace 1f5b6eef action 18 (before-state)'. `trace snapshot 18 --name before` ERRORS with 'No snapshot found for action 18' despite `trace action 18` listing before/input/after as available; the default `trace snapshot 18` resolves to the 'input' snapshot and IS the bare page-3 DOM. The claims are correct but the cited retrieval recipe does not reproduce. Recorded so the next miner does not conclude the evidence is missing.",
+      "Added the header 'Menu' navigation and Beta banner to chromeControlsExcluded; noted the second cookie-banner button (id=button-cookies) explicitly.",
+      "Added a top-level confidenceNote — the bare 'gap' at the root reads as though the whole page is unevidenced, when it means 'validation copy is the headline unknown'."
+    ],
+    "notFaulted": "The 11 chapter labels and every other confirmed string (re-transcribed and diffed character-by-character — no invented copy anywhere, including no tidied GOV.UK copy, no sentence-casing, no dropped punctuation). The three-form model. action=search as discriminator. parent_<code> as submit buttons with an explicit type=\"submit\" (unlike the Search button — the spec is right about both, which is why the fabricated Search-button quote is an isolated slip and not a pattern). selectedCommodity=root. The species-tab-is-default refutation (re-verified independently: panel id === 'species-search-tab'). certificateType=CHEDPP asymmetry (re-verified: 0 on code-search). The js-hidden asymmetry. The validation gap and its hardening. The 10-digit code finding. The page-object analysis. The stateless-re-entry finding. The absent back link. The URL template. All hold.",
+    "gapsThatSurvive": "Unchanged and unfillable from the admissible sources. VALIDATION remains the highest-value gap: there is provably no test-side handle on this page, so zero verbatim error copy exists and none is recoverable — a human must specify it from scratch. Tree drill-down beyond level 1: still unevidenced by both sources and un-modelled by the page object. Species-search BEHAVIOUR: structure is now fully captured (including the hint copy and the autocomplete container), but what it fetches, returns and validates is still unevidenced. The 500-line limit's enforcement: still unevidenced. FORM0's purpose and commodityDetailsPage's meaning: still unevidenced. NO COPY WAS INVENTED to fill any of these."
+  }
+}

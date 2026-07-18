@@ -1,0 +1,326 @@
+{
+  "slug": "origin-of-import",
+  "name": "Origin of the import / add a reference number for this consignment",
+  "url": "/notification/vnet/protected/notifications/:draftId/consignment/page-2",
+  "urlEvidence": "confirmed — trace 219b882ee3b4fbe040b824d146d38991d6b70149, request 2022: GET https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/consignment/page-2 (200, text/html). Form posts back to the same path (form action=\"page-2\" method=\"post\"), request 2038 POST -> 302.",
+  "pageTitle": "Add a reference number for this consignment",
+  "caption": "About the consignment",
+  "heading": "Origin of the import",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "secondaryActionsEvidence": "confirmed EMPTY IN CREATE MODE ONLY. trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — exactly one govuk-button inside <main> ('Save and continue'). Source 2 concurs on BUTTONS specifically: OriginOfImportPage.ts exposes exactly one BUTTON locator, btnSaveAndContinue (:17-19), and no other button (it does also expose three radio locators at :6-15 — CHED-P variant surface, see openQuestions — so 'nothing else' would be wrong; 'no other button' is the claim). Its page-1 sibling CountryOfOriginPage.ts additionally exposes btnSaveAndReview (:13-15) and btnSaveAndReturnToHub (:17-19). So page-1 demonstrably renders amend-mode and hub-exit buttons and page-2 has no known equivalent. CRUCIAL CAVEAT ADDED THIS WAVE — THE BUTTON SET IS DATA-DRIVEN, NOT HARDCODED: the template ends with `{{> common/saveButtons model=actionsModel actions=actions}}` (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentCountries.html:200), i.e. the same shared partial renders whatever actions the handler's actionsModel supplies. The page markup therefore does NOT fix the button set — the observed single button is a property of the create-mode context, not of this page. This materially strengthens the AMEND-MODE BYPASS open question: 'page-2 has no secondary actions' is confirmed for the create journey ONLY, and is a gap for amend/hub-exit, where the same partial would plausibly render more buttons.",
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "back-link",
+      "text": "Back",
+      "govukComponent": "Back link (class=\"govuk-back-link back-link--next-to-breadcrumbs\", href=\"#\") — sits OUTSIDE <main>. Note the non-govuk modifier class and the placeholder href; see nonStandardPatterns."
+    },
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Origin of the import",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "select",
+      "text": "Country of origin",
+      "govukComponent": "Select (label govuk-label--m, select govuk-select govuk-!-width-one-half)"
+    },
+    {
+      "element": "select",
+      "text": "Country from where consigned",
+      "govukComponent": "Select (label govuk-label--m, select govuk-select govuk-!-width-one-half)"
+    },
+    {
+      "element": "text-input",
+      "text": "Add a reference number for this consignment (optional)",
+      "govukComponent": "Text input (label govuk-label--m, hint govuk-hint, input govuk-input govuk-!-width-one-half, maxlength=30)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, data-module=govuk-button, data-prevent-double-click=true, id/name=button-save-and-continue, type=submit, value=\"Save and continue\")"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 2,
+      "usage": "Country of origin and Country from where consigned — both 254-option country lists",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 (input snapshot): both selects report options.length=254. Independently re-verified at e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 16 (254/254) and 1f5b6eef3d110815e713ed79998cec2cb53026ee action 15 (254/254). Option count corroborated by the QA repo's country vocabulary: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts has exactly 253 country entries (verified by count); 253 + 1 placeholder = 254."
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 1,
+      "usage": "Optional consignment reference number, maxlength=30",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — control inventory returns INPUT|type=text|name=local-reference-number|id=local-reference-number|value=|maxlength=30|required=false"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Hint under the reference number input, wired via aria-describedby=local-reference-number-hint",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — #local-reference-number-hint has class=\"govuk-hint\"; #local-reference-number has aria-describedby=\"local-reference-number-hint\" (both read directly from the frozen DOM)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--m"],
+      "count": 3,
+      "usage": "One medium label per field — no fieldset/legend on this page",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — all three labels are class=\"govuk-label govuk-label--m\" with for=origin-country / for=consigned-country / for=local-reference-number. main fieldset count = 0, legend count = 0."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Primary submit — 'Save and continue'. (A second govuk-button exists in the document — the 'Accept Cookies' cookie-banner button, class=\"govuk-button button--cookie\" — but it is outside <main> and is page chrome, not a page control.)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13. Corroborated as the only control the CHED-PP tests ever touch on this page: workflows/notification/ched-pp-workflows.ts:275 (`await pages.originOfImport.btnSaveAndContinue.click();`, immediately after the '// Origin of Import Page' comment) and tests/accessibility/ched-pp-accessibility-tests.spec.ts:37 both call btnSaveAndContinue and nothing else."
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption above the H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — textContent 'About the consignment', id=page-secondary-title"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — h1 textContent 'Origin of the import', id=page-primary-title, class='govuk-heading-xl'"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Wraps each of the three fields",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — main .govuk-form-group count = 3"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs (NON-GOVUK)"],
+      "count": 1,
+      "usage": "'Back' link above the page content, outside <main>. href=\"#\" — i.e. it is not a real link target; navigation is presumably wired by JS. The rebuild should use a real href so it works without JavaScript.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — .govuk-back-link textContent 'Back', href='#', class='govuk-back-link back-link--next-to-breadcrumbs'"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "Inside <main>: no non-govuk classes at all",
+      "whatItDoes": "Every class inside <main> is prefixed govuk-. The full inventory is exactly: govuk-!-margin-bottom-4, govuk-!-margin-right-1, govuk-!-width-one-half, govuk-button, govuk-caption-xl, govuk-form-group, govuk-grid-column-full, govuk-grid-row, govuk-heading-xl, govuk-hint, govuk-input, govuk-label, govuk-label--m, govuk-select.",
+      "concern": "Positive finding, but SCOPED TO <main>. The form content of this page is 100% inside the GOV.UK Design System toolbox — no accessible-autocomplete, no custom widgets, no third-party markup — and should port to govuk-frontend 1:1. This does NOT extend to the surrounding page furniture: see the next entry.",
+      "govukAlternative": "n/a",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — a class filter over main *, keeping only classes not starting with 'govuk-', returned empty; the same filter returned empty at 1f5b6eef3d110815e713ed79998cec2cb53026ee action 15"
+    },
+    {
+      "pattern": "Non-govuk classes in the page furniture OUTSIDE <main>",
+      "whatItDoes": "A body-wide class sweep (excluding govuk- prefixed) returns: app-width-container--wide, application-title, back-link--next-to-breadcrumbs, button--cookie, cookie-button, cookie-button-accept, cookie-button-settings, cookie-buttons, global-accepted-cookie-message, global-cookie-message, global-cookie-wrapper, heading-tertiary, information-banner, information-banner__content, navigation-links, navigation-links__left-block.",
+      "concern": "Most of these are shared IPAFFS chrome (cookie banner, header, information banner) rather than page-specific surface, and are out of scope for a per-page port. Two are worth flagging: (1) back-link--next-to-breadcrumbs is a custom modifier on the GOV.UK Back link — the rebuild should not need it; (2) the back link's href is '#', so it depends on JavaScript. The rebuild's back link should be a real server-rendered href.",
+      "govukAlternative": "Standard govuk-back-link with a real href; standard GOV.UK cookie banner component.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — body-wide non-govuk class sweep; back link attrs read directly (href='#')"
+    },
+    {
+      "pattern": "<select> with 254 options for country choice",
+      "whatItDoes": "Plain govuk-select listing every country. Uses a native <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> to group England / Scotland / Wales / Northern Ireland.",
+      "concern": "Standard markup, but a 254-option native select is a known usability weak point and GOV.UK guidance discourages long selects. The optgroup is valid HTML but is not a documented govuk-frontend Select feature, so a naive port may drop it. Country data is reference data — source it from a reference-data service, do not hardcode. NOTE the value space is NOT purely ISO 3166-1 alpha-2: the four UK constituents use ISO 3166-2 subdivision codes (GB-ENG, GB-NIR, GB-SCT, GB-WLS), so the reference-data contract must accommodate both shapes.",
+      "govukAlternative": "GOV.UK accessible-autocomplete enhancement over a select, or the Select component with a reference-data-driven option list retaining the UK optgroup.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — both selects report optgroups=['United Kingdom of Great Britain and Northern Ireland'] and options.length=254. Value space read directly from the frozen DOM: options[1]=Afghanistan/AF, options[253]=Zimbabwe/ZW, and the GB- filtered set is exactly England=GB-ENG, Scotland=GB-SCT, Wales=GB-WLS, Northern Ireland=GB-NIR. Corroborated in source at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts:238-241."
+    },
+    {
+      "pattern": "hidden inputs: crumb, etag, navigation-target-page",
+      "whatItDoes": "crumb = CSRF token (hapi crumb). etag = optimistic-concurrency token — the DOM attribute value INCLUDES literal double-quote characters: value=\"\\\"0000000000BD29A5\\\"\", and it is posted back that way (POST body carries etag=%220000000000BD29A5%22). navigation-target-page = \"commodity/input-method\", i.e. the NEXT page is decided by a client-submitted hidden field, not by the server's own routing.",
+      "concern": "navigation-target-page is an IPAFFS architecture artefact: journey routing is carried in the request body and is therefore client-tamperable. The rebuild must NOT copy this — next-page routing belongs on the server. etag implies page-2 participates in an optimistic-locking scheme against the draft. The quote-wrapped etag is an HTTP ETag value leaking its quoting into a form field.",
+      "govukAlternative": "n/a — this is architecture, not a component. Server-side routing plus a standard CSRF token.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — control inventory returns the three hidden inputs; POST body (request 2038, resources/6dc61d10622f1e8fe9b167673d5be9e1c2452a01.dat) reads: crumb=...&etag=%220000000000BD29A5%22&navigation-target-page=commodity%2Finput-method&origin-country=AT&consigned-country=AT&local-reference-number=&button-save-and-continue=Save+and+continue. NAV value re-confirmed as 'commodity/input-method' in e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 16 and 1f5b6eef3d110815e713ed79998cec2cb53026ee action 15."
+    }
+  ],
+  "fields": [
+    {
+      "name": "origin-country",
+      "label": "Country of origin",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "legacy — MANDATORY for CHED-PP in the authoritative submission schema. Commodities.countryOfOrigin carries @NotNull for the CHED-PP validation group (NotificationChedppFieldValidation.class) at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:168-180, message key partone.commodities.countryoforigin.not.null. This UPGRADES the earlier 'inferred' (frontend Joi) finding to 'legacy': both the page-level frontend Joi (COUNTRY_REQUIRED, inferred) AND the whole-notification submission schema (this @NotNull, legacy) agree origin-country is mandatory for CHED-PP. The DOM fact that no HTML required attribute is present remains true (confirmed, see evidence below) — required=true here records the field's MANDATORINESS as the legacy system enforced it server-side, not an HTML attribute. Mandatoriness is a legacy policy the rebuild may revisit, but here it is corroborated by two independent legacy layers, so it is a strong requirement.",
+      "options": [
+        "Select a country",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Barbados"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 254,
+      "placeholderText": "Select a country",
+      "placeholderValue": "",
+      "placeholderDisabled": false,
+      "observedValues": ["AT (Austria)", "BZ (Belize)", "FR (France)"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 (input snapshot). Option values are ISO 3166-1 alpha-2 codes (options[1]=Afghanistan/AF ... options[253]=Zimbabwe/ZW) EXCEPT the four UK constituents, which use ISO 3166-2 subdivision codes (GB-ENG/GB-SCT/GB-WLS/GB-NIR, read directly from the DOM and corroborated at types/country.ts:238-241); the placeholder option 'Select a country' has value=\"\" and is NOT disabled. England/Scotland/Wales/Northern Ireland sit inside an <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\">. Full list is reference data — the new app should source it from a reference-data service rather than hardcode it. The field arrives PRE-SELECTED because the user set Country of origin on the previous page ('Origin of the plants, plant product or other objects', /consignment/page-1); no trace ever changes it here. CONFIRMED ACROSS THREE TRACES THAT THE PRE-SELECTED VALUE IS TEST CONFIG, NOT A SYSTEM DEFAULT — and the three disagree, which is the point: 219b88... (notification/ched-pp/ched-pp-article72.spec.ts:15) arrives AT, because ched-pp-article72.spec.ts:25 sets euCountryOfOrigin: country.Austria; e10b7c... (notification/ched-pp/ched-pp-hmi-checks.spec.ts:15) arrives BZ, because ched-pp-hmi-checks.spec.ts:21 sets rowCountryOfOrigin: country.Belize; 1f5b6e... (smoke/smoke-ched-pp-notifier-inspector-decision-flows.spec.ts:67) arrives FR, i.e. the DEFAULT_CONFIG value euCountryOfOrigin: country.France at ched-pp-workflows.ts:141 (rowCountryOfOrigin: country.Afghanistan at :142). The value is written on page-1 via pages.countryOfOrigin.dropdownCountryOfOrigin.selectOption(...) — ched-pp-workflows.ts:268 for the EU branch, :270 for the ROW branch — never on this page. required=false records the DOM fact that no HTML required attribute is present; every CHED-PP journey nevertheless arrives here with a country already chosen, so no test ever submits this page with the placeholder selected and the server-side rule is unobserved (see openQuestions). SOURCE-2 CITATIONS RE-VERIFIED THIS WAVE, ALL EXACT: OriginOfImportPage.ts:17-19 (btnSaveAndContinue only), CountryOfOriginPage.ts:6-8 (dropdownCountryOfOrigin = getByLabel('Country of origin')), ched-pp-workflows.ts:141-142 (DEFAULT_CONFIG euCountryOfOrigin: country.France / rowCountryOfOrigin: country.Afghanistan), :268/:270 (the EU/ROW selectOption on page-1), :275 (the bare continue on page-2), types/country.ts:238-241 (England GB-ENG / NorthernIreland GB-NIR / Scotland GB-SCT / Wales GB-WLS). country.ts contains exactly 253 entries (verified by count this wave), so 253 + 1 placeholder = 254 reconciles the DOM option count precisely.",
+      "conditionalOn": null
+    },
+    {
+      "name": "consigned-country",
+      "label": "Country from where consigned",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "legacy — MANDATORY for CHED-PP in the authoritative submission schema, which CONTRADICTS the frontend page-level Joi. Commodities.consignedCountry carries @NotNull for the CHED-PP validation group (NotificationChedppFieldValidation.class) at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:190-201, message key partone.commodities.consignedcountry.not.null. THIS INVERTS the frontend-Joi finding recorded in validationMessages below: the frontend per-page Joi (consignment_countries.js:69-71) applies only a max-length-6 rule to consigned-country and NO required rule, so the page would accept a blank submission — but the whole-notification submission schema (this @NotNull, legacy) requires it for a completed CHED-PP. The two legacy layers DISAGREE (recorded in discrepancies). Precedence: for the mandatoriness fact, the authoritative schema model (legacy) wins over the frontend-Joi reading (inferred), so required=true. Note this is a two-layer legacy artefact — page validation lets it through, submission validation blocks it — and in practice the field always defaults to equal origin-country (confirmed across three traces), so a genuinely blank consigned-country is never posted and neither rule is ever exercised. The rebuild should decide deliberately whether consigned-country is mandatory rather than inherit this split.",
+      "options": [
+        "Select country from where consigned",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Barbados"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 254,
+      "placeholderText": "Select country from where consigned",
+      "placeholderValue": "",
+      "placeholderDisabled": true,
+      "observedValues": ["AT (Austria)", "BZ (Belize)", "FR (France)"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 (input snapshot). Same 254-option country list as origin-country (same mixed alpha-2 / GB-* subdivision value space), same UK optgroup. The placeholder option 'Select country from where consigned' (value=\"\") IS DISABLED — unlike origin-country's placeholder, which is not; this asymmetry is re-confirmed in all three evidence traces (e10b7c... action 16, 1f5b6e... action 15) and, ADDED THIS WAVE, is corroborated at the TEMPLATE level rather than only in the rendered DOM: the consigned placeholder is authored with a literal `disabled` attribute (consignmentCountries.html:114) while the origin placeholder is authored without one (:32). The asymmetry is therefore deliberate source, not a runtime accident. FIELD RENDER GATE (previously unrecorded here): consigned-country is not unconditional — the whole block is wrapped in `{{^eq countryData.type \"CVEDA\"}}` (:106), i.e. it renders for every CHED type EXCEPT CHED-A. It renders for CHED-PP, which is what the traces show; but it is shared cross-CHED surface, not CHED-PP-specific. ALWAYS ARRIVES EQUAL TO origin-country, confirmed across three traces with three different countries: AT/AT (219b88... action 13), BZ/BZ (e10b7c... action 16), FR/FR (1f5b6e... action 15). It is therefore defaulted from the country chosen on page-1; no trace ever changes it here, and the POST body (219b88... request 2038) submits consigned-country=AT unchanged. CORROBORATED AS A COVERAGE HOLE: the QA repo has NO locator for this field anywhere — a grep for 'consigned-country' / 'Country from where consigned' across page-objects/, workflows/, tests/, types/ and utils/ returns nothing. No CHED-PP test ever reads, sets or asserts it. Its independence from origin-country (i.e. whether a user can consign from a country other than the origin, which is the whole point of the field) is entirely unexercised by this corpus. THE COVERAGE HOLE WAS RE-PROVEN INDEPENDENTLY THIS WAVE: a fresh grep for 'consigned-country' / 'Country from where consigned' (and, in the same sweep, 'local-reference-number' / 'reference number for this consignment' / 'customs-reference-number' / 'region-code') across page-objects/, workflows/, tests/, types/ and utils/ returned ZERO hits of any kind. Reinforced from the config side: ChedPPNotificationConfig (ched-pp-workflows.ts:41-133, read in full) has knobs for euCountryOfOrigin (:51) and rowCountryOfOrigin (:53) and NO consigned-country counterpart — so the de-facto payload for the whole CHED-PP journey cannot express a consignment country that differs from the origin country. The test suite is not merely silent on this field; it is structurally incapable of varying it.",
+      "conditionalOn": null
+    },
+    {
+      "name": "local-reference-number",
+      "label": "Add a reference number for this consignment (optional)",
+      "hint": "This can be whatever internal reference you use for the consignment.",
+      "control": "text",
+      "required": false,
+      "requiredEvidence": "legacy — OPTIONAL in the authoritative submission schema, corroborating the confirmed empirical fact (blank accepted, 302 on request 2038). The schema-model home of this field is PartOne.importerLocalReferenceNumber (/Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:602), a plain String with NO @NotNull annotation for any validation group — so it is not mandatory at submission for CHED-PP or any CHED type. This adds a fourth name for the field (schema property 'importerLocalReferenceNumber') on top of the three already noted (visible label 'Add a reference number...', error label 'Internal reference number', constant LOCAL_REFERENCE_NUMBER_LABEL 'Reference number').",
+      "maxlength": 30,
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 13 — control inventory: INPUT|type=text|name=local-reference-number|id=local-reference-number|value=|maxlength=30|required=false, with aria-describedby=\"local-reference-number-hint\" and class 'govuk-input govuk-!-width-one-half'. Hint textContent (whitespace-trimmed) is exactly 'This can be whatever internal reference you use for the consignment.'. Free text, capped at 30 chars by maxlength. Optional and marked so in the label. No CHED-PP trace ever types into it — it is empty in all three evidence traces (219b88... action 13, e10b7c... action 16, 1f5b6e... action 15 all read value=\"\"). POSITIVE CONFIRMATION THAT BLANK IS ACCEPTED: 219b88... request 2038 POSTs local-reference-number= (empty) and the server responds 302, navigating on to commodity/input-method — so the field is genuinely optional on the server, not merely labelled optional. CORROBORATED AS A COVERAGE HOLE: the QA repo has no locator for it (grep for 'local-reference-number' / 'reference number for this consignment' across page-objects/, workflows/, tests/, types/ and utils/ returns nothing), and ChedPPNotificationConfig (ched-pp-workflows.ts:41-133) has no field for it. So the evidence establishes it is optional, but says nothing about its behaviour when populated. RE-VERIFIED THIS WAVE by a fresh grep across page-objects/, workflows/, tests/, types/ and utils/ (zero hits) and by reading ChedPPNotificationConfig in full (:41-133) — its ~45 optional knobs cover commodity codes, EPPO codes, packages, quantity, weights, transport, documents, billing and consignor address, but nothing on this page. Every CHED-PP journey therefore submits this field empty by construction, which is exactly why the 302 on request 2038 proves 'optional' and nothing more."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Country of origin",
+      "field": "origin-country",
+      "trigger": "Whole-notification (submission-level) validation: Commodities.countryOfOrigin is null when a CHED-PP is validated for submission. This is the back-end microservice/schema rule, distinct from the frontend per-page Joi 'Select the country of origin...' rule below; both mark origin-country mandatory for CHED-PP.",
+      "confidence": "legacy",
+      "evidence": "AUTHORITATIVE SCHEMA MODEL + MICROSERVICE MESSAGE CATALOGUE. @NotNull(groups={...NotificationChedppFieldValidation.class...}) on Commodities.countryOfOrigin at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:168-180; message resolves via key partone.commodities.countryoforigin.not.null to the verbatim string 'Country of origin' at /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:86. CAVEAT ON COPY: this microservice message value is a field-LABEL fragment ('Country of origin'), not a full sentence — it is composed into an error summary downstream, so it is not the literal end-user sentence a person sees. Never observed rendered in any trace (all CHED-PP journeys arrive with a country pre-selected). This is submission-level mandatoriness 'as the old system had it'; a policy the rebuild may revisit.",
+      "layer": "submission-schema"
+    },
+    {
+      "message": "Consigned country",
+      "field": "consigned-country",
+      "trigger": "Whole-notification (submission-level) validation: Commodities.consignedCountry is null when a CHED-PP is validated for submission. IMPORTANT — this submission-level rule CONTRADICTS the frontend per-page Joi below, which applies no required rule to consigned-country for CHED-PP (max-length only). See discrepancies.",
+      "confidence": "legacy",
+      "evidence": "AUTHORITATIVE SCHEMA MODEL + MICROSERVICE MESSAGE CATALOGUE. @NotNull(groups={...NotificationChedppFieldValidation.class...}) on Commodities.consignedCountry at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:190-201; message resolves via key partone.commodities.consignedcountry.not.null to the verbatim string 'Consigned country' at /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:87. Same field-label-fragment caveat as origin-country (composed into an error summary, not a literal sentence). Never observed rendered. THE INVERSION: the frontend Joi treats consigned-country as optional for CHED-PP (max-length 6 only, consignment_countries.js:69-71 — see the 'Country of consignment must be 6 characters or fewer' entry below), whereas this submission schema requires it. In practice the field always defaults to equal origin-country (confirmed across three traces), so a blank consigned-country is never submitted and neither rule fires — but the authoritative model says a completed CHED-PP MUST carry a consigned country. Mandatoriness is a legacy policy the rebuild may revisit.",
+      "layer": "submission-schema"
+    },
+    {
+      "message": "Select the country of origin of the animal or product",
+      "field": "origin-country",
+      "trigger": "origin-country submitted empty — i.e. the (selectable) 'Select a country' placeholder is left in place. Joi string.empty on ORIGIN_COUNTRY_KEY in the base schema.",
+      "confidence": "inferred",
+      "evidence": "APP SOURCE (ipaffs-frontend-notification, not the QA repo): message COUNTRY_REQUIRED defined verbatim at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:64; wired to STRING_EMPTY for ORIGIN_COUNTRY_KEY at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_countries.js:36-39. NOT observed rendered in any trace — no CHED-PP trace submits this page with the placeholder selected. THIS RESOLVES HALF OF THE 'NO VALIDATION EVIDENCE' OPEN QUESTION: origin-country IS mandatory server-side, even though the DOM carries no required attribute. COPY BUG — the string is animal/product-flavoured and reads wrongly on a PLANTS journey; a plant-specific variant exists (COUNTRY_REQUIRED_PLANT, 'Select the country of origin of plants, plant product or other objects', en.js:65) but is wired to a DIFFERENT handler (consignment_origin.js:15-17), not to this page. The rebuild should use the plant wording."
+    },
+    {
+      "message": "Country of origin must be 6 characters or fewer",
+      "field": "origin-country",
+      "trigger": "origin-country value longer than 6 characters. Only reachable by tampering with the POST body — the select's own values are 2-char alpha-2 codes or 6-char GB-* subdivision codes, so a legitimate UI submission can never breach this.",
+      "confidence": "inferred",
+      "evidence": "Composed at runtime by maxLengthMessage(errorLabels.ORIGIN_COUNTRY, 6). Template `${label} must be ${maxLength} characters or fewer` at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:3-5; label 'Country of origin' at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:74; wired at consignment_countries.js:36-37. Not observed in any trace. NOTE the max of 6 is exactly wide enough for 'GB-ENG'/'GB-NIR' — the mixed alpha-2 / ISO 3166-2 value space is what forces it above 2."
+    },
+    {
+      "message": "Country of consignment must be 6 characters or fewer",
+      "field": "consigned-country",
+      "trigger": "consigned-country value longer than 6 characters (tamper-only, as above). This is the ONLY server-side rule on consigned-country in the CHED-PP branch.",
+      "confidence": "inferred",
+      "evidence": "maxLengthMessage(errorLabels.CONSIGNED_COUNTRY, 6); label 'Country of consignment' at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:26; wired in the `case CHEDPP:` branch at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_countries.js:69-71. Not observed in any trace. THIS RESOLVES THE OTHER HALF OF THE 'NO VALIDATION EVIDENCE' OPEN QUESTION: consigned-country has NO required rule for CHED-PP — max length only — so a blank country of consignment would be accepted by the server. The disabled placeholder is a UI-only guard against re-selecting blank. LABEL MISMATCH: the error says 'Country of consignment'; the visible label says 'Country from where consigned'."
+    },
+    {
+      "message": "Internal reference number must be 30 characters or fewer",
+      "field": "local-reference-number",
+      "trigger": "local-reference-number longer than 30 characters. The input also carries maxlength=30, so this is reachable only by paste-overflow or POST tampering.",
+      "confidence": "inferred",
+      "evidence": "maxLengthMessage(errorLabels.LOCAL_REFERENCE_NUMBER, LOCAL_REFERENCE_NUMBER_MAX_CHEDPP); label 'Internal reference number' at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:66; LOCAL_REFERENCE_NUMBER_MAX_CHEDPP: 30 at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/validation_constants.js:86; wired in the `case CHEDPP:` branch at consignment_countries.js:75-77. CORROBORATES THE DOM: the observed maxlength=30 (219b88... action 13) is the CHED-PP-specific override — the default is 58 (LOCAL_REFERENCE_NUMBER_MAX_DEFAULT, validation_constants.js:85). Joi allows '' explicitly, which independently confirms the field is optional (already proven empirically by the 302 on request 2038). THREE NAMES FOR ONE FIELD: visible label 'Add a reference number for this consignment (optional)', error label 'Internal reference number', constant LOCAL_REFERENCE_NUMBER_LABEL 'Reference number' (validation_constants.js:84). The rebuild should settle on one."
+    },
+    {
+      "message": "Customs reference number must be 32 characters or fewer",
+      "field": "customs-reference-number",
+      "trigger": "Unreachable via the rendered UI — the CHED-PP Joi branch accepts a customs-reference-number key (max 32, allows '') but no such control is rendered on this page.",
+      "confidence": "gap",
+      "evidence": "maxLengthMessage(errorLabels.CUSTOMS_REFERENCE_NUMBER, 32) wired in the `case CHEDPP:` branch at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_countries.js:72-74; label 'Customs reference number' at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:37. No matching field in consignmentCountries.html and none in any trace snapshot. See openQuestions — either dead schema surface or the key is posted from elsewhere. LEGACY MODEL CORROBORATION ADDED THIS WAVE — it is NOT purely dead schema: customs reference number is a real field in the authoritative notification model, PartOne.customsReferenceNumber (a plain String) at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:186. It carries NO @NotNull for any group, so it is OPTIONAL at submission. Its presence in the model strengthens the 'real CHED-PP datum the UI silently dropped' reading over 'abandoned schema' — the field has a home in the persisted notification, it is simply not collected on this rendered page. Whether/where the rebuild collects it is a question for a human."
+    }
+  ],
+  "accessibility": {
+    "requirement": "This page is an explicit accessibility checkpoint in the CHED-PP journey — axe runs against it with tags wcag2a, wcag2aa, wcag21a, wcag21aa (rule 'aria-allowed-attr' disabled globally, per an in-code note attributing aria-expanded on conditional radios to GOV.UK Frontend v6 runtime behaviour, IMTA-20937). The default gate is strict: maxViolations 0, failOnViolations true.",
+    "confidence": "inferred",
+    "evidence": "tests/accessibility/ched-pp-accessibility-tests.spec.ts:36 — checkPageAccessibility(pages.page, 'Origin of Import Page'); standard defined at utils/accessibility-utils.ts:119 — new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).disableRules(['aria-allowed-attr']); thresholds at utils/accessibility-utils.ts:21-22 (maxViolations: 0, failOnViolations: true). The CHED-PP a11y spec imports setAccessibilityConfig but never calls it (:13, flagged with an eslint no-unused-vars disable), so the strict defaults apply."
+  },
+  "openQuestions": [
+    "RESOLVED — EVIDENCE POINTER WAS WRONG, AND THE QA REPO PROVES IT. The task brief said this page carries (per OriginOfImportPage.ts) 'Does this consignment conform...', 'Does your consignment require a health certificate?' and 'Will the consignment change after BCP...'. None of those three radios exist in the rendered CHED-PP page-2 — main input[type=radio] count = 0, fieldset count = 0, legend count = 0, confirmed independently in 219b88... action 13 and 1f5b6e... action 15. Source 2 corroborates the traces, not the brief: OriginOfImportPage.ts:6-15 does expose those three radio locators, but ONLY the CHED-P journey ever checks them (ched-p-workflows.ts:282-283, :676-677, :862-863 and tests/accessibility/ched-p-accessibility-tests.spec.ts:36-37 call radioConformsYes / radioChangeAfterBcpYes). Every other CHED type walks past with a bare continue: CHED-PP (ched-pp-workflows.ts:275; ched-pp-accessibility-tests.spec.ts:37), CHED-D (ched-d-workflows.ts:204; ched-d-accessibility-tests.spec.ts:34) and CHED-A (ched-a-workflows.ts:269, :948; ched-a-accessibility-tests.spec.ts:34). CONCLUSION: OriginOfImportPage.ts is a shared, CHED-P-shaped page object over a page whose content varies by CHED type; the three radios are CHED-P variant surface and are OUT OF SCOPE for the CHED-PP rebuild. radioHealthCertificateNo (OriginOfImportPage.ts:10-12) is defined but never called by ANY journey — dead locator. NOW PROVEN FROM THE APP SOURCE TOO, NOT JUST THE TEST CODE — this closes the 'confirm CHED-PP never asks these' caveat at the template level: the Handlebars template gates the conformance radios behind {{#eq countryData.type \"CVEDP\"}} (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentCountries.html:122) and the change-after-BCP radios behind {{#if showTransportDetailsRequired}} (:166), where the handler sets `viewContext.showTransportDetailsRequired = notification.type === CVEDP` (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_countries.js:165). The Joi schema agrees — TRANSPORTER_DETAILS_REQUIRED_KEY and CONFORMS_TO_UK_REGULATIONS_KEY appear ONLY under `case CVEDP:` (validation/routes/handlers/importer/consignment_countries.js:52-65), never under `case CHEDPP:`. A third, independent test source concurs: the webdriverio release-tests guard the click with `if (this.data.chedType === 'CHEDP')` (/Users/samfarrington/git/defra/ipaffs/ipaffs-release-tests/src/steps/chedAllNotification.steps.ts:97-99). CVEDP is CHED-P. So all three sources — rendered DOM, app template/handler/schema, and two separate test suites — agree these are CHED-P-only surface. They are OUT OF SCOPE for the CHED-PP rebuild; this is settled, not a question. FOR THE RECORD, the CHED-P legend copy the brief half-remembered is 'Will the consignment change vehicles or means of transport after the Border Control Post (BCP)?' when isChedp, else 'Do you need to provide details for means of transport after Border Control Post (BCP)?' (consignmentCountries.html:170). No 'health certificate' question exists on this page for ANY CHED type in the app source — that part of the brief appears to be a fabrication of the dead radioHealthCertificateNo locator.",
+    "REGION CODE IS EXPLICITLY EXCLUDED FOR CHED-PP — recorded so the rebuild does not inherit it. The template wraps the whole region-code block (a Yes/No radio pair 'region-code-option' revealing a conditional 'region-code' text input, with a country-prefix widget) in {{#if (not (eq notification.type 'CHEDPP') (eq notification.type 'CED'))}} (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentCountries.html:40). So it renders for CHED-A/CHED-P only. Corroborated by the traces: main input[type=radio] count = 0. NOTE the base Joi schema still accepts region-code and region-code-option keys for ALL types (validation/routes/handlers/importer/consignment_countries.js:40-45) — schema surface wider than the UI, same smell as customs-reference-number below. No action needed for CHED-PP beyond not copying it.",
+    "DEAD SCHEMA SURFACE — CUSTOMS REFERENCE NUMBER. The CHED-PP Joi branch accepts a 'customs-reference-number' key (Joi.string().allow('').max(32), /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_countries.js:72-74) with a full error label and message wired up — but NO control with that name exists in consignmentCountries.html (grepped), and no trace snapshot shows one. Note it is CHED-PP-SPECIFIC: it appears under `case CHEDPP:` and under no other CHED type, so it is not generic cross-CHED leftovers. Question for a human: is a customs reference number a real CHED-PP data requirement that the UI silently dropped (in which case the rebuild may be missing a field), or is this abandoned schema? This is the one place where the traces being a LOWER BOUND might be hiding an actual requirement.",
+    "THE TWO COUNTRY SELECTS ARE FED FROM DIFFERENT TEMPLATE VARIABLES, which the 254/254 observation masks. origin-country is rendered from `countries`/`regions` (consignmentCountries.html:33) while consigned-country is rendered from `allCountries`/`allRegions` (:117). In all three traces both lists came out at 254 options, so they were identical HERE — but the naming implies `countries` can be a RESTRICTED list (plausibly filtered by commodity/regime/Article 72 status) while `allCountries` is the full set. The reference-data contract for the rebuild needs to know whether this is one list or two, and if two, what filters the origin list. Do not assume they are the same list on the strength of three traces that happen to agree.",
+    "NEW THIS WAVE — THE AMEND ROUTE BYPASSES THIS PAGE ENTIRELY, which strengthens the 'redundant re-display' case below and opens a fresh gap. When a submitted CHED-PP is amended, the test drives: btnAmend -> linkCountryOfOriginChangeLink -> pages.countryOfOrigin.dropdownCountryOfOrigin.selectOption(country.Austria) -> pages.countryOfOrigin.btnSaveAndReview (ched-pp-manipulation.spec.ts:68-71), landing straight back on the review page and asserting 'Austria' on view-details (:92). Origin-of-import (page-2) is NEVER rendered in the amend journey — the change link deep-links to page-1 and Save and review returns to review, hopping over page-2. TWO CONSEQUENCES. (1) It corroborates from a second angle that page-1 is the sole write point for country of origin and page-2's copy is a pass-through: the amend flow, which exists precisely to edit that datum, does not go near page-2. (2) IT CREATES A GAP: page-1's page object exposes btnSaveAndReview (CountryOfOriginPage.ts:13-15) and btnSaveAndReturnToHub (:17-19), while page-2's exposes only btnSaveAndContinue (OriginOfImportPage.ts:17-19). So we have no evidence — trace or test — of what page-2 looks like in amend or save-and-return-to-hub mode, or whether it is reachable in those modes at all. Question for a human: if the rebuild keeps this page, must it support amend/hub-exit variants, and if page-2 is genuinely unreachable when amending, is its consigned-country field editable after submission by ANY route? On current evidence, consigned-country may be write-once-and-unamendable — which, if true, is a defect worth surfacing rather than porting.",
+    "NO PAGE OBJECT COVERS THIS PAGE'S ACTUAL CHED-PP FIELDS. The three controls that really render here (origin-country, consigned-country, local-reference-number) have no locator anywhere in the QA repo, and ChedPPNotificationConfig (ched-pp-workflows.ts:41-133) has no config knob for any of them. Every CHED-PP test walks past this page with a bare Save and continue (ched-pp-workflows.ts:275). This is the single biggest evidence hole on the page: three fields, 65 CHED-PP traces, zero interactions. Everything below follows from it. RE-CONFIRMED THIS WAVE AND NOW EXHAUSTIVE — I grepped every usage of originOfImport across workflows/, tests/ and utils/: there are exactly 19 call sites in the whole repo, and for CHED-PP, CHED-A and CHED-D every single one is btnSaveAndContinue and nothing else (ched-pp-workflows.ts:275; ched-a-workflows.ts:269, :948; ched-d-workflows.ts:204; and the four a11y specs). Only CHED-P ever checks a radio here (ched-p-workflows.ts:282-283, :676-677, :862-863; ched-p-accessibility-tests.spec.ts:36-37). The a11y spec also proves the page is only ever assessed in its untouched walk-past state — checkPageAccessibility runs at ched-pp-accessibility-tests.spec.ts:36 BEFORE the click at :37, with no interaction in between. So there is no hidden corner of the QA repo that exercises these fields; the hole is total, not merely unfound.",
+    "TITLE/H1 MISMATCH: <title> is 'Add a reference number for this consignment' but the H1 is 'Origin of the import', and the <title> lacks the ' - Import and export applications - GOV.UK' suffix that other pages carry. This looks like an IPAFFS bug — the title appears to describe only the third field. The rebuild should pick one name; GOV.UK convention is <title> = H1 + service name. Which is correct copy is a question for content design. Note the QA repo calls this page 'Origin of Import Page' (ched-pp-accessibility-tests.spec.ts:36), matching neither string exactly — so there is no third source to break the tie. RELATED, AND WORTH RAISING TOGETHER: page-1 has its own title/H1 mismatch of a different kind — its <title> is 'Origin of the animal or product - Import and export applications - GOV.UK' while its H1 is 'Origin of the plants, plant product or other objects' (219b88... action 11, both read directly). So page-1 carries the service-name suffix but describes ANIMALS on a plants journey. Both pages look like shared cross-CHED templates whose titles were never specialised for CHED-PP.",
+    "COUNTRY OF ORIGIN IS ASKED TWICE, AND SOURCE 2 CONFIRMS THE FIRST ASK IS THE REAL ONE. 'Country of origin' is collected on page-1 (H1 'Origin of the plants, plant product or other objects', 219b88... action 11) and then re-presented, pre-selected, on page-2. The QA repo treats page-1 as the sole write point: CountryOfOriginPage.ts exposes dropdownCountryOfOrigin and ched-pp-workflows.ts:268 (EU branch) / :270 (ROW branch) select there, immediately followed by '// Origin of Import Page' + a bare continue at :275. The page-2 copy is never touched, and amendments also go via page-1 (tests/notification/ched-pp/ched-pp-manipulation.spec.ts:70 — selectOption(country.Austria) then btnSaveAndReview, asserted at :92 as 'Austria' on the view-details page). So the page-2 select is, on all available evidence, a redundant re-display. Is it a deliberate confirm/amend step or duplication? The rebuild probably wants to ask once. Needs a product decision. (Caveat: CountryOfOriginPage's getByLabel('Country of origin') would be ambiguous if ever run against page-2, which carries the same label — another reason to de-duplicate.)",
+    "NO *RENDERED* VALIDATION EVIDENCE — BUT THE RULES AND COPY ARE NOW RECOVERED FROM THE APP SOURCE (supersedes the earlier 'not observable from either admissible source' assessment). Still true: zero validation messages were captured in any trace; all three evidence traces are error-free, every CHED-PP trace clicks straight through, no control carries the HTML required attribute, and no CHED-PP test asserts any error here. What has CHANGED is that the app repo (ipaffs-frontend-notification) yields the Joi schema and the message catalogue directly, so validationMessages is now populated with five entries — inferred (file:line cited), never observed. The two substantive answers: (1) origin-country IS mandatory server-side — Joi STRING_EMPTY maps to COUNTRY_REQUIRED (validation/routes/handlers/importer/consignment_countries.js:36-39); (2) consigned-country is NOT mandatory for CHED-PP — its only rule is max length 6 (:69-71). THIS INVERTS THE PLACEHOLDER TELL noted earlier: the field with the DISABLED placeholder (consigned-country) is the optional one, and the field with the SELECTABLE placeholder (origin-country) is the mandatory one. The UI affordance is backwards relative to the server rules in both directions — a real legacy defect worth not reproducing. WHAT REMAINS A GAP: no error state has ever been RENDERED, so the error-summary markup, the per-field inline error presentation, the summary link text and the a11y of the error state are all still unverified; and the recovered copy is what the code composes, not what a user was seen to receive. Would still benefit from a new trace that submits page-2 with the placeholder selected. Do not treat the five messages as confirmed.",
+    "The optional reference field is never populated in any CHED-PP trace and has no test coverage at all, so its persistence, its 30-char cap and any format rules are untested. maxlength=30 is confirmed from the DOM, and blank-submit-accepted is confirmed from a real 302 (219b88... request 2038), but there is no evidence of a server-side length counterpart, and nothing shows whether a populated value is echoed back on the review/view-details page or carried onto the submitted CHED. Question for a human: is this reference meant to be searchable on the dashboard?",
+    "CONSIGNED-COUNTRY SEMANTICS UNVERIFIED — AND THE EVIDENCE IS NOW STRONGER THAN 'PROBABLY DEFAULTED'. Across three traces spanning three different origin countries and both the EU and ROW branches (AT/AT article72 EU, BZ/BZ hmi-checks ROW, FR/FR smoke EU-default), consigned-country tracked origin-country exactly every time, and nothing in either source ever sets it independently. If in practice it is always equal to country of origin, the rebuild may not need it as a separate question; if it can legitimately differ (goods routed through a third country), that is a real requirement with zero test coverage today. Needs a product answer plus, ideally, a new trace that sets the two to different values.",
+    "COPY INCONSISTENCY ACROSS THE FIELD'S THREE NAMES, plus an animal/plant wording bug — a content-design cleanup list for the rebuild, all from the app source. (1) The reference field is called three different things: visible label 'Add a reference number for this consignment (optional)', error label 'Internal reference number' (validation/labels/en.js:66), constant LOCAL_REFERENCE_NUMBER_LABEL 'Reference number' (utils/validation_constants.js:84) — so a user who overflows it is told off about a field name they have never seen. (2) 'Country from where consigned' errors as 'Country of consignment' (labels/en.js:26) — same problem. (3) The origin-country required message is 'Select the country of origin of the animal or product' on a PLANTS journey; the correct plant string exists (COUNTRY_REQUIRED_PLANT, messages/en.js:65) but is wired to a different handler. (4) The reference field's copy differs by CHED type, but NOT in the direction an earlier draft of this spec claimed — CORRECTED THIS WAVE after reading the template branch directly. The gate is `{{#if (or (eq notification.type 'CVEDA') (eq notification.type 'CED'))}}` (consignmentCountries.html:176): CHED-A (CVEDA) and CHED-D (CED) are the SPECIAL-CASED branch and get 'Your internal reference number for this consignment (optional)' (:181) / 'Enter any internal reference number you want to use to identify this consignment, or leave blank.' (:183) / no maxLength attribute (so the base Joi max of 58 applies). CHED-PP falls through to the ELSE branch (:188-197) and gets 'Add a reference number for this consignment (optional)' (:192) / 'This can be whatever internal reference you use for the consignment.' (:194) — copy it SHARES with CHED-P (CVEDP), which is also unmatched by the gate. So the CHED-PP label and hint are the template DEFAULT, not a CHED-PP-specific variant. The ONLY CHED-PP-specific thing about this field is the max length, applied inline as `maxLength=(ifConditionalValueTrimmed (eq notification.type 'CHEDPP') '30' '')` (:196) and mirrored server-side by the CHEDPP Joi override (max 30, validation .../consignment_countries.js:75-77) against the base default of 58 (:33). Practical consequence for the rebuild: adopting the observed copy is adopting a shared cross-CHED default, so it carries no evidence of a deliberate CHED-PP content decision — whereas the 30-char cap IS deliberate and CHED-PP-only.",
+    "navigation-target-page='commodity/input-method' is a hidden, client-submitted next-page pointer (confirmed in the DOM and in the POST body). Worth flagging to the architecture discussion as a pattern the new app must not reproduce.",
+    "The back link has href='#', so back navigation depends on JavaScript, and it carries a custom modifier class back-link--next-to-breadcrumbs. The rebuild should render a real href. Minor, but it is a progressive-enhancement failure in the legacy app worth not copying.",
+    "This page is an axe checkpoint (wcag2a/2aa/21a/21aa) in the CHED-PP a11y suite, and the gate is strict (maxViolations 0, failOnViolations true, defaults unoverridden) — so a green suite implies it passes today, though this run's a11y result was not itself inspected. It is checked only in its walk-past state, with no error summary rendered. The error-state accessibility of this page is unverified, which follows directly from the no-validation-evidence gap above.",
+    "TWO LEGACY VALIDATION LAYERS DISAGREE ON consigned-country MANDATORINESS — recovered this wave from the authoritative schema model. The frontend per-page Joi (ipaffs-frontend-notification, consignment_countries.js:69-71) applies ONLY a max-length-6 rule to consigned-country for CHED-PP and NO required rule, so the page itself would accept a blank consignment country. But the whole-notification submission schema (ipaffs-imports-notification-schema, Commodities.java:190-201) marks Commodities.consignedCountry @NotNull for the CHED-PP group, and the microservice message catalogue backs it (ValidationMessages.properties:87). So a completed CHED-PP MUST carry a consigned country per the model, even though the page validation does not enforce it. Because the field always defaults to equal origin-country in every observed journey, neither rule is ever exercised and the split is invisible in the traces. QUESTION FOR A HUMAN / RECONCILE: is consigned-country mandatory in the rebuild? The authoritative model says yes; the page behaviour says it is never blank anyway. Decide deliberately rather than inherit the two-layer split. origin-country has no such split — both layers agree it is mandatory. RECORDED IN discrepancies.",
+    "SCHEMA-MODEL HOMES FOR THIS PAGE'S FIELDS, recovered this wave for the rebuild's data mapping: origin-country -> Commodities.countryOfOrigin (@NotNull CHED-PP, Commodities.java:168-180); consigned-country -> Commodities.consignedCountry (@NotNull CHED-PP, Commodities.java:190-201); local-reference-number -> PartOne.importerLocalReferenceNumber (plain String, no @NotNull, PartOne.java:602); customs-reference-number (schema-only, not rendered here) -> PartOne.customsReferenceNumber (plain String, no @NotNull, PartOne.java:186). Note the two country fields live at COMMODITY level in the model (Commodities.java), not at consignment/PartOne level, even though the page presents them as single consignment-wide selects — the rebuild's model mapping should be aware the legacy datum is per-commodity."
+  ],
+  "confidence": "confirmed"
+}

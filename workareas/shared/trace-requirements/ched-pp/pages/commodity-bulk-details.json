@@ -1,0 +1,1019 @@
+{
+  "slug": "commodity-bulk-details",
+  "name": "Commodity details — bulk entry",
+  "url": "/notification/vnet/protected/notifications/:draftId/commodity/details/bulk",
+  "urlEvidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 request 976 — GET https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/commodity/details/bulk?bulkValuesApplied=true&commodityDetailsPage=1",
+  "pageTitle": "Commodity details",
+  "caption": "Description of the goods",
+  "heading": "Commodity",
+  "headingEvidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — document.querySelector('h1').textContent === 'Commodity'; document.title === 'Commodity details'. Independently re-confirmed in trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 (same h1/title).",
+  "bodyCopy": [
+    "499 Commodity lines remaining"
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Add commodity",
+    "Apply",
+    "Clear",
+    "Add Genus (and Species)",
+    "Change Variety and Class",
+    "Update total",
+    "Save and return to hub",
+    "Cancel and return to hub"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full (nested govuk-grid-row > govuk-grid-column-one-quarter / govuk-grid-column-three-quarters for the bulk-apply panel)",
+  "pageScripts": {
+    "note": "Two page-specific client scripts load on this page. Their behaviour was not decompiled — listed so the rebuild knows client JS exists here.",
+    "scripts": ["commodity_details_chedpp.js?v=1.0.4005", "commodity_details_bulk_chedpp.js?v=1.0.4005"],
+    "confidence": "confirmed",
+    "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 requests 964, 965"
+  },
+  "qaAutomationNaming": {
+    "note": "The QA automation repo does NOT call this page 'commodity bulk details'. It drives it through the page object CommodityExtendedDescriptionPage and refers to it in comments as the 'Commodity Extended Description Page'. The separate ChedppCommodityBulkDetailsPage page object exists but is a 3-locator stub used only on the amend/cloning path. Anyone tracing requirements back to the tests must search for 'commodityExtendedDescription', not 'bulk'.",
+    "primaryPageObject": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:1-107",
+    "secondaryPageObject": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ChedppCommodityBulkDetailsPage.ts:1-18",
+    "confidence": "inferred"
+  },
+  "structure": [
+    { "element": "caption", "text": "Description of the goods", "govukComponent": "Caption (govuk-caption-xl)" },
+    { "element": "h1", "text": "Commodity", "govukComponent": "Heading (govuk-heading-xl)" },
+    { "element": "button", "text": "Add commodity", "govukComponent": "Button (govuk-button govuk-!-display-block)" },
+    { "element": "paragraph", "text": "499 Commodity lines remaining", "govukComponent": "Body (govuk-body-l), count in <strong class=\"bold\">" },
+    { "element": "h2", "text": "Commodities", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "table", "text": "Commodities table — columns: Select all | Commodity | Genus and species | Variety | Class", "govukComponent": "Table (govuk-table commodities-info-table) with checkbox column; caption 'Commodities table' is govuk-visually-hidden" },
+    { "element": "h3", "text": "Apply to all commodity lines", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "label", "text": "Number of packages" },
+    { "element": "label", "text": "Type of package" },
+    { "element": "label", "text": "Quantity" },
+    { "element": "label", "text": "Quantity type" },
+    { "element": "label", "text": "Net weight (kg)" },
+    { "element": "label", "text": "Controlled atmosphere container" },
+    { "element": "button", "text": "Apply", "govukComponent": "Button" },
+    { "element": "link", "text": "Clear", "govukComponent": "Link (govuk-link clear-link govuk-!-margin-bottom-0)" },
+    {
+      "element": "h2",
+      "text": "Observed values: 'Other' (trace e10b7cd5, commodity 08059000) and 'Hyacinths' (trace 1f5b6eef, commodity 06011010)",
+      "govukComponent": "Heading (govuk-heading-m), first child of div.commodity-details-commodity-wrapper",
+      "note": "CORRECTED: this is NOT the commodity-group name. In trace e10b7cd5 the heading reads 'Other' while the sibling hidden input <uuid>.commodity-group reads 'Fruit and nuts'; in trace 1f5b6eef the heading reads 'Hyacinths' while commodity-group reads 'Plants for Planting'. The two diverge in both observed cases, so heading != group. Most likely the CN/commodity-code leaf description (0601.10.10 = 'Hyacinths'; 0805.90.00 = citrus '... Other'), but its true data source was not observed — see openQuestions.",
+      "confidence": "confirmed (the two rendered strings); the heading's DATA SOURCE is a gap"
+    },
+    { "element": "h2", "text": "The commodity code, e.g. '08059000' / '06011010'", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "table", "text": "Commodity details — per-commodity editable grid; header/input row pairs; tfoot Subtotal Net weight (kg) / Subtotal Number of packages", "govukComponent": "Table (govuk-table commodity-details-table); caption 'Commodity details' is govuk-visually-hidden" },
+    { "element": "button", "text": "Add Genus (and Species)", "govukComponent": "non-standard: BUTTON.link-button (name=add_species, value=<commodity code>)" },
+    { "element": "button", "text": "Change Variety and Class", "govukComponent": "non-standard: BUTTON.link-button margin-top (name=change_variety, id=change-variety-<commodity code>). CONDITIONAL — present for group 'Fruit and nuts', ABSENT for 'Plants for Planting'. TARGET (v16, inferred): it almost certainly re-enters the standalone Commodity Class page — a SEPARATE page the QA repo models as CommodityClassPage.ts:1-13, whose only control is getByLabel('Select class') with the three values Class I / Class II / Extra Class (/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/commodity-class.ts:1-5). That page is reached on the commodity-ADD path at ched-pp-workflows.ts:313-315, gated on an EPPO code having been given. No test ever clicks 'Change Variety and Class' itself, so the link between this button and that page is an inference from naming + the Fruit-and-nuts conditionality, not an observation." },
+    { "element": "h2", "text": "Total for this consignment", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "table", "text": "Commodity weight — Net weight (kg) 0 / Number of packages 0", "govukComponent": "Table (govuk-table); caption 'Commodity weight' is govuk-visually-hidden" },
+    { "element": "button", "text": "Update total", "govukComponent": "Button" },
+    { "element": "button", "text": "Save and return to hub", "govukComponent": "Button" },
+    { "element": "button", "text": "Save and continue", "govukComponent": "Button" },
+    { "element": "paragraph", "text": "Cancel and return to hub", "govukComponent": "Link in govuk-body paragraph; href = /notification/vnet/protected/notifications/:draftId/overview" }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": ["govuk-heading-xl", "govuk-heading-m"],
+      "count": 6,
+      "usage": "H1 'Commodity' (xl); 4x H2 (Commodities, <commodity description>, <commodity code>, Total for this consignment) and 1x H3 (Apply to all commodity lines), all govuk-heading-m. CORRECTED from 7 — the H2 count scales with the number of commodity lines (2 H2s per commodity), so 6 is the one-commodity case.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — enumeration of main h1,h2,h3"
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "count": 1,
+      "usage": "Section caption 'Description of the goods' above the H1",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": ["govuk-table__head", "govuk-table__body", "govuk-table__footer", "govuk-table__row", "govuk-table__header", "govuk-table__cell", "govuk-!-margin-bottom-4"],
+      "count": 3,
+      "usage": "Commodities selection table; per-commodity 'Commodity details' editable grid; 'Commodity weight' totals table. NOTE 'govuk-table__footer' is NOT a govuk-frontend class (the library has no tfoot modifier) — another hand-written-class symptom.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — 3 tables in main; class inventory of main *"
+    },
+    {
+      "component": "Checkboxes",
+      "govukClass": "govuk-checkboxes",
+      "modifiers": ["govuk-checkboxes__input", "govuk-checkboxes__item", "govuk-checkboxes__label"],
+      "count": 2,
+      "usage": "'Select all' header checkbox plus one checkbox per commodity row (so this count scales with commodity lines), driving which lines the bulk Apply writes to. A per-commodity 'test and trial' checkbox also exists on a variant not covered by our traces — see fields.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["govuk-!-width-full"],
+      "count": 6,
+      "usage": "CORRECTED from 8. Six selects in main for the one-commodity 'Fruit and nuts' case: 3 in the bulk panel (bulk-package-type, bulk-quantity-type, bulk-container) and 3 in the per-commodity row (package-type, quantity-type, container). A 'Plants for Planting' line adds a 4th per-row select (finished-or-propagated) — trace 1f5b6eef action 26 shows 7 selects for that variant. The count scales with commodity lines and group.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main select count = 6; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — control inventory"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": ["govuk-input--width-4", "govuk-!-width-full"],
+      "count": 6,
+      "usage": "Number of packages, Quantity, Net weight (kg) — 3 in the bulk panel plus 3 per commodity row. Scales with commodity lines.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main input[type=text] count = 6"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--s", "govuk-checkboxes__label"],
+      "count": 8,
+      "usage": "Six bulk-apply panel field labels (all govuk-label--s, all with a correct for= attribute) plus two checkbox labels (Select all, commodity-<uuid>). NOTE: the per-commodity grid controls have NO <label> at all — they rely solely on aria-label.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — label inventory (8 labels, all with htmlFor set)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-display-block", "govuk-!-margin-bottom-0", "govuk-!-margin-left-0", "govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 5,
+      "usage": "CORRECTED from 6. Exactly five .govuk-button elements: Add commodity, Apply, Update total, Save and return to hub, Save and continue. 'Add commodity' carries data-module=govuk-button and data-prevent-double-click=true. Main contains 8 <button> elements in total — the other 3 are 2x BUTTON.link-button (Add Genus (and Species), Change Variety and Class) and 1x BUTTON.js-hidden ('Keyboard submit'), none of which are govuk-buttons.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main .govuk-button textContent list = [Add commodity, Apply, Update total, Save and return to hub, Save and continue]; #add-commodity outerHTML confirms data-module/data-prevent-double-click"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "count": 10,
+      "usage": "CORRECTED from 6. Ten .govuk-form-group elements in main — the six bulk-apply panel fields plus further groups wrapping the checkbox and per-commodity controls.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main .govuk-form-group count = 10"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "count": 2,
+      "usage": "Exactly two links in main: 'Clear' (href = this page's own URL) and 'Cancel and return to hub' (href = :draftId/overview). Both carry govuk-link.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main a enumeration"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "count": 5,
+      "usage": "CORRECTED from 1. Five elements in main, including the three table captions ('Commodities table', 'Commodity details', 'Commodity weight').",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main .govuk-visually-hidden count = 5; caption enumeration"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": ["govuk-body-l", "govuk-!-display-inline-block"],
+      "count": 2,
+      "usage": "'499 Commodity lines remaining'; 'Cancel and return to hub' paragraph",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "count": 1,
+      "usage": "'Back' link above the caption",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — .govuk-back-link textContent = 'Back'"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "class=\"govuk-tabgit border-bottom-none le__cell\"",
+      "whatItDoes": "Applied to ONE <td> in the per-commodity 'Commodity details' grid — the cell holding the per-commodity 'container' select. This is a CORRUPTED class string — 'govuk-table__cell' has been mangled into two broken tokens 'govuk-tabgit' and 'le__cell', almost certainly a botched find/replace or an unresolved merge artifact committed to the template.",
+      "concern": "Neither 'govuk-tabgit' nor 'le__cell' exists in govuk-frontend, so this cell silently loses all govuk-table__cell styling (padding, border, alignment). It renders 'close enough' that nobody noticed. It is direct evidence that IPAFFS templates hand-write govuk-* classes rather than using the Nunjucks macros — a class typo in a macro call would be impossible. The rebuild should use the govukTable macro so this class of defect cannot occur.",
+      "govukAlternative": "govuk-table__cell, ideally emitted by the govukTable Nunjucks macro rather than hand-written HTML",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — document.querySelectorAll('.govuk-tabgit').length === 1; outerHTML = '<td class=\"govuk-tabgit border-bottom-none le__cell\"><div class=\" \"><select class=\"govuk-select govuk-!-width-full\" id=\"2d6f1f9f-...\"'. Both tokens also appear in the main class inventory."
+    },
+    {
+      "pattern": "BUTTON.link-button (and .link-button.margin-top)",
+      "whatItDoes": "Styles a real <button type=submit> ('Add Genus (and Species)', 'Change Variety and Class') to look like a hyperlink.",
+      "concern": "Bespoke class outside the toolbox. The behaviour is right (it submits, so a button is the correct element) but the styling is hand-rolled. govuk-frontend has a supported idiom for exactly this.",
+      "govukAlternative": "govuk-button--secondary for button-styled affordance, or the documented 'button that looks like a link' pattern (govuk-link class on a button with the button reset styles)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main .link-button textContent list = ['Add Genus (and Species)', 'Change Variety and Class']; class inventory contains link-button and margin-top"
+    },
+    {
+      "pattern": ".clear-link",
+      "whatItDoes": "Additive custom class on the 'Clear' link that resets the bulk-apply panel. Full class list is 'govuk-link clear-link govuk-!-margin-bottom-0'; href = the page URL itself, i.e. a plain reload.",
+      "concern": "CORRECTED framing: govuk-link IS already applied, so this is a bespoke class layered ON TOP of the toolbox class rather than replacing it. The real concern is behavioural, not classing — the reset is done by navigating to the page URL rather than clearing client-side, so it discards any unsaved per-commodity edits too. A usability trap.",
+      "govukAlternative": "Keep govuk-link, drop the bespoke class, and scope the reset to the bulk panel only",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — outerHTML = '<a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/commodity/details/bulk\" class=\"govuk-link clear-link govuk-!-margin-bottom-0\">Clear</a>'"
+    },
+    {
+      "pattern": ".commodities-info-table, .commodity-details-table, .commodity-details-commodity-wrapper, .commodity-details-lines-remaining, .commodity-variation-header",
+      "whatItDoes": "IPAFFS-specific layout/styling hooks layered on top of govuk-table and the surrounding wrappers. .commodity-variation-header is applied to the <td> cells carrying the genus/species and EPPO values in the per-commodity grid's header pair.",
+      "concern": "The per-commodity 'Commodity details' grid is a bespoke editable data-grid built inside a govuk-table — header row / input row pairs stacked vertically within one table, which is not a Design System pattern. Editable tables are explicitly not something govuk-frontend provides. This is the single biggest rebuild decision on this page.",
+      "govukAlternative": "No direct equivalent. The Design System steer would be one-thing-per-page: a separate 'add commodity details' page per commodity line, with a govuk-summary-list overview and Change links — rather than an inline editable grid.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — class inventory of main * contains all five; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — .commodity-variation-header resolves to 6 TDs, first two textContent 'Albuca bracteata' and 'ABWBR'"
+    },
+    {
+      "pattern": ".table-responsive",
+      "whatItDoes": "Wrapper making the wide commodity tables horizontally scrollable on narrow viewports.",
+      "concern": "Custom responsive shim — the class name is Bootstrap's. Suggests non-govuk CSS has leaked into the codebase.",
+      "govukAlternative": "None in govuk-frontend (it has no responsive-table helper). Avoided entirely if the grid is replaced by one-thing-per-page.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — class inventory of main *"
+    },
+    {
+      "pattern": ".js-hidden — BUTTON 'Keyboard submit'",
+      "whatItDoes": "A visually-hidden submit button, first in the form, that exists so pressing Enter in a text field submits to a predictable default handler rather than triggering whichever button happens to be first.",
+      "concern": "A workaround for the page having many submit buttons (Add commodity / Apply / Update total / Save…) sharing one <form>. It is a symptom of the single-mega-form architecture, and it is JS-dependent (hidden only when JS runs).",
+      "govukAlternative": "Not needed if the page is decomposed so each form has one primary action",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — outerHTML = '<button class=\"js-hidden\" type=\"submit\" value=\"Keyboard submit\">Keyboard submit</button>'"
+    },
+    {
+      "pattern": ".search-panel, .grid, .container, .action, .bold, .weight, .species, .variety, .eppo, .class, .margin-top, .border-bottom-none",
+      "whatItDoes": "Assorted bespoke utility and semantic classes used for layout and cell styling.",
+      "concern": "A generic utility layer running in parallel to govuk-frontend's own (govuk-!-*). Two competing utility systems on one page. Note '.class' and '.container' are dangerously generic names.",
+      "govukAlternative": "govuk-!-* spacing/width override classes and the govuk grid",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — class inventory of main * contains all twelve"
+    },
+    {
+      "pattern": "Single <form> in main with multiple named submit buttons (add_commodity, apply-bulk-commodity-details, update-total, save-and-return-button, button-save-and-continue, add_species, change_variety) discriminated server-side by button name/value; form has NO action attribute so it posts to the current URL",
+      "whatItDoes": "One giant form posts every commodity's fields at once; the server branches on which submit button's name arrived, then 302s. 'Apply' is a full server round-trip, not client-side: POST to the bulk URL then GET bulk?bulkValuesApplied=true&commodityDetailsPage=1.",
+      "concern": "Architectural, not cosmetic. Field names are constructed from commodity UUIDs ('<uuid>.num-packages'), so the server must parse dotted, dynamically-named parameters. add_species/change_variety carry the commodity CODE as their value (e.g. '08059000'), which is not unique per line if the same code is added twice. This is the IPAFFS architecture the rebuild is explicitly told NOT to copy.",
+      "govukAlternative": "One page per commodity line with stable field names, or a genuine bulk-apply page separate from the per-line edit pages",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — main form count = 1, form.getAttribute('action') === null; control inventory shows all named submit buttons; requests 994 (POST 302 bulk?bulkValuesApplied=true&commodityDetailsPage=…) and 976 (GET 200 same URL)"
+    },
+    {
+      "pattern": "Self-referential aria-labelledby on the three bulk SELECTS (e.g. <select id=\"bulk-quantity-type\" aria-labelledby=\"bulk-quantity-type\">), which OVERRIDES a correct sibling label[for]",
+      "whatItDoes": "Each of bulk-package-type, bulk-quantity-type and bulk-container carries aria-labelledby pointing at ITSELF rather than at its label element. The three bulk text inputs (bulk-num-packages, bulk-quantity, bulk-net-weight) carry no aria-labelledby and are unaffected.",
+      "concern": "CORRECTED MECHANISM — the previous version of this spec claimed 'the controls only get a name because a sibling <label> happens to exist' and that the fix is 'should be a plain label[for]'. Both are wrong. A correct label[for] ALREADY exists for all six bulk fields. The bug is that aria-labelledby WINS over label[for] in the accessible-name computation, and because it resolves to the select itself the computed name becomes the select's own selected-option text, NOT the label. This precisely explains the observed locator behaviour: getByLabel('Select type of package') and getByLabel('Select quantity type') resolve, because the accessible name is the PLACEHOLDER OPTION text; getByLabel fails for bulk-container because its first option's text is EMPTY, yielding no accessible name at all — which is why the page object falls back to getByText. The fix is to DELETE the aria-labelledby attribute, not to add a label.",
+      "govukAlternative": "govukSelect macro, which emits label[for] and no aria-labelledby",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — per-control audit: bulk-package-type/bulk-quantity-type/bulk-container each have aria-labelledby === own id AND hasLabelFor === true; bulk-num-packages/bulk-quantity/bulk-net-weight have aria-labelledby absent AND hasLabelFor === true. Label inventory confirms all 8 labels carry htmlFor. trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 30 log — 'locator resolved to <label for=\"bulk-container\" class=\"govuk-label govuk-label--s\">Controlled atmosphere container</label>'. trace 219b882e action 26 log — getByLabel('Select type of package') resolves to <select id=\"bulk-package-type\" aria-labelledby=\"bulk-package-type\">. Corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:67-69"
+    },
+    {
+      "pattern": "Per-commodity grid controls have NO <label> and NO aria-labelledby — named only by aria-label",
+      "whatItDoes": "All six per-commodity controls (<uuid>.num-packages, .package-type, .quantity, .quantity-type, .net-weight, .container) get their accessible name solely from an aria-label attribute; no <label for> element targets them.",
+      "concern": "Distinct from the bulk-panel defect above and previously unrecorded. Names are invisible to sighted users (the visible column header is a separate <th> not programmatically associated), and several aria-labels are wrong for their control type — '.quantity-type' is a SELECT labelled 'Enter quantity type'. Also means the visible header text and the accessible name can drift independently.",
+      "govukAlternative": "govukInput/govukSelect macros with real labels, or scope=col <th> headers properly associated via headers/id",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — per-control audit: all six <uuid>.* controls report aria-labelledby absent AND hasLabelFor === false; control inventory shows their aria-label values"
+    },
+    {
+      "pattern": "Row checkbox label = 'commodity-' + the raw commodity UUID (e.g. 'commodity-2d6f1f9f-a8bc-418e-bfb9-c06e969efd3a')",
+      "whatItDoes": "Each commodity row's select-checkbox is labelled with its internal UUID, prefixed 'commodity-'. The label element is correctly associated (for= matches), so this is a copy defect rather than an association defect.",
+      "concern": "Screen-reader users hear a 46-character 'commodity-<uuid>' string read out as the checkbox's accessible name. Should be the commodity code / species. A real, shippable a11y bug. Note the accessibility suite DOES run axe against this page in both states ('Commodity Extended Description Page (with commodities)' and '(after apply)'), so either axe does not flag UUID-as-name (it cannot — the name is non-empty and correctly associated) or the finding is being tolerated.",
+      "govukAlternative": "govuk-visually-hidden label naming the commodity meaningfully",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — label inventory entry 'for=commodity-2d6f1f9f-a8bc-418e-bfb9-c06e969efd3a | class=govuk-label govuk-checkboxes__label | text=\"commodity-2d6f1f9f-a8bc-418e-bfb9-c06e969efd3a\"'; /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:88,92"
+    },
+    {
+      "pattern": "FOUR different value encodings behind identical 'Yes'/'No' option text on ONE page (bulk-container on/off; <uuid>.container 1364882/''; <uuid>.finished-or-propagated Finished/Propagated; plus differing placeholder conventions)",
+      "whatItDoes": "Every select on this page that renders the option texts 'Yes' and 'No' submits a DIFFERENT value vocabulary. bulk-container: Yes='on', No='off', with an empty-TEXT placeholder. <uuid>.container: Yes='1364882' (an opaque internal id), No='' (empty string), with NO placeholder. <uuid>.finished-or-propagated: Yes='Finished', No='Propagated', with a 'Select option' placeholder.",
+      "concern": "CORRECTED AND WIDENED by the v17 pass — the prior version said 'Three different encodings of the same Yes/No concept' and listed only the two container selects' values. Two things were wrong. (1) It is FOUR encodings, not three, because finished-or-propagated's values were never dumped. (2) More importantly, they are NOT all 'the same Yes/No concept': finished-or-propagated is a Finished/Propagated DOMAIN ENUM merely labelled Yes/No, so a user reading 'Yes' cannot know they are asserting 'Finished'. The other defects remain: '1364882' looks like a leaked database key, and <uuid>.container's No='' makes 'No' and 'not answered' indistinguishable on submit. A reviewer cannot tell any of this from the rendered page — all four look like ordinary Yes/No dropdowns.",
+      "govukAlternative": "govukRadios with an explicit, stable value vocabulary per question, and a distinct representation for unanswered. Where the datum is a domain enum (Finished/Propagated), ask for the enum directly rather than dressing it as Yes/No.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — option dump: '2d6f1f9f-….container => [\"Yes\":\"1364882\", \"No\":\"\"] count=2' vs 'bulk-container => [\"\":\"\", \"Yes\":\"on\", \"No\":\"off\"] count=3'. trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — option dump: '84994871-….finished-or-propagated => [\"Select option\":\"\", \"Yes\":\"Finished\", \"No\":\"Propagated\"] count=3'; action 39 — selecting label 'Yes' returns values [\"Finished\"]."
+    },
+    {
+      "pattern": "Id-suffix-only addressable controls ([id$=\"finished-or-propagated\"], [id$=\"test-and-trial\"])",
+      "whatItDoes": "The per-commodity conditional controls are addressed by the tests only via an id-suffix CSS selector, because the id is prefixed with the commodity UUID and the accessible name is either generic ('Select option') or absent.",
+      "concern": "Corroborates that these controls have no usable accessible name or stable identity — the QA repo could not write a role/label locator for them. Any control that can only be found by CSS suffix is a control a screen reader cannot describe.",
+      "govukAlternative": "Stable field names plus govukSelect/govukCheckboxes macros with real labels",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:71-77; /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ChedppCommodityBulkDetailsPage.ts:6-8. The aria-label 'Select option' on finished-or-propagated is confirmed at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26."
+    }
+  ],
+  "fields": [
+    {
+      "name": "select-all-checkbox",
+      "label": "Select all",
+      "control": "checkbox",
+      "required": false,
+      "confidence": "confirmed",
+      "observedValues": ["checked"],
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 24 (Check, getByRole('checkbox', { name: 'Select all' })); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — label inventory 'for=select-all-checkbox | text=\"Select all\"'. Corroborated: CommodityExtendedDescriptionPage.ts:30-32; every CHED-PP journey checks it before filling the bulk panel — ched-pp-workflows.ts:366, ched-pp-workflows.ts:836, ched-pp-accessibility-tests.spec.ts:80. NOTE: no test ever selects a SUBSET of rows, so partial bulk-apply is untested."
+    },
+    {
+      "name": "commodity-<uuid>",
+      "label": "commodity-<uuid> — the raw UUID, e.g. 'commodity-2d6f1f9f-a8bc-418e-bfb9-c06e969efd3a'",
+      "control": "checkbox",
+      "required": false,
+      "conditionalOn": "one per commodity line added on commodity-search; label is the raw UUID (see nonStandardPatterns)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|checkbox|commodity-2d6f1f9f-a8bc-418e-bfb9-c06e969efd3a', label text identical; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — same shape with a different UUID (84994871-0490-49cc-b787-4496d7222235). No page object addresses individual rows — the QA repo only ever uses 'Select all', so per-row selection has no test coverage."
+    },
+    {
+      "name": "bulk-num-packages",
+      "label": "Number of packages",
+      "control": "text",
+      "required": false,
+      "observedValues": ["2"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 25 — Fill \"2\" on getByRole('textbox', { name: 'Number of packages' }).first(); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|bulk-num-packages' value '2', label[for=bulk-num-packages] text 'Number of packages'. Corroborated: CommodityExtendedDescriptionPage.ts:10-12 (inputNumberOfPackages), driven at ched-pp-workflows.ts:367 with DEFAULT_CONFIG.numberOfPackages = '2' (ched-pp-workflows.ts:150). Tests use .first() because the non-exact role name also matches the per-row aria-label 'Enter number of packages'."
+    },
+    {
+      "name": "bulk-package-type",
+      "label": "Type of package",
+      "control": "select",
+      "required": false,
+      "optionCount": 24,
+      "optionsTruncated": false,
+      "placeholderOption": "Select type of package (value=\"\")",
+      "optionValueEqualsText": true,
+      "options": [
+        "Select type of package",
+        "Bag",
+        "Bale",
+        "Bottle, flask and other glass packages",
+        "Box",
+        "Bulk solid granular particles (\"grains\")",
+        "Can",
+        "Carton",
+        "Case",
+        "Cask",
+        "Coffer",
+        "Container",
+        "Crate",
+        "Other",
+        "Package",
+        "Pallet",
+        "Polystyrene Box",
+        "Tray",
+        "Tube",
+        "Vial",
+        "Wood bundle",
+        "Wood crate",
+        "Wooden barrel",
+        "Wooden case with pallet base"
+      ],
+      "observedValues": ["Box"],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — full option dump verified character-by-character: 24 options, placeholder value=\"\", every other option's value === its text. trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 26 — Select option 'Box', return values [\"Box\"]. Corroborated: CommodityExtendedDescriptionPage.ts:51-53 (dropdownTypeOfPackage — getByLabel('Select type of package'), i.e. the tests address it by its PLACEHOLDER option text, which IS its computed accessible name — see the aria-labelledby entry in nonStandardPatterns); ched-pp-workflows.ts:368 with DEFAULT_CONFIG.typeOfPackage = packageType.box (ched-pp-workflows.ts:151). CROSS-CHECK: the QA domain vocabulary /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/package-type.ts:1-35 lists 33 package types across all CHED types; the 23 real options rendered here (24 minus the placeholder) are exactly that list MINUS Balloon Protected, Block, Container not otherwise specified as transport equipment, Drum, In Bulk, Jar, Pail, Pallet Box, Tank, Tote. So the CHED-PP list is a filtered subset of a shared reference-data set — the new app must source this list per-CHED-type, not hardcode it. Note the inconsistent Title Case ('Polystyrene Box', 'Wood crate')."
+    },
+    {
+      "name": "bulk-quantity",
+      "label": "Quantity",
+      "control": "text",
+      "required": false,
+      "observedValues": ["1"],
+      "inferredValues": ["2 — the copy-as-new default at ched-pp-workflows.ts:780; NOT trace-observed"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 27 — Fill \"1\" on getByRole('textbox', { name: 'Quantity', exact: true }); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|bulk-quantity' value '1', label[for=bulk-quantity] text 'Quantity'. Corroborated: CommodityExtendedDescriptionPage.ts:59-61 (inputQuantity — exact name resolves uniquely, confirming only the bulk panel's input has that exact accessible name); ched-pp-workflows.ts:369 with DEFAULT_CONFIG.quantity = '1' (ched-pp-workflows.ts:152)."
+    },
+    {
+      "name": "bulk-quantity-type",
+      "label": "Quantity type",
+      "control": "select",
+      "required": false,
+      "optionCount": 8,
+      "optionsTruncated": false,
+      "placeholderOption": "Select quantity type (value=\"\")",
+      "optionValueEqualsText": true,
+      "options": [
+        "Select quantity type",
+        "Stems",
+        "Bulbs",
+        "Corms and rhizomes",
+        "Plants in tissue culture",
+        "Seeds",
+        "Kilograms",
+        "Pieces"
+      ],
+      "observedValues": ["Bulbs"],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — full option dump verified: 8 options, placeholder value=\"\", every other option's value === its text. Action 36 itself IS the Select option call (getByLabel('Select quantity type'), return values [\"Bulbs\"]). trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 28 — same call. Corroborated EXACTLY: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/quantity-type.ts:1-9 defines precisely these 7 values (Stems, Bulbs, Corms and rhizomes, Plants in tissue culture, Seeds, Kilograms, Pieces) — a full independent match of the rendered list minus the placeholder. This is the highest-confidence option list on the page. Driven at ched-pp-workflows.ts:370, DEFAULT_CONFIG.quantityType = quantityType.bulbs (ched-pp-workflows.ts:153). Addressed by placeholder text (CommodityExtendedDescriptionPage.ts:63-65)."
+    },
+    {
+      "name": "bulk-net-weight",
+      "label": "Net weight (kg)",
+      "control": "text",
+      "required": false,
+      "observedValues": ["1"],
+      "inferredValues": ["10 — the copy-as-new default at ched-pp-workflows.ts:782; NOT trace-observed"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 29 — Fill \"1\" on getByRole('textbox', { name: 'Net weight (kg)' }); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|bulk-net-weight', label[for=bulk-net-weight] text 'Net weight (kg)'. Corroborated: CommodityExtendedDescriptionPage.ts:47-49 (inputNetWeightinKgs — CHED-PP-specific locator, distinct from the CHED-A/P/D 'Net weight' one at :6-8); ched-pp-workflows.ts:371, DEFAULT_CONFIG.netWeightInKgs = '1' (ched-pp-workflows.ts:154)."
+    },
+    {
+      "name": "bulk-container",
+      "label": "Controlled atmosphere container",
+      "control": "select",
+      "required": false,
+      "optionCount": 3,
+      "options": ["", "Yes", "No"],
+      "optionValues": { "": "", "Yes": "on", "No": "off" },
+      "observedValues": ["Yes"],
+      "inferredValues": ["No — the copy-as-new default at ched-pp-workflows.ts:783; NOT trace-observed"],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — option dump 'bulk-container => [\"\":\"\", \"Yes\":\"on\", \"No\":\"off\"] count=3'; label[for=bulk-container] text 'Controlled atmosphere container'. trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 30 — Select option 'Yes', return values [\"on\"]. NOTE: the first option has EMPTY text — no 'Select…' placeholder, unlike its siblings — which is precisely why it has no computed accessible name and the page object must use getByText (CommodityExtendedDescriptionPage.ts:67-69). A Yes/No question rendered as a select rather than govuk Radios. Driven at ched-pp-workflows.ts:372; DEFAULT_CONFIG.controlledAtmosphereContainer = 'Yes' (ched-pp-workflows.ts:155)."
+    },
+    {
+      "name": "<uuid>.num-packages",
+      "label": "(no <label> element — aria-label only)",
+      "hint": "aria-label: Enter number of packages",
+      "control": "text",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "MANDATORY for CHED-PP at submission. The per-line number_package datum is validated @ChedppMinValueKeyDataPair under the NotificationChedppFieldValidation group at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:314-319 (field constant NUMBER_PACKAGE, ComplementParameterSet.java:38). The HTML control itself carries NO required attribute (that part is confirmed: per-control audit shows required=false), so enforcement is server-side on submit, not client-side. Legacy mandatoriness — a policy the rebuild may revisit, but this is how IPAFFS had it.",
+      "conditionalOn": "one per commodity line, in the per-commodity 'Commodity details' grid",
+      "confidence": "confirmed",
+      "notes": "required flipped false->true by the legacy-schema pass: the DOM has no required attribute (confirmed), but the backend @NotNull-group model makes it mandatory for CHED-PP submission (legacy). Not a contradiction — the two describe different layers (client optional, server required-on-submit).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|2d6f1f9f-….num-packages|Enter number of packages'; per-control audit confirms hasLabelFor === false. trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — same shape. No test ever fills the per-row inputs directly — every CHED-PP journey uses Select all + the bulk panel + Apply. Per-row editing is UNTESTED in the QA suite."
+    },
+    {
+      "name": "<uuid>.package-type",
+      "label": "(no <label> element — aria-label only)",
+      "hint": "aria-label: Select package type",
+      "control": "select",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "MANDATORY for CHED-PP at submission. The per-line type_package datum is validated @ChedppNotNullKeyDataPair under NotificationChedppFieldValidation at PartOne.java:320-325 (field constant TYPE_PACKAGE, ComplementParameterSet.java:42). Backend message 'Add the package type' (ValidationMessages.properties:131). HTML control has no required attribute (confirmed) — enforcement is server-side. Legacy policy the rebuild may revisit.",
+      "notes": "required flipped false->true by the legacy-schema pass on backend @NotNull-group evidence; client-side the select is optional (confirmed).",
+      "optionCount": 24,
+      "optionsIdenticalTo": "bulk-package-type — verified as a byte-identical option list",
+      "options": [
+        "Select type of package",
+        "Bag",
+        "Bale",
+        "Bottle, flask and other glass packages",
+        "Box",
+        "Bulk solid granular particles (\"grains\")",
+        "Can",
+        "Carton",
+        "Case",
+        "Cask",
+        "Coffer",
+        "Container",
+        "Crate",
+        "Other",
+        "Package",
+        "Pallet",
+        "Polystyrene Box",
+        "Tray",
+        "Tube",
+        "Vial",
+        "Wood bundle",
+        "Wood crate",
+        "Wooden barrel",
+        "Wooden case with pallet base"
+      ],
+      "conditionalOn": "one per commodity line",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — full option dump for '2d6f1f9f-….package-type' matches bulk-package-type exactly (24 options, same texts, same values)"
+    },
+    {
+      "name": "<uuid>.quantity",
+      "label": "(no <label> element — aria-label only)",
+      "hint": "aria-label: Enter quantity",
+      "control": "text",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "MANDATORY for CHED-PP at submission. The per-line quantity datum carries BOTH @ChedppNotNullKeyDataPair (must be present) AND @ChedppIsPositiveDoubleKeyDataPair (must be a positive number) under NotificationChedppFieldValidation at PartOne.java:332-343 (field constant QUANTITY). Backend message 'Add the quantity' (ValidationMessages.properties:134). HTML control has no required attribute (confirmed) — enforcement is server-side. Legacy policy the rebuild may revisit.",
+      "conditionalOn": "one per commodity line",
+      "confidence": "confirmed",
+      "notes": "required flipped false->true by the legacy-schema pass on backend @NotNull-group evidence; client-side the input is optional (confirmed). Backend also enforces positive-double.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|2d6f1f9f-….quantity|Enter quantity'"
+    },
+    {
+      "name": "<uuid>.quantity-type",
+      "label": "(no <label> element — aria-label only)",
+      "hint": "aria-label: Enter quantity type",
+      "control": "select",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "MANDATORY for CHED-PP at submission. The per-line type_quantity datum is validated @ChedppNotNullKeyDataPair under NotificationChedppFieldValidation at PartOne.java:326-331 (field constant TYPE_QUANTITY). Backend message 'Add the quantity type' (ValidationMessages.properties:133). HTML control has no required attribute (confirmed) — enforcement is server-side. Legacy policy the rebuild may revisit.",
+      "notes": "required flipped false->true by the legacy-schema pass on backend @NotNull-group evidence; client-side the select is optional (confirmed).",
+      "optionCount": 8,
+      "optionsIdenticalTo": "bulk-quantity-type — verified as a byte-identical option list",
+      "options": [
+        "Select quantity type",
+        "Stems",
+        "Bulbs",
+        "Corms and rhizomes",
+        "Plants in tissue culture",
+        "Seeds",
+        "Kilograms",
+        "Pieces"
+      ],
+      "conditionalOn": "one per commodity line. NOTE the aria-label says 'Enter quantity type' on a select — copy defect.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'SELECT|select-one|2d6f1f9f-….quantity-type|Enter quantity type'; full option dump matches bulk-quantity-type exactly"
+    },
+    {
+      "name": "<uuid>.net-weight",
+      "label": "(no <label> element — aria-label only)",
+      "hint": "aria-label: Enter net weight",
+      "control": "text",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "MANDATORY for CHED-PP at submission (must be present and above a minimum). The per-line net_weight datum is validated @MinValueKeyDataPair at ComplementParameterSet.java:72-80 (field constant NET_WEIGHT) with the CHED-PP message key chedpp.net_weight.message = 'Add the net weight' (ValidationMessages.properties:132). CAVEAT: that annotation is bound to the NotificationSingleCedValidation group, not NotificationChedppFieldValidation — unlike the other four per-line fields, whose CHED-PP requiredness is on the NotificationChedppFieldValidation group in PartOne.java. The message key is nonetheless the chedpp.* one, and the frontend commodity_details validator also treats net-weight as required-on-save. Which group actually runs for a CHED-PP submission (NotificationChedppFieldValidation vs NotificationSingleCedValidation) was not traced — noted as a caveat, not a blocker. HTML control has no required attribute (confirmed) — enforcement is server-side.",
+      "conditionalOn": "one per commodity line",
+      "confidence": "confirmed",
+      "notes": "required flipped false->true by the legacy-schema pass. Slightly weaker than the other four per-line fields because the chedpp net-weight message is bound to the SingleCed group rather than the Chedpp group — see requiredEvidence. Legacy policy the rebuild may revisit.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — control inventory 'INPUT|text|2d6f1f9f-….net-weight|Enter net weight'"
+    },
+    {
+      "name": "<uuid>.container",
+      "label": "(no <label> element — aria-label only; the visible column header reads 'Controlled Atmosphere Container')",
+      "hint": "aria-label: Has container",
+      "control": "select",
+      "required": false,
+      "optionCount": 2,
+      "options": ["Yes", "No"],
+      "optionValues": { "Yes": "1364882", "No": "" },
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "OPTIONAL for CHED-PP. The container keydatapair (ComplementParameterSet.CONTAINER = 'container', ComplementParameterSet.java:53) carries NO @NotNull / @ChedppNotNullKeyDataPair anywhere in the model — grep for CONTAINER in the schema-java representation returns only the constant. No CHED-PP required-message key for container exists in ValidationMessages.properties. Confirms the DOM's required=false.",
+      "conditionalOn": "one per commodity line. NOTE: visible header capitalised 'Controlled Atmosphere Container' here vs 'Controlled atmosphere container' in the bulk panel — inconsistent with GOV.UK sentence case. Unlike the bulk equivalent there is NO placeholder option, and the values are opaque ('1364882' for Yes, '' for No) rather than on/off — see nonStandardPatterns.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — option dump '2d6f1f9f-….container => [\"Yes\":\"1364882\", \"No\":\"\"] count=2'; main innerText shows the header 'Controlled Atmosphere Container'; control inventory shows aria-label 'Has container'"
+    },
+    {
+      "name": "<uuid>.finished-or-propagated",
+      "label": "Intended for final users or commercial flower production",
+      "hint": "aria-label: Select option",
+      "control": "select",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "CONDITIONALLY REQUIRED. A dedicated CHED-PP required-message exists — 'You must select whether the commodity is intended for final users or propagating' (ValidationMessages.properties:93, key ...partone.commodities.finishedorpropagated.message). So when this control renders (i.e. for 'Plants for Planting' commodities where the intended-use dropdown is shown), a value must be chosen. It is NOT a plain @NotNull-group field on ComplementParameterSet in the schema-java model (grep for finished_or_propagated / finishedorpropagated in the representation returns only the FINISHED_OR_PROPAGATED constant at ComplementParameterSet.java:46 — no annotation binds finishedorpropagated.message there), so the required rule is enforced conditionally elsewhere (a custom validator / the microservice / the frontend) rather than by a model @NotNull. GAP: the exact validator that binds finishedorpropagated.message and the precise render/require trigger were not located in the schema-java model. required kept false at the page/DOM level (the control is absent for most commodities); it becomes required only in its render condition. Legacy policy the rebuild may revisit — and the datum is the Finished/Propagated enum, not a boolean (see labelValueMismatch).",
+      "optionCount": 3,
+      "placeholderOption": "Select option (value=\"\")",
+      "options": ["Select option", "Yes", "No"],
+      "optionValueEqualsText": false,
+      "optionValues": { "Select option": "", "Yes": "Finished", "No": "Propagated" },
+      "observedValues": ["Yes (submits the value \"Finished\")"],
+      "labelValueMismatch": {
+        "note": "ADDED by the v17 refutation pass — MISSED BY EVERY PRIOR PASS. This select's option TEXTS are Yes/No but its option VALUES are 'Finished' and 'Propagated'. No prior version of this spec recorded optionValues for this field, and the spec repeatedly framed it as a 'Yes/No concept'. It is not: it is a Finished-vs-Propagated domain enum wearing a Yes/No label veneer.",
+        "meaning": "Yes = Finished (the plant is intended for final users / commercial flower production, i.e. sold as-is). No = Propagated (it is intended to be grown on). This is why the field is NAMED 'finished-or-propagated' while variant A labels it 'Intended for final users or commercial flower production' — the name is the domain, the label is one phrasing of it.",
+        "rebuildImplication": "The underlying datum is a two-value domain enum, NOT a boolean. Rendering it as Yes/No is lossy and is very likely the root of the label/variant sprawl recorded under `variants` — variantA and variantB are two attempts to phrase the same enum as a Yes/No question. The rebuild should ask the real question with the real values (e.g. govuk Radios: 'Finished' / 'Propagated', or a plainly-worded question whose answers map 1:1 to those values) rather than a Yes/No whose meaning a user cannot recover from the label alone.",
+        "confidence": "confirmed",
+        "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — option dump for '84994871-….finished-or-propagated' => \"Select option\":\"\" , \"Yes\":\"Finished\" , \"No\":\"Propagated\" (count=3). trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 39 — Select option with valueOrLabel 'Yes' returns values: [\"Finished\"], proving the label-to-value mapping at submit time; the same action's log resolves the locator to <select aria-label=\"Select option\" id=\"84994871-….finished-or-propagated\">."
+      },
+      "variants": {
+        "note": "ADDED by the v15 template pass — the SAME field name has THREE renderings, only one of which any trace observed. Template: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/commodityDetailsBulkChedpp.html:272-306.",
+        "variantA_intendedUse": "`{{#if commodity.group.showIntendedUseDropdown}}` -> govuk/select with topOption/ariaLabel = plantsForPlantingFinishedOrPropagatedDefaultText and items = plantsForPlantingFinishedOrPropagatedOptions. THIS is the observed variant (label 'Intended for final users or commercial flower production', aria-label 'Select option').",
+        "variantB_finishedOrPropagated": "`{{else if commodity.group.showFinishedOrPropagatedDropdown}}` -> a DIFFERENT select using finishedOrPropagatedDefaultText / finishedOrPropagatedOptions. NEVER observed; its label and option list are unknown. The mutually-exclusive if/else-if proves a commodity gets AT MOST ONE of the two.",
+        "variantC_radios": "Within variant B, `{{#if @root.isExternalSystem}}` renders govuk/radios with classes 'govuk-radios--inline commodity-details-radio-button' INSTEAD of a select. So the same datum is a select for normal users and inline radios for an external-system context. NEVER observed.",
+        "rebuildImplication": "REVISED (v17). One logical question with two label variants and two control types, chosen by flags computed upstream. The prior wording said the new app should collapse this to 'one control (govuk Radios for a Yes/No)' — that advice is now suspect, because the underlying values are NOT a boolean but the enum Finished/Propagated (see labelValueMismatch). Collapse to one question and one control, yes, but ask for the ENUM, not a Yes/No. The variantA/variantB label sprawl is best explained as two failed attempts to phrase a two-value enum as a Yes/No question — evidence that the Yes/No framing is itself the problem, not the thing to preserve.",
+        "v17Note": "The Finished/Propagated values were observed on variant A (the 'Intended for final users…' rendering). Whether variant B (the never-observed 'finishedOrPropagated' rendering) shares that same value vocabulary is a GAP — likely, given the shared field name, but unobserved."
+      },
+      "conditionalOn": "ONLY rendered when the commodity's hidden <uuid>.commodity-group = 'Plants for Planting'. Absent for group 'Fruit and nuts'. Corroborated by the tests: DEFAULT_CONFIG uses firstCommodityCode = hyacinths (06011010, Plants for Planting) with intendedUse = 'Yes' and DOES drive the dropdown; every test whose first commodity is NOT plants-for-planting (fruitAndNuts 0808108010, cutFlowers 0603197090, hmiOnlyCIDAC 08059000, canarySeed 10083000, tractorsWheeled 87019510) passes intendedUse: 'No' purely to make the workflow SKIP the dropdown.",
+      "confidence": "confirmed",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 39 — Select option, selector '[id$=\"finished-or-propagated\"]', valueOrLabel 'Yes', RETURN VALUES [\"Finished\"] (v17: this action was never cited by any prior pass and is what exposes the label/value mismatch above). trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — PRESENT for commodity 06011010 (Albuca bracteata, hidden commodity-group === 'Plants for Planting'); the visible column-header copy 'Intended for final users or commercial flower production' verified VERBATIM in main innerText, and the control inventory shows 'SELECT|select-one|84994871-….finished-or-propagated|Select option'. ABSENT in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 for 08059000 (commodity-group === 'Fruit and nuts') — that trace's control inventory has no finished-or-propagated entry. Corroborated: CommodityExtendedDescriptionPage.ts:71-73 (locator '[id$=\"finished-or-propagated\"]' — id-suffix only, no accessible name); ched-pp-workflows.ts:376-378 (guarded fill); ChedppCommodityBulkDetailsPage.ts:6-8 + :14-17 (amend path re-selects 'Yes'); tests passing intendedUse: 'No' at ched-pp-article72.spec.ts:27, :73, ched-pp-hmi-checks.spec.ts:25, ched-pp-eu-harmonisation.spec.ts:28, :35; driven with 'Yes' at ched-pp-accessibility-tests.spec.ts:87 and ched-pp-workflows.ts:843 (copy-as-new). IMPORTANT: because the locator is strict-mode and un-suffixed by commodity, the tests only pass when EXACTLY ONE commodity on the page has this control — i.e. the multi-commodity default (hyacinths + foliageOther) yields one plants-for-planting line only. That is an accidental but strong corroboration of the conditionality."
+    },
+    {
+      "name": "<uuid>.test-and-trial",
+      "label": "For test and trial — the visible COLUMN HEADER in the per-commodity grid (RESOLVED from 'gap' by the v15 template pass)",
+      "control": "checkbox",
+      "required": false,
+      "conditionalOn": "RESOLVED: rendered per-commodity, inside the per-commodity 'Commodity details' grid — NOT in the bulk-apply panel — gated on the per-variation flag `variation.requiresTestAndTrial`. Template: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/commodityDetailsBulkChedpp.html:256-258 emits `{{#if variation.requiresTestAndTrial}}<th scope=\"col\" class=\"govuk-table__header\">For test and trial</th>{{/if}}` in the same header row as 'Controlled Atmosphere Container'; the control itself is at :336 with name=(concat variation.uniqueComplementId '.test-and-trial'). This settles the prior open question 'whether it sits in the bulk panel or the per-commodity grid' — it is the grid. STILL OPEN: what SETS requiresTestAndTrial (commodity group? EPPO code? country?) — the flag is computed upstream in a transformer/backend and was not traced. NARROWED (v16) from the ONE test that exercises it: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-eu-harmonisation.spec.ts:20-29 renders it for a ROW (Azerbaijan) consignment of canarySeed (10083000, EPPO PHAAN) + broadBeans (0713500010, EPPO LENCU), with intendedUse: 'No'. So the flag fires on SEEDS/LEGUMES, not on 'Plants for Planting' — the test's own intendedUse:'No' proves the finished-or-propagated dropdown is absent for those same commodities, i.e. test-and-trial and intended-use are driven by DIFFERENT and apparently disjoint upstream conditions. That is one data point, not the rule; whether the trigger is the commodity group, the EPPO code, the country, or a combination is still a GAP.",
+      "confidence": "inferred",
+      "evidence": "NOT trace-observed — absent from the control inventory of BOTH trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 and trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26. Source only: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:75-77 — get checkboxTestAndTrial(): this.page.locator('[id$=\"test-and-trial\"]'); driven at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:373-375 — `if (testAndTrial === yesNo.yes) { await pages.commodityExtendedDescription.checkboxTestAndTrial.first().check(); }`, inside the same bulk-panel block as the other bulk fields (between the controlled-atmosphere select at :372 and the Apply click at :379). Exercised ONLY by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-eu-harmonisation.spec.ts:20-28 ('Submit CHED-PP Notification with Test and Trial Information…') with testAndTrial: yesNo.yes. DEFAULT_CONFIG.testAndTrial = 'No' (ched-pp-workflows.ts:157), which is why no trace in our corpus rendered it. The `.first()` implies more than one may render (one per eligible commodity line)."
+    },
+    {
+      "name": "<uuid>.commodity-group",
+      "label": "(hidden — no visible label)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": ["Fruit and nuts", "Plants for Planting"],
+      "conditionalOn": "hidden input carrying the commodity group; drives which conditional per-commodity columns render (finished-or-propagated for 'Plants for Planting'; Variety/Class + the 'Change Variety and Class' button for 'Fruit and nuts')",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — 'INPUT|hidden|2d6f1f9f-….commodity-group|||Fruit and nuts'; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26 — hidden-input dump yields ['Plants for Planting']. NOTE: this value does NOT match the H2 rendered above the commodity's grid ('Other' and 'Hyacinths' respectively) — see structure and openQuestions."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden — CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — value [REDACTED]. Appears twice in the DOM (main form and the footer/cookie form)."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden — optimistic-concurrency etag)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": ["\"0000000000BD2B59\"", "\"0000000000BD304E\""],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 26. Implies the new app needs a concurrency story for draft edits. No test asserts any concurrency behaviour — the etag conflict path is untested."
+    },
+    {
+      "name": "commodityDetailsPage",
+      "label": "(hidden — pagination marker)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": ["1"],
+      "conditionalOn": "suggests the commodity list paginates beyond some line count; also travels as a query param (bulk?bulkValuesApplied=true&commodityDetailsPage=1)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36 — 'INPUT|hidden|commodityDetailsPage|||1'; request 976 shows the same value as a query param. No test adds more than 3 commodities (thirdCommodityCode is the ceiling — ched-pp-workflows.ts:57-59), so pagination is never triggered and its threshold is unknown."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select at least one commodity line to apply changes to",
+      "field": "the row checkboxes (commodity-<uuid>)",
+      "trigger": "Clicking 'Apply' with no commodity line selected",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/commodity_details_bulk_apply_validation.js:44-45 — a Joi ANY_REQUIRED message in the BULK-APPLY-SPECIFIC validator, which is required by this page's handler at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/commodity_details_bulk_chedpp.js:28. This message is literal in the schema (not a shared catalogue key), so it is unambiguously THIS page's copy. Never observed rendered — no trace caught an error state."
+    },
+    {
+      "message": "Fill in at least one field to update the selected commodity lines",
+      "field": "the bulk-apply panel as a whole",
+      "trigger": "Clicking 'Apply' with all six bulk fields empty",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:51-52 — literal ANY_REQUIRED message in the bulk-apply validator. Same provenance as above; unambiguously this page. Confirms the bulk panel's semantics: every bulk field is Joi .allow('') (optional), and the only cross-field rule is 'at least one'. This corroborates the DOM's required=false on all six."
+    },
+    {
+      "message": "Number of packages must be a whole number",
+      "field": "bulk-num-packages (and <uuid>.num-packages)",
+      "trigger": "Non-integer number of packages",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:22-24 binds NUM_PACKAGES_REGEX_MESSAGE directly to the 'bulk-num-packages' key; text at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:120. Field-name binding proves it applies to this page's bulk panel."
+    },
+    {
+      "message": "Quantities cannot have more than 3 decimals, or be larger than 16 digits including decimals",
+      "field": "bulk-quantity (and <uuid>.quantity)",
+      "trigger": "Quantity failing QUANTITY_VALUE_REGEX",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:26-28 binds QUANTITY_REGEX_MESSAGE to the 'bulk-quantity' key; text at en.js:132."
+    },
+    {
+      "message": "Net weight must be 0.001 or more",
+      "field": "bulk-net-weight (and <uuid>.net-weight)",
+      "trigger": "Net weight below 0.001",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:30-36 binds NET_WEIGHT_TOO_SMALL_MESSAGE to the 'bulk-net-weight' key; text at en.js:114."
+    },
+    {
+      "message": "Net weight cannot have more than 3 decimals",
+      "field": "bulk-net-weight (and <uuid>.net-weight)",
+      "trigger": "Net weight with more than 3 decimal places",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:30-37 binds NET_WEIGHT_TOO_MANY_DECIMALS to the 'bulk-net-weight' key; text at en.js:116. NOTE the binding looks like a BUG worth raising: NUMBER_MAX is mapped to NET_WEIGHT_TOO_MANY_DECIMALS and STRING_LENGTH to NET_WEIGHT_TOO_LARGE_MESSAGE, which reads inverted against the message texts."
+    },
+    {
+      "message": "Net weight cannot have more than 16 digits, including decimals",
+      "field": "bulk-net-weight (and <uuid>.net-weight)",
+      "trigger": "Net weight exceeding 16 digits",
+      "confidence": "inferred",
+      "evidence": "commodity_details_bulk_apply_validation.js:30-38 binds NET_WEIGHT_TOO_LARGE_MESSAGE to the 'bulk-net-weight' key; text at en.js:115."
+    },
+    {
+      "message": "Enter the number of packages",
+      "field": "<uuid>.num-packages",
+      "trigger": "'Save and continue' with an empty Number of packages on a commodity line",
+      "confidence": "inferred",
+      "evidence": "en.js:119 (NUM_PACKAGES_MESSAGE), referenced by /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/commodity_details.js, whose normaliseAndValidate is imported by this page's handler at commodity_details_bulk_chedpp.js:30. WEAKER than the bulk-apply messages above: commodity_details.js is a SHARED validator that may also serve CHED-A/P/D commodity pages, so per-field applicability to CHED-PP is not proven — only that this page invokes that validator. The required-on-save rule itself is unobserved."
+    },
+    {
+      "message": "Select the type of package",
+      "field": "<uuid>.package-type",
+      "trigger": "'Save and continue' with Type of package left on the placeholder",
+      "confidence": "inferred",
+      "evidence": "en.js:123 (PACKAGE_TYPE_MESSAGE) via the shared commodity_details.js validator imported at commodity_details_bulk_chedpp.js:30. Same shared-validator caveat as above."
+    },
+    {
+      "message": "Enter the quantity",
+      "field": "<uuid>.quantity",
+      "trigger": "'Save and continue' with an empty Quantity",
+      "confidence": "inferred",
+      "evidence": "en.js:131 (QUANTITY_MESSAGE) via the shared commodity_details.js validator. Same caveat."
+    },
+    {
+      "message": "Select the quantity type",
+      "field": "<uuid>.quantity-type",
+      "trigger": "'Save and continue' with Quantity type left on the placeholder",
+      "confidence": "inferred",
+      "evidence": "en.js:133 (QUANTITY_TYPE_MESSAGE) via the shared commodity_details.js validator. Same caveat."
+    },
+    {
+      "message": "Enter the net weight in kilograms",
+      "field": "<uuid>.net-weight",
+      "trigger": "'Save and continue' with an empty Net weight",
+      "confidence": "inferred",
+      "evidence": "en.js:112 (NET_WEIGHT_MESSAGE) via the shared commodity_details.js validator. Same caveat. NOTE the template passes hideErrorMessage=true to this input (commodityDetailsBulkChedpp.html:265), so the inline message is suppressed and the error presumably surfaces only in an error summary — unverified."
+    },
+    {
+      "message": "You have exceeded the maximum of <MAX_COMMODITY_LINES> commodity lines per notification",
+      "field": "commodity lines",
+      "trigger": "Exceeding the commodity-line cap (the '499 Commodity lines remaining' budget)",
+      "confidence": "inferred",
+      "evidence": "en.js:109 (MAX_COMMODITY_LINES_EXCEEDED — interpolates the MAX_COMMODITY_LINES constant from utils/constants, en.js:1). The constant's VALUE was not read, so the literal number is deliberately left as a placeholder rather than guessed at 500. Related copy: en.js:106 MAX_COMMODITY_LINES, :107 MAX_COMMODITY_LINES_REACHED, :108 MAX_COMMODITY_LINES_SINGLE ('You have added the maximum amount of commodity lines'). Which of these fires on THIS page vs commodity-search is unresolved."
+    },
+    {
+      "message": "Add the number of packages",
+      "field": "<uuid>.num-packages (per-commodity number_package)",
+      "trigger": "Submitting a CHED-PP notification with a commodity line missing its number of packages",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:130 (key ...partone.commodities.complementparameterset.keydatapair.chedpp.number_package.message). Bound to the per-line NUMBER_PACKAGE field via @ChedppMinValueKeyDataPair under the NotificationChedppFieldValidation group at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:314-319. This is the BACKEND-authoritative CHED-PP message and DIFFERS from the frontend en.js copy 'Enter the number of packages' (en.js:119) — see discrepancies. Not confirmed: no trace rendered an error here."
+    },
+    {
+      "message": "Add the package type",
+      "field": "<uuid>.package-type (per-commodity type_package)",
+      "trigger": "Submitting a CHED-PP notification with a commodity line missing its package type",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:131 (key ...keydatapair.chedpp.type_package.message). Bound to per-line TYPE_PACKAGE via @ChedppNotNullKeyDataPair under NotificationChedppFieldValidation at PartOne.java:320-325. Backend-authoritative; DIFFERS from frontend en.js 'Select the type of package' (en.js:123) — see discrepancies. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "Add the net weight",
+      "field": "<uuid>.net-weight (per-commodity net_weight)",
+      "trigger": "Submitting a CHED-PP notification with a commodity line missing its net weight",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:132 (key ...keydatapair.chedpp.net_weight.message). Bound to per-line NET_WEIGHT via @MinValueKeyDataPair at ComplementParameterSet.java:72-80 — CAVEAT: that annotation names the NotificationSingleCedValidation group, not NotificationChedppFieldValidation (unlike the other four per-line fields). Backend-authoritative; DIFFERS from frontend en.js 'Enter the net weight in kilograms' (en.js:112) — see discrepancies. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "Add the quantity type",
+      "field": "<uuid>.quantity-type (per-commodity type_quantity)",
+      "trigger": "Submitting a CHED-PP notification with a commodity line missing its quantity type",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:133 (key ...keydatapair.chedpp.type_quantity.message). Bound to per-line TYPE_QUANTITY via @ChedppNotNullKeyDataPair under NotificationChedppFieldValidation at PartOne.java:326-331. Backend-authoritative; DIFFERS from frontend en.js 'Select the quantity type' (en.js:133) — see discrepancies. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "Add the quantity",
+      "field": "<uuid>.quantity (per-commodity quantity)",
+      "trigger": "Submitting a CHED-PP notification with a commodity line missing its quantity (or a non-positive quantity)",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:134 (key ...keydatapair.chedpp.quantity.message). Bound to per-line QUANTITY via BOTH @ChedppNotNullKeyDataPair AND @ChedppIsPositiveDoubleKeyDataPair under NotificationChedppFieldValidation at PartOne.java:332-343, so the SAME message covers both 'missing' and 'not a positive number'. Backend-authoritative; DIFFERS from frontend en.js 'Enter the quantity' (en.js:131) — see discrepancies. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "You must select whether the commodity is intended for final users or propagating",
+      "field": "<uuid>.finished-or-propagated (per-commodity finished_or_propagated)",
+      "trigger": "Submitting a 'Plants for Planting' commodity line (where the intended-use dropdown renders) without choosing a value",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:93 (key ...partone.commodities.finishedorpropagated.message). This is the authoritative required-message for the intended-use / finished-or-propagated select. GAP: no @NotNull-group annotation binding this key was located in the schema-java representation (grep for finished_or_propagated / finishedorpropagated returns only the FINISHED_OR_PROPAGATED constant at ComplementParameterSet.java:46), so the binding is a custom/conditional validator not read in this pass. Note the copy speaks the DOMAIN ('intended for final users or propagating'), matching the Finished/Propagated enum values — NOT a Yes/No. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "Add the total net weight",
+      "field": "totalNetWeight (the 'Total for this consignment' / Subtotal Net weight section on this page)",
+      "trigger": "Submitting a CHED-PP notification with no total net weight",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:85 (key ...partone.commodities.chedpp.totalnetweight.not.null). Bound @NotNull under NotificationChedppFieldValidation on Commodities.totalNetWeight at /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:91-99. Relevant to this page's 'Total for this consignment' table (Subtotal Net weight) and computed from the per-line net weights; the on-page subtotal is a stale display (see journeyContext) but the datum it represents is mandatory. Not confirmed: no error-state trace."
+    },
+    {
+      "message": "Add the total gross weight",
+      "field": "totalGrossWeight (feeds the downstream 'Total gross weight (kg)' page reached via Save and continue)",
+      "trigger": "Submitting a CHED-PP notification with no total gross weight",
+      "confidence": "legacy",
+      "source": "backend-microservice",
+      "evidence": "ValidationMessages.properties:84 (key ...partone.commodities.chedpp.totalgrossweight.not.null). Bound @NotNull under NotificationChedppFieldValidation on Commodities.totalGrossWeight at Commodities.java:72-80. Included for completeness because this page's 'Save and continue' leads to the gross-weight page; the field is not entered ON this page. A related min-value rule exists: 'Total gross weight is less than the total net weight' (ValidationMessages.properties:83, @MinCommoditiesGrossWeight at Commodities.java:45-54). Not confirmed: no error-state trace."
+    }
+  ],
+  "validationMessagesNote": "ADDED by the v15 source pass. The prior version of this spec had validationMessages: [] and an open question saying the copy was a gap on BOTH sources and must not be guessed. That was correct given the sources then in use (traces + the QA automation repo). It is now superseded: the IPAFFS FRONTEND SOURCE — /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification — is a third source no prior pass cited, and it contains the message catalogue and the Joi schemas. None of the above is a guess; each is a real string bound to a real field key. But NONE is confirmed, because no trace ever rendered an error on this page — the taxonomy bar for 'confirmed' is observed-in-a-snapshot. The two bulk-apply messages are the strongest (literal strings in this page's own validator); the per-commodity ones come from a SHARED validator and carry a real risk of not all applying to CHED-PP. An error-state trace is still wanted to confirm rendering and presentation.",
+  "discrepancies": [
+    {
+      "field": "<uuid>.num-packages (per-commodity number_package)",
+      "backendCopy": "Add the number of packages",
+      "backendSource": "ValidationMessages.properties:130 (keydatapair.chedpp.number_package.message), backend Jakarta @ChedppMinValueKeyDataPair, confidence: legacy",
+      "frontendCopy": "Enter the number of packages",
+      "frontendSource": "en.js:119 (NUM_PACKAGES_MESSAGE) via the shared commodity_details.js Joi validator, confidence: inferred",
+      "note": "Two legacy layers diverge for the SAME required rule; neither is confirmed (no error-state trace on this page). Backend fires on server-side final submission, frontend on client-side save. GDS style favours the 'Enter …' voice over 'Add …'. The rebuild must pick ONE voice."
+    },
+    {
+      "field": "<uuid>.package-type (per-commodity type_package)",
+      "backendCopy": "Add the package type",
+      "backendSource": "ValidationMessages.properties:131 (keydatapair.chedpp.type_package.message), backend Jakarta @ChedppNotNullKeyDataPair, confidence: legacy",
+      "frontendCopy": "Select the type of package",
+      "frontendSource": "en.js:123 (PACKAGE_TYPE_MESSAGE) via the shared commodity_details.js Joi validator, confidence: inferred",
+      "note": "Backend/frontend copy diverge. Frontend correctly uses 'Select …' for a dropdown; backend uses 'Add …'. Neither confirmed."
+    },
+    {
+      "field": "<uuid>.net-weight (per-commodity net_weight)",
+      "backendCopy": "Add the net weight",
+      "backendSource": "ValidationMessages.properties:132 (keydatapair.chedpp.net_weight.message), backend @MinValueKeyDataPair bound to the NotificationSingleCedValidation group not the Chedpp group (ComplementParameterSet.java:72-80), confidence: legacy",
+      "frontendCopy": "Enter the net weight in kilograms",
+      "frontendSource": "en.js:112 (NET_WEIGHT_MESSAGE) via the shared commodity_details.js Joi validator, confidence: inferred",
+      "note": "Copy diverges AND the frontend adds 'in kilograms' the backend omits. Template also passes hideErrorMessage=true to this input (commodityDetailsBulkChedpp.html:265), so which layer's copy a user sees, and whether inline vs summary, is unobserved."
+    },
+    {
+      "field": "<uuid>.quantity-type (per-commodity type_quantity)",
+      "backendCopy": "Add the quantity type",
+      "backendSource": "ValidationMessages.properties:133 (keydatapair.chedpp.type_quantity.message), backend Jakarta @ChedppNotNullKeyDataPair, confidence: legacy",
+      "frontendCopy": "Select the quantity type",
+      "frontendSource": "en.js:133 (QUANTITY_TYPE_MESSAGE) via the shared commodity_details.js Joi validator, confidence: inferred",
+      "note": "Backend/frontend copy diverge. Neither confirmed."
+    },
+    {
+      "field": "<uuid>.quantity (per-commodity quantity)",
+      "backendCopy": "Add the quantity",
+      "backendSource": "ValidationMessages.properties:134 (keydatapair.chedpp.quantity.message), backend Jakarta @ChedppNotNullKeyDataPair + @ChedppIsPositiveDoubleKeyDataPair (one message covers both missing and non-positive), confidence: legacy",
+      "frontendCopy": "Enter the quantity",
+      "frontendSource": "en.js:131 (QUANTITY_MESSAGE) via the shared commodity_details.js Joi validator, confidence: inferred",
+      "note": "Backend/frontend copy diverge. Neither confirmed."
+    },
+    {
+      "field": "PROVENANCE NOTE — not a copy conflict",
+      "note": "None of these five discrepancies is a rendered (confirmed) vs legacy conflict — no error-state trace exists for this page, so NO validation message was ever observed rendered. All five are LEGACY-vs-LEGACY: the backend Jakarta catalogue (ValidationMessages.properties, 'Add the …', authoritative on final server submission) against the frontend Joi catalogue (en.js, 'Enter/Select the …', client-side save on this page). Precedence cannot be settled from evidence: which the user actually sees depends on where validation fires first, which is unobserved. Recorded here to satisfy the repeated inline 'see discrepancies' references in validationMessages. Added by the discrepancies-collection pass."
+    }
+  ],
+  "journeyContext": [
+    {
+      "fact": "This page is reached from the notification hub via the 'Commodity' link, and is the landing page for the commodity section — it renders BEFORE any commodity exists (with an empty table and the 'Add commodity' button as the only meaningful action) and again after each commodity is added.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:61-66 — notificationHub.linkCommodity.click() then an axe check labelled 'Commodity Extended Description Page' then btnAddCommodity.click(); the axe suite deliberately checks this page in three distinct states: empty, 'with commodities', and 'after apply' (:64, :88, :92). Partially corroborated by trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — Click on getByRole('link', { name: 'Commodity' })."
+    },
+    {
+      "fact": "'Add commodity' leads to the consignment page-3 route, which IS the commodity-search page — it renders with a 'Commodity code search' tab. UPGRADED from open question to confirmed.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 request 799 — GET 200 https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/consignment/page-3; request 817 — GET 200 page-3?tab=commodity-code-search; request 834 — POST 302 page-3?tab=commodity-code-search; request 835 — GET 200 page-4?commodity-selected-code=08059000. Behaviourally corroborated at ched-pp-workflows.ts:344-348 (btnAddCommodity.click() lands on the Search Commodity page)."
+    },
+    {
+      "fact": "'Apply' is a full server round-trip, not a client-side operation: the mega-form POSTs to the bulk URL and the server 302s to bulk?bulkValuesApplied=true&commodityDetailsPage=1. The rebuild should not assume the bulk-apply is client-side.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 requests 994 (POST 302 bulk?bulkValuesApplied=true&commodityDetailsPage=…) and 976 (GET 200 .../commodity/details/bulk?bulkValuesApplied=true&commodityDetailsPage=1); main form has no action attribute (action === null), so it posts to the current URL."
+    },
+    {
+      "fact": "The page is BYPASSED entirely on the CSV-upload branch. When the user chooses 'Upload from CSV' on the description-of-goods page, commodity details come from the CSV and the journey goes straight to the gross-weight page via the hub's 'Additional details' link.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:277-292 (isCSVUpload branch — no commodity-details fill) vs :293-380 (manual-entry branch)."
+    },
+    {
+      "fact": "'Save and continue' from this page leads to the total gross weight page (Total gross weight (kg)), which is a SEPARATE page despite the page object sharing a class.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 31 (Click 'Apply') then action 33 — Fill \"12\" on getByRole('textbox', { name: 'Total gross weight (kg)', exact: true }); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 requests 995/1011 — GET then POST 302 on details?commodityDetailsPage=1. Corroborated: ched-pp-workflows.ts:380-382; ched-pp-accessibility-tests.spec.ts:93-98 where the axe check is labelled 'Commodity Extended Description Page (gross weight)'."
+    },
+    {
+      "fact": "The canonical fill order the tests use is: check 'Select all' -> fill all six bulk fields (+ test-and-trial checkbox and intended-use select where applicable) -> click 'Apply' -> click 'Save and continue'. 'Update total', 'Save and return to hub', 'Cancel and return to hub', 'Clear', 'Add Genus (and Species)' and 'Change Variety and Class' are NEVER clicked by any test in the QA repo.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:366-380; /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:80-93; grep for 'Update total' / 'Add Genus' / 'Change Variety' / 'Save and return to hub' across the whole QA repo returns no hits on this page's controls. Trace-corroborated by 219b882ee3b4fbe040b824d146d38991d6b70149 actions 24-31, which show exactly this sequence and nothing else."
+    },
+    {
+      "fact": "BULK-APPLY SEMANTICS — SETTLED BY A HUMAN ASSERTION (added v16). 'Apply' COPIES each bulk value to EVERY selected commodity line; it does not divide, split or apportion. The consignment totals are then the SUM across lines. This is the single most important behavioural requirement on this page and no prior pass captured it.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:32-35 asserts, on the downstream view-details page for a notification built with DEFAULT_CONFIG: locatorCommodityOne toContainText /\\s*1\\s*Kg\\s*/i; locatorNetWeight toContainText /\\s*Total net weight\\s*2 Kg\\s*/i; toContainText /\\s*Total packages\\s*4\\s*/i; toContainText /\\s*Total gross weight \\(kg\\)\\s*12 Kg\\s*/i. Arithmetic: DEFAULT_CONFIG is a TWO-commodity notification (firstCommodityCode hyacinths + secondCommodityCode foliageOther, singleCommodity:false — ched-pp-workflows.ts:139-141,144) with netWeightInKgs '1' and numberOfPackages '2' entered ONCE into the bulk panel (ched-pp-workflows.ts:367,371). The result is per-line net weight 1 Kg, total net weight 2 Kg (1x2 lines) and total packages 4 (2x2 lines). Copy-per-line + sum is the only reading consistent with those three numbers. NOTE this is 'inferred' not 'confirmed' because it is an assertion in test code plus arithmetic, and the numbers are read on a DIFFERENT page (view-details) — no trace observed this page's own subtotals populated."
+    },
+    {
+      "fact": "'Update total' is NOT load-bearing for submission. Every CHED-PP test submits successfully, and the manipulation spec asserts CORRECT totals downstream, without any test ever clicking 'Update total'. The totals must therefore be computed server-side on save (or on the view-details page), and the button is a client-side convenience only. UPGRADED (v16) from an open question to a supported finding.",
+      "confidence": "inferred",
+      "evidence": "grep for 'Update total' across /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation returns no page-object getter and no test click — the button is unreachable from the QA repo. Yet /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:33-34 asserts 'Total net weight 2 Kg' and 'Total packages 4' on the submitted notification. Combined with the trace observation that this page's own subtotal/total rows read 0 even after Apply (trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 36), the conclusion is that the ON-PAGE total is a stale display that only 'Update total' refreshes, while the REAL total is computed elsewhere. The rebuild should compute totals from the data, not require a recalculation click."
+    },
+    {
+      "fact": "The bulk 'Controlled atmosphere container' select is so poorly named that the QA repo drives it by clicking its LABEL: dropdownControlledAtmosphereContainer is getByText('Controlled atmosphere container', { exact: true }) and .selectOption() is then called on that <label>, relying on Playwright's label-to-control resolution. Independent corroboration, from a second source, of the aria-labelledby defect recorded in nonStandardPatterns.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:67-69; driven at ched-pp-workflows.ts:372, :842 and ched-pp-accessibility-tests.spec.ts:86. Trace-corroborated by 219b882ee3b4fbe040b824d146d38991d6b70149 action 30, whose log records 'locator resolved to <label for=\"bulk-container\" …>'. Every OTHER select on the page is addressed by getByLabel; this one alone needs getByText, because it alone has no computed accessible name."
+    },
+    {
+      "fact": "The page object is SHARED across all four CHED types and most of its locators are NOT CHED-PP's. CommodityExtendedDescriptionPage.ts carries inputNetWeight ('Net weight'), inputNumberOfAnimals, dropdownPackageType ('Package type'), dropdownPackageTypeInput, inputTotalGrossWeight and a whole .commodity-detail-form-desktop family — none of which this CHED-PP page renders. Only the block commented '// CHED-PP specific locators' (:46-77) applies here.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CommodityExtendedDescriptionPage.ts:6-44 (shared/other-CHED locators) vs :46-77 (the CHED-PP block). The non-CHED-PP getters are consumed by ched-a-workflows.ts:298-300, ched-p-workflows.ts:329-333 and ched-d-workflows.ts:615-619, and by the CHED-A/P/D accessibility specs. Relevance: anyone mining this page object for CHED-PP requirements will over-collect fields (notably 'Number of animals', which is CHED-A) unless they respect that comment boundary. It also shows the four CHED types render materially different commodity-details pages — CHED-D even has a separate desktop form — so this page's design must not be assumed shared."
+    },
+    {
+      "fact": "On the AMEND / cloning path the page reappears via 'Change commodity details' on the review page, and the intended-use dropdown must be re-selected before Save and continue — implying the value is not carried through cloning, or is invalidated by it.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:985-986 — reviewNotification.changeCommodityDetails() then chedppCommodityBulkDetails.updateIntendedUseAndSaveAndContinue(); /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ChedppCommodityBulkDetailsPage.ts:14-17."
+    },
+    {
+      "fact": "On the copy-as-new path the page is revisited and ALL commodity details are re-entered from scratch (packages, package type, quantity, quantity type, net weight, container, intended use), suggesting copy-as-new does not carry commodity details forward — or that the test chooses to overwrite them.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:834-844 (copyAsNewChedPPNotification)."
+    }
+  ],
+  "confidence": "inferred",
+  "confidenceNote": "CORRECTED v15: was 'confirmed'. The rule is that page-level confidence takes the WEAKEST field confidence. 19 of 20 fields are confirmed, but <uuid>.test-and-trial is inferred (source-only — no trace ever rendered it), so the page grades 'inferred'. This is a bookkeeping correction, not a downgrade in evidence quality: the page is very well evidenced, the bulk-apply panel and per-commodity grid are fully trace-confirmed, and the single inferred field is a conditional variant our 65-trace CHED-PP corpus never exercised because DEFAULT_CONFIG.testAndTrial='No'. Read the per-field confidences, not this one number. The page reaches 'confirmed' the moment someone traces the ched-pp-eu-harmonisation test-and-trial journey.",
+  "adversarialReview": {
+    "reviewer": "v14 refutation pass",
+    "reopenedTraces": [
+      "e10b7cd5117799d60c1e0fbeddc3322eefde1572 (ched-pp-hmi-checks.spec.ts:15, 0 errors) — action 36 re-derived from scratch",
+      "219b882ee3b4fbe040b824d146d38991d6b70149 (ched-pp-article72.spec.ts:15, 0 errors) — actions 24-31 re-derived",
+      "1f5b6eef3d110815e713ed79998cec2cb53026ee (smoke-ched-pp-notifier-inspector-decision-flows.spec.ts:67, 0 errors) — action 26 re-derived"
+    ],
+    "pageIdentityVerified": "PASS — h1 === 'Commodity' and document.title === 'Commodity details' in both e10b7cd5 action 36 and 1f5b6eef action 26; URL .../commodity/details/bulk confirmed via request 976. The spec is about the right page.",
+    "copyVerified": "PASS — every copy string marked confirmed was diffed character-by-character against the rendered DOM. No invented copy found. Specifically re-verified verbatim: 'Save and continue', 'Save and return to hub', 'Cancel and return to hub', 'Add Genus (and Species)', 'Change Variety and Class', 'Apply to all commodity lines', 'Update total', '499 Commodity lines remaining', 'Controlled atmosphere container' (bulk, sentence case) vs 'Controlled Atmosphere Container' (per-row, title case), and the long conditional label 'Intended for final users or commercial flower production'.",
+    "optionListsVerified": "PASS — all four option lists dumped in full (text:value pairs) rather than sampled. bulk-package-type 24, bulk-quantity-type 8, bulk-container 3, <uuid>.container 2, and the per-row package-type/quantity-type lists byte-match their bulk equivalents. No fabricated options.",
+    "correctionsApplied": [
+      "structure: the per-commodity H2 was described as 'the commodity-group name'. REFUTED — heading and group diverge in BOTH observed traces ('Other' vs group 'Fruit and nuts'; 'Hyacinths' vs group 'Plants for Planting').",
+      "nonStandardPatterns: the aria-labelledby entry described the wrong failure mechanism ('controls only get a name because a sibling label happens to exist'; 'should be a plain label[for]'). REFUTED — a correct label[for] already exists on all six bulk fields; aria-labelledby overrides it. Fix is deletion, not addition.",
+      "govukComponents counts: Select 8->6, Form group 6->10, Visually hidden 1->5, Button 6->5, Heading 7->6. All five were wrong against a direct DOM count.",
+      "govuk-tabgit described as applying to '<td> elements' (plural) — only 1 element exists.",
+      "clear-link govukAlternative said 'govuk-link' when govuk-link is already present.",
+      "observedValues on bulk-quantity ('2'), bulk-net-weight ('10') and bulk-container ('No') were source-inferred, not trace-observed — moved to a separate inferredValues key.",
+      "hidden inputs were typed as control:'text' — corrected to control:'hidden'."
+    ],
+    "additionsFromThisPass": [
+      "Opaque per-row container option values (Yes='1364882', No='') — a third Yes/No encoding on one page.",
+      "Per-commodity grid controls have NO label element at all (distinct from the bulk-panel aria-labelledby defect).",
+      "'Apply' is a server round-trip (POST 302 -> GET bulk?bulkValuesApplied=true).",
+      "The mega-form has no action attribute; add_species/change_variety carry the commodity CODE as value, which is not unique per line.",
+      "Two page-specific client scripts (commodity_details_chedpp.js, commodity_details_bulk_chedpp.js).",
+      "govuk-table__footer is not a real govuk-frontend class.",
+      "'Add commodity' -> consignment/page-3 upgraded from open question to confirmed.",
+      "Back link 'Back' recorded as a govuk component; Cancel href = :draftId/overview."
+    ]
+  },
+  "v15SourcePass": {
+    "whatChanged": "The v14 spec was built from two sources: the Playwright traces and the ipaffs-qa-automation repo. This pass added a THIRD — the IPAFFS frontend application source at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification — which no prior pass cited. Nothing in v14 was refuted; the DOM findings all held. Everything below is additive.",
+    "sourcesAdded": [
+      "service/src/views/importer/commodityDetailsBulkChedpp.html — THE template for this page. Ground truth for conditional rendering.",
+      "service/src/routes/handlers/importer/commodity_details_bulk_chedpp.js — the handler; names the validators.",
+      "service/src/validation/routes/handlers/importer/commodity_details_bulk_apply_validation.js — the page's OWN bulk-apply Joi schema.",
+      "service/src/validation/routes/handlers/importer/commodity_details.js — shared commodity validator invoked by this page.",
+      "service/src/validation/messages/en.js — the message catalogue."
+    ],
+    "resolved": [
+      "validationMessages: [] -> 13 field-bound messages (all inferred, none confirmed — no error-state trace exists).",
+      "Bulk-apply scope: SETTLED at six fields. The bulk validator has exactly six bulk-* keys and no intended-use/test-and-trial key. The task brief was wrong.",
+      "test-and-trial: label is 'For test and trial'; it lives in the per-commodity grid, not the bulk panel; gated on variation.requiresTestAndTrial.",
+      "intended-use: has THREE renderings (two different labels, plus an inline-radios variant when isExternalSystem) — only one was ever observed."
+    ],
+    "stillOpen": [
+      "No error-state trace for this page — validation rendering/presentation remains unobserved.",
+      "What computes variation.requiresTestAndTrial and commodity.group.show*Dropdown — both are set upstream of the template.",
+      "The per-commodity H2 data source (v14's open question) — the template pass did not chase it.",
+      "The MAX_COMMODITY_LINES constant value was not read; the '500' implied by '499 remaining' is still an inference."
+    ],
+    "methodNote": "Message wiring was VERIFIED, not assumed: the catalogue keys were traced from en.js -> the validator that binds them to specific field names -> the handler that imports that validator. Messages bound literally to bulk-* keys are strong; those from the shared commodity_details.js validator carry a real risk of belonging to CHED-A/P/D and are flagged as such inline. v14's instruction 'do not guess it' was honoured — none of this is guessed, and the taxonomy bar for 'confirmed' (observed in a snapshot) is still deliberately unmet."
+  },
+  "v16QaCorroborationPass": {
+    "brief": "Corroborate the trace-derived spec against the QA automation repo ONLY (page objects, workflows, types, tests). The IPAFFS application source was explicitly OUT OF SCOPE for this pass.",
+    "outcome": "NOTHING REFUTED. Every field, option list and copy string marked 'confirmed' was re-checked against the page object and workflow and held. The spec was already unusually strong — v14 did the DOM work and v15 added the app source. This pass is additive.",
+    "additions": [
+      "BULK-APPLY SEMANTICS (journeyContext) — ched-pp-manipulation.spec.ts:32-35 pins it by arithmetic: 2 lines x netWeight '1' = 'Total net weight 2 Kg'; 2 lines x packages '2' = 'Total packages 4'. Apply COPIES to each selected line and totals SUM. This is the page's core behavioural rule and no prior pass had it.",
+      "'Update total' is not load-bearing — correct totals are asserted downstream though no test ever clicks it.",
+      "requiresTestAndTrial NARROWED — the one test that renders it uses canarySeed + broadBeans (seeds/legumes, ROW Azerbaijan), NOT plants-for-planting. So test-and-trial and intended-use are driven by disjoint upstream conditions.",
+      "'Change Variety and Class' likely re-enters the standalone Commodity Class page (CommodityClassPage.ts:1-13; values Class I / Class II / Extra Class).",
+      "The bulk container select is driven via its LABEL (getByText + selectOption) — second-source corroboration of the aria-labelledby defect.",
+      "The page object is shared across all four CHED types; only the '// CHED-PP specific locators' block (:46-77) belongs to this page."
+    ],
+    "scopeCaveatOnV15": "FLAG FOR THE PARENT, not a correction. This pass's brief names the rendered frontend and the tests as the ONLY admissible sources and forbids reading the IPAFFS application source. The v15 pass predates that constraint and derived all 13 validationMessages, the finished-or-propagated variants A/B/C, and the test-and-trial template gating from /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification (templates, Joi validators, en.js). Under the current rules that material is inadmissible and those items would be GAPs. It has been PRESERVED, not deleted — it is honestly cited, correctly marked 'inferred', and useful — but a human should decide whether it stays. Note it is exactly the kind of source-derived inference the rebuild is trying to avoid, and it is the reason this spec looks more complete than the trace+test evidence alone supports.",
+    "confirmedByQaRepo": "select-all-checkbox, bulk-num-packages, bulk-package-type, bulk-quantity, bulk-quantity-type, bulk-net-weight, bulk-container — all seven driven by name from ched-pp-workflows.ts:366-372 with DEFAULT_CONFIG values at :150-155, matching the trace-observed values exactly. quantity-type's 7 options are a full independent match against types/quantity-type.ts:1-9. No field in the DOM is missing from the tests except the per-row grid controls and the never-clicked buttons, both already recorded as coverage gaps.",
+    "noNewFieldsFound": "This pass looked specifically for controls the page object exposes that no trace rendered. The only two are <uuid>.finished-or-propagated and <uuid>.test-and-trial, both already in the spec. There is no third hidden variant in the QA repo."
+  },
+  "v17RefutationPass": {
+    "brief": "Adversarial refutation pass. Re-derived the page independently from the three evidence traces before reading any prior pass's conclusions: page identity, full control inventory, every component count, every option list, and all rendered copy.",
+    "outcome": "CORRECTED — one real defect found, in a place five prior passes all walked past. Everything else held.",
+    "whatHeld": {
+      "pageIdentity": "PASS — h1 'Commodity', document.title 'Commodity details' re-confirmed in e10b7cd5 action 36 AND 1f5b6eef action 26. Right page.",
+      "counts": "PASS — every count re-derived by direct DOM query and ALL matched: select 6, input[type=text] 6, .govuk-form-group 10, .govuk-visually-hidden 5, .govuk-button 5, button 8, h1 1 / h2 4 / h3 1, table 3, label 8, form 1, a 2, .govuk-tabgit 1. The v14 count corrections were right.",
+      "copy": "PASS — no invented copy. Re-verified verbatim against rendered DOM: caption 'Description of the goods'; back link 'Back'; headings ['Commodities','Apply to all commodity lines','Other','08059000','Total for this consignment']; govuk-buttons ['Add commodity','Apply','Update total','Save and return to hub','Save and continue']; link-buttons ['Add Genus (and Species)','Change Variety and Class']; table captions ['Commodities table','Commodity details','Commodity weight']; '499 Commodity lines remaining'; the bulk/per-row container case split ('Controlled atmosphere container' vs 'Controlled Atmosphere Container'); and the long label 'Intended for final users or commercial flower production'. All eight label texts matched, all with htmlFor.",
+      "controlInventory": "PASS — no missed fields. The dumped inventory is exactly the spec's field list, in both the 'Fruit and nuts' trace (e10b7cd5) and the 'Plants for Planting' trace (1f5b6eef, which adds finished-or-propagated and drops the change_variety button).",
+      "optionLists": "MOSTLY PASS — bulk-package-type (24), bulk-quantity-type (8), bulk-container (3), <uuid>.container (2) and both per-row lists all matched byte-for-byte, including the nested escaped quotes in 'Bulk solid granular particles (\"grains\")'. No fabricated options. The ONE exception is finished-or-propagated — see below.",
+      "otherConfirmedClaims": "PASS — spot-checked the confirmed claims not covered above: pageScripts (requests 964/965 commodity_details_chedpp.js + commodity_details_bulk_chedpp.js, both GET 200) and the Apply server round-trip (request 994 POST 302, request 976 GET 200, both bulk?bulkValuesApplied=true). Both exactly as cited. The aria-labelledby self-reference re-confirmed live in e10b7cd5 action 36 and 219b882e action 26; the getByText label fallback re-confirmed in 219b882e action 30 ('locator resolved to <label for=\"bulk-container\">', returns [\"on\"])."
+    },
+    "theDefect": {
+      "finding": "<uuid>.finished-or-propagated records `options: ['Select option','Yes','No']` and `observedValues: ['Yes']` but NO optionValues — while every other non-text-valued select on the page HAS an optionValues key. The omission is not cosmetic: the values are 'Finished' and 'Propagated'. The spec then repeatedly reasoned about the field as a 'Yes/No concept' (in nonStandardPatterns, in the variants rebuildImplication, and in an openQuestion), which is wrong.",
+      "whyItMattered": "It inverted the rebuild advice. The spec told the rebuild to render this as 'govuk Radios for a Yes/No'. The datum is actually a two-value domain enum (Finished = for final users; Propagated = to be grown on), and the Yes/No is a lossy veneer over it — a user answering 'Yes' cannot tell they are asserting 'Finished'. It also explains the variantA/variantB label sprawl the v15 pass found but could not account for.",
+      "whyEveryPassMissedIt": "The field was only ever reached via the [id$=\"finished-or-propagated\"] locator and its PRESENCE/ABSENCE was the interesting question (it is the group-conditional control). Prior passes dumped its option TEXTS and stopped. The proof is in trace 1f5b6eef action 39 — a Select option call no prior pass cited, whose return value is [\"Finished\"] for the label 'Yes'. Reading option text alone is not reading a select.",
+      "generalisableLesson": "On this page, option TEXT and option VALUE diverge on three of six selects. Any select whose values were not dumped should be treated as unverified, not as text-valued by default."
+    },
+    "notRefuted": "The v16 scopeCaveatOnV15 flag is left exactly as-is. It is a scope/admissibility judgement for a human, not a factual error, and this pass had no basis to resolve it either way."
+  },
+  "legacySchemaPass": {
+    "brief": "Mine the two authorised legacy sources no prior pass had read — the ipaffs-notification-microservice ValidationMessages.properties (backend message catalogue) and the ipaffs-imports-notification-schema Java model (Jakarta @NotNull / @Chedpp*KeyDataPair group annotations) — for the CHED-PP field mandatoriness and validation copy the rendered traces never showed (no error-state trace exists for this page).",
+    "sourcesAdded": [
+      "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties — backend CHED-PP validation copy (lines 84,85,93,130-134).",
+      "/Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/.../representation/PartOne.java:302-345 — the CHED-PP per-line keydatapair required annotations (@ChedppMinValueKeyDataPair / @ChedppNotNullKeyDataPair / @ChedppIsPositiveDoubleKeyDataPair on Commodities under NotificationChedppFieldValidation).",
+      "/Users/samfarrington/git/defra/ipaffs/.../representation/ComplementParameterSet.java — the per-line field constants (NUMBER_PACKAGE, TYPE_PACKAGE, NET_WEIGHT, QUANTITY, TYPE_QUANTITY, CONTAINER, FINISHED_OR_PROPAGATED) and the net_weight @MinValueKeyDataPair binding.",
+      "/Users/samfarrington/git/defra/ipaffs/.../representation/Commodities.java:63-99 — totalGrossWeight / totalNetWeight @NotNull under NotificationChedppFieldValidation.",
+      "/Users/samfarrington/git/defra/ipaffs/.../validation/groups/NotificationChedppFieldValidation.java — the CHED-PP validation group itself."
+    ],
+    "mandatorinessFindings": {
+      "note": "The CHED-PP validation group is NotificationChedppFieldValidation. For submission, IPAFFS makes these per-COMMODITY-LINE fields mandatory. This is the biggest gap the rendered pass could not see: the DOM carries NO required attribute on any per-line control (confirmed), so all mandatoriness is server-side and invisible to a snapshot.",
+      "requiredForChedpp": [
+        "<uuid>.num-packages (NUMBER_PACKAGE) — @ChedppMinValueKeyDataPair, PartOne.java:314-319 — required flipped false->true.",
+        "<uuid>.package-type (TYPE_PACKAGE) — @ChedppNotNullKeyDataPair, PartOne.java:320-325 — required flipped false->true.",
+        "<uuid>.quantity-type (TYPE_QUANTITY) — @ChedppNotNullKeyDataPair, PartOne.java:326-331 — required flipped false->true.",
+        "<uuid>.quantity (QUANTITY) — @ChedppNotNullKeyDataPair + @ChedppIsPositiveDoubleKeyDataPair, PartOne.java:332-343 — required flipped false->true.",
+        "<uuid>.net-weight (NET_WEIGHT) — @MinValueKeyDataPair, ComplementParameterSet.java:72-80, CAVEAT bound to NotificationSingleCedValidation group not the Chedpp group — required flipped false->true with a weaker-confidence note.",
+        "totalNetWeight — @NotNull NotificationChedppFieldValidation, Commodities.java:91-99 (the 'Total for this consignment' datum this page displays).",
+        "totalGrossWeight — @NotNull NotificationChedppFieldValidation, Commodities.java:72-80 (entered on the downstream gross-weight page, not here)."
+      ],
+      "optionalForChedpp": [
+        "<uuid>.container (CONTAINER) — no @NotNull anywhere in the model; required stays false, now legacy-confirmed rather than merely DOM-observed.",
+        "All six bulk-* panel fields — these are a bulk-APPLY convenience, not persisted fields; the page's own Joi bulk validator makes them .allow('') with only an 'at least one' cross-field rule. required stays false (unchanged)."
+      ],
+      "conditionalForChedpp": [
+        "<uuid>.finished-or-propagated — a required-message exists ('You must select whether the commodity is intended for final users or propagating', properties:93) so it is required WHEN it renders (Plants for Planting), but no model @NotNull-group binding for it was located; the binding is a custom/conditional validator not read here (GAP)."
+      ],
+      "policyCaveat": "Legacy mandatoriness is 'as IPAFFS had it', not a rebuild mandate. The rebuild (trade-imports-animals) may deliberately revisit whether each per-line field is required, and — more importantly — SHOULD reconsider the whole single-mega-form + inline-editable-grid architecture (recorded in nonStandardPatterns) rather than porting the required-on-server-only model. The per-field required:true values added here describe the OLD system's submission rules, useful as the baseline the rebuild starts from."
+    },
+    "validationCopyFindings": {
+      "note": "Added 8 backend-microservice validation messages (confidence: legacy, source: backend-microservice) covering the five per-line required fields, finished-or-propagated, total net weight and total gross weight. These are the BACKEND-authoritative CHED-PP strings. None is 'confirmed' — the taxonomy bar is observed-in-a-snapshot and no error-state trace exists for this page.",
+      "twoLegacyLayersDiverge": "The frontend Joi copy (en.js, added by the v15 pass, marked inferred) and the backend Jakarta copy (ValidationMessages.properties, added by THIS pass, marked legacy) are DIFFERENT strings for the same rules: frontend 'Enter/Select the …' vs backend 'Add the …'. Both are real legacy artifacts from different layers. Recorded in discrepancies. Which one a user actually sees depends on where validation fires first (client-side Joi on this page vs server-side Jakarta on final submission) — unobserved without an error-state trace. The rebuild should pick ONE voice; GDS style favours 'Enter …' / 'Select …' over 'Add …'."
+    },
+    "stillOpen": [
+      "No error-state trace for this page — validation RENDERING and presentation (error summary vs inline, and which layer's copy wins) remain unobserved. This is the same gap every prior pass flagged; the legacy sources give the copy but not the rendering.",
+      "The exact validator binding finishedorpropagated.message and its precise require-trigger were not found in schema-java — likely a custom @interface or a microservice-side rule.",
+      "Whether NotificationChedppFieldValidation or NotificationSingleCedValidation is the group that actually runs for a CHED-PP submit (relevant only to which net_weight message text fires) — both carry a chedpp.net_weight message key, so the user-visible string is the same either way."
+    ]
+  },
+  "openQuestions": [
+    "NEW (v16) — is the bulk-apply arithmetic actually 'copy to each line', or does the test's 2x2 coincidence hide something? The reading rests on ONE notification shape (2 lines, netWeight 1 -> total 2; packages 2 -> total 4). '2 Kg' is consistent with copy-then-sum but also with 'the bulk value IS the total'... no it is not: total packages 4 from an entered '2' rules that out, and per-commodity '1 Kg' (ched-pp-manipulation.spec.ts:32) rules out apportionment. So the reading is sound, but it would be cheap to confirm with a 3-commodity trace (thirdCommodityCode is supported at ched-pp-workflows.ts:57-59 but no CHED-PP test sets it) and would settle it beyond arithmetic.",
+    "NEW (v16) — what triggers variation.requiresTestAndTrial? The only exercising test (ched-pp-eu-harmonisation.spec.ts:20-29) uses canarySeed (10083000, EPPO PHAAN) + broadBeans (0713500010, EPPO LENCU) from ROW Azerbaijan with intendedUse 'No'. Seeds and legumes, not plants-for-planting. Candidate triggers — commodity group, EPPO code, ROW-vs-EU origin, or the combination — cannot be separated from one data point because that test varies all four at once from DEFAULT_CONFIG. A human who knows the plant-health rules can probably answer this instantly; it is not worth more archaeology.",
+    "NEW (v16) — does 'Change Variety and Class' navigate to the standalone Commodity Class page (Select class: Class I / Class II / Extra Class)? Naming and the Fruit-and-nuts conditionality both point that way, and that page IS reached on the add path (ched-pp-workflows.ts:313-315), but no test clicks the button and no trace followed it. Confirm before the rebuild assumes the two are the same page.",
+    "SUPERSEDED (v15) — this previously read 'validation copy is a GAP on BOTH sources … Do not guess it.' A THIRD source resolves most of it: the IPAFFS frontend repo /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification, which no prior pass cited. This page's handler (routes/handlers/importer/commodity_details_bulk_chedpp.js:28,30) wires up a page-specific bulk-apply Joi validator AND the shared commodity_details validator; validationMessages is now populated with 13 real, field-bound strings. STILL TRUE: none is 'confirmed' — no trace rendered an error here, all three evidence traces are clean happy-path runs (0 errors each), and the QA repo has no negative test for this page. What remains genuinely open: (a) does the error summary render at the top, and are inline messages suppressed (the template passes hideErrorMessage=true to net-weight at commodityDetailsBulkChedpp.html:265)? (b) the shared commodity_details validator may serve CHED-A/P/D too, so which per-commodity required-rules actually bind to CHED-PP is unproven; (c) the DOM says required=false on every field, so the required-on-save rules are asserted by the server only. An error-state trace is still the missing evidence.",
+    "NEW/UNRESOLVED — what data drives the per-commodity H2? It is NOT the commodity group (proven: 'Other' with group 'Fruit and nuts'; 'Hyacinths' with group 'Plants for Planting'). It is most likely the CN/commodity-code leaf description (0601.10.10 = 'Hyacinths'; 0805.90.00 = citrus '…Other'), but this is an inference from two data points and the field's origin was never observed. It matters because the rebuild must source this string from somewhere — confirm whether it comes from the commodity-code reference data or from a separate 'commodity variation' concept (cf. the .commodity-variation-header class, which is applied to the genus/EPPO cells, not to this heading).",
+    "RESOLVED FURTHER (v15) — test-and-trial. Prior state: known to exist (CommodityExtendedDescriptionPage.ts:75-77, ched-pp-workflows.ts:373-375, exercised by ched-pp-eu-harmonisation.spec.ts:20-28), with THREE sub-questions open. The template answers two: its visible label is the column header 'For test and trial' (commodityDetailsBulkChedpp.html:256-258) and it lives in the PER-COMMODITY GRID, not the bulk panel — emitted in the same header row as 'Controlled Atmosphere Container', gated on `{{#if variation.requiresTestAndTrial}}`, control at :336. STILL OPEN: what sets requiresTestAndTrial. It is a per-VARIATION flag (not per-group like the intended-use dropdown, which keys off commodity.group.*), computed upstream and never traced. Note this also sharpens the bulk-apply scope question below: the flag being per-variation means test-and-trial is inherently per-line and cannot be a bulk field. A trace of the eu-harmonisation journey would still confirm rendering and the checkbox's exact position.",
+    "RESOLVED (v15) — the bulk-apply scope disagreement. Prior state: trace evidence said six bulk fields, test structure implied eight were set before Apply, and the task brief claimed Apply bulk-applies intended use and test-and-trial. THE SIX-FIELD READING IS CORRECT, now settled on source. The page's own bulk-apply validator, commodity_details_bulk_apply_validation.js:22-52, defines a Joi schema over EXACTLY the six bulk-* keys (bulk-num-packages, bulk-quantity, bulk-net-weight and the selects) plus the row-selection array — there is NO bulk-intended-use or bulk-test-and-trial key anywhere in it. Independently, the template puts finished-or-propagated (:272-306) and test-and-trial (:256,:336) inside the per-VARIATION loop, and test-and-trial is gated on a per-variation flag, so it is structurally incapable of being a bulk field. CONCLUSION for the rebuild: Apply copies six values to the selected lines. Intended use and test-and-trial are per-line and are NOT bulk-applied. The tests fill them adjacent to the bulk block (ched-pp-workflows.ts:366-379), which is what created the illusion of eight — that is a test-ergonomics artifact, not app behaviour. The task brief was simply wrong on this point. A multi-commodity post-Apply trace would still be nice-to-have confirmation but is no longer needed to decide the rebuild's scope.",
+    "SHARPENED (v17) — the tests conflate 'intended use = No' with 'this commodity has no intended-use field'. Every test whose commodity is not plants-for-planting passes intendedUse: 'No' solely to make the workflow skip the dropdown (ched-pp-article72.spec.ts:27, :73; ched-pp-hmi-checks.spec.ts:25; ched-pp-eu-harmonisation.spec.ts:28, :35). So the QA suite has NO coverage of actually answering 'No'. This matters MORE than the prior wording implied: 'No' is not a negation, it submits the value 'Propagated' — a substantive domain answer meaning 'this plant is intended to be grown on' (trace 1f5b6eef action 26/39). So the untested path is not 'the user declined' but 'the user declared a whole different intended use', and the test suite's sentinel value for 'skip this field' collides with a real, meaningful answer. Any rebuild that keeps a Yes/No rendering inherits this ambiguity; asking for Finished/Propagated directly removes it.",
+    "The package-type list is a filtered subset of a shared reference-data set. The rendered CHED-PP select has 23 real options (24 including the placeholder); types/package-type.ts:1-35 has 33 across all CHED types. The 10 excluded from CHED-PP are Balloon Protected, Block, Container not otherwise specified as transport equipment, Drum, In Bulk, Jar, Pail, Pallet Box, Tank, Tote. Confirm the filter rule (per CHED type? per commodity group?) — the new app must source this from a reference-data service, not hardcode it.",
+    "The quantity-type list is a full independent match between trace and QA domain (7 values + placeholder). Treat it as settled.",
+    "CORRECTED (v17) — was: 'the same Yes/No concept is encoded three different ways on one page … finished-or-propagated uses a Select option placeholder.' That entry characterised finished-or-propagated by its PLACEHOLDER only and never dumped its values, which made it look like a third Yes/No variant. It is not. Its values are Finished/Propagated (trace 1f5b6eef action 26 option dump; action 39 returns [\"Finished\"] for label 'Yes'), so it is a DOMAIN ENUM labelled Yes/No, not a Yes/No question at all. The corrected picture: FOUR encodings behind identical Yes/No option text — bulk-container on/off (empty-text placeholder); <uuid>.container 1364882/'' (no placeholder); <uuid>.finished-or-propagated Finished/Propagated ('Select option' placeholder). STILL GENUINELY OPEN: (a) does IPAFFS persist a tri-state for <uuid>.container, given 'No' and 'not answered' are both submitted as ''? (b) '1364882' looks like a leaked database key — is it stable across environments, or is it a row id that would differ in prod? (c) pick ONE encoding for the rebuild. NEW SUB-QUESTION (v17): is 'Finished'/'Propagated' the persisted domain vocabulary end-to-end, or does the backend re-map it again? Worth one look, because the rebuild should adopt the real vocabulary rather than the Yes/No veneer.",
+    "'499 Commodity lines remaining' implies a hard cap of 500 commodity lines per notification. The cap is inferred from the counter, not from any rendered copy stating it, and the error/behaviour at the limit was never exercised — no test adds more than 3 commodities (thirdCommodityCode is the ceiling, ched-pp-workflows.ts:57-59). What happens on the 501st? Also unknown: the pagination threshold behind the hidden commodityDetailsPage=1 marker.",
+    "The per-commodity grid renders conditional columns by commodity group ('Fruit and nuts' shows Variety/Class + a 'Change Variety and Class' button; 'Plants for Planting' shows finished-or-propagated, leaves the Variety/Class header cells EMPTY, and offers only 'Add Genus (and Species)'). Both halves of this are now trace-confirmed (change_variety present in e10b7cd5, absent in 1f5b6eef). But only these two groups were observed, and the tests reach for at most 8 CHED-PP commodity codes (hyacinths, foliageOther, canarySeed, broadBeans, fruitAndNuts, cutFlowers, tractorsWheeled, ploughs, hmiOnlyCIDAC — types/commodity-code.ts:1-21). The full commodity-group -> column matrix remains a GAP; tractorsWheeled/ploughs (machinery) in particular is a variant we have neither trace nor column evidence for.",
+    "LARGELY ANSWERED (v16) — 'Subtotal and total rows read 0 even after Apply; totals only refresh via Update total, which NO test clicks.' The v16 QA pass supplies the missing half: ched-pp-manipulation.spec.ts:33-35 asserts CORRECT totals ('Total net weight 2 Kg', 'Total packages 4', 'Total gross weight (kg) 12 Kg') on the submitted notification, in a journey that never clicks 'Update total'. So the real total is computed away from this page and the on-page total is a stale client-side display. ANSWER FOR THE REBUILD: compute totals from the data on render/save; do not port the button. STILL OPEN only as a nice-to-have: what 'Update total' actually does client-side (it is one of the two page scripts) and whether any user relies on it.",
+    "The 'Clear' link resets by navigating to the page URL, which would also discard unsaved per-commodity edits. Untested. Confirm intended scope of Clear.",
+    "Per-row selection and per-row editing have ZERO coverage. Every test uses 'Select all' + the bulk panel + Apply; no test ever ticks an individual commodity checkbox or types into a <uuid>.* input. If the rebuild keeps per-line editing, it is being ported on trace evidence alone with no behavioural test to lean on.",
+    "'Save and return to hub' and 'Cancel and return to hub' on this page are exercised by no test (grep across the QA repo finds those button names only on AboutTheConsignment, CountryOfOrigin, GoodsMovementServices and TransportDetails page objects). Their behaviour — particularly whether 'Save and return to hub' persists partial commodity details — is a GAP.",
+    "The etag concurrency path is untested and unobserved in a conflict state. What should the new app do when two sessions edit the same draft's commodities?",
+    "Defects worth raising against IPAFFS regardless of the rebuild: (1) the corrupted td class 'govuk-tabgit border-bottom-none le__cell' (mangled govuk-table__cell); (2) the self-referential aria-labelledby on the three bulk selects, which OVERRIDES the correct label[for] and makes bulk-container nameless — independently corroborated by the QA repo having to locate it via getByText (CommodityExtendedDescriptionPage.ts:67-69); (3) the per-commodity grid controls having no <label> at all and an aria-label that says 'Enter quantity type' on a <select>; (4) the row checkbox whose accessible name is 'commodity-<uuid>'. All four are real and shipped. ADDED v15: (5) an apparently INVERTED Joi error-key binding in commodity_details_bulk_apply_validation.js:35-38 — NUMBER_MAX maps to NET_WEIGHT_TOO_MANY_DECIMALS while STRING_LENGTH maps to NET_WEIGHT_TOO_LARGE_MESSAGE, which reads back-to-front against the message texts ('cannot have more than 3 decimals' vs 'cannot have more than 16 digits'). If correct, a user entering an over-long net weight sees the decimals message and vice versa. Unproven without an error-state trace, but worth a look. (6) The v15 template read CONFIRMS the mechanism behind defects (1)-(3): commodityDetailsBulkChedpp.html hand-writes raw HTML with literal govuk-* class strings and calls partials like `govuk/select` with an explicit ariaLabel, rather than using the govuk-frontend Nunjucks macros. That is why a class can be typo'd into 'govuk-tabgit' and why aria-labelledby can be set to a control's own id — the macros make both impossible. This is the single strongest argument for the rebuild using the macros directly.",
+    "Naming trap for whoever reads this next: the QA repo calls this page the 'Commodity Extended Description Page' and drives it via CommodityExtendedDescriptionPage.ts. The ChedppCommodityBulkDetailsPage.ts stub is only used on the amend path. Anyone grepping the tests for 'bulk' will conclude this page is barely covered; it is in fact the most-driven page in the CHED-PP suite."
+  ]
+}

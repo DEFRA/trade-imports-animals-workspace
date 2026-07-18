@@ -1,0 +1,80 @@
+{
+  "hash": "b1f31ed70fbdb2f92f66488da5bda6f3e510a0c9",
+  "title": "auth/DoA/doa-agent-access.spec.ts:34 › Delegated Organisation - Agent Visibility › Carol Clark (agent) submits for Plant Org 1 → Carol Clark (agent) can see it on her dashboard",
+  "kind": "agent-access",
+  "specFile": "ipaffs-qa-automation/tests/auth/DoA/doa-agent-access.spec.ts",
+  "wrote": true,
+  "summary": "Delegated-authority (DoA) CHED-PP trace. A Plant-agency agent (Carol Clark, member of 'IPAFFS Plant Agency C') creates a CHED-PP on behalf of a DIFFERENT organisation ('IPAFFS Plant Organisation 1') via a two-step organisation-selection surface the main run never exercised, submits it, then confirms she can view/copy/amend her own delegated submission on her dashboard. The spec's sibling tests define the full who-can-see-what authorization rule set.",
+
+  "pagesTouched": [
+    "consignment-for",
+    "consignment-organisation-type",
+    "consignment-organisation",
+    "country-of-origin",
+    "origin-of-import",
+    "commodity-code-search",
+    "commodity-details",
+    "point-of-entry",
+    "means-of-transport",
+    "documents",
+    "traders-addresses",
+    "consignor-exporter",
+    "consignee-importer",
+    "declaration-submit",
+    "confirmation",
+    "notification-dashboard"
+  ],
+  "slugMappingNotes": "consignment-organisation-type and consignment-organisation are the two DoA-specific organisation-selection sub-pages (see newSurface). The remainder map to the standard CHED-PP creation slugs already covered by the main run; they are listed for completeness but hold no delegated-agent-specific surface in this trace.",
+
+  "newSurface": "This trace exercises the delegated-agent organisation-selection surface that the standard (non-agent) creation journey never renders. It is a TWO-STEP flow, both under the /notification/vnet/protected/notifications/consignment-organisation?type=CHEDPP route, that appears immediately after the 'What are you importing?' (import type = Plants) page and before Country of origin:\n\nSTEP 1 — org-type page. H1 'Who are you creating this notification for?' (caption 'About the consignment'). Radio group with exactly two options: (a) the agent's OWN organisation, rendered by its literal name 'IPAFFS Plant Agency C'; (b) 'A different organisation'. 'Save and continue' button. In this trace the agent selected 'A different organisation'.\n\nSTEP 2 — org-list / delegated-org picker. H1 'Which company is this notification for' (caption 'About the consignment'; page <title> 'Which company is this notification for'). Radio list of the organisations the agent is authorised to act for, each radio label = org name + full address rendered as strong name over address lines. Options observed:\n  - 'IPAFFS Plant Agency F' — 22 Acacia Avenue, London, N17 8LR\n  - 'IPAFFS Plant Organisation 1' — KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT  [checked/selected in this trace]\n  - 'IPAFFS Plant Organisation 2' — KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT\n  'Save and continue' button. Note step 2 renders only when 'A different organisation' was chosen in step 1; selecting the own-org radio skips it.\n\nAGENT-ONLY HEADER NAV. Throughout the authenticated agent journey the account header renders an agent-specific link set: 'Carol Clark | Address book | Manage account | Manage trade partners | Sign out'. The 'Manage trade partners' link (/notification/vnet/protected/notifications/trade-partners/filter) is delegated-agent-specific surface not present for ordinary org members.\n\nNOT observed in THIS trace (still gaps for a human): the Trade Partner badge on a consignment, and contact/importer auto-population from the selected delegated organisation. In this journey the agent instead created a brand-new consignor ('Linus George Ltd') by hand and set consignee via the 'Same as consignee' button, so no auto-population fired. These surfaces are named in the mining brief but were not rendered here; capture them from a DoA creation trace that adds an existing trade partner.",
+
+  "fields": {
+    "consignment-organisation-type": {
+      "heading": "Who are you creating this notification for?",
+      "caption": "About the consignment",
+      "route": "/notification/vnet/protected/notifications/consignment-organisation?type=CHEDPP",
+      "control": "radio group",
+      "options": [
+        { "label": "IPAFFS Plant Agency C", "meaning": "the agent's own organisation (own-org path — skips step 2)", "confidence": "confirmed", "evidence": "trace b1f31ed7 action 11 before-snapshot" },
+        { "label": "A different organisation", "meaning": "delegated path — reveals the org picker (step 2)", "selectedInTrace": true, "confidence": "confirmed", "evidence": "trace b1f31ed7 action 10 (check) + action 11 before-snapshot" }
+      ],
+      "submit": "Save and continue"
+    },
+    "consignment-organisation": {
+      "heading": "Which company is this notification for",
+      "pageTitle": "Which company is this notification for",
+      "caption": "About the consignment",
+      "route": "/notification/vnet/protected/notifications/consignment-organisation?type=CHEDPP (step 2)",
+      "control": "radio list of authorised organisations (name + full address per option)",
+      "options": [
+        { "name": "IPAFFS Plant Agency F", "address": ["22 Acacia Avenue", "London", "N17 8LR"], "confidence": "confirmed", "evidence": "trace b1f31ed7 action 13 before-snapshot" },
+        { "name": "IPAFFS Plant Organisation 1", "address": ["KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT", "BELFAST", "BT7 1NT"], "selectedInTrace": true, "confidence": "confirmed", "evidence": "trace b1f31ed7 action 12 (check) + action 13 before-snapshot" },
+        { "name": "IPAFFS Plant Organisation 2", "address": ["KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT", "BELFAST", "BT7 1NT"], "confidence": "confirmed", "evidence": "trace b1f31ed7 action 13 before-snapshot" }
+      ],
+      "submit": "Save and continue"
+    }
+  },
+
+  "authorizationRules": [
+    "An agent (Carol Clark, member of 'IPAFFS Plant Agency C') may create a CHED-PP on behalf of a DIFFERENT organisation she is authorised to act for; the delegated organisation is chosen via the two-step organisation-selection surface (own-org vs 'A different organisation', then a picker of authorised orgs). [confirmed — trace b1f31ed7 actions 10-13]",
+    "Agent submits FOR the delegated org (Plant Org 1) → the AGENT herself can view, copy-as-new and amend that notification on her own dashboard. [confirmed — THIS trace, actions 89-93: search CHEDPP.GB.2026.1525735 then soft-assert view-details, copy-as-new, amend-details all visible]",
+    "Agent submits FOR the delegated org (Plant Org 1) → a MEMBER of Plant Org 1 (Isabel Irwin) can view, copy-as-new and amend the notification on their dashboard — i.e. a delegated submission surfaces to the beneficiary organisation's own members. [inferred — sibling test doa-agent-access.spec.ts:7-31, not in this trace]",
+    "Agent submits for her OWN organisation (Plant Agency C, useOwnOrganisation) → a member of Plant Org 1 (Isabel Irwin) CANNOT see it (view-details hidden). Own-org submissions are scoped to the agent's own org and are NOT visible to unrelated delegated orgs — cross-org isolation. [inferred — sibling test doa-agent-access.spec.ts:60-86, not in this trace]",
+    "The agent account header exposes a delegated-agent-only 'Manage trade partners' link (/notification/vnet/protected/notifications/trade-partners/filter) alongside Address book / Manage account, indicating an agent maintains a managed set of trade-partner organisations. [confirmed — trace b1f31ed7 action 11/13 before-snapshots, header nav]"
+  ],
+
+  "confirmedReference": {
+    "notificationReference": "CHEDPP.GB.2026.1525735",
+    "confidence": "confirmed",
+    "evidence": "trace b1f31ed7 actions 82/86 (#reference-number) and dashboard search actions 89-93"
+  },
+
+  "legacyCorroboration": {
+    "orgSelectionPageObject": "ipaffs-qa-automation/page-objects/notification/OrganisationSelectionPage.ts:6-41 — radioDifferentOrganisation = getByRole('radio',{name:'A different organisation'}); radioOwnOrganisation = getByRole('radio',{name:'IPAFFS Plant Agency C'}); selectDifferentOrganisation() checks 'A different organisation', Save and continue, then checks the named company radio, Save and continue (two-step flow). Save-and-review variant also exists (btnSaveAndReview) for amend flows.",
+    "workflowBranch": "ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:259-264 — if organisationName -> selectDifferentOrganisation(name); else if useOwnOrganisation -> selectOwnOrganisation(). Org-selection step sits between Import Type and Country of origin.",
+    "confidence": "inferred"
+  },
+
+  "discrepancies": [],
+  "notes": "Trace is the second of three sibling tests in doa-agent-access.spec.ts. This one covers agent-sees-own-delegated-submission. The other two (org-member-sees-delegated-submission; org-member-cannot-see-agent-own-org-submission) were not in this trace but their authorization rules are recorded above from the spec source. Trade Partner badge and contact/importer auto-population named in the brief were NOT rendered in this journey (agent hand-entered a new consignor and used 'Same as consignee'); flag as open gaps to capture from a trade-partner-add DoA trace."
+}

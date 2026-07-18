@@ -1,0 +1,379 @@
+{
+  "slug": "document-upload",
+  "name": "Upload attachment (upload service)",
+  "url": "/upload/vnet/protected/upload/:draftId/0/notification/attach",
+  "pageTitle": "Accompanying documents - Import and export applications - GOV.UK",
+  "caption": "Documents",
+  "heading": "Accompanying documents",
+  "bodyCopy": [
+    "Your file must be:",
+    "smaller than 10MB",
+    "larger than 1KB",
+    "file type must be a DOC, JPEG, PDF, PNG or XLS",
+    "ZIP files are not allowed for security reasons"
+  ],
+  "backLink": "Back (href=\"#\" id=\"back-link\" — JS history back, not a real URL; rendered outside <main>, class=\"govuk-back-link back-link--next-to-breadcrumbs\"). CONFIRMED: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 — raw markup <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>, verified outside <main> via element.closest('main') === null.",
+  "continueLabel": "Next (CHED-PP) — trace-confirmed. NOTE: the same page renders a \"Continue\" button in the CHED-P journey — the page object exposes btnNext, btnContinue and a btnNextOrContinue regex to cope with both. CORRECTED at corroboration: an earlier revision said \"every CHED-PP usage drives btnNext\" — that is not true. Only the journey workflow (ched-pp-workflows.ts:461,882) and the a11y spec (ched-pp-accessibility-tests.spec.ts:137) drive btnNext; ALL EIGHT document specs drive the btnNextOrContinue REGEX on the CHED-PP route (document-upload-valid-commercial-invoice.spec.ts:66, -invalid-commercial-invoice.spec.ts:71, -valid-inspector.spec.ts:65, -invalid-inspector.spec.ts:69), so those specs would pass against EITHER label and pin nothing. \"Next\" for CHED-PP therefore rests on the TRACE plus the two btnNext call sites — not on the document suite. See openQuestions.",
+  "secondaryActions": [
+    "Cancel (link, href=/notification/vnet/protected/notifications/:draftId/documents/page-1 — returns to the accompanying-documents page in the NOTIFICATION app). In the file-too-large error state ONLY, the href gains a ?fileTooLarge=true query param; the file-type-rejection error state carries no query param. MECHANISM (corrected): this is NOT deliberate cross-app error signalling — the too-large error state is reached by a redirect to the upload page's OWN url with ?fileTooLarge=true, and the Cancel link is built from the current query string, so it inherits the param incidentally. See validationMessages['The selected file must be smaller than 10MB'] and nonStandardPatterns."
+  ],
+  "layout": "govuk-grid-row (id=add-attachment-page) > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Documents",
+      "govukComponent": "Caption (span.govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Accompanying documents",
+      "govukComponent": "Heading (h1.govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "error-summary",
+      "text": "Please fix the following errors / <one link per error, href=#fileUpload>",
+      "govukComponent": "Error summary (error state only)"
+    },
+    {
+      "element": "form",
+      "text": "method=POST enctype=multipart/form-data, NO action attribute (posts to self); hidden inputs: crumb (CSRF), etag, document-index, request-from",
+      "govukComponent": "-"
+    },
+    {
+      "element": "label",
+      "text": "Select a file",
+      "govukComponent": "Label (govuk-label govuk-label--m)"
+    },
+    {
+      "element": "error-message",
+      "text": "<validation message> (p.govuk-error-message#fileUpload-error, error state only)",
+      "govukComponent": "Error message"
+    },
+    {
+      "element": "file",
+      "text": "input#fileUpload name=fileUpload — sibling of the label and error message inside div[data-module=\"dropzone\"]",
+      "govukComponent": "File upload (govuk-file-upload)"
+    },
+    {
+      "element": "h2",
+      "text": "Your file must be:",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "list",
+      "text": "smaller than 10MB / larger than 1KB / file type must be a DOC, JPEG, PDF, PNG or XLS / ZIP files are not allowed for security reasons",
+      "govukComponent": "List (govuk-list govuk-list--bullet)"
+    },
+    {
+      "element": "button",
+      "text": "Next",
+      "govukComponent": "Button (govuk-button), id/name=next-button, type=submit, value=Next"
+    },
+    {
+      "element": "link",
+      "text": "Cancel",
+      "govukComponent": "Link (govuk-link) inside div.govuk-body"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "File upload",
+      "govukClass": "govuk-file-upload",
+      "modifiers": [
+        "govuk-file-upload--error"
+      ],
+      "count": 1,
+      "usage": "The single attachment file picker. Native <input type=\"file\"> with NO accept attribute — file-type restriction is enforced server-side only.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57; error modifier: trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67, trace 6099ec64646884189b2234becca4af82499fe62d action 67"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--m"
+      ],
+      "count": 1,
+      "usage": "\"Select a file\", for=\"fileUpload\"",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [
+        "govuk-form-group--error"
+      ],
+      "count": 1,
+      "usage": "Wraps the dropzone div (label + error message + file input); gains --error modifier on validation failure",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57; error: trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67"
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "count": 1,
+      "usage": "Section caption \"Documents\" above the H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-m"
+      ],
+      "count": 2,
+      "usage": "H1 \"Accompanying documents\" (xl) and H2 \"Your file must be:\" (m). In the error state a third heading appears — the error summary title h2.govuk-error-summary__title.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57"
+    },
+    {
+      "component": "List",
+      "govukClass": "govuk-list",
+      "modifiers": [
+        "govuk-list--bullet",
+        "govuk-error-summary__list"
+      ],
+      "count": 1,
+      "usage": "The four file-requirement bullets (govuk-list--bullet). In the error state the error summary adds a second govuk-list (govuk-error-summary__list).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57; error-summary list: trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary \"Next\" submit button. Label is journey-dependent: CHED-PP/A/D render \"Next\", CHED-P renders \"Continue\" — same page, same role. Only \"Next\" was observed in CHED-PP traces.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (raw markup: <button class=\"govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4\" id=\"next-button\" name=\"next-button\" type=\"submit\" value=\"Next\">Next</button>); also rendered \"Next\" on the inspector route (trace bff126371f9dffc7d3d34dd5a8923a9c08e75a41 action 108). Label variance inferred from /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DocumentUploadPage.ts:6-16 (btnNext/btnContinue/btnNextOrContinue) + workflows/notification/ched-p-workflows.ts:350,728,936 (btnContinue) vs workflows/notification/ched-pp-workflows.ts:461,882 (btnNext) and workflows/notification/ched-d-workflows.ts:250,635 (btnNext)."
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [
+        "govuk-error-summary__title",
+        "govuk-error-summary__body",
+        "govuk-error-summary__list"
+      ],
+      "count": 1,
+      "usage": "Rendered above the caption on validation failure. data-module=\"govuk-error-summary\"; inner div carries role=\"alert\"; list item links to #fileUpload.",
+      "evidence": "trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67; trace bff126371f9dffc7d3d34dd5a8923a9c08e75a41 action 108; trace 6099ec64646884189b2234becca4af82499fe62d action 67"
+    },
+    {
+      "component": "Error message",
+      "govukClass": "govuk-error-message",
+      "count": 1,
+      "usage": "Inline error above the file input, id=fileUpload-error",
+      "evidence": "trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "count": 1,
+      "usage": "\"Cancel\" — returns to the notification app's accompanying-documents page",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57"
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "count": 2,
+      "usage": "Wraps the requirements block and the Cancel link",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "div[data-module=\"dropzone\"] wrapping the label, error message and file input",
+      "whatItDoes": "A bespoke IPAFFS JS module that turns the file-input container into a drag-and-drop zone. It wraps the label, the inline error message and the input — not the input alone. No govuk-* class is attached — it is a data-module hook only, so the class inventory is 100% govuk-*. The enhancement did not render in the trace snapshots (no visible dropzone chrome), so its progressive-enhancement behaviour is unobserved.",
+      "concern": "Drag-and-drop is NOT part of the GOV.UK Design System's File upload component as used here. The new app would need custom JS to match it, or drop the behaviour. Note the base component degrades gracefully — the plain input works without JS, so this is additive, not load-bearing.",
+      "govukAlternative": "govuk-frontend now ships a JS-enhanced File upload (data-module=\"govuk-file-upload\") with a drag-and-drop dropzone built in. That is the standard replacement — no bespoke module needed.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (main innerHTML raw markup)"
+    },
+    {
+      "pattern": "<h2 class=\"govuk-error-summary__title\">Please fix the following errors</h2>",
+      "whatItDoes": "The error summary title uses IPAFFS-specific copy instead of the Design System's standard wording.",
+      "concern": "GDS standard error summary copy is \"There is a problem\". \"Please fix the following errors\" is off-pattern and also breaches the GDS content style guide (\"please\" is discouraged). The new app should use the standard copy.",
+      "govukAlternative": "Error summary with default titleText \"There is a problem\"",
+      "evidence": "trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67; trace bff126371f9dffc7d3d34dd5a8923a9c08e75a41 action 108; trace 6099ec64646884189b2234becca4af82499fe62d action 67"
+    },
+    {
+      "pattern": "<p class=\"govuk-error-message\" id=\"fileUpload-error\">The selected file must be smaller than 10MB</p> — no visually-hidden \"Error:\" prefix",
+      "whatItDoes": "The inline error message omits the <span class=\"govuk-visually-hidden\">Error:</span> prefix that the Design System's Error message component includes.",
+      "concern": "Accessibility gap — screen reader users do not hear that the text is an error. The govuk-frontend macro adds this automatically; IPAFFS hand-rolled the markup and lost it.",
+      "govukAlternative": "govukErrorMessage macro (emits the visually-hidden prefix by default)",
+      "evidence": "trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67 (raw markup: <p class=\"govuk-error-message\" id=\"fileUpload-error\">…</p>)"
+    },
+    {
+      "pattern": "The file input carries no accept attribute; the input is not linked to the error via aria-describedby",
+      "whatItDoes": "No client-side file-type filter in the OS file picker, and #fileUpload is not wired to #fileUpload-error via aria-describedby.",
+      "concern": "Users can pick a ZIP/TXT and only learn it is invalid after a full round-trip upload. The missing aria-describedby means the inline error is not announced when the input receives focus from the error-summary link. Both are cheap to fix in the rebuild.",
+      "govukAlternative": "govukFileUpload macro with errorMessage set (wires aria-describedby automatically); add accept for the allowed extensions as progressive enhancement — server-side validation remains authoritative.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57; trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67 (error-state input markup carries neither accept nor aria-describedby)"
+    },
+    {
+      "pattern": "The file-too-large rule is enforced by the HTTP framework (hapi maxBytes -> 413) and fed back through a REDIRECT + query param, not by the page's own validator",
+      "whatItDoes": "NEW AT ADVERSARIAL REVIEW. The single-file validator validate() in src/validation/file_upload_validation.js contains NO upper size bound at all — it checks filename presence, extension, emptiness, then a 200-byte floor. The 10MB rule lives in the hapi route payload config (maxBytes: TEN_MB, src/routes/route_options.js:54). An oversized POST is rejected by hapi with a 413 BEFORE the handler runs; a server extension then rewrites the response into a 302 to the page's own URL with ?fileTooLarge=true appended (src/server_extensions/error_handler_pre_response.js:83, calculatePath()). On the follow-up GET, attach.js:31 calls validateQueryParams(request.query), which maps fileTooLarge=true to the FILE_TOO_LARGE string and injects it into the view context. Net effect: the user's file is uploaded, discarded at the framework boundary, and they are bounced through a full extra round-trip to see the error.",
+      "concern": "Three problems for the rebuild. (1) The size rule is invisible to the validator — anyone reading the validation module would conclude 10MB is unenforced. (2) It costs a redirect and a second page load to report an error the browser could have caught, and the user has already paid the full upload cost of an oversized file. (3) It leaks into the UI: the Cancel link inherits ?fileTooLarge=true from the query string, which is why that one error state has a different Cancel href — an accident of query-string reconstruction, NOT deliberate cross-app signalling as an earlier revision of this spec assumed. Keep ONE validator that owns every rule including size, and report errors in the POST response.",
+      "govukAlternative": "Validate size in the same server-side validator as the other rules and re-render the page with an error summary in the POST response (the standard GOV.UK error pattern). Optionally reject oversized files client-side before upload as progressive enhancement.",
+      "evidence": "src/validation/file_upload_validation.js validate() (no upper-bound branch; filename -> extension -> _.isEmpty(fileContent) -> _.size(fileContent) < TWO_HUNDRED_B); /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/routes/route_options.js:54 (maxBytes: TEN_MB on userAccessPostRequestMultipart); /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/server_extensions/error_handler_pre_response.js:83; /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/routes/handlers/upload/attach.js:31. Corroborated by trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67, where the Cancel href carries ?fileTooLarge=true while the file-type-rejection trace 6099ec64646884189b2234becca4af82499fe62d action 67 (a genuine in-handler validation failure, re-rendered from the POST) carries no query param at all — exactly the asymmetry this mechanism predicts."
+    },
+    {
+      "pattern": "Separate app boundary: page served from /upload/vnet/protected/upload/... (ipaffs-frontend-upload) while the journey lives at /notification/vnet/protected/notifications/... (notification app)",
+      "whatItDoes": "Attachment upload is a physically separate hapi application. State is handed across the boundary via hidden form fields: crumb (CSRF), etag (optimistic concurrency token for the draft notification), document-index (which attachment slot), request-from (calling context). Cancel/return links are absolute paths back into the notification app.",
+      "concern": "This is the strongest architectural signal in the CHED-PP corpus. The split forces cross-app state marshalling (etag round-tripping, returnUrl threading, duplicated GOV.UK chrome and cookie banner) and produces a jarring full-page hop mid-journey. The rebuild MUST NOT copy this — it is an artefact of IPAFFS's microservice sprawl (ipaffs-frontend-upload + ipaffs-file-upload-microservice + ipaffs-file-compression-microservice), not a user need.",
+      "govukAlternative": "Keep upload as a page inside the single CDP app; use CDP's cdp-uploader for the virus-scanned file handling behind one origin.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (page URL + raw hidden inputs: crumb, etag=\"0000000000BD29E8\", document-index, request-from; Cancel href absolute into /notification/vnet/...). Handler-side corroboration: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/routes/handlers/upload/attach.js:74-84 (on success, PATCHes the notification then h.redirect()s back to the notification app's part-1 documents URL)."
+    }
+  ],
+  "fields": [
+    {
+      "name": "fileUpload",
+      "label": "Select a file",
+      "control": "file",
+      "required": true,
+      "requiredNote": "CORRECTED at adversarial review (was required:false). The rendered markup carries no required attribute and no aria-required — so it is not marked required in HTML — but the page DOES require a file to proceed: validate() in src/validation/file_upload_validation.js returns FILE_NOT_SELECTED when _.isEmpty(filename), which re-renders the page with an error instead of continuing. So a user cannot get past this page without choosing a file. This settles open question (b) of the earlier revision. Whether a NOTIFICATION can be submitted with zero attachments is a separate question owned by the notification app and remains open — see openQuestions.",
+      "hint": "Your file must be: / smaller than 10MB / larger than 1KB / file type must be a DOC, JPEG, PDF, PNG or XLS / ZIP files are not allowed for security reasons",
+      "observedValues": [
+        "example.png",
+        "example.zip",
+        "empty-file.pdf",
+        "large-file.pdf"
+      ],
+      "conditionalOn": "Only reached when 'Add attachment' is clicked on the accompanying-documents page. Corroborated on BOTH CHED-PP routes: the B2C notifier route via accompanyingDocuments.btnAddAttachment (workflows/notification/ched-pp-workflows.ts:457,878; tests/accessibility/ched-pp-accessibility-tests.spec.ts:131; document-upload-valid-commercial-invoice.spec.ts:64) and the B2B inspector route, which reaches the identical page after selecting a document type + reference + date (workflows/shared/document-workflows.ts:10 and :34, driven by document-upload-{valid,invalid}-inspector.spec.ts on CHED-PP). No other entry point exists in the suite. PAGE OPTIONALITY (inferred): the CHED-PP workflow has no config knob to skip the attachment — ChedPPNotificationConfig (ched-pp-workflows.ts:39-125) exposes documentType/documentReference/documentDate but NOTHING for the file itself, which is hardcoded to example.png at :460 and :881. The one escape, stopAtAccompanyingDocuments (:118-119, :455), returns 'NOT_SUBMITTED' and abandons the journey rather than submitting without an attachment. So EVERY completed CHED-PP happy path in the suite uploads exactly one file, and whether a notification can be SUBMITTED with no attachment at all is untested by either admissible source — see openQuestions.",
+      "confidence": "confirmed",
+      "evidence": "TRACE (confirmed): trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (value example.png; input resolved to <input type=\"file\" id=\"fileUpload\" name=\"fileUpload\" class=\"govuk-file-upload \">); corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 65 — value example.png, source ched-pp-workflows.ts:460 (independently re-verified at adversarial review: both actions are Set input files with localPaths [/app/resources/file-upload/example.png] and both resolve the same input). Invalid fixtures also confirmed in CHED-PP traces: example.zip (trace 6099ec64646884189b2234becca4af82499fe62d), empty-file.pdf (trace bff126371f9dffc7d3d34dd5a8923a9c08e75a41), large-file.pdf (trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0). PAGE OBJECT (inferred): locator is input[type=\"file\"] at /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DocumentUploadPage.ts:22-24 — it targets the input by TYPE, not by the #fileUpload id the trace shows, so the tests never pin the field name; the name fileUpload rests on trace evidence alone (corroborated by FILE_BROWSE: 'fileUpload' at validation_constants.js:12). VALUES DRIVEN BY TESTS BUT NOT SEEN IN A CHED-PP TRACE (inferred): example.jpg/doc/docx/xls/pdf (valid matrix, tests/document/document-upload-valid-commercial-invoice.spec.ts:8); example.txt (invalid matrix, tests/document/document-upload-invalid-commercial-invoice.spec.ts:10); example.xlsx (inspector flow, workflows/shared/document-workflows.ts:36). health-cert.png is CHED-A only, not CHED-PP. Fixture dir listing (resources/file-upload/) corroborates: no example.gif and no example.jpeg exist. REQUIRED (inferred): src/validation/file_upload_validation.js validate() — `if (_.isEmpty(filename)) return FILE_NOT_SELECTED`."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden — CSRF token)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (value [REDACTED] — CSRF token). Re-verified at adversarial review via form-ownership eval: three separate crumb inputs exist on the page (one in each of the two cookie-banner forms, one in the upload form); only the form=SELF one belongs to this page."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden — optimistic-concurrency token for the draft notification)",
+      "control": "text",
+      "required": false,
+      "observedValues": [
+        "\"0000000000BD29E8\""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57 (rendered as value=\"&quot;0000000000BD29E8&quot;\" — the quotes are part of the ETag value). A different draft yields a different value: \"0000000000BD1875\" in trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67."
+    },
+    {
+      "name": "document-index",
+      "label": "(hidden — index of the attachment slot being filled; empty when adding a new attachment)",
+      "control": "text",
+      "required": false,
+      "observedValues": [
+        ""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57. Server-side use corroborated at attach.js updateDocuments() — the value indexes into accompanyingDocuments, with a special-case string 'latest-vet-health' (not a number) selecting the latestVeterinaryHealthCertificate document instead."
+    },
+    {
+      "name": "request-from",
+      "label": "(hidden — calling context; empty in observed traces)",
+      "control": "text",
+      "required": false,
+      "observedValues": [
+        ""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57. PURPOSE NOW PARTLY ANSWERED (inferred, new at adversarial review): attach.js POST switches on it — case NOTIFICATION patches partOne.veterinaryInformation.accompanyingDocuments, case DECISION patches partTwo.accompanyingDocuments, default renders the error `The request was not recognised from '<value>'`. The values come from utils/constants parts: { NOTIFICATION, DECISION }. Note it is empty in the hidden FIELD but the handler reads request.params.requestFrom from the URL path (…/0/notification/attach), which is where the real value lives — the hidden field appears to be vestigial on this route."
+    }
+  ],
+  "notFieldsOfThisPage": [
+    "returnUrl, fromFooterHeader, cookies, accept-cookies — these belong to the GOV.UK cookie-banner/cookie-settings forms (action=/upload/vnet/protected/upload/cookies), NOT the upload form. Verified by mapping every input to its owning <form>: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 57. INDEPENDENTLY RE-VERIFIED at adversarial review by re-running the control inventory and grouping by element.form: the upload form's complete field set is exactly crumb, etag, document-index, request-from, fileUpload, next-button — no missed controls, no extras."
+  ],
+  "validationMessages": [
+    {
+      "message": "The selected file must be smaller than 10MB",
+      "field": "fileUpload",
+      "trigger": "Submitting a file larger than 10485760 bytes (TEN_MB). MECHANISM CORRECTED at adversarial review — this is NOT a branch in the page's validator. hapi rejects the oversized POST at the route payload boundary (maxBytes: TEN_MB, route_options.js:54) with a 413 before the handler runs; error_handler_pre_response.js:83 redirects to the page's own URL with ?fileTooLarge=true; the follow-up GET calls validateQueryParams (attach.js:31), which turns that query param into this message. An earlier revision implied validateAccompanyingDocument performed the size check — it does not; validate() has no upper-bound branch at all.",
+      "confidence": "confirmed",
+      "evidence": "trace 55fcf6fd3bf75bb4445ba23ce28ee24b984aecd0 action 67 — CHED-PP, document-upload-invalid-commercial-invoice.spec.ts:65 › CHED-PP › LARGE; rendered verbatim in both the error summary link and the inline p#fileUpload-error (re-verified character-by-character at adversarial review). Constant FILE_TOO_LARGE at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:6. Mechanism: route_options.js:54 + error_handler_pre_response.js:83 + file_upload_validation.js validateQueryParams:159-163 + attach.js:31. CORROBORATED by test: asserted verbatim for CHED-PP with fixture large-file.pdf at tests/document/document-upload-invalid-commercial-invoice.spec.ts:12 (LARGE row). Trace and test agree."
+    },
+    {
+      "message": "The selected file is empty",
+      "field": "fileUpload",
+      "trigger": "Submitting a zero-byte file (fileContent empty — checked BEFORE the 200-byte floor, and AFTER the filename and extension checks)",
+      "confidence": "confirmed",
+      "evidence": "trace bff126371f9dffc7d3d34dd5a8923a9c08e75a41 action 108 — NOTE this trace is the B2B INSPECTOR route (document-upload-invalid-inspector.spec.ts:59 › Invalid inspector attachment upload › CHED-PP › EMPTY), still CHED-PP; the assertion at document-upload-invalid-inspector.spec.ts:71 matched role=alert containing 'The selected file is empty'. Rendered verbatim in both error summary and inline (re-verified at adversarial review). Constant FILE_IS_EMPTY at validation_constants.js:8; ordering confirmed by reading src/validation/file_upload_validation.js validate() in full — the branch order is filename -> extension -> _.isEmpty(fileContent) -> _.size(fileContent) < TWO_HUNDRED_B, so FILE_IS_EMPTY precedes FILE_TOO_SMALL. SEPARATELY corroborated on the B2C notifier route by test only: tests/document/document-upload-invalid-commercial-invoice.spec.ts:11 (EMPTY row) asserts the identical string. This SETTLES the earlier conflict with ipaffs-release-tests/documentUpload.feature:29 (which expected 'must be larger than 1KB' for the EMPTY case): the trace and the current qa-automation suite agree, so the release-tests feature file is stale."
+    },
+    {
+      "message": "The selected file must be a DOC, JPEG, PDF, PNG or XLS",
+      "field": "fileUpload",
+      "trigger": "Submitting a file whose extension is not in ALLOWED_EXTENSIONS (doc, docx, jpg, jpeg, pdf, png, xlsx, xls) — e.g. ZIP or TXT. Extension match is case-insensitive (the extracted extension is lowercased before the includes check).",
+      "confidence": "confirmed",
+      "evidence": "trace 6099ec64646884189b2234becca4af82499fe62d action 67 — CHED-PP, document-upload-invalid-commercial-invoice.spec.ts:65 › CHED-PP › 'B2C notifier cannot upload an invalid ZIP commercial invoice attachment'; rendered verbatim in BOTH the error summary link and the inline p#fileUpload-error (re-verified at adversarial review). A sibling TXT trace also exists (6d3c0bfcd375d9afe8f8e31d5e4a350884c5445f), plus inspector-route ZIP/TXT traces (b5379598b396db828a7b360fe34ead68dbaa3500, e6e88c415d78abef5434eddb18be5fe9df49cbff). SOURCE: template FILE_TYPE_IS_INCORRECT_TEMPLATE ('The selected file must be a %s') at validation_constants.js:5 expanded with ALLOWED_EXTENSIONS_FOR_MESSAGE ('DOC, JPEG, PDF, PNG or XLS') at :22; case-insensitivity from `fileExtension = fileExtension.toLowerCase()` in validate(). ALSO asserted verbatim by test for CHED-PP for both ZIP and TXT at tests/document/document-upload-invalid-commercial-invoice.spec.ts:9-10 and again on the health-certificate route at tests/document/document-upload-invalid-health-certificate.spec.ts:7-8. Trace, source and test all agree."
+    },
+    {
+      "message": "The selected file must be larger than 1KB",
+      "field": "fileUpload",
+      "trigger": "Submitting a non-empty file smaller than TWO_HUNDRED_B (200 bytes). NOTE the message says 1KB but the code threshold is 200 bytes — the copy is inaccurate.",
+      "confidence": "inferred",
+      "evidence": "Constant FILE_TOO_SMALL at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:7; threshold TWO_HUNDRED_B: 200 at :15; branch `if (_.size(fileContent) < TWO_HUNDRED_B) return FILE_TOO_SMALL` in src/validation/file_upload_validation.js validate() — re-verified in full at adversarial review. NOT observed in any trace. The only test expectation is the STALE /Users/samfarrington/git/defra/ipaffs/ipaffs-release-tests/src/features/notification/document/documentUpload.feature:29, which attaches it to the EMPTY case that the trace + current qa-automation suite both show returns 'The selected file is empty' instead. NO CURRENT TEST asserts this message: grep for 'larger than 1KB' across ipaffs-qa-automation tests/, workflows/ and page-objects/ returns nothing, and there is no 200-999-byte fixture in resources/file-upload/. So this message may be unreachable in practice — nothing in the corpus or the suite has ever made it fire."
+    },
+    {
+      "message": "Select a file",
+      "field": "fileUpload",
+      "trigger": "TWO paths (second one new at adversarial review). (1) Submitting the form with no file chosen — validate() returns FILE_NOT_SELECTED when _.isEmpty(filename). (2) A GET of the page with ?fileNotSelected=true — validateQueryParams maps that query param to the same message (file_upload_validation.js:164-166, reached via attach.js:31). Path (2) is the single-upload twin of the fileTooLarge redirect mechanism; no caller that sets fileNotSelected=true was located in this service, so it may be dead or set by a sibling app.",
+      "confidence": "inferred",
+      "evidence": "Constant FILE_NOT_SELECTED at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:4; both branches read at adversarial review — src/validation/file_upload_validation.js validate() (`if (_.isEmpty(filename)) return FILE_NOT_SELECTED`) and validateQueryParams:164-166 (`if (_.isEqual(fileNotSelected, 'true')) return multiUpload ? FILE_MISSING : FILE_NOT_SELECTED`). Not observed rendering in any trace, and NO test exercises it: every qa-automation path calls inputFile.setInputFiles(...) before clicking Next, so the empty-submit branch is never driven (grep for 'Select a file' across tests/, workflows/ and page-objects/ returns nothing). Untested in both admissible sources — but note the SOURCE evidence for path (1) is strong and unambiguous, so the RULE (a file is mandatory on this page) is better-evidenced than the rendered COPY. NOTE the string is identical to the field's visible label, which would read oddly as an error."
+    },
+    {
+      "message": "The selected file contains a virus - upload failed",
+      "field": "fileUpload",
+      "trigger": "Antivirus scan rejects the uploaded file",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-file-compression-microservice/service/src/main/java/uk/gov/defra/tracesx/file/compression/antivirus/symantec/SymantecAntiVirusScanner.java:20 (literal constant); the sibling FileStoreAntiVirusScanner.java:22 uses a template 'The selected file contains a virus - %s failed' expanded with upload/download. SURFACING PATH NOW IDENTIFIED (new at adversarial review — an earlier revision called this 'close to a gap' and said 'how it surfaces in the UI is unverified'): attach.js POST awaits fileUploadService.uploadFile(...), reads `response.errorMessage` (attach.js:55), and on a non-empty value calls errorsHelper.addErrorToContext(viewContext, errorMessage) then re-renders THIS page's template (attach.js:56-58) — the identical channel used by the confirmed validation messages, so it would render in the same error summary + inline p#fileUpload-error. So the microservice message reaching this page is a concrete, readable code path, not speculation. What remains unevidenced is the exact string that arrives (the compression microservice and the upload microservice both produce virus copy) and the wire shape of errorMessage. No qa-automation test asserts it (no EICAR/virus fixture exists in resources/file-upload/) and no trace renders it, so it stays `inferred`."
+    },
+    {
+      "message": "The selected file could not be uploaded - Try again",
+      "field": "fileUpload",
+      "trigger": "Upload/scan infrastructure failure (non-2xx from the file-store scan API)",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-file-compression-microservice/service/src/main/java/uk/gov/defra/tracesx/file/compression/antivirus/filestore/FileStoreAntiVirusScanner.java — the source is a template `String.format(\"The selected file could not be %sed - Try again\", getErrorMessage(document))`; the 'uploaded' expansion with capital 'Try' is pinned verbatim by FileStoreAntiVirusScannerTest.java:119 and StubbedAntiVirusScannerTest.java:57. Surfacing path is the same response.errorMessage channel as the virus message (attach.js:55-58) — see above. Not observed rendering on this page, and no qa-automation test asserts it (an infrastructure-failure path the suite cannot easily drive), so it stays `inferred`. CASING CONFLICT: the frontend-upload service has near-identical copy with a LOWERCASE 't' — 'The selected file could not be uploaded - try again' (validation_constants.js commodityDetailsUpload.UPLOAD_ERROR and multiUpload.accompanyingDocument.errorMessages.UPLOAD_ERROR) — but those constants belong to the commodityDetailsUpload and multiUpload surfaces, not this single-file accompanyingDocument page. Which casing a user would actually see here is unverified."
+    },
+    {
+      "message": "Add a phytosanitary certificate",
+      "field": "fileUpload (downstream: accompanyingDocuments[].documentType)",
+      "trigger": "SUBMISSION-LEVEL, not an inline error on this upload page. For a CHED-PP consignment whose commodity carries a regulatory_authority of PHSI or JOINT, PartOne must contain at least one accompanyingDocument of documentType PHYTOSANITARY_CERTIFICATE. If it does not, submit/review validation fails with this message. This is the schema-level rule that makes populating the accompanying-documents list (which THIS upload page feeds) mandatory for those CHED-PP consignments — the field mandatoriness no rendered trace of the upload page could show. It fires in the notification microservice at submit/review, NOT inline on the ipaffs-frontend-upload page. EXCLUSION CONFIRMED at legacy-enrichment pass: the three sibling accompanyingDocuments keys at ValidationMessages.properties:139-141 ('A veterinary health certificate document type must be entered', 'Add a health certificate', 'Add latest health certificate') are the CHED-A/CHED-P VETERINARY equivalents — wired to veterinary/CHED-P groups, not NotificationChedppFieldValidation — and do NOT apply to a CHED-PP consignment. So the two phytosanitary keys (143, 144) are the COMPLETE set of CHED-PP document-mandatoriness messages in the notification microservice; no further CHED-PP accompanyingDocuments validation exists there.",
+      "confidence": "legacy",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:143 — key partone.veterinaryinformation.accompanyingdocuments.phytosanitary.required, value 'ACCOMPANYING_DOCUMENTS:Add a phytosanitary certificate' (the 'ACCOMPANYING_DOCUMENTS:' prefix is the error anchor/section id; the user-facing copy is 'Add a phytosanitary certificate'). Rule wiring: /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:123 @PhytosanitaryCertificateRequired(groups = PhytosanitaryCertificateRequiredValidation.class); validator /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/validation/annotations/PhytosanitaryCertificateRequiredValidator.java — isValid returns true unless hasPhsiOrJoint(partOne) (a commodity ComplementParameterSet keyDataPair with key regulatory_authority and data PHSI or JOINT) AND the accompanyingDocuments contain no document of DocumentType.PHYTOSANITARY_CERTIFICATE. NOT observed in any trace (upload-page traces cannot render it) and untested in the qa-automation upload suite; legacy-authoritative for the COPY and the RULE."
+    },
+    {
+      "message": "Phytosanitary certificate attachment",
+      "field": "fileUpload (downstream: accompanyingDocuments[].attachmentId)",
+      "trigger": "SUBMISSION-LEVEL, not an inline error on this upload page. Once a CHED-PP accompanyingDocument has documentType PHYTOSANITARY_CERTIFICATE, that document must carry an attachmentId (i.e. a file must actually have been uploaded via THIS page). If the phytosanitary certificate row exists but no file was attached, submit/review validation fails. This is the rule that ties THIS upload page to CHED-PP submission mandatoriness: a phytosanitary certificate is not complete until its attachment (the fileUpload here, PATCHed back as attachmentId/attachmentFilename/attachmentContentType) is present. The copy reads oddly as a standalone error ('Phytosanitary certificate attachment') because the raw property value is really the field anchor/summary label.",
+      "confidence": "legacy",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:144 — key partone.veterinaryinformation.accompanyingdocuments.phytosanitary.attachment.required, value 'Phytosanitary certificate attachment'. Rule wiring: /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/AccompanyingDocument.java @PhytosanitaryCertificateAttachmentRequired(groups = NotificationChedppFieldValidation.class); validator /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/validation/annotations/PhytosanitaryCertificateAttachmentRequiredValidator.java — isValid returns false when documentType == DocumentType.PHYTOSANITARY_CERTIFICATE and attachmentId == null. NOT observed in any trace and untested in the qa-automation upload suite; legacy-authoritative for the COPY and the RULE. NOTE for the rebuild: this legacy mandatoriness is 'as the old system had it' — the target model is built like trade-imports-animals, not IPAFFS, so whether a phytosanitary attachment is mandatory (and whether the requirement is unconditional or PHSI/JOINT-gated as here) is a policy the rebuild may deliberately revisit."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "The 'larger than 1KB' hint and the 'The selected file must be larger than 1KB' error are BOTH inaccurate: the code rejects files under 200 bytes (TWO_HUNDRED_B), not 1024. A 500-byte file passes despite the copy saying it will not. The rebuild should pick one real threshold and state it truthfully. See validation_constants.js:15 + file_upload_validation.js.",
+    "The hint says 'DOC, JPEG, PDF, PNG or XLS' but ALLOWED_EXTENSIONS also accepts docx, jpg and xlsx (validation_constants.js:21). CORROBORATED AND SHARPENED by the tests: the CHED-PP valid-type matrix at tests/document/document-upload-valid-commercial-invoice.spec.ts:8 is ['jpg','png','doc','docx','xls','pdf'] and every one is expected to upload successfully — so DOCX and JPG are demonstrably accepted while the on-screen list mentions neither. The user-facing copy understates what is accepted; this is well-evidenced, not speculative. Confirm the intended allow-list for the new app. (Note the tests do NOT cover jpeg or xlsx on the CHED-PP notifier route: there is NO example.jpeg fixture at all — only example.jpg — while example.xlsx exists but is driven only via the inspector flow at workflows/shared/document-workflows.ts:36. So the 'jpeg' entry in ALLOWED_EXTENSIONS is untested by any route.)",
+    "IPAFFS's own microservices disagree on the allow-list: ipaffs-file-upload-microservice says 'DOC, JPEG, PDF, PNG, XLS or GIF' (MultiUploadValidationService.java:18) while the frontend says '...or XLS' with no GIF. Which is authoritative? Is GIF actually accepted? STILL OPEN — and the tests cannot settle it: there is no example.gif fixture in ipaffs-qa-automation/resources/file-upload/, and no spec drives a GIF on any CHED route. Neither admissible source has an opinion on GIF, so this needs a human answer before the rebuild fixes its allow-list.",
+    "'ZIP files are not allowed for security reasons' is called out as a bullet, but ZIP is simply not in the allow-list — the same as TXT, which gets no special mention. The singling-out of ZIP looks like legacy copy; confirm whether it still earns its place. BEHAVIOUR NOW SETTLED BY TRACE: the CHED-PP ZIP trace (6099ec64 action 67) and the TXT sibling both render the IDENTICAL generic error 'The selected file must be a DOC, JPEG, PDF, PNG or XLS'. So ZIP gets no special handling in code, only in copy. The bullet is decorative; the rebuild can drop it without behaviour change.",
+    "RESOLVED (kept as a record): the empty-file case returns 'The selected file is empty' in the live app (trace bff12637, inspector route) and the CURRENT qa-automation suite asserts exactly that for CHED-PP on both the notifier and inspector routes. The ipaffs-release-tests feature file expecting 'must be larger than 1KB' for the EMPTY row (documentUpload.feature:29) is confirmed stale — trace and current tests agree against it. No human input needed.",
+    "RESOLVED (kept as a record): the file-type-rejection copy IS rendered in the CHED-PP corpus — trace 6099ec64646884189b2234becca4af82499fe62d action 67 (ZIP) shows 'The selected file must be a DOC, JPEG, PDF, PNG or XLS' verbatim in both the error summary and inline. An earlier revision of this spec wrongly recorded that no trace rendered it and tagged the message 'inferred'; it is 'confirmed'. The genuinely unevidenced RENDERED COPY is 'Select a file' (no-file-selected), which has NO trace and NO test in either admissible source — though its RULE is firmly evidenced in validate(). If its rendered copy matters to the rebuild, someone must capture a trace or accept the legacy string on faith.",
+    "RESOLVED AT ADVERSARIAL REVIEW (was: 'What does the notification app do with fileTooLarge=true, and why does only this one error propagate? Cross-app error signalling via query string is another symptom of the split-app architecture.'). The premise was wrong — the param is NOT propagated to the notification app and is not cross-app signalling. It is the UPLOAD app signalling to ITSELF: an oversized POST is killed by hapi's maxBytes at the route boundary (413) before any handler runs, so the only way to report it is a redirect back to the page's own URL carrying ?fileTooLarge=true (error_handler_pre_response.js:83), which the follow-up GET decodes via validateQueryParams (attach.js:31). The Cancel link picks the param up incidentally because it is rebuilt from the current query string — which is exactly why the file-type error state (a normal in-handler validation failure re-rendered from the POST, no redirect) has a clean Cancel href. No human input needed; see the new nonStandardPatterns entry.",
+    "RESOLVED AT ADVERSARIAL REVIEW (was: 'CHED-PP and CHED-P assert DIFFERENT success signals… Does the CHED-PP route render a success banner too and the test simply not assert it, or is the banner genuinely CHED-P-only? Unresolvable from the two admissible sources'). It IS resolvable — from the handler. attach.js:64-65 reads `if (originalNotification.type === CVEDP) { queryParams.success = 1 }` before redirecting back to the notification app. CVEDP is the legacy TRACES code for CHED-P and is a DISTINCT constant from CHEDPP (utils/constants.js:10 vs :14), so a CHED-PP notification never gets success=1 and therefore never triggers the notification app's success banner. The banner is genuinely CHED-P-only, by explicit design in code — the CHED-PP test is not merely under-asserting. This is `inferred` (source-read, not trace-observed). DECISION STILL NEEDED for the rebuild: this per-type divergence looks accidental; if a GOV.UK Notification banner is the intended success pattern it should render on every route.",
+    "NEW AT CORROBORATION — the page's SUCCESS outcome is a requirement the trace pass never captured, because no CHED-PP trace snapshot was taken AFTER a successful upload. The tests state it: on success the user is thrown back across the app boundary to the notification app's accompanying-documents page, where the uploaded file appears as a LINK NAMED AFTER THE FILENAME (inferred: accompanyingDocuments.locatorAttachmentLink(`example.${docType}`) asserted visible for CHED-PP at tests/document/document-upload-valid-commercial-invoice.spec.ts:68; the inspector route asserts a DIFFERENT locator, locatorInspectorAttachmentLink, at document-upload-valid-inspector.spec.ts:66 — so notifier-uploaded and inspector-uploaded attachments render differently, another finding). Corroborated by the a11y spec, which checks a distinct 'Accompanying Documents Page (after upload)' state at ched-pp-accessibility-tests.spec.ts:140. CONFIRMED IN SOURCE at adversarial review: attach.js POST patches the notification then `return h.redirect(getPart1DocumentsUrl(referenceNumber, …) + query)` for requestFrom=NOTIFICATION, and the displayed filename is de-duplicated via docUtils.getUniqueName(response.filename, accompanyingDocuments) — so uploading two files of the same name renames the second, a behaviour no test or trace covers. The rebuild needs to decide this return-to-list behaviour deliberately.",
+    "NARROWED AT ADVERSARIAL REVIEW — is an attachment MANDATORY to submit a CHED-PP notification? This was previously two questions; (b) is now answered. (b) ANSWERED: once on THIS page the user CANNOT proceed without choosing a file — validate() returns FILE_NOT_SELECTED on an empty filename and re-renders the page with an error, so the file is mandatory to get past the page (the field is now recorded required:true on that basis, despite the markup carrying no required attribute). Their only escape is Cancel. (a) STILL OPEN: can a notification be SUBMITTED with zero attachments at all? That is the notification app's rule, not this page's, and neither admissible source settles it — the workflow hardcodes an upload on every completed path and offers no skip (ched-pp-workflows.ts:460; the only escape, stopAtAccompanyingDocuments:455, abandons the journey), so no test ever submits an attachment-free notification. A human must answer (a).",
+    "The submit button label is journey-dependent on the SAME page: CHED-PP, CHED-A and CHED-D render 'Next' while CHED-P renders 'Continue' (page object exposes btnNext, btnContinue AND a btnNextOrContinue regex to paper over it — DocumentUploadPage.ts:6-16; CHED-P drives btnContinue at ched-p-workflows.ts:350,728,936; CHED-PP drives btnNext at ched-pp-workflows.ts:461,882; CHED-D at ched-d-workflows.ts:250,635). CHED-PP is unambiguously 'Next'. But why does one shared page have two labels? This smells like accidental divergence rather than design. The rebuild should pick ONE label — and per GDS, 'Continue' is the conventional choice for a non-saving step.",
+    "CHED-A appears to drive TWO uploads in sequence, clicking btnNext then btnContinue on consecutive steps (ched-a-workflows.ts:597-600, 614-617, 986-1002), and its a11y spec checks a 'Document Upload Page (second)' (tests/accessibility/ched-a-accessibility-tests.spec.ts:96-98). That hints at a multi-attachment or two-stage variant of this page that no CHED-PP trace or workflow exercises. CAVEAT: the page object locates buttons by role+name across the whole page, so the btnContinue click may land on a DIFFERENT page after navigation rather than proving a second label on this one. Out of CHED-PP scope, but worth knowing the page may have an unexplored mode before the rebuild assumes one-file-one-page.",
+    "The page object exposes btnSaveAndContinue (DocumentUploadPage.ts:18-20) but NO workflow or spec ever calls it on this page; every 'Save and continue' click goes to accompanyingDocuments instead. Likely dead code in the page object rather than evidence of a third button — do not treat it as a requirement. Flagged so a later reader does not mistake it for one.",
+    "CORRECTION MADE AT CORROBORATION (kept as a record): this spec previously asserted that 'every CHED-PP usage drives btnNext'. Verified false — all eight CHED-PP document specs drive the btnNextOrContinue REGEX (/^(Next|Continue)$/, DocumentUploadPage.ts:14-16), which matches either label and therefore pins neither. Only ched-pp-workflows.ts:461,882 and ched-pp-accessibility-tests.spec.ts:137 name btnNext. Re-verified at adversarial review by reading DocumentUploadPage.ts and grepping both call sites. The CHED-PP label 'Next' is unchanged and remains 'confirmed' on TRACE evidence (219b882e action 57, plus bff12637 action 108 on the inspector route) — the correction narrows the corroboration, it does not weaken the finding. Worth noting for the rebuild's own test suite: a regex that accepts either label is a test that cannot catch the divergence it was written to paper over.",
+    "Test coverage on this page is narrower than it looks. The suite only ever drives the happy path plus four invalid fixtures (zip/txt/empty/large). It NEVER covers: submitting with no file, a 200-999 byte file, a virus-infected file, or an upload-infrastructure failure. FOUR of the seven validation messages in this spec ('The selected file must be larger than 1KB', 'Select a file', the virus message and the upload-failure message) are therefore unreachable from both admissible sources. If the rebuild intends to keep those rules, they need new tests — they are currently regressions waiting to happen.",
+    "This page IS covered by an automated accessibility check ('Document Upload Page', tests/accessibility/ched-pp-accessibility-tests.spec.ts:134-137), yet the spec's own trace evidence shows two real a11y defects: the inline error has no visually-hidden 'Error:' prefix, and #fileUpload is not wired to #fileUpload-error via aria-describedby. Both survive because the a11y check runs ONLY after setInputFiles and BEFORE clicking Next — i.e. on the clean page, never on the error state (verified: setInputFiles → checkPageAccessibility → btnNext.click(), ched-pp-accessibility-tests.spec.ts:134-137). The error state of this page has never been accessibility-tested by anything. The rebuild should assert a11y on error states too; this is exactly the blind spot that let these defects persist.",
+    "The 'Back' link renders with href=\"#\" (JS history back) rather than a real URL, and carries a non-standard companion class (back-link--next-to-breadcrumbs). This breaks for no-JS users and is a deviation from the GDS Back link pattern. The Cancel link, by contrast, is a real URL.",
+    "The bespoke data-module=\"dropzone\" drag-and-drop enhancement never rendered visibly in any snapshot — unclear whether it is live, dead code, or JS-gated in a way the traces did not exercise.",
+    "'request-from' is partly explained (see the field's evidence: attach.js switches on NOTIFICATION vs DECISION to decide whether the attachment lands in partOne.veterinaryInformation.accompanyingDocuments or partTwo.accompanyingDocuments, with an unrecognised value producing the error `The request was not recognised from '<value>'`). What is NOT explained is why it is ALSO a hidden form field when the handler reads it from the URL path — the hidden field was empty in every observed trace and looks vestigial. Confirm before the rebuild copies it.",
+    "The upload form has NO action attribute — it posts back to the page's own URL. Confirm the rebuild's intended post target rather than inheriting post-to-self by accident.",
+    "The upload service carries a whole SECOND, unexercised multi-upload surface for this same document type: multiUpload.accompanyingDocument at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:64-79. It has its own parallel error catalogue phrased per-filename rather than 'the selected file' ('%s must be smaller than 10MB', '%s is empty', FILE_MISSING: 'Select at least one document'), its own caps (MAX_NUMBER_OF_FILES: 10, TOTAL_NUMBER_OF_FILES: 100, validation_constants.js:61-62), a document-type selector ('Select a document type', :74), and a genuine MIN_FILE_LENGTH_BYTES = 1000 (:99) — i.e. the multi path enforces the real 1KB floor that the single path only claims. Its validator is a SEPARATE function, validateFile(), which — unlike the single-file validate() — DOES check the 10MB bound in-handler (file_upload_validation.js:148). No CHED-PP trace or workflow touches it. This is a plausible origin for the data-module=\"dropzone\" hook, which lives in a file literally named multi_upload.js (src/assets/javascripts/multi_upload.js) despite this page uploading one file at a time — the single-file page appears to be wearing the multi-upload module's clothes. Open question for a human: is multi-upload live for CHED-PP (behind a flag or a different entry point), dead code, or reserved for another notification type? It materially changes the rebuild's scope — one-file-one-page vs a multi-file component with document typing.",
+    "Related to the CHED-A two-upload question above: if a multi-upload mode IS live anywhere, the '1KB' copy problem inverts. The single-file path says 1KB and enforces 200 bytes; the multi path enforces 1000 bytes. So the same stated rule has two different real thresholds depending on which surface the user lands on. The two surfaces ALSO disagree on HOW the 10MB rule is enforced (single: hapi maxBytes + 413 redirect; multi: an in-validator size check at file_upload_validation.js:148) — two mechanisms, two thresholds, one stated rule. Whichever way the rebuild goes, it should have ONE threshold, ONE mechanism and ONE catalogue."
+  ]
+}

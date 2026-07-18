@@ -1,0 +1,583 @@
+{
+  "slug": "confirm-billing-details",
+  "name": "Confirm billing details (Common User Charge)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/billing-details/confirm?source=IDM",
+  "pageTitle": "Confirm billing details - Import and export applications - GOV.UK",
+  "caption": "Billing",
+  "heading": "Confirm billing details",
+  "bodyCopy": [
+    "We will issue invoices using the billing details in your Defra account. We will send them to the email address provided. You should:",
+    "read about rates and eligibility (opens in new tab)",
+    "read the terms and conditions (opens in new tab)",
+    "Additional fees may apply if you provide incorrect billing details.",
+    "Why do I need to provide billing details?",
+    "Consignments eligible for Border Control Post (BCP) checks at Sevington will incur charges if they enter through:",
+    "Port of Dover",
+    "Eurotunnel Le Shuttle",
+    "Warning",
+    "If you change the billing details, they will be applied to all previous notifications created during the same invoicing period."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "pageConditionality": {
+    "summary": "This page is NOT part of the default CHED-PP journey. It renders only for Common User Charge (CUC) consignments — i.e. when the entry BCP / inspection premises combination routes the consignment through Sevington.",
+    "detail": "The QA workflow gates the entire billing block behind `if (isCuc)`, and DEFAULT_CONFIG sets `isCuc: false` — so the standard CHED-PP journey never sees this page. The only CHED-PP test that reaches it sets `isCuc: true` together with `entryBorderControlPost: 'Folkstone - GBFOL4PP'` and `inspectionPremises: 'Sevington IBF'`, which corroborates the on-page Details copy about Sevington BCP charges for Dover / Eurotunnel entries. The equivalent gate exists identically for CHED-P and CHED-D.",
+    "triggerRule": "A HUMAN STATEMENT OF THE TRIGGER EXISTS IN THE TESTS: ched-p-workflows.ts:538 carries the comment `// Billing Details Pages (CUC only — triggered by Sevington port)`. This is the closest thing either source gives to the actual rule, and it says the trigger is the SEVINGTON PORT — not the isCuc flag, which is only the test's way of telling the workflow to expect the page. NOTE THE PROVENANCE: the comment sits in the CHED-P workflow, not the CHED-PP one; ched-pp-workflows.ts:480 and ched-d-workflows.ts:355 have the identical `if (isCuc)` block with NO comment. All three drive the same ConfirmBillingDetailsPage object, so the statement is evidence about the shared page, but it was authored about CHED-P. Treat as inferred, not confirmed.",
+    "chedPpDivergence": "CHED-PP REACHES SEVINGTON DIFFERENTLY FROM CHED-P AND CHED-D — this matters for the rebuild. CHED-P and CHED-D select a single port-of-entry `poe.sevington` = 'DOVER EAST (SEVINGTON BCP) (GBSEV)' (types/poe.ts:9). CHED-PP has no port-of-entry field; it sets an entry BCP of 'Folkstone - GBFOL4PP' and inspection premises of 'Sevington IBF' — so for CHED-PP the entry BCP is NOT Sevington, and Sevington appears only as the INSPECTION PREMISES. That reading fits the on-page Details copy exactly: charges apply to consignments checked at Sevington that ENTER through Port of Dover or Eurotunnel Le Shuttle — and Folkestone is the Eurotunnel Le Shuttle terminal. So the CHED-PP trigger appears to key on the inspection premises (Sevington) reached via a Dover/Eurotunnel entry BCP, not on the entry BCP being Sevington itself. This is inference from test data plus page copy; the new app needs the real server-side rule.",
+    "journeyPosition": "CORROBORATED BY THE WORKFLOW: the billing block (ched-pp-workflows.ts:480-487) sits immediately after the Traders Addresses page (`btnSameAsConsignee` + `btnSaveAndContinue`, ched-pp-workflows.ts:477-478) and immediately before the Review Notification page (:489). That independently corroborates the trace's observed destination (Save and continue -> /review) and fixes the preceding page as Traders Addresses.",
+    "confidence": "inferred",
+    "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:480 (`if (isCuc) {`); :191 (`isCuc: false` in DEFAULT_CONFIG); :124 (`isCuc?: boolean;`); :477-478 and :489 (journey position); tests/notification/ched-pp/ched-pp-cuc.spec.ts:17-21 (the only CHED-PP test that sets isCuc true, with Folkstone BCP + Sevington IBF); workflows/notification/ched-p-workflows.ts:538 (the 'triggered by Sevington port' comment); types/poe.ts:9 (poe.sevington); tests/notification/ched-p/ched-p-cuc.spec.ts:18 and tests/notification/ched-d/ched-d-cuc.spec.ts:22 (both use poe.sevington)"
+  },
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to notification",
+    "Change (address) -> /notification/vnet/protected/notifications/{notificationId}/billing-details/find-address?source=IDM (id=confirm-billing-address)",
+    "Change (email address) -> /notification/vnet/protected/notifications/{notificationId}/billing-details/contact?source=IDM (id=confirm-billing-address-email)",
+    "Change (phone number) -> /notification/vnet/protected/notifications/{notificationId}/billing-details/contact (id=confirm-billing-address-phone-number)"
+  ],
+  "layout": "govuk-grid-row (id=billing-details-page) > govuk-grid-column-two-thirds; inner content wrapped in a nested 'govuk-grid-row govuk-body govuk-!-margin-left-0' div",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Billing",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Confirm billing details",
+      "govukComponent": "Heading XL (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "paragraph",
+      "text": "We will issue invoices using the billing details in your Defra account. We will send them to the email address provided. You should:",
+      "govukComponent": "Body text (govuk-body on parent)"
+    },
+    {
+      "element": "bullet-list",
+      "text": "read about rates and eligibility (opens in new tab) / read the terms and conditions (opens in new tab)",
+      "govukComponent": "NON-STANDARD: class 'list-bullet' (should be govuk-list govuk-list--bullet). Links are govuk-link, target=_blank rel=noreferrer noopener, ids read-rates / read-terms"
+    },
+    {
+      "element": "paragraph",
+      "text": "Additional fees may apply if you provide incorrect billing details.",
+      "govukComponent": "Body text"
+    },
+    {
+      "element": "details",
+      "text": "Why do I need to provide billing details? -> Consignments eligible for Border Control Post (BCP) checks at Sevington will incur charges if they enter through: Port of Dover / Eurotunnel Le Shuttle",
+      "govukComponent": "Details (govuk-details)"
+    },
+    {
+      "element": "form",
+      "text": "method=POST, no action attribute (posts to same URL). Contains hidden crumb + etag then the summary card.",
+      "govukComponent": "-"
+    },
+    {
+      "element": "summary-card",
+      "text": "Billing details",
+      "govukComponent": "NON-STANDARD hand-rolled 'summary-card' wrapper (h2.summary-card__title) around a govuk-summary-list"
+    },
+    {
+      "element": "summary-list",
+      "text": "Name: Michael Scott (no action) / Address: 2, CAMPBELL BANNERMAN WAY, TIVIDALE, OLDBURY, WEST MIDLANDS, B69 3NE [Change] / Email address: email@mailinator.com [Change] / Phone number: 07440311981 [Change]",
+      "govukComponent": "Summary list (govuk-summary-list) — 4 rows"
+    },
+    {
+      "element": "warning-text",
+      "text": "If you change the billing details, they will be applied to all previous notifications created during the same invoicing period.",
+      "govukComponent": "Warning text (govuk-warning-text)"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=save-and-return-button)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4, id=button-save-and-continue)"
+    },
+    {
+      "element": "button",
+      "text": "Cancel and return to notification",
+      "govukComponent": "NON-STANDARD: class 'link-button' (id=cancel-button) — submit button styled as a link, but still carries data-module=govuk-button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Billing' above the H1",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (snapshot)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "H1 'Confirm billing details'. Note a stray trailing space in the class attribute (\"govuk-heading-xl \").",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "component": "Details",
+      "govukClass": "govuk-details",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Collapsible 'Why do I need to provide billing details?' explaining Sevington BCP charges. Note: no data-module=govuk-details attribute observed.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "component": "Summary list",
+      "govukClass": "govuk-summary-list",
+      "modifiers": [
+        "govuk-summary-list--no-border (misapplied to a __row element, see nonStandardPatterns)"
+      ],
+      "count": 1,
+      "usage": "Read-only display of the 4 billing details rows with per-row Change links",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "component": "Warning text",
+      "govukClass": "govuk-warning-text",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Warns that changing billing details applies retroactively to all notifications in the same invoicing period",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "'Save and return to hub' and 'Save and continue'. Both type=submit with data-prevent-double-click=true; distinguished server-side by the submitted button name. Only 'Save and continue' is modelled by the page object, and it is located by accessible role+name (not by id) — so the visible button text 'Save and continue' is contractually load-bearing for the tests. DESTINATION CONFIRMED: clicking 'Save and continue' navigates to /notification/vnet/protected/notifications/{notificationId}/review — i.e. this page hands straight to review-notification with no intermediate step, confirming the journey position.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html); 'Save and continue' clicked at action 95, whose navigation log records 'navigated to https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/review'; ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:14-16 (`getByRole('button', { name: 'Save and continue' })`)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs (NON-STANDARD, no govuk- prefix — see nonStandardPatterns)"
+      ],
+      "count": 1,
+      "usage": "'Back' link rendered OUTSIDE <main>, inside a div.navigation-links__left-block. It DOES use the standard govuk-back-link class; the non-standard parts are the href=\"#\" and the bespoke modifier.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (eval: `<a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>`, closest('main') === null, parentElement.className === 'navigation-links__left-block')"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 5,
+      "usage": "2 guidance links (rates/eligibility, terms and conditions) + 3 'Change' links (address, email, phone). Guidance link hrefs: https://www.gov.uk/guidance/common-user-charge-rates-and-eligibility and https://www.gov.uk/government/publications/paying-the-common-user-charge-terms-and-conditions",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec actions 86 and 91 (link inventory eval over `main a`)"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 1,
+      "usage": "The 'Warning' prefix inside the warning text, for screen readers",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "summary-card / summary-card__title-wrapper / summary-card__title / summary-card__content",
+      "whatItDoes": "Hand-rolled card wrapper providing a titled ('Billing details') bordered container around the govuk-summary-list.",
+      "concern": "This is a bespoke re-implementation of a component the Design System already ships. IPAFFS predates (or ignores) govuk-frontend's Summary card, so it carries its own CSS for it. The new app should not port this CSS.",
+      "govukAlternative": "Summary card (govuk-summary-card, available in govuk-frontend v4.6.0+) — supports a card title and card-level actions natively.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "pattern": "list-bullet",
+      "whatItDoes": "Bullet list styling for the two guidance links and for the two ports inside the Details body.",
+      "concern": "Bespoke class where a standard one exists; means IPAFFS ships custom list CSS. Trivial to drop in the rebuild.",
+      "govukAlternative": "govuk-list govuk-list--bullet",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html) — used twice"
+    },
+    {
+      "pattern": "doBillingDetailsExist=false empty-state branch (LEGACY, unreachable on THIS route)",
+      "whatItDoes": "The billingDetails.html template has an `{{else}}` branch for `{{#if doBillingDetailsExist}}` that replaces the whole summary card + warning with: `No billing details for <name/companyName> found` and a link `Add billing details to Defra account` (id=add-billing-address -> billing-details/find-address). It also gates the `Additional fees may apply if you provide incorrect billing details.` paragraph behind `doBillingDetailsExist`.",
+      "concern": "NOT reachable from the confirm URL: the confirm route's GET handler hardcodes `doBillingDetailsExist: true` (confirm_billing_details.js:67), so on /billing-details/confirm the empty state and the missing 'Additional fees' paragraph can never render — the template is SHARED with the add-billing-details route, which is where the empty branch lives. Recorded so the rebuild does not mistake the shared template's empty state for a state of THIS page.",
+      "govukAlternative": "n/a — template-sharing observation, not a component choice.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/billingDetails.html:31-33 (fees para gate), :132-158 (empty-state else branch); ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/confirm_billing_details.js:14 (VIEW_TEMPLATE='importer/billingDetails'), :67 (`doBillingDetailsExist: true` hardcoded)"
+    },
+    {
+      "pattern": "link-button",
+      "whatItDoes": "The 'Cancel and return to notification' submit button, styled to look like a link rather than a button.",
+      "concern": "Custom class, and inconsistent: it keeps data-module=\"govuk-button\" and data-prevent-double-click but drops the govuk-button class, so it is JS-initialised as a button while styled as a link. A tertiary action rendered as a submit control is a deliberate pattern (it must POST to discard/cancel), but the styling is outside the toolbox.",
+      "govukAlternative": "govuk-button govuk-button--secondary, or a genuine govuk-link if the action can be a GET.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "pattern": "summary-list__row--no-actions",
+      "whatItDoes": "Custom modifier on the 'Name' row, which has no Change link — presumably suppresses the empty actions column.",
+      "concern": "Custom modifier (note: no govuk- prefix). The Design System handles rows without actions natively as long as the actions <dd> is omitted or the list is given the right structure.",
+      "govukAlternative": "Omit the govuk-summary-list__actions <dd> for that row; govuk-frontend handles the layout.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "pattern": "<div class=\"govuk-summary-list__row govuk-summary-list--no-border\">",
+      "whatItDoes": "Applies the list-level --no-border modifier to a single row (the last one, Phone number) to strip its bottom border.",
+      "concern": "A govuk class used in a non-standard way: govuk-summary-list--no-border is a block-level modifier for the <dl>, not for a __row. It happens to work only because of CSS specificity. This is exactly the kind of misuse that breaks on a govuk-frontend upgrade.",
+      "govukAlternative": "govuk-frontend already removes the last row's border inside a summary card; no modifier needed.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "pattern": "<input class=\"govuk-input\" type=\"hidden\" ...>",
+      "whatItDoes": "All 8 billing values (addressLine1-3, cityOrTown, county, postalCode, email, telephone) are hidden inputs carrying the govuk-input class.",
+      "concern": "govuk-input styles a visible text input; on a type=hidden control it is meaningless noise. Cosmetic, but signals copy-paste templating.",
+      "govukAlternative": "No class needed on a hidden input.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval) — verified: exactly 8 hidden inputs carry class=\"govuk-input\"; crumb and etag do not"
+    },
+    {
+      "pattern": "Hidden-input state round-tripping (addressLine1-3, cityOrTown, county, postalCode, email, telephone) + etag",
+      "whatItDoes": "The page re-posts every billing value back to the server as hidden form fields, alongside an 'etag' optimistic-concurrency token (value \"0000000000BD2AFD\") and a hapi 'crumb' CSRF token.",
+      "concern": "ARCHITECTURAL, not cosmetic — the highest-value finding on this page. A confirmation page should read state server-side (session/draft record) and post only the user's decision. Round-tripping through the client makes the values tamperable, couples the view to the wire format, and forces the etag concurrency dance into the template. The new CDP app should render this page from the draft notification server-side and POST only the intent (continue / save / cancel).",
+      "govukAlternative": "n/a — this is a service-architecture concern, not a component choice.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval + main.html)"
+    },
+    {
+      "pattern": "<div class=\"govuk-grid-row govuk-body govuk-!-margin-left-0\"> nested inside govuk-grid-column-two-thirds",
+      "whatItDoes": "A grid-row used as a body-text container inside a grid column, with a margin override to undo the negative margin a grid-row applies.",
+      "concern": "Misuse of the grid: govuk-grid-row is a layout primitive, not a typography wrapper, and the govuk-!-margin-left-0 exists purely to cancel the damage. Symptom of fighting the grid rather than using it.",
+      "govukAlternative": "Drop the wrapper; put govuk-body on the individual <p> elements inside the existing column.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html)"
+    },
+    {
+      "pattern": "<a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>",
+      "whatItDoes": "The Back link uses the standard govuk-back-link class but points at '#' rather than a real URL — navigation is presumably JS history.back() — and carries a bespoke 'back-link--next-to-breadcrumbs' positioning modifier.",
+      "concern": "TWO separate issues, neither of which is 'not using the govuk component': (1) href=\"#\" breaks without JS and gives no meaningful target; (2) 'back-link--next-to-breadcrumbs' is a custom modifier with no govuk- prefix, i.e. bespoke positioning CSS bolted onto a Design System component. Rendered outside <main>, inside div.navigation-links__left-block.",
+      "govukAlternative": "Keep govuk-back-link but give it a real server-known previous-page href, and handle placement with standard spacing utilities rather than a bespoke modifier.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (eval of the back-link outerHTML + closest('main') === null + parentElement.className === 'navigation-links__left-block'); same markup re-verified at action 95"
+    }
+  ],
+  "fields": [
+    {
+      "name": "(no input — display only)",
+      "label": "Name",
+      "control": "display",
+      "required": false,
+      "observedValues": [
+        "Michael Scott"
+      ],
+      "conditionalOn": "Always shown on this page. Row has no Change link (class summary-list__row--no-actions) — the name is taken from the Defra account and is not editable here. LEGACY BRANCH THE TRACE COULD NOT SHOW: the template renders this row conditionally — `{{#if isOrganisation}}` swaps the row KEY from 'Name' to 'Organisation' and the VALUE from `notification.partOne.personResponsible.name` to `...personResponsible.companyName`. `isOrganisation` is computed server-side as `!!notification.partOne.personResponsible.companyId` (confirm_billing_details.js:54). The captured trace was an individual (Michael Scott), so it rendered the 'Name' variant; an organisation notifier would see 'Organisation: <companyName>' here instead. Either way the row is display-only with no Change link. CORROBORATED: the ChedPPNotificationConfig interface has no billingName field — only billingPostcode / billingAddressIndex / billingEmail / billingTelephone (ched-pp-workflows.ts:125-128) — so the name is NOT supplied by billing test data. POSITIVELY CORROBORATED as the signed-in account's profile name: tests/notification/ched-pp/ched-pp-manipulation.spec.ts runs as the SAME account as the CUC test (both `test.use({ storageState: AUTH_FILES.b2cNotifier })`) and hard-asserts that the Importer and Delivery address render as 'Michael Scott / 34 GREYSTONE PARK, CREWE, CW1 2AL' (:51-52) — the same person, defaulted from the account, but with a DIFFERENT address from the billing one (B69 3NE, which was looked up on the find-address page). So 'Michael Scott' is the b2cNotifier account holder: the billing NAME is inherited from the account while the billing ADDRESS is overridden by the lookup. The name also appears as `signatoryName: 'Michael Scott'` in ched-a-workflows.ts:1286, consistent with it being the shared test-account identity. MODEL MANDATORINESS (legacy): the billing name maps to `BillingInformation.contactName`, annotated `@NotBlank` — mandatory whenever billing information is persisted (BillingInformation.java:26-27). The annotation is unconditional (not group-scoped), so it is not CHED-PP-specific; and `PartOne.billingInformation` itself carries NO `@NotNull` group annotation (PartOne.java:660), so the whole billing block is optional at the model level for every validation group including CHED-PP — corroborating that this page is conditional (CUC-only), not part of the mandatory spine. This mandatoriness is 'as the old system had it'; the rebuild may revisit whether/where a billing name is captured.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (snapshot + main.html); corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:124-128 (billing config fields — no name); tests/notification/ched-pp/ched-pp-manipulation.spec.ts:10 (b2cNotifier storageState) and :51-52 (importer/delivery = 'Michael Scott'); workflows/notification/ched-a-workflows.ts:1286 (signatoryName); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/BillingInformation.java:26-27 (contactName @NotBlank); PartOne.java:660 (billingInformation — no @NotNull group)"
+    },
+    {
+      "name": "addressLine1",
+      "label": "Address (line 1 of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "2"
+      ],
+      "conditionalOn": "Populated from the Defra account / address lookup. Editable only via the 'Change' link to billing-details/find-address (page object locator #confirm-billing-address). The value is chosen by picking an entry from the 'Select the address' dropdown on billing-details/select-address, NOT typed. MODEL MANDATORINESS (legacy): maps to `PostalAddress.addressLine1`, annotated `@NotBlank` — mandatory whenever a billing address is persisted (PostalAddress.java:16-17), independently corroborating the frontend Joi `.required()` rule on the add-billing-address-manual sub-page. Display-only on THIS page (required:false is correct for the confirm page's read-only control); the mandatoriness bites upstream on the address sub-pages.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:6-8; page-objects/notification/BillingSelectTheAddressPage.ts:6-17; MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:16-17 (addressLine1 @NotBlank)"
+    },
+    {
+      "name": "addressLine2",
+      "label": "Address (line 2 of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "CAMPBELL BANNERMAN WAY"
+      ],
+      "conditionalOn": "MODEL MANDATORINESS (legacy): maps to `PostalAddress.addressLine2` which has NO constraint annotation — OPTIONAL in the model (PostalAddress.java:18), matching the frontend Joi `.empty('').max(100)` optional rule on the address sub-page.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:18 (addressLine2 — no annotation, optional)"
+    },
+    {
+      "name": "addressLine3",
+      "label": "Address (line 3 of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "TIVIDALE"
+      ],
+      "conditionalOn": "MODEL MANDATORINESS (legacy): maps to `PostalAddress.addressLine3` which has NO constraint annotation — OPTIONAL in the model (PostalAddress.java:19), matching the frontend Joi `.empty('').max(100)` optional rule on the address sub-page.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:19 (addressLine3 — no annotation, optional)"
+    },
+    {
+      "name": "cityOrTown",
+      "label": "Address (town/city line of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "OLDBURY"
+      ],
+      "conditionalOn": "MODEL MANDATORINESS (legacy): maps to `PostalAddress.cityOrTown`, annotated `@NotBlank` — MANDATORY whenever a billing address is persisted (PostalAddress.java:22-23), independently corroborating the frontend Joi `.required()` rule (max 32). Display-only on THIS page; the mandatoriness bites upstream on the address sub-pages.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:22-23 (cityOrTown @NotBlank)"
+    },
+    {
+      "name": "county",
+      "label": "Address (county line of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "WEST MIDLANDS"
+      ],
+      "conditionalOn": "MODEL MANDATORINESS (legacy): maps to `PostalAddress.county` which has NO constraint annotation — OPTIONAL in the model (PostalAddress.java:21), matching the frontend Joi `.empty('').max(32)` optional rule on the address sub-page.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:21 (county — no annotation, optional)"
+    },
+    {
+      "name": "postalCode",
+      "label": "Address (postcode line of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "B69 3NE"
+      ],
+      "conditionalOn": "Note the lookup was driven by typing 'B693NE' (unspaced) on the find-address page; the value that comes back and renders here is normalised to 'B69 3NE'. CORROBORATED: the unspaced 'B693NE' is exactly DEFAULT_CONFIG.billingPostcode, so the normalisation to 'B69 3NE' is done by the app/address-lookup service, not by the test. MODEL MANDATORINESS (legacy): maps to `PostalAddress.postalCode`, annotated `@NotBlank` — MANDATORY whenever a billing address is persisted (PostalAddress.java:24-25), independently corroborating the frontend Joi `.pattern(POSTCODE_REGEX).required()` rule. Display-only on THIS page; the mandatoriness bites upstream on the address sub-pages.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); action 87 fills 'B693NE' on the find-address page; corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:192 (`billingPostcode: 'B693NE'`); MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:24-25 (postalCode @NotBlank)"
+    },
+    {
+      "name": "email",
+      "label": "Email address",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "email@mailinator.com"
+      ],
+      "conditionalOn": "Editable via the 'Change' link (id=confirm-billing-address-email) to billing-details/contact. Invoices are sent to this address. CORROBORATED: matches DEFAULT_CONFIG.billingEmail; the contact page's field is located by accessible name 'Email address'. MODEL MANDATORINESS (legacy): maps to `BillingInformation.emailAddress`, annotated `@NotBlank` — MANDATORY whenever billing information is persisted (BillingInformation.java:20-21), independently corroborating the frontend Joi `.email(...).required()` rule (max 100) on the contact sub-page. Display-only on THIS page; the mandatoriness bites upstream on the contact sub-page.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); changed at actions 91-94; corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:194; page-objects/notification/ConfirmBillingDetailsPage.ts:10-12; page-objects/notification/BillingChangeContactDetailsPage.ts:6-8; MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/BillingInformation.java:20-21 (emailAddress @NotBlank)"
+    },
+    {
+      "name": "telephone",
+      "label": "Phone number",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "07440311981"
+      ],
+      "conditionalOn": "Editable via the 'Change' link (id=confirm-billing-address-phone-number) to billing-details/contact — the SAME page as the email change link, which gathers email and phone together. CORROBORATED: matches DEFAULT_CONFIG.billingTelephone, and updateContactDetailsAndContinue(email, telephone) fills BOTH fields on one page then clicks Continue, confirming the shared page. MODEL MANDATORINESS (legacy): maps to `BillingInformation.phoneNumber`, annotated `@NotBlank` — MANDATORY whenever billing information is persisted (BillingInformation.java:22-23), independently corroborating the frontend Joi `.pattern(BILLING_TELEPHONE_REGEX).min(9).max(20).required()` rule on the contact sub-page. Display-only on THIS page; the mandatoriness bites upstream on the contact sub-page.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval); filled at action 93; corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:195, :485; page-objects/notification/BillingChangeContactDetailsPage.ts:10-22; MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/BillingInformation.java:22-23 (phoneNumber @NotBlank)"
+    },
+    {
+      "name": "addressLine4",
+      "label": "Address (line 4 of the composite 'Address' summary row)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [],
+      "conditionalOn": "LEGACY-ONLY FIELD — no trace ever rendered it. The template emits a fourth hidden `addressLine4` input, but only inside `{{#if billingDetails.billingAddress.addressLine4}}`, so it appears solely when the looked-up address has a fourth line. The observed test address (2, CAMPBELL BANNERMAN WAY, TIVIDALE, OLDBURY, WEST MIDLANDS, B69 3NE) has no line 4, which is why the trace's control inventory found only 8 hidden billing values, not 9. On the ADD/EDIT sub-pages the field is optional (max 100 chars). MODEL MANDATORINESS (legacy): maps to `PostalAddress.addressLine4` which has NO constraint annotation — OPTIONAL in the model (PostalAddress.java:20), matching the frontend Joi optional rule.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/billingDetails.html:81-83 (`name=\"addressLine4\"` gated on `{{#if billingDetails.billingAddress.addressLine4}}`); mandatoriness/max: ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:47-49 (`ADDRESS_LINE_4_KEY: Joi.string().empty('').max(100)` — optional); label 'Address line 4' at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/validation_constants.js:355-356; MODEL: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PostalAddress.java:20 (addressLine4 — no annotation, optional)"
+    },
+    {
+      "name": "isConfirmed",
+      "label": "(no control — server-side billing-confirmation state)",
+      "control": "server-state",
+      "required": true,
+      "observedValues": [],
+      "conditionalOn": "LEGACY-ONLY, NOT A RENDERED CONTROL — no trace could show it. The billing model carries `BillingInformation.isConfirmed` (a Boolean), annotated `@NotBlank`, i.e. it must be set whenever billing information is persisted (BillingInformation.java:17-18). This is the very state THIS page exists to establish: the confirm page reads it (`isConfirmed: billingInformation?.isConfirmed`, confirm_billing_details.js:82) and the POST hands off to the account-level billing patch. It is server state, not a form input, so it appears nowhere in the rendered form or the traces — recorded so the rebuild models the 'billing confirmed' flag rather than mistaking it for a UI field. (Note: `@NotBlank` on a Boolean is an IPAFFS annotation quirk — @NotBlank targets CharSequence — but it evidences the intent that the flag is mandatory. Whether the rebuild keeps an explicit confirmation flag is a policy the rebuild may revisit.)",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/BillingInformation.java:17-18 (isConfirmed @NotBlank); ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/confirm_billing_details.js:82 (handler reads billingInformation.isConfirmed)"
+    },
+    {
+      "name": "etag",
+      "label": "(no label — optimistic concurrency token)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "\"0000000000BD2AFD\""
+      ],
+      "conditionalOn": "Always present. Round-tripped so the server can detect a concurrent edit of the draft notification. Note the value INCLUDES literal double-quote characters (rendered in the HTML as &quot;...&quot;) — it is an HTTP-style entity tag, quotes and all.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval; main.html shows `value=\"&quot;0000000000BD2AFD&quot;\"`)"
+    },
+    {
+      "name": "crumb",
+      "label": "(no label — hapi CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "[REDACTED]"
+      ],
+      "conditionalOn": "Always present, and it is the FIRST input inside the billing <form>. Note the page carries TWO inputs named 'crumb' with the same value — one in the billing form and a second in the footer cookie-settings form; only the former is billing surface.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (control inventory eval — two crumb entries; main.html shows the billing-form one)"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "(none observed on the confirm page itself)",
+      "field": "n/a",
+      "trigger": "No error state was captured for this page. LEGACY CONFIRMS THE ABSENCE IS REAL, NOT JUST UNOBSERVED: the confirm route's POST is registered with only `userAccessPostRequest` options (no Joi payload validation), and the POST handler never calls a validator — it goes straight to patch + redirect. A `confirm_billing_details_validation.js` module DOES exist and would validate the whole round-tripped payload (address + email + telephone + etag + source), but it is imported NOWHERE in src/ (only its own test references it) — dead/unwired code. So the confirm page renders no .govuk-error-summary because nothing on it validates; all live validation for this page's fields fires UPSTREAM on the Change sub-pages (contact for email/phone; find-address / add-billing-address-manual for the address). The messages below are those upstream rules, added verbatim as legacy because they govern THIS page's field values.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec — error-summary eval at actions 86/95 returned 'none'; trace metadata reports Errors: 0. LEGACY: ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/routes.js:1364-1369 (confirm POST, no validate) + ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/route_options.js:14-18 (userAccessPostRequest = payload allow only, no schema); handler ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/confirm_billing_details.js:23-48 (no validate call); the unwired validator ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/confirm_billing_details_validation.js:9-24 (grep of src/ finds no importer)"
+    },
+    {
+      "message": "Enter an email address",
+      "field": "email",
+      "trigger": "Empty / missing email on the billing CONTACT sub-page (billing-details/contact), reached via the email Change link. Fires on Joi STRING_EMPTY and ANY_REQUIRED — email is required.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:23-29; string ENTER_EMAIL at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:47"
+    },
+    {
+      "message": "Enter an email address in the correct format, like name@example.com",
+      "field": "email",
+      "trigger": "Email fails Joi .email() format check on the contact sub-page.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:25; string EMAIL_ADDRESS_REGEX_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:49"
+    },
+    {
+      "message": "Email address must be 100 characters or fewer",
+      "field": "email",
+      "trigger": "Email exceeds 100 characters on the contact sub-page (Joi .max(100), STRING_MAX).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:23,27; string EMAIL_ADDRESS_MAX_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:48"
+    },
+    {
+      "message": "Enter a telephone number",
+      "field": "telephone",
+      "trigger": "Empty / missing phone number on the contact sub-page. Fires on STRING_EMPTY and ANY_REQUIRED — telephone is required.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:30-37; string ENTER_TELEPHONE_NUMBER at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:44"
+    },
+    {
+      "message": "Enter a telephone number that is between 9 and 20 characters",
+      "field": "telephone",
+      "trigger": "Phone number shorter than 9 or longer than 20 characters on the contact sub-page (Joi .min(9).max(20), STRING_MIN / STRING_MAX).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:30,35-36; string TELEPHONE_NUMBER_MIN_MAX_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:45"
+    },
+    {
+      "message": "Enter a telephone number using only these characters: 0-9 / + ().-",
+      "field": "telephone",
+      "trigger": "Phone number contains characters outside the allowed set on the contact sub-page (Joi .pattern(BILLING_TELEPHONE_REGEX = /^[ 0-9+().\\/-]+$/), STRING_PATTERN).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:30,32; regex ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/regexes.js:9; string TELEPHONE_NUMBER_REGEX_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:46"
+    },
+    {
+      "message": "Enter address line 1, typically the building and street",
+      "field": "addressLine1",
+      "trigger": "Empty / missing address line 1 on the add-billing-address-manual sub-page. Fires on STRING_EMPTY and ANY_REQUIRED — addressLine1 is required.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:36-40; string ENTER_ADDRESS_LINE_1 at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:42"
+    },
+    {
+      "message": "\"Address line 1\" must be 100 characters or less",
+      "field": "addressLine1",
+      "trigger": "Address line 1 over 100 characters on the manual sub-page (STRING_MAX; message built by MAX_LENGTH_VALIDATION_MESSAGE_FULL('Address line 1', 100)). Lines 2, 3 and 4 use the same template with their own labels (all optional).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:36-49; message fn MAX_LENGTH_VALIDATION_MESSAGE_FULL at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:10-11; labels at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/validation_constants.js:349-356"
+    },
+    {
+      "message": "Enter town or city",
+      "field": "cityOrTown",
+      "trigger": "Empty / missing town or city on the manual sub-page. STRING_EMPTY / ANY_REQUIRED — cityOrTown is required.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:50-54; string ENTER_TOWN_OR_CITY at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:43"
+    },
+    {
+      "message": "\"Town or city\" must be 32 characters or less",
+      "field": "cityOrTown",
+      "trigger": "Town or city over 32 characters on the manual sub-page (STRING_MAX, max 32). County uses the same template ('\"County\" must be 32 characters or less', optional field).",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:50-57; labels 'Town or city' / 'County' at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/validation_constants.js:357-360"
+    },
+    {
+      "message": "Enter postcode",
+      "field": "postalCode",
+      "trigger": "Empty / missing postcode on the manual sub-page. STRING_EMPTY / ANY_REQUIRED — postalCode is required.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:58-62; string POSTCODE_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:38"
+    },
+    {
+      "message": "Enter valid UK postcode",
+      "field": "postalCode",
+      "trigger": "Postcode fails the UK postcode regex on the manual sub-page (STRING_PATTERN, POSTCODE_REGEX). This is the same field the find-address lookup normalises (e.g. 'B693NE' -> 'B69 3NE').",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/add_billing_address_manual_validator.js:58-61; regex POSTCODE_REGEX at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/regexes.js:13; string UK_POSTCODE_ERROR_MESSAGE at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:39"
+    },
+    {
+      "message": "Only valid value for source is IDM",
+      "field": "source",
+      "trigger": "Would fire if the `source` query/payload param were anything other than the literal 'IDM'. DEAD ON THE CONFIRM PAGE — this rule lives only in the unwired confirm_billing_details_validation.js, so it never actually runs; recorded because it documents the intended contract for the ?source=IDM parameter.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/confirm_billing_details_validation.js:15-18 (`source: Joi.string().empty('').valid('IDM')` -> 'Only valid value for source is IDM'); unwired — no importer of this module in src/"
+    }
+  ],
+  "confidence": "confirmed",
+  "corroboration": {
+    "pageObject": "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts (registered as `confirmBillingDetails` at page-objects/factory.ts:191)",
+    "workflow": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:480-487",
+    "tests": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cuc.spec.ts (the only CHED-PP test that reaches this page). Exhaustively verified: grep for `isCuc` across tests/ returns exactly four tests — ched-pp-cuc.spec.ts:18, ched-p-cuc.spec.ts:19, ched-d-cuc.spec.ts:24, ched-d-cuc-replacement-amendment.spec.ts:36 — and only the first is CHED-PP.",
+    "siblingPages": "The three sub-pages reached from the Change links are modelled and corroborate this page's Change-link targets: FindAnAddressPage.ts:6-17 (textbox 'Postcode' + button 'Find address'), BillingSelectTheAddressPage.ts:6-17 (combobox 'Select the address' + button 'Continue'), BillingChangeContactDetailsPage.ts:6-22 (textboxes 'Email address' and 'Phone number' + button 'Continue', filled together by updateContactDetailsAndContinue). All four billing page objects are registered at page-objects/factory.ts:191-194. Note FindAnAddressPage is SHARED with non-billing address flows, so it is not billing-specific surface.",
+    "verdict": "The traces cover MORE of this page than the tests do. The page object models only THREE controls — linkChangeAddress (#confirm-billing-address), linkChangeEmailAddress (#confirm-billing-address-email) and btnSaveAndContinue — while the trace shows a fourth control the page object has no locator for (#confirm-billing-address-phone-number) plus two unmodelled submit buttons (#save-and-return-button, #cancel-button). No test asserts anything about this page. So for this page the page object RAISES no requirements the traces missed; instead it reveals a large untested surface. WHAT THE TESTS DID ADD, beyond confirming the trace: a human statement of the page's trigger rule (ched-p-workflows.ts:538, 'triggered by Sevington port'), the journey position either side of it (Traders Addresses -> billing -> Review), the CHED-PP-vs-CHED-P/D divergence in how Sevington is reached, and the fact that the amendment/replacement resubmit path never re-shows this page. See pageConditionality and uncoveredSurface.",
+    "verificationNote": "ADVERSARIALLY RE-VERIFIED (v26). Every rendered-copy claim was re-derived from the trace snapshot at action 86 and diffed character-by-character: page title, H1, caption, both body paragraphs, both guidance-link texts and hrefs, the collapsed <details> summary and body, all 4 summary rows, the warning text, all 3 button labels/ids/values, and all 3 Change-link ids and hrefs (including the confirmed ABSENCE of ?source=IDM on the phone-number link). All matched exactly; no invented copy was found. The control inventory was re-run independently and matches the fields list exactly (10 billing-form controls, no omissions). Page identity was re-confirmed at BOTH action 86 and action 95. THREE citation defects were found and fixed in this revision: (1) the journeyPosition cited ched-pp-workflows.ts:363-364 and :378 for Traders Addresses / Review Notification — both WRONG (:363-364 are closing braces in the commodity block, :378 is dropdownIntendedUse); the correct lines are :477-478 and :489, and the positional claim itself is sound. (2) The 'Name' field claimed 'Michael Scott appears nowhere in the QA automation repo' and cited a grep 'returns nothing' — FALSE: it appears at ched-pp-manipulation.spec.ts:51-52 and ched-a-workflows.ts:1286; the conclusion survives and is now better evidenced (see that field). (3) The back link was characterised as not using the govuk component — it DOES carry class 'govuk-back-link'; the real defects are href=\"#\" and the bespoke 'back-link--next-to-breadcrumbs' modifier. The prior claim that 'every line citation resolved exactly as cited' was itself inaccurate and has been replaced by this note. MODEL-LAYER ENRICHMENT (v27): added independent mandatoriness evidence from the imports-notification-schema Java model, which the prior passes (frontend-only) had not consulted. `PartOne.billingInformation` carries NO `@NotNull` group annotation (PartOne.java:660), so the entire billing block is optional at the model level for every validation group INCLUDING CHED-PP — model-level corroboration that this page is conditional (CUC-only), not part of the mandatory spine. Within the block, `BillingInformation` marks `isConfirmed`, `emailAddress`, `phoneNumber` and `contactName` `@NotBlank`, and `PostalAddress` marks `addressLine1`, `cityOrTown` and `postalCode` `@NotBlank` while addressLine2/3/4 and county carry no annotation — a clean model-level match to the frontend Joi required/optional split, added per-field. A new legacy-only `isConfirmed` field was added (server-state, not a rendered control). Field-level `required` on the confirm page's display/hidden controls was left at false (correct — they are read-only here); the model mandatoriness is recorded as the upstream-and-model rule the rebuild inherits.",
+    "confidence": "confirmed",
+    "evidence": "page-objects/notification/ConfirmBillingDetailsPage.ts:1-17 (whole file — 3 getters, no assertions, no cancel/hub locators)"
+  },
+  "uncoveredSurface": [
+    {
+      "item": "Phone-number Change link (#confirm-billing-address-phone-number)",
+      "why": "Rendered in the trace but absent from the page object — no test ever clicks it. The phone number is only ever changed as a side effect of clicking the EMAIL change link (both fields live on billing-details/contact).",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (main.html); absence: ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:1-17"
+    },
+    {
+      "item": "'Save and return to hub' (#save-and-return-button)",
+      "why": "No locator in the page object and no trace clicked it — but LEGACY now supplies the behaviour. The POST handler branches on the pressed button: SAVE_AND_RETURN_BUTTON (like CANCEL) redirects to IMPORTER_OVERVIEW_PAGE (the notification hub/overview), whereas SAVE_AND_CONTINUE redirects to IMPORTER_REVIEW_PAGE. For both save-and-return and save-and-continue (and only when NOT source=IDM), the handler also patches the billing details back to the Defra account via commonUserChargeHelper.patchBillingDetails; the notification itself is patched (viewToNotificationTransformer.updateNotification) on EVERY action.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/confirm_billing_details.js:28-47 (patch + branch: SAVE_AND_CONTINUE->review, SAVE_AND_RETURN/CANCEL->overview) and :31-35 (patchBillingDetails only when source!==IDM and save-return/save-continue); trace a61cf55bc26138194f50d589181543a2714db2ec (rendered at action 86, never clicked); page object has no getter at ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:1-17"
+    },
+    {
+      "item": "'Cancel and return to notification' (#cancel-button, value='cancel')",
+      "why": "No locator in the page object and no trace clicked it — LEGACY partially answers 'discard vs navigate'. Cancel is a genuine submit: the handler still runs doPatchOperations (updateNotification) on the posted payload, then redirects to IMPORTER_OVERVIEW_PAGE. The ONE thing Cancel skips is the account-level billing patch — commonUserChargeHelper.patchBillingDetails runs only for save-return / save-continue, never for CANCEL. So Cancel does NOT fully discard: it patches the notification and navigates to the overview, but does not persist billing to the Defra account. The exact semantics of what updateNotification writes on cancel is worth a human confirm.",
+      "confidence": "legacy",
+      "evidence": "~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/confirm_billing_details.js:28-42 (unconditional doPatchOperations; CANCEL excluded from patchBillingDetails at :31-35; CANCEL redirects to overview at :40-42); trace a61cf55bc26138194f50d589181543a2714db2ec action 86 (button value='cancel' confirmed via button inventory eval); page object has no getter at ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:1-17"
+    },
+    {
+      "item": "The 'accept the details as they are' path",
+      "why": "The QA workflow ALWAYS changes the address, then the email+phone, before clicking Save and continue — it never clicks Save and continue on the pristine page. So the straight-through happy path (Defra account details already correct → Save and continue) has no coverage in either source, despite being the most likely real-world path.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:480-487 (unconditional change-address + change-contact before btnSaveAndContinue)"
+    },
+    {
+      "item": "The amendment / replacement resubmit path never re-shows this page",
+      "why": "NEW FINDING from the tests — the traces could not have shown this. When a CUC notification is replaced and amended, the notifier's resubmit path is dashboard -> openAmendNotification -> reviewNotification.linkReviewAndSubmit -> reviewNotification.btnSaveAndContinue -> declaration.btnSubmitNotification. There is NO billing confirm step, and the ChedDCopyAsNewConfig interface has no billing fields at all. So billing details are carried over to the replacement silently, without the user re-confirming them — even though the page's own warning copy says changed billing details apply retroactively across an invoicing period. The interaction between 'carried over silently' and 'applied to all previous notifications in the period' is exactly what the CHED-D test's manual-verification annotation says QA cannot assert from the UI ('User charge must apply only once across the original and replacement notifications. Verify externally via the billing queue or Dynamics.'). The new app needs a ruling here.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts:534-541 (submitAmendmentForChedDNotification — no billing step); :546-558 (ChedDCopyAsNewConfig — no billing fields); tests/notification/ched-d/ched-d-cuc-replacement-amendment.spec.ts:76-81 (manual-verification annotation). No CHED-PP equivalent test exists — this is inferred from the CHED-D sibling, which drives the SAME ConfirmBillingDetailsPage object."
+    },
+    {
+      "item": "The CHED-PP CUC trigger values are raw string literals outside the domain vocabulary",
+      "why": "ched-pp-cuc.spec.ts:19-20 hardcodes `entryBorderControlPost: 'Folkstone - GBFOL4PP'` and `inspectionPremises: 'Sevington IBF'` as bare strings, while DEFAULT_CONFIG uses the typed domain constants (`bcp.controlPointParent`, `cp.barfootsOfBotleyChichester`) for the same two fields. Neither 'Folkstone - GBFOL4PP' nor 'Sevington IBF' exists anywhere in types/ — grep for sevington/folkstone/folkestone across types/ returns only poe.ts:9 ('DOVER EAST (SEVINGTON BCP) (GBSEV)'), which is the CHED-P/CHED-D port-of-entry value, not either CHED-PP value. So the one piece of data that triggers this entire page for CHED-PP is untyped, unshared and spelled 'Folkstone' (the real place is Folkestone). That is a smell worth flagging: the CUC trigger data is not part of the maintained domain vocabulary.",
+      "confidence": "confirmed",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cuc.spec.ts:19-20; workflows/notification/ched-pp-workflows.ts:161-162 (DEFAULT_CONFIG uses bcp.controlPointParent / cp.barfootsOfBotleyChichester); grep -rni 'sevington|folkstone|folkestone' over types/ returns only types/poe.ts:9"
+    },
+    {
+      "item": "Accessibility coverage",
+      "why": "tests/accessibility/ched-pp-accessibility-tests.spec.ts names the CHED-PP pages in journey order but contains NO reference to billing/CUC — so this page is never axe-scanned. Given the page ships several non-standard patterns (hand-rolled summary-card, link-button, list-bullet, bespoke back-link modifier), that is a real gap.",
+      "confidence": "confirmed",
+      "evidence": "grep -rni 'billing|cuc' over ~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts returns no matches (re-run and confirmed empty in v26)"
+    }
+  ],
+  "openQuestions": [
+    "EVIDENCE POINTER WAS INCOMPLETE, NOT WRONG. Both supplied actions (86, 91) are genuinely on this page and the page identity was verified at both (Page Title 'Confirm billing details - Import and export applications - GOV.UK', H1 'Confirm billing details'). But the pointers missed TWO things: (a) a THIRD change link, #confirm-billing-address-phone-number -> billing-details/contact, for the Phone number row; (b) action 95, which is the actual 'Save and continue' submit on this page (re-verified in v26: its own snapshot is still this page, and its navigation log records the hand-off to /review). Action 95 should be treated as part of the evidence set.",
+    "URL IS RECOVERABLE despite the brief saying 'no URL captured'. The cookie-settings returnUrl hidden input in the snapshot chrome carries '%2Fprotected%2Fnotifications%2FDRAFT.GB.2026.1526000%2Fbilling-details%2Fconfirm%3Fsource%3DIDM', which decodes to /protected/notifications/DRAFT.GB.2026.1526000/billing-details/confirm?source=IDM. So the page URL is /notification/vnet/protected/notifications/{notificationId}/billing-details/confirm?source=IDM.",
+    "WHAT IS ?source=IDM? LEGACY LARGELY EXPLAINS THIS. The handler computes `idmQueryParam = request.query?.source === IDM ? '?source=IDM' : undefined` (confirm_billing_details.js:56) and appends `{{idmQueryParam}}` to the address and email Change links only. The phone-number Change link in the template has NO `{{idmQueryParam}}` (billingDetails.html:116) — so its ABSENCE on the phone link is a template inconsistency (a bug), not meaningful routing. The param also switches where billing details are SOURCED: when source=IDM the handler reads billing details from the customer/IDM account (commonUserChargeHelper.getBillingDetails); otherwise it reads them off the notification's partOne.billingInformation, back-filling from IDM only where address/email are missing (getBillingDetails / updateBillingDetails, confirm_billing_details.js:74-109). And on POST, when source=IDM the account-level billing patch is SKIPPED (:31-35). So 'IDM' = the details came from / are read from the Defra ID (Identity Management) account. STILL FOR A HUMAN: at action 91 the returned email link had LOST ?source=IDM even though the address link kept it earlier — whether that (or the missing phone param) causes any wrong return-journey routing in the real app needs confirming; the rebuild should decide whether to keep this param at all.",
+    "WHEN DOES THIS PAGE APPEAR? THE SINGLE MOST IMPORTANT QUESTION ON THIS PAGE — now much better evidenced, but still needs a human ruling. The QA workflow gates the whole billing block behind `if (isCuc)` (ched-pp-workflows.ts:480) with `isCuc: false` by default (:191), and the one CHED-PP CUC test pairs `isCuc: true` with `entryBorderControlPost: 'Folkstone - GBFOL4PP'` + `inspectionPremises: 'Sevington IBF'` (ched-pp-cuc.spec.ts:17-21). `isCuc` is a TEST-SIDE flag telling the workflow to EXPECT the page — it does not cause it. The best evidence of the real rule is a human comment in the sibling workflow: `// Billing Details Pages (CUC only — triggered by Sevington port)` (ched-p-workflows.ts:538) — note it is in the CHED-P workflow, and the CHED-PP and CHED-D blocks carry no such comment. And CHED-PP reaches Sevington DIFFERENTLY from its siblings: CHED-P/CHED-D set a single port of entry `poe.sevington` = 'DOVER EAST (SEVINGTON BCP) (GBSEV)' (types/poe.ts:9), whereas CHED-PP's entry BCP is Folkstone and Sevington is only the INSPECTION PREMISES. So 'triggered by Sevington port' cannot be literally true for CHED-PP. Best current reading, matching the page's own Details copy: the trigger is a consignment CHECKED at Sevington that ENTERS via Dover or Eurotunnel Le Shuttle (Folkestone being the Eurotunnel terminal). CONFIRM WITH A HUMAN: is the rule keyed on inspection premises, on entry BCP, on the pair, on charge-eligibility of the commodity, or on something server-side we cannot see? The new app needs the actual rule, not the test's proxy for it.",
+    "The 'Name' row is not editable here and has no Change link. The billing config in the tests has no name field (only postcode / addressIndex / email / telephone — ched-pp-workflows.ts:125-128), and the same name 'Michael Scott' is asserted as the default IMPORTER and DELIVERY ADDRESS name for the same b2cNotifier account in ched-pp-manipulation.spec.ts:51-52 — but there against a DIFFERENT address (34 GREYSTONE PARK, CREWE, CW1 2AL) from the billing one. So the account supplies the name to several places while each address is sourced separately. Is the billing name ALWAYS taken from the Defra account with no override path anywhere in the journey — and is it the same name field that populates the importer?",
+    "Three submit buttons post to the same handler (save-and-return-button / button-save-and-continue / cancel-button), distinguished by which button name arrives. Note the two govuk-styled buttons submit their own visible LABEL as their value ('Save and return to hub', 'Save and continue') whereas 'Cancel and return to notification' submits value='cancel' — so two of the three server-side discriminators are user-facing copy, which would break if the copy were reworded. Does 'Cancel and return to notification' discard the billing changes, or just navigate away leaving them saved? Not observable; no trace exercised it and the page object has no locator for it.",
+    "The warning copy says changed billing details 'will be applied to all previous notifications created during the same invoicing period'. This is a significant retroactive side-effect and implies a batch/invoicing-period data model behind the CUC. Partially corroborated from the sibling CHED-D test, whose manual-verification note says 'User charge must apply only once across the original and replacement notifications. Verify externally via the billing queue or Dynamics.' (tests/notification/ched-d/ched-d-cuc-replacement-amendment.spec.ts:76-81) — i.e. even QA cannot assert the invoicing behaviour from the UI; it is a downstream billing-queue/Dynamics concern. SHARPENED: the same test shows the amendment resubmit path never re-shows this page (ched-d-workflows.ts:534-541), so billing details ride along to a replacement notification without re-confirmation, while the warning copy claims a change would retroactively re-price the whole invoicing period. Those two behaviours need reconciling. The new app needs a ruling on whether it reproduces this behaviour.",
+    "No trace exercised 'Save and return to hub' or 'Cancel and return to notification' from this page, and no validation error state was ever rendered on it. Now doubly confirmed: the page object models neither button, so no test can exercise them either. Uncovered surface — a FINDING, not an absence of requirement. See uncoveredSurface.",
+    "Neither source covers the pristine 'details are already correct → Save and continue' path — the workflow always changes address + contact first (ched-pp-workflows.ts:480-487). Does the page behave identically if nothing is changed (e.g. is the etag still required, does the warning still apply)?",
+    "The Details body ('Consignments eligible for BCP checks at Sevington will incur charges if they enter through: Port of Dover / Eurotunnel Le Shuttle') was only readable via outerHTML/textContent because the <details> was collapsed — it is absent from main.innerText. Content is verbatim but note it hardcodes Sevington/Dover/Eurotunnel — reference data baked into copy. The two guidance links likewise hardcode gov.uk URLs (common-user-charge-rates-and-eligibility, paying-the-common-user-charge-terms-and-conditions). Should the new app source these from a reference-data service or config?",
+    "The <details> element carries no data-module=\"govuk-details\" attribute, unlike the buttons which do carry data-module=\"govuk-button\" (and data-govuk-button-init=\"\", showing govuk-frontend JS did initialise them). Works via native <details> semantics, but is inconsistent with how the rest of the page initialises govuk components.",
+    "NAMING TRAP for whoever reads the test config next: DEFAULT_CONFIG.billingAddressIndex is '2' (ched-pp-workflows.ts:193) and the observed addressLine1 is also '2'. These are unrelated — billingAddressIndex is the zero-based option index passed to selectOption on the 'Select the address' dropdown (BillingSelectTheAddressPage.ts:14-17), whereas addressLine1 '2' is the house number of whichever address that index happened to land on. Do not treat the match as meaningful.",
+    "This page is not CHED-PP-specific: identical `if (isCuc)` billing blocks exist in ched-p-workflows.ts:539 and ched-d-workflows.ts:355, and all three use the same ConfirmBillingDetailsPage object. If the new app is CHED-PP-only, is the CUC billing step still shared service-wide, or does it need re-implementing per CHED type?"
+  ]
+}

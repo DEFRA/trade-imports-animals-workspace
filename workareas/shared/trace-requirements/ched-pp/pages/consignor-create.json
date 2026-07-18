@@ -1,0 +1,652 @@
+{
+  "slug": "consignor-create",
+  "name": "Add a consignor or exporter (create new)",
+  "url": "/notification/vnet/protected/notifications/:draftId/traders/consignor/new",
+  "pageTitle": "Add consignor or exporter - Import and export applications - GOV.UK",
+  "caption": ":draftReference - CHEDPP",
+  "heading": "Add consignor or exporter",
+  "bodyCopy": [
+    "Return to search"
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Return to search (link to /notification/vnet/protected/notifications/:draftId/traders/consignor/search)"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "urlEvidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (<base href> = https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/traders/consignor/new). The :draftId segment is the draft reference itself, not a separate opaque id — VERIFIED THIS PASS.",
+  "captionEvidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 renders 'DRAFT.GB.2026.1525990 - CHEDPP'; trace e10b7cd5117799d60c1e0fbeddc3322eefde1572, action 74 renders 'DRAFT.GB.2026.1526011 - CHEDPP'. CORRECTED THIS PASS: an earlier revision hardcoded the first trace's draft reference as if it were page copy. It is per-draft instance data — only the ' - CHEDPP' suffix is fixed copy.",
+  "entryRoute": {
+    "description": "Reached from the Traders Addresses page: click 'Add a consignor or exporter' -> Search Existing Consignor Or Exporter page -> click 'Create a new consignor or exporter'. This page is therefore ALWAYS the second step of the consignor flow; there is no direct link to it from the hub. Exit is 'Save and continue' -> Consignor Confirmation page ('Add to notification') -> back to Traders Addresses. The chain is unconditional in the workflow — no branch skips this page.",
+    "confidence": "inferred",
+    "evidence": "page-objects/notification/TradersAddressesPage.ts:6-8 (link 'Add a consignor or exporter'); page-objects/notification/SearchExistingConsignorOrExporterPage.ts:6-8 (link 'Create a new consignor or'); workflows/notification/ched-pp-workflows.ts:464-474 (the full click chain: linkAddConsignorOrExporter.click -> linkCreateNewConsignorOrExporter.click -> fillAddress -> btnSaveAndContinue.click -> btnAddToNotification.click). Chain corroborated DIRECTLY IN THE TRACE this pass: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 60 (click link 'Add a consignor or exporter'), action 61 (click link 'Create a new consignor or'), actions 62-70 (the nine fills), action 71 (click 'Save and continue'), action 72 (click 'Add to notification'). Independently mirrored in the a11y spec at tests/accessibility/ched-pp-accessibility-tests.spec.ts:144-168."
+  },
+  "sourceRoots": {
+    "note": "ADDED THIS PASS. Earlier revisions cited IPAFFS files by bare filename ('economic_operator.js:26'), which is not resolvable and hid the fact that the schema lives under src/. Full paths verified on disk this pass; all IPAFFS-side citations below are relative to these roots.",
+    "ipaffsFrontend": "~/git/defra/ipaffs/ipaffs-frontend-notification/service",
+    "template": "ipaffs-frontend-notification/service/src/views/importer/traders/economic_operator_create.html",
+    "templateNote": "ADDED THIS PASS. This is the authoritative Handlebars PAGE template — the actual markup source for this page, which no prior revision cited (they read only the Joi validation layer + the rendered trace). It confirms every label verbatim, confirms the form action='new' POST, confirms the duplicated govuk-label on the Country control (template:154 emits class=\"govuk-label govuk-label\"), and — most valuably — exposes conditional controls the traces never rendered (see legacyTemplateEnrichment). The H1, the name-field label and the fieldset legend are all COMPOSED at render time, not hardcoded: H1 = concat('Add ', toLowercase(title)) (template:20), name label = concat(toSentenceCase(displayName), ' name') (template:68), legend = toSentenceCase(displayName) (template:78) — with displayName 'Consignor or exporter' these compose to the exact strings the trace rendered, corroborating the confirmed copy.",
+    "schema": "ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/economic_operator.js",
+    "labels": "ipaffs-frontend-notification/service/src/validation/labels/en.js",
+    "messages": "ipaffs-frontend-notification/service/src/validation/messages/en.js",
+    "schemaUnitTest": "ipaffs-frontend-notification/service/test/validation/routes/handlers/importer/economic_operator_test.js",
+    "qaAutomation": "~/git/defra/ipaffs/ipaffs-qa-automation",
+    "backendModel": "~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation",
+    "backendMessages": "~/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties",
+    "backendModelNote": "ADDED THIS PASS (legacy source now authorised). The rendered-frontend pass and its predecessor only ever consulted the IPAFFS FRONTEND Joi layer (economic_operator.js). The authoritative Java schema model (EconomicOperator.java, EconomicOperatorAddress.java, PartOne.java) and the microservice submission-validation copy (ValidationMessages.properties) were NOT read before this pass. They are the source of the entity-level CHED-PP mandatoriness and the submission-level 'Add a consignor or exporter' message below — neither of which the frontend field validation expresses. All backend citations below are relative to these two roots."
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": ":draftReference - CHEDPP",
+      "govukComponent": "NOT a GOV.UK component — a custom <span class=\"heading-tertiary\"> rendered outside <main>, above the H1. CORRECTED THIS PASS: an earlier revision described this as a govuk Caption. There is no govuk-caption-* class on the page. See nonStandardPatterns."
+    },
+    {
+      "element": "h1",
+      "text": "Add consignor or exporter",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Return to search",
+      "govukComponent": "Link (govuk-body > govuk-link) — returns to the consignor search/address-book page"
+    },
+    {
+      "element": "text-input",
+      "text": "Consignor or exporter name",
+      "govukComponent": "Text input with govuk-label--m (sits OUTSIDE the fieldset, above it)"
+    },
+    {
+      "element": "fieldset-legend",
+      "text": "Consignor or exporter",
+      "govukComponent": "Fieldset legend (govuk-fieldset__legend--m) wrapping the 8 address fields"
+    },
+    {
+      "element": "text-input",
+      "text": "Address line 1",
+      "govukComponent": "Text input"
+    },
+    {
+      "element": "text-input",
+      "text": "Address line 2 (optional)",
+      "govukComponent": "Text input"
+    },
+    {
+      "element": "text-input",
+      "text": "Address line 3 (optional)",
+      "govukComponent": "Text input"
+    },
+    {
+      "element": "text-input",
+      "text": "City or town",
+      "govukComponent": "Text input"
+    },
+    {
+      "element": "text-input",
+      "text": "Postcode or ZIP code",
+      "govukComponent": "Text input"
+    },
+    {
+      "element": "text-input",
+      "text": "Telephone number",
+      "govukComponent": "Text input (type=tel)"
+    },
+    {
+      "element": "select",
+      "text": "Country",
+      "govukComponent": "Select (254 options)"
+    },
+    {
+      "element": "text-input",
+      "text": "Email address",
+      "govukComponent": "Text input (type=email)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": ["govuk-heading-xl"],
+      "count": 1,
+      "usage": "H1 'Add consignor or exporter'",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (class inventory eval; h1.className === 'govuk-heading-xl' — re-verified this pass)"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 8,
+      "usage": "Consignor or exporter name, Address lines 1-3, City or town, Postcode or ZIP code, Telephone number, Email address. Every input is width-one-half — no per-field width tuning (e.g. postcode is not narrowed). The Country select carries the same modifier, so all 9 visible controls are width-one-half.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (control inventory eval; the width-one-half selector resolves to exactly 8 INPUTs + 1 SELECT — re-verified this pass); all 8 corroborated as the exact set the tests drive at page-objects/notification/ConsignorCreationPage.ts:7-41 (getters) and :47-57 (fillAddress)"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 1,
+      "usage": "Country — 254 options, ISO 3166-1 alpha-2 values plus GB-ENG/GB-SCT/GB-WLS/GB-NIR subdivisions",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 + action 69 (selected GB-ENG); driven as a plain select via selectOption at page-objects/notification/ConsignorCreationPage.ts:35-37 (getByLabel('Country')) and :55 (selectOption) — the tests treat it as a native <select>, corroborating that no autocomplete widget is present"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": ["govuk-fieldset__legend", "govuk-fieldset__legend--m"],
+      "count": 1,
+      "usage": "Groups the 8 address fields under the legend 'Consignor or exporter'. Note the name field is NOT inside the fieldset.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (structure eval — re-verified this pass by closest('fieldset') per control: company-name false, the other 8 true)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--m"],
+      "count": 9,
+      "usage": "govuk-label--m on 'Consignor or exporter name' only; the 8 fieldset fields use the default (small) label. Trivial artefact: the Country label emits class=\"govuk-label govuk-label\" (the class is duplicated) — harmless, do not reproduce.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (structure eval — all 9 label classNames dumped and inspected this pass)"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "count": 9,
+      "usage": "One wrapper per field",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (class inventory eval; querySelectorAll count === 9 — re-verified this pass)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "count": 1,
+      "usage": "'Save and continue' — primary, no secondary/cancel button on this page",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 + action 71 (clicked); corroborated page-objects/notification/ConsignorCreationPage.ts:43-45 — the page object exposes exactly one button, i.e. the tests know of no other"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "count": 1,
+      "usage": "'Return to search' inside a govuk-body paragraph; href=/notification/vnet/protected/notifications/:draftId/traders/consignor/search",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 — href and classes read directly off the anchor this pass ('main a' resolves to exactly this one link). NOT exposed by the page object — no test ever clicks it (ConsignorCreationPage.ts:4-58 has no locator for it)."
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": ["govuk-grid-column-full"],
+      "count": 1,
+      "usage": "Layout — full width column, NOT the two-thirds column normally used for question pages",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (class inventory eval)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs (NON-govuk)"],
+      "count": 1,
+      "usage": "A 'Back' link renders above <main>, outside it: <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>, wrapped in <div class=\"navigation-links__left-block\">. It IS the Design System component class, but with href=\"#\" (JS-driven history back) and an extra bespoke modifier.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 — outerHTML read directly this pass. CORRECTED THIS PASS: an earlier revision asserted this link carried NO govuk-back-link class and recommended adding one. That was factually wrong — the class is present. NOT exposed by the page object — no test ever clicks it."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "No non-govuk-* classes inside <main> (but there ARE some outside it)",
+      "whatItDoes": "The full class inventory of main is: govuk-!-width-one-half, govuk-body, govuk-button, govuk-fieldset, govuk-fieldset__legend, govuk-fieldset__legend--m, govuk-form-group, govuk-grid-column-full, govuk-grid-row, govuk-heading-xl, govuk-input, govuk-label, govuk-label--m, govuk-link, govuk-select.",
+      "concern": "Largely a GOOD finding: the form itself is 100% inside the GOV.UK Design System toolbox and can be rebuilt with stock govuk-frontend macros, no custom CSS or JS. Notably the Country field is a plain <select>, NOT accessible-autocomplete, so there is no third-party widget to replace. SCOPE CORRECTED THIS PASS: the claim holds only INSIDE <main>. The page chrome around it does carry bespoke classes — heading-tertiary (the caption), back-link--next-to-breadcrumbs and navigation-links__left-block (the back link). An earlier revision generalised this to 'this page is 100% inside the toolbox', which overstates it.",
+      "govukAlternative": "n/a",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (non-govuk class filter over 'main *' returned empty — re-verified this pass; the three bespoke classes above were then found outside main)"
+    },
+    {
+      "pattern": "The draft-reference caption is a bespoke <span class=\"heading-tertiary\">, not a GOV.UK caption",
+      "whatItDoes": "Renders the draft reference and CHED type above the H1 as <span class=\"heading-tertiary\"><span id=\"reference-number\">DRAFT.GB.2026.1525990</span><span> - CHEDPP</span></span>, outside <main>.",
+      "concern": "NEW THIS PASS — missed entirely by earlier revisions, which recorded it as a govuk 'Caption' component. It uses a bespoke class, sits outside <main> (so it is not programmatically associated with the H1), and splits the reference and the type across two spans. The rebuild should use the Design System pattern: a govuk-caption-l/-xl span INSIDE the <h1>'s heading block, so screen readers announce the context with the heading.",
+      "govukAlternative": "govuk-caption-xl inside the heading block",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (outerHTML of the caption element read directly this pass); same structure in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572, action 74 with reference DRAFT.GB.2026.1526011"
+    },
+    {
+      "pattern": "Back link uses href=\"#\" and carries a bespoke modifier class",
+      "whatItDoes": "<a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a> — the DS class is present, but the href is a placeholder and client JS handles history back.",
+      "concern": "REFRAMED THIS PASS. The defect is NOT a missing govuk-back-link class (an earlier revision claimed that; it is wrong — the class is there). The real issues are: (1) href=\"#\" means the link does nothing without JS, and GOV.UK guidance is to render a real destination URL; (2) back-link--next-to-breadcrumbs is a bespoke positioning modifier outside the Design System. The rebuild should emit a real href and drop the custom modifier.",
+      "govukAlternative": "Back link with a real href",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (outerHTML read directly this pass)"
+    },
+    {
+      "pattern": "title=\"consignor or exporter\" attribute on every text input",
+      "whatItDoes": "Each of the 8 text/tel/email inputs carries a title attribute naming the trader type — an artefact of the shared address partial being parameterised by trader type.",
+      "concern": "title on form inputs is not a Design System pattern and adds a redundant tooltip/AT announcement. Purely incidental; drop it in the rebuild. SCOPE CORRECTED THIS PASS: an earlier revision said 'every input'. The Country <select> carries NO title, and neither do the hidden crumb/etag inputs — it is the 8 text-family inputs only.",
+      "govukAlternative": "n/a — omit the attribute; the label is the accessible name",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (per-control title dump this pass: 8 text-family inputs = 'consignor or exporter'; country select and both hidden inputs = empty)"
+    },
+    {
+      "pattern": "Shared address form reused across ~10 trader types via a labelKey/article switch",
+      "whatItDoes": "The same page + Joi schema serves consignor, consignee, importer, transporter, place of destination, permanent address, charity, organisation branch address, economic operator. Copy is templated: `Enter ${article} ${label.toLowerCase()}`.",
+      "concern": "Not a markup concern but an architecture one, and the brief says do not copy IPAFFS's architecture. The templating is what produces the label/message mismatches below. For a CHED-PP-only rebuild, prefer one explicit address component with hardcoded, hand-written GOV.UK error copy per field over a generic message factory.",
+      "govukAlternative": "n/a",
+      "evidence": "CONFIRMED IN THE SCHEMA THIS PASS: economic_operator.js:74-95 getMappedEconomicOperatorType(type, request) switches on trader type and returns {labelKey, article}; the COMPANY_NAME message resolves labels[`${type.labelKey}_NAME`] at economic_operator.js:26-27. ALSO CORROBORATED FROM THE TESTS: page-objects/notification/ConsigneeCreationPage.ts:8-44 exposes a byte-identical control set to ConsignorCreationPage.ts:7-45 — same 7 address labels, same 'Country' select, same 'Save and continue' button; only the name label differs ('Consignee name' vs 'Consignor or exporter name'). Both fillAddress() methods take the SAME types/address.ts Address type. Sibling page objects for the same partial confirmed present by directory listing: TransporterCreationPage.ts, BranchAddressCreationPage.ts, PermanentAddressPage.ts, AddEconomicOperatorPage.ts, ContactAddressPage.ts, FindAnAddressPage.ts."
+    },
+    {
+      "pattern": "The same creation page is shared across all four CHED types",
+      "whatItDoes": "CHED-PP, CHED-P, CHED-D and CHED-A all drive this identical page via the same page object and the same click chain.",
+      "concern": "Not a defect, but scope intelligence for the rebuild: the consignor address form is NOT CHED-PP-specific. A CHED-PP-only rebuild owns only its own copy of it; if other CHED types migrate later they will want the same component. Design it as a reusable address form within the new app, but do NOT reproduce IPAFFS's runtime labelKey/article indirection to achieve that.",
+      "govukAlternative": "n/a",
+      "evidence": "tests/accessibility/ched-pp-accessibility-tests.spec.ts:151-168, tests/accessibility/ched-p-accessibility-tests.spec.ts:131-148, tests/accessibility/ched-d-accessibility-tests.spec.ts:93-110 all use pages.consignorCreation with identical fills; the same chain also appears in workflows/notification/ched-p-workflows.ts:394-398, :748-750, :954-956 and workflows/notification/ched-d-workflows.ts:260-264"
+    }
+  ],
+  "autocompleteMap": {
+    "note": "NEW THIS PASS — missed entirely by earlier revisions, which never mentioned autocomplete at all. Every visible field except Country emits a correct WHATWG autocomplete token. This is a GOOD finding worth preserving in the rebuild, and it also surfaces one genuine gap.",
+    "confidence": "confirmed",
+    "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (per-control autocomplete dump this pass)",
+    "tokens": {
+      "company-name": "organization",
+      "address-line-1": "address-line1",
+      "address-line-2": "address-line2",
+      "address-line-3": "address-line3",
+      "city-or-town": "address-level2",
+      "postcode": "postal-code",
+      "telephone": "tel",
+      "country": "(NONE — gap; GOV.UK/WHATWG would use country-name)",
+      "email": "email"
+    }
+  },
+  "fields": [
+    {
+      "name": "company-name",
+      "label": "Consignor or exporter name",
+      "control": "text",
+      "required": true,
+      "autocomplete": "organization",
+      "observedValues": ["Linus George Ltd"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 62 + action 66 snapshot; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 74. required=true from economic_operator.js:25 (Joi.string().max(255).empty('').required()); note the HTML carries NO required attribute — validation is server-side only (re-verified this pass: hasAttribute('required') === false on all 9 controls). QA corroboration: page-objects/notification/ConsignorCreationPage.ts:7-9 (getByRole textbox name 'name') filled unconditionally at ConsignorCreationPage.ts:48; value 'Linus George Ltd' is DEFAULT_CONFIG.consignorAddress.name at workflows/notification/ched-pp-workflows.ts:179 and is asserted downstream on the View Details page at tests/notification/ched-pp/ched-pp-manipulation.spec.ts:48-50 — i.e. this field is the one consignor value the tests require to survive submission. NOTE the locator is a SUBSTRING match on the accessible name ('name'), unlike its consignee twin which matches the full 'Consignee name' (ConsigneeCreationPage.ts:8) — so the tests do not pin this field's full label; the rendered label 'Consignor or exporter name' comes from the trace alone."
+    },
+    {
+      "name": "address-line-1",
+      "label": "Address line 1",
+      "control": "text",
+      "required": true,
+      "autocomplete": "address-line1",
+      "observedValues": ["101 Main St"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 63 + action 66 snapshot; required per economic_operator.js:29. QA corroboration: ConsignorCreationPage.ts:11-13 (label pinned exactly) + :49; value from DEFAULT_CONFIG at ched-pp-workflows.ts:180"
+    },
+    {
+      "name": "address-line-2",
+      "label": "Address line 2 (optional)",
+      "control": "text",
+      "required": false,
+      "autocomplete": "address-line2",
+      "observedValues": ["Suite 2"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 64 + action 66 snapshot; optional per economic_operator.js:33 (Joi.string().max(255).allow('')). QA corroboration: ConsignorCreationPage.ts:15-17 (the page object pins the '(optional)' suffix as part of the accessible name) + :50; value from DEFAULT_CONFIG at ched-pp-workflows.ts:181. NOTE the tests never exercise the optional path — types/address.ts:4 types addressLine2 as a required non-nullable string, so every test run fills it. Optionality is asserted by the label suffix and the schema only, never by a passing empty submit."
+    },
+    {
+      "name": "address-line-3",
+      "label": "Address line 3 (optional)",
+      "control": "text",
+      "required": false,
+      "autocomplete": "address-line3",
+      "observedValues": ["Building 2"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 65 + action 66 snapshot; optional per economic_operator.js:36. QA corroboration: ConsignorCreationPage.ts:19-21 + :51; value from DEFAULT_CONFIG at ched-pp-workflows.ts:182. Same caveat as address-line-2: types/address.ts:5 makes it non-optional, so the empty path is never tested."
+    },
+    {
+      "name": "city-or-town",
+      "label": "City or town",
+      "control": "text",
+      "required": true,
+      "autocomplete": "address-level2",
+      "observedValues": ["Springfield"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (this action IS the City-or-town fill); corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 74 (also the City-or-town fill). required per economic_operator.js:39. QA corroboration: ConsignorCreationPage.ts:23-25 + :52; value from DEFAULT_CONFIG at ched-pp-workflows.ts:183"
+    },
+    {
+      "name": "postcode",
+      "label": "Postcode or ZIP code",
+      "control": "text",
+      "required": false,
+      "autocomplete": "postal-code",
+      "observedValues": ["10000"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 67 + action 66 snapshot. OPTIONAL per economic_operator.js:48 (Joi.string().max(32).allow('')) — despite the label carrying no '(optional)' suffix, unlike Address line 2/3. See openQuestions. QA corroboration: ConsignorCreationPage.ts:27-29 + :53; value '10000' from DEFAULT_CONFIG at ched-pp-workflows.ts:184. The tests always fill it and types/address.ts:7 makes it non-optional, so the QA repo neither confirms nor contradicts its optionality. NOTE the only value ever exercised, '10000', is a US-style ZIP, not a GB postcode — no GB-format postcode is tested against this field anywhere in the suite even though the observed country is England (GB-ENG)."
+    },
+    {
+      "name": "telephone",
+      "label": "Telephone number",
+      "control": "text",
+      "required": true,
+      "autocomplete": "tel",
+      "observedValues": ["01100100100"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 68 + action 66 snapshot (input type=tel, autocomplete=tel — both re-verified this pass). required per economic_operator.js:51. No format/regex validation — max length 30 only. QA corroboration: ConsignorCreationPage.ts:31-33 + :54; value '01100100100' from DEFAULT_CONFIG at ched-pp-workflows.ts:185. The tests only ever supply a plain GB-style digit string — no international/+44/spaced format is exercised anywhere, so tolerance of those formats is unverified."
+    },
+    {
+      "name": "country",
+      "label": "Country",
+      "control": "select",
+      "required": true,
+      "autocomplete": null,
+      "optionCount": 254,
+      "optionsTruncated": true,
+      "options": [
+        "Please select your country",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Barbados"
+      ],
+      "observedValues": ["GB-ENG"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 snapshot + action 69 (selectOption GB-ENG). ALL OPTION-LIST CLAIMS RE-DERIVED THIS PASS by enumerating select[name=country].options: length === 254; options[0] is label 'Please select your country' with an EMPTY value (a placeholder, not a submittable code); options[1] is 'Afghanistan'='AF'. REFERENCE DATA — the new app must source the country list from a reference-data service, not hardcode it. Option values are ISO 3166-1 alpha-2. The list is NOT purely ISO: the four UK nations appear as separate options — VERIFIED EXACTLY: England='GB-ENG', Scotland='GB-SCT', Wales='GB-WLS', Northern Ireland='GB-NIR' — positioned immediately after 'United Arab Emirates' (i.e. sorted where 'United Kingdom' would fall), and there is NO 'United Kingdom' option (filter for that label returns zero). It also carries non-ISO entries, verified by value this pass: 'Canary Islands'='ES-CN', 'Kosovo'='XK', and 'Republic of Ireland'='IE' (not 'Ireland'); 'The Occupied Palestinian Territories' is also present in the rendered list. QA corroboration: ConsignorCreationPage.ts:35-37 (getByLabel('Country')) + :55 selectOption; the observed value GB-ENG is types/country.ts:238 England='GB-ENG' referenced by DEFAULT_CONFIG at ched-pp-workflows.ts:186. types/country.ts INDEPENDENTLY CONFIRMS the non-ISO shape of the list from the tests' own vocabulary — RE-VERIFIED LINE-EXACT THIS PASS: CanaryIslands='ES-CN' (country.ts:43), Ireland='IE' (country.ts:110), Kosovo='XK' (country.ts:121), England='GB-ENG' (country.ts:238), NorthernIreland='GB-NIR' (country.ts:239). country.ts keys the IE entry as 'Ireland' while the rendered option label is 'Republic of Ireland' — a naming divergence between the tests' vocabulary and the UI, see openQuestions. NOTE getByLabel('Country') is a substring-tolerant match and would also resolve a label like 'Country of origin' — it pins the option VALUE (GB-ENG), not the option LABEL; every country label in this spec comes from the trace alone."
+    },
+    {
+      "name": "email",
+      "label": "Email address",
+      "control": "text",
+      "required": true,
+      "autocomplete": "email",
+      "observedValues": ["techsolutions@example.com"],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 70 + action 66 snapshot (input type=email, autocomplete=email — both re-verified this pass). required per economic_operator.js:43; value is lowercased and TLD validation is disabled — Joi.string().lowercase().email({ tlds: { allow: false } }).max(255).empty('').required(), read verbatim off economic_operator.js:43 this pass. QA corroboration: ConsignorCreationPage.ts:39-41 + :56; value from DEFAULT_CONFIG at ched-pp-workflows.ts:187. No test exercises a malformed address or an uppercase address, so neither the format error nor the lowercasing behaviour is verified by the suite."
+    },
+    {
+      "name": "crumb",
+      "label": "(no visible label — CSRF token)",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (control inventory eval: INPUT|hidden|crumb, inside the page's own form). Platform CSRF concern, not a user-facing requirement. Invisible to the QA suite — no page object references it. NOTE: a SECOND input named 'crumb' exists in the DOM, but it belongs to the cookie-banner form (action=/notification/vnet/protected/notifications/cookies) OUTSIDE <main> — verified by form ownership this pass — and is not part of this page's payload."
+    },
+    {
+      "name": "etag",
+      "label": "(no visible label — optimistic concurrency token)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66 (control inventory eval: INPUT|hidden|etag). Validated at economic_operator.js:66 as Joi.string().ruleset.min(16).max(18).allow('') — read verbatim this pass. Implies IPAFFS does optimistic locking on the draft notification — a design decision the rebuild should make deliberately, not inherit. Invisible to the QA suite — no page object references it, and no test exercises a concurrent-edit conflict."
+    }
+  ],
+  "formPayload": {
+    "note": "NEW THIS PASS. The page's own <form> posts to a RELATIVE action of 'new' with method=POST, and contains exactly these 11 controls in this order. Verified by enumerating forms and their fields at trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 66. A second form (action=/notification/vnet/protected/notifications/cookies, fields crumb/returnUrl/fromFooterHeader) sits OUTSIDE <main> and is the cookie banner — it is NOT part of this page's submission and is correctly excluded from the field list above.",
+    "confidence": "confirmed",
+    "action": "new (relative POST)",
+    "fields": ["crumb", "etag", "company-name", "address-line-1", "address-line-2", "address-line-3", "city-or-town", "postcode", "telephone", "country", "email"]
+  },
+  "legacyTemplateEnrichment": {
+    "note": "NEW THIS PASS. Findings from reading the authoritative Handlebars page template (economic_operator_create.html) for the first time — the layer between the Joi validation (already cited) and the rendered trace. Two kinds of finding: (a) CONFIRMATIONS of trace-derived copy from the template source, and (b) CONDITIONAL CONTROLS the shared partial can render that no CHED-PP consignor trace ever exercised.",
+    "confidence": "legacy",
+    "copyConfirmations": [
+      {
+        "fact": "The 6 hardcoded field labels (Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Email address) are literal string constants in the template, not composed.",
+        "evidence": "template:85,95,105,115,125,135,183 — labelText='...' literals. Matches the confirmed trace copy exactly."
+      },
+      {
+        "fact": "The name-field label and the fieldset legend are COMPOSED from displayName at render time, not hardcoded — which is why the QA page object could only substring-match them.",
+        "evidence": "template:68 labelText=(concat (toSentenceCase displayName) ' name'); template:78 legend={{toSentenceCase displayName}}. With displayName='Consignor or exporter' these resolve to 'Consignor or exporter name' and 'Consignor or exporter' respectively — the exact confirmed trace values."
+      },
+      {
+        "fact": "The duplicated govuk-label class on the Country control (recorded as a 'trivial artefact' from the trace) is confirmed AT SOURCE, so it is deliberate template output, not a rendering accident.",
+        "evidence": "template:154 — <label class=\"govuk-label govuk-label\" for=\"country\">. Do not reproduce."
+      },
+      {
+        "fact": "The Country control for a consignor renders via the hand-rolled {{else}} <select> branch (template:167-174) with the 'Please select your country' empty-value placeholder — NOT the govuk/select partial (that is the isOrganisationBranchAddress branch, template:142-151) and NOT the disabled GB-NIR-hardcoded branch (that is the CHED-A commercial-transporter branch, template:158-165). Confirms the trace's plain-<select> observation and explains why only this trader type gets the placeholder option.",
+        "evidence": "template:152-177 (the {{#if isOrganisationBranchAddress}} / {{#and isCheda isCommercialTransporterType}} / {{else}} three-way branch)."
+      },
+      {
+        "fact": "The optional-suffix labelling the spec flagged is confirmed at source: Address line 2 and Address line 3 carry '(optional)' in the template literal, postcode does NOT — so the postcode optionality-not-signalled openQuestion is a real template inconsistency, not a rendering artefact.",
+        "evidence": "template:95 'Address line 2 (optional)', template:105 'Address line 3 (optional)', template:125 'Postcode or ZIP code' (no suffix)."
+      }
+    ],
+    "conditionalControlsNeverRendered": [
+      {
+        "control": "'Return to notification' link",
+        "whatItIs": "An ALTERNATIVE escape link to 'Return to search', rendered only when returnToNotificationUrl is set: <p class=\"govuk-body\"><a href=\"{{returnToNotificationUrl}}\" class=\"govuk-link\">Return to notification</a></p>.",
+        "confidence": "legacy",
+        "evidence": "template:34-38 ({{#if returnToNotificationUrl}}). The consignor traces rendered the 'Return to search' branch (template:28-32, {{#if searchUrl}}) instead. Both are gated; a CHED-PP consignor reached via the address-book search path shows 'Return to search', but a consignor reached directly from an in-progress notification review could show 'Return to notification'. No trace in the corpus rendered this variant.",
+        "policyNote": "The rebuild should decide its own return-navigation deliberately; do not assume 'Return to search' is the only exit."
+      },
+      {
+        "control": "'from-importer-review' hidden input",
+        "whatItIs": "A conditional hidden field carrying the flag that the user arrived from the importer-review page, so submit can route them back.",
+        "confidence": "legacy",
+        "evidence": "template:192-193 ({{else if fromImporterReview}} -> <input name=\"from-importer-review\" type=\"hidden\" value=\"{{fromImporterReview}}\"/>). Not present in the consignor payload the trace captured (formPayload lists 11 controls; this makes a possible 12th only on the importer-review entry path). A journey/routing concern, not user-facing."
+      },
+      {
+        "control": "'reimport' hidden input",
+        "whatItIs": "A conditional hidden field set when the flow is a re-import, again for post-submit routing.",
+        "confidence": "legacy",
+        "evidence": "template:195-197 ({{#if reimport}} -> <input name=\"reimport\" type=\"hidden\" value=\"{{reimport}}\"/>). Absent from the observed consignor payload. Journey-state plumbing the rebuild need not inherit verbatim."
+      },
+      {
+        "control": "'approval-number' text input ('Transporter authorisation number')",
+        "whatItIs": "A leading field the shared partial renders ONLY for commercial transporters — gated out for a consignor.",
+        "confidence": "legacy",
+        "evidence": "template:40-50 ({{#if isCommercialTransporterType}}). Listed here to make explicit that the shared partial's full control set is LARGER than the consignor page's, and this field is correctly NOT part of the consignor form. Reinforces the nonStandardPatterns finding that one templated partial serves ~10 trader types."
+      }
+    ]
+  },
+  "backendMandatoriness": {
+    "note": "NEW THIS PASS from the authoritative Java schema model. Distinguishes TWO layers of 'required' the frontend-only pass conflated. (1) ENTITY-LEVEL: is a consignor required to exist on a CHED-PP notification at all? (2) FIELD-LEVEL: which of this page's inputs are mandatory? The backend model answers (1) YES for CHED-PP, and answers (2) with SILENCE for CHED-PP — the per-field required flags in `fields[]` above are enforced only by the frontend Joi (economic_operator.js), NOT by the backend model. That divergence is a policy the rebuild should decide deliberately, not inherit.",
+    "confidence": "legacy",
+    "entityLevel": {
+      "field": "PartOne.consignor (the whole EconomicOperator object)",
+      "required": true,
+      "chedppGroup": "NotificationChedppFieldValidation",
+      "message": "Add a consignor or exporter",
+      "evidence": "backendModel/PartOne.java:201-214 — the consignor field carries @NotNull(groups = NotificationChedppFieldValidation.class, message = '{...partone.consignor.chedpp.not.null}') distinct from the high-risk/EU groups at :192-200 and the single-CED groups at :205-212; the message key resolves at backendMessages/ValidationMessages.properties:17 (uk.gov.defra.tracesx.notificationschema.representation.partone.consignor.chedpp.not.null=Add a consignor or exporter). This is the review/submit-time error a CHED-PP user sees if they never add a consignor — it is what makes THIS create page mandatory in the journey. It is NOT rendered on this create page (which validates individual fields via the frontend Joi); it fires upstream on the notification-level submit. No trace in the corpus rendered it.",
+      "policyNote": "Legacy mandatoriness = as the old system had it: a CHED-PP notification cannot be submitted without a consignor. Safe to carry into the rebuild as a genuine business rule (a phytosanitary consignment must name who exported/consigned the goods), but confirm rather than inherit."
+    },
+    "fieldLevelSilence": {
+      "summary": "At the Java model layer the per-field @NotNull group annotations on EconomicOperator and EconomicOperatorAddress are scoped to CHED-A (NotificationCvedaFieldValidation) and EU CHED-P transporter (TransporterDetailsRequiredEuCvedpValidation) ONLY — there is NO NotificationChedppFieldValidation on any individual consignor/address field. So for CHED-PP the backend model imposes no field-level mandatoriness on this page; every 'required: true' in fields[] traces solely to the frontend Joi.",
+      "modelFieldGroups": {
+        "companyName": "backendModel/EconomicOperator.java:45-54 — @NotNull for {NotificationCvedaFieldValidation, TransporterDetailsRequiredEuCvedpValidation}; NOT CHED-PP",
+        "address (the EconomicOperatorAddress object)": "backendModel/EconomicOperator.java:63-72 — @NotNull for {Cveda, TransporterEuCvedp}; NOT CHED-PP",
+        "type": "backendModel/EconomicOperator.java:27-35 — @NotNull for {Cveda, TransporterEuCvedp}; NOT CHED-PP (and 'type' is not a control on this page)",
+        "status": "backendModel/EconomicOperator.java:37-43 — @NotNull for Cveda only",
+        "addressLine1": "backendModel/EconomicOperatorAddress.java:23-25 — @NotNull for NotificationCvedaFieldValidation only (message ErrorCodes.NOT_NULL); NOT CHED-PP",
+        "city": "backendModel/EconomicOperatorAddress.java:33-35 — @NotNull for Cveda only; NOT CHED-PP",
+        "countryISOCode": "backendModel/EconomicOperatorAddress.java:40-42 — @NotNull for Cveda only; NOT CHED-PP",
+        "addressLine2": "backendModel/EconomicOperatorAddress.java:27-28 — NO @NotNull for any group",
+        "addressLine3": "backendModel/EconomicOperatorAddress.java:30-31 — NO @NotNull for any group",
+        "postalZipCode": "backendModel/EconomicOperatorAddress.java:37-38 — NO @NotNull for any group",
+        "telephone": "backendModel/EconomicOperatorAddress.java:49-50 — NO @NotNull for any group",
+        "email": "backendModel/EconomicOperatorAddress.java:52-53 — NO @NotNull for any group"
+      },
+      "propertiesFileCorroboration": "CONFIRMED THIS PASS by grepping the microservice ValidationMessages.properties for every consignor / economic-operator key: the ONLY consignor keys are the four ENTITY-level ones (partone.euimp.consignor.not.null='Place of origin must be entered' at :11; partone.consignor.not.null='Who is the consignor or exporter' at :12; partone.consignor.chedpp.not.null='Add a consignor or exporter' at :17; partone.singleced.consignor.not.null='Add a consignor' at :18). There is NO field-level economic-operator/address message key (no company-name, address-line, city, postcode, telephone, email, country key) for CHED-PP or any other CHED type in the properties file. This independently confirms fieldLevelSilence: the backend model imposes no per-field mandatoriness on this page, so all per-field error copy lives in the frontend Joi layer. The three sibling entity keys (:11/:12/:18) map to the non-CHED-PP groups on PartOne.consignor at PartOne.java:192-200 (high-risk/EU) and :205-212 (single-CED), matching the group structure already cited.",
+      "divergenceFromFrontend": "GENUINE FINDING for Reconcile. The frontend Joi (economic_operator.js) marks company-name, address-line-1, city-or-town, telephone, country AND email as required for CHED-PP, but the backend Java model marks NONE of them @NotNull for CHED-PP — and for email + telephone the backend model has no @NotNull for ANY CHED type. So a payload that satisfies the backend model could still be rejected by the frontend, and the two layers disagree on whether email/telephone are mandatory. The rebuild should set field mandatoriness ONCE, deliberately: treat the frontend Joi as the de-facto CHED-PP contract (it is what users actually hit) but do not assume the backend enforces it.",
+      "confidence": "legacy"
+    }
+  },
+  "validationMessages": [
+    {
+      "message": "Add a consignor or exporter",
+      "field": "(entity-level — PartOne.consignor, not a control on this page)",
+      "trigger": "CHED-PP notification submitted/validated with no consignor added at all (the create page was never completed). Fires at the notification level, upstream of this page — NOT an inline error on this form.",
+      "confidence": "legacy",
+      "evidence": "backendMessages/ValidationMessages.properties:17 (uk.gov.defra.tracesx.notificationschema.representation.partone.consignor.chedpp.not.null=Add a consignor or exporter), bound to PartOne.consignor via @NotNull(groups = NotificationChedppFieldValidation.class) at backendModel/PartOne.java:201-204. Read verbatim this pass. Included here because it is the mandatoriness rule that makes this page a required step for CHED-PP; the previous frontend-only pass could not see it. Distinct from the frontend field errors below, which validate the individual inputs once the user IS on this page. Never rendered into any trace in the corpus."
+    },
+    {
+      "message": "Enter a consignor or exporter name",
+      "field": "company-name",
+      "trigger": "Submitted empty",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:27 requiredMessage(labels[`${type.labelKey}_NAME`], type.article); template `Enter ${article} ${label.toLowerCase()}` at messages/en.js:31-33 (read verbatim this pass); labels/en.js:30 CONSIGNOR_OR_EXPORTER_NAME='Consignor or exporter name' (VERIFIED LINE-EXACT this pass); labelKey resolved at economic_operator.js:74-88 (getMappedEconomicOperatorType: case 'consignor' with a non-empty request.pre.notification => labelKey 'CONSIGNOR_OR_EXPORTER', article 'a'; without one it would be 'CONSIGNOR' — read verbatim this pass). COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:172 — RE-VERIFIED CHARACTER-FOR-CHARACTER THIS PASS. That test calls validator.validate(request, ['AF'], 'consignor') and expects exactly this string, which also proves the with-notification labelKey branch is the one under test. NOT asserted anywhere in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Consignor or exporter name must be 255 characters or fewer",
+      "field": "company-name",
+      "trigger": "More than 255 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:26 maxLengthMessage(labels[`${type.labelKey}_NAME`], 255); template at messages/en.js:3-5. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:335 — RE-VERIFIED CHARACTER-FOR-CHARACTER THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Enter an address line 1",
+      "field": "address-line-1",
+      "trigger": "Submitted empty",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:31 requiredMessage(labels.ADDRESS_LINE_1, 'an'); labels/en.js:4 ADDRESS_LINE_1='Address line 1' (VERIFIED LINE-EXACT this pass). COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:173 — RE-VERIFIED THIS PASS, confirming the awkward 'Enter an address line 1' really is the shipped copy, not a composition artefact. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Address line 1 must be 255 characters or fewer",
+      "field": "address-line-1",
+      "trigger": "More than 255 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:30. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:336 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Address line 2 must be 255 characters or fewer",
+      "field": "address-line-2",
+      "trigger": "More than 255 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:33-35 (the ADDRESS_LINE_2 key declares ONLY a STRING_MAX message — there is no required message, consistent with .allow('')). COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:337 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Address line 3 must be 255 characters or fewer",
+      "field": "address-line-3",
+      "trigger": "More than 255 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:36-38. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:338 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Enter a city or town",
+      "field": "city-or-town",
+      "trigger": "Submitted empty",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:41 requiredMessage(labels.CITY_OR_TOWN, 'a'); labels/en.js:23 CITY_OR_TOWN='City or town' (VERIFIED LINE-EXACT this pass). COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:174 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite (that citation is an IPAFFS-side unit test), and never rendered into a trace."
+    },
+    {
+      "message": "City or town must be 58 characters or fewer",
+      "field": "city-or-town",
+      "trigger": "More than 58 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:39-40 — Joi.string().max(58) with maxLengthMessage(labels.CITY_OR_TOWN, 58), read verbatim this pass. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:339 — RE-VERIFIED THIS PASS. NOTE the odd 58-char cap — every other text field is 255. Both the schema and the unit test independently pin the number 58, so it is a deliberate constant and not a typo. Likely a TRACES/EU downstream constraint; carry it deliberately or confirm with the business."
+    },
+    {
+      "message": "Post code must be 32 characters or fewer",
+      "field": "postcode",
+      "trigger": "More than 32 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:48-49 maxLengthMessage(labels.POSTCODE, 32); labels/en.js:81 POSTCODE='Post code' (VERIFIED LINE-EXACT this pass). MISMATCH: the visible label is 'Postcode or ZIP code' but the error says 'Post code' — see openQuestions. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:342 — RE-VERIFIED THIS PASS, which CONFIRMS the mismatch is real shipped behaviour rather than an artefact of reconstructing the string. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Enter a telephone",
+      "field": "telephone",
+      "trigger": "Submitted empty",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:51-53 requiredMessage(labels.TELEPHONE, 'a'); labels/en.js:97 TELEPHONE='Telephone' (VERIFIED LINE-EXACT this pass). MISMATCH: the visible label is 'Telephone number' but the error says 'Enter a telephone' — see openQuestions. (labels/en.js:98 does define TELEPHONE_NUMBER='Telephone number' — verified line-exact this pass — but this schema binds TELEPHONE.) COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:175 — RE-VERIFIED THIS PASS, which CONFIRMS the mismatch is real shipped behaviour: the unit test pins the un-idiomatic wording in place. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Telephone must be 30 characters or fewer",
+      "field": "telephone",
+      "trigger": "More than 30 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:52. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:343 — RE-VERIFIED THIS PASS. Same 'Telephone' vs 'Telephone number' label mismatch as the required message. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Enter a country",
+      "field": "country",
+      "trigger": "Submitted with the 'Please select your country' placeholder still selected (its value is empty, and the schema declares .empty('').required())",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:55-56 requiredMessage(labels.COUNTRY, 'a'); labels/en.js:34 COUNTRY='Country'. NOTE: GOV.UK convention for a select would be 'Select a country', and the codebase HAS a selectMessage helper — `const selectMessage = (label, article) => { return \\`Select ${article} ${label.toLowerCase()}\\` }` at messages/en.js:38 (LINE CORRECTED THIS PASS from :37; also exported at messages/en.js:105) — this schema uses requiredMessage instead. The rebuild should say 'Select a country'. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:176 — RE-VERIFIED THIS PASS, confirming 'Enter a country' is the shipped copy for a <select>. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Country is not valid",
+      "field": "country",
+      "trigger": "Submitted value not in the allowed country-code list (Joi.string().valid(...countries))",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:57 invalidMessage(labels.COUNTRY); template at messages/en.js:19-21. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:344 — RE-VERIFIED THIS PASS (that test passes an allow-list of ['AA'], so any real code is invalid). Not asserted in the Playwright QA suite — the tests only ever select a valid option via selectOption (ConsignorCreationPage.ts:55), which cannot produce this state from the UI — and never rendered into a trace."
+    },
+    {
+      "message": "Enter an email address",
+      "field": "email",
+      "trigger": "Submitted empty",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:45 requiredMessage(labels.EMAIL_ADDRESS, 'an'); labels/en.js:46 EMAIL_ADDRESS='Email address' (VERIFIED LINE-EXACT this pass). WEAKEST MESSAGE IN THIS SPEC: the ONLY one of the 16 with no verbatim assertion anywhere — purely template-derived. CONFIRMED THIS PASS by reading the required-field test: economic_operator_test.js:165-177 submits every other field empty but passes email: 'some@email.com', so the empty-email branch is never reached; its length assertion (:177) expects exactly 5 errors, none of them this one. No trace rendered it either. Mitigating: the template at messages/en.js:31-33 is a deterministic two-token concatenation, so 'an' + 'Email address'.toLowerCase() composes to this string with near-certainty — but treat the exact wording as unverified."
+    },
+    {
+      "message": "Enter an email address in the correct format, like name@example.com",
+      "field": "email",
+      "trigger": "Not a valid email address",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:46 EMAIL_CORRECT_FORMAT; literal at messages/en.js:72 — a hardcoded string, not composed (VERIFIED LINE-EXACT this pass). ALSO ASSERTED VERBATIM at economic_operator_test.js:340 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    },
+    {
+      "message": "Email address must be 255 characters or fewer",
+      "field": "email",
+      "trigger": "More than 255 characters",
+      "confidence": "inferred",
+      "evidence": "economic_operator.js:44. COMPOSED STRING ASSERTED VERBATIM at economic_operator_test.js:341 — RE-VERIFIED THIS PASS. Not asserted in the Playwright QA suite, and never rendered into a trace."
+    }
+  ],
+  "assertedBehaviours": [
+    {
+      "behaviour": "This page must pass an axe-core accessibility scan at WCAG 2.0/2.1 A and AA, with the aria-allowed-attr rule disabled globally (a known govuk-frontend v6 issue, IMTA-20937). The scan runs with the form FILLED but BEFORE submit, so the error state is never scanned.",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-pp-accessibility-tests.spec.ts:152-165 (fillAddress with an inline address literal at :152-163, then checkPageAccessibility(pages.page, 'Consignor Creation Page') at :164, then btnSaveAndContinue.click at :165 — read verbatim this pass); utils/accessibility-utils.ts:114-121 (AxeBuilder withTags ['wcag2a','wcag2aa','wcag21a','wcag21aa'].disableRules(['aria-allowed-attr']))"
+    },
+    {
+      "behaviour": "The consignor NAME entered here must render on the read-only View Details page after submission. No other consignor field is asserted downstream.",
+      "confidence": "inferred",
+      "evidence": "tests/notification/ched-pp/ched-pp-manipulation.spec.ts:48-50 — expect(pages.viewDetails.locatorConsignorOrExporter).toContainText(new RegExp(`\\s*${DEFAULT_CONFIG.consignorAddress.name}\\s*`, 'i')). The ONLY consignor assertion in the whole tests/notification/ched-pp/ directory."
+    },
+    {
+      "behaviour": "All 9 visible fields are filled on every single test run — there is no variant-only or conditional branch on this page. fillAddress() takes a fully-populated Address and fills every control unconditionally; the Address type marks no member optional, and consignorAddress is exercised through Required<ChedPPNotificationConfig>.",
+      "confidence": "inferred",
+      "evidence": "types/address.ts:1-11 (all 9 members are non-optional `string` — re-verified line-exact this pass); page-objects/notification/ConsignorCreationPage.ts:47-57 (nine unconditional fills, no branching — re-verified verbatim this pass); workflows/notification/ched-pp-workflows.ts:135 (DEFAULT_CONFIG typed Required<ChedPPNotificationConfig>) + :178-188, and :470 (the fillAddress call sits outside any if-branch). Corroborated in the trace: 219b882e… actions 62-70 are nine consecutive fills with no intervening branch. This is a POSITIVE finding for the rebuild: no hidden conditionality to reverse-engineer on this page."
+    },
+    {
+      "behaviour": "consignorAddress is declared OPTIONAL on the test config interface (ChedPPNotificationConfig) but is never actually absent: DEFAULT_CONFIG is typed Required<ChedPPNotificationConfig> and every caller merges through it, so the page is always visited and always fully filled. The optionality is a config-ergonomics affordance (callers may override the address), NOT evidence of a journey branch that skips the consignor.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:41 (interface ChedPPNotificationConfig), :117 (`consignorAddress?: Address;` with JSDoc 'Consignor address (default: Linus George Ltd, Springfield, etc.)'), :135 (DEFAULT_CONFIG: Required<ChedPPNotificationConfig>), :212-213 (resolver returns Required<ChedPPNotificationConfig>), :417 + :470 (destructured then used unconditionally). Worth stating explicitly because a reader skimming the '?' could wrongly infer a skip branch."
+    },
+    {
+      "behaviour": "Consignor data feeds an inspector-side PHSI documentary check whose hold/non-compliant reason list includes 'Incorrect information: Consignor business name' — i.e. the consignor name captured here is a field inspectors can reject the consignment on.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:579, :585, :669 (selectOption label 'Incorrect information: Consignor business name' on labelReasonForDocumentCheckStatus). Downstream of this page and out of scope for the form itself, but it establishes why the name is business-critical."
+    }
+  ],
+  "confidence": "inferred",
+  "openQuestions": [
+    "TWO-LAYER MANDATORINESS, ADDED THIS PASS FROM LEGACY BACKEND SOURCE (see backendMandatoriness). The IPAFFS backend Java model enforces exactly ONE consignor rule for CHED-PP: the consignor entity must EXIST (PartOne.java:201-204, NotificationChedppFieldValidation -> 'Add a consignor or exporter', ValidationMessages.properties:17). It enforces NO per-field mandatoriness for CHED-PP — the @NotNull groups on EconomicOperator/EconomicOperatorAddress are CHED-A (Cveda) and EU-CHED-P (TransporterEuCvedp) scoped, and email + telephone have no @NotNull for ANY CHED type. Every 'required: true' on this page's fields therefore comes from the FRONTEND Joi (economic_operator.js) alone. CONSEQUENCE FOR THE REBUILD: decide field mandatoriness deliberately in one place. The frontend Joi is the de-facto CHED-PP contract (it is what users hit) and is the safer basis for parity, but do NOT assume the backend re-checks it — email/telephone in particular are frontend-only requirements. This is a real cross-layer divergence, recorded in discrepancies for Reconcile.",
+    "CONFIDENCE OF THE 16 FIELD-LEVEL MESSAGES (clarification, not a change). Those messages are tagged 'inferred' but are read from authoritative IPAFFS FRONTEND source (economic_operator.js + messages/en.js + labels/en.js) and 15 of 16 are asserted verbatim in the IPAFFS unit tests — i.e. they are legacy-grade for COPY under this pass's taxonomy, stronger than 'inferred' implies. They were left tagged 'inferred' to preserve the previous pass's careful provenance notes; the newly-added entity-level 'Add a consignor or exporter' message is tagged 'legacy' because it comes from the backend model/properties layer read for the first time this pass. What remains genuinely unobserved for ALL of them is the RENDERING (summary markup, order, inline prefixes), never rendered into a trace.",
+    "NO validation state was observed in a trace. Both evidence traces pass with 0 errors, so the error summary was never rendered on this page. Every entry in validationMessages is therefore 'inferred' — reconstructed by resolving the Joi schema (economic_operator.js) against the message templates (messages/en.js) and label constants (labels/en.js). HOWEVER THE MESSAGE COPY IS MUCH STRONGER THAN 'inferred' SUGGESTS: 15 of the 16 strings are asserted VERBATIM in the IPAFFS-side unit tests — the required set at economic_operator_test.js:172-176 ('Enter a consignor or exporter name', 'Enter an address line 1', 'Enter a city or town', 'Enter a telephone', 'Enter a country') and the max-length/format set at :335-344 (all six max-length messages, the email-format message, 'Post code must be 32 characters or fewer', 'Telephone must be 30 characters or fewer', 'Country is not valid'). ALL 15 RE-VERIFIED CHARACTER-FOR-CHARACTER AT THOSE EXACT LINES THIS PASS. Those assertions are on the SAME schema this page invokes, with the consignor labelKey, so the copy can be treated as reliable. The single exception is 'Enter an email address', which is composed-only and unverified. WHAT REMAINS GENUINELY UNKNOWN is the RENDERING, not the wording: the error-summary markup, the summary title copy (e.g. 'There is a problem'), the per-field inline error prefix, the govuk-error-message/govuk-form-group--error classes, and the ORDER of errors in the summary are all unobserved. GAP: no CHED-PP trace in the corpus submits this form empty.",
+    "CORROBORATION FOUND NOTHING TO CONTRADICT THE TRACES on the field set. Every field, label, control type and the single button in the trace-derived spec matches page-objects/notification/ConsignorCreationPage.ts:4-58 exactly, one-for-one, with no field in either source that is missing from the other — re-verified by reading the page object in full this pass. No trace/test disagreement to record.",
+    "CORRECTIONS MADE THIS PASS (adversarial re-derivation against the raw DOM). Four claims in the previous revision did not survive checking: (1) THE BACK LINK. The previous revision asserted the Back link renders 'without govuk-back-link' and recommended the rebuild 'emit a real href WITH the govuk-back-link class'. The actual markup is <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a> — the DS class IS present. Only the href=\"#\" and the bespoke modifier are real defects. (2) THE CAPTION was recorded as a govuk 'Caption' component; it is actually a bespoke <span class=\"heading-tertiary\"> outside <main> with no govuk-caption-* class anywhere — a non-standard pattern that was missed entirely. (3) THE CAPTION VALUE was hardcoded to 'DRAFT.GB.2026.1525990 - CHEDPP', i.e. one trace's draft reference presented as page copy, even though the URL in the same spec was correctly templated to :draftId; the second evidence trace renders DRAFT.GB.2026.1526011. It is now templated to :draftReference. (4) 'title on every input' overstated the scope — the Country <select> and the hidden inputs carry no title; it is the 8 text-family inputs only. A fifth, softer correction: 'the two traces render byte-identical page copy' was not quite true — the captions differ; everything else (title, H1, all 9 labels, legend, button, 254 options) IS identical, verified this pass.",
+    "CITATION HYGIENE (fixed this pass). The previous revision cited IPAFFS files by bare filename ('economic_operator.js:26', 'labels/en.js:30'), which is not resolvable from the workspace and obscured that the schema lives under service/src/, not service/. Full roots are now recorded in sourceRoots. The IPAFFS SCHEMA line numbers were also systematically off by one (company-name .required() is :25 not :26; the 58-char cap is :40 not :41; the etag rule is :66 not :67; selectMessage is messages/en.js:38 not :37) and have been corrected. NOTE for the reader's confidence: the labels/en.js citations, the economic_operator_test.js citations and every QA-repo citation were spot-checked and are EXACT — the off-by-one was confined to the schema file.",
+    "TWO CONTROLS THE TESTS CANNOT SEE. The 'Return to search' link and the 'Back' link both render in the trace but have NO locator in ConsignorCreationPage.ts:4-58 — the page object exposes only the 9 fields and the one button. So no test ever leaves this page by any route except 'Save and continue'. The abandon/return-to-search path is therefore entirely untested and untraced, and what happens to part-entered data when the user takes it is unknown from both sources. A question for the rebuild: does 'Return to search' discard the draft consignor silently?",
+    "THE TESTS DO NOT PIN THIS PAGE'S TWO MOST DISTINCTIVE LABELS. ConsignorCreationPage.ts:8 locates the name field by the substring 'name' — not 'Consignor or exporter name' — and ConsignorCreationPage.ts:36 uses getByLabel('Country'), which is substring-tolerant. Contrast ConsigneeCreationPage.ts:8, which pins the full 'Consignee name'. Consequence: if the rendered name label changed to anything containing 'name', the suite would still pass. Both labels in this spec rest on trace evidence alone, which is the stronger source anyway — but it means the QA suite provides NO independent corroboration of them, and it is a locator-robustness gap worth not reproducing in the new app's suite.",
+    "ZERO NEGATIVE END-TO-END COVERAGE OF THIS PAGE (a QA finding, not a requirement). The Playwright suite never submits this form empty, over-length, or with a malformed email; it never clicks 'Save and continue' without first calling fillAddress with a complete address. The ONLY hits when grepping tests/notification/ched-pp/ for 'consignor' are the two lines of the downstream name assertion at ched-pp-manipulation.spec.ts:48-49. Consequently NOT ONE of the 16 validation messages above is asserted by an end-to-end test, and none was ever rendered into a trace. The wording is nonetheless well pinned at the unit level (15 of 16 — see the first open question), so the gap is specifically that NOBODY TESTS THE ERROR UX: whether the summary renders, links to the right field, and is announced correctly is unverified at every level. Worth fixing in the new app's own suite from day one.",
+    "THE OPTIONAL PATHS ARE NEVER EXERCISED. types/address.ts:1-11 types all nine members as required non-nullable strings, so Address line 2, Address line 3 and postcode are always filled by the tests even though the schema allows them empty. The claim that those three fields are optional rests entirely on the label suffix and the Joi schema — no passing empty submit exists in either source. Worth one test each in the rebuild.",
+    "THE A11Y SPEC DUPLICATES THE ADDRESS LITERAL INSTEAD OF USING DEFAULT_CONFIG (minor QA finding). tests/accessibility/ched-pp-accessibility-tests.spec.ts:152-163 inlines an address object with the same nine values as workflows/notification/ched-pp-workflows.ts:178-188 rather than importing DEFAULT_CONFIG.consignorAddress — confirmed by reading both this pass. The values happen to match today, so it does not affect this spec's observedValues — but it is a second, drifting source of truth for the same fixture. Do not reproduce this in the new suite.",
+    "LABEL/ERROR MISMATCH (postcode): the visible label is 'Postcode or ZIP code' but the validation label constant is POSTCODE='Post code' (labels/en.js:81), so the error reads 'Post code must be 32 characters or fewer'. GOV.UK guidance is that the error names the field as labelled. Rebuild should use one term throughout. Both halves independently verified this pass (label from the DOM, constant from source).",
+    "LABEL/ERROR MISMATCH (telephone): the visible label is 'Telephone number' but the schema binds TELEPHONE='Telephone' (labels/en.js:97), giving 'Enter a telephone' — which is not idiomatic English. A TELEPHONE_NUMBER='Telephone number' constant already exists (labels/en.js:98) and is unused here. Rebuild should use 'Enter a telephone number'. Both halves independently verified this pass.",
+    "OPTIONALITY NOT SIGNALLED (postcode): postcode is optional in the schema (.allow('')) but its label has no '(optional)' suffix, whereas Address line 2 and 3 do. Either the label is wrong or the validation is. Worth confirming with the business — a mandatory postcode for GB addresses but optional for third countries would be a reasonable real requirement that IPAFFS is not currently enforcing. Note the ONLY postcode value the suite ever sends is '10000' (a US ZIP) while the country selected is England (GB-ENG) — so IPAFFS demonstrably accepts a non-GB postcode against a GB country with no cross-field validation. If the rebuild wants country-conditional postcode rules, that is NEW behaviour, not parity.",
+    "COUNTRY LIST IS NOT PURE ISO 3166: no 'United Kingdom' option; England/Scotland/Wales/Northern Ireland appear as four separate options (GB-ENG/GB-SCT/GB-WLS/GB-NIR) sorted where 'United Kingdom' would sit, immediately after 'United Arab Emirates'. Also present: 'Canary Islands' (ES-CN), 'Kosovo' (XK), 'Republic of Ireland' (IE, not 'Ireland'), 'The Occupied Palestinian Territories'. All re-verified by enumerating the live <select> this pass. The new app must decide whether to reproduce this exact list from the reference-data service or adopt a standard one — a straight swap to ISO would change submitted values and break parity with downstream TRACES. The QA repo's own vocabulary (types/country.ts) mirrors the same non-ISO shape — ES-CN:43, XK:121, GB-ENG:238, GB-NIR:239, all verified line-exact this pass — which means the oddities are stable, long-standing and depended upon, not a rendering accident.",
+    "COUNTRY NAMING DIVERGENCE (tests vs UI): types/country.ts:110 names the IE entry 'Ireland' while the rendered select option reads 'Republic of Ireland'. The tests select by VALUE ('IE'), so the divergence is invisible to them and neither source is authoritative on the label. The rendered label wins for this spec. Which term the new service should use is a content-design question for a human — 'Ireland' is the GOV.UK-preferred term.",
+    "CITY OR TOWN CAPPED AT 58 CHARACTERS while every other text field is 255. Almost certainly a downstream TRACES/EU field-width constraint rather than a UX choice. Confirm before relaxing it in the rebuild.",
+    "NO MAXLENGTH ATTRIBUTES and NO required attributes are emitted on any input — re-verified this pass across all 9 visible controls plus the 2 hidden ones; all limits are enforced server-side only. The rebuild can keep server-side truth but should consider whether to surface limits in the UI (GOV.UK advises against maxlength truncation, favouring a character count where a limit is meaningful).",
+    "AUTOCOMPLETE IS ALMOST COMPLETE — ONE GAP (new this pass). Eight of the nine visible fields emit a correct WHATWG autocomplete token (organization, address-line1/2/3, address-level2, postal-code, tel, email — see autocompleteMap). The Country <select> emits NONE. WCAG 2.1 AA SC 1.3.5 (Identify Input Purpose) applies to fields collecting the user's own data, so the risk here is low for a third-party consignor address — but the inconsistency is unexplained and the rebuild should either add country-name or drop the rest deliberately. Note the a11y suite would not catch this: axe does not flag a missing autocomplete.",
+    "TELEPHONE FORMAT IS UNCONSTRAINED AND UNTESTED: no regex in the schema (verified this pass — the TELEPHONE key declares only .max(30).empty('').required()), and the only value ever exercised is the plain digit string '01100100100' (ched-pp-workflows.ts:185). Whether international formats (+44…, spaces, extensions) are accepted, normalised or rejected downstream is unknown from both sources. A question for the business, and a candidate for real validation in the rebuild.",
+    "THE FORM POSTS TO A RELATIVE ACTION OF 'new' (new this pass; see formPayload). Combined with the base href, that resolves back to this same URL — a post-to-self. Harmless, but it means the create and submit routes are the same endpoint distinguished by HTTP method; the rebuild should make that explicit rather than relying on a relative action string.",
+    "The hidden 'etag' field (16-18 chars) implies optimistic-concurrency control on the draft notification. Whether the rebuilt app needs this is an architecture decision for the team — flagging it because it is invisible in the UI and easy to miss. Note the QA suite has no concurrent-edit test, so IPAFFS's actual conflict behaviour is unobserved by either source.",
+    "CONDITIONAL RETURN NAVIGATION (new this pass from the page template, legacy). The shared partial renders EITHER 'Return to search' (when searchUrl is set — the address-book path the traces took, template:28-32) OR 'Return to notification' (when returnToNotificationUrl is set, template:34-38), gated on how the user reached the page. Only the 'Return to search' variant was ever traced. The rebuild's consignor create page needs a deliberate answer to 'where does the secondary link go, and when?' rather than inheriting IPAFFS's two mutually-exclusive gated links. Both are untested by the QA suite (neither link has a page-object locator).",
+    "SHARED-PARTIAL CONTROL SET IS WIDER THAN THIS PAGE (new this pass from the template, legacy). economic_operator_create.html is a single partial serving ~10 trader types and can render controls a consignor never gets: a leading 'Transporter authorisation number' (approval-number) field for commercial transporters (template:40-50), a govuk/select country widget for organisation-branch addresses (template:142-151), and a disabled GB-NIR-hardcoded country for CHED-A commercial transporters (template:158-165). For a consignor NONE of these apply — the country is the plain {{else}} <select> (template:167-174). Recorded so the rebuild does not mistake sibling-trader controls for consignor requirements, and as further evidence for the 'do not reproduce the labelKey/article/trader-type indirection' recommendation in nonStandardPatterns.",
+    "CONDITIONAL HIDDEN ROUTING FIELDS (new this pass from the template, legacy). Beyond crumb + etag, the template can emit two more hidden inputs depending on entry path: 'from-importer-review' (template:192-193) and 'reimport' (template:195-197). Neither appeared in the observed 11-control payload. They are journey-state plumbing for post-submit routing, not user data; the rebuild should model return-routing explicitly (e.g. a typed redirect target) rather than smuggling it through hidden form fields.",
+    "This page is the create-new branch. The sibling 'Return to search' / address-book path (search for an existing consignor) is a separate page and is not covered by this spec. The QA suite only ever exercises the create-new branch — SearchExistingConsignorOrExporterPage.ts:3-9 exposes exactly ONE locator, the 'Create a new consignor or exporter' link (:6-8), so the address-book SEARCH functionality is entirely untested and untraced. That is a significant uncovered surface for whoever specs that page. The page object has NO search input, NO results list and NO select-a-result locator, so the tests give literally zero information about what that page contains beyond the one escape link.",
+    "After 'Save and continue' the journey goes to a confirmation step with an 'Add to notification' button (trace 219b882ee3b4fbe040b824d146d38991d6b70149, action 72) — i.e. creating the consignor does NOT immediately attach it to the notification. That intermediate page is a separate slug. Corroborated: ConsignorConfirmationPage.ts:3-9 exposes only btnAddToNotification (:6-8), and ched-pp-workflows.ts:473-474 clicks straight through it — so that page's content is unspecified by the tests too. Whether the rebuild needs this extra step at all is a design question: nothing in either source shows the user doing anything on it except confirming.",
+    "EVIDENCE POINTERS RE-VERIFIED AND CORRECT. Action 66 in trace 219b882e… (test: ched-pp-article72.spec.ts:15, 111 actions, 0 errors) and action 74 in trace e10b7cd5… (test: ched-pp-hmi-checks.spec.ts:15, 127 actions, 0 errors) are both the 'City or town' fill on this page. The two traces render identical page copy in every respect checked (title, H1, all 9 labels, legend, button, 254 country options) EXCEPT the draft-reference caption, which is per-draft instance data."
+  ]
+}

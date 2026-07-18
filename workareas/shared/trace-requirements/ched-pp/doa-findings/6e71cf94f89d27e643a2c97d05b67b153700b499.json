@@ -1,0 +1,115 @@
+{
+  "hash": "6e71cf94f89d27e643a2c97d05b67b153700b499",
+  "title": "auth/DoA/doa-notification-creation.spec.ts:8 › Delegated Organisation - Notification Creation › Isabel Irwin (Plant Org 1 member) creates → notification assigned to Plant Org 1",
+  "kind": "agent-access",
+  "specFile": "ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts",
+  "traceRole": "This trace itself renders the BASELINE (org member, NOT an agent) — a Plant Org 1 member creating a CHED-PP. Because the creator is a plain member and not a delegated agent, the organisation-selection page does NOT render and the responsible-person/organisation block is auto-derived from the member's own identity + org. The delegated-AGENT surface (organisation picker, Trade Partner badge, change-org-before-submit, contact/importer auto-population from a delegated org) lives in sibling tests of the SAME spec and two sibling specs (doa-agent-access, doa-importer-access); those are captured here from the QA source (inferred/legacy) because they are the exact gap the main run never exercised.",
+  "wrote": true,
+
+  "pagesTouched": [
+    "notification-dashboard",
+    "import-type",
+    "organisation-selection (agent-only; NOT rendered in this member trace)",
+    "consignment-for/country-of-origin",
+    "origin-of-import",
+    "description-of-goods",
+    "commodity-code-search",
+    "purpose",
+    "commodity-details",
+    "gross-weight",
+    "transport-and-bcp",
+    "goods-movement-services",
+    "documents-certificates",
+    "consignor-exporter",
+    "traders-addresses/consignee",
+    "declaration",
+    "confirmation",
+    "review-notification"
+  ],
+
+  "confirmedRendered": {
+    "reviewNotification.personResponsibleBlock": {
+      "confidence": "confirmed",
+      "trace": "6e71cf94f89d27e643a2c97d05b67b153700b499 action 172 (snapshot after call@172, Review Notification page)",
+      "fields": {
+        "Responsible person": "Isabel Irwin",
+        "Telephone": "0123456789",
+        "Email": "ipaffs-plant-org-1-isabel@mailinator.com",
+        "Organisation Name": "IPAFFS Plant Organisation 1",
+        "Organisation Address": "KAINOS SOFTWARE LTD, 4-6,UPPER CRESCENT,BELFAST,BT7 1NT,GB",
+        "Organisation Telephone": "0123456789"
+      },
+      "note": "This whole block is auto-populated from the signed-in user's identity + associated organisation; there is no contact-details entry page in the member journey. #responsible-organisation-name = 'IPAFFS Plant Organisation 1' is the assertion target that proves org assignment."
+    },
+    "reviewNotification.template": {
+      "confidence": "legacy",
+      "source": "ipaffs-frontend-notification/service/src/views/partials/review/personResponsible.html:1-27",
+      "detail": "Row order + copy + dom ids: dt id='responsible-person' 'Responsible person' = personResponsible.name; 'Telephone' = personResponsible.phone; 'Email' = personResponsible.email; dt id='responsible-organisation-name' 'Organisation Name' = personResponsible.companyName; 'Organisation Address' = personResponsible.address; 'Organisation Telephone' = personResponsible.phone. Gated by {{#if displayPersonResponsible}}."
+    },
+    "confirmationPage": {
+      "confidence": "confirmed",
+      "trace": "6e71cf94f89d27e643a2c97d05b67b153700b499 action 152 (Import notification sent page)",
+      "values": {
+        "CHED reference": "CHEDPP.GB.2026.1525740",
+        "Reference for your customs declaration": "GBCHD2026.1525740",
+        "Customs document code": "C085",
+        "Inspection status": "Not required",
+        "Initial risk assessment heading": "Initial risk assessment",
+        "warning": "You must use the correct reference and code on the customs declaration or your consignment will be delayed.",
+        "whatYouNeedToDo": "Tell the haulier that this consignment does not need an inspection. Initial risk assessments can change.",
+        "whatHappensNext": "An inspector may update the risk assessment. If the risk assessment changes, IPAFFS will notify you and any nominated contacts by text message or email.",
+        "actions": ["Return to your dashboard", "Create a new notification"]
+      }
+    }
+  },
+
+  "newSurface": "The delegated-agent (DoA) journey adds an ORGANISATION-SELECTION step and rewrites who a notification belongs to. (1) Organisation selection page — for agents only, it renders immediately AFTER the Import Type page and BEFORE Country of Origin (workflow gates it on organisationName/useOwnOrganisation; a plain member like Isabel skips it entirely, as this trace confirms). Its controls: a radio 'A different organisation' which reveals a second radio list of delegated companies (agent picks e.g. 'IPAFFS Plant Organisation 1'), plus a radio for the agent's own organisation labelled 'IPAFFS Plant Agency C'; buttons 'Save and continue' and (when entered via amend) 'Save and review'. (2) When an agent creates FOR a delegated org, the responsible contact + importer blocks are auto-populated from that delegated org, not the agent: contact name 'Isabel Irwin', email 'ipaffs-plant-org-1-isabel@mailinator.com', telephone '0123456789', importer 'IPAFFS Plant Organisation 1' with address 'KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT' (dom ids #responsible-contact-name / #responsible-contact-email / #responsible-contact-telephone / #importer / #responsible-organisation-name). (3) Trade Partner badge — an agent-submitted notification shows on the dashboard status cell (#status-0) as status 'New' plus a 'Trade Partner' marker, distinguishing agent-created work from the org's own. (4) Change organisation before submit — from the review page the agent can hit 'Amend', follow #organisation-change-link back to the org-selection page, switch to their own org ('IPAFFS Plant Agency C') via 'Save and review', then declare + submit; the notification's responsible organisation flips to the newly-chosen org. None of this surface appears in a member journey.",
+
+  "agentSurfaceDetail": {
+    "organisationSelectionPage": {
+      "confidence": "inferred",
+      "source": "ipaffs-qa-automation/page-objects/notification/OrganisationSelectionPage.ts:1-42; workflow gating ched-pp-workflows.ts:259-264",
+      "position": "After Import Type page, before Country of Origin page (agents only)",
+      "controls": {
+        "radio_differentOrganisation": "'A different organisation' -> reveals company radio list -> select company by name (e.g. 'IPAFFS Plant Organisation 1') -> 'Save and continue'",
+        "radio_ownOrganisation": "'IPAFFS Plant Agency C' (agent's own org) -> 'Save and continue' (or 'Save and review' when amending)",
+        "buttons": ["Save and continue", "Save and review"]
+      }
+    },
+    "tradePartnerBadge": {
+      "confidence": "inferred",
+      "source": "doa-notification-creation.spec.ts:55-58; NotificationDashboardPage.ts:224-226",
+      "detail": "Dashboard status cell #notifications-page #status-0 contains BOTH 'New' and 'Trade Partner' for an agent-created (delegated) notification."
+    },
+    "contactImporterAutoPopulation": {
+      "confidence": "inferred",
+      "source": "doa-notification-creation.spec.ts:113-140; ReviewNotificationPage.ts:41-55",
+      "values": {
+        "#responsible-contact-name": "Isabel Irwin",
+        "#responsible-contact-email": "ipaffs-plant-org-1-isabel@mailinator.com",
+        "#responsible-contact-telephone": "0123456789",
+        "#importer": "IPAFFS Plant Organisation 1 / KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT"
+      },
+      "note": "Populated from the DELEGATED org, not the acting agent. Assertions use expect.soft."
+    },
+    "changeOrganisationBeforeSubmit": {
+      "confidence": "inferred",
+      "source": "doa-notification-creation.spec.ts:92-110; ReviewNotificationPage.ts:14-16,125-127; OrganisationSelectionPage.ts:31-34",
+      "flow": "review page btnAmend ('Amend') -> #organisation-change-link ('Change organisation') -> org-selection: check own-org radio 'IPAFFS Plant Agency C' + 'Save and review' -> review 'Save and continue' -> declaration checkbox -> 'Submit notification'. Result: responsible-organisation-name flips to 'IPAFFS Plant Agency C'."
+    }
+  },
+
+  "authorizationRules": [
+    "MEMBER CREATE (this trace, confirmed): a Plant Org 1 member (Isabel Irwin) creating a CHED-PP produces a notification whose responsible organisation IS Plant Org 1 — #responsible-organisation-name = 'IPAFFS Plant Organisation 1'; no org-selection step is offered.",
+    "AGENT CREATE FOR DELEGATED ORG (inferred, doa-notification-creation.spec.ts:33-63): an agent (Carol Clark) creating for 'IPAFFS Plant Organisation 1' produces a notification assigned to Plant Org 1, shown on the dashboard with status 'New' and a 'Trade Partner' badge.",
+    "AGENT CHANGE-ORG BEFORE SUBMIT (inferred, doa-notification-creation.spec.ts:65-111): an agent may amend a draft created for Plant Org 1 and switch the responsible organisation to their OWN org ('IPAFFS Plant Agency C') before submitting; the submitted notification is then assigned to Plant Agency C.",
+    "AGENT AUTO-POPULATION (inferred, doa-notification-creation.spec.ts:113-140): when the agent creates for Plant Org 1, contact (Isabel Irwin / ipaffs-plant-org-1-isabel@mailinator.com / 0123456789) and importer (IPAFFS Plant Organisation 1, KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT) are auto-populated from the DELEGATED org, not the agent.",
+    "VISIBILITY — AGENT SUBMIT -> ORG MEMBER SEES (inferred, doa-agent-access.spec.ts:7-32 & doa-importer-access.spec.ts:7-32): agent submits for Plant Org 1 -> Plant Org 1 member (Isabel) CAN view, Copy-as-new and Amend the notification on her dashboard.",
+    "VISIBILITY — AGENT SUBMIT -> AGENT SEES (inferred, doa-agent-access.spec.ts:34-58): agent submits for Plant Org 1 -> the AGENT (Carol) CAN also view, Copy-as-new and Amend it on her own dashboard.",
+    "VISIBILITY — AGENT SUBMIT FOR OWN ORG -> ORG MEMBER CANNOT SEE (inferred, doa-agent-access.spec.ts:60-86): agent submits for her OWN org (Plant Agency C) -> Plant Org 1 member CANNOT find it (view-details hidden).",
+    "VISIBILITY — AGENT DRAFT (not submitted) -> ORG MEMBER CANNOT SEE (inferred, doa-importer-access.spec.ts:34-58): agent DRAFTS for Plant Org 1 but does not submit -> Plant Org 1 member CANNOT find the DRAFT.GB.* draft; only submitted notifications become visible to org members.",
+    "VISIBILITY — SAME-ORG MEMBERS SHARE (inferred, doa-importer-access.spec.ts:60-84): a member (Franklyn D) of 'IPAFFS Plant Organisation Test' submits -> another member (David D) of the same org CAN view, Copy-as-new and Amend it. Org membership, not authorship, governs visibility."
+  ],
+
+  "notes": "Errors: 0. Duration 28.1s. Creator in THIS trace is a member (AUTH_FILES.b2cOrg1 / Isabel Irwin), so the org-selection page and Trade Partner badge do NOT render here — confirmed by the action timeline going straight from Import Type 'Save and continue' (action 11) to Country of origin select (action 12) with no org step. All agent-only surface is sourced from the QA spec + page objects (inferred) and the legacy review template (legacy). Reference number generated: CHEDPP.GB.2026.1525740 / customs GBCHD2026.1525740 / code C085. Commodity used: 06011010, single commodity, ROW origin Afghanistan, purpose Internal market."
+}

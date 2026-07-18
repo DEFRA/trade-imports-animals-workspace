@@ -1,0 +1,109 @@
+{
+  "hash": "253df9dcdf570dfa90715630fcd0b175ae37c695",
+  "title": "auth/DoA/doa-notification-creation.spec.ts:33 › Delegated Organisation - Notification Creation › Carol Clark (agent) creates for Plant Org 1 → notification assigned to Plant Org 1 with Trade Partner badge",
+  "kind": "creation",
+  "specFile": "ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts",
+  "actorContext": {
+    "agent": "Carol Clark",
+    "agentOwnOrganisation": "IPAFFS Plant Agency C",
+    "delegatedTo": ["IPAFFS Plant Agency F", "IPAFFS Plant Organisation 1", "IPAFFS Plant Organisation 2"],
+    "createdForOrganisation": "IPAFFS Plant Organisation 1",
+    "authFile": "b2cDoaAgent",
+    "confidence": "confirmed",
+    "evidence": "trace 253df9dc actions 8-13 + snapshot before@call@517 (consignment-organisation radio list)"
+  },
+  "pagesTouched": [
+    "notification-type",
+    "consignment-for",
+    "consignment-organisation",
+    "consignment-country-of-origin",
+    "commodities",
+    "review",
+    "contact-details",
+    "importer",
+    "declaration",
+    "dashboard"
+  ],
+  "delegatedAgentSurface": {
+    "consignment-for": {
+      "slug": "consignment-for",
+      "url": "/notification/vnet/protected/notifications/consignment-for?type=CHEDPP",
+      "pageTitle": "Who are you creating this notification for - Import and export applications - GOV.UK",
+      "caption": "About the consignment",
+      "heading": "Who are you creating this notification for?",
+      "confidence": "confirmed",
+      "evidence": "trace 253df9dc snapshot before@call@513 (action 11)",
+      "fields": [
+        {
+          "type": "radio-group",
+          "name": "organisation-for",
+          "options": [
+            {"label": "IPAFFS Plant Agency C", "note": "the agent's OWN organisation (rendered first, dynamic to the signed-in agent)"},
+            {"label": "A different organisation", "note": "checked in this trace — routes on to the organisation picker (consignment-organisation)"}
+          ]
+        }
+      ],
+      "newSurfaceNote": "This entire page never appears for a non-delegated user. It only renders when the signed-in account has DoAs. Own-org radio label is the agent's own organisation name; 'A different organisation' is the branch into the delegated-org picker."
+    },
+    "consignment-organisation": {
+      "slug": "consignment-organisation",
+      "url": "/notification/vnet/protected/notifications/consignment-organisation?type=CHEDPP",
+      "pageTitle": "Which company is this notification for - Import and export applications - GOV.UK",
+      "caption": "About the consignment",
+      "heading": "Which company is this notification for",
+      "confidence": "confirmed",
+      "evidence": "trace 253df9dc snapshot before@call@517 (action 13)",
+      "fields": [
+        {
+          "type": "radio-group",
+          "name": "delegated-organisation",
+          "note": "each option renders the org name as <strong> plus its full address on separate lines; radio accessible-name concatenates name + address",
+          "options": [
+            {"label": "IPAFFS Plant Agency F", "address": ["22 Acacia Avenue", "London", "N17 8LR"]},
+            {"label": "IPAFFS Plant Organisation 1", "address": ["KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT", "BELFAST", "BT7 1NT"], "note": "checked in this trace"},
+            {"label": "IPAFFS Plant Organisation 2", "address": ["KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT", "BELFAST", "BT7 1NT"]}
+          ]
+        }
+      ],
+      "newSurfaceNote": "Delegated-org picker — lists every organisation the agent holds a DoA for, each with its registered trading address. The chosen org becomes the notification's responsible organisation (not the agent's own org)."
+    }
+  },
+  "autoPopulation": {
+    "confidence": "legacy",
+    "evidence": "spec ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:113-140 (test 5) + doa.feature:42-56; review-page locators ReviewNotificationPage.ts:41-54",
+    "rule": "When an agent creates for a delegated organisation, the notification's Contact details and Importer are auto-populated from that delegated organisation — the agent does not type them.",
+    "contactDetails": {
+      "locators": {"name": "#responsible-contact-name", "email": "#responsible-contact-email", "telephone": "#responsible-contact-telephone"},
+      "expectedForPlantOrg1": {"name": "Isabel Irwin", "email": "ipaffs-plant-org-1-isabel@mailinator.com", "telephone": "0123456789"},
+      "note": "contact resolves to the delegated org's registered member (Isabel Irwin is the Plant Org 1 member)"
+    },
+    "importer": {
+      "locator": "#importer",
+      "expectedForPlantOrg1": {"name": "IPAFFS Plant Organisation 1", "address": "KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT", "country": "United Kingdom of Great Britain and Northern Ireland"}
+    }
+  },
+  "tradePartnerBadge": {
+    "confidence": "confirmed",
+    "evidence": "trace 253df9dc snapshot before@call@... dashboard result card (snap95 refs e309-e311); assertion doa-notification-creation.spec.ts:57-58",
+    "location": "dashboard search-result card, under the 'CHED status' term",
+    "rendering": "two <strong> tags side by side — 'New' (status) and 'Trade Partner' (delegated-authority badge)",
+    "consigneeShown": "IPAFFS Plant Organisation 1",
+    "rule": "A notification an agent created for a delegated (trade-partner) organisation carries a 'Trade Partner' badge on the dashboard. An own-org creation (or an org changed back to own org before submit) carries no such badge."
+  },
+  "changeOrganisationBeforeSubmit": {
+    "confidence": "legacy",
+    "evidence": "spec doa-notification-creation.spec.ts:65-111 (test 3) + doa.feature:32-40; ReviewNotificationPage.ts:125 (#organisation-change-link), OrganisationSelectionPage.ts:18-34",
+    "rule": "While a notification is in Draft, the agent can amend it and change the responsible organisation. Changing from a delegated org (Plant Org 1) back to the agent's own org (IPAFFS Plant Agency C) reassigns ownership to the own org; the review page 'Save and review' button replaces 'Save and continue' when re-entering the org picker via the change link.",
+    "changeLink": "#organisation-change-link on the review page (reached via Amend)"
+  },
+  "authorizationRules": [
+    "confirmed/legacy: An agent account (Carol Clark, own org 'IPAFFS Plant Agency C') with DoAs can create a notification for any organisation it holds a delegated authority over. In this trace the delegated set was IPAFFS Plant Agency F, IPAFFS Plant Organisation 1, IPAFFS Plant Organisation 2.",
+    "confirmed: The notification's responsible/owning organisation is the SELECTED delegated organisation (IPAFFS Plant Organisation 1), NOT the agent's own organisation. Confirmed by review-page #responsible-organisation-name = 'IPAFFS Plant Organisation 1' and dashboard Consignee = 'IPAFFS Plant Organisation 1'.",
+    "confirmed: A delegated (agent-created) notification is flagged with a 'Trade Partner' badge on the dashboard alongside its CHED status.",
+    "legacy: A member of the responsible organisation (Isabel Irwin, IPAFFS Plant Organisation 1) creating in her own right produces a notification owned by Plant Org 1 with NO Trade Partner badge (spec test 1, doa-notification-creation.spec.ts:8-31). Implication: ownership is by responsible org regardless of author, and the badge distinguishes agent-created work from member-created work.",
+    "legacy: In Draft, the agent can change the responsible organisation (e.g. from Plant Org 1 to own org Plant Agency C) before submitting; the final ownership follows the last selection (spec test 3, doa-notification-creation.spec.ts:65-111).",
+    "legacy: Creating for a delegated org auto-populates Contact details (Isabel Irwin / ipaffs-plant-org-1-isabel@mailinator.com / 0123456789) and Importer (Plant Org 1 / KAINOS SOFTWARE LTD address) from that org, not from the agent (spec test 5 + doa.feature:42-56)."
+  ],
+  "newSurface": "This DoA CHED-PP journey exercises the entire delegated-agent surface the standard (single-org) journey never reaches: (1) a 'consignment-for' page ('Who are you creating this notification for?') that only renders for accounts holding DoAs, offering the agent's own org vs 'A different organisation'; (2) a 'consignment-organisation' picker ('Which company is this notification for') listing every delegated org with its full registered address; (3) auto-population of the Contact details and Importer blocks from the chosen delegated organisation rather than agent input; (4) a 'Trade Partner' badge on the dashboard result card marking agent/delegated-authored notifications; (5) an in-draft 'change organisation' link on the review page (#organisation-change-link) that lets the agent reassign the responsible org (including back to their own org) before submit. Ownership/visibility is keyed to the responsible organisation, not the authoring agent — members of the delegated org can see the notification, and the badge distinguishes it from own-org member creations.",
+  "notes": "Trace is one of 5 tests in the DoA spec; only test 2 (this one) is captured in the trace. The other four tests (own-org member creation, change-org-before-submit, auto-population, and Isabel-Irwin own creation) are read from the QA spec/feature as legacy evidence for the authorization + auto-population rules. Reference number produced: CHEDPP.GB.2026.1525741. Agent's own-org radio label ('IPAFFS Plant Agency C') is hardcoded in the OrganisationSelectionPage page object, confirming it is the fixed own-org identity for this agent fixture."
+}

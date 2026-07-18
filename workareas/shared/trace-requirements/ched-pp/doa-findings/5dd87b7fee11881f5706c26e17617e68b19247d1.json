@@ -1,0 +1,131 @@
+{
+  "hash": "5dd87b7fee11881f5706c26e17617e68b19247d1",
+  "title": "auth/DoA/doa-agent-access.spec.ts:60 › Delegated Organisation - Agent Visibility › Carol Clark (agent) submits for own org (Plant Agency C) → Isabel Irwin (Plant Org 1 member) cannot see it",
+  "specFile": "auth/DoA/doa-agent-access.spec.ts:60",
+  "kind": "agent-access",
+  "notificationType": "CHEDPP",
+  "referenceNumber": "CHEDPP.GB.2026.1525736",
+  "actors": {
+    "agent": "Carol Clark (member of IPAFFS Plant Agency C)",
+    "orgMember": "Isabel Irwin (member of IPAFFS Plant Org 1)"
+  },
+  "summary": "Negative/control visibility case. Carol Clark, an agent, creates and submits a CHED-PP for her OWN organisation (IPAFFS Plant Agency C) rather than for a delegated trade partner. Isabel Irwin, a member of a DIFFERENT organisation (Plant Org 1), then searches her dashboard by the resulting reference and finds nothing ('0 results' / 'No notifications have been found'). The value of this trace is (a) the delegated-agent organisation-picker surface it renders and (b) the authorization/visibility rule it pins.",
+  "pagesTouched": [
+    "consignment-for",
+    "consignment-organisation",
+    "consignment-commodities",
+    "consignment-transport",
+    "consignment-purpose",
+    "consignment-documents",
+    "consignment-consignor-exporter",
+    "consignment-place-of-destination",
+    "consignment-declaration",
+    "consignment-review-submit",
+    "dashboard-notifications-search"
+  ],
+  "pageDetails": {
+    "consignment-for": {
+      "confidence": "confirmed",
+      "evidence": "trace 5dd87b7fee11881f5706c26e17617e68b19247d1 action 11 (snapshot before Save and continue)",
+      "url": "/notification/vnet/protected/notifications/consignment-for?type=CHEDPP",
+      "pageTitle": "Who are you creating this notification for - Import and export applications - GOV.UK",
+      "sectionCaption": "About the consignment",
+      "heading": "Who are you creating this notification for?",
+      "controls": [
+        {
+          "type": "radio-group",
+          "options": [
+            {
+              "label": "IPAFFS Plant Agency C",
+              "note": "The agent's OWN organisation. Checked/selected in this trace — this is what makes it the own-org (non-delegated) path.",
+              "state": "checked"
+            },
+            {
+              "label": "A different organisation",
+              "note": "The delegated path. Selecting this routes the agent to choose one of their linked trade partners / a different organisation to create the notification FOR. NOT exercised in this trace (only its label was rendered)."
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "label": "Save and continue"
+        }
+      ],
+      "newSurface": "This is the delegated-agent organisation picker. The main run's standard journey never renders it because a non-agent user has no organisations to choose between. The two-option radio ('own org' vs 'A different organisation') is the entry fork into the whole delegated-agency flow."
+    },
+    "header-nav": {
+      "confidence": "confirmed",
+      "evidence": "trace action 11 snapshot, banner region",
+      "note": "Signed-in agent header shows: 'Carol Clark | Address book | Manage account | Manage trade partners | Sign out'. The 'Manage trade partners' link (/notification/vnet/protected/notifications/trade-partners/filter) is agent-specific surface not present for an ordinary trader. The same 'Manage trade partners' link also appears in Isabel Irwin's (org member) header, so the link is not gated to agents only.",
+      "manageTradePartnersUrl": "/notification/vnet/protected/notifications/trade-partners/filter"
+    },
+    "dashboard-notifications-search": {
+      "confidence": "confirmed",
+      "evidence": "trace action 91 snapshot (Isabel Irwin, after search)",
+      "url": "/notification/vnet/protected/notifications?certificate-number=CHEDPP.GB.2026.1525736&orderBy=arrivalDateTimeDesc",
+      "pageTitle": "Your import notifications - Import and export applications - GOV.UK",
+      "searchField": {
+        "label": "Keywords or notification number",
+        "hint": "For example: reference, destination, consignor, transporter, documents",
+        "valueUsed": "CHEDPP.GB.2026.1525736"
+      },
+      "resultForOrgMember": {
+        "resultCount": "0 results",
+        "emptyMessage": "No notifications have been found",
+        "viewDetailsLinkHidden": true,
+        "note": "The test asserts locator id 'view-details-CHEDPP.GB.2026.1525736' toBeHidden; the rendered dashboard shows the empty state confirming Isabel cannot see the agent's own-org notification."
+      }
+    }
+  },
+  "creationDataObserved": {
+    "confidence": "confirmed",
+    "note": "Full CHED-PP was created and submitted by the agent for her own org. Selected values captured from the action timeline.",
+    "notificationSubType": "Plants, plant products and (radio) — CHED-PP",
+    "commodityCode": "06011010",
+    "internalMarketPurpose": "Internal market",
+    "commodityDetails": {
+      "numberOfPackages": "2",
+      "quantity": "1",
+      "netWeightKg": "1",
+      "packagingType": "Controlled atmosphere container",
+      "totalGrossWeightKg": "12"
+    },
+    "transport": {
+      "transportIdentification": "F12345",
+      "transportDocumentReference": "certificate",
+      "arrivalDate": "18/07/2026 18:48",
+      "usingCTC": "No",
+      "transportUsesCTC": "No"
+    },
+    "documents": {
+      "documentReference": "REF-124",
+      "documentDate": "04/12/2025",
+      "attachmentAdded": true
+    },
+    "consignorExporter": {
+      "name": "Linus George Ltd",
+      "addressLine1": "101 Main St",
+      "addressLine2": "Suite 2",
+      "addressLine3": "Building 2",
+      "cityOrTown": "Springfield",
+      "postcode": "10000",
+      "telephone": "01100100100",
+      "email": "techsolutions@example.com",
+      "note": "Created via 'Create a new consignor or exporter' then 'Add to notification'."
+    },
+    "placeOfDestination": "Same as consignee (button)",
+    "declaration": "I/We have read and understood (checkbox) then Submit notification"
+  },
+  "newSurface": "Two delegated-agency surfaces the standard (non-agent) journey never exercises: (1) the 'Who are you creating this notification for?' organisation picker (slug consignment-for), a radio fork between the agent's own org ('IPAFFS Plant Agency C') and 'A different organisation'; and (2) the agent header's 'Manage trade partners' link. In THIS trace the agent deliberately takes the own-org branch (no trade partner selected), so the Trade Partner badge, delegated auto-population of contact/importer, and change-organisation-before-submit surface do NOT render — this trace is the negative control for the visibility rule, not a positive delegated-population example. Its load-bearing value is the authorization rule, captured below.",
+  "authorizationRules": [
+    "An agent (member of a Plant Agency) may create a CHED-PP for their OWN organisation by selecting their own org on the 'Who are you creating this notification for?' page ('IPAFFS Plant Agency C' radio).",
+    "A CHED-PP created for the agent's OWN organisation is NOT visible to members of a different organisation. Isabel Irwin (a Plant Org 1 member) searching her dashboard by the exact reference CHEDPP.GB.2026.1525736 gets '0 results' and 'No notifications have been found'.",
+    "Notification visibility is scoped to the organisation the notification was created FOR, not to the creating agent's set of linked trade partners. Because Carol created this one for Plant Agency C (her own org) and NOT for Plant Org 1, Plant Org 1 members cannot see it.",
+    "Contrast (implied by the test-suite naming, not rendered in this trace): when an agent creates a CHED-PP FOR a delegated organisation (e.g. Plant Org 1), members of that delegated organisation CAN see it. This own-org trace is the negative half of that pairing."
+  ],
+  "discrepancies": [],
+  "gaps": [
+    "The delegated ('A different organisation') branch of the org picker is not exercised here — the trade-partner selection list, the Trade Partner badge, and delegated contact/importer auto-population must be sourced from a positive delegated trace, not this one."
+  ],
+  "wrote": true
+}

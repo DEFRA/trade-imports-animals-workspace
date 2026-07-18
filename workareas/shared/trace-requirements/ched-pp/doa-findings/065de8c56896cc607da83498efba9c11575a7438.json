@@ -1,0 +1,133 @@
+{
+  "hash": "065de8c56896cc607da83498efba9c11575a7438",
+  "title": "auth/DoA/doa-importer-access.spec.ts:60 › Delegated Organisation - Notification Visibility › Franklyn D (Plant Org Test member) submits → David D (Plant Org Test member) can see it",
+  "specFile": "auth/DoA/doa-importer-access.spec.ts:60",
+  "kind": "visibility",
+  "notificationType": "CHED-PP",
+  "confidence": "confirmed",
+  "traceMeta": {
+    "playwright": "1.58.1",
+    "duration": "28.2s",
+    "pages": 4,
+    "actions": 104,
+    "submittedReference": "CHEDPP.GB.2026.1525737"
+  },
+  "actors": {
+    "creator": {
+      "name": "Franklyn D",
+      "orgFixtureLabel": "IPAFFS Plant Organisation Test",
+      "orgTradingName": "Test Org Ltd",
+      "role": "Plant Org Test member"
+    },
+    "viewer": {
+      "name": "David D",
+      "orgFixtureLabel": "Test Org Ltd",
+      "role": "Plant Org Test member",
+      "capabilitiesObserved": ["View details", "Copy as new", "Amend", "Show notification"]
+    },
+    "note": "Both actors are members of the SAME organisation (the test's Plant Org Test). The creator step is labelled 'IPAFFS Plant Organisation Test'; the viewer step and the notification consignee both read 'Test Org Ltd' — i.e. 'Test Org Ltd' is the org's trading name and 'IPAFFS Plant Organisation Test' its fixture descriptor. confirmed (trace 065de8c5, actions 3, 83, 87 banner, 90 results)."
+  },
+  "kindDetail": "This is a same-organisation notification-visibility trace. It is the POSITIVE case of the DoA visibility pair: a notification submitted by one member of an organisation is visible to — and view/copy/amend-able by — another member of the SAME organisation. It does not exercise an explicit organisation picker or a Trade Partner badge; the delegated-agent surface it DOES prove is organisation-level ownership and consignee auto-population.",
+  "authorizationRules": [
+    "Notifications are owned at the ORGANISATION level, not at the individual-user level: a CHED-PP submitted by Franklyn D is visible to David D purely because they share the same organisation (confirmed, trace 065de8c5 title + actions 83-91).",
+    "A member of the owning organisation who did NOT create the notification can View details, Copy as new, and Amend it, plus Show notification — all four controls render on the dashboard row for the co-member (confirmed, trace 065de8c5 action 90: locators view-details-CHEDPP.GB.2026.1525737, copy-as-new-CHEDPP.GB.2026.1525737, amend-details-CHEDPP.GB.2026.1525737, and row text 'Copy as new View details Amend Show notification').",
+    "The co-member (David D) finds the notification by searching the standard 'Your import notifications' dashboard by reference number (CHEDPP.GB.2026.1525737) — no special delegated view; it appears in his own notification list (confirmed, trace 065de8c5 actions 86-90).",
+    "The notification's Consignee resolves to the acting organisation's name ('Test Org Ltd') — the same org both users belong to; ownership/visibility keys on this org identity (confirmed, trace 065de8c5 action 90 results: Consignee = 'Test Org Ltd').",
+    "PAIR CONTEXT (this trace = positive leg only): the negative leg 'agent's own-org submission → other-org member cannot see it' is asserted elsewhere in auth/DoA/doa-importer-access.spec.ts but is NOT exercised in this trace (inferred from spec grouping 'Delegated Organisation - Notification Visibility')."
+  ],
+  "newSurface": "The main CHED-PP run never exercised organisation-scoped visibility. This trace proves three delegated/organisation-level surfaces the standard single-user journey hides: (1) ORG-LEVEL OWNERSHIP — a notification created by Franklyn D surfaces in David D's own dashboard because they share one organisation; ownership is the org, not the author. (2) CO-MEMBER CAPABILITIES — a non-author org member gets the full action set (View details, Copy as new, Amend, Show notification) on the dashboard row, identical to what the author would see; there is no read-only downgrade for co-members. (3) CONSIGNEE AUTO-POPULATION — across Franklyn's entire create flow there is NO manual consignee/importer entry action, yet the submitted notification's Consignee is 'Test Org Ltd' (the acting org); the consignee is auto-populated from the acting organisation. The dashboard banner also exposes a 'Manage trade partners' link (/notification/vnet/protected/notifications/trade-partners/filter) and an 'Address book' link, confirming the trade-partner/address-book infrastructure exists, though this trace renders no Trade Partner badge and no organisation-selection step (Franklyn creates directly as his single org).",
+  "pagesTouched": [
+    "notifications-dashboard",
+    "consignment-for",
+    "consignment-country-of-origin",
+    "commodity-entry-method",
+    "commodity-code-search",
+    "commodity-purpose",
+    "commodity-details",
+    "consignment-gross-weight",
+    "transport-and-bcp",
+    "ctc-transit-questions",
+    "supporting-documents",
+    "consignor-exporter",
+    "consignee",
+    "responsible-for-load",
+    "declaration",
+    "submit-confirmation"
+  ],
+  "creationFlowSummary": {
+    "note": "Creation here is fixture setup for the visibility assertion, not the trace's purpose. Fields captured verbatim from actions.txt (confirmed unless noted).",
+    "importType": "Plants, plant products and (CHED-PP radio) — confirmed action 8",
+    "countryOfOrigin": "France (selected; confirmed via results row Origin=France, action 90)",
+    "commodityEntry": "Manual entry (radio) — confirmed action 13",
+    "commodityCode": "06011010 (searched + Add) — confirmed actions 16-18, results row Commodity=06011010",
+    "purpose": "Internal market (radio) — confirmed action 20",
+    "commodityDetails": {
+      "numberOfPackages": "2",
+      "packageType": "(selected, value not surfaced) — confirmed action 25",
+      "quantity": "1",
+      "quantityType": "(selected) — confirmed action 27",
+      "netWeightKg": "1",
+      "container": "Controlled atmosphere container — confirmed action 29",
+      "finishedOrPropagated": "(selected) — confirmed action 30"
+    },
+    "totalGrossWeightKg": "12 — confirmed action 33",
+    "transportAndBcp": {
+      "entryBorderControlPost": "(selected) — confirmed action 35",
+      "inspectionPremises": "(selected) — confirmed action 36",
+      "meansOfTransport": "Choose from: (selected) — confirmed action 37",
+      "transportIdentification": "F12345 — confirmed action 38",
+      "transportDocumentReference": "certificate — confirmed action 39",
+      "arrivalDate": "18/07/2026 18:48 — confirmed actions 40-44; results row 'Arrival at BCP or POE 18 July 2026'"
+    },
+    "ctcTransitQuestions": {
+      "usingCommonTransitConvention": "No — confirmed action 46",
+      "transportUseCtc": "No — confirmed action 47"
+    },
+    "supportingDocuments": {
+      "documentType": "(selected) — confirmed action 51",
+      "documentReference": "REF-124 — confirmed action 52",
+      "documentDate": "04/12/2025 — confirmed actions 53-55",
+      "attachment": "file uploaded — confirmed actions 56-58"
+    },
+    "consignorExporter": {
+      "createdNew": true,
+      "name": "Linus George Ltd",
+      "addressLine1": "101 Main St",
+      "addressLine2": "Suite 2",
+      "addressLine3": "Building 2",
+      "cityOrTown": "Springfield",
+      "postcode": "10000",
+      "telephone": "01100100100",
+      "country": "(selected)",
+      "email": "techsolutions@example.com",
+      "note": "confirmed actions 62-72; results row Consignor='Linus George Ltd'"
+    },
+    "consignee": {
+      "value": "Test Org Ltd",
+      "autoPopulated": true,
+      "note": "No manual consignee-name entry appears in the timeline; consignee page passed with Save and continue only (actions 74-75). Value confirmed from results row Consignee='Test Org Ltd' (action 90). This is the org auto-population finding."
+    },
+    "responsibleForLoad": "Same as consignee (button) — confirmed action 73",
+    "declaration": "I/We have read and understood (checkbox) — confirmed action 76",
+    "submit": "Submit notification → reference CHEDPP.GB.2026.1525737 — confirmed actions 77-78",
+    "inspection": "Not required — confirmed action 90 results row"
+  },
+  "dashboardResultRow": {
+    "source": "confirmed — trace 065de8c5 action 90 (David D search results, before-expect DOM)",
+    "referenceNumber": "CHEDPP.GB.2026.1525737",
+    "commodity": "06011010",
+    "arrivalAtBcpOrPoe": "18 July 2026",
+    "chedStatus": "New",
+    "consignee": "Test Org Ltd",
+    "consignor": "Linus George Ltd",
+    "origin": "France",
+    "inspection": "Not required",
+    "rowActions": "Copy as new | View details | Amend | Show notification"
+  },
+  "gaps": [
+    "No organisation-selection / 'creates for Plant Org N' picker is rendered in this trace — Franklyn creates directly as his single organisation. The org-picker surface remains unexercised by this DoA trace (gap).",
+    "No Trade Partner badge is rendered on any page in this trace, though a 'Manage trade partners' link exists in the banner (gap for the badge specifically).",
+    "The negative visibility leg (other-org member CANNOT see an own-org submission) is grouped in the same spec file but not exercised in this trace (gap — needs the sibling trace).",
+    "Whether a co-member's Amend/Copy actually succeeds (vs merely rendering the controls) is not exercised — the trace asserts only visibility of the three controls, not their downstream behaviour (gap)."
+  ]
+}

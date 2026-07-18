@@ -1,0 +1,531 @@
+{
+  "slug": "commodity-basic-description",
+  "name": "Commodity basic description / select species of commodity",
+  "url": "/notification/vnet/protected/notifications/:draftId/consignment/page-4?commodity-selected-code=:commodityCode[&genus=&eppo-code=&page=N&commodityDetailsPage=&search=Search]",
+  "pageTitle": "Select species of commodity - Import and export applications - GOV.UK",
+  "caption": "Description of the goods",
+  "heading": "Commodity",
+  "bodyCopy": [
+    "You can add multiple Genus (and Species)",
+    "No search results"
+  ],
+  "backLink": "Back -> /notification/vnet/protected/notifications/:draftId/consignment/page-3",
+  "continueLabel": "Save and continue",
+  "continueDestination": "CONDITIONAL — NOT always page-5. Observed both ways: for 06011010 (no commodity class) Save and continue -> /consignment/page-5 (trace 1f5b6eef action 22). For 08059000 (HMI commodity, commodityClass 'Extra Class') Save and continue -> /commodity/variety-of-genus-and-species?commodity-selected-code=08059000 i.e. the Commodity Class page (trace e10b7cd5 action 25). The rebuild must model this branch: species -> [class] -> summary -> page-5. CORROBORATED BY THE TESTS: the class step is driven only when the config supplies commodityClass (ched-pp-workflows.ts:313-316), and the single test that supplies it (ched-pp-hmi-checks.spec.ts:19-24 — hmiOnlyCIDAC/08059000 + CIDAC + 'Extra Class') is precisely the test that produced trace e10b7cd5. No other CHED-PP test sets commodityClass, so the class branch has exactly one source in each of the two admissible sources, and they agree.",
+  "variants": [
+    {
+      "name": "species-picker (default / plant commodities)",
+      "description": "The observed rendering: a paginated, filterable reference-data table of Genus (and Species) + EPPO code, with a per-row Add submit button. Observed for plant commodity codes 08059000 (summary description renders as 'Other') and 06011010 ('Hyacinths'). 06042090 (foliageOther) is driven by the tests through this page but was never traced.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (08059000/'Other'); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (06011010/'Hyacinths'). 06042090 is INFERRED only — types/commodity-code.ts:8."
+    },
+    {
+      "name": "species-checkbox (machinery / non-plant commodities)",
+      "description": "A SECOND, structurally different rendering of the same page in which species are CHECKBOXES (id=\"<EPPO_CODE>-checkbox\") rather than a paginated table of Add buttons. The user ticks the box and clicks Save and continue directly — no EPPO filter, no Search, no Add, no pagination. Driven for machinery commodity codes 87019510 (tractorsWheeled) and 84321000 (ploughs) with the placeholder EPPO code NNNXX. NEVER RENDERED IN THE TRACE CORPUS — known only from the tests. THE VARIANT IS PER-COMMODITY, NOT PER-NOTIFICATION — see openQuestions.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:85 (isSpeciesACheckbox?: boolean), :158 (DEFAULT_CONFIG isSpeciesACheckbox: false), :304-312 (branch); page-objects/notification/CommodityBasicDescriptionPage.ts:14-16 (checkboxChedPPSpecies -> `#${species}-checkbox`); tests/notification/ched-pp/ched-pp-eu-harmonisation.spec.ts:44,54-57 ('Machinery EPPO Code', tractorsWheeled + NNNXX); tests/notification/ched-pp/ched-pp-notification.spec.ts:89-91 (ploughs + NNNXX)"
+    },
+    {
+      "name": "unfiltered add-first (no EPPO code supplied)",
+      "description": "When no EPPO code is known the user does not filter at all — the full paginated species list renders and the first row's Add is clicked. This is the branch trace 1f5b6eef exercised for 06011010. It is also the DEFAULT CHED-PP journey: DEFAULT_CONFIG sets firstEppoCode: '' and firstCommodityCode: commodityCode.hyacinths (06011010), so any test that does not override those takes this branch — which is exactly what trace 1f5b6eef shows.",
+      "confidence": "confirmed",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 21 (Add .first() with no prior filter) + action 22 snapshot (full 4-page list for 06011010, 'Next page : 2 of 4', 25 Add buttons); corroborated by workflows/notification/ched-pp-workflows.ts:318-321 (firstEppoCode falsy -> btnAddSpecies.first() with no filter), :146 (DEFAULT_CONFIG firstCommodityCode: commodityCode.hyacinths), :150 (firstEppoCode: '') and tests/accessibility/ched-pp-accessibility-tests.spec.ts:51,75"
+    }
+  ],
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Commodity",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "table",
+      "text": "Commodity summary table | Commodity Code / Description | 08059000 / Other",
+      "govukComponent": "Table (govuk-table). Caption is govuk-visually-hidden. Read-only echo of the commodity chosen on page-3. td id=commodity-code-value"
+    },
+    {
+      "element": "fieldset-legend",
+      "text": "Select Genus (and Species) of commodity ",
+      "govukComponent": "Fieldset (govuk-fieldset, form=\"species-selection\") + legend govuk-fieldset__legend--m. NOTE trailing space in the legend text — CONFIRMED via legend.textContent at trace e10b7cd5 action 24."
+    },
+    {
+      "element": "hint",
+      "text": "You can add multiple Genus (and Species)",
+      "govukComponent": "Hint (govuk-hint, id=species-hint)"
+    },
+    {
+      "element": "table",
+      "text": "Remove species table | Genus (and Species) / EPPO code | Albuca bracteata / ABWBR",
+      "govukComponent": "Table (govuk-table) inside its own <form method=\"post\"> (no id), id=selected-species-table. Rendered ONLY when >=1 species already added ({{#gt species.selected.length 0}}). CORRECTED: it is NOT 'absent throughout trace e10b7cd5' — it is absent at e10b7cd5 action 24 (pre-add) and PRESENT at e10b7cd5 action 25 (post-add, showing 'Citrus australasica / CIDAC'), which is the within-trace contrast that establishes the add-conditioning. Caption says 'Remove species table' but NO remove control was rendered in either observed post-add state (querySelectorAll('[name*=remove],[id*=remove]') returned 0 at e10b7cd5 action 25 and at 1f5b6eef action 22). LEGACY RESOLVES THE MISSING-REMOVE-CONTROL GAP: the template only renders the third column (a visually-hidden 'Remove action links' header) and the per-row Remove button when species.selected.length > 1 — i.e. the Remove control appears only once TWO OR MORE species are added. Both traces had exactly ONE species selected, so the remove column was correctly absent. The Remove button is <button type=\"submit\" name=\"remove-species-{{speciesId}}\" value=\"Remove\" class=\"link-button\" id=\"remove-species-{{speciesId}}\">Remove</button> — same link-button anti-pattern and same data-derived name/id as Add. So a user CAN undo an Add, but only when 2+ species are present; the last remaining species cannot be removed from this table. Evidence: consignmentCommodityAttributesChedpp.html:53-79 (id=selected-species-table, {{#gt species.selected.length 1}} guards on the header col :60-62 and the button cell :70-74)."
+    },
+    {
+      "element": "h2",
+      "text": "Filter",
+      "govukComponent": "Fieldset legend wrapping an h2.govuk-fieldset__heading, inside a non-standard .search-panel. Opens <form method=\"get\" id=\"species-filter\">"
+    },
+    {
+      "element": "text-input",
+      "text": "Genus (and Species)",
+      "govukComponent": "Text input (govuk-input — bare, no width modifier on the input itself) + Label (govuk-label). The govuk-!-width-full sits on the wrapping form-group."
+    },
+    {
+      "element": "text-input",
+      "text": "EPPO code",
+      "govukComponent": "Text input (govuk-input — bare) + Label (govuk-label)"
+    },
+    {
+      "element": "button",
+      "text": "Search",
+      "govukComponent": "Button (govuk-button govuk-!-margin-bottom-0, id=search, name=search, data-module=govuk-button, data-prevent-double-click=true)"
+    },
+    {
+      "element": "link",
+      "text": "Clear",
+      "govukComponent": "Link (govuk-link clear-link, id=clear)"
+    },
+    {
+      "element": "table",
+      "text": "Add species table | Genus (and Species) / EPPO code / Add action links | Citrus australasica / CIDAC / Add — or, when the result set is empty, a single row with <td colspan=\"3\">No search results</td>",
+      "govukComponent": "Table (govuk-table) inside <form method=\"post\" id=\"species-selection\">. First columnheader carries govuk-!-width-one-half. Third columnheader label is a govuk-visually-hidden span 'Add action links'. Each row's Add is a submit button, class=link-button. EMPTY STATE CONFIRMED: the table keeps its header row and renders one full-width cell reading 'No search results' — it is not hidden and there is no error summary."
+    },
+    {
+      "element": "checkboxes",
+      "text": "(species-checkbox variant only) one checkbox per species, id=\"<EPPO_CODE>-checkbox\" e.g. #NNNXX-checkbox; name=\"species\", value=species.value, label is govuk-checkboxes__label--s wrapping a govuk-visually-hidden span of the species name. Rendered inside a table row: Genus (and Species) | EPPO code | checkbox. Legend 'Select species of commodity', hint 'Select all that apply.' (id=species-hint), fieldset id=species-list, error key 'species-list'.",
+      "govukComponent": "LEGACY-RESOLVED (was INFERRED). The checkbox rendering is NOT in the CHED-PP species template (consignmentCommodityAttributesChedpp.html has no checkbox path at all). It lives in the SHARED non-chedpp commodity-attributes template consignmentCommodityAttributes.html:154-166: a real GOV.UK Checkboxes (govuk-checkboxes / govuk-checkboxes__item / govuk-checkboxes__input) with id=\"{{species.eppoCode}}-checkbox\", name=\"species\", value=\"{{species.value}}\", and a govuk-label govuk-checkboxes__label govuk-label--s whose only content is a govuk-visually-hidden species name. So the inferred component identity (govuk-checkboxes) was CORRECT, and the CHED-PP-specific by-id locator matches because the label has no visible text (a by-accessible-name locator would be unreliable — which explains the sibling CHED-A/P by-name locator difference). When species carry no eppoCode a second branch (:167-178) keys the id off the species TEXT instead (id=\"{{species.text}}-checkbox\"). This is a DISCREPANCY worth Reconcile attention: a CHED-PP machinery commodity renders through a DIFFERENT template than a CHED-PP plant commodity. See discrepancies. Evidence: consignmentCommodityAttributes.html:123-183; en.js error key 'species-list'."
+    },
+    {
+      "element": "pagination",
+      "text": "Next page : 2 of 3",
+      "govukComponent": "NON-STANDARD custom <nav class=\"pagination\" aria-label=\"Pagination\"> — next-only, 25 rows per page. Present when results exceed one page; ABSENT on a filtered single-page result (confirmed absent at trace e10b7cd5 action 24, present at the same trace's action 22)."
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-bottom-4, id=button-save-and-continue, name=save-button, data-module=govuk-button, data-prevent-double-click=true)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel",
+      "govukComponent": "Link (govuk-link, id=cancel-link) inside p.govuk-body -> /consignment/page-3. CONDITIONAL ON THE SPECIES LIST BEING EMPTY: rendered at e10b7cd5 action 24 (no species added, #cancel-link count 1); NOT rendered at e10b7cd5 action 25 (same trace, same commodity, one species added, count 0) nor at 1f5b6eef action 22 (one species added, count 0). See openQuestions — the rule is established by a within-trace contrast, not merely cross-trace."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Description of the goods' above the H1 (id=page-secondary-title)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "H1 'Commodity' (id=page-primary-title)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-table__head",
+        "govuk-table__header",
+        "govuk-table__cell",
+        "govuk-!-width-one-half"
+      ],
+      "count": 3,
+      "usage": "(1) Commodity summary echo, (2) Remove species table of already-added species, (3) Add species results table with a per-row Add button. All three captions are govuk-visually-hidden. NOTE only tables 1+3 render until a species has been added.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (tables 1 + 3 only — querySelectorAll('table').length === 2); trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 25 (all three — length === 3, after the CIDAC Add); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (all three — length === 3)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-fieldset__legend--m",
+        "govuk-fieldset__heading"
+      ],
+      "count": 2,
+      "usage": "(1) 'Select Genus (and Species) of commodity ' legend + hint, associated to the species-selection form via a form=\"species-selection\" attribute; (2) 'Filter' legend wrapping an h2. Both legends carry govuk-fieldset__legend--m.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (2 fieldsets, 2 .govuk-fieldset__legend--m)"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'You can add multiple Genus (and Species)' (id=species-hint)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Genus (and Species) and EPPO code filter fields, both maxlength=200. The input class is BARE govuk-input — no width modifier on the input; govuk-!-width-full is on the wrapping .govuk-form-group.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — <input class=\"govuk-input\" maxlength=\"200\" id=\"genus\"|\"eppo-code\">"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Labels for the two filter inputs",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Checkboxes",
+      "govukClass": "(presumed govuk-checkboxes — NOT OBSERVED)",
+      "modifiers": [],
+      "count": 0,
+      "usage": "species-checkbox variant only (machinery commodities). One checkbox per species, id=\"<EPPO_CODE>-checkbox\". No trace in the corpus rendered this variant, so the component identity is inferred from the test locator alone and the real markup may not be the Design System component at all. NOTE the CHED-PP locator (checkboxChedPPSpecies, by id) differs from the sibling CHED-A/P locator (checkboxSpecies, by accessible name — CommodityBasicDescriptionPage.ts:10-12), which hints the two CHED types render species checkboxes differently; the CHED-PP one may not have an associated label at all, since a by-name locator was evidently not usable.",
+      "evidence": "page-objects/notification/CommodityBasicDescriptionPage.ts:14-16; workflows/notification/ched-pp-workflows.ts:305-306 — INFERRED, no trace evidence"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-bottom-0",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "'Search' (filter submit) and 'Save and continue' (primary). Both data-module=govuk-button with data-prevent-double-click=true. The per-row 'Add' buttons are NOT govuk-button — see nonStandardPatterns.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "clear-link"
+      ],
+      "count": 2,
+      "usage": "'Clear' (class='govuk-link clear-link', id=clear) and 'Cancel' (class='govuk-link', id=cancel-link -> page-3)",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [
+        "govuk-!-width-full",
+        "search-panel__form-group"
+      ],
+      "count": 2,
+      "usage": "Wraps each filter input; co-classed with the non-standard search-panel__form-group. Full class string: 'search-panel__form-group govuk-form-group govuk-!-width-full'.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "'Back' -> /consignment/page-3. id=back-link-nojs. Rendered OUTSIDE <main> (a.closest('main') is null), in the service-information region above it. Carries a non-standard co-class back-link--next-to-breadcrumbs.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — <a class=\"govuk-back-link back-link--next-to-breadcrumbs\" id=\"back-link-nojs\" href=\".../consignment/page-3\">"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 5,
+      "usage": "All three table captions ('Commodity summary table', 'Remove species table', 'Add species table') plus the 'Add action links' columnheader span and the pagination ':' separator span. Only 3 render in the pre-add / filtered state (2 captions + 'Add action links').",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 — 5 elements: CAPTION 'Commodity summary table', CAPTION 'Remove species table', CAPTION 'Add species table', SPAN 'Add action links', SPAN ':'. trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 has only 3 (no remove table, no pagination)."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "class=\"link-button\" on <button type=\"submit\" name=\"add-species-1364882\" value=\"Add\">",
+      "whatItDoes": "The per-row 'Add' action. A real submit button styled to look like a link, so a POST can be triggered from inside a table cell without a form-per-row.",
+      "concern": "Not a Design System class. The rebuild needs a decided pattern for a row-level action that mutates server state: either a govuk-button--secondary per row, or a checkbox multi-select plus one primary submit (which would also remove the one-POST-per-species round trip).",
+      "govukAlternative": "Button (govuk-button govuk-button--secondary) per row, or Checkboxes + a single Add button",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (locator resolved to <button value=\"Add\" class=\"link-button\" id=\"add-species-1364882\">); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (<button type=\"submit\" name=\"add-species-1425416\" value=\"Add\" class=\"link-button\" id=\"add-species-1425416\">Add</button>)"
+    },
+    {
+      "pattern": "Dynamic control names/ids: name=\"add-species-<speciesId>\" (e.g. add-species-1364882, add-species-1425416)",
+      "whatItDoes": "Encodes the species primary key into the button's name attribute; the server infers which species to add from which key is present in the POST body.",
+      "concern": "The form's field names are data-dependent, so the request contract cannot be typed or validated against a fixed schema, and tests must locate by accessible name rather than by a stable id. This is an architecture pattern the new app must NOT copy. The cost is visible in the suite itself: because no row is addressable, EVERY test resolves the Add button with .first() (ched-pp-workflows.ts:310,319,344,361; ched-pp-accessibility-tests.spec.ts:51,75) — no automated test can add a NAMED species, so 'add the species I searched for' is untested behaviour.",
+      "govukAlternative": "A fixed control name carrying the id as its value (e.g. name=\"speciesId\" value=\"1364882\"), or checkboxes named speciesId[]",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (25 buttons, all named add-species-<distinct id>)"
+    },
+    {
+      "pattern": "Data-derived element id in the checkbox variant: id=\"<EPPO_CODE>-checkbox\" (e.g. #NNNXX-checkbox)",
+      "whatItDoes": "In the machinery/species-checkbox variant each species checkbox takes its DOM id from the EPPO code itself.",
+      "concern": "Same anti-pattern family as add-species-<id>: the DOM contract is data-dependent, so ids are only as stable and as CSS-safe as the reference data. An EPPO code that is not a valid CSS identifier would break the selector. The rebuild should use a fixed name with the code as the VALUE. NOTE this is inferred from the test locator only — no trace rendered this variant, so the surrounding markup is unverified.",
+      "govukAlternative": "govuk-checkboxes with name=\"speciesEppoCode\" value=\"NNNXX\" and a generated stable id",
+      "evidence": "page-objects/notification/CommodityBasicDescriptionPage.ts:14-16 (`this.page.locator(\\`#${species}-checkbox\\`)`); workflows/notification/ched-pp-workflows.ts:306 — INFERRED, no trace evidence"
+    },
+    {
+      "pattern": "<nav class=\"pagination\"> with .pagination-list / .pagination-item / .pagination-item-next / .pagination-link / .pagination-link-title / .pagination-link-icon, plus an inline SVG arrow and a govuk-visually-hidden ':' separator",
+      "whatItDoes": "Next-only pagination over the species reference list, 25 rows per page ('Next page : 2 of 3' for 08059000; 'Next page : 2 of 4' for 06011010). Links to ?commodity-selected-code=...&page=N via <a rel=\"next\" id=\"next-page\">.",
+      "concern": "Hand-rolled pagination predating the Design System Pagination component. Next-only with no Previous and no page numbers, and the ':' separator is visually hidden text rather than semantic structure. The new app should either use the standard component or avoid paging entirely by making species a type-ahead lookup. NOTE no test ever paginates — the suite only ever filters or takes the first row — so pagination behaviour beyond page 1 has NO coverage in either admissible source.",
+      "govukAlternative": "GOV.UK Pagination component, or (preferred) an accessible autocomplete over the species reference data so no paging is needed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 22 (unfiltered 08059000 list, 3 pages, 25 Add buttons); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (06011010, 4 pages). Absence of any pagination locator: page-objects/notification/CommodityBasicDescriptionPage.ts:1-37 exposes no next-page accessor."
+    },
+    {
+      "pattern": "class=\"search-panel\" and \"search-panel__form-group\"",
+      "whatItDoes": "IPAFFS-specific BEM-ish wrapper giving the Filter fieldset its panel styling and tightening the form-group spacing.",
+      "concern": "Bespoke CSS for a filter panel. The Design System has no 'search panel', but the same layout is achievable with a fieldset in a grid row plus govuk-!-* spacing utilities, or an Inset text if a visual container is genuinely wanted.",
+      "govukAlternative": "govuk-fieldset in a govuk-grid-row with spacing utilities; govuk-inset-text if a container is required",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 class inventory (.search-panel x1, .search-panel__form-group x2)"
+    },
+    {
+      "pattern": "class=\"table-responsive\"",
+      "whatItDoes": "Wrapper div around each govuk-table, presumably to allow horizontal scroll on narrow viewports.",
+      "concern": "Custom overflow shim. Low risk, but it is bespoke CSS the rebuild would have to re-implement; worth confirming whether it is needed at all given these tables are 2-3 columns.",
+      "govukAlternative": "No Design System equivalent; an overflow-x container is acceptable but these narrow tables likely need none",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 class inventory (.table-responsive x2)"
+    },
+    {
+      "pattern": "class=\"text-align-right\" and \"clear-link\"",
+      "whatItDoes": "Utility classes: right-aligns the Add button cell (one per species row); adds spacing/styling to the Clear link next to the Search button.",
+      "concern": "Bespoke utility classes duplicating what govuk-!-text-align-right and govuk-!-margin-left-* already provide.",
+      "govukAlternative": "govuk-!-text-align-right and govuk-!-margin-* spacing utilities",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 class inventory (.text-align-right x1 — one filtered row); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (.text-align-right x25 — one per row)"
+    },
+    {
+      "pattern": "class=\"back-link--next-to-breadcrumbs\" co-classed onto the govuk-back-link, and id=back-link-nojs",
+      "whatItDoes": "Positions the standard Back link relative to the breadcrumb trail; the -nojs id suggests a JS-enhanced twin swaps in when scripting is available.",
+      "concern": "Bespoke positioning class plus a no-JS/JS duplication of the same control. The rebuild should render one Back link with the standard component and no positional override.",
+      "govukAlternative": "govuk-back-link alone, positioned by the page template",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — <a class=\"govuk-back-link back-link--next-to-breadcrumbs\" id=\"back-link-nojs\">"
+    },
+    {
+      "pattern": "Three overlapping <form>s once a species has been added: <form method=\"post\"> (remove species, no id), <form method=\"get\" id=\"species-filter\">, <form method=\"post\" id=\"species-selection\">; the 'Select Genus (and Species)' fieldset is bound to the third via a form=\"species-selection\" attribute rather than nesting.",
+      "whatItDoes": "Separates the filter (GET, bookmarkable query string) from the mutation (POST) and from the remove action, and re-associates an out-of-tree fieldset by id. Before any species is added only TWO forms render (species-filter + species-selection).",
+      "concern": "Three forms plus a cross-tree form= attribute makes the page's submit semantics hard to reason about, and each Add is a full POST + redirect round trip. Filter state also lives in the query string AND in duplicated hidden inputs (commodityDetailsPage appears once per form — 2 copies pre-add, 3 copies post-add).",
+      "govukAlternative": "One GET-filtered list + one POST form; carry selection as checkboxes so a single submit adds all chosen species",
+      "evidence": "trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 — 3 forms in main (post no-id, get #species-filter, post #species-selection) and 3 input[name=commodityDetailsPage]. trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — only 2 forms and 2 commodityDetailsPage inputs (no species added yet). Fieldset form= attribute confirmed at e10b7cd5 action 24."
+    }
+  ],
+  "fields": [
+    {
+      "name": "genus",
+      "label": "Genus (and Species)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — <input class=\"govuk-input\" maxlength=\"200\" id=\"genus\" name=\"genus\" type=\"text\">. Filter field only; not part of the saved consignment. maxlength=200, no required attribute. Never filled in any observed trace. CORROBORATED AS UNUSED by the QA suite: no page object accessor and no workflow/test ever fills the genus filter — every test filters by EPPO code instead (CommodityBasicDescriptionPage.ts exposes only inputEppoCode, :22-24). LEGACY (partial): the template pre-populates it from searchCriteria.genus (consignmentCommodityAttributesChedpp.html:96) and the handler reads it as genusSearchString and passes it ALONGSIDE eppoCodeSearchString into a single getSpecies call (consignment_commodity_attributes_chedpp.js:86-88,:129) — so genus and eppo-code are submitted together as one combined filter, not two alternatives; hasFilter is true if EITHER is non-empty (:88). The AND/OR semantics WITHIN the reference-data query remain unknown (that logic lives in the commodity-code integration/reference-data service, not this handler), as does substring-vs-prefix and case sensitivity."
+    },
+    {
+      "name": "eppo-code",
+      "label": "EPPO code",
+      "control": "text",
+      "required": false,
+      "observedValues": [
+        "CIDAC"
+      ],
+      "inferredValues": [
+        "PHAAN",
+        "LENCU",
+        "CXQDA",
+        "GYPEL"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 22 (fill 'CIDAC') + action 24 — <input class=\"govuk-input\" maxlength=\"200\" id=\"eppo-code\" name=\"eppo-code\" type=\"text\">. Filter field only; maxlength=200, no required attribute. Locator: CommodityBasicDescriptionPage.ts:22-24 (getByRole textbox 'EPPO code'). inferredValues are real codes the tests drive into this filter: PHAAN (ched-pp-eu-harmonisation.spec.ts:25; ched-pp-notification.spec.ts:25,58), LENCU (ched-pp-eu-harmonisation.spec.ts:27,58), CXQDA (ched-pp-notification.spec.ts:94,153,220), GYPEL (ched-pp-date-validation.spec.ts:16 and 9 further lines). NOTE only CIDAC is in types/eppo-code.ts:2 — the file defines a SINGLE code and every other value is an inline string literal in the specs, so the type is not a reliable enumeration of the domain. NNNXX is the machinery placeholder and is NOT typed into this filter — it goes to the checkbox variant, so it is excluded here."
+    },
+    {
+      "name": "<EPPO_CODE>-checkbox",
+      "label": "(species checkbox, e.g. #NNNXX-checkbox)",
+      "control": "checkbox",
+      "required": false,
+      "inferredValues": [
+        "NNNXX"
+      ],
+      "conditionalOn": "species-checkbox variant only — machinery / non-plant commodity codes 87019510 (tractorsWheeled) and 84321000 (ploughs). Mutually exclusive with the filter+Add table: in this variant the workflow ticks the box and goes straight to Save and continue, never touching inputEppoCode, btnSearch or btnAddSpecies. SCOPED PER COMMODITY, NOT PER NOTIFICATION — both machinery tests pair a checkbox first commodity with a filter+Add second commodity in the SAME notification (see openQuestions). NOTE the test harness only reaches this branch when firstEppoCode is ALSO truthy (ched-pp-workflows.ts:304 gates :305), because the code is reused as the checkbox's DOM id. LEGACY: the checkbox markup is rendered by the SHARED consignmentCommodityAttributes.html template, not the chedpp one, and its label text/legend/hint/error key are now known (legend 'Select species of commodity', hint 'Select all that apply.', fieldset id=species-list, error key 'species-list', name='species').",
+      "confidence": "legacy",
+      "evidence": "MARKUP NOW LEGACY-SOURCED: consignmentCommodityAttributes.html:154-160 (govuk-checkboxes__input id=\"{{species.eppoCode}}-checkbox\" name=\"species\" value=\"{{species.value}}\", label govuk-checkboxes__label--s with a govuk-visually-hidden species-name span), :128-135 (fieldset id=species-list, legend 'Select species of commodity', hint id=species-hint 'Select all that apply.'), :127,:136 (error key 'species-list'). QA-source corroboration: page-objects/notification/CommodityBasicDescriptionPage.ts:14-16 (checkboxChedPPSpecies -> `#${species}-checkbox`); workflows/notification/ched-pp-workflows.ts:85,:158,:304-312; tests/notification/ched-pp/ched-pp-eu-harmonisation.spec.ts:54-57; tests/notification/ched-pp/ched-pp-notification.spec.ts:89-91. STILL no CHED-PP TRACE renders this — the confidence is legacy (template-sourced), not confirmed (rendered); whether machinery CHED-PP commodities truly route to this shared template rather than the chedpp one is the open discrepancy."
+    },
+    {
+      "name": "add-species-<speciesId>",
+      "label": "Add",
+      "control": "button",
+      "required": false,
+      "observedValues": [
+        "Add"
+      ],
+      "conditionalOn": "One per row of the Add species results table. Row count = 25 per page (or the filtered subset). Absent in the species-checkbox variant.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (add-species-1364882 -> Citrus australasica / CIDAC); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (25 such buttons). The REAL captured datum is the species selection (Genus/Species name + EPPO code), not the button. The button's text and accessible name are exactly 'Add' with NO trailing space (outerHTML: >Add</button>); the page object's getByRole('button', { name: 'Add ' }) at CommodityBasicDescriptionPage.ts:30-32 matches anyway because Playwright whitespace-normalises the name option. Tests always take .first(), so no test ever adds a specific species by name (ched-pp-workflows.ts:310,319,344,361; ched-pp-accessibility-tests.spec.ts:51,75)."
+    },
+    {
+      "name": "search",
+      "label": "Search",
+      "control": "button",
+      "required": false,
+      "observedValues": [
+        "Search"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 23 — submits #species-filter via GET. name=search, id=search. Locator CommodityBasicDescriptionPage.ts:26-28."
+    },
+    {
+      "name": "save-button",
+      "label": "Save and continue",
+      "control": "button",
+      "required": false,
+      "observedValues": [
+        "Save and continue"
+      ],
+      "confidence": "confirmed",
+      "evidence": "name=save-button, id=button-save-and-continue, value='Save and continue'. DESTINATION IS CONDITIONAL: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (06011010, no commodity class) -> /consignment/page-5; trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 25 (08059000, commodityClass 'Extra Class') -> /commodity/variety-of-genus-and-species?commodity-selected-code=08059000. Locator CommodityBasicDescriptionPage.ts:34-36."
+    },
+    {
+      "name": "page",
+      "label": "(hidden) page",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "1"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — <input type=\"hidden\" name=\"page\" value=\"1\"> on the filter form; pagination cursor carried through the filter form"
+    },
+    {
+      "name": "commodity-selected-code",
+      "label": "(hidden) commodity-selected-code",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "08059000",
+        "06011010"
+      ],
+      "inferredValues": [
+        "06042090",
+        "0713500010",
+        "87019510",
+        "84321000",
+        "10083000",
+        "0603197090",
+        "0808108010",
+        "14019000"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 (value=08059000); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22 (06011010). Identifies which commodity's species are being edited; also present as a query param. The two observed codes are named in types/commodity-code.ts:10 (hmiOnlyCIDAC 08059000 — the name independently corroborates that 08059000 is the HMI commodity) and :11 (hyacinths 06011010). inferredValues are the further codes CHED-PP tests drive through this page but that no trace rendered: 06042090 foliageOther (types/commodity-code.ts:8; ched-pp-notification.spec.ts:93,152,219), 0713500010 broadBeans (:18; ched-pp-eu-harmonisation.spec.ts:24,56), 87019510 tractorsWheeled (:19; ched-pp-eu-harmonisation.spec.ts:54), 84321000 ploughs (:20; ched-pp-notification.spec.ts:89), 10083000 canarySeed (:15; ched-pp-eu-harmonisation.spec.ts:23, ched-pp-notification.spec.ts:24,57), 0603197090 cutFlowers (:17; ched-pp-date-validation.spec.ts:15 and 9 further lines, ched-pp-article72.spec.ts:72), 0808108010 fruitAndNuts (:16; ched-pp-article72.spec.ts:26), 14019000 adenariaFloribunda (:4; ched-pp-notification.spec.ts:154,274). So the suite drives TEN distinct commodity codes through page-4 and the corpus traced only two — the species reference data behind the other eight is unseen."
+    },
+    {
+      "name": "commodityDetailsPage",
+      "label": "(hidden) commodityDetailsPage",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        ""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — empty in every observed render; duplicated once per form (2 copies pre-add at e10b7cd5 action 24; 3 copies post-add at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 22). Purpose unknown; no test references it."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) crumb",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — CSRF token on the POST forms. Value [REDACTED]."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) etag",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — optimistic-concurrency token for the draft, e.g. \"0000000000BD2B4B\""
+    },
+    {
+      "name": "is-last-of-page",
+      "label": "(hidden) is-last-of-page",
+      "control": "hidden",
+      "required": false,
+      "observedValues": [
+        "true"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — on the species-selection POST form. Semantics not established from traces; no test references it."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "No search results",
+      "field": "Add species table (the filtered species list)",
+      "trigger": "The species result set is empty. Rendered as a single <td colspan=\"3\"> inside the Add species table body, with the header row still present. This is an EMPTY STATE, not a validation error — no govuk-error-summary and no govuk-error-message accompany it. Observed after adding the only species matching the CIDAC filter: the re-query returned nothing because the sole match had moved into the Remove species table, so already-added species are excluded from the results.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 25 — main innerText ends '...Add species table / Genus (and Species)\tEPPO code\t / Add action links / / No search results / Save and continue'; table outerHTML at the same action shows <tr><td class=\"govuk-table__cell\" colspan=\"3\">No search results</td></tr>. Answers the openQuestion about whether a nil-match filter shows a message or a bare empty table: it shows this message. NO test asserts this string — it is trace-only."
+    },
+    {
+      "message": "Select at least one species",
+      "field": "species (the species-selection form as a whole)",
+      "trigger": "LEGACY — Save and continue clicked while zero species are selected. The chedpp handler sets errors [{ field: ['species'], description: SPECIES }] and re-renders. isSpeciesEmptyWithFilterOrNot is true when species.selected.length === 0 and either results exist or a filter is present. This is the mandatoriness enforcement for the species collection: at least one Genus (and Species) must be added before leaving the page. NOTE it uses the GENERIC SPECIES message, not the CHED-PP-specific SPECIES_CHEDPP string that also exists in the same file (see next entry). No trace and no test ever rendered this error — trace-corpus and QA suite are both happy-path only.",
+      "confidence": "legacy",
+      "evidence": "en.js:141 SPECIES: 'Select at least one species'; routes/handlers/importer/consignment_commodity_attributes_chedpp.js:16 (imports SPECIES), :133-140 (isSpeciesEmptyWithFilterOrNot -> errors field ['species'] description SPECIES), :221-224 (empty predicate). Field span rendered by the template's {{errorSpan errors 'species'}} at consignmentCommodityAttributesChedpp.html:132-133."
+    },
+    {
+      "message": "Select at least one Genus (and Species)",
+      "field": "species",
+      "trigger": "LEGACY — the CHED-PP-specific 'no species selected' copy. DEFINED in the same messages file as SPECIES_CHEDPP but NOT wired into the consignmentCommodityAttributesChedpp save handler, which uses the generic SPECIES ('Select at least one species') instead. SPECIES_CHEDPP is referenced from the bulk/other commodity flows. Recorded because it is the phrasing IPAFFS intends for a CHED-PP species requirement and the rebuild will likely prefer it over the generic one; which string a user actually sees on THIS page in legacy is the generic SPECIES. Flagged as a legacy inconsistency, not a rendered fact.",
+      "confidence": "legacy",
+      "evidence": "en.js:142 SPECIES_CHEDPP: 'Select at least one Genus (and Species)'. Not imported by consignment_commodity_attributes_chedpp.js:16 (only SPECIES is)."
+    },
+    {
+      "message": "You have added the maximum amount of commodity lines",
+      "field": "species (field-level error span)",
+      "trigger": "LEGACY — Add clicked (or a species added via the GET add path) when the notification is already at the commodity-line cap (numberOfCommodityLines + 1 > MAX_COMMODITY_LINES, config.maxCommodityLines). Rendered as the field-level error on 'species'; paired with the MAX_COMMODITY_LINES_EXCEEDED validation-summary header. Caps how many Genus (and Species) rows a whole notification may hold, across all commodities. Never traced, never tested.",
+      "confidence": "legacy",
+      "evidence": "en.js:108 MAX_COMMODITY_LINES_SINGLE: 'You have added the maximum amount of commodity lines'; consignment_commodity_attributes_chedpp.js:46-58 (GET add path) and :104-115 (POST add path) -> errors field ['species'] description MAX_COMMODITY_LINES_SINGLE; constants.js:12 MAX_COMMODITY_LINES = config.maxCommodityLines."
+    },
+    {
+      "message": "You have exceeded the maximum of {N} commodity lines per notification",
+      "field": "validation summary header (validationHeaderText)",
+      "trigger": "LEGACY — the error-summary heading shown alongside the field-level 'You have added the maximum amount of commodity lines' when an Add would breach the per-notification commodity-line cap. {N} is MAX_COMMODITY_LINES_VALUE, interpolated from config. Never traced, never tested.",
+      "confidence": "legacy",
+      "evidence": "en.js:109 MAX_COMMODITY_LINES_EXCEEDED: 'You have exceeded the maximum of ${MAX_COMMODITY_LINES_VALUE} commodity lines per notification'; consignment_commodity_attributes_chedpp.js:56 and :113 set viewContext.validationHeaderText = MAX_COMMODITY_LINES_EXCEEDED, rendered by the template's validationSummary partial (consignmentCommodityAttributesChedpp.html:14)."
+    },
+    {
+      "message": "Select a maximum of {maxRemaining} genus and species",
+      "field": "species",
+      "trigger": "LEGACY — the remaining-headroom variant of the commodity-line cap ('you may add at most N more'). Defined as MAX_COMMODITY_LINES_REACHED(maxRemaining) in the messages file. NOT imported by the consignmentCommodityAttributesChedpp handler (which uses the _SINGLE/_EXCEEDED pair), so it is not the message THIS page renders; recorded because it is part of the same commodity-line-cap family and the rebuild's species-cap copy should be reconciled against all three. Never traced, never tested.",
+      "confidence": "legacy",
+      "evidence": "en.js:107 MAX_COMMODITY_LINES_REACHED: maxRemaining => `Select a maximum of ${maxRemaining} genus and species`. Not referenced by consignment_commodity_attributes_chedpp.js."
+    },
+    {
+      "message": "Select at least one species",
+      "field": "species-list (checkbox variant only)",
+      "trigger": "LEGACY — the checkbox rendering of the species page (the non-chedpp consignmentCommodityAttributes template, reached for machinery/non-plant commodities) validates its checkbox group under the error key 'species-list', not 'species'. The field-level error span is bound to 'species-list' there. Copy is the generic SPECIES string. Recorded so the rebuild knows the checkbox and picker renderings use DIFFERENT error field keys ('species-list' vs 'species') for the same 'no species chosen' rule.",
+      "confidence": "legacy",
+      "evidence": "consignmentCommodityAttributes.html:127 ({{displayErrorClass errors 'species-list'}}), :136 ({{errorSpan errors 'species-list'}}); en.js:141 SPECIES."
+    },
+    {
+      "message": "(no true validation error observed)",
+      "field": "-",
+      "trigger": "No error state for this page was captured IN A TRACE OR TEST — both evidence traces are zero-error happy paths and .govuk-error-summary was absent from every snapshot; no CHED-PP spec asserts any error copy. SUPERSEDED FOR COPY by the legacy entries above (SPECIES, MAX_COMMODITY_LINES_*), which supply the real error strings from the IPAFFS source. Retained to record that the RENDERED corpus and the QA suite remain silent on these — the copy is legacy-sourced, not confirmed-rendered, so an error-path trace is still worth capturing to confirm the strings render as the source says.",
+      "confidence": "gap",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 — eval of document.querySelectorAll('.govuk-error-summary').length returned 0. CORROBORATION ATTEMPTED AND NEGATIVE: no test in the QA repo asserts any error/validation copy for this page. Every CHED-PP spec drives page-4 only on the happy path (filter -> Add -> Save and continue, or tick -> Save and continue); a grep across tests/ for species/genus error assertions returns nothing, and the page object exposes no error/summary locator (CommodityBasicDescriptionPage.ts:1-37). So there is no second source for this page's error copy — it must come from a human."
+    }
+  ],
+  "confidence": "inferred",
+  "openQuestions": [
+    "PAGE CONFIDENCE IS 'inferred', NOT 'confirmed' — corrected on the snapshot pass. The rule is that the page takes the WEAKEST of its field confidences, and the species-checkbox field (#<EPPO_CODE>-checkbox) is 'inferred': it is known only from the test locator, and no trace in the corpus renders it. Every other field on this page is 'confirmed' from rendered DOM, so the picker variant is the single thing holding the page below full confidence. Close that gap and the page becomes 'confirmed'.",
+    "EVIDENCE POINTER PARTLY WRONG (the boundary question the workflow asked us to settle): the page-3/page-4 boundary is settled for trace e10b7cd5 — actions 22-25 all render page title 'Select species of commodity'. So btnAddSpecies IS on page-4. But the second pointer was wrong: trace 1f5b6eef action 22 is a 'Save and continue' click (workflow :320), NOT an Add — the Add is action 21. Its snapshot is still on page-4, so it was usable as-is.",
+    "THE 'SIMPLE COMMODITY' PREMISE IS FALSE — BUT A SIMPLE VARIANT DOES EXIST, JUST NOT WHERE THE WORKFLOW SAID. The workflow states that for 06011010 (hyacinths) 'the page is a single Add + Save and continue'. Trace 1f5b6eef action 22 disproves that: 06011010 renders the FULL species picker ('Next page : 2 of 4', 25 species per page, one Add button each). The tests corroborate the trace — ched-pp-workflows.ts:318-321 shows that with no EPPO code the flow simply clicks the FIRST row's Add on the unfiltered list, which is what the workflow author probably mistook for 'simple'. Note 06011010 + no EPPO code is the DEFAULT_CONFIG combination (:146,:150), which is why this branch is the most-travelled one in the suite and the easiest to mistake for the whole page. HOWEVER a genuinely simple variant does exist for MACHINERY commodities (see next item). Rendered reality wins for 06011010; the premise is corrected, not the trace.",
+    "NEW VARIANT FOUND IN THE TESTS, NEVER TRACED — THE BIGGEST GAP ON THIS PAGE. For machinery commodity codes 87019510 (tractors, wheeled) and 84321000 (ploughs), page-4 renders species as CHECKBOXES (id=\"<EPPO_CODE>-checkbox\", driven with the placeholder EPPO code NNNXX) instead of the filter+paginated-table+Add pattern. The user ticks and saves — no Search, no Add, no pagination. Evidence: ched-pp-workflows.ts:85,158,304-312; CommodityBasicDescriptionPage.ts:14-16; ched-pp-eu-harmonisation.spec.ts:44,54-57; ched-pp-notification.spec.ts:89-91. NOTHING is known about how this variant actually looks — legend, hint, checkbox labels, whether it is govuk-checkboxes, whether NNNXX is the only option, and what triggers it (commodity code? a 'no species applicable' reference-data flag on non-plant goods?). NEEDS A TARGETED TRACE HUNT OR A HUMAN. The rebuild's page model must account for two renderings of this page, and NNNXX looks like a sentinel 'not a plant / no species' value worth designing for explicitly rather than copying.",
+    "THE VARIANT IS SCOPED PER COMMODITY, NOT PER NOTIFICATION — NEW, AND IT CONSTRAINS THE REBUILD'S PAGE MODEL. Although isSpeciesACheckbox is a single notification-level flag in the test config, both machinery tests pair a CHECKBOX first commodity with a FILTER+ADD second commodity inside the SAME notification: ched-pp-eu-harmonisation.spec.ts:54-58 (tractorsWheeled/NNNXX checkbox, then broadBeans/LENCU via filter) and ched-pp-notification.spec.ts:89-94 (ploughs/NNNXX checkbox, then foliageOther/CXQDA via filter). This works only because the workflow's second/third-commodity branches never consult isSpeciesACheckbox at all (ched-pp-workflows.ts:341-345, :358-362 use inputEppoCode/btnSearch/btnAddSpecies unconditionally) — so the flag is really 'is the FIRST commodity a checkbox one'. Conclusion: the rendering is conditioned on the COMMODITY CODE, not on the notification, and one consignment can legitimately show both renderings on successive visits to page-4. Inferred from test structure, not observed — but the tests would fail if it were otherwise, which makes it strong. Confirm the conditioning input (commodity code vs a reference-data flag) with a human.",
+    "TEST-CODE ASYMMETRY WORTH KNOWING WHEN READING THE WORKFLOW AS A SPEC: only the FIRST commodity's page-4 visit supports the checkbox variant (:305) and the commodity-class step (:313-316); the second and third visits (:341-345, :358-362) support neither. So 'second commodity + commodity class' and 'second commodity + checkbox species' are combinations the suite CANNOT express and has never run. Absence of these in the tests is a limitation of the harness, NOT evidence that the app forbids them — do not read it as a requirement.",
+    "The 'Remove species table' renders with only two columns (Genus (and Species), EPPO code) and NO remove control — querySelectorAll('[name*=remove],[id*=remove]') on trace 1f5b6eef action 22 returns 0, and NO page object accessor or test ever removes a species either (CommodityBasicDescriptionPage.ts exposes no remove locator). Both sources are silent, which strengthens rather than resolves the finding. Either removal is unreachable from this page (and the caption is misleading), or it appears in a state neither the traces nor the suite exercised. This is a real functional gap: how does a user undo an accidental Add? Needs a human answer.",
+    "CANCEL IS CONDITIONED ON THE SPECIES LIST BEING EMPTY — UPGRADED FROM 'unproven' TO 'confirmed' ON THE ADVERSARIAL PASS. The earlier draft compared e10b7cd5 action 24 (Cancel present) with 1f5b6eef action 22 (Cancel absent) and correctly refused to conclude, because those two renders differ in commodity code (08059000 vs 06011010), filter state and test spec as well as in species count — too many variables. But the controlled contrast exists INSIDE a single trace and was missed: at e10b7cd5 action 24 #cancel-link count is 1, and at e10b7cd5 action 25 — same trace, same commodity, same filter, the only intervening event being the CIDAC Add at action 24 — the count is 0. Species-added is therefore the sole varying input, and Cancel disappears with it. 1f5b6eef action 22 (species added, count 0) is consistent. The rule: Cancel renders only while zero species are selected — 'cancel' is offered only while there is nothing to lose. No test references a Cancel control, so the trace is the only source; the DESIGN INTENT (why the escape hatch is withdrawn precisely when the user has state worth discarding, which is when an escape hatch is most useful) is a question for a human, and the rebuild should probably not copy it.",
+    "COMMODITY CLASS INTERLEAVE — NOW SETTLED, AND IT IS A PAGE-OBJECT SMELL, NOT A SECOND VISIT. ched-pp-workflows.ts:312 clicks btnSaveAndContinue on page-4, :313-316 fills the Commodity Class page, then :317 clicks commodityBasicDescription.btnSaveAndContinue AGAIN. Trace e10b7cd5 resolves what those three clicks actually hit: action 25 (:312) is on page-4 and navigates to /commodity/variety-of-genus-and-species?commodity-selected-code=08059000; action 27 (:315) navigates to /commodity/summary; action 28 (:317) is on a page titled 'Commodity - Import and export applications - GOV.UK' at /commodity/summary and navigates to /consignment/page-5. So the second btnSaveAndContinue is the page object being REUSED to drive /commodity/summary — a different page that happens to share the 'Save and continue' button. The user does NOT return to page-4. Real page order for a class-bearing commodity: page-4 (species) -> /commodity/variety-of-genus-and-species (class) -> /commodity/summary -> page-5. NOTE /commodity/summary's save button carries an extra class govuk-!-margin-right-3, which distinguishes it from page-4's. Both /commodity/variety-of-genus-and-species and /commodity/summary need their own page specs — neither is covered here. Seed for the class page's spec: its dropdown is commodityClass.dropdownSelectClass and its three known options are 'Class I', 'Class II', 'Extra Class' (types/commodity-class.ts:2-4), of which only 'Extra Class' is ever driven (ched-pp-hmi-checks.spec.ts:24).",
+    "No true validation error was observed at all, and the tests assert none either, so neither admissible source has this page's error copy. Unknown whether 'Save and continue' with zero species selected is an error (likely, given the fieldset legend 'Select Genus (and Species) of commodity '), and unknown what the message says. Also unknown: any max number of species. ALL error copy for this page must be sourced from a human or a fresh error-path trace. PARTIALLY RESOLVED: the nil-match question is now answered — a filter matching nothing renders the message 'No search results' as a colspan=3 cell inside the Add species table, keeping the header row, with no error summary (trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 25). It is an empty state, not an error.",
+    "THE ONLY HUMAN-STATED RULE ABOUT THIS PAGE IN THE TESTS IS AN ACCESSIBILITY ONE — BUT ITS COVERAGE IS NARROWER THAN THE EARLIER DRAFT CLAIMED. The a11y suite runs an axe check against this page for both the first and second commodity (tests/accessibility/ched-pp-accessibility-tests.spec.ts:52 'Commodity Basic Description Page (first)', :76 '(second)'). CORRECTED: the draft said the checks assert the page passes 'with a species list rendered and, at :76, with a species already added', implying :52 covers a pre-add state. It does not. BOTH checks run immediately AFTER an Add click (:51 then :52; :75 then :76), so both observe the POST-ADD state only. Consequences the rebuild should know: (a) the PRE-ADD state — the one carrying the Cancel link and the two-table layout — has NO a11y coverage at all; (b) the 'No search results' empty state has none either; (c) coverage is picker-variant only — the checkbox variant has NO a11y coverage, which matters given its data-derived ids and the missing-label hint above. The inherited requirement is real but thinner than it looks.",
+    "ALREADY-ADDED SPECIES ARE EXCLUDED FROM THE SEARCH RESULTS — inferred from one observation, worth confirming. At trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 24 the CIDAC filter returned exactly one row (Citrus australasica); at action 25, after that row's Add was clicked, the same filter returned 'No search results' while Citrus australasica appeared in the Remove species table. The most likely rule is that the Add species table subtracts the already-selected set, which would also mean a species cannot be added twice. Only one data point, no test corroborates it, and the alternative explanation (the POST silently reset the filter) is not excluded — the query string still carried eppo-code=CIDAC, which argues for the exclusion reading. Confirm before relying on it: it implies the rebuild needs an anti-duplicate rule.",
+    "The species list is reference data (EPPO codes + scientific names) scoped by commodity code: 08059000 (description 'Other') returns Citrus* (3 pages), 06011010 ('Hyacinths') returns hyacinth-family genera (Albuca, Barnardia, Bellevalia, Bowiea, Brimeura, Camassia, Chlorogalum, Dipcadi... — 4 pages). Real EPPO codes the suite drives are CIDAC, PHAAN, LENCU, CXQDA, GYPEL (plus the NNNXX machinery sentinel) — a useful seed set for the rebuild's reference data, though note types/eppo-code.ts defines only CIDAC and the rest are inline literals, so there is no authoritative enumeration in either source. The suite drives TEN distinct commodity codes through this page (see the commodity-selected-code field) and only two were traced. The commodity->species mapping rule itself is derivable from neither traces nor tests and must come from the reference-data service or a human.",
+    "hidden field 'commodityDetailsPage' is empty in every observed render and 'is-last-of-page=true' semantics are unclear. Neither is referenced by any test. Both look like IPAFFS navigation-state plumbing rather than captured requirements — flagged so the rebuild does not cargo-cult them.",
+    "Page-4 is reached once per commodity, so the species selection is a nested collection (consignment -> commodity[] -> species[]). The tests confirm multi-commodity re-entry that the traces never showed: ched-pp-workflows.ts:330-364 walks page-4 a second and third time (secondCommodityCode/thirdCommodityCode with secondEppoCode/thirdEppoCode), as does ched-pp-accessibility-tests.spec.ts:50-77. So per-commodity scoping via commodity-selected-code is corroborated, but no trace exercised a multi-commodity consignment on this page. Note DEFAULT_CONFIG is multi-commodity (singleCommodity: false, secondCommodityCode: foliageOther — ched-pp-workflows.ts:145,147), so the default journey visits this page TWICE; the traced journeys are the single-commodity exception (ched-pp-hmi-checks.spec.ts:18 sets singleCommodity: true).",
+    "PAGE OBJECT IS SHARED ACROSS ALL FOUR CHED TYPES — do not mistake its other members for CHED-PP requirements. CommodityBasicDescriptionPage.ts also exposes dropdownTypeOfCommodity (:6-8), checkboxSpecies(name) (:10-12) and radioNo (:18-20), but every caller of those three is CHED-A, CHED-P or CHED-D (ched-a-workflows.ts:277,956; ched-p-workflows.ts:294-301,686-690,871-875; ched-d-workflows.ts:211-212; and the sibling a11y specs). No CHED-PP workflow or test touches them, and no CHED-PP trace renders them. They are therefore EXCLUDED from this spec as out-of-journey. Flagged only so a later reader does not 'find' them and add a Type of commodity dropdown to the CHED-PP rebuild. The same caution applies to btnSaveAndContinue, which the CHED-PP workflow itself reuses to drive /commodity/summary (see the interleave item above).",
+    "LEGACY (mandatoriness) — THE SPECIES COLLECTION IS REQUIRED: at least one Genus (and Species) must be added before Save and continue succeeds. Enforced at the frontend controller, NOT by a model @NotNull group — now confirmed against the schema model: CommodityComplement.java:29-49 (the per-species-line representation: eppoCode, speciesID, speciesName, speciesTypeName, speciesClass, speciesFamily, speciesNomination, speciesCommonName) carries ONLY @RetrospectiveCloningProperty on those fields and ZERO @NotNull group annotations, so nothing at the CHED-PP submission-validation layer (ValidationMessages.properties has no species/genus key — its commodities.chedpp.* keys are weights and complementparameterset package/quantity fields for OTHER pages) requires a species. The requirement is purely frontend: consignment_commodity_attributes_chedpp.js:133-140 blocks with errors field ['species'] description SPECIES ('Select at least one species') when species.selected.length === 0. This is 'as the old system had it' and is a policy the rebuild will keep (a commodity line with no species is meaningless) but should re-express with the CHED-PP-specific copy 'Select at least one Genus (and Species)' (SPECIES_CHEDPP) rather than the generic string IPAFFS actually renders. The genus and eppo-code FILTER inputs are NOT mandatory (optional search fields, not persisted); the hidden plumbing fields are not user inputs. So the only mandatoriness on this page is the collection-level 'at least one species' — a frontend-only rule, which the rebuild is free to revisit (e.g. enforce it in the model/API rather than only in the UI). Evidence: CommodityComplement.java:29-49 (no @NotNull); ValidationMessages.properties (no species/genus chedpp key); consignment_commodity_attributes_chedpp.js:133-140.",
+    "LEGACY — A THIRD RENDERING EXISTS: THE HIDDEN SELECTION BLOCK. shouldShowSpeciesSelection (consignment_commodity_attributes_chedpp.js:246-247) is false when the species reference query returns zero elements AND no filter is applied — i.e. a commodity with NO species reference data at all. When false the template hides the ENTIRE selection block (legend, hint, filter, add table, pagination) via {{#if shouldShowSpeciesSelection}} (consignmentCommodityAttributesChedpp.html:37,:130) and renders only: the commodity summary echo table, the Save and continue button, and (since selected.length is 0) the Cancel link. Never traced, never tested. This is distinct from the checkbox variant and is the most likely real behaviour for a commodity that genuinely has no selectable species. The rebuild's page model must therefore account for THREE renderings of page-4: picker (plant), hidden-block (no reference species), and checkbox (shared non-chedpp template) — not two.",
+    "DISCREPANCY — THE CHECKBOX VARIANT IS NOT IN THE CHED-PP TEMPLATE. consignmentCommodityAttributesChedpp.html (the authoritative CHED-PP species template) has NO checkbox path whatsoever — it is filter + paginated Add table + conditional Remove table only. The species checkboxes the QA suite drives for machinery commodities (id=\"{eppoCode}-checkbox\", name=\"species\") are rendered by the SHARED consignmentCommodityAttributes.html:154-166, the CHED-A/P/D commodity-attributes page. Either (a) machinery/non-plant CHED-PP commodities are routed to the shared template rather than the chedpp one, or (b) the QA 'isSpeciesACheckbox' path exercises a code branch that in production only fires for other CHED types. The traces cannot arbitrate (none rendered a machinery commodity). This is a genuine routing question for a human/Reconcile, not merely missing copy."
+  ]
+}

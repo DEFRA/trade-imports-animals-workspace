@@ -1,0 +1,107 @@
+{
+  "hash": "545412266caaec96b0aae12262fecfee3e099888",
+  "title": "auth/DoA/doa-notification-creation.spec.ts:113 › Delegated Organisation - Notification Creation › Carol Clark (agent) creates for Plant Org 1 → contact and importer auto-populated from Plant Org 1",
+  "kind": "creation",
+  "specFile": "auth/DoA/doa-notification-creation.spec.ts:113",
+  "actor": "Carol Clark (delegated agent)",
+  "delegatedOrg": "IPAFFS Plant Organisation 1",
+  "chedType": "CHEDPP",
+  "resultReference": "CHEDPP.GB.2026.1525742 (draft: DRAFT.GB.2026.1525742)",
+  "pagesTouched": [
+    "notifications-dashboard",
+    "consignment-type",
+    "consignment-for",
+    "consignment-organisation",
+    "consignment-country-of-origin",
+    "consignment-commodities",
+    "commodity-code-search",
+    "commodity-purpose",
+    "commodity-details",
+    "consignment-gross-weight",
+    "consignment-transport-bcp",
+    "consignment-cvedp-controls",
+    "consignment-documents",
+    "consignor-exporter",
+    "importer",
+    "declaration",
+    "notification-sent-confirmation",
+    "review-notification-details"
+  ],
+  "newSurface": "This delegated-agent (DoA) CHED-PP creation exercises the entire agent surface the standard journey never renders. (1) A TWO-STEP organisation selector inserted right after the CHED-PP consignment-type page: first 'consignment-for' (Who are you creating this notification for?) offering the agent's OWN organisation(s) as radios (e.g. 'IPAFFS Plant Agency C') plus a final radio 'A different organisation'; choosing that leads to 'consignment-organisation' (Which company is this notification for) which lists every trade-partner the agent is authorised to act for as radios, each rendered with organisation name in bold + full multi-line address (IPAFFS Plant Agency F — 22 Acacia Avenue, London, N17 8LR; IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT; IPAFFS Plant Organisation 2 — same address). (2) A persistent 'Trade Partner' badge: on the dashboard each notification created for a delegated org shows, under the 'CHED status' term, a 'Draft CHEDPP' strong tag followed by a 'Trade Partner' strong badge, and the Consignee column resolves to the delegated org ('IPAFFS Plant Organisation 1'). (3) Contact/importer AUTO-POPULATION from the delegated org, NOT the signed-in agent: the Responsible person / Contact details resolve to a MEMBER of Plant Org 1 (Isabel Irwin, ipaffs-plant-org-1-isabel@mailinator.com, tel 0123456789) and the Importer resolves to the delegated org itself (IPAFFS Plant Organisation 1, KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT, GB, 0123456789, test@example.com) — the agent (Carol Clark) never types responsible-person or importer details; the journey skips straight from consignor/exporter to declaration. (4) Agent header nav: the signed-in banner reads 'Carol Clark |' and carries extra links 'Address book', 'Manage account', 'Manage trade partners' (/trade-partners/filter), 'Sign out' — the trade-partner management entry points.",
+  "fields": {
+    "consignment-for": {
+      "pageTitle": "Who are you creating this notification for - Import and export applications - GOV.UK",
+      "heading": "Who are you creating this notification for?",
+      "sectionCaption": "About the consignment",
+      "urlSlug": "/protected/notifications/consignment-for?type=CHEDPP",
+      "control": "radios",
+      "options": [
+        { "label": "IPAFFS Plant Agency C", "note": "agent's own organisation (confirmed for this fixture; the list is the agent's own org(s))" },
+        { "label": "A different organisation", "note": "route into the delegated / trade-partner organisation picker" }
+      ],
+      "submit": "Save and continue",
+      "confidence": "confirmed",
+      "evidence": "trace 545412266caaec96b0aae12262fecfee3e099888 action 11 (snapshot before), refs e64/e67"
+    },
+    "consignment-organisation": {
+      "pageTitle": "Import and export applications - GOV.UK",
+      "heading": "Which company is this notification for",
+      "sectionCaption": "About the consignment",
+      "urlSlug": "/protected/notifications/consignment-organisation?type=CHEDPP",
+      "control": "radios (org name in bold + full address block per option)",
+      "options": [
+        { "label": "IPAFFS Plant Agency F", "address": "22 Acacia Avenue, London, N17 8LR" },
+        { "label": "IPAFFS Plant Organisation 1", "address": "KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT", "selected": true },
+        { "label": "IPAFFS Plant Organisation 2", "address": "KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT" }
+      ],
+      "submit": "Save and continue",
+      "confidence": "confirmed",
+      "evidence": "trace 545412266caaec96b0aae12262fecfee3e099888 action 13 (snapshot before), refs e58/e62/e66"
+    },
+    "review-responsible-person-autopopulated": {
+      "pageTitle": "Review Notification",
+      "heading": "Contact details",
+      "fields": {
+        "Responsible person": "Isabel Irwin",
+        "Telephone": "0123456789",
+        "Email": "ipaffs-plant-org-1-isabel@mailinator.com",
+        "Organisation Name": "IPAFFS Plant Organisation 1",
+        "Organisation Address": "KAINOS SOFTWARE LTD, 4-6,UPPER CRESCENT,BELFAST,BT7 1NT,GB",
+        "Organisation Telephone": "0123456789"
+      },
+      "note": "Auto-populated from the DELEGATED org (Plant Org 1 member Isabel Irwin), not from the signed-in agent Carol Clark. Never entered by hand during the journey.",
+      "confidence": "confirmed",
+      "evidence": "trace action 95 (snapshot before) refs e109-e125; eval on #responsible-contact-name/email/telephone"
+    },
+    "review-importer-autopopulated": {
+      "heading": "Importer",
+      "value": "IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT, United Kingdom of Great Britain and Northern Ireland, 0123456789, test@example.com",
+      "note": "Importer resolves to the delegated org itself. Journey clicked 'Same as consignee' (action 77) on the importer page; consignee = the delegated org.",
+      "confidence": "confirmed",
+      "evidence": "trace action 95 eval on #importer; dashboard action 90 Consignee=IPAFFS Plant Organisation 1"
+    },
+    "dashboard-trade-partner-badge": {
+      "location": "dashboard row 'CHED status' definition, and Consignee column",
+      "chedStatusStack": ["Draft CHEDPP", "Trade Partner"],
+      "consignee": "IPAFFS Plant Organisation 1",
+      "consignor": "Linus George Ltd",
+      "note": "'Trade Partner' rendered as a <strong> badge beneath the CHED status on every notification created on behalf of a delegated org.",
+      "confidence": "confirmed",
+      "evidence": "trace action 90 (snapshot before) refs e344-e352"
+    }
+  },
+  "authorizationRules": [
+    "Carol Clark is a delegated agent authorised to create CHED-PP notifications on behalf of multiple trade-partner organisations: IPAFFS Plant Agency F, IPAFFS Plant Organisation 1, and IPAFFS Plant Organisation 2 — all offered as selectable radios on the consignment-organisation picker (confirmed, trace action 13).",
+    "The agent may also create for their own organisation(s) (e.g. IPAFFS Plant Agency C) — offered on the consignment-for page alongside the 'A different organisation' route (confirmed, trace action 11).",
+    "When creating for a delegated org, the Responsible person / Contact details are auto-populated from a MEMBER of that delegated org (Isabel Irwin of Plant Org 1) — NOT from the signed-in agent (Carol Clark). The agent's own identity is not used as the responsible contact (confirmed, trace action 95).",
+    "When creating for a delegated org, the Importer is auto-populated as the delegated org itself (IPAFFS Plant Organisation 1) (confirmed, trace action 95 / dashboard action 90).",
+    "A notification created on behalf of a trade partner is tagged 'Trade Partner' (badge under CHED status) and lists the delegated org as Consignee on the agent's dashboard (confirmed, trace action 90).",
+    "Trade-partner relationships are managed via a dedicated 'Manage trade partners' area (/protected/notifications/trade-partners/filter) linked from the signed-in header (confirmed, header nav all snapshots).",
+    "This trace does not by itself prove the reciprocal visibility rule (whether a Plant Org 1 member can see the agent-created notification); that requires the paired visibility trace. Recorded as a gap for the cross-actor visibility assertion."
+  ],
+  "notes": "kind=creation but the value is the agent-access surface: two-step org selector (consignment-for → consignment-organisation), Trade Partner dashboard badge, and delegated-org auto-population of responsible person + importer. Standard CHED-PP body pages (country of origin=France, commodity 06011010, manual entry, internal market purpose, packages, transport by rail/road with BCP + inspection premises, CHED reference document REF-124, consignor/exporter 'Linus George Ltd', declaration) were walked but are already covered by the main run — only the delegated surfaces above are new. All org names/addresses are IPAFFS test fixtures.",
+  "gaps": [
+    "Reciprocal visibility (Plant Org 1 member seeing an agent-created notification vs an agent's own-org notification) is asserted by the paired auth/DoA visibility trace, not this one.",
+    "Exact business rule for WHICH member of the delegated org becomes the 'Responsible person' (here Isabel Irwin) is not shown — inferred to be a designated org contact; a question for a human / the DoA spec."
+  ]
+}

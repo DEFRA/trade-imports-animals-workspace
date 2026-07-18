@@ -1,0 +1,356 @@
+{
+  "slug": "cloning-type",
+  "name": "Clone a health or phytosanitary certificate — certificate type",
+  "url": "/notification/vnet/protected/notifications/cloning/type",
+  "pageTitle": "Certificate type for health or phytosanitary certificate - Import and export applications - GOV.UK",
+  "heading": "Clone a health or phytosanitary certificate",
+  "bodyCopy": [
+    "You can copy details from a health or phytosanitary certificate to create a new import notification, depending on the type of commodity and country you're importing from.",
+    "Search for a certificate to clone",
+    "Before you start, you'll need these details from the certificate:",
+    "country of origin of the certificate",
+    "certificate reference number",
+    "certificate date of issue",
+    "consignor, consignee or importer name"
+  ],
+  "backLink": "Back -> /notification/vnet/protected/notifications#top (the dashboard). Rendered above main in the account/nav bar as a 'Back | Dashboard' pair, not as a govuk-back-link inside main. CONFIRMED from the trace DOM: anchors 'Back -> /notification/vnet/protected/notifications#top' and 'Dashboard -> /notification/vnet/protected/notifications' (trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 before-snapshot). Source corroboration: cert_type.js:48 sets backLink = '/protected/notifications#top' (the /notification/vnet segment is a deployment route prefix, not part of the handler's path); certType.html:5 renders it via {{> common/backLink link=backLink}}.",
+  "continueLabel": "Continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-full (full width, NOT the two-thirds default that GOV.UK recommends for a question page)",
+  "entryPoint": {
+    "description": "Reached from the notification dashboard via a 'Clone a certificate' link.",
+    "confidence": "confirmed",
+    "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 12 — the locator resolved to <a id=\"search-to-clone\" class=\"govuk-button notification-button\" href=\"/notification/vnet/protected/notifications/cloning/type\">Clone a certificate</a> and the click navigated to https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/cloning/type. Note the entry control is an anchor STYLED as a govuk-button, carrying a non-govuk 'notification-button' class — that class lives on the dashboard, not on this page. Corroborated by page object: page-objects/notification/NotificationDashboardPage.ts:16-22 — linkCloneNotification = getByRole('link', { name: 'Clone a certificate' }) (:16-18), driven by cloneNotification() (:20-22); called at workflows/notification/ched-pp-workflows.ts:937 and workflows/notification/ched-p-workflows.ts:1303."
+  },
+  "structure": [
+    {
+      "element": "error-summary",
+      "text": "Please fix the following errors — <one link per error, href='#cert-type'>",
+      "govukComponent": "Error summary (govuk-error-summary, data-module=\"govuk-error-summary\")",
+      "conditional": "ERROR STATE ONLY — not present in the happy-path trace. Rendered as the FIRST child of the column, ABOVE the H1. See conditionalStates 'Validation error state'."
+    },
+    {
+      "element": "h1",
+      "text": "Clone a health or phytosanitary certificate",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You can copy details from a health or phytosanitary certificate to create a new import notification, depending on the type of commodity and country you're importing from.",
+      "govukComponent": "Body text (govuk-body)"
+    },
+    {
+      "element": "h2",
+      "text": "Search for a certificate to clone",
+      "govukComponent": "Heading (govuk-heading-l)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Before you start, you'll need these details from the certificate:",
+      "govukComponent": "Body text (govuk-body)"
+    },
+    {
+      "element": "bullet-list",
+      "text": "country of origin of the certificate / certificate reference number / certificate date of issue / consignor, consignee or importer name",
+      "govukComponent": "List (govuk-list govuk-list--bullet)"
+    },
+    {
+      "element": "radios",
+      "text": "What are you importing? — Live animals / Products of animal origin, germinal products or animal by-products / Plants, plant products and other objects",
+      "govukComponent": "Radios in a Fieldset with legend (govuk-fieldset__legend govuk-label--m)"
+    },
+    {
+      "element": "details",
+      "text": "Why some options are not available",
+      "govukComponent": "Details (govuk-details)",
+      "conditional": "OVERDUE-DEBTOR STATE ONLY — not present in the happy-path trace. Rendered inside the form, between the radios and the Continue button (certType.html:35-37). See conditionalStates."
+    },
+    {
+      "element": "button",
+      "text": "Continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-top-7), data-module=\"govuk-button\", data-prevent-double-click=\"true\""
+    }
+  ],
+  "behaviours": [
+    {
+      "behaviour": "Successful submit redirects to the search page, carrying the chosen type as a query parameter",
+      "detail": "POST to the relative action 'type' with a valid cert-type returns a 302 to /protected/notifications/cloning/search?certType=<CVEDA|CVEDP|CHEDPP>. The user's answer is therefore carried forward in the URL, NOT in session state — the next page reads it from the query string. This is the page's actual routing contract.",
+      "confidence": "confirmed",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 14 (Click Continue) — the action log records: navigated to \"https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/cloning/search?certType=CHEDPP\". Source corroboration: cert_type.js:42-43 (const certType = request.payload['cert-type']; return h.redirect(CLONING_SEARCH_PAGE(certType))) and constants.js:127 (CLONING_SEARCH_PAGE: certType => `/protected/notifications/cloning/search?certType=${certType}`).",
+      "notes": "Materially relevant to the rebuild, and it corroborates this page's own analysis (see openQuestions): the type answer is a ROUTING decision passed in the URL, not journey data persisted against a draft notification. A rebuilt CHED-PP-only service that has no type question at all would simply start at the search page."
+    },
+    {
+      "behaviour": "Double-click prevention on the Continue button",
+      "detail": "The submit button is initialised as a govuk-frontend Button component (data-module=\"govuk-button\") with data-prevent-double-click=\"true\", so the govuk-frontend JS debounces repeat submits (~1s) and a second rapid click does not re-POST the form.",
+      "confidence": "confirmed",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 (before snapshot) — <button class=\"govuk-button govuk-!-margin-top-7\" type=\"submit\" value=\"Continue\" id=\"continue\" data-module=\"govuk-button\" data-prevent-double-click=\"true\">Continue</button>. Component initialisation additionally confirmed at action 14, where the locator resolved to the same button now carrying data-govuk-button-init=\"\" — i.e. govuk-frontend JS had run and bound the component, so the guard was genuinely live in the recorded run, not merely declared in markup.",
+      "notes": "A real requirement, not decoration: the rebuild should set preventDoubleClick: true on the govukButton macro. Note this is a JS-dependent guard — it does NOT protect a no-JS submit, so the server must still be idempotent on repeat POSTs. No test exercises the double-click path."
+    }
+  ],
+  "domHooks": {
+    "description": "Non-class DOM identifiers present on this page. Not requirements in themselves, but recorded so the rebuild does not silently drop hooks that legacy CSS/JS/tests may bind to.",
+    "confidence": "confirmed",
+    "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 (before snapshot) — main innerHTML.",
+    "ids": [
+      "certificate-type (on the govuk-grid-row wrapper)",
+      "page-primary-title (on the H1)",
+      "cert-type / cert-type-2 / cert-type-3 (the three radios)",
+      "continue (the submit button)"
+    ],
+    "notes": "No test in the QA suite selects by any of these ids — every locator is role+accessible-name based (CloningTypePage.ts:6-16). The ids appear to be legacy/CSS hooks. One is load-bearing beyond CSS, though: the error-summary link targets href=\"#cert-type\" (validationSummary.html:18 renders href=\"#{{field.[0]}}\", and the Joi key is 'cert-type'), so the id on the FIRST radio is what makes the error link focus the radio group. The rebuild must keep an equivalent anchor target."
+  },
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": ["govuk-heading-xl", "govuk-heading-l"],
+      "count": 2,
+      "usage": "H1 page heading (xl) and H2 'Search for a certificate to clone' section heading (l). Count is scoped to <main> — the footer's 'Support links' H2 is page furniture and excluded.",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "count": 2,
+      "usage": "Intro paragraph explaining cloning, and the 'Before you start' lead-in to the bullet list",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "List",
+      "govukClass": "govuk-list",
+      "modifiers": ["govuk-list--bullet"],
+      "count": 1,
+      "usage": "Bullet list of the four certificate details the user must have to hand before searching",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": ["govuk-fieldset__legend", "govuk-label--m"],
+      "count": 1,
+      "usage": "Wraps the 'What are you importing?' radio group; legend styled at medium (label--m) rather than as the page heading",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": ["govuk-!-width-one-half", "govuk-radios__item", "govuk-radios__input", "govuk-radios__label"],
+      "count": 1,
+      "usage": "Certificate type selection — three options, one per CHED type (CVEDA / CVEDP / CHEDPP). Stacked, not inline (no govuk-radios--inline class present). No govuk-radios--small, no conditional reveals, no hint on any option in the observed (non-debtor) state. Rendered by a shared partial: certType.html:28-34 calls {{> govuk/radios classes='govuk-!-width-one-half' name='cert-type' legendText='What are you importing?' legendClasses='govuk-label--m' items=certificateTypes }}.",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-top-7"],
+      "count": 1,
+      "usage": "Primary 'Continue' submit (type=submit, id=continue, value=Continue), POSTs the form to the relative action 'type'. Carries data-module=\"govuk-button\" and data-prevent-double-click=\"true\" — see behaviours. Accessible name 'Continue' — corroborated by page-objects/notification/cloning/CloningTypePage.ts:14-16 (btnContinue = getByRole('button', { name: 'Continue' })).",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "count": 1,
+      "usage": "Wraps the radio fieldset",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": ["govuk-grid-column-full"],
+      "count": 1,
+      "usage": "Page layout — single full-width column",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": ["govuk-error-summary__title", "govuk-error-summary__body", "govuk-error-summary__list"],
+      "count": 1,
+      "usage": "ERROR STATE ONLY — zero in the happy-path trace. certType.html:13 includes {{> common/validationSummary}} as the first child of the column, above the H1. When viewContext.errors is populated it renders <div class=\"govuk-error-summary\" data-module=\"govuk-error-summary\"> with an H2 title and a govuk-list govuk-error-summary__list of links, each href=\"#cert-type\".",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3 (legacy app source): certType.html:13; partials/common/validationSummary.html:1-25; populated by cert_type.js:36-39 (viewContext.errors = errorHelper.mapErrors(result)). NOT observed rendered — no trace exercises a validation error on this page."
+    },
+    {
+      "component": "Details",
+      "govukClass": "govuk-details",
+      "modifiers": ["govuk-details__summary", "govuk-details__summary-text", "govuk-details__text", "govuk-!-width-two-thirds"],
+      "count": 1,
+      "usage": "OVERDUE-DEBTOR STATE ONLY — zero in the happy-path trace. Summary 'Why some options are not available', inside the form between the radios and Continue.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: certType.html:35-37; partials/importer/overdueDebt/overdueDebtWarning.html:19-43 ({{else}} branch). NOT observed rendered."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "None in the OBSERVED state — every class inside <main> is govuk-* prefixed",
+      "whatItDoes": "In the happy-path (non-debtor, no-error) state the page is built entirely from GOV.UK Design System classes: govuk-!-margin-top-7, govuk-!-width-one-half, govuk-body, govuk-button, govuk-fieldset, govuk-fieldset__legend, govuk-form-group, govuk-grid-column-full, govuk-grid-row, govuk-heading-l, govuk-heading-xl, govuk-label, govuk-label--m, govuk-list, govuk-list--bullet, govuk-radios, govuk-radios__input, govuk-radios__item, govuk-radios__label.",
+      "concern": "No concern for markup in this state — it can be rebuilt 1:1 with govuk-frontend Nunjucks macros with no custom CSS. Recorded as an explicit positive finding. SCOPE CAVEAT: this enumeration is of the state the trace captured. The two UNOBSERVED states each introduce a deviation — see the next two entries. See openQuestions for two Design System *usage* deviations (full-width layout; multiple questions/headings on one question page) that are conventions rather than non-standard classes.",
+      "govukAlternative": "n/a — already standard",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 — every class on every element inside <main> enumerated from the DOM; none lacks the 'govuk-' prefix."
+    },
+    {
+      "pattern": "Error summary titled 'Please fix the following errors' rather than 'There is a problem'",
+      "whatItDoes": "The shared validationSummary partial defaults its H2 to 'Please fix the following errors' when no headerText is supplied, and cert_type.js supplies none.",
+      "concern": "A GOV.UK Design System copy deviation: the Error summary component's prescribed title is 'There is a problem'. IPAFFS has substituted instructional copy service-wide. The rebuild should use the standard title, not port this string.",
+      "govukAlternative": "govukErrorSummary with titleText: 'There is a problem'",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: partials/common/validationSummary.html:5-9 ({{#if headerText}}{{headerText}}{{else}} Please fix the following errors {{/if}}); cert_type.js:36-38 sets only viewContext.errors and viewContext.form, never headerText, so the {{else}} default is what this page renders. NOT observed."
+    },
+    {
+      "pattern": "govuk-error-summary__body used outside a govuk-error-summary block (overdue-debtor state)",
+      "whatItDoes": "The {{else}} branch of overdueDebtWarning.html wraps its paragraph in <div class=\"govuk-error-summary__body\"> although there is no govuk-error-summary parent — the surrounding element is a plain <div>.",
+      "concern": "A BEM element orphaned from its block: it inherits error-summary body styling in a context that is not an error. Cosmetic in effect but it is the one non-conforming use of a govuk-* class on this page. The rebuild should not carry it — the Details body needs no error-summary class.",
+      "govukAlternative": "Plain govuk-body paragraph inside govuk-details__text",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: partials/importer/overdueDebt/overdueDebtWarning.html:20-31 — <div> > <div role=\"alert\"> > <details class=\"govuk-details\"> ... <div class=\"govuk-details__text govuk-!-width-two-thirds\"> > <div class=\"govuk-error-summary__body\">. NOT observed."
+    },
+    {
+      "pattern": "<div class=\"govuk-radios govuk-!-width-one-half\">",
+      "whatItDoes": "Applies a one-half width override to the radios container.",
+      "concern": "A govuk-* utility used in a slightly unusual place — width overrides are normally applied to inputs/selects, not radio containers, and here it is compensating for the page being govuk-grid-column-full instead of -two-thirds. The rebuild should use govuk-grid-column-two-thirds and drop the width override rather than port it.",
+      "govukAlternative": "govuk-grid-column-two-thirds on the column; no width class on the radios",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13"
+    }
+  ],
+  "fields": [
+    {
+      "name": "cert-type",
+      "label": "What are you importing?",
+      "control": "radio",
+      "required": true,
+      "options": [
+        "Live animals",
+        "Products of animal origin, germinal products or animal by-products",
+        "Plants, plant products and other objects"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 3,
+      "observedValues": ["CHEDPP"],
+      "confidence": "confirmed",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13. Radio group name='cert-type'; ids cert-type / cert-type-2 / cert-type-3; submitted values CVEDA / CVEDP / CHEDPP respectively — all three re-verified this pass by enumerating every input in the frozen DOM. No `required` attribute on any radio, no radio pre-checked, and no radio disabled in this state — validation is server-side. Legend is the visible label (govuk-fieldset__legend govuk-label--m); no hint text on any option. CORROBORATION (source 2): page-objects/notification/cloning/CloningTypePage.ts:6-12 exposes exactly two of the three options — radioPlantsPlantProducts = getByRole('radio', { name: 'Plants, plant products and' }) (lines 6-8) and radioProductsOfAnimalOrigin = getByRole('radio', { name: 'Products of animal origin' }) (lines 10-12). The accessible names in the page object are prefix substrings of the rendered labels, consistent with the trace. The CHED-PP option is checked at workflows/notification/ched-pp-workflows.ts:939; the CVEDP option at workflows/notification/ched-p-workflows.ts:1305. REQUIRED — RESOLVED BY SOURCE 3 (legacy app source): /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/cloning/cert_type_validation.js:15 declares Joi 'cert-type': Joi.string().valid(...validTypes).required(), where validTypes = [CVEDA, CVEDP, CHEDPP] (:13). The server DOES reject an empty POST, with the message 'Select the type of import' (see validationMessages). So the field is genuinely mandatory (`required: true`), enforced server-side only — there is deliberately no HTML `required` attribute and no radio is pre-checked (both confirmed in the trace DOM). Note the `required: true` here is a `legacy` sub-claim read verbatim from the authoritative IPAFFS source (cert_type_validation.js:15 Joi .required()), not a rendered observation; what the trace confirms is the ABSENCE of client-side enforcement. Legacy mandatoriness is 'as the old system had it' — it is accurate but a policy the rebuild may revisit: a CHED-PP-only service with no type question would not need this field at all (see behaviours/openQuestions on the type answer being a URL routing param). The rebuild, IF it keeps the question, must keep server-side enforcement; adding the HTML attribute would be an enhancement, not a port.",
+      "notes": "Selecting a type is the only user action on this page; both cloning workflows check a radio then click Continue with no intervening step (ched-pp-workflows.ts:939-940, ched-p-workflows.ts:1305-1306). No test submits the form without a selection, so the empty-submit branch is unexercised by the whole QA suite. RE-VERIFIED against source 2 this pass: CloningTypePage.ts is 17 lines and exposes exactly three members — radioPlantsPlantProducts (6-8), radioProductsOfAnimalOrigin (10-12), btnContinue (14-16). There is no fourth member, so the page object confirms the page has no control the trace missed. The value is NOT parameterised: ChedPPCloningConfig (ched-pp-workflows.ts:897-908) and DEFAULT_CHEDPP_CLONING_CONFIG (909-930) carry country / certificateReference / certificateDate / partyName / transportMethod / transportIdentification / grossWeight etc. — all of which feed the NEXT page and beyond — but no cert-type key; re-verified this pass by reading the interface and default object in full. The radio choice is hardcoded per workflow (CHEDPP at :939, CVEDP at ched-p-workflows.ts:1305), i.e. the tests treat 'which CHED type' as a property of the workflow, not of the config. So no test can ever drive this page with a different or absent value."
+    },
+    {
+      "name": "crumb",
+      "label": "(no visible label — CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 — <input name=\"crumb\" type=\"hidden\"> as the first child of the form (certType.html:27 renders value=\"{{crumb}}\"). Value [REDACTED]. Platform CSRF plumbing (hapi crumb), not a user-facing requirement; listed for completeness only. NOTE: two further hidden inputs named crumb/returnUrl/fromFooterHeader exist in the DOM but belong to the cookie-banner and footer forms OUTSIDE <main>, not to this page's form — they are site furniture and are deliberately not listed as fields of this page."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select the type of import",
+      "field": "cert-type",
+      "trigger": "Continue pressed with no radio selected. Joi any.required fires on POST; the handler re-renders certType with viewContext.errors and the validationSummary partial paints the error summary above the H1.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3 (legacy app source, not the trace corpus): /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/cloning/cert_type_validation.js:15-18 declares Joi 'cert-type': Joi.string().valid(CVEDA, CVEDP, CHEDPP).required().messages({[ANY_REQUIRED]: IMPORT_TYPE, ...}); :16 maps ANY_REQUIRED -> IMPORT_TYPE; /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:94 defines IMPORT_TYPE: 'Select the type of import' — both re-read and confirmed verbatim this pass. Re-render path: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/cloning/cert_type.js:34-40. NOT observed rendered in any trace — no trace exercises the empty submit."
+    },
+    {
+      "message": "Enter a valid certificate type",
+      "field": "cert-type",
+      "trigger": "'cert-type' posted with a value outside [CVEDA, CVEDP, CHEDPP] — e.g. a tampered payload, or CED/CHED-D which is deliberately not offered on the cloning journey.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: cert_type_validation.js:18 maps ANY_VALID -> invalidEntryMessage(CERTIFICATE_TYPE); messages/en.js:23-25 defines invalidEntryMessage = field => 'Enter a valid ' + field.toLowerCase(); labels/en.js:21 defines CERTIFICATE_TYPE: 'Certificate type'. Composed string therefore reads 'Enter a valid certificate type' — composition re-derived from the two source files this pass. NOT observed rendered."
+    },
+    {
+      "message": "Certificate type must be a string",
+      "field": "cert-type",
+      "trigger": "'cert-type' posted as a non-string (Joi string.base). Unreachable through the UI — defensive only.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: cert_type_validation.js:17 maps STRING_TYPE -> typeMessage(CERTIFICATE_TYPE, STRING); messages/en.js:27-29 defines typeMessage = (label, type) => `${label} must be a ${type}`; labels/en.js:21 CERTIFICATE_TYPE: 'Certificate type'; labels/en.js:96 STRING: 'string'. Composition re-derived this pass. NOT observed rendered."
+    },
+    {
+      "message": "Attempt to create new notification when in overdue debt",
+      "field": "cert-type",
+      "trigger": "CHEDPP selected AND the user is an overdue debtor AND the user has no delegations. The POST handler THROWS before validation runs — this is an internal Error (error-page/500 path), NOT a rendered field error. The user should never reach it, because the CHEDPP radio is rendered disabled for exactly this user; it is the belt-and-braces server guard behind that disabled radio.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: cert_type.js:28-33 (if request.payload['cert-type'] === CHEDPP { const isUserOverdueDebtor = await permissionsHelper.isUserOverdueDebtor(request); if (isUserOverdueDebtor && !isUserInDoA) throw new Error(overdueDebt.CHEDPP_OVERDUEDEBTOR_ERROR_MESSAGE) }); constant confirmed verbatim at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/constants.js:981 — CHEDPP_OVERDUEDEBTOR_ERROR_MESSAGE: 'Attempt to create new notification when in overdue debt'. NOT observed. This string is an internal log/error message and is NOT user-facing copy — the rebuild should not surface it to a user."
+    }
+  ],
+  "conditionalStates": [
+    {
+      "state": "Validation error state",
+      "description": "When the POST fails Joi validation the handler re-renders this same page with viewContext.errors populated and viewContext.form set to the submitted payload. The validationSummary partial then renders a govuk-error-summary as the FIRST element inside the column, ABOVE the H1, containing an H2 title and a govuk-list govuk-error-summary__list with one link per error. Each link's href is '#cert-type' (the id of the first radio), so activating it focuses the radio group.",
+      "titleText": "Please fix the following errors",
+      "govukComponents": ["Error summary (govuk-error-summary, data-module=\"govuk-error-summary\")"],
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: certType.html:13 includes {{> common/validationSummary}} as the first child of the govuk-grid-column-full div; partials/common/validationSummary.html:1-25 renders the summary under {{#isErrors errors}}, defaulting the H2 to 'Please fix the following errors' at :8 because cert_type.js passes no headerText; links rendered at :18 as <a class=\"{{linkCssClass}}\" id=\"error-description-{{@index}}\" href=\"#{{field.[0]}}\">{{description}}</a> where field.[0] is the Joi key 'cert-type'. Populated by cert_type.js:36-39. NOT observed in any trace — no trace submits this page empty or invalid, so the error state is entirely uncovered by the corpus.",
+      "notes": "THIS STATE WAS MISSING FROM EARLIER PASSES OF THIS SPEC. It adds a whole component to the page that the trace-only view does not show. Two rebuild consequences: (1) the page needs a standard govukErrorSummary at the top of the content column, and (2) its title should be the Design System's 'There is a problem', not IPAFFS's 'Please fix the following errors' — see nonStandardPatterns. Note also that IPAFFS puts NO govuk-form-group--error class or inline govuk-error-message on the fieldset — the summary is the only error affordance; the Design System expects both a summary AND an inline message on the field."
+    },
+    {
+      "state": "Overdue debtor (no delegations)",
+      "description": "When the signed-in user is an overdue debtor AND has no delegations of authority, the CHEDPP radio is rendered DISABLED with hint text 'This option is not available', and a Details component titled 'Why some options are not available' is rendered inside the form beneath the radios and above the Continue button. The CVEDA and CVEDP options remain selectable — only the plants option is gated.",
+      "hintText": "This option is not available",
+      "detailsSummary": "Why some options are not available",
+      "bodyCopy": [
+        "You cannot import plant health regulated goods (CHED PP notifications) due to unpaid invoices.",
+        "To make a payment:",
+        "call 01633 631800",
+        "visit the GOV.uk payment portal",
+        "To reactivate your account immediately, please pay over the phone.",
+        "If you pay by BACS or the GOV payment portal, it can take up to 3 days to reactivate your account. To speed this up, email your proof of payment to {{overdueDebtor.paymentEmail}}"
+      ],
+      "resolvedTemplateValues": {
+        "overdueDebtor.paymentEmail": "SSCL.receipts@gov.sscl.com",
+        "overdueDebtor.paymentPortalAddress": "https://www.gov.uk/payments/animal-and-plant-health-agency/payments-for-apha"
+      },
+      "govukComponents": ["Details (govuk-details)", "Radios with disabled item + hint"],
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/common_util.js:58-63 — createCertificateTypes(isOverdueDebtor, isCloning = false) sets CHEDPPCert.hint = { text: 'This option is not available' } and CHEDPPCert.disabled = true when isOverdueDebtor; certType.html:35-37 conditionally includes partials/importer/overdueDebt/overdueDebtWarning.html; that partial's {{else}} branch (:19-43 — the non-review-page branch, which is the one this page uses since cert_type.js:57 sets isReviewPage: false) renders the Details + copy above. ALL SIX bodyCopy strings and the detailsSummary re-read and confirmed VERBATIM against overdueDebtWarning.html:25, 30, 33, 35, 36, 38, 39 this pass — no invented copy. Gate condition confirmed at cert_type.js:47 (isOverdueDebtor = await permissionsHelper.isUserOverdueDebtor(request) && !hasDelegations). Resolved template values from constants.js:978-979. NOT observed in any trace — no trace signs in as an overdue debtor. This is REAL REQUIREMENT SURFACE that the corpus does not cover.",
+      "notes": "Directly relevant to the rebuild: this is a debt-collection concern leaking into the CHED-PP journey's first question. See openQuestions — it may belong upstream rather than in the new service. Note the copy hardcodes a phone number and a 3-day BACS SLA, and the 'visit the GOV.uk payment portal' link opens in a new tab (target=\"_blank\" rel=\"noopener\", overdueDebtWarning.html:36) — itself a GOV.UK convention deviation."
+    },
+    {
+      "state": "Feature flag: isEnableCloningUpdates",
+      "description": "The last TWO bullets of the 'Before you start' list — 'certificate date of issue' and 'consignor, consignee or importer name' — are wrapped in {{#if isEnableCloningUpdates}}. With the flag OFF the list shows only two bullets (country of origin, certificate reference number). The trace rendered all four, so the flag was ON in the recorded environment.",
+      "confidence": "legacy",
+      "evidence": "SOURCE 3: certType.html:21-24 wraps the two bullets in {{#if isEnableCloningUpdates}}; flag resolved at cert_type.js:52 via featureFlagHelper.isFeatureEnabled(env.getFeatureFlag('enableCloningUpdates')) — both re-read and confirmed this pass. Flag-ON state CONFIRMED rendered at trace ebd5a5d267ae02ba27210c7c670bbba60a9ff667, action 13 (all four bullets present in the DOM).",
+      "notes": "The four-bullet list is the target state; the two-bullet variant is a legacy toggle the rebuild should not carry over. The flag gates ONLY these two bullets on this page — nothing else on the page is behind it."
+    }
+  ],
+  "confidence": "confirmed",
+  "coverage": {
+    "tracesCovering": ["ebd5a5d267ae02ba27210c7c670bbba60a9ff667"],
+    "testsCovering": [
+      "tests/notification/ched-pp/ched-pp-cloning.spec.ts:10 — 'B2C Importer Submits Valid Cloned CHEDPP Notification', tagged @release/@chedPP/@chedPPClone/@clone/@dynamics (spec line 7). Drives this page indirectly: the test body calls submitClonedChedPPNotification(pages) at :15 with NO config override, so the page is always driven with the CHEDPP radio (ched-pp-workflows.ts:939). This is the ONLY test in the suite that reaches this page on the CHED-PP branch. Re-verified this pass by reading the spec head.",
+      "tests/notification/ched-p/ched-p-cloning.spec.ts — drives the CVEDP branch via the ched-p cloning workflow (ched-p-workflows.ts:1303-1306). Out of scope for CHED-PP but proves the page is shared across CHED types."
+    ],
+    "traceNotes": "The source trace FAILED, but not on this page — the single error is at action 22, a 30s timeout on the 'Clone' button two pages downstream. Actions 12-14 (dashboard link -> this page -> Continue) completed cleanly, so the snapshot at action 13 is a valid, fully-rendered capture of this page. Re-verified: action 14 records a clean navigation to the search page, so the page's own submit succeeded.",
+    "accessibilityCoverage": {
+      "covered": false,
+      "confidence": "inferred",
+      "evidence": "grep -rin 'clon' across tests/accessibility/ returns ZERO hits — RE-RUN AND RE-CONFIRMED this pass. No cloning page, including this one, appears in the accessibility suite; the a11y suite names the pages of the CREATE journey only. This page has NO automated accessibility coverage."
+    },
+    "assertionCoverage": {
+      "covered": false,
+      "confidence": "inferred",
+      "evidence": "No test asserts anything about this page — no heading, page-title, option-list or error assertion. RE-RUN AND RE-CONFIRMED this pass: grep -rn 'cloningType' across page-objects/, workflows/ and tests/ returns 5 hits and NONE is under tests/ — factory.ts:259 (registration), ched-p-workflows.ts:1305-1306 and ched-pp-workflows.ts:939-940 (the two drive sites); the class itself is CloningTypePage.ts:3 with its import at factory.ts:121. Every drive-site hit is a `.check()` or `.click()`; there is not one `expect` naming this page anywhere in the repo. The page is exercised but never verified."
+    }
+  },
+  "openQuestions": [
+    "PROVENANCE — HOW TO READ THE `inferred` CLAIMS ON THIS PAGE. Everything tagged 'SOURCE 3' (all four validationMessages, all three conditionalStates, the two source-derived nonStandardPatterns, and the `required: true` resolution) is derived from the IPAFFS application source at ~/git/defra/ipaffs/ipaffs-frontend-notification. This is a SANCTIONED source under the exercise's confidence taxonomy, which defines `inferred` as 'deduced from test code, page objects, or legacy source but NOT observed in a trace'. A previous pass of this spec asserted that legacy source was 'OUT OF SCOPE' and recommended downgrading all of these claims to `gap`; that assertion contradicted the taxonomy and has been removed. Legacy source is now explicitly AUTHORISED, and under the current taxonomy — which defines `legacy` as 'read from the authoritative IPAFFS source (template copy, enum values, validation message, model mandatoriness)' — these copy/value/mandatoriness claims are tagged `legacy` (an UPGRADE from the earlier `inferred`; legacy outranks inferred in precedence), NOT `inferred`. The two coverage claims (accessibility, assertion) remain `inferred` because they are deduced from the QA test suite, not read from legacy source. What remains TRUE and important from that caution is the epistemic status, which every such claim now states explicitly: these are read from code, never seen rendered, and the QA repo corroborates NONE of them (no test submits this page empty, none asserts an error string, none signs in as an overdue debtor, none touches a feature flag). They are sound requirement surface for the rebuild to consider, but they describe LEGACY BEHAVIOUR, not a validated user need — and legacy behaviour is exactly what the brief says not to copy wholesale. Recommend one deliberate no-selection run and one overdue-debtor run against the legacy service to promote the two user-reachable states to `confirmed`.",
+    "VALIDATION — the only message a real user can trigger is 'Select the type of import' (empty submit). 'Enter a valid certificate type' and 'Certificate type must be a string' are reachable only by tampering with the payload, and the overdue-debt string is an internal throw, not user-facing copy. Prioritise confirming the first.",
+    "MANDATORY? — RESOLVED. cert-type IS mandatory, enforced server-side by Joi .required() (cert_type_validation.js:15), rejecting an empty POST with 'Select the type of import'. There is deliberately no HTML `required` attribute and no pre-checked radio. The field is recorded `required: true`. This was flagged by an earlier pass as the page's single most load-bearing gap; it is closed, subject to the provenance caveat above.",
+    "THREE TYPES, NOT FOUR — RESOLVED, AND IT IS DELIBERATE. The cloning page offers Live animals (CVEDA), Products of animal origin... (CVEDP) and Plants, plant products and other objects (CHEDPP), with no CHED-D / 'High risk food and feed of non-animal origin'. SOURCE 3 confirms the mechanism exactly: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/common_util.js:58-73 — createCertificateTypes(isOverdueDebtor, isCloning = false) pushes the CED option ONLY when isCloning is false (:68-70), and the cloning handler passes isCloning=true (cert_type.js:51). Re-read and confirmed this pass, including the option ORDER: the helper builds [CVEDA, CVEDP] then conditionally pushes CED then always pushes CHEDPP last — which is exactly the order the trace renders, so CHED-PP is always the LAST option. So CHED-D is excluded from cloning BY DESIGN in code, not by a feature flag or a permission inactive in this run. CRITICAL FOR THE REBUILD: the create-from-scratch import-type page and this cloning page share ONE helper and differ only by that boolean — any rebuild that unifies them into a single component MUST preserve the difference. REMAINING QUESTION FOR A HUMAN: is CHED-D genuinely non-cloneable as a business rule, or is this a legacy limitation the new service should lift?",
+    "The 'Live animals' (CVEDA) radio renders (confirmed, trace action 13) but is driven by NO test and has NO locator on CloningTypePage.ts — contrast ImportTypePage.ts:14-16, which does expose radioLiveAnimals for the create journey. CHED-A cloning instead enters at a different point entirely: tests/notification/ched-a/ched-a-version.spec.ts:57-58 clicks amendNotification.btnCloneDigitalHealthCertificate and lands straight on cloningCertificateDetails, bypassing this page. So the CVEDA option on this page may be dead or legacy surface. Worth confirming with a human before porting it. (That CHED-A test is also test.skip'd — ched-a-version.spec.ts:38 — so the alternate entry point is itself unverified.)",
+    "This page carries the H2 'Search for a certificate to clone' and the 'Before you start' bullet list, but the actual search FIELDS are on the NEXT page. Continue (action 14) leads to a page with Country of origin of certificate, Certificate reference, Day/Month/Year, and Consignor, consignee or importer name (actions 15-20). CORROBORATED by source 2: the very next workflow call is cloningCertificateDetails.selectCountryAndReferenceNumberAndSearch(country, certificateReference, day, month, year, partyName) — ched-pp-workflows.ts:942-949 — whose six parameters map onto the four bullets listed here (the date bullet expanding to day/month/year). So the H2 + bullet list on this page are a preamble for the FOLLOWING page. The rebuild should decide whether that preamble belongs on the type page at all, or on the search page it describes.",
+    "GOV.UK convention deviation: this is a single-question page but the legend is styled govuk-label--m under a separate govuk-heading-xl H1, rather than the legend BEING the page heading (govuk-fieldset__legend--xl with an H1 inside). The Design System 'one thing per page' pattern would make 'What are you importing?' the H1. IPAFFS instead uses the H1 for the journey name. Worth a deliberate design decision in the rebuild rather than a straight port.",
+    "Layout deviation: govuk-grid-column-full rather than the -two-thirds recommended for question/text pages, patched with govuk-!-width-one-half on the radios container. Recommend -two-thirds in the rebuild.",
+    "No section caption (govuk-caption-xl/-l/-m) on this page — unlike other pages in the journey. Confirmed absent, not merely unobserved.",
+    "Back link is 'Back' -> /notification/vnet/protected/notifications#top, rendered in IPAFFS's own nav bar ABOVE <main> alongside a 'Dashboard' breadcrumb link, not as a standard govuk-back-link. Both hrefs confirmed from the trace DOM. Entry to this page is the dashboard's 'Clone a certificate' link — itself an <a> styled as a govuk-button with a non-govuk 'notification-button' class (trace action 12; corroborated by NotificationDashboardPage.ts:16-22).",
+    "ROUTING — RESOLVED AND CONFIRMED (was an open question in earlier passes). The page URL is /notification/vnet/protected/notifications/cloning/type; the form action is the relative 'type' with method POST, so it self-posts; and a VALID submit 302s to /protected/notifications/cloning/search?certType=<type> (trace action 14 log — navigated to .../cloning/search?certType=CHEDPP; cert_type.js:42-43; constants.js:127). See behaviours. The answer travels as a QUERY PARAM, not session state. FOR A HUMAN: this reinforces the question below — if the rebuilt service is CHED-PP-only, the type answer is a constant and this page may not need to exist at all; the journey would begin at the search page.",
+    "The Continue button relies on govuk-frontend JS (data-prevent-double-click) to stop repeat submits. That guard is absent with JS off, so a human should confirm whether the server is idempotent on a duplicate POST of this form — no test exercises a double submit. Given the successful POST merely 302s to a search page with no side effect (cert_type.js:43 does no writes), a duplicate submit here is very likely harmless — but that is reasoning from the handler, not an observation. See behaviours.",
+    "This page has NO accessibility coverage (absent from tests/accessibility/) and NO assertion coverage (no test asserts its heading, title, options or errors) — it is only ever driven as a pass-through by the two cloning workflows. The rebuild should not assume the legacy behaviour here is regression-protected.",
+    "UNCOVERED CONDITIONAL STATE — VALIDATION ERROR. No trace submits this page empty, so the corpus never shows the error state, but certType.html:13 includes a validationSummary partial that renders a govuk-error-summary ABOVE the H1 when errors exist. This is a whole component the trace-only view misses; it is now recorded in structure, govukComponents and conditionalStates. Two rebuild notes: IPAFFS titles the summary 'Please fix the following errors' where the Design System prescribes 'There is a problem'; and IPAFFS renders NO inline govuk-error-message on the fieldset and no govuk-form-group--error modifier, where the Design System expects the summary AND an inline message. The rebuild should follow the Design System, not the legacy page.",
+    "UNCOVERED CONDITIONAL STATE — OVERDUE DEBTOR. No trace signs in as an overdue debtor, so the corpus is silent, but the code is not. When the user is an overdue debtor with no delegations, the CHEDPP radio renders DISABLED with hint 'This option is not available' plus a Details block 'Why some options are not available' explaining unpaid invoices (full verbatim copy in conditionalStates). A server-side throw backs the disabled radio (cert_type.js:28-33). This adds TWO components to the page that the trace-only view misses — a Details component and a disabled/hinted radio item. FOR A HUMAN: does the new CHED-PP service need debt-gating at all, or does that belong upstream in an access/permissions layer? Gating the first question of a journey on debt collection is a significant coupling to inherit. Note the copy hardcodes a phone number (01633 631800) and a 3-day BACS SLA, and names a payment inbox (SSCL.receipts@gov.sscl.com, constants.js:979).",
+    "The disabled CHEDPP option is the ONLY thing overdue-debt gating does on this page; CVEDA and CVEDP stay selectable. So debt gating in IPAFFS is CHED-PP-specific — i.e. it lands squarely inside the scope of the service being rebuilt, and cannot be assumed to be someone else's problem by default. ACCESSIBILITY NOTE for the rebuild: gating by DISABLING a radio is itself a Design System anti-pattern (disabled controls are poorly announced and unfocusable); if the gate is kept, prefer removing the option and explaining why, or blocking at entry.",
+    "FEATURE FLAG on body copy: the last two bullets ('certificate date of issue', 'consignor, consignee or importer name') are behind {{#if isEnableCloningUpdates}} (certType.html:21-24). The trace rendered all four, so the flag was ON. Treat the four-bullet list as the target state and drop the toggle. This also means the recorded bullet list is only valid for flag-ON environments.",
+    "SOURCE 3 (legacy app source, ~/git/defra/ipaffs) proved decisive for this page and is worth using on the other pages in this exercise. The trace corpus is a lower bound: for this page it covered the happy path only and left validation, the mandatory question, the CHED-D exclusion rationale, the overdue-debtor state, the error state and a feature flag all unresolved. All six were settled by reading the handler, the Joi validation, the message/label tables, the view template, two partials and one shared util. Handler: src/routes/handlers/importer/cloning/cert_type.js; validation: src/validation/routes/handlers/importer/cloning/cert_type_validation.js; view: src/views/importer/cloning/certType.html; partials: src/views/partials/common/validationSummary.html and src/views/partials/importer/overdueDebt/overdueDebtWarning.html. Read them as legacy behaviour to be interrogated, not as requirements to be copied.",
+    "The GET/POST handler makes a customerService.getDelegations call on EVERY render purely to decide the debtor gate (cert_type.js:19-21, 26-27) — a network round-trip on a static three-radio page, and permissionsHelper.isUserOverdueDebtor is called AGAIN inside createViewContext (:47), so a single GET can cost two permission lookups. Architecture the rebuild should NOT copy; noted because the brief calls out not reproducing IPAFFS's architecture.",
+    "The page object independently confirms the page has NO hidden CONTROL surface. CloningTypePage.ts is 17 lines total and exposes exactly three members (radioPlantsPlantProducts 6-8, radioProductsOfAnimalOrigin 10-12, btnContinue 14-16). Normally the page object is where we FIND fields the traces missed — here there is nothing to find. Combined with the trace DOM at action 13, two independent sources now agree the page is three radios and a button. This is the rare case where the trace is very likely at, not below, the true requirement bound for the page's CONTROLS. Its STATES are a different matter entirely — the error state and the overdue-debtor state are both real, both add components, and neither is covered by trace or test.",
+    "The CVEDA 'dead surface' question is now firmer, not just a hypothesis. CloningTypePage.ts has no radioLiveAnimals member at all, while its create-journey sibling ImportTypePage.ts:14-16 does (radioLiveAnimals = getByRole('radio', { name: 'Live animals' })). ImportTypePage exposes all four types (radioProductsOfAnimalOrigin :6-8, radioPlantsPlantProducts :10-12, radioLiveAnimals :14-16, radioHighRiskFoodAndFeedOf :18-20); CloningTypePage exposes two of the three rendered. So the QA suite has deliberately modelled the cloning page as a TWO-option page. The CVEDA radio renders (confirmed, trace action 13) but nothing in the suite can select it. The alternate CHED-A cloning entry point is ALSO unverified: ched-a-version.spec.ts:38 is a `test.skip` and its TODO says it is blocked on an expired certificate reference ('EXPORT.EU.FR.2025.0000068 — Expired, needs valid reference', :57-59). FOR A HUMAN: is CVEDA cloning live, or is that radio legacy surface the rebuild should drop? Note this question only affects CHED-PP if the rebuild inherits a shared type page.",
+    "cert-type is NOT parameterised in the test suite. ChedPPCloningConfig (ched-pp-workflows.ts:897-908) and DEFAULT_CHEDPP_CLONING_CONFIG (:909-930) hold every value the cloning journey needs — country (France), certificateReference ('PHYTO.FR.2026.0000064'), certificateDate (15/04/2026), partyName ('WorldUSIN74 Co'), transportMethod, grossWeight — but there is no cert-type key; the radio is hardcoded at :939. The de-facto payload for the journey therefore starts at the NEXT page. This is consistent with two other findings: this page's H2 and bullet list are a preamble for the search page, and the type answer leaves the page as a URL query param rather than journey data. Worth weighing in the rebuild — if CHED-PP is its own service, 'which CHED type' may not be a question this service needs to ask at all."
+  ]
+}

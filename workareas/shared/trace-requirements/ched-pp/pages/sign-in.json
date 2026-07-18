@@ -1,0 +1,336 @@
+{
+  "slug": "sign-in",
+  "name": "How do you want to sign in? (SCP / Defra ID)",
+  "url": "https://dcidmtest.b2clogin.com/dcidmtest.onmicrosoft.com/oauth2/authresp (Azure AD B2C — no in-app URL; reached via redirect from https://your-account.cpdev.cui.defra.gov.uk/registration/oidc/authorize/<state>)",
+  "pageTitle": "How do you want to sign in?",
+  "heading": "How do you want to sign in?",
+  "bodyCopy": [],
+  "continueLabel": "Continue",
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds (id=\"content\"), inside main.govuk-main-wrapper.govuk-main-wrapper--auto-spacing. NOTE: main is not the whole page — body also carries a.govuk-skip-link (\"Skip to main content\"), a <header>, section.govuk-service-navigation (\"IPAFFS\"), div.govuk-width-container wrapping main, footer.govuk-footer (Support links: Help / Privacy notice / Terms and conditions / Cookies, each opens in new tab), and the hidden div#no_cookie.error_container block (see structure).",
+  "reachedBy": {
+    "description": "Reached ONLY on the B2C sign-in path. LoginPage.login() branches on the user role: roles prefixed 'b2b_' go to loginB2B() (a completely different Azure AD B2B page — Email > Next > Password > Sign in > optional 'Stay signed in? Yes'), which never renders this sign-in-method choice. Roles prefixed 'b2c_' go to loginB2C(), which navigates to the application URL and lands on this page. CORROBORATED AND WIDENED: all EIGHT b2c_* roles reach this page — b2c_notifier, b2c_inspector, b2c_inspector_felixstowe, b2c_lvu, b2c_doa_agent, b2c_org1, b2c_org_test1, b2c_org_test2 (config/users.ts:6-13) — because loginB2C() is role-agnostic. The b2b/b2c split is also what selects the base URL: buildApplicationUrl() picks getB2BUrl() vs getB2CUrl() off the same 'b2b_' prefix (config/environments.ts:100-102). Additionally, this page can render MID-TEST, not only at setup: reauthenticateIfLoggedOut() detects a session drop by hostname and re-drives the whole login flow (utils/auth-utils.ts:24-47).",
+    "confidence": "inferred",
+    "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:81-92 (isB2B = user.role.startsWith('b2b_')); :118-134 (loginB2B); :136-159 (loginB2C). Role list: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/config/users.ts:1-14 (VERIFIED: the USER_ROLES array spans :1-14; the eight b2c_* entries are :6-13). URL split: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/config/environments.ts:100-102. Mid-test re-auth: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/utils/auth-utils.ts:24-47."
+  },
+  "structure": [
+    {
+      "element": "hidden-error-page",
+      "text": "div#no_cookie.no_display > div.error_container — h1 \"We can't sign you in\"; p.govuk-body \"Your browser is currently set to block cookies. You need to allow cookies to use this service.\"; p.govuk-body \"Cookies are small text files stored on your computer that tell us when you're signed in. To learn how to allow cookies, check the online help in your web browser.\"",
+      "govukComponent": "(Heading + Body text, but outside main and outside the GOV.UK page template — bespoke B2C cookie-block fallback)",
+      "_note": "ADDED BY REVIEW — missed by the previous spec, which only ever evaluated main.outerHTML. This block is the FIRST child of <body>, sits outside main, and is hidden by class 'no_display'. It is a whole alternative error page: if the browser blocks cookies, B2C reveals this instead of the sign-in choice. It contains the only second <h1> on the page. Copy is transcribed verbatim from the DOM but the state was never rendered visible in any trace."
+    },
+    {
+      "element": "paragraph",
+      "text": "You must select one of the options below to sign in",
+      "govukComponent": "Body text",
+      "_note": "id=\"NoSelectionErrorText\", rendered with the hidden attribute — this is the page-level validation message, revealed client-side when Continue is pressed with no radio selected. Never observed visible in any trace."
+    },
+    {
+      "element": "hidden-template-blocks",
+      "text": "four div[data-signin-method] blocks (one|scp|ttp|cap), each hidden, carrying span.title + span.description — the JS shim copies title/description into the radio labels/hints for whichever methods are enabled",
+      "govukComponent": "(none — bespoke B2C template plumbing)"
+    },
+    {
+      "element": "b2c-selfasserted-form",
+      "text": "div#api[data-name=\"SelfAsserted\"] > form#attributeVerification — the stock Azure AD B2C form: intro paragraph \"Please provide the following details.\", four hidden pageLevel error summaries, an attributeList of two text inputs, and its own Continue button. Entirely hidden/replaced at runtime.",
+      "govukComponent": "(none — bespoke B2C template)"
+    },
+    {
+      "element": "h1",
+      "text": "How do you want to sign in?",
+      "govukComponent": "Heading (govuk-heading-xl), id=\"header\""
+    },
+    {
+      "element": "radios",
+      "text": "Sign in with GOV UK One Login / Sign in with Government Gateway",
+      "govukComponent": "Radios (inside govuk-form-group#identityProviderList, with an empty itemLevel govuk-error-message live region above)"
+    },
+    {
+      "element": "button",
+      "text": "Continue",
+      "govukComponent": "Button (id=\"continueReplacement\", in a govuk-button-group govuk-!-margin-bottom-6)"
+    }
+  ],
+  "_countScope": "REVIEW NOTE: every count below was re-derived document-wide (document.querySelectorAll) at trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 12, input snapshot. The previous spec's counts were silently scoped to main.outerHTML, which understated Body text (2 vs the true 4). Verified totals: .govuk-button-group 3, .govuk-form-group 3, .govuk-error-summary 4, .govuk-error-message 3, .govuk-input 2, .govuk-label 4, .govuk-body 4, .govuk-hint 2, .govuk-button 2, fieldset 0, h1 2, .govuk-back-link 0, caption 0.",
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": ["govuk-heading-xl"],
+      "count": 1,
+      "usage": "The H1 \"How do you want to sign in?\" (id=\"header\"). NOTE: there are 2 <h1> elements in the document — the second is the bare, unclassed \"We can't sign you in\" inside the hidden div#no_cookie block, which carries no govuk-heading class.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot). Second h1 verified by eval over document.querySelectorAll('h1') at action 12: [{id:'', cls:'', txt:\"We can't sign you in\", inMain:false, vis:false}, {id:'header', cls:'govuk-heading-xl', txt:'How do you want to sign in?', inMain:true, vis:true}]."
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": ["govuk-radios__item", "govuk-radios__input", "govuk-radios__label", "govuk-radios__hint", "break-word"],
+      "count": 1,
+      "usage": "The sign-in method choice — 2 rendered radios (One Login, Government Gateway), each with hint text. No fieldset/legend wrapper: the H1 sits outside the form group rather than inside a legend.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); fieldset absence re-verified document-wide at action 12 (document.querySelectorAll('fieldset').length === 0). Corroborated by the page object, which locates the Government Gateway radio by raw id — /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:53-55 (`this.page.locator('#scp')`)."
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": ["govuk-radios__hint"],
+      "count": 2,
+      "usage": "Per-radio hint text under each sign-in method label. Neither hint has an id and neither radio has aria-describedby, so the hints are not programmatically associated with their inputs — see nonStandardPatterns.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot) — main.outerHTML shows <div class=\"govuk-hint govuk-radios__hint\"> with no id attribute on either hint, and no aria-describedby on input#one or input#scp."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-bottom-0 (on #continueReplacement only; #continue carries a bare govuk-button)"],
+      "count": 2,
+      "usage": "Continue. Two exist in the DOM: the visible #continueReplacement (shim form) and the hidden #continue (stock B2C form, type=submit form=attributeVerification aria-label=Continue).",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); action 13 clicks getByRole('button', { name: 'Continue' }). Corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:57-59 (`getByRole('button', { name: 'Continue' })`) — note the accessible-name lookup resolves despite two Continue buttons existing, because the stock B2C one is hidden."
+    },
+    {
+      "component": "Button group",
+      "govukClass": "govuk-button-group",
+      "modifiers": ["govuk-!-margin-bottom-6 (on the replacement group only)"],
+      "count": 3,
+      "usage": "Three div.buttons.govuk-button-group: one empty at the top of div#api, one wrapping the hidden #continue, one wrapping the visible #continueReplacement.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "count": 3,
+      "usage": "Wraps the radios (#identityProviderList) and each hidden B2C attrEntry",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": ["error", "pageLevel"],
+      "count": 4,
+      "usage": "Four empty, display:none, aria-hidden error summaries belonging to the stock B2C form (#passwordEntryMismatch, #requiredFieldMissing, #fieldIncorrect, #claimVerificationServerError). Populated client-side by B2C. All empty in every observed snapshot.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Error message",
+      "govukClass": "govuk-error-message",
+      "modifiers": ["error", "itemLevel"],
+      "count": 3,
+      "usage": "Empty role=\"alert\" live regions — one above the radios, one per hidden B2C attrEntry. All empty in every observed snapshot.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": ["textInput"],
+      "count": 2,
+      "usage": "The two hidden B2C claim inputs (authenticationMethodsEnabledString, amrExecuted). Not user-facing.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-radios__label", "break-word"],
+      "count": 4,
+      "usage": "Two radio labels (with text, both also carrying break-word) plus two empty labels on the hidden B2C inputs (#authenticationMethodsEnabledString_label, #amrExecuted_label)",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot); count re-verified document-wide by eval at action 12."
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "count": 4,
+      "usage": "CORRECTED (was 2 — the previous spec counted only within main). Four in total: the hidden #NoSelectionErrorText validation paragraph, the hidden B2C \"Please provide the following details.\" intro, and TWO paragraphs inside the hidden div#no_cookie cookie-block error page (which sits outside main).",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot) — document.querySelectorAll('.govuk-body').length === 4; the two extra confirmed by extracting div#no_cookie.outerHTML at action 12."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "div#no_cookie.no_display > div.error_container — a second, hidden full-page error state outside main",
+      "whatItDoes": "A cookie-blocked fallback page shipped inside the same document as the sign-in choice. Hidden via a bespoke 'no_display' class (not the HTML hidden attribute, not govuk-*), revealed by B2C when the browser rejects cookies.",
+      "concern": "Two pages in one document, switched client-side. The error h1 is a bare <h1> with no govuk-heading class, sits outside main and outside the GOV.UK page template, and uses a bespoke .no_display / .error_container class pair. It also means every user downloads the cookie-error copy on every sign-in. The apostrophe in \"We can't sign you in\" is a straight ASCII quote, unlike the typographic apostrophes used in the radio hints (\"don’t\", \"You’ll\") — inconsistent copy conventions within a single page.",
+      "govukAlternative": "A separate server-rendered error page, or the GOV.UK cookie-banner / no-JS patterns. Not the new app's problem to solve — but note the new CDP app WILL need its own cookie-blocked story.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot) — eval over document.body.children returned div#no_cookie.no_display as the first body child, offsetParent null (hidden); its outerHTML transcribed verbatim in structure above."
+    },
+    {
+      "pattern": "div#api[data-name=\"SelfAsserted\"] > form#attributeVerification, with li.Readonly / li.TextBox / div.attrEntry / div#attributeList.attr / input.textInput",
+      "whatItDoes": "The stock Azure AD B2C SelfAsserted page markup. B2C emits a generic ul/li \"attribute list\" driven by the custom policy's claims; DEFRA has skinned it by adding govuk-* classes alongside the B2C classes (class=\"attrEntry govuk-form-group\", class=\"textInput govuk-input\", class=\"error pageLevel govuk-error-summary\").",
+      "concern": "This page is NOT rendered by the IPAFFS hapi/Handlebars app at all — it is served by Azure AD B2C (dcidmtest.b2clogin.com) and its structure is dictated by the B2C custom policy, not by the service team. The govuk-* classes are a veneer bolted onto B2C's own DOM. Nothing here is reusable by the new app.",
+      "govukAlternative": "N/A — the new CDP app should not rebuild this page. It sits in the identity provider, upstream of the service. If a sign-in-method choice is needed it comes from the DEFRA identity platform as-is.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot, main.outerHTML)"
+    },
+    {
+      "pattern": "form#replacementSelectIdentityProvider (a second, client-side-injected form that visually replaces div#api)",
+      "whatItDoes": "A bespoke JS shim. The B2C SelfAsserted form (div#api) is hidden and a hand-built GOV.UK radios form is injected in its place. Selecting a radio writes its value into the hidden input#amrExecuted, and #continueReplacement proxies the submit to the real B2C form. Confirmed by the DOM: input#amrExecuted (type=text, aria-required=true) and the radios share name=\"amrExecuted\". Both forms have action=\"javascript:void(0);\".",
+      "concern": "A whole parallel form exists purely to make B2C's generic claim-collection UI look like the Design System. The visible controls are not the controls that are submitted — a fragile, JS-dependent indirection with no no-JS fallback. It also duplicates the Continue button and the error regions, so there are two of each in the DOM.",
+      "govukAlternative": "Radios, rendered server-side by the identity provider's own template rather than swapped in by client JS. Not the new app's problem to solve.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot, main.outerHTML). Weak corroboration that the shim is slow: the page object waits up to a 60s LOGIN_TIMEOUT for the #scp radio to be clickable — /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:6 (LOGIN_TIMEOUT = 60 * 1000) and :151 (`.click({ timeout: LOGIN_TIMEOUT })`). CORRECTED CLAIM: the previous spec asserted the 60s wait is \"specific to this page's shim, not a blanket login timeout\". That overreads the code — LOGIN_TIMEOUT is ALSO applied to the page.goto() at :149, so it is not unique to the radio. What IS true is narrower: the next page's User ID fill (:154) passes no explicit timeout, so the explicit 60s appears on navigation and on this page's radio, but not downstream. The trace shows the radio took 2.3s to resolve (action 12), well inside the default, so nothing here evidences an actual slow shim."
+    },
+    {
+      "pattern": "div[data-signin-method=\"one|scp|ttp|cap\"][hidden] > span.title + span.description",
+      "whatItDoes": "Four hidden content blocks, one per possible sign-in method, each holding the label (span.title) and hint (span.description) copy. The shim reads input#authenticationMethodsEnabledString (value \"one|scp\") and renders a radio only for the pipe-delimited methods listed there, pulling label/hint from the matching block.",
+      "concern": "Copy for all four identity providers ships to every browser regardless of which are enabled, and which options appear is driven by a pipe-delimited string in a readonly text input. Two methods (ttp = Local Authority, cap = customer reference number) are templated but were NOT rendered in this trace — their copy is captured below.",
+      "govukAlternative": "Server-side conditional rendering of the Radios items.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot, main.outerHTML) — all four blocks carry hidden=\"hidden\"."
+    },
+    {
+      "pattern": "a.helpLink.tiny — \"What is this?\"",
+      "whatItDoes": "B2C's stock per-field help link (href=\"javascript:void(0)\"), one per attrEntry (2 in total). Toggles a help popup.",
+      "concern": "Non-Design-System pattern, javascript:void(0) href, and it is inside the hidden B2C form so it never renders. Pure B2C furniture.",
+      "govukAlternative": "Details component, or hint text.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot, main.outerHTML)"
+    },
+    {
+      "pattern": "Radios without a fieldset/legend; H1 is a sibling of the form group",
+      "whatItDoes": "The radio group sits in a bare div.govuk-form-group#identityProviderList with no <fieldset> and no <legend>. The question is only conveyed by the h1#header outside it.",
+      "concern": "Deviates from the Design System's Radios pattern (a question wrapped in fieldset with the H1 inside the legend). Screen-reader users get no programmatic association between the question and the radio group. NOTE: this defect has never been caught by the automated accessibility suite, because every accessibility spec starts from a saved storageState and so never renders this page — see openQuestions.",
+      "govukAlternative": "Radios with fieldset + legend (govuk-fieldset__legend--xl wrapping the H1).",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot, main.outerHTML); re-verified document-wide — document.querySelectorAll('fieldset').length === 0. A11y-coverage gap: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:16 (`test.use({ storageState: AUTH_FILES.b2cNotifier })`), :18 (`pages.notificationDashboard.goTo(...)`) and :19 (first checkPageAccessibility, 'Notification Dashboard', post-auth)."
+    },
+    {
+      "pattern": "div.govuk-hint.govuk-radios__hint with no id; radio inputs carry no aria-describedby",
+      "whatItDoes": "Renders the hint text under each radio label (\"Use your email address and password…\", \"You’ll have a user ID if…\").",
+      "concern": "Second a11y defect in the radio group, distinct from the missing fieldset/legend. The Design System's Radios macro gives each hint an id (e.g. one-item-hint) and points the input's aria-describedby at it. Here the shim injects the hint divs with no id at all, so neither hint is programmatically associated with its radio: a screen-reader user hears the option label but never the hint explaining which identity they need. Visually correct, semantically inert. Like the fieldset defect, it is unflagged because axe never runs against this page (see the accessibility-coverage gap in openQuestions).",
+      "govukAlternative": "The Radios macro's `hint` option per item, which generates the id and the aria-describedby wiring.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot) — main.outerHTML shows both hints as <div class=\"govuk-hint govuk-radios__hint\"> with no id attribute, and neither input#one nor input#scp carries aria-describedby. (The previous spec cited an eval at action 13 for this; the same fact is directly legible in the action 12 markup, which is the stronger citation since action 13 is the Continue click.)"
+    },
+    {
+      "pattern": "class=\"break-word\", class=\"tiny\", class=\"intro\", class=\"buttons\", class=\"title\", class=\"description\", class=\"attr\", class=\"error pageLevel\", class=\"error itemLevel\", class=\"Readonly\", class=\"TextBox\", class=\"textInput\", class=\"attrEntry\", class=\"helpLink\", class=\"no_display\", class=\"error_container\"",
+      "whatItDoes": "The full set of non-govuk-* classes on the page. All are Azure AD B2C template classes (its CSS hooks for claim types, error levels and layout), except break-word which is a DEFRA addition to wrap long radio labels.",
+      "concern": "Every non-standard class on this page originates in B2C, not in IPAFFS application code. Confirms the page is entirely outside the service team's frontend.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot). CORRECTED: the previous spec's list was main-scoped and so omitted no_display and error_container, which belong to the div#no_cookie block outside main.",
+      "govukAlternative": "N/A"
+    }
+  ],
+  "fields": [
+    {
+      "name": "amrExecuted",
+      "label": "How do you want to sign in?",
+      "control": "radio",
+      "required": true,
+      "options": [
+        "Sign in with GOV UK One Login",
+        "Sign in with Government Gateway"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 2,
+      "observedValues": ["scp"],
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — locator resolved to <input id=\"scp\" value=\"scp\" type=\"radio\" name=\"amrExecuted\" class=\"govuk-radios__input\"> (verbatim from the action log). Radio ids/values: one, scp. required inferred from aria-required=\"true\" on the paired input#amrExecuted and from the #NoSelectionErrorText message; the radio inputs themselves carry no required attribute. CORROBORATED by the page object: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:53-55 exposes exactly one radio, `b2cRadioSignInGovGateway = this.page.locator('#scp')`, and :151 clicks it unconditionally on every B2C login. The trace's observed value 'scp' is therefore not incidental — it is the only option the whole test suite ever selects, for all eight b2c_* roles (config/users.ts:6-13).",
+      "testCoverage": {
+        "summary": "Only the 'scp' (Government Gateway) option is ever exercised. The 'one' (GOV.UK One Login) option renders but no test selects it — the page object has no locator for it — so the One Login branch of this page and everything downstream of it is entirely unverified by automation and unobserved in the trace corpus. The monoculture is total, not partial: loginB2C() is role-agnostic and hard-clicks #scp, so all eight b2c_* roles (b2c_notifier, b2c_inspector, b2c_inspector_felixstowe, b2c_lvu, b2c_doa_agent, b2c_org1, b2c_org_test1, b2c_org_test2) traverse this page identically. There is no parameterisation of the sign-in method anywhere in the repo.",
+        "confidence": "inferred",
+        "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:53-59 (only #scp and Continue are exposed); :136-159 (loginB2C is role-agnostic, hard-clicks #scp at :151); config/users.ts:6-13 (the eight b2c_* roles). INDEPENDENTLY RE-VERIFIED by this review: `grep -rn \"amrExecuted|One Login|authenticationMethods|#one\"` across page-objects/, tests/, config/ and utils/ returns ZERO hits — there is no #one, #ttp or #cap locator, and nothing reads the enabled-methods claim."
+      },
+      "_optionDetail": [
+        {
+          "value": "one",
+          "id": "one",
+          "label": "Sign in with GOV UK One Login",
+          "hint": "Use your email address and password. If you don’t have a GOV.UK One Login, you can create one.",
+          "confidence": "confirmed",
+          "note": "Rendered as a real radio (verified in main.outerHTML at action 12), but never selected by any test and never followed in any trace. What this option leads to is unknown. Note the label says 'GOV UK One Login' (no dots in GOV UK) while its own hint says 'GOV.UK One Login' — an inconsistency in the source copy, transcribed here exactly as rendered. The QA repo contains a constant literally named ONE_LOGIN_HOST (utils/auth-utils.ts:8) which does NOT refer to this option — see openQuestions."
+        },
+        {
+          "value": "scp",
+          "id": "scp",
+          "label": "Sign in with Government Gateway",
+          "hint": "You’ll have a user ID if you’ve registered for Self Assessment or filed a tax return online before.",
+          "confidence": "confirmed",
+          "note": "This is the option the trace selects. SCP = Government Gateway; it leads to the User ID / Password page (actions 14-17). The page object hard-codes this choice for every B2C user — LoginPage.ts:151."
+        }
+      ]
+    },
+    {
+      "name": "amrExecuted (option: ttp)",
+      "label": "Sign in as a Local Authority",
+      "hint": "Use your email address to obtain a one-time passcode.",
+      "control": "radio",
+      "required": false,
+      "conditionalOn": "Rendered only when \"ttp\" appears in authenticationMethodsEnabledString. In this trace that value was \"one|scp\", so this option was NOT rendered.",
+      "confidence": "inferred",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — present in the DOM as a hidden template block <div data-signin-method=\"ttp\" hidden=\"hidden\">, copy verbatim from span.title/span.description (re-verified character-for-character against main.outerHTML by this review). CONFIDENCE NOTE: the COPY is directly observed (confirmed); what is inferred is that this copy would become a radio option, since it was never rendered as one in any trace. Marked inferred overall on the conservative reading. No corroboration available from the QA repo: no test, page object or user role references ttp — the 13 roles in /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/config/users.ts:1-14 are all b2b_* or b2c_*, none Local-Authority. (Caveat for the reader: b2c_lvu is 'Live Veterinary Unit'/LVU, an IPAFFS internal role that signs in via scp like every other b2c role — it is NOT the ttp Local Authority method.)"
+    },
+    {
+      "name": "amrExecuted (option: cap)",
+      "label": "Sign in with your customer reference number (CRN)",
+      "hint": "Use your customer reference number CRN and password to sign in",
+      "control": "radio",
+      "required": false,
+      "conditionalOn": "Rendered only when \"cap\" appears in authenticationMethodsEnabledString. In this trace that value was \"one|scp\", so this option was NOT rendered.",
+      "confidence": "inferred",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — present in the DOM as a hidden template block <div data-signin-method=\"cap\" hidden=\"hidden\">, copy verbatim from span.title/span.description (re-verified character-for-character by this review — note the hint genuinely has no comma or brackets around CRN and no trailing full stop, unlike the other three hints). CONFIDENCE NOTE: the COPY is directly observed (confirmed); the radio rendering is inferred. No corroboration available from the QA repo: nothing references cap or a CRN sign-in."
+    },
+    {
+      "name": "authenticationMethodsEnabledString",
+      "label": "(no visible label — label element is empty)",
+      "control": "text",
+      "required": false,
+      "observedValues": ["one|scp"],
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — <input id=\"authenticationMethodsEnabledString\" class=\"textInput govuk-input\" type=\"text\" value=\"one|scp\" disabled=\"disabled\" readonly=\"readonly\" autofocus=\"autofocus\">. Not user-facing: a B2C claim carrying the pipe-delimited list of enabled sign-in methods, read by the JS shim to decide which radios to render. NOT a requirement for the new app. No test reads or asserts this value (grep re-verified by this review: zero hits for authenticationMethods across the QA repo)."
+    },
+    {
+      "name": "amrExecuted (hidden B2C claim input)",
+      "label": "(no visible label — label element is empty)",
+      "control": "text",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — <input id=\"amrExecuted\" class=\"textInput govuk-input\" type=\"text\" aria-required=\"true\">. Not user-facing: the B2C claim the shim writes the chosen radio value into before submitting form#attributeVerification. NOT a requirement for the new app. No test reads or asserts this value."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "You must select one of the options below to sign in",
+      "field": "amrExecuted",
+      "trigger": "Pressing Continue with no sign-in method selected (inferred — the paragraph ships with the hidden attribute and is presumably unhidden client-side by the shim).",
+      "confidence": "inferred",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — <p hidden=\"\" id=\"NoSelectionErrorText\" class=\"govuk-body\">You must select one of the options below to sign in</p>. Copy re-verified verbatim by this review (note: no trailing full stop). The error state was never rendered in any trace, so the trigger is not confirmed. Note it is a plain govuk-body paragraph, not a govuk-error-summary or govuk-error-message. NOT corroborated by any test: no spec in the QA repo asserts this string, or any error state on this page — the only sign-in assertions are on the post-login end state (/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/auth/login.spec.ts:10-11, :17-18). The suite cannot ever fire this rule, because every login path selects a radio before pressing Continue (LoginPage.ts:151-152)."
+    },
+    {
+      "message": "We can't sign you in",
+      "field": "(page-level — cookie-blocked browser)",
+      "trigger": "Browser is set to block cookies. B2C reveals div#no_cookie (removing the bespoke .no_display class) in place of the sign-in choice. Trigger inferred from the element id and copy; never observed rendered.",
+      "confidence": "inferred",
+      "supportingCopy": [
+        "Your browser is currently set to block cookies. You need to allow cookies to use this service.",
+        "Cookies are small text files stored on your computer that tell us when you're signed in. To learn how to allow cookies, check the online help in your web browser."
+      ],
+      "evidence": "ADDED BY REVIEW — entirely missing from the previous spec, which only ever evaluated main.outerHTML and so never saw this block. trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 (input snapshot) — eval over document.body.children returned div#no_cookie.no_display as the FIRST body child with offsetParent null; its outerHTML is <div id=\"no_cookie\" class=\"no_display\"><div class=\"error_container\"><div><h1>We can't sign you in</h1><p class=\"govuk-body\">Your browser is currently set to block cookies…</p><p class=\"govuk-body\">Cookies are small text files…</p></div></div></div>. Copy transcribed verbatim (straight ASCII apostrophes in \"can't\" and \"you're\", unlike the typographic ones in the radio hints). The heading is a bare <h1> with NO govuk-heading class. No test in the QA repo references no_cookie or any cookie-blocked state."
+    },
+    {
+      "message": "(unknown — four B2C page-level error summaries exist but are empty)",
+      "field": "(B2C form-level)",
+      "trigger": "B2C populates #passwordEntryMismatch, #requiredFieldMissing, #fieldIncorrect and #claimVerificationServerError client-side. All four were empty and display:none in every observed snapshot, so no copy could be captured.",
+      "confidence": "gap",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 12 — the four div.error.pageLevel.govuk-error-summary elements each contain an empty <p></p> and carry style=\"display: none;\" aria-hidden=\"true\". No test exercises a failed sign-in: every login helper drives the happy path only (LoginPage.ts:136-159), and there is no negative-path login spec in tests/auth/ (login.spec.ts contains only 'should login successfully as …' cases, :4-32, re-verified by this review). So no error copy exists in the QA repo either."
+    }
+  ],
+  "confidence": "inferred",
+  "_legacyEnrichment": {
+    "outcome": "no-legacy-source",
+    "summary": "The authorised legacy IPAFFS notification source has NOTHING to add to this page: it is not an IPAFFS-served page. The sign-in-method choice is served by Azure AD B2C (dcidmtest.b2clogin.com) from a B2C custom policy's SelfAsserted markup, upstream of the service and outside the CHED-PP rebuild boundary. There is therefore no Handlebars template in ipaffs-frontend-notification/service/src/views/importer/, no route handler in .../routes/handlers/importer/, no key in ipaffs-notification-microservice ValidationMessages.properties, and no @NotNull mandatoriness in the imports-notification-schema model (PartOne.java etc.) for this page's controls — because amrExecuted / authenticationMethodsEnabledString are B2C claim names, not notification fields. All copy, options, hints, the #NoSelectionErrorText validation paragraph and the div#no_cookie cookie-error block already in this spec are `confirmed` (rendered in the B2C-served DOM) and remain the authoritative source; they cannot be corroborated or contradicted from the IPAFFS notification codebase because that codebase does not own them.",
+    "confidence": "legacy",
+    "searchesRun": [
+      "grep -rn 'How do you want to sign in' across ~/git/defra/ipaffs/ — only govuk-frontend node_modules fixtures (the DS Radios example, unrelated), no application template.",
+      "grep -rn \"We can't sign you in|block cookies|amrExecuted|authenticationMethodsEnabled|SelfAsserted|signin-method\" across ~/git/defra/ipaffs/ (excluding node_modules) — the ONLY hits are ipaffs-test/jmeter/*.jmx performance harnesses issuing HTTP requests to the EXTERNAL B2C endpoint `${B2C_TENANT}.onmicrosoft.com/${B2C_POLICY}/SelfAsserted` (e.g. imports-performance-test-chedpp.jmx:1271-1363). These confirm the page is B2C-hosted; none is an IPAFFS-owned template or copy source.",
+      "grep -rin 'sign.in|signin|b2clogin|oauth' in ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties — zero hits; no validation message keys relate to sign-in."
+    ],
+    "evidence": "Absence verified across ~/git/defra/ipaffs/ (94 repos). External-B2C ownership corroborated by ipaffs-test/jmeter/imports-performance-test-chedpp.jmx:1271,1274 (`${B2C_TENANT}.onmicrosoft.com/${B2C_POLICY}/SelfAsserted`)."
+  },
+  "openQuestions": [
+    "EVIDENCE POINTER WAS WRONG (re-confirmed by this review). The brief cited action 14, which is Fill \"583104393659\" into getByRole('textbox', { name: 'User ID' }) — that is the SCP (Government Gateway) credential page, a DIFFERENT page downstream of this one. The sign-in-method choice page is action 12 (Click locator('#scp')), which is what this spec is built from. CORRECTION TO THE PREVIOUS SPEC: it claimed \"Action 12 has no 'before' snapshot; the 'input' phase snapshot was used.\" That is false — `trace action 12` reports `Snapshots available: before, input, after`. All three phases exist. The input snapshot remains the right choice (it is the one carrying the __playwright_target__ marker on #scp), but the stated reason was wrong.",
+    "This page is served by Azure AD B2C (dcidmtest.b2clogin.com), not by IPAFFS. It is upstream of the service and outside the CHED-PP rebuild's boundary — recorded here for completeness only, as the brief states. Nothing on it should be reimplemented in the new CDP app. Confirmed by the action 12 navigation log: your-account.cpdev.cui.defra.gov.uk/registration/oidc/authorize/<state> → dcidmtest.b2clogin.com/dcidmtest.onmicrosoft.com/oauth2/authresp.",
+    "The H1 is NOT the SCP/Defra ID choice the page name suggests. The two rendered options are 'Sign in with GOV UK One Login' and 'Sign in with Government Gateway'. SCP (id/value 'scp') IS Government Gateway — it is the option the trace selects, and it leads to the User ID/Password page. There is no 'Defra ID' radio: Defra ID (Defra Customer Identity, the your-account.cpdev.cui.defra.gov.uk host) is the surrounding identity platform that hosts this B2C policy, not one of the choices. The page name in the brief conflates the two.",
+    "NAMING CONFLATION IS ALSO IN THE TEST CODE (verified by this review). utils/auth-utils.ts:8 defines `const ONE_LOGIN_HOST = /(cui\\.defra\\.gov\\.uk|b2clogin\\.com)$/` — a constant named for GOV.UK One Login that actually matches the Defra Customer Identity and Azure B2C hosts, i.e. the identity platform, not the 'one' radio option. It is used at :33 and :38 purely to decide 'are we sitting on a login host?'. So the same SCP/Defra ID/One Login muddle the page name shows up in is baked into the QA vocabulary too. Worth flagging to whoever owns the naming in the new service: pick one term per concept (identity platform vs identity provider vs sign-in method) before this is carried forward.",
+    "COPY INCONSISTENCY IN THE SOURCE (new, from this review's character-by-character check). Within one radio group the service spells the brand two ways: the label reads 'Sign in with GOV UK One Login' (no dots) while its own hint reads 'GOV.UK One Login' (dots). Separately, the cookie-error block uses straight ASCII apostrophes (\"We can't sign you in\", \"you're\") while the radio hints use typographic ones (\"don’t\", \"You’ll\"), and the cap hint alone has no trailing full stop. All transcribed here exactly as rendered — do NOT tidy these when carrying copy forward without a content designer's ruling.",
+    "Two further sign-in methods are templated but were not enabled in this trace: ttp ('Sign in as a Local Authority') and cap ('Sign in with your customer reference number (CRN)'). Their copy is captured verbatim from the hidden template blocks. Whether they are enabled in production is unknown — authenticationMethodsEnabledString was 'one|scp' here, and the QA repo has no user role, locator or test for either method (config/users.ts:1-14 lists only b2b_*/b2c_* roles). Does any real user population sign in via ttp or cap, and if so does the new service need to support them?",
+    "COVERAGE GAP (corroborated, and wider than first recorded): the 'one' (GOV.UK One Login) option renders on this page but is never selected. LoginPage.ts:53-55 exposes only `#scp`, and :151 clicks it on every single B2C login. Because loginB2C() (:136-159) is role-agnostic, this is true for ALL EIGHT b2c_* roles (config/users.ts:6-13) — there is no role, fixture, env var or parameter anywhere in the repo that would make a test choose 'one' (independently re-verified by grep: zero hits for #one / amrExecuted / One Login outside the ONE_LOGIN_HOST constant). So the One Login journey, and any difference in what the service receives from it, is unverified by automation and absent from the trace corpus. If One Login is the strategic direction, this is the least-tested and least-understood path.",
+    "COVERAGE GAP: this page is never accessibility-tested. Every accessibility spec sets `test.use({ storageState: AUTH_FILES.<user> })` (tests/accessibility/ched-pp-accessibility-tests.spec.ts:16) and begins its checks at the Notification Dashboard (:18 goTo, :19 first checkPageAccessibility), so axe never runs against the sign-in-method page. This is why the missing fieldset/legend AND the id-less hints on the radio group have gone unflagged. Worth telling whoever owns the B2C policy — these are real WCAG issues in a page every external user passes through.",
+    "NEW — UNEXAMINED ERROR SURFACE. The document ships a complete hidden cookie-blocked error page (div#no_cookie: 'We can't sign you in' + two paragraphs). It was missed entirely by the first pass because only main.outerHTML was evaluated, and main is not the whole page. Nothing in the trace corpus or the QA suite ever renders it, and no test references it. Two questions: (a) does the new CDP app need its own cookie-blocked story, and what should it say; (b) LESSON FOR THE OTHER PAGE SPECS IN THIS SET — if they were also derived from main.outerHTML alone, they may be missing body-level error blocks, banners or dialogs in exactly the same way. Worth a sweep.",
+    "No validation state was ever exercised, and no test asserts one. The #NoSelectionErrorText copy is transcribed verbatim from the DOM but was never seen rendered, and the four B2C error summaries were empty. login.spec.ts asserts only the post-login end state (URL + a dashboard button, :10-11), never anything on this page; every case in it is a 'should login successfully' happy path (:4-32). Structurally the suite CANNOT fire the no-selection rule, because LoginPage always clicks a radio before Continue (:151-152). The trigger and presentation of every error on this page remain unconfirmed — a question for whoever owns the B2C custom policy.",
+    "No back link and no section caption on this page — re-verified document-wide at action 12 (.govuk-back-link 0; .govuk-caption-xl/-l/-m 0), so confirmed absent from the whole DOM, not merely from main and not merely unobserved. The page furniture that IS present, outside main: a.govuk-skip-link ('Skip to main content'), a <header>, section.govuk-service-navigation ('IPAFFS'), and footer.govuk-footer (Support links: Help / Privacy notice / Terms and conditions / Cookies, each 'opens in new tab').",
+    "Only 1 of the 65 CHED-PP traces (this one, the B2C agent) renders this page; every other trace reuses a stored storageState and skips the auth journey entirely. CORROBORATED AND REFINED: tests/auth/b2c.setup.ts is a setup project that logs in once per role and writes storageState to AUTH_FILES.* (:10-16, :19-25 etc.), and it short-circuits even that via probeSession() when a saved session is still valid (:12, :21, :29, :37…). Four of the eight b2c setups are additionally env-gated and silently return when their credential var is unset (:44 B2C_DOA_AGENT_USER_ID, :54 B2C_ORG1_USER_ID, :62 B2C_ORG_TEST1_USER_ID, :72 B2C_ORG_TEST2_USER_ID). So how many times this page renders per run is environment-dependent and can legitimately be zero — there is no corroborating second observation for anything on this page, by design. Everything here rests on a single sample.",
+    "The suite never identifies this page by its CONTENT, only by its URL — utils/session-probe.ts:5 (`LOGIN_URL_HINTS = /(sign-?in|login|b2clogin|oauth2|authorize)/i`) and :48 (`hitLoginUrl = LOGIN_URL_HINTS.test(finalUrl)`) treat landing on a URL matching that regex as 'session invalid'. Nothing asserts the heading, the options, or that the right sign-in methods are offered. Consequence for the rebuild: if B2C changed this page's copy or dropped an option, no test in this repo would fail. Anyone relying on the QA suite as a safety net for the auth surface should know it is a URL-shape check, not a UI contract.",
+    "RESOLVED (was: why is the password set by an Evaluate at action 16 rather than a Fill?). This is deliberate test-code behaviour, not an app behaviour: LoginPage.fillPassword() uses locator.evaluate() to set .value and dispatch input/change events, specifically so the password does not appear in the trace, and only falls back to fill() when PWDEBUG is set — /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/login/LoginPage.ts:17-31 (re-verified by this review). Nothing should be inferred about the app from the Evaluate. Credentials in the sign-in block remain [REDACTED].",
+    "Downstream of a successful sign-in, some users hit a '/select-organisation' page (a govuk Select named 'Organisation' + 'Save and continue') and some go straight to the dashboard — LoginPage.ts:94-116. It is real and load-bearing: loginWithOrgSelection() races the two possible destinations (:102-108) and no-ops if org selection did not appear (:109-111); b2c.setup.ts drives it by index for b2cInspector/b2cLvu (:22, :38) and by org LABEL for b2cOrg1 ('IPAFFS Plant Organisation 1', :56) and b2cOrgTest2 ('Test Org Ltd', :74); DecisionDashboardPage.ts:34-40 re-implements the same conditional dance independently. That page is not in this spec's scope but is part of the same pre-journey auth surface — confirm whether a multi-org / org-selection concept exists in the new CDP service, because it changes who a notification belongs to.",
+    "This page can appear MID-JOURNEY, not just at the start. utils/auth-utils.ts:24-47 (`reauthenticateIfLoggedOut`) exists precisely because a session can drop part-way through a test: it waits to see whether the URL settles on an identity host or the app (:29-37, using ONE_LOGIN_HOST at :33 and :38), and if it landed on the identity host it re-drives the entire login (:41-45). So sign-in is not purely a journey-position -1 concern — session expiry can bounce a user out of a half-filled CHED-PP notification. Question for the rebuild: what happens to in-progress notification data when this fires? Nothing in the trace corpus or the QA suite answers that.",
+    "Locally, B2C routing is forced with an 'x-original-host' cookie pointing at a proxy (LoginPage.ts:138-147; config/environments.ts:20-22, :96-98), because local runs serve B2B and B2C from one URL. Environment-plumbing detail only — no requirement for the new app, but it means locally-rendered sign-in markup may not match the remote B2C policy's."
+  ]
+}

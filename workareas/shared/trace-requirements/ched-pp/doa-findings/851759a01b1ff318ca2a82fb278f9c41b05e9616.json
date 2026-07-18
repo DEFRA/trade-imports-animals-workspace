@@ -1,0 +1,183 @@
+{
+  "hash": "851759a01b1ff318ca2a82fb278f9c41b05e9616",
+  "title": "auth/DoA/doa-notification-creation.spec.ts:65 › Delegated Organisation - Notification Creation › Carol Clark (agent) creates for Plant Org 1 → changes organisation to Plant Agency C before submitting",
+  "kind": "creation",
+  "wrote": true,
+  "spec": "ipaffs-qa-automation/tests/auth/DoA/doa-notification-creation.spec.ts:65",
+  "actor": {
+    "agent": "Carol Clark (DoA agent, auth b2cDoaAgent / role b2c_doa_agent, own org 'IPAFFS Plant Agency C')",
+    "delegatedOrg": "IPAFFS Plant Organisation 1 (member: Isabel Irwin, auth b2cOrg1)",
+    "note": "confirmed identities from trace title + spec; agent/org relationship inferred from sibling DoA specs and users.ts (config/users.ts:79 getB2CDoaAgent, config/auth-files.ts:20-21)"
+  },
+  "trace_capture_note": "This trace was captured WITHOUT DOM snapshots (0 snapshot events in *.trace) and with 0 attachments, so no accessibility-tree renders were available. Field/copy evidence is drawn from the ordered action timeline (confirmed: real accessible names + values that Playwright resolved against the live DOM) and cross-checked against the IPAFFS QA page-object + workflow source (inferred/legacy).",
+  "pagesTouched": [
+    "notification-dashboard",
+    "import-type",
+    "organisation-selection",
+    "consignment-country-of-origin",
+    "origin-of-import",
+    "description-of-goods",
+    "search-commodity",
+    "commodity-basic-description",
+    "about-the-consignment",
+    "notification-hub",
+    "commodity-extended-description",
+    "transport-details",
+    "goods-movement-services",
+    "contact-details",
+    "nominated-contacts",
+    "accompanying-documents",
+    "document-upload",
+    "traders-addresses",
+    "consignor-creation",
+    "consignor-confirmation",
+    "review-notification",
+    "declaration",
+    "confirmation"
+  ],
+  "newSurface": "This DoA CHED-PP trace exercises the delegated-agent surface the standard (non-DoA) journey never renders: (1) an ORGANISATION-SELECTION page inserted immediately after the import-type page, only shown to agents who hold delegated authority; (2) a change-organisation-before-submit flow reached from the review page; and (3) the responsible-organisation identity carried onto the review/confirmation. Standard non-agent CHED-PP journeys skip the organisation-selection page entirely (workflow only visits it when organisationName or useOwnOrganisation is set — ched-pp-workflows.ts:260-264). Sibling tests in the same suite additionally surface a 'Trade Partner' dashboard badge and auto-population of the responsible contact + importer from the delegated org (captured below under authorizationRules / autoPopulation as related-but-not-rendered-in-THIS-trace).",
+  "delegatedAgentSurface": {
+    "organisationSelectionPage": {
+      "slug": "organisation-selection",
+      "position": "Rendered immediately after the import-type page ('Plants, plant products and...') and before country-of-origin — ONLY for delegated agents.",
+      "step1_whoseOrg": {
+        "control": "radio group",
+        "options_confirmed": [
+          "A different organisation"
+        ],
+        "options_inferred": [
+          "(implied sibling option for the agent's own organisation — selecting the agent's own org radio is modelled as radioOwnOrganisation = 'IPAFFS Plant Agency C', page-objects/notification/OrganisationSelectionPage.ts:18-20)"
+        ],
+        "evidence": "confirmed: action 'Check getByRole(radio,{name:A different organisation})' pw:api@26, trace 851759a...; page object OrganisationSelectionPage.ts:6-8"
+      },
+      "step2_pickOrg": {
+        "control": "radio group listing the specific delegated organisations the agent is authorised to act for",
+        "option_confirmed": "IPAFFS Plant Organisation 1",
+        "evidence": "confirmed: action 'Check getByRole(radio,{name:IPAFFS Plant Organisation 1})' then 'Save and continue', trace 851759a...; radioCompany(companyName) OrganisationSelectionPage.ts:14-16",
+        "note": "Only appears after 'A different organisation' is chosen (selectDifferentOrganisation checks the different-org radio, Save and continue, then checks the named-company radio — OrganisationSelectionPage.ts:36-41)."
+      },
+      "buttons": [
+        "Save and continue (confirmed)",
+        "Save and review (confirmed — used on the change-org-before-submit path, OrganisationSelectionPage.ts:22-24,31-34)"
+      ]
+    },
+    "changeOrganisationBeforeSubmit": {
+      "entryPoint": "Review-notification page → 'Amend' button → change link #organisation-change-link",
+      "flow": "Amend (btnAmend) → click #organisation-change-link → organisation-selection page → select own org radio 'IPAFFS Plant Agency C' → 'Save and review' → back to review → 'Save and continue' → declaration → submit",
+      "result": "The responsible/owning organisation on the SUBMITTED notification becomes the newly-chosen org (Plant Agency C), overriding the Plant Org 1 chosen during draft creation.",
+      "evidence": "confirmed: actions 89-95 (Amend, #organisation-change-link, radio 'IPAFFS Plant Agency C', 'Save and review', 'Save and continue', checkbox 'I/We have read and understood', 'Submit notification'), trace 851759a...; ReviewNotificationPage.ts:14-16,125-127; OrganisationSelectionPage.ts:31-34",
+      "reviewLocators": {
+        "responsibleOrganisationName": "#responsible-organisation-name (ReviewNotificationPage.locatorOrganisationName, ReviewNotificationPage.ts:37-39)",
+        "organisationChangeLink": "#organisation-change-link (ReviewNotificationPage.linkChangeOrganisation, ReviewNotificationPage.ts:125-127)",
+        "amendButton": "getByRole('button',{name:'Amend'}) (ReviewNotificationPage.ts:14-16)"
+      }
+    }
+  },
+  "fields": {
+    "note": "This trace walks the full CHED-PP creation journey with the workflow defaults (ched-pp-workflows.ts DEFAULT_CONFIG). Non-DoA field detail is standard CHED-PP and covered by the main run; recorded here only where the action timeline confirms a concrete value.",
+    "import-type": {
+      "radio_selected": "Plants, plant products and... (CHED-PP)",
+      "evidence": "confirmed action 8, trace 851759a..."
+    },
+    "consignment-country-of-origin": {
+      "control": "Country of origin dropdown; value = ROW default 'Afghanistan' (singleCommodity config leaves isEu default true here, but workflow default euCountryOfOrigin=France — see note)",
+      "evidence": "confirmed 'Select option getByLabel(Country of origin)' action 14; value not surfaced in accessible name"
+    },
+    "description-of-goods": {
+      "radio_selected": "Manual entry",
+      "evidence": "confirmed action 17, trace 851759a..."
+    },
+    "search-commodity": {
+      "commodityCode": "06011010 (Hyacinths, commodityCode.hyacinths)",
+      "evidence": "confirmed Fill '06011010' action 20, trace 851759a..."
+    },
+    "about-the-consignment": {
+      "radio_selected": "Internal market",
+      "evidence": "confirmed action 24, trace 851759a..."
+    },
+    "commodity-extended-description": {
+      "numberOfPackages": "2",
+      "typeOfPackage": "Box",
+      "quantity": "1",
+      "quantityType": "Bulbs",
+      "netWeightKg": "1",
+      "controlledAtmosphereContainer": "Controlled atmosphere container (Yes)",
+      "totalGrossWeightKg": "12",
+      "evidence": "confirmed actions 28-37, trace 851759a..."
+    },
+    "transport-details": {
+      "entryBorderControlPost": "CONPNT (Control Point Parent)",
+      "inspectionPremises": "INSPBAR1 (Barfoots of Botley, Chichester)",
+      "transportMethod": "airplane",
+      "transportIdentification": "F12345",
+      "transportDocumentReference": "certificate",
+      "arrivalDate": "18/07/2026 18:49 (relative offset)",
+      "evidence": "confirmed actions 39-48, trace 851759a...; legacy default values ched-pp-workflows.ts:161-165"
+    },
+    "goods-movement-services": {
+      "usingCommonTransitConvention": "No",
+      "transportWillUseTheService": "No",
+      "evidence": "confirmed actions 50-51, trace 851759a..."
+    },
+    "contact-details": {
+      "action": "Save and continue only — no manual entry (contact pre-populated for the delegated org)",
+      "evidence": "confirmed action 53 (Save and continue with no field fills preceding); auto-population asserted by sibling test doa-notification-creation.spec.ts:113-140"
+    },
+    "accompanying-documents": {
+      "documentType": "Phytosanitary certificate",
+      "documentReference": "REF-124",
+      "documentDate": "04/12/2025",
+      "attachment": "example.png",
+      "evidence": "confirmed actions 55-62, trace 851759a...; legacy defaults ched-pp-workflows.ts:171-177"
+    },
+    "consignor-creation": {
+      "name": "Linus George Ltd",
+      "addressLine1": "101 Main St",
+      "addressLine2": "Suite 2",
+      "addressLine3": "Building 2",
+      "cityOrTown": "Springfield",
+      "postcode": "10000",
+      "telephone": "01100100100",
+      "country": "England",
+      "email": "techsolutions@example.com",
+      "evidence": "confirmed actions 66-74, trace 851759a...; legacy defaults ched-pp-workflows.ts:178-188"
+    },
+    "traders-addresses": {
+      "placeOfDestination": "Same as consignee",
+      "evidence": "confirmed action 77 'Same as consignee', trace 851759a..."
+    },
+    "declaration": {
+      "checkbox": "I/We have read and understood...",
+      "submit": "Submit notification",
+      "evidence": "confirmed actions 94-95, trace 851759a..."
+    }
+  },
+  "autoPopulation": {
+    "description": "For agent-created-for-delegated-org notifications the responsible contact and importer are auto-filled from the delegated organisation (Plant Org 1) — the agent does NOT enter them. Asserted in sibling test doa-notification-creation.spec.ts:113-140, NOT rendered in this specific trace but part of the same DoA surface.",
+    "reviewValues_legacy": {
+      "responsibleContactName": "Isabel Irwin (#responsible-contact-name)",
+      "responsibleContactEmail": "ipaffs-plant-org-1-isabel@mailinator.com (#responsible-contact-email)",
+      "responsibleContactTelephone": "0123456789 (#responsible-contact-telephone)",
+      "importer": "IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT (#importer)"
+    },
+    "evidence": "inferred/legacy: doa-notification-creation.spec.ts:132-138; ReviewNotificationPage.ts:41-54"
+  },
+  "authorizationRules": [
+    "An agent holding delegated authority sees an organisation-selection page after import-type; a non-delegated user does not (the org-selection page is skipped) — confirmed this trace renders it; inferred the negative from workflow ched-pp-workflows.ts:259-264.",
+    "An agent may create a notification FOR a delegated organisation (Plant Org 1) OR for their OWN organisation (Plant Agency C); the chosen organisation becomes the responsible/owning organisation on the submitted notification (#responsible-organisation-name) — confirmed this trace: created-for Plant Org 1, changed to Plant Agency C before submit, final owner = Plant Agency C (action 104 expects #responsible-organisation-name toContainText 'IPAFFS Plant Agency C').",
+    "An agent may change the responsible organisation at review time (before submit) via #organisation-change-link → re-run org-selection → Save and review — confirmed this trace (actions 89-92).",
+    "When an agent SUBMITS for a delegated org (Plant Org 1), a member of that org (Isabel Irwin) CAN view, copy-as-new and amend it — legacy: doa-agent-access.spec.ts:7-31 / doa-importer-access.spec.ts:7-31.",
+    "When an agent submits for their OWN org (Plant Agency C), a member of Plant Org 1 CANNOT see it — legacy: doa-agent-access.spec.ts:60-86.",
+    "An agent's DRAFT for a delegated org (not yet submitted) is NOT visible to that org's members; it becomes visible to them only once submitted — legacy: doa-importer-access.spec.ts:34-58.",
+    "An agent can always view/copy/amend notifications she created on her OWN dashboard, regardless of owning org — legacy: doa-agent-access.spec.ts:34-58.",
+    "Members of the same organisation can see each other's submitted notifications (Franklyn D & David D in Plant Org Test) — legacy: doa-importer-access.spec.ts:60-84.",
+    "Agent-created-for-delegated-org notifications carry a 'Trade Partner' badge in the dashboard status column (#status-0) alongside the 'New' status — legacy: doa-notification-creation.spec.ts:57-58; NotificationDashboardPage.getNotificationStatus #notifications-page #status-0, NotificationDashboardPage.ts:224-226."
+  ],
+  "relatedDashboardSurface": {
+    "tradePartnerBadge": "#notifications-page #status-0 contains both 'New' and 'Trade Partner' for agent-created-for-delegated-org notifications (doa-notification-creation.spec.ts:55-58)",
+    "manageTradePartnersLink": "getByRole('link',{name:'Manage trade partners'}) (NotificationDashboardPage.ts:28-30) — DoA management entry point",
+    "manageAuthorisationsHeading": "h1 / #page-primary-title 'Manage your authorisations' (NotificationDashboardPage.ts:252-254)",
+    "evidence": "legacy: NotificationDashboardPage.ts"
+  },
+  "notes": "kind=creation (from doa-notification-creation.spec.ts) but the load-bearing value is the delegated-agent surface: organisation-selection page + change-organisation-before-submit + responsible-organisation identity, plus the sibling-test authorization/visibility rules and the 'Trade Partner' dashboard badge. No DOM snapshots were captured in this trace, so page-level field/copy detail is corroborated from the QA page-object + workflow source rather than rendered a11y trees. Discrepancy watch: workflow config default isEu=true→euCountryOfOrigin=France, but the trace passed only {organisationName, singleCommodity, stopAtReview}, so country-of-origin used the France default even though the dropdown value was not exposed in the action's accessible name."
+}

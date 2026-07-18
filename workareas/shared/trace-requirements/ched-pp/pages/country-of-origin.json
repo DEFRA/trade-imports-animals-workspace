@@ -1,0 +1,421 @@
+{
+  "slug": "country-of-origin",
+  "name": "Origin of the plants, plant product or other objects (country of origin)",
+  "url": "/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP[&orgId=:orgId]",
+  "urlEvidence": "GET observed as .../notification/vnet/protected/notifications/consignment-origin?type=CHEDPP -> 200 text/html in trace 219b882ee3b4fbe040b824d146d38991d6b70149 (request 2005). The optional &orgId suffix is confirmed in source: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/constants.js:135 builds the path as `/protected/notifications/consignment-origin?type=${type}${organisationId ? `&orgId=${organisationId}` : ''}`. The form POSTs back to the same path (form action=/protected/notifications/consignment-origin, method=post).",
+  "pageTitle": "Origin of the animal or product - Import and export applications - GOV.UK",
+  "caption": "About the consignment",
+  "heading": "Origin of the plants, plant product or other objects",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "secondaryActionsNote": "REFUTED BY SOURCE — this page has NO secondary actions. An earlier draft of this spec claimed 'Save and review' (inferred) and 'Save and return to hub' (gap) render here. Both are wrong. The route handler hardcodes the action list with no branch: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_origin.js:118 sets `actions: [SAVE_AND_CONTINUE_ACTION]` unconditionally, and :127-131 `getFormActionModel()` returns only `{ saveAndContinueButton: SAVE_AND_CONTINUE_BUTTON }`. The shared saveButtons partial (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/saveButtons.html:19-53) only emits a button for an action present in that array, so 'save-and-return' (:20-28) and 'save-and-review' (:38-46) can never render on this route. There is exactly one route registration for the path (routes.js:214-222, GET+POST), so there is no amend-mode variant of this page. Both traces corroborate: exactly one button inside the page form. The earlier claim came from misreading a page object — see entryRoutes and openQuestions. QA-SUITE CORROBORATION (this wave): the ONLY CHED-PP test that clicks `btnSaveAndReview` from the CountryOfOriginPage object is ched-pp-manipulation.spec.ts:71 and :75, and both clicks happen on OTHER pages — :75 fires while on the about-the-consignment page (radioReEntry was just clicked at :74). Every CHED-PP test that is genuinely on THIS page clicks `btnSaveAndContinue` (ched-pp-workflows.ts:272, ched-pp-accessibility-tests.spec.ts:33). `btnSaveAndReturnToHub` (CountryOfOriginPage.ts:17-19) IS called — but never on this page, and never by a CHED-PP test. CORRECTED THIS WAVE: an earlier draft claimed it was 'never invoked by ANY test in the repo — a dead locator'. That is FALSE; ched-a-manipulation.spec.ts:44 calls `pages.countryOfOrigin.btnSaveAndReturnToHub.click()`. The correction STRENGTHENS the refutation rather than weakening it, because that call is a THIRD instance of the same unscoped-locator roaming: the CHED-A test reaches the page via `pages.amendNotification.linkAmendCountryOfOrigin` = `getByRole('link', { name: 'Origin of the import' })` (AmendNotificationPage.ts:6-8), and 'Origin of the import' is the H1 of the OTHER page — consignmentCountries.html:15 — as well as a hub link (overview.html:44, singleChedaOverview.html:34). So that click lands on consignment-countries, whose actions ARE dynamic, not on consignment-origin. Verified this wave: grep for `btnSaveAndReturnToHub` across ipaffs-qa-automation returns exactly 5 call sites, none of them CHED-PP and none on this page. Both sources now agree.",
+  "entryRoutes": [
+    {
+      "route": "Create flow — straight after the Import Type page (or after the optional Organisation Selection page for DoA agents acting on behalf of another org).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 actions 8-11 (Click 'Create a new notification' -> Check radio 'Plants, plant products and' -> Click 'Save and continue' -> Select option getByLabel('Country of origin')), i.e. Import Type straight to this page with no org step. Corroborated by /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:255-272 (importType -> optional organisationSelection -> countryOfOrigin) and /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:26-33. This is the ONLY entry route either source evidences: every one of the ~8 CHED-PP specs reaches this page through `createChedPPNotification` (ched-pp-workflows.ts:253-272), which always arrives from Import Type."
+    }
+  ],
+  "entryRoutesRefuted": [
+    {
+      "route": "Amend flow — via the '#country-of-origin-change-link' change link on the amend/review page.",
+      "verdict": "REFUTED — this page is NOT reachable from the amend flow.",
+      "confidence": "inferred",
+      "evidence": "The id is misleading. EVERY occurrence of #country-of-origin-change-link in the frontend hrefs `/protected/notifications/{{referenceNumber}}/consignment/page-2`, never /consignment-origin: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/reviewChedpp.html:29-30 (where it sits on the 'Add a reference number for this consignment' row, not the country row), common/review.html:21-23 and :56-58, review/consignmentReferenceTable.html:9. routes.js:273-276 maps consignment/page-2 to the `consignmentCountries` handler — a DIFFERENT page, whose template also carries a 'Country of origin' label (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentCountries.html:27) and whose actions ARE dynamic (consignment_countries.js:168-169 `viewContext.actions = formActions.getAvailableFormActions(formActionsModel)`), which is where 'Save and review' actually comes from. For CHED-PP, common/review.html:30-35 renders the 'Country of origin' summary row with `review-summary-list__row-no-action` and NO change link at all — the change-linked country row at :45-62 is guarded by `{{#if (or isCveda isChedD)}}`, i.e. CHED-A/CHED-D only.",
+      "qaSuiteCorroboration": "CONFIRMS THE REFUTATION — and shows exactly how the earlier draft was misled. ched-pp-manipulation.spec.ts:68-71 does: `pages.amendNotification.linkCountryOfOriginChangeLink.click()` -> `pages.countryOfOrigin.dropdownCountryOfOrigin.selectOption(country.Austria)` -> `pages.countryOfOrigin.btnSaveAndReview.click()`. On its face this reads as 'the amend change link lands on the country-of-origin page, which has a Save and review button'. It does not. The link locator is `page.locator('#country-of-origin-change-link')` (/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AmendNotificationPage.ts:10-12) — the very id whose href is consignment/page-2. And BOTH CountryOfOriginPage locators used afterwards are UNSCOPED — `page.getByLabel('Country of origin')` (CountryOfOriginPage.ts:6-8) and `page.getByRole('button', { name: 'Save and review' })` (CountryOfOriginPage.ts:13-15) — so they resolve happily on the consignment-countries page, which carries the same 'Country of origin' label and does have a Save and review button. The test passes while never visiting this page. Sequence proof that these locators roam: at :75 the SAME `pages.countryOfOrigin.btnSaveAndReview` is clicked while the test is demonstrably on the about-the-consignment page (:73-74 clicked the consignment-purpose change link and the Re-entry radio). LESSON: an unscoped page object is not evidence of page ownership — see openQuestions.",
+      "qaSuiteCorroborationConfidence": "inferred"
+    }
+  ],
+  "layout": "main.govuk-main-wrapper > div.govuk-grid-row#consignment-origin-page > div.govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Origin of the plants, plant product or other objects",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "label",
+      "text": "Country of origin",
+      "govukComponent": "Label (govuk-label govuk-label--m)"
+    },
+    {
+      "element": "select",
+      "text": "Country of origin — 254 options, default \"Select a country\". NOT a flat list: contains one <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> wrapping the 4 UK subdivisions.",
+      "govukComponent": "Select (govuk-select govuk-!-width-one-half)"
+    },
+    {
+      "element": "optgroup",
+      "text": "United Kingdom of Great Britain and Northern Ireland — contains England, Scotland, Wales, Northern Ireland",
+      "govukComponent": "(no govuk component — plain <optgroup> emitted inside govuk-select)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": [
+        "govuk-!-width-one-half"
+      ],
+      "count": 1,
+      "usage": "The single Country of origin picker — 254 options, of which 4 sit inside one optgroup.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 (locator resolved to <select id=\"origin-country\" name=\"origin-country\" class=\"govuk-select govuk-!-width-one-half\">); corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14 (identical). Template: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:25-28. QA-side: driven as a native select via `selectOption` (ched-pp-workflows.ts:268/270), which confirms it is a real <select> and not a JS-enhanced autocomplete."
+    },
+    {
+      "component": "Optgroup",
+      "govukClass": "(none)",
+      "modifiers": [],
+      "count": 1,
+      "usage": "One <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> holding GB-ENG/GB-SCT/GB-WLS/GB-NIR. Not a Design System component — a raw HTML optgroup inside the govuk-select. The GOV.UK Design System Select component does not document optgroup support, so this is a deviation the rebuild should decide on deliberately.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 (querySelectorAll('#origin-country optgroup').length === 1; label + 4 children GB-ENG=England, GB-SCT=Scotland, GB-WLS=Wales, GB-NIR=Northern Ireland); independently reproduced in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14 (optgroup count 1). Root cause in source: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/data/countriesSelectHighLow.html:3-8 — `{{#eq this.code 'GB'}}<optgroup label=\"{{this.name}}\">{{#each ../regions}}<option .../>{{/each}}</optgroup>{{else}}<option .../>{{/eq}}`, i.e. the country whose code is GB is expanded into an optgroup of the UK regions instead of being rendered as a selectable option. QA-side corroboration of the MEMBERSHIP (not the grouping): /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts:238-241 lists England='GB-ENG', NorthernIreland='GB-NIR', Scotland='GB-SCT', Wales='GB-WLS' as four ordinary entries with NO 'UnitedKingdom' key — exactly consistent with a non-selectable group label. No CHED-PP test selects any GB-* value, so the optgroup's behaviour is untested from the QA side."
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--m"
+      ],
+      "count": 1,
+      "usage": "Label for the Country of origin select. Medium size — acts as the de-facto question on a single-question page, but is NOT the H1. The label-for/id association is sound (getByLabel resolves the select in both traces).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 (label class 'govuk-label govuk-label--m', text 'Country of origin'); /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:21-23. The QA suite depends on this association working: CountryOfOriginPage.ts:6-8 addresses the select by `getByLabel('Country of origin')` and nothing else — there is no id-based fallback locator."
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the label + select. Template applies an error modifier class conditionally via {{displayErrorClass errors 'origin-country'}}.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11; /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:20"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary submit, and the ONLY button in the page form. id=name=\"button-save-and-continue\", value=\"Save and continue\", type=submit, data-module=\"govuk-button\", data-prevent-double-click=\"true\". The count is fixed at 1 — actions are hardcoded on this route (see secondaryActionsNote).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14 — form[action*=consignment-origin] contains exactly one button: <button class=\"govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4\" id=\"button-save-and-continue\" name=\"button-save-and-continue\" type=\"submit\" value=\"Save and continue\" data-module=\"govuk-button\" data-prevent-double-click=\"true\">Save and continue</button>. Same in trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11. Source: consignment_origin.js:118 + saveButtons.html:29-37. QA-side: every test genuinely on this page clicks 'Save and continue' (ched-pp-workflows.ts:272; ched-pp-accessibility-tests.spec.ts:33) — see secondaryActionsNote for why the btnSaveAndReview clicks are not counter-evidence."
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "Standard govuk-back-link component, but carrying a non-Design-System modifier class and rendered OUTSIDE <main> inside an IPAFFS-custom .navigation-links wrapper. Its href is \"#\" (JS-driven history nav), not a real URL. See nonStandardPatterns.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — outerHTML: <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>; parent chain A -> DIV.navigation-links__left-block -> DIV.navigation-links -> DIV.govuk-width-container app-width-container--wide; document.querySelector('main #back-link') === null. Template: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:2-8 (partial common/backLink). No CHED-PP test ever clicks the back link on this page — the QA suite only moves forwards through the journey, so the href=\"#\" behaviour is untested."
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"About the consignment\" above the H1. Supplied by the common/pageTitle partial as secondaryTitle.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11; /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:14"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "H1 page heading, supplied as primaryTitle and branched per notification type.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11; branch at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_origin.js:115-117. No test asserts the H1 text on this page — the QA suite identifies the page only via the label, never the heading."
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [],
+      "count": 0,
+      "usage": "Rendered by the common/validationSummary partial when validation fails. Not observed in either evidence trace (both happy-path, zero errors); presence inferred from the template only. The QA suite offers NO corroboration — no CHED-PP test submits this page empty (see openQuestions).",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:13 (validationSummary partial) and :24 ({{errorSpan errors 'origin-country'}} inline error slot). QA-SUITE GAP NOW POSITIVELY ESTABLISHED (this wave): a repo-wide grep for the strings 'Select the country' and 'country of origin of' across ipaffs-qa-automation returns ZERO hits, and CountryOfOriginPage.ts (all 20 lines) exposes no error-summary, error-link or error-message locator at all. The page object could not assert an error even if a test wanted to. Both sources are silent — this is a real, systemic gap, not an oversight in this analysis."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "(none within <main>)",
+      "whatItDoes": "Every class inside the main content region is govuk-* prefixed: govuk-main-wrapper, govuk-grid-row, govuk-grid-column-full, govuk-caption-xl, govuk-heading-xl, govuk-form-group, govuk-label, govuk-label--m, govuk-select, govuk-!-width-one-half, govuk-button, govuk-!-margin-right-1, govuk-!-margin-bottom-4.",
+      "concern": "No concern on classes — the main region is 100% inside the GOV.UK toolbox. The one structural deviation is the raw <optgroup> inside the select (see below), which is HTML rather than a custom class.",
+      "govukAlternative": "n/a — already standard",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — de-duplicated class inventory over `main, main [class]` returned exactly the 13 govuk-* classes listed above and nothing else."
+    },
+    {
+      "pattern": "<optgroup> inside govuk-select, grouping only the UK",
+      "whatItDoes": "The country whose ISO code is GB is not rendered as a selectable option. Instead it becomes an <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> containing the four UK subdivisions (England GB-ENG, Scotland GB-SCT, Wales GB-WLS, Northern Ireland GB-NIR). Because the group takes the GB country's alphabetical slot, the four subdivisions appear between 'United Arab Emirates' and 'United States Minor Outlying Islands' rather than under E/S/W/N. Exactly one optgroup exists; every other country is a flat option.",
+      "concern": "The GOV.UK Design System Select component does not document optgroup support, so this is outside the documented toolbox even though the classes are standard. It is also asymmetric — one grouped country among 249 flat ones — and the group label is not itself selectable, so a user looking for 'United Kingdom' finds a non-selectable heading. Whether this is desirable is a content/policy decision (NI is a distinct SPS territory), but the rebuild should make it deliberately rather than inherit it.",
+      "govukAlternative": "Either flatten the four subdivisions into ordinary options sorted under E/S/W/N, or use an accessible autocomplete. Decide with content design; do not copy the optgroup by default.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 (optgroup count 1; direct children of #origin-country are 250 OPTIONs — the placeholder plus 249 flat countries — plus one OPTGROUP positioned immediately after AE and before UM. Re-measured this wave: an earlier draft said 249 direct OPTIONs, which omitted the placeholder); reproduced in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14. Source: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/data/countriesSelectHighLow.html:3-8. Note the accessibility suite runs axe on this page (ched-pp-accessibility-tests.spec.ts:30-33) and passes, so the optgroup raises no automated a11y violation — the concern is a Design-System-conformance and findability one, not an axe failure."
+    },
+    {
+      "pattern": "div.navigation-links / .navigation-links__left-block (outside main)",
+      "whatItDoes": "IPAFFS-specific chrome wrapper above <main>, holding the Back link and a navigation list. The Back link itself IS the standard govuk-back-link component, but it carries an extra custom modifier (back-link--next-to-breadcrumbs) and its href is \"#\" — i.e. JS-driven history navigation, not a real URL.",
+      "concern": "Two separate issues, only the second of which is about the component: (1) the .navigation-links / .navigation-links__left-block wrapper is custom BEM-ish chrome outside the Design System; (2) href=\"#\" means the back link does not work without JS and gives no real target. NOTE: an earlier draft of this spec claimed the back link 'is not the standard govuk-back-link component' — that is false, it is govuk-back-link. Cosmetic/chrome rather than a data requirement, but the new app should not copy the wrapper or the href=\"#\".",
+      "govukAlternative": "govuk-back-link with a real server-rendered href to the previous page in the journey, and no custom wrapper.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>, parent chain DIV.navigation-links__left-block -> DIV.navigation-links -> DIV.govuk-width-container app-width-container--wide; /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:2-8."
+    }
+  ],
+  "fields": [
+    {
+      "name": "origin-country",
+      "label": "Country of origin",
+      "control": "select",
+      "required": true,
+      "requiredLegacyEvidence": "MANDATORY confirmed at the authoritative schema layer, not just the frontend Joi. The notification-level origin country is stored as `partOne.commodities.countryOfOrigin` (String) and carries `@NotNull(groups = { ..., NotificationChedppFieldValidation.class, ... })` — /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/Commodities.java:168-180 (the CHED-PP group is at :171). So for CHED-PP this field is required both at the frontend (Joi any.required, en.js copy) and at the backend schema (@NotNull, microservice message key .commodities.countryoforigin.not.null). confidence: legacy. NOTE this is legacy 'as the old system had it' — the mandatoriness is a policy the rebuild may keep or revisit, but the old system unambiguously enforced it for CHED-PP at both layers.",
+      "requiredLegacyConfidence": "legacy",
+      "pageObject": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CountryOfOriginPage.ts:6-8 — `get dropdownCountryOfOrigin(): Locator { return this.page.getByLabel('Country of origin'); }`. This is the ONLY field locator the page object exposes for this page, corroborating that the page has exactly one business field. NOTE the locator is unscoped and therefore also matches the consignment-countries page — see entryRoutesRefuted.",
+      "optionsStructure": "254 <option> elements in total = 1 placeholder + 249 flat country options + 4 options nested inside a single <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\">. The optgroup sits between AE (United Arab Emirates) and UM (United States Minor Outlying Islands).",
+      "options": [
+        "=Select a country",
+        "AF=Afghanistan",
+        "AX=Aland Islands",
+        "AL=Albania",
+        "DZ=Algeria",
+        "AS=American Samoa",
+        "AD=Andorra",
+        "AO=Angola",
+        "AI=Anguilla",
+        "AQ=Antarctica",
+        "AG=Antigua and Barbuda",
+        "AR=Argentina",
+        "AM=Armenia",
+        "AW=Aruba",
+        "AU=Australia",
+        "AT=Austria",
+        "AZ=Azerbaijan",
+        "BS=Bahamas",
+        "BH=Bahrain",
+        "BD=Bangladesh",
+        "BB=Barbados",
+        "BY=Belarus",
+        "BE=Belgium",
+        "BZ=Belize",
+        "BJ=Benin",
+        "… (alphabetical continuation elided; includes territories/regions e.g. BV=Bouvet Island, ES-CN=Canary Islands, VA=Holy See) …",
+        "TR=Turkey",
+        "TM=Turkmenistan",
+        "TC=Turks and Caicos Islands",
+        "TV=Tuvalu",
+        "UG=Uganda",
+        "UA=Ukraine",
+        "AE=United Arab Emirates",
+        "<optgroup label=\"United Kingdom of Great Britain and Northern Ireland\">",
+        "  GB-ENG=England",
+        "  GB-SCT=Scotland",
+        "  GB-WLS=Wales",
+        "  GB-NIR=Northern Ireland",
+        "</optgroup>",
+        "UM=United States Minor Outlying Islands",
+        "US=United States of America",
+        "UY=Uruguay",
+        "UZ=Uzbekistan",
+        "VU=Vanuatu",
+        "VE=Venezuela",
+        "VN=Viet Nam",
+        "VI=Virgin Islands of the United States",
+        "WF=Wallis and Futuna",
+        "EH=Western Sahara",
+        "YE=Yemen",
+        "ZM=Zambia",
+        "ZW=Zimbabwe"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 254,
+      "selectableOptionCount": 253,
+      "observedValues": [
+        "AT",
+        "BZ"
+      ],
+      "testDrivenValues": [
+        "FR (France) — CHED-PP workflow default for the EU branch (isEu: true, the DEFAULT_CONFIG path). ched-pp-workflows.ts:141; asserted back as 'France' on the view-details page at ched-pp-manipulation.spec.ts:25.",
+        "AF (Afghanistan) — CHED-PP workflow default for the ROW branch (isEu: false). ched-pp-workflows.ts:142; also the DoA-agent journey's ROW country, doa-notification-creation.spec.ts:16.",
+        "FR (France) — CHED-PP accessibility journey. ched-pp-accessibility-tests.spec.ts:31.",
+        "AT (Austria) — MATCHES observed trace value. Used as euCountryOfOrigin by ched-pp-article72.spec.ts:25 (Article-72 country + Article-72 commodities) and ched-pp-notification-csv.spec.ts:15; also the amended-to value in ched-pp-manipulation.spec.ts:70, asserted back as 'Austria' at :92.",
+        "BZ (Belize) — MATCHES observed trace value. rowCountryOfOrigin for the HMI auto-completion journey, ched-pp-hmi-checks.spec.ts:21.",
+        "AZ (Azerbaijan) — rowCountryOfOrigin for both EU-harmonisation journeys, ched-pp-eu-harmonisation.spec.ts:22 and :53.",
+        "NO (Norway) — passed as euCountryOfOrigin to exercise the NON-Article-72-country branch, ched-pp-article72.spec.ts:49 and :71. Norway is EEA, not EU — see openQuestions.",
+        "HR (Croatia) — passed as euCountryOfOrigin to exercise the Article-72-country branch, ched-pp-article72.spec.ts:94."
+      ],
+      "testDrivenValuesConfidence": "inferred",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — Select option, params options:[{valueOrLabel:\"AT\"}], return values:[\"AT\"], locator resolved to <select id=\"origin-country\" name=\"origin-country\" class=\"govuk-select govuk-!-width-one-half\">. Corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14 (values:[\"BZ\"]). Placeholder verified verbatim: first option outerHTML = <option value=\"\">Select a country</option>. Option names verified character-by-character against the DOM (AX=Aland Islands, AG=Antigua and Barbuda, BV=Bouvet Island, ES-CN=Canary Islands, VA=Holy See, TR=Turkey, US=United States of America, VN=Viet Nam, VI=Virgin Islands of the United States). The HTML `required` attribute is NOT set (DOM inventory shows req=false); requiredness is enforced server-side by Joi (see validationMessages). COUNT INDEPENDENTLY CORROBORATED: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts holds exactly 253 entries and contains the four GB-* subdivisions (:238-241) with NO 'UnitedKingdom' key — matching the 253 selectable options (249 flat + 4 regions) exactly, since the GB optgroup label is not selectable. testDrivenValues sourced from ched-pp-workflows.ts:141-142 + 267-272, ched-pp-accessibility-tests.spec.ts:31, ched-pp-article72.spec.ts:25/49/71/94, ched-pp-hmi-checks.spec.ts:21, ched-pp-eu-harmonisation.spec.ts:22/53, ched-pp-manipulation.spec.ts:70 — all select-by-VALUE (ISO code), never by label. VALUE-vs-LABEL SETTLED: country.ts maps names to codes (Austria: 'AT' at :16, Belize: 'BZ' at :24, France: 'FR' at :80, Afghanistan: 'AF' at :2, Azerbaijan: 'AZ' at :17, Norway: 'NO' at :169, Croatia: 'HR' at :57) and `selectOption(country.X)` therefore passes the code — so the submitted value is the ISO code, matching both traces. TRACE-TO-TEST LINKAGE — NOW CONFIRMED, NOT INFERRED (upgraded this wave; an earlier draft hedged this as 'most likely'). Both traces self-identify via `trace open` metadata: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 Title = 'notification/ched-pp/ched-pp-hmi-checks.spec.ts:15 › [IMTA-20591] CHED-PP HMI auto-completion › should auto-complete the HMI check outcome when risk decision is no inspection', and its action 14 Source stack is ched-pp-workflows.ts:270 -> ched-pp-hmi-checks.spec.ts:18 — so the BZ selection provably originates from the HMI spec. Trace 219b882ee3b4fbe040b824d146d38991d6b70149 Title = 'notification/ched-pp/ched-pp-article72.spec.ts:15 › Article 72 CHED-PP flows › B2C Importer (Not Agent): Submits Valid CHEDPP Notification Using Article 72 Country and Commodities', with action 11 Source stack ched-pp-workflows.ts:268 -> ched-pp-article72.spec.ts:23 — confirming the AT selection is the Article-72 journey. This also means BOTH evidence traces for this page are the two country-driven CHED-PP journeys (Article 72 and HMI/risk), which is why neither exercises an error state."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden — CSRF token)",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — INPUT|hidden|crumb, and form-element mapping shows it is a member of form[action=/notification/vnet/protected/notifications/consignment-origin] (fields: crumb,type,orgId,origin-country,button-save-and-continue). /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentOrigin.html:17. Platform CSRF, not a business field. The QA suite never touches it — it drives the real browser, so the crumb rides along automatically; no page object references it."
+    },
+    {
+      "name": "type",
+      "label": "(hidden — notification type, CHEDPP)",
+      "control": "hidden",
+      "required": true,
+      "options": [
+        "CVEDA",
+        "CVEDP",
+        "CHEDPP",
+        "CED"
+      ],
+      "optionsConfidence": "inferred",
+      "observedValues": [
+        "CHEDPP"
+      ],
+      "confidence": "confirmed",
+      "evidence": "PRESENCE confirmed: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — INPUT|hidden|type, member of the consignment-origin form; page reached via GET ...?type=CHEDPP (request 2005). ENUM inferred from source, not observed: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_origin.js:25 `type: Joi.string().required().valid(CVEDA, CVEDP, CHEDPP, CED)`. This page is shared across all 4 CHED types; `type` branches both the H1 (routes/handlers/importer/consignment_origin.js:115-117) and the validation message (validation/.../consignment_origin.js:12-23). Set upstream on the Import Type page (ched-pp-workflows.ts:256, radioPlantsPlantProducts). QA-side corroboration of the 4-type domain: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/types/ched-type.ts is the suite's own vocabulary for the same four types (referenced as chedType.chedPP throughout, e.g. ched-pp-manipulation.spec.ts:15), and the repo carries a sibling test directory per type (tests/notification/ched-a, ched-p, ched-pp, ched-d) — independent evidence the enum is exactly these four."
+    },
+    {
+      "name": "orgId",
+      "label": "(hidden — organisation id, optional)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — INPUT|hidden|orgId, member of the consignment-origin form. Optional per /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_origin.js:30 `orgId: Joi.string().optional().allow('')`, and the URL builder only appends &orgId when an organisationId is present (utils/constants.js:135). Corroborated as the DoA-agent 'acting on behalf of another organisation' case: ched-pp-workflows.ts:259-264 only visits the Organisation Selection page when organisationName/useOwnOrganisation is configured — and the workflow config models these as two distinct optional knobs, `organisationName?: string` (default '' — skips org selection) and `useOwnOrganisation?: boolean` (default false), ched-pp-workflows.ts:42-45 + 136-137. So there are THREE upstream states feeding this field: no org step at all (both defaults — the path both evidence traces took), agent selects its own org, agent selects a different org. Only the first is trace-covered."
+    }
+  ],
+  "fieldsExcluded": [
+    {
+      "name": "crumb / returnUrl / fromFooterHeader / cookies",
+      "reason": "Present in the DOM but belong to the cookie-banner form (action=/notification/vnet/protected/notifications/cookies), not this page's form. Correctly excluded from the field list.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 — form-to-elements mapping returned two forms: consignment-origin (crumb,type,orgId,origin-country,button-save-and-continue) and cookies (crumb,returnUrl,fromFooterHeader,cookies)."
+    }
+  ],
+  "fieldsCorroborationSummary": "The QA suite adds NO field to this page. CountryOfOriginPage.ts is 20 lines and exposes exactly one field locator (the dropdown) plus three button locators, of which only btnSaveAndContinue is genuinely this page's. The ChedPPNotificationConfig interface (ched-pp-workflows.ts:41-129) contributes exactly two knobs attributable to this page — euCountryOfOrigin (:50-51) and rowCountryOfOrigin (:52-53) — plus isEu (:46-47) which SELECTS BETWEEN them rather than being a field on the page. Every other config field belongs to a later page. Conclusion: this page really is a single-question page, and both sources agree on its shape. The value the QA suite adds is not new fields but new BEHAVIOUR driven by this field — see downstreamBehaviour.",
+  "validationMessages": [
+    {
+      "message": "Select the country of origin of plants, plant product or other objects",
+      "field": "origin-country",
+      "trigger": "Submitting with no country selected, when type=CHEDPP. Bound to Joi any.required and string.empty ONLY. PRECISION FIX THIS WAVE: an earlier draft also listed string.base as producing this message. It does not — the CHEDPP branch maps STRING_TYPE to `typeMessage(COUNTRY_REQUIRED_PLANT, 'string')` (validation/routes/handlers/importer/consignment_origin.js:16), a wrapper that emits a DIFFERENT string. Empty-submit (the realistic user error) fires string.empty; string.base needs a non-string payload, which the select cannot produce. THE STRING_TYPE STRING, RESOLVED VERBATIM THIS WAVE: `typeMessage(label, type)` returns `` `${label} must be a ${type}` `` (validation/messages/en.js:27-29), so with label = COUNTRY_REQUIRED_PLANT the emitted copy is the malformed sentence 'Select the country of origin of plants, plant product or other objects must be a string' — recorded so Reconcile can see it is a wrapper concatenation artefact, not authored copy, and is effectively unreachable via a native <select>.",
+      "confidence": "inferred",
+      "evidence": "Copy transcribed verbatim from /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:65 `COUNTRY_REQUIRED_PLANT: 'Select the country of origin of plants, plant product or other objects'`, wired at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_origin.js:12-18 (`Joi.string().when('type', { is: CHEDPP, then: ... })` mapping ANY_REQUIRED / STRING_TYPE / STRING_EMPTY). NOT observed rendered in any trace — both evidence traces are happy-path with zero errors. NO CORROBORATION FROM THE QA SUITE — confirmed this wave by a repo-wide grep for 'Select the country' and 'country of origin of' across ipaffs-qa-automation: ZERO hits. No test asserts this string; no test submits this page empty; the page object has no error locator to assert with. Copy is transcription-only, unverified against rendered reality by EITHER source."
+    },
+    {
+      "message": "Select the country of origin of the animal or product",
+      "field": "origin-country",
+      "trigger": "Same page, but for the NON-CHEDPP types (CVEDA/CVEDP/CED). Recorded only to show the branch — out of scope for the CHED-PP rebuild.",
+      "confidence": "inferred",
+      "evidence": "Verbatim from /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:64 `COUNTRY_REQUIRED: 'Select the country of origin of the animal or product'`; otherwise-branch at validation/.../consignment_origin.js:19-23. Likewise unasserted anywhere in the QA suite (same zero-hit grep) and never observed."
+    },
+    {
+      "message": "Country of origin",
+      "field": "origin-country",
+      "trigger": "Backend schema-layer @NotNull failure for CHED-PP when partOne.commodities.countryOfOrigin is null. This is the SECOND validation layer behind this page's field — the microservice re-validates the notification against the Java schema on submit, independently of the frontend Joi check. The copy is terse/field-name-style (the backend message table uses labels, not sentences), in contrast with the friendly frontend copy 'Select the country of origin of plants, plant product or other objects'. Both guard the SAME datum at different layers.",
+      "confidence": "legacy",
+      "evidence": "Verbatim from /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:86 `uk.gov.defra.tracesx.notificationschema.representation.partone.commodities.countryoforigin.not.null=Country of origin`, wired to the @NotNull on Commodities.java:168-180 (CHED-PP group NotificationChedppFieldValidation at :171). Never observed rendered (both traces happy-path); not asserted anywhere in the QA suite. This is a legacy backend message — the rebuild will author its own error copy; recorded so Reconcile can see the old system had two-layer validation with divergent copy for the same field."
+    },
+    {
+      "message": "You must select an EU country if you are using a POD",
+      "field": "origin-country",
+      "trigger": "Cross-field rule: when a POD (temporary place of destination) is set on the notification but the chosen origin country is NOT a POD/EU country, submission is rejected. Enforced on the whole PartOne, not on a single field, but it constrains which value this page's origin-country may take when a POD exists later in the journey. So the origin country chosen here is not freely selectable in all journeys — a downstream POD choice can retroactively invalidate a non-EU origin.",
+      "confidence": "legacy",
+      "evidence": "Message verbatim from /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:94 `uk.gov.defra.tracesx.notificationschema.representation.partone.pod.invalid.due.to.country=You must select an EU country if you are using a POD`. Rule in /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/validation/annotations/ChedppInvalidPodCheckValidator.java:16-18 — invalid when `partOne.getPod() != null && countryOfOriginIsPodCountry != null && countryOfOriginIsPodCountry.equals(FALSE)`. The `countryOfOriginIsPodCountry` flag is a sibling field on Commodities.java:182 derived from the chosen origin country's reference data. Never observed rendered; no QA-suite assertion. Legacy cross-field policy the rebuild should decide on deliberately."
+    },
+    {
+      "message": "Enter a valid notification type",
+      "field": "type",
+      "trigger": "Fires against the HIDDEN `type` field on this page when it is absent from the submitted payload (Joi any.required). `type` is set upstream on the Import Type page and rides along as a hidden input (consignmentOrigin.html:18), so this can only fire on a tampered/malformed POST, never through the UI. Recorded for completeness because `type` IS a field on this page's form and carries its own message set.",
+      "confidence": "legacy",
+      "evidence": "Copy resolved verbatim from the wrapper `invalidEntryMessage(field)` = `` 'Enter a valid ' + field.toLowerCase() `` (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:23-25) applied to the label NOTIFICATION_TYPE = 'Notification type' (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:69), wired at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_origin.js:25-27 (`type: Joi.string().required().valid(CVEDA, CVEDP, CHEDPP, CED)` with ANY_REQUIRED -> invalidEntryMessage(NOTIFICATION_TYPE)). Never observed rendered; not asserted in the QA suite. Legacy; tamper-only in practice."
+    },
+    {
+      "message": "Notification type must be a string",
+      "field": "type",
+      "trigger": "Hidden `type` field, Joi string.base — a non-string payload for `type`. Tamper-only (the hidden input always submits a string). Recorded for completeness.",
+      "confidence": "legacy",
+      "evidence": "Copy resolved verbatim from the wrapper `typeMessage(label, type)` = `` `${label} must be a ${type}` `` (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:27-29) with label = NOTIFICATION_TYPE ('Notification type', labels/en.js:69) and type = 'string'; wired at validation/routes/handlers/importer/consignment_origin.js:26 (STRING_TYPE -> typeMessage(NOTIFICATION_TYPE, 'string')). Never observed rendered; not asserted in the QA suite. Legacy; tamper-only."
+    },
+    {
+      "message": "Notification type is not valid",
+      "field": "type",
+      "trigger": "Hidden `type` field, Joi any.only — a `type` value outside the allowed set {CVEDA, CVEDP, CHEDPP, CED}. Tamper-only. Recorded for completeness.",
+      "confidence": "legacy",
+      "evidence": "Copy resolved verbatim from the wrapper `invalidMessage(field)` = `` field + ' is not valid' `` (/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:19-21) with field = NOTIFICATION_TYPE ('Notification type', labels/en.js:69); wired at validation/routes/handlers/importer/consignment_origin.js:27 (ANY_VALID -> invalidMessage(NOTIFICATION_TYPE)). The allowed enum {CVEDA, CVEDP, CHEDPP, CED} is the `.valid(...)` list at consignment_origin.js:25 — corroborating the `type` field's `options` already recorded. Never observed rendered; not asserted in the QA suite. Legacy; tamper-only."
+    }
+  ],
+  "legacyModelContext": [
+    {
+      "note": "The two 'Country of origin'-labelled pages are TWO DISTINCT model fields, not one datum captured twice — this resolves the openQuestion 'TWO PAGES CAPTURE COUNTRY OF ORIGIN'. This page's origin-country persists to `partOne.commodities.countryOfOrigin` (Commodities.java:180, @NotNull CHED-PP, message 'Country of origin' ValidationMessages.properties:86). The consignment-countries page's identically-labelled control persists to a SEPARATE field `partOne.commodities.consignedCountry` (Commodities.java:189-199, @NotNull CHED-PP, message 'Consigned country' ValidationMessages.properties:87). Distinct fields with distinct messages = two different concepts sharing a UI label (origin vs consigned/dispatch country). The rebuild should rename at least one label rather than collapse them.",
+      "confidence": "legacy"
+    },
+    {
+      "note": "ARTICLE 72 IS MODELLED — partial legacy answer to the openQuestion 'ARTICLE 72 — WHAT DOES THE CLASSIFICATION ACTUALLY CHANGE'. The classification the QA suite exposed by test-name only is a real stored/derived boolean on the schema: `partOne.commodities.isLowRiskArticle72Country` (Commodities.java:184, Boolean). Its name ties Article-72 status to the LOW-RISK concept (RISK_LEVEL), suggesting country risk level and Article-72 status may be the same reference-data concept — which is exactly the BA question flagged in openQuestions. What the flag changes downstream is still a gap (the model stores it; where it is consumed is out of scope here), but its existence and per-notification storage are now confirmed from source.",
+      "confidence": "legacy"
+    },
+    {
+      "note": "THE UK OPTGROUP FEEDS A SEPARATE REGION FIELD. When a UK subdivision (GB-ENG/GB-SCT/GB-WLS/GB-NIR) is chosen from the optgroup, the region is persisted to `partOne.commodities.regionOfOrigin` (Commodities.java:187, String, NOT @NotNull) alongside countryOfOrigin=GB. So the single select on this page can populate two model fields (country + region). This is why the optgroup exists — the UK is the one country whose region is captured. regionOfOrigin is optional at the schema layer even for CHED-PP.",
+      "confidence": "legacy"
+    },
+    {
+      "note": "SIBLING FLAG countryOfOriginIsPodCountry (Commodities.java:182, Boolean, not @NotNull) is derived from the chosen origin country's reference data and drives the POD cross-field validation above. Not a control on this page's form (the template renders only the origin-country select for CHED-PP) — it is a derived/stored attribute of the selected country. Recorded so the rebuild knows the origin country must carry an EU/POD-eligibility flag in its reference data.",
+      "confidence": "legacy"
+    },
+    {
+      "note": "NO MISSED FORM CONTROLS FOR CHED-PP. The template (consignmentOrigin.html:16-35) renders exactly the origin-country select plus the three hidden inputs already in the field list. The only extra control — the `country_of_origin_not_listed` escape hatch at :30-32 — is guarded by `{{#eq type 'CED'}}` and therefore never renders for CHED-PP (matches the existing openQuestion). So no legacy-only form field is added for this page.",
+      "confidence": "legacy"
+    }
+  ],
+  "downstreamBehaviour": [
+    {
+      "behaviour": "The country selected here is the EU / rest-of-world switch for the whole notification. Countries carry an `eu` flag in the reference data, and the CHED-PP test workflow models the choice as a single `isEu` boolean picking between euCountryOfOrigin (France) and rowCountryOfOrigin (Afghanistan), which then drives later pages. This page is therefore not a leaf data-capture page — it is the journey's main branch point, and the rebuild must treat the value as a routing input, not just a stored field.",
+      "confidence": "inferred",
+      "evidence": "The `eu` flag is real and per-country in source: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_origin.js:112 `countries = notificationType === CED ? countries.filter(country => !country.eu) : countries` — i.e. only CED filters EU countries out; CHED-PP receives the full list. Test-side: /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:46-47 (`isEu?: boolean` — 'Whether the notification is for EU (true) or ROW (false) - defaults to true'), 50-53, 138 (DEFAULT_CONFIG isEu: true), 267-272. Sibling journeys make the downstream consequence explicit: ched-p-date-validations.spec.ts:12-23 and ched-a-date-validation.spec.ts:25-40 pair each country with an isEu flag and assert DIFFERENT arrival-date acceptance windows; ched-p-poe-validation.spec.ts:16-28 pairs country with point-of-entry validity. No equivalent CHED-PP date or point-of-entry test exists, so those particular CHED-PP consequences remain a gap — but see the Article 72 behaviour below, which IS a CHED-PP-specific country-driven rule the suite does exercise. IMPORTANT NUANCE FOUND THIS WAVE: `isEu` is a test-harness switch selecting which config field to read, NOT an assertion about the app's `eu` reference-data flag. ched-pp-article72.spec.ts:49 passes Norway (EEA, not EU) as `euCountryOfOrigin` with isEu left at its default true — so the harness's 'EU' bucket is really 'the non-ROW bucket'. Do not infer the app's country-classification rules from the harness's field names."
+    },
+    {
+      "behaviour": "ARTICLE 72 — A CHED-PP-SPECIFIC RULE DRIVEN BY THIS FIELD (new this wave; the trace pass missed it entirely). The country chosen here is classified as an Article-72 or non-Article-72 country, and that classification combines with the commodity codes chosen much later in the journey to form a 2x2 matrix that the CHED-PP suite tests as four distinct journeys. Article 72 (EU plant health regulation) governs which origin-country/commodity combinations may enter under reduced or different checks. This is the clearest evidence yet that this page's value is a routing/classification input for the whole notification, and it is CHED-PP-specific — there is no Article-72 spec for CHED-A, CHED-P or CHED-D.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-article72.spec.ts — four tests spanning the matrix, each varying ONLY the country and the commodity: (a) Article-72 country + Article-72 commodities — euCountryOfOrigin: country.Austria (AT) + commodityCode.fruitAndNuts (:23-28); (b) 'Submits New CHEDPP Notification Using Non-Article 72 Country and Commodities' — euCountryOfOrigin: country.Norway (NO) (:45-49); (c) 'Non-Article-72 Country and Article-72 Commodities' — country.Norway + commodityCode.cutFlowers (:65-74); (d) 'Article-72 Country and Non-Article-72 Commodities' — euCountryOfOrigin: country.Croatia (HR) (:90-94). So the suite's own classification, stated in its test names, is: Austria and Croatia = Article-72 countries; Norway = non-Article-72 country. HONESTY NOTE ON STRENGTH: the test names assert the rule, but the ASSERTIONS do not discriminate between the four cases — all four end with the same three checks (notification status 'New', and SOAP OperationCode 0 + reference-number + Certificates present, e.g. :56-62 vs :99-102). So the suite proves the four country/commodity combinations are all SUBMITTABLE and reach the decision dashboard; it does NOT prove they are handled differently. The differing behaviour is asserted by test NAME only. What the classification actually changes downstream is therefore still a gap for a human — but the existence of the dimension, and which countries fall on which side, is solid."
+    },
+    {
+      "behaviour": "The stored value is displayed downstream by country NAME, not ISO code — the review summary row renders e.g. 'Austria'. The select submits the code (AT), so a code-to-name lookup exists on the read path.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/review.html:31-33 renders `<dt>Country of origin</dt><dd>{{pageView.about.countryOfOrigin}}</dd>`. STRONGLY CORROBORATED BY TEST ASSERTIONS (the QA suite states this as a rule twice, with anchored regexes): ched-pp-manipulation.spec.ts:25 `await expect(pages.viewDetails.locatorCountryOfOrigin).toContainText(/^France$/)` after the default config submitted the CODE 'FR' (country.France = 'FR', country.ts:80); and :92 `toContainText(/^Austria$/)` after :70 submitted the CODE 'AT' (country.ts:16). The `^...$` anchoring means the read path renders the bare display name with no code, no parenthetical and no suffix. Read-path locators: ViewDetailsPage.ts:21-23 (#country-of-origin), ReviewNotificationPage.ts:65-67 (summary row keyed by the label 'Country of origin' — the same label string as this page's field, so the two must stay in sync)."
+    },
+    {
+      "behaviour": "The value is amendable after submission, and the amendment round-trips end-to-end (change -> re-submit -> re-read). But the amendment is NOT made on this page — it is made on the consignment-countries page reached from the amend hub.",
+      "confidence": "inferred",
+      "evidence": "ched-pp-manipulation.spec.ts:56-95 is a complete amend journey: create with the default FR, amend to Austria (:68-71), re-submit via declaration (:83-84), then re-read from the dashboard and assert /^Austria$/ (:92). This proves the datum is mutable post-submission and that the new value propagates to the view-details read path. See entryRoutesRefuted for why the page the test actually amends on is consignment-countries, not this one. For the rebuild this matters twice over: the datum needs an edit path, and the legacy edit path is a DIFFERENT page from the capture path."
+    },
+    {
+      "behaviour": "For CHED-PP the review page renders Country of origin as a NO-ACTION summary row — there is no 'Change' link against it. Changing the country after submission is done on the separate consignment-countries page (consignment/page-2), not by returning to this page.",
+      "confidence": "inferred",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/partials/common/review.html:30-35 — the Country of origin row is guarded by `{{#if (and (not isCveda) (not isChedD))}}` and carries `review-summary-list__row-no-action` with no <a>. The change-linked variant at :45-62 (id=\"country-of-origin\") is guarded by `{{#if (or isCveda isChedD)}}`, i.e. CHED-A/CHED-D only. See entryRoutesRefuted — this REPLACES an earlier claim that the amend flow returns to this page. QA-side corroboration of the no-change-link rendering, on the VIEW-DETAILS page specifically: ched-pp-manipulation.spec.ts:53-54 asserts `expect(pages.viewDetails.locatorGetChangelinks).toHaveCount(0)` with the comment 'No change links should be visible - which means user can't edit the notification'. Note this is the read-only view-details page for a submitted notification, not the amend hub (which demonstrably DOES expose #country-of-origin-change-link, clicked at :68) — so the two are consistent, but do not over-read :54 as evidence about the review/amend page."
+    },
+    {
+      "behaviour": "The country reaches at least two external systems downstream — the SOAP certificate feed and Dynamics — though neither is asserted on the country value itself.",
+      "confidence": "gap",
+      "evidence": "The CHED-PP suite routinely submits a notification and then reads it back out of external systems: SOAP via `getSoapCertificateData(request, chedType.chedPP, referenceNumber)` (ched-pp-article72.spec.ts:39-42, :58-62, :83-87) and Dynamics via `getDynamicsPlantsImportNotificationByReference` (imported at ched-pp-hmi-checks.spec.ts:11). Those assertions check OperationCode, the CHEDPP reference number and the presence of a Certificates block — NONE of them assert the country of origin in the payload. So we know the notification (and therefore presumably its country) flows to SOAP and Dynamics, but we have NO evidence of the field name, format (code vs name) or presence in either payload. Marked `gap` deliberately: the integration wave owns this, and confirming it from the legacy source is out of scope here."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "PAGE TITLE / H1 MISMATCH — CONFIRMED BUG-SHAPED FINDING, ROOT CAUSE NOW IDENTIFIED. The <title> is 'Origin of the animal or product - Import and export applications - GOV.UK' even on the CHED-PP journey, while the H1 reads 'Origin of the plants, plant product or other objects'. Root cause: routes/handlers/importer/consignment_origin.js:114 sets `pageTitle: CONSIGNMENT_ORIGIN + GENERIC_PAGE_TITLE` UNCONDITIONALLY from the single un-branched constant utils/constants.js:245 `CONSIGNMENT_ORIGIN: 'Origin of the animal or product'`, whereas :115-117 DOES branch `primaryTitle` on `notificationType === CHEDPP`. The title was simply never branched alongside the H1. This breaks the GOV.UK convention that the page title mirrors the H1, and it is what screen-reader and browser-tab users hear/see first. The new app should title the page after the H1. Evidence: trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 11 and trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 14 — both show document.title = the animal/product string alongside h1 = the plants string on a CHEDPP page. WHY NEITHER SOURCE CATCHES IT (confirmed this wave): the CHED-PP accessibility journey (ched-pp-accessibility-tests.spec.ts:30-33) asserts axe compliance here but never asserts the title, and axe does not flag a title/H1 divergence; and no page object for this page exposes a title or heading locator at all (CountryOfOriginPage.ts is 20 lines — one dropdown, three buttons). The suite could not catch this bug as written.",
+    "ARTICLE 72 — WHAT DOES THE CLASSIFICATION ACTUALLY CHANGE? (NEW, HIGH VALUE, NEEDS A BA/POLICY ANSWER.) The trace pass missed this dimension completely; the QA suite exposes it. ched-pp-article72.spec.ts tests a 2x2 matrix of Article-72-vs-not COUNTRY (chosen on this page) against Article-72-vs-not COMMODITY (chosen later), and its test names classify Austria and Croatia as Article-72 countries and Norway as non-Article-72. But all four tests assert the same generic outcomes (status 'New'; SOAP OperationCode 0 + reference + Certificates present), so the suite proves only that all four combinations submit successfully — it never asserts a DIFFERENCE. Questions for a human: (a) what does Article-72 status actually change — checks required, documents required, routing, fees, decision outcome? (b) is the country's Article-72 status reference data (like the `eu` flag) or a hardcoded list? (c) does it need to be known AT THIS PAGE (i.e. does it change what the user sees next), or only at decision time? (d) does the CHED-PP rebuild need it at all in scope 1? This is the single biggest NEW requirement surfaced by corroboration.",
+    "'euCountryOfOrigin' IS A MISNOMER IN THE HARNESS — DOES THE APP'S `eu` FLAG INCLUDE EEA/EFTA? (NEW.) ched-pp-article72.spec.ts:49 and :71 pass `country.Norway` as **euCountryOfOrigin** while leaving isEu at its default true (DEFAULT_CONFIG isEu: true, ched-pp-workflows.ts:138). Norway is EEA/EFTA, not EU. Either (a) the app's per-country `eu` reference-data flag is really a 'non-ROW / EEA-inclusive' flag and Norway carries it, or (b) the flag is strictly EU, Norway does not carry it, and the test is simply passing a ROW country through the EU-named config field because the field name is only a harness label and nothing in the test depends on the distinction. The suite cannot tell us which — nothing asserts on EU-ness. This matters for the rebuild because the EU/ROW switch is this page's whole reason for existing (see downstreamBehaviour). Needs confirming against the reference-data source, NOT against the harness's field names. Related: Switzerland, Iceland, Liechtenstein presumably sit in the same bucket as Norway, whichever it is.",
+    "THE UK IS AN OPTGROUP, NOT FOUR FLAT OPTIONS — CORRECTED FINDING. An earlier draft of this spec asserted the rendered DOM is 'a FLAT alphabetical list with no <optgroup>'. That is false and was contradicted by both evidence traces. There is exactly one <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> containing England (GB-ENG), Scotland (GB-SCT), Wales (GB-WLS) and Northern Ireland (GB-NIR). The mechanism is deliberate, not incidental: countriesSelectHighLow.html:3-8 special-cases `this.code === 'GB'` and expands that one country into an optgroup of the separately-fetched `regions` list. This also explains the alphabetical position the earlier draft flagged as a puzzle — the group inherits GB's slot, hence between 'United Arab Emirates' and 'United States Minor Outlying Islands'. Decisions for the rebuild: (a) do we keep a non-selectable 'United Kingdom' group header at all; (b) optgroup is not a documented GOV.UK Select feature — flatten, or use an accessible autocomplete? Evidence: traces 219b882... action 11 and e10b7cd... action 14 (optgroup count 1 in both); source as cited. QA CORROBORATION THIS WAVE: types/country.ts:238-241 carries the four GB-* subdivisions as ordinary entries and has no 'UnitedKingdom' key — consistent with a non-selectable label. But NO CHED-PP test ever selects a GB-* value, so nothing exercises the optgroup. If a UK origin is legitimate for CHED-PP (a returning/NI consignment?), that is an untested path in the legacy service as well as an untested one here.",
+    "'countriesSelectHighLow' — THE NAME IS ABOUT RISK-FILTERED REUSE, NOT GROUPING ON THIS PAGE. An earlier draft speculated the partial name 'hints at a high-risk/low-risk country grouping' not expressed in the DOM. Partly resolvable now: RISK_LEVEL is a real domain concept (utils/constants.js:836-839, `{ LOW: 1, HIGH: 0 }`), and this handler DOES touch it — consignment_origin.js:104-106 stamps `region.risk = RISK_LEVEL.LOW` on every UK region. But this page passes the UNFILTERED country list (consignment_origin.js:100-101 calls `countriesService.getCountries()` + `getUkRegions()`, and the only filter at :112 is on `country.eu` for CED, not on risk), and the partial itself contains no risk logic at all. Sibling callers DO filter by risk — page_managers/transport_details.js:81 `getCountriesByRiskLevel(..., RISK_LEVEL.LOW)` and services/consignment_countries.js:103-106 `getCountriesByRiskLevel(..., RISK_LEVEL.HIGH)`. So the partial is a shared component named for the risk-filtered lists other pages feed it; on THIS page risk does not group or filter anything. Remaining question for a human: does country risk level drive any CHED-PP behaviour downstream of this page? NOTE the QA suite has a SelectRiskCategoryPage page object (page-objects/notification/SelectRiskCategoryPage.ts) and ched-pp-hmi-checks.spec.ts turns on a risk-decision/auto-clearance path — so 'risk' is live in the CHED-PP journey, but nothing ties it back to the country chosen here. Ask a BA whether country risk level and Article-72 status are the same concept wearing two names.",
+    "NO VALIDATION ERROR STATE EVER OBSERVED, AND NO TEST COVERS IT — NOW POSITIVELY ESTABLISHED FROM BOTH SIDES. Neither evidence trace (nor any CHED-PP trace touching this page) submits the form empty. The QA side is now proven, not assumed: a repo-wide grep of ipaffs-qa-automation for 'Select the country' and 'country of origin of' returns ZERO hits, no test submits this page empty, and CountryOfOriginPage.ts exposes no error locator of any kind (20 lines: one dropdown, three buttons) — so the suite has no mechanism to assert an error here even if someone wanted to. The rendered error summary (consignmentOrigin.html:13), the inline errorSpan copy (:24) and the govuk-form-group--error styling (:20) are therefore unverified from BOTH sources. The messages are transcribed verbatim from the Joi handler and en.js, so the copy is probably right, but nothing confirms it renders. Recommend the new app's E2E covers the empty-submit case explicitly, and that the copy is re-confirmed with content design rather than ported on trust.",
+    "RESOLVED — 'SAVE AND REVIEW' AND 'SAVE AND RETURN TO HUB' DO NOT EXIST ON THIS PAGE. Two earlier openQuestions asked whether these buttons render here. They do not, and this no longer needs a human. The earlier claim rested on /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CountryOfOriginPage.ts:10-19, but every locator in that page object is an UNSCOPED `page.getByRole('button', { name: ... })` that matches on ANY page — it is a bag of generic locators, not evidence of page ownership. Proof it is being used cross-page: ched-pp-manipulation.spec.ts:75 calls `pages.countryOfOrigin.btnSaveAndReview.click()` while on the about-the-consignment page. Source settles it: consignment_origin.js:118 hardcodes `actions: [SAVE_AND_CONTINUE_ACTION]` with no branch, getFormActionModel() (:127-131) exposes only saveAndContinueButton, saveButtons.html:19-53 emits a button only for actions present in that array, and routes.js:214-222 registers exactly one GET/POST pair for the path. Both traces show exactly one button in the page form. CORRECTION THIS WAVE — AND THE CORRECTED VERSION IS STRONGER: an earlier draft claimed `btnSaveAndReturnToHub` (CountryOfOriginPage.ts:17-19) 'is never invoked by ANY test in the entire repo — a dead locator'. That was FALSE and must not be relied on: ched-a-manipulation.spec.ts:44 does call it. But it is called on the OTHER page — the CHED-A test gets there via `linkAmendCountryOfOrigin` = `getByRole('link', { name: 'Origin of the import' })` (AmendNotificationPage.ts:6-8), and 'Origin of the import' is the H1 of consignmentCountries.html:15 and a hub link (overview.html:44). So this is a THIRD documented instance of a CountryOfOriginPage locator roaming onto consignment-countries — it corroborates the refutation instead of undermining it. No CHED-PP test calls it at all. LESSON FOR THE CORPUS: a shared, unscoped page object is not evidence about any particular page; a locator's mere existence is not evidence that the control exists; and 'no test calls it' is itself a claim that must be grepped rather than assumed — this spec asserted it twice without checking, and it was wrong both times.",
+    "COUNTRY LIST IS REFERENCE DATA — DO NOT HARDCODE. 254 <option> elements = 1 placeholder + 253 selectable (249 flat countries + 4 UK subdivisions in the optgroup). The 253 is independently corroborated by the QA suite's own domain vocabulary (types/country.ts holds exactly 253 entries, including the four GB-* subdivisions at :238-241 and no 'UnitedKingdom' key — consistent, since the optgroup label is not selectable). The list is served at runtime by countriesService.getCountries() + getUkRegions() (consignment_origin.js:100-101), so the new app should source it from a reference-data service, not a literal. One quirk to decide deliberately: the list mixes sovereign states with territories and regions (ES-CN=Canary Islands, AQ=Antarctica, VA=Holy See, BV=Bouvet Island). Almost certainly intentional for the plant-health regime, but confirm against the reference-data source rather than copying the legacy DOM. The sibling CHED-P suite treats Northern Ireland as a first-class point-of-entry test case (ched-p-poe-validation.spec.ts:22), supporting the 'deliberate' reading. NOTE the QA suite's country.ts is itself a hand-maintained copy of this reference data — a second place the list is duplicated, and a warning about how easily it drifts.",
+    "EU/ROW BRANCHING IS THE REAL REQUIREMENT ON THIS PAGE — PARTIALLY ANSWERED THIS WAVE, STILL THE BIGGEST GAP. The country picked here sets the journey's isEu switch, and the `eu` flag is per-country reference data (consignment_origin.js:112 filters on `country.eu` for CED). The CHED-P and CHED-A suites prove country choice has hard downstream consequences for THOSE types — different arrival-date windows (ched-p-date-validations.spec.ts:12-23: -30 days accepted, -31 rejected; 180 accepted, 182 rejected) and different valid points of entry (ched-p-poe-validation.spec.ts:16-28). CORRECTION TO THE EARLIER DRAFT: it claimed 'CHED-PP does not test country branching at all'. That is too strong — CHED-PP DOES have a country-driven test dimension, Article 72 (see the dedicated question above), which no other CHED type has. What remains true and unanswered: there is NO CHED-PP date-validation spec and NO CHED-PP point-of-entry-validation spec, so we still do not know whether CHED-PP inherits the CHED-P/CHED-A date and POE rules, has its own, or has none. Needs a human/BA answer, not more mining.",
+    "TWO PAGES CAPTURE 'COUNTRY OF ORIGIN' — WHICH DOES THE REBUILD NEED? This page (consignmentOrigin.html:22) and the consignment-countries page (consignmentCountries.html:27) both render a 'Country of origin' label. The amend flow edits the country on the latter (consignment/page-2, consignment_countries handler), not here. NOW WITH TEST EVIDENCE OF THE CONFUSION ITSELF: because both pages carry the identical label, the unscoped `getByLabel('Country of origin')` in CountryOfOriginPage.ts:6-8 resolves on BOTH — which is precisely why ched-pp-manipulation.spec.ts:68-71 passes while amending on the other page, and why an earlier draft of this spec drew the wrong conclusion. If the duplicate label can fool the test suite and a prior analysis pass, it can fool a user. The rebuild should establish whether these are genuinely two captures of the same datum (and if so collapse them to one) or two different concepts sharing a label (and if so, rename at least one). The openQuestion below about country of harvest vs dispatch may be the same question wearing a different hat. Worth a BA answer.",
+    "The template has a CED-only conditional block ('country_of_origin_not_listed', consignmentOrigin.html:30-32) offering a route when the country is not in the list. CHED-PP does NOT get this escape hatch. No test in the QA suite exercises it for any CHED type. Confirm that is deliberate and that no CHED-PP user can legitimately have an unlisted origin country.",
+    "JOURNEY POSITION IS VARIABLE, NOT FIXED. The page's position depends on whether the optional Organisation Selection step runs: the accessibility journey goes Dashboard -> Import Type -> Country of Origin directly (ched-pp-accessibility-tests.spec.ts:22-33, matching trace 219b882... actions 8-11), whereas the DoA-agent path inserts Organisation Selection first (ched-pp-workflows.ts:259-264). Confirmed this wave that there are THREE upstream variants, not two: no org step (both config defaults — the only trace-covered path), select own org (`useOwnOrganisation: true`), select a different org (`organisationName: '<name>'`) — ched-pp-workflows.ts:42-45, 136-137, 259-264; the different-org path is exercised by tests/auth/DoA/doa-notification-creation.spec.ts. The rebuild should not assume a fixed ordinal.",
+    "Page furniture note: the Back link and the account bar sit outside <main> in an IPAFFS-custom .navigation-links wrapper. Skipped as chrome per instructions, but flagged in nonStandardPatterns because the back link's href=\"#\" does not work without JS. (The link itself IS the standard govuk-back-link component — an earlier draft wrongly said it was not.) No test clicks it, so its behaviour is unverified from both sources.",
+    "No hint text and no body copy exist on this page at all — the govuk-label--m label is the entire question. Confirmed via .govuk-hint query (returned empty) and main innerText (caption -> h1 -> label -> options -> button, nothing else); corroborated by the page object, which needs no hint locator. If the rebuild wants to explain what 'country of origin' means for plants (e.g. country of harvest vs country of dispatch — a genuinely confusable distinction given the separate consignment-countries page), that hint would be NEW copy needing content-design input, not a port. Note the label string 'Country of origin' is load-bearing in THREE places beyond this page's own markup: the review summary row is keyed by that exact text (ReviewNotificationPage.ts:65-67), the view-details row is read via #country-of-origin (ViewDetailsPage.ts:21-23), and the QA suite's only locator for this page's field is getByLabel on that string (CountryOfOriginPage.ts:6-8). Changing the label changes the summary key and breaks the suite's page object — worth knowing before content design touches it."
+  ]
+}

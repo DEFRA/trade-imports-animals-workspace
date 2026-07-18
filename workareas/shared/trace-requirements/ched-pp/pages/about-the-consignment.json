@@ -1,0 +1,447 @@
+{
+  "slug": "about-the-consignment",
+  "name": "Purpose of the consignment (about the consignment)",
+  "url": "/notification/vnet/protected/notifications/:draftId/consignment/page-5",
+  "urlEvidence": "UPGRADED TO CONFIRMED 2026-07-17 — this was the ONLY uncited claim in the spec; every previous revision asserted the URL pattern without evidence (it was reasonable, since the form posts to a relative action of \"page-5\", but the absolute prefix was never observed and the a11y log shows a DIFFERENT prefix, '/0/dev/protected/notifications/...', which could have made it wrong). Now directly observed in trace network evidence: trace 9a918b862ad1b3599fc13659f757c25aaec78ada request 1004 = `GET https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526023/consignment/page-5` → 200 text/html. The `/notification/vnet` prefix is confirmed real. Note the hidden `returnUrl` field elsewhere in the DOM carries the SHORTER form (/protected/notifications/<draft>/consignment/page-5, no /notification/vnet prefix) — so the app uses two path conventions internally; do not assume one from the other.",
+  "pageTitle": "Purpose of the consignment - Import and export applications - GOV.UK",
+  "caption": "About the consignment",
+  "heading": "What is the main reason for importing the consignment?",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    {
+      "label": "Save and review",
+      "context": "AMEND variant of this page. Reached from the amend-notification screen via the 'Change' link with DOM id #consignment-purpose-change-link. On that variant the primary button is 'Save and review' (returns to the review screen) rather than 'Save and continue'. NEVER captured in any trace — no trace in the corpus exercises the amend route to this page.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:73-75 (clicks linkConsignmentPurposeChangeLink, then radioReEntry, then btnSaveAndReview); page-objects/notification/AmendNotificationPage.ts:14-16 (#consignment-purpose-change-link); page-objects/notification/CountryOfOriginPage.ts:13-15 (btnSaveAndReview = getByRole('button', { name: 'Save and review' }) — a role/name locator, so the button with that accessible name genuinely renders on whatever page is current, i.e. this page). RE-VERIFIED A THIRD TIME 2026-07-17 by this adversarial pass, reading ched-pp-manipulation.spec.ts:72-95 directly: the sequence `linkConsignmentPurposeChangeLink.click()` → `aboutTheConsignment.radioReEntry.click()` → `countryOfOrigin.btnSaveAndReview.click()` is exact, contiguous, and has no intervening navigation. The cross-page-object call (reaching through the countryOfOrigin page object while standing on THIS page) is the mechanical proof: the locator is by role+name, not scoped to any page, so the test passing means a button with accessible name 'Save and review' renders on THIS page in the amend variant. Correctly remains `inferred` — no trace ever rendered it."
+    },
+    {
+      "label": "Save and return to hub",
+      "context": "Exposed on the shared page object (btnSaveAndReturnToHub) and used on THIS page by the CHED-P amend journey. NOT exercised on this page by any CHED-PP test and NOT rendered in any CHED-PP trace. May be an amend-only or other-CHED-type-only control — treat as unconfirmed for CHED-PP.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AboutTheConsignmentPage.ts:50-52 (`get btnSaveAndReturnToHub(): Locator { return this.page.getByRole('button', { name: 'Save and return to hub' }); }` — re-verified exact 2026-07-17); used on this page at tests/notification/ched-p/ched-p-manipulation.spec.ts:49 (CHED-P, not CHED-PP). No CHED-PP usage found."
+    }
+  ],
+  "layout": "govuk-grid-row (id=consignment-purpose-page) > govuk-grid-column-three-quarters",
+  "sharedPageWarning": {
+    "summary": "In IPAFFS this is a SINGLE shared page serving all four CHED types (A, P, PP, D). CHED-PP renders only 3 of the radios; the rest of the controls on the shared page object belong to other CHED types and MUST NOT be carried into the CHED-PP rebuild.",
+    "notChedPpSurface": [
+      "radioHumanConsumption ('Human consumption') — AboutTheConsignmentPage.ts:14-16 (CHED-P)",
+      "radioAnimalFeedingstuff ('Animal feedingstuff') — AboutTheConsignmentPage.ts:18-20 (CHED-P, ched-p-workflows.ts:694)",
+      "radioNonInternalMarket ('Non-internal market') — AboutTheConsignmentPage.ts:22-24 (CHED-D, ched-d-workflows.ts:218)",
+      "radioTransferOfOwnershipRescue ('Transfer of ownership – Rescue') — AboutTheConsignmentPage.ts:26-28 (CHED-A, ched-a-workflows.ts:287)",
+      "radioTransit ('Transit') — AboutTheConsignmentPage.ts:30-32 (CHED-A/P, ched-a-workflows.ts:282)",
+      "radioTemporaryAdmissionHorses ('Temporary admission horses') — AboutTheConsignmentPage.ts:34-36 (CHED-A, ched-a-workflows.ts:284)",
+      "selectExitBcpTransit / selectExitBcpTemporaryAdmission / inputExitBcp / selectExitBorderControlPost — AboutTheConsignmentPage.ts:38-44, 86-96 (CHED-A/P exit-BCP conditional reveals)",
+      "inputPointOfExit + Day/Month/Year/Hour/Minutes date-time inputs — AboutTheConsignmentPage.ts:54-76 (CHED-D 'Non-internal market' conditional reveal, ched-d-workflows.ts:219-220)"
+    ],
+    "notChedPpSurfaceVerification": "ALL line refs re-verified 2026-07-17 by this adversarial pass against a fresh read of AboutTheConsignmentPage.ts. Exact. The getter inventory is: radioReEntry (:6), radioInternalMarket (:10), radioHumanConsumption (:14), radioAnimalFeedingstuff (:18), radioNonInternalMarket (:22), radioTransferOfOwnershipRescue (:26), radioTransit (:30), radioTemporaryAdmissionHorses (:34), btnSaveAndContinue (:46), btnSaveAndReturnToHub (:50), plus textbox getters for Point of exit (:55), Day (:59), Month (:63), Year (:67), Hour (:71), Minutes (:75) and combobox getters for 'BCP or Port of exit' (:87) and 'Exit border control post' (:95). CONFIRMS the spec's central claim that only 3 of the 8 radios are CHED-PP surface, and independently CONFIRMS that no getter exists for 'For import re-conformity check'.",
+    "otherChedTypesHaveMultipleRadioGroups": {
+      "observation": "On CHED-A and CHED-P this page carries MORE THAN ONE radio group: the workflows check 'Internal market' AND THEN a second radio in the same page visit without any intervening submit. So the shared template has a purpose group plus a second sub-purpose group for those types. CHED-PP has exactly ONE group (name=\"purpose\", 3 radios) — confirmed by the trace control inventory, which returns 3 radios all with name=\"purpose\" and nothing else.",
+      "whyItMatters": "This is the mechanical reason the page object's radioInternalMarket getter needs .first() (AboutTheConsignmentPage.ts:10-12) — 'Internal market' is not unique on the shared page for every CHED type. The CHED-PP rebuild needs neither the second group nor the .first() disambiguation.",
+      "firstDisambiguationIsSelective": "RE-VERIFIED 2026-07-17 by independent grep of the whole page object. The .first() appears on EXACTLY TWO getters — radioInternalMarket (:11) and radioNonInternalMarket (:23) — and on NO other radio getter (radioReEntry :7, radioHumanConsumption :15, radioAnimalFeedingstuff :19, radioTransferOfOwnershipRescue :27, radioTransit :31, radioTemporaryAdmissionHorses :35 are all bare getByRole). That selectivity is itself evidence: an author only reaches for .first() after a strict-mode violation, so 'Internal market' and 'Non-internal market' are the only two accessible names that genuinely collide on the shared page — and they plausibly collide with EACH OTHER, since getByRole name matching is substring-based by default and 'Non-internal market' CONTAINS 'internal market'. If so the .first() on radioInternalMarket may be masking a locator bug rather than a second radio group. This does not affect the CHED-PP rebuild (only 3 radios, no collision) but it weakens this entry's inference slightly — see openQuestions.",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-a-workflows.ts:286-287 (radioInternalMarket.check() then radioTransferOfOwnershipRescue.check()); workflows/notification/ched-p-workflows.ts:693-694 (radioInternalMarket.check() then radioAnimalFeedingstuff.check(), under the verbatim comment 'About the Consignment Page — Internal market (Non-Transit), Animal feedingstuff purpose'). CHED-PP single-group side is confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 control inventory returns exactly 3 radios, all name=\"purpose\" — independently re-run 2026-07-17, returning ids radio-internalmarket|radio-reimport|radio-reconformity and nothing else."
+    },
+    "implication": "The 'govuk-radios--conditional' modifier on the CHED-PP page (see nonStandardPatterns) is almost certainly bleed-through from this shared template: other CHED types DO have conditional reveals behind these radios, CHED-PP does not. The rebuild is CHED-PP-only and should carry neither the modifier nor the reveals. NOW INDEPENDENTLY CORROBORATED BY THE OBSERVED POST BODY — see observedPostBody: the real POST carries exactly 4 fields and no reveal data.",
+    "confidence": "inferred",
+    "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/AboutTheConsignmentPage.ts (single class used by all four ched-*-workflows.ts); page-objects/factory.ts:152 (aboutTheConsignment: new AboutTheConsignmentPage(page)). CORROBORATED FROM SOURCE — the sharing is real at BOTH the template and the validation layer, not merely an artefact of the QA repo reusing one page object: (a) ONE template serves all types — /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentPurpose.html is 300+ lines carrying every CHED type's radio set (the CHED-PP subset renders from ~line 73); (b) ONE validator dispatches per type — consignment_purpose_validation.js:255-271 switches on certificateType across CVEDA/CVEDP/CHEDPP. RE-VERIFIED 2026-07-17: the dispatch is real (`case CHEDPP: { schema = getChedppSchema()` at :267-268) and the per-type PURPOSE_VALIDATION_RULES calls sit at :211 (CVEDA, 6 options), :225 (CVEDP, 4 options), :234 (a third set: tranship/transit/customs/free/supplier/ship) and :249 (CHEDPP, 3 options) — four distinct option sets in one file, which is the sharing made concrete. Note there is ALSO a CHED-D-specific fork (src/routes/handlers/importer/chedd/consignment_purpose.js and a separate chedd test/snapshot tree), so CHED-D has partly been split out of the shared page already — precedent for exactly the de-sharing this rebuild does for CHED-PP."
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "What is the main reason for importing the consignment?",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "form",
+      "text": "POST to relative action \"page-5\"; hidden inputs: crumb (CSRF token), etag (optimistic concurrency, e.g. \"0000000000BD2B55\")",
+      "govukComponent": "-"
+    },
+    {
+      "element": "fieldset",
+      "text": "EMPTY legend — the fieldset contains no <legend> element at all. The H1 sits OUTSIDE the form/fieldset.",
+      "govukComponent": "Fieldset (govuk-fieldset)"
+    },
+    {
+      "element": "radios",
+      "text": "Internal market / Re-entry / For import re-conformity check",
+      "govukComponent": "Radios (govuk-radios govuk-radios--conditional, id=purpose, data-module=govuk-radios)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button, id=button-save-and-continue, data-module=govuk-button, data-prevent-double-click=true)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"About the consignment\" above the H1, rendered as a <span id=\"page-secondary-title\">.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17."
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "H1 question. Note trailing space in the class attribute (class=\"govuk-heading-xl \").",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17, trailing space confirmed present."
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the radio group. Contains NO legend — see nonStandardPatterns.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17."
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": [
+        "govuk-radios--conditional"
+      ],
+      "count": 1,
+      "usage": "The single question on the page — 3 radios, name=\"purpose\". Each item carries govuk-radios__item plus a custom \"purpose\" class. Labels are bolded via govuk-!-font-weight-bold.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17."
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "govuk-radios__hint"
+      ],
+      "count": 2,
+      "usage": "Per-radio hints under 'Internal market' and 'Re-entry'. The third radio has no hint.",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17: exactly two divs with class=\"govuk-hint govuk-radios__hint\", and the third govuk-radios__item contains only an input and a label."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary submit \"Save and continue\". type=submit, name+id=button-save-and-continue, value=\"Save and continue\", data-module=\"govuk-button\", data-prevent-double-click=\"true\". Note the two govuk-!- classes are spacing OVERRIDE utilities, not BEM modifiers of the Button component. NOTE: on the amend variant of this page the primary button is 'Save and review' instead (inferred — see secondaryActions).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML) — re-verified 2026-07-17; also carries data-govuk-button-init=\"\", i.e. the button JS had initialised at snapshot time."
+    },
+    {
+      "component": "Back link",
+      "govukClass": "n/a — rendered in the service header region, outside main",
+      "modifiers": [],
+      "count": 1,
+      "usage": "\"Back\" link with href=\"#\" (JS-driven history back, not a real URL).",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (a11y snapshot ref=e48, /url: \"#\") — re-verified 2026-07-17. Positionally it sits at ref=e48, before main (ref=e56), confirming it is header chrome and not page content."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<fieldset class=\"govuk-fieldset\"> with no <legend>; the H1 sits outside the fieldset",
+      "whatItDoes": "Groups the radios visually/semantically but gives the group no accessible name. The a11y tree shows an unnamed `group [ref=e63]`.",
+      "concern": "Breaks the GOV.UK 'one question per page' radios pattern, which requires the H1 to BE the legend (<legend class=\"govuk-fieldset__legend govuk-fieldset__legend--xl\"><h1 class=\"govuk-fieldset__heading\">...</h1></legend>). As built, a screen reader entering the radio group announces no question — a WCAG 3.3.2 / 1.3.1 concern. The rebuild must use the standard legend-wraps-H1 markup. NOTE: the QA repo's axe run does NOT flag this (axe has no rule for an empty fieldset legend), so its absence from the a11y log is not a clean bill of health — the trace evidence stands.",
+      "govukAlternative": "Radios with fieldset legend as page heading (govuk-fieldset__legend--xl + govuk-fieldset__heading)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML — the fieldset opens and the very next element is the radios div, with only whitespace between; no <legend> anywhere in main. a11y snapshot shows unnamed `group [ref=e63]` directly containing the radio items). INDEPENDENTLY RE-VERIFIED 2026-07-17 by this adversarial pass from both the raw outerHTML and the a11y tree. Confirmed."
+    },
+    {
+      "pattern": "Duplicate DOM id: id=\"re-entry-hint\" used on BOTH hint divs",
+      "whatItDoes": "The 'Internal market' hint and the 'Re-entry' hint both carry id=\"re-entry-hint\".",
+      "concern": "Invalid HTML (ids must be unique) and clearly a copy-paste defect — the Internal market hint is misnamed after Re-entry. Combined with the missing aria-describedby (below) the ids are dead weight. The rebuild should use per-radio ids (e.g. purpose-internal-market-item-hint) as govuk-frontend's Nunjucks macro generates automatically. NOTE: the QA repo's axe run does not flag this either — axe's duplicate-id rule was deprecated/removed in axe 4.x, and the run is restricted to wcag2a/2aa/21a/21aa tags (accessibility-utils.ts:119). Absence from the a11y log is not evidence of absence.",
+      "govukAlternative": "govuk-frontend radios macro auto-generates unique hint ids and wires aria-describedby",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML — id=\"re-entry-hint\" appears on both the Internal market hint div and the Re-entry hint div). RE-VERIFIED 2026-07-17 from raw outerHTML: confirmed, both hint divs carry the identical id. SOURCE CONFIRMATION ALSO RE-VERIFIED 2026-07-17 BY INDEPENDENT GREP — the defect is in the shared template itself, where the SAME id is hardcoded FOUR times: /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/consignmentPurpose.html:73, :222, :233, :304 (grep for 're-entry-hint' returns exactly these four lines). So it is not a rendering accident of the CHED-PP path but a template-wide copy-paste defect affecting every CHED type. Line :304 compounds it, exactly as previously recorded and now re-confirmed verbatim: `<div class=\"govuk-hint govuk-radios__hint\" for=\"a_impadm2\" id=\"re-entry-hint\">` — a `for` attribute on a <div>, which is meaningless in HTML (for belongs on <label>/<output>) and looks like a failed attempt at exactly the input-hint association that is missing throughout."
+    },
+    {
+      "pattern": "Hints not associated with their radios — no aria-describedby on any input",
+      "whatItDoes": "The two hint divs have ids but no radio input references them via aria-describedby.",
+      "concern": "The hint text is not programmatically associated with the control, so screen reader users do not hear the explanation of what 'Internal market' or 'Re-entry' means — and that explanation is the load-bearing content of this page. Accessibility defect to fix, not port.",
+      "govukAlternative": "govuk-frontend radios macro sets aria-describedby on each input automatically",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (control-inventory eval returned desc=null for all five inputs in main; no aria-describedby attribute present anywhere in main.outerHTML). INDEPENDENTLY RE-RUN 2026-07-17 by this adversarial pass — the eval returns desc=null for every input on the whole document (all 8, including the header/footer ones), and a read of the raw main.outerHTML confirms the string 'aria-describedby' does not occur. Confirmed."
+    },
+    {
+      "pattern": "govuk-radios--conditional modifier with no conditional reveal content",
+      "whatItDoes": "The radios container declares the conditional-reveal modifier, but no govuk-radios__conditional child exists and no input carries data-aria-controls or aria-controls.",
+      "concern": "Dead/vestigial markup — the modifier does nothing here. Almost certainly bleed-through from the shared all-CHED-types template (see sharedPageWarning): CHED-A/P/D DO have reveals behind these radios, CHED-PP does not. Do not carry it into the rebuild; use plain govuk-radios unless a reveal is genuinely needed. This is the ONLY surviving trace of the conditional-reveal machinery on the current CHED-PP page — see the historical pattern below for the April-2026 state, which was worse.",
+      "govukAlternative": "Plain Radios (govuk-radios) with no modifier",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML — `class=\"govuk-radios govuk-radios--conditional\" data-module=\"govuk-radios\" id=\"purpose\" data-govuk-radios-init=\"\"` with no govuk-radios__conditional child anywhere; control-inventory eval returns ac=null and dac=null for every input). INDEPENDENTLY RE-VERIFIED 2026-07-17 on both counts. TRIPLE-CORROBORATED: trace DOM (no reveal), QA page object (no CHED-PP reveal getters), server schema (getChedppSchema spreads no conditional rule blocks) — and now a FOURTH source, the observed POST body, which carries only crumb/etag/purpose/button-save-and-continue (see observedPostBody). A reveal that renders nothing, accepts no POST data and has no server rule is inert beyond reasonable doubt."
+    },
+    {
+      "pattern": "HISTORICAL (April 2026, NOT present in the July trace corpus): dangling conditional-reveal wiring — #radio-internalmarket carried aria-controls=\"internalmarket-conditional\" pointing at a non-existent element",
+      "whatItDoes": "In an axe run captured on 1 April 2026, the CHED-PP 'Internal market' radio referenced a conditional-reveal container id 'internalmarket-conditional' that was not present in the DOM, producing a CRITICAL 'aria-valid-attr-value' violation. The July 2026 trace corpus shows NO such attribute — the wiring is gone; only the inert govuk-radios--conditional class remains.",
+      "concern": "NOT A CURRENT DEFECT — do not report it to stakeholders as one. Two independent facts establish this: (1) DATE GAP — the a11y-test.log artefact has an mtime of 1 April 2026, while the trace corpus was recorded 2026-07-16, i.e. the log is ~3.5 months STALE; (2) POST-INIT PROOF — the July trace DOM carries data-govuk-radios-init=\"\" on the radios container, meaning govuk-frontend's radios JS HAD ALREADY RUN when the snapshot was taken, and after init there is still no aria-controls AND no data-aria-controls on any input. So the attribute is genuinely absent from the current page, not merely un-rewritten. The rebuild guidance is unchanged (carry no conditional wiring).",
+      "govukAlternative": "Plain Radios with no conditional reveal — no aria-controls, no data-aria-controls",
+      "confidence": "inferred",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/a11y-test.log:9592-9599 — '⚠️  About The Consignment Page [/0/dev/protected/notifications/DRAFT.GB.2026.1425001/consignment/page-5]: 1 accessibility violation(s) … aria-valid-attr-value (critical impact) … Node 1: #radio-internalmarket … Invalid ARIA attribute value: aria-controls=\"internalmarket-conditional\"'. Attribution to CHED-PP is solid: the block is immediately preceded by the ched-pp-accessibility-tests.spec.ts:17:7 worker line (a11y-test.log:9591) and draft DRAFT.GB.2026.1425001 is the CHED-PP run's draft (same id at a11y-test.log:9583, 'Commodity Basic Description Page (first)', also under the ched-pp spec line) — the log interleaves parallel workers, so this draft-id correlation is what makes the attribution sound. Staleness: `ls -l a11y-test.log` → mtime '1 Apr 15:26' vs trace start time 2026-07-16T16:14:02.703Z. Post-init proof: trace e10b7cd5 action 29 main.outerHTML contains data-govuk-radios-init=\"\" on div#purpose — RE-VERIFIED VERBATIM 2026-07-17 from raw outerHTML by this adversarial pass; the attribute is present exactly as claimed, so the post-init argument holds."
+    },
+    {
+      "pattern": "Custom class \"purpose\" on each govuk-radios__item; id=\"purpose\" on the radios container",
+      "whatItDoes": "The only non-govuk-* class in main. Presumably an IPAFFS-specific styling/JS hook.",
+      "concern": "Low-risk but non-standard. The container id duplicates the input name attribute, which is a smell. No govuk equivalent needed — the rebuild should simply drop it.",
+      "govukAlternative": "None needed — remove; govuk-radios__item alone is sufficient",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML — class=\"govuk-radios__item purpose\" on all three items; 'purpose' is the sole non-govuk- class in main). RE-VERIFIED 2026-07-17 from raw outerHTML: confirmed on all three items, and confirmed as the only non-govuk- class present."
+    },
+    {
+      "pattern": "Radio labels bolded via govuk-!-font-weight-bold",
+      "whatItDoes": "Each govuk-radios__label also carries the bold font-weight override utility.",
+      "concern": "Not standard GOV.UK styling — Design System radio labels are regular weight. This is a deliberate visual deviation (likely to make the label stand out from its hint). It stays inside the govuk utility toolbox so it is not a hard problem, but the rebuild should only keep it if design confirms it is intended.",
+      "govukAlternative": "Default Radios label styling (no weight override)",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML — class=\"govuk-label govuk-radios__label govuk-!-font-weight-bold\" on all three labels). RE-VERIFIED 2026-07-17: confirmed on all three, including the third (hintless) label."
+    },
+    {
+      "pattern": "Radio id/value mismatch: id=\"radio-reimport\" carries value=\"import\" for the label 'Re-entry'",
+      "whatItDoes": "FOUR different vocabularies for the same concept — form label 'Re-entry', id 'radio-reimport', submitted value 'import', and the view-details display string 'For re-entry'.",
+      "concern": "Not a markup standards issue but a data-contract trap. Anyone rebuilding from the labels alone would guess a value of 're-entry' or 'reentry' and break the contract with downstream/backend. The submitted values are the load-bearing part: internalmarket | import | reconformity. Pin these in the new app's tests if the wire contract must be preserved; otherwise take the chance to make them consistent. The QA suite independently pins the DISPLAY strings on the view-details page ('For internal market', 'For re-entry'), which is a fifth vocabulary layer to preserve or deliberately simplify. NOTE the extra sting: the CHED-A schema DOES accept a literal 're-entry' value (consignment_purpose_validation.js:211) — so 're-entry' is a real value in this system, just not for CHED-PP, which uses 'import' for the same-labelled option. A rebuilder copying across CHED types would silently get this wrong.",
+      "govukAlternative": "n/a — naming/data-contract issue, not a component issue",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (control inventory eval: id=radio-reimport value=import) — RE-RUN AND CONFIRMED 2026-07-17. Display strings: ~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:27 and :93 — re-verified a third time 2026-07-17 by reading :72-95 directly: :93 = `await expect(pages.viewDetails.locatorPurposeOfConsignment).toContainText(/^\\s*For re-entry\\s*$/);` — exact. The display layer has a DOM contract too: locatorPurposeOfConsignment resolves to `#purpose-of-consignment-value` (page-objects/notification/ViewDetailsPage.ts:29-31). So the full chain for one concept is SIX artefacts: form label 'Re-entry' → input id 'radio-reimport' → wire value 'import' → amend change-link id '#consignment-purpose-change-link' → view-details element id '#purpose-of-consignment-value' → display string 'For re-entry'. Both anchored regexes (^...$) mean the QA suite pins the display strings EXACTLY, so they are a hard contract for anything that reuses these tests. Cross-type 're-entry' value re-verified 2026-07-17: consignment_purpose_validation.js:211 = `...PURPOSE_VALIDATION_RULES(['internalmarket', 'import', 'tranship', 'transit', 're-entry', 'temporary'])`."
+    },
+    {
+      "pattern": "Back link href=\"#\"",
+      "whatItDoes": "The 'Back' link has no real target; it relies on JS history.",
+      "concern": "Non-progressive-enhancement — fails without JS. The GOV.UK Back link component expects a real URL. Minor, and it lives in the service header chrome rather than the page, but worth fixing in the rebuild.",
+      "govukAlternative": "Back link (govuk-back-link) pointing at the previous page's real URL",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (a11y snapshot ref=e48, /url: \"#\") — RE-VERIFIED 2026-07-17: `- link \"Back\" [ref=e48] [cursor=pointer]:` followed by `- /url: \"#\"`. Exact."
+    }
+  ],
+  "fields": [
+    {
+      "name": "purpose",
+      "label": "What is the main reason for importing the consignment?",
+      "hint": "",
+      "control": "radio",
+      "required": true,
+      "requiredNote": "purpose is MANDATORY, enforced server-side by Joi — `.empty('').required()` in getChedppSchema (consignment_purpose_validation.js:247-253). This field records the REQUIREMENT, not the DOM attribute: no input carries a `required` attribute, which must NOT be read as 'optional'. Mechanism note for the rebuild: IPAFFS does no client-side required validation on this page at all — it round-trips to the server and re-renders with an error. See validationMessages and serverSideContract. RE-VERIFIED 2026-07-17 by reading the schema directly (see serverSideContract evidence).",
+      "requiredNoteLegacy": "MANDATORINESS NOW CORROBORATED FROM THE AUTHORITATIVE BACKEND SCHEMA MODEL (legacy source, authorised 2026-07-17), not merely the frontend Joi layer. The rebuild-target model is still built like trade-imports-animals and NOT like IPAFFS, but IPAFFS's own Bean Validation groups are the definitive record of what the old system required for CHED-PP: (1) PartOne.purpose carries @NotNull for the NotificationChedppFieldValidation group — /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:347-358 (the `groups = { ... NotificationChedppFieldValidation.class ... }` block on `private Purpose purpose;` at :372), message key `partone.purpose.not.null`; (2) the actual radio selection is the model field Purpose.purposeGroup (a PurposeGroupEnum), ALSO @NotNull for NotificationChedppFieldValidation — Purpose.java:66-78, message key `partone.purpose.purposeGroup.not.null`. So both the purpose object AND its purposeGroup discriminator are mandatory for CHED-PP at the schema layer. This is a policy the rebuild MAY revisit, but for a core discriminator field the risk of revisiting is low. confidence: legacy.",
+      "radioToModelMapping": "LEGACY (template-confirmed, 2026-07-17). The three CHED-PP radios bind their checked-state to the model field purposeGroup (PurposeGroupEnum), giving a fifth vocabulary layer on top of the four already recorded in nonStandardPatterns. Mapping (wire value → PurposeGroupEnum constant → enum display value used for the checked test in the template): `internalmarket` → IMPORT → 'For Import' (consignmentPurpose.html:69); `import` (label 'Re-entry') → RE_IMPORT → 'For Re-Import' (consignmentPurpose.html:218/229); `reconformity` → RE_CONFORMITY_CHECK → 'For Import Re-Conformity Check' (consignmentPurpose.html:372). Enum constants + display values: /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/enumeration/PurposeGroupEnum.java:6,10,13. NOTE the trap this sharpens: the wire value `internalmarket` maps to enum IMPORT ('For Import'), NOT to any 'internal market' enum — there IS a NON_INTERNAL_MARKET constant (:14) but it belongs to CHED-D, not CHED-PP. A rebuilder must not assume the wire value, the enum name and the display string agree. confidence: legacy.",
+      "options": [
+        "Internal market",
+        "Re-entry",
+        "For import re-conformity check"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 3,
+      "observedValues": [
+        "internalmarket"
+      ],
+      "conditionalOn": "Always shown. Reached on BOTH the manual and CSV branches of the CHED-PP journey (confirmed: manual traces e10b7cd5/1f5b6eef, CSV trace 9a918b86 — all three render identical main innerText and all post the form to a relative action of \"page-5\"). CORROBORATED by the QA workflow, which drives this page identically on both branches (ched-pp-workflows.ts:287-288 CSV branch, :324-325 manual branch). Also reachable via the AMEND route (ched-pp-manipulation.spec.ts:73) — untraced. NEW 2026-07-17: the 3-radio set is ALSO confirmed identical on an EU CHED-PP flow — trace 1f5b6eef is titled 'should hold checks and request amendment on EU CHED-PP after B2B notifier submission', so the radio set does not vary between EU and non-EU CHED-PP. This partially answers the openQuestion about whether the set is conditional on origin.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29; trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 23; trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 35 — ALL THREE INDEPENDENTLY RE-OPENED AND RE-VERIFIED 2026-07-17 by this adversarial pass. All three return byte-identical main innerText ('About the consignment\\nWhat is the main reason for importing the consignment?\\nInternal market\\n…\\nSave and continue') and identical page title 'Purpose of the consignment - Import and export applications - GOV.UK'. Action 29 is confirmed to be a Check on `internal:role=radio[name=\"Internal market\"i] >> nth=0` resolving to `<input type=\"radio\" name=\"purpose\" value=\"internalmarket\" id=\"radio-internalmarket\">`, sourced from ched-pp-workflows.ts:324:57 — so the evidence pointer lands on the right page and the right control. Submitted values from control-inventory eval: internalmarket | import | reconformity (ids radio-internalmarket | radio-reimport | radio-reconformity). No `required` attribute on any input — server-side validation only. Corroboration: ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:287-288, :324-325 — re-verified exact 2026-07-17."
+    },
+    {
+      "name": "purpose (option 1: Internal market)",
+      "label": "Internal market",
+      "hint": "The consignment is intended for sale or use in Great Britain (England, Scotland and Wales). Or, it is using a transit mechanism to move goods to a control point.",
+      "control": "radio",
+      "required": false,
+      "requiredFieldNote": "`required: false` here is a category artefact of the schema shape — this entry describes an OPTION of the required `purpose` group, not an independent optional field. The group is mandatory (see the `purpose` field above). Do not read these three option entries as optional inputs.",
+      "options": [],
+      "observedValues": [
+        "internalmarket"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29. input id=radio-internalmarket value=internalmarket. Hint div id=re-entry-hint (misnamed — duplicate id, see nonStandardPatterns). HINT COPY RE-VERIFIED CHARACTER-FOR-CHARACTER 2026-07-17 by this adversarial pass against main.innerText — exact, including the two-sentence structure and the parenthetical '(England, Scotland and Wales)'. This is the only option any trace in the corpus selects, and the only one the CHED-PP creation workflow ever selects (ched-pp-workflows.ts:287, :324 — hardcoded, NOT configurable; ChedPPNotificationConfig (ched-pp-workflows.ts:41-129, 47 optional keys covering origin, commodities, EPPO codes, packages, quantity, weights, BCP, transport, documents, addresses, billing and CSV/stop-at flags) contains NO purpose key of any kind — the absence is confirmed by exhaustive reading, not only by a grep returning zero hits. So ChedPPNotificationConfig exposes no purpose option at all — unlike the ched-a and ched-p workflows, which expose a typed `purpose` config key (ched-a-workflows.ts:94-95 'internalMarket'|'transit'|'temporaryAdmissionHorses'; ched-p-workflows.ts:101-102 'reEntry'|'transit') that their tests exercise (ched-a-holyhead.spec.ts:19, ched-p-holyhead.spec.ts:17). CHED-D does NOT have a purpose key — it branches on an isInternalMarket boolean instead (ched-d-workflows.ts:215-218).) Downstream display string on the view-details page is 'For internal market' (inferred — ched-pp-manipulation.spec.ts:27)."
+    },
+    {
+      "name": "purpose (option 2: Re-entry)",
+      "label": "Re-entry",
+      "hint": "The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain.",
+      "control": "radio",
+      "required": false,
+      "requiredFieldNote": "See the note on option 1 — `required: false` denotes an option of the mandatory `purpose` group, not an optional field.",
+      "options": [],
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML). input id=radio-reimport value=import. LABEL AND HINT COPY RE-VERIFIED CHARACTER-FOR-CHARACTER 2026-07-17 against main.innerText — exact. Rendered and confirmed, but NEVER selected in any trace. HOWEVER the QA suite DOES exercise it for CHED-PP on the amend route: ~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:74 selects it and :93 asserts the notification submits successfully and the view-details page then shows purpose 'For re-entry' (both lines re-verified exact 2026-07-17 by direct read of :72-95). So this option is proven END-TO-END SUBMITTABLE for CHED-PP (inferred), which materially narrows the 'untested surface' risk. Selecting it did NOT change any later page in that spec — the test proceeds straight through transport, review, declaration and submit."
+    },
+    {
+      "name": "purpose (option 3: For import re-conformity check)",
+      "label": "For import re-conformity check",
+      "control": "radio",
+      "required": false,
+      "requiredFieldNote": "See the note on option 1 — `required: false` denotes an option of the mandatory `purpose` group, not an optional field.",
+      "options": [],
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (main.outerHTML). input id=radio-reconformity value=reconformity. LABEL COPY RE-VERIFIED CHARACTER-FOR-CHARACTER 2026-07-17 — exact, including the leading 'For ' and the hyphen in 're-conformity'. Has NO hint text, unlike the other two options (RE-CONFIRMED 2026-07-17 from raw outerHTML — the third govuk-radios__item contains only an input and a label, no hint div). Rendered and confirmed, but NEVER selected in any trace — AND, unlike 'Re-entry', never selected by any test either: the shared page object exposes no getter for it at all (AboutTheConsignmentPage.ts getter inventory re-derived independently 2026-07-17 by grep — it has getters for Re-entry, Internal market, Human consumption, Animal feedingstuff, Non-internal market, Transfer of ownership – Rescue, Transit, Temporary admission horses, and none matching 'For import re-conformity check'). This option is entirely uncovered by BOTH sources: no trace, no test. Highest-risk item on this page. It IS however a server-valid value — getChedppSchema accepts 'reconformity' (consignment_purpose_validation.js:249)."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) CSRF token",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (control inventory eval). type=hidden, value is a per-session CSRF token — [REDACTED]. Platform concern (hapi crumb plugin — the observed request Cookie header carries a matching `crumb=Fe26.2**…` iron-sealed cookie, i.e. the standard hapi crumb double-submit pattern), not a user-facing requirement; noted so the rebuild does not mistake it for data. RE-VERIFIED 2026-07-17."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) optimistic-concurrency token",
+      "control": "text",
+      "required": false,
+      "observedValues": [
+        "\"0000000000BD2B55\"",
+        "\"0000000000BD2C0B\""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 29 (control inventory eval). type=hidden; value is a quoted hex string, HTML-encoded in the markup as value=\"&quot;0000000000BD2B55&quot;\" — the quotes are part of the value (standard HTTP ETag syntax). RE-VERIFIED 2026-07-17. NEW 2026-07-17 — the round-trip is now DIRECTLY OBSERVED, not merely implied by the presence of the hidden field: the real POST body in trace 9a918b862ad1b3599fc13659f757c25aaec78ada request 1021 contains `etag=%220000000000BD2C0B%22`, i.e. the quoted hex value URL-encoded and sent back to the server (second observed value added above; it differs from the e10b7cd5 draft's because it is a different draft). This CONFIRMS IPAFFS does optimistic-concurrency / lost-update detection on the draft notification. It IS a real behavioural requirement to consider for the rebuild (see openQuestions). No test in the QA repo asserts anything about etag or lost-update behaviour — the concurrency RULE (what happens on a stale etag) remains uncorroborated; only the round-trip itself is confirmed."
+    }
+  ],
+  "observedPostBody": {
+    "summary": "NEW 2026-07-17 — no previous revision captured the actual submitted request. The real POST body was recovered from the trace network log and it independently confirms, from RENDERED REALITY rather than from source, several things the spec previously only inferred from the IPAFFS Joi schema. This is the single most valuable addition of this pass, because it is admissible under the exercise's own evidence rules (trace-derived) where the schema-derived serverSideContract is not.",
+    "request": "POST https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526023/consignment/page-5 → 302 Found",
+    "body": "crumb=[REDACTED]&etag=%220000000000BD2C0B%22&purpose=internalmarket&button-save-and-continue=Save+and+continue",
+    "contentType": "application/x-www-form-urlencoded (Content-Length: 143)",
+    "confirms": [
+      "The POST carries EXACTLY FOUR fields and nothing else. No reveal data, no sub-purpose, no exit-BCP, no date-time parts — direct trace-level corroboration that CHED-PP has no conditional-reveal surface behind purpose, previously argued only from the Joi schema and the absence of reveal markup.",
+      "`purpose=internalmarket` — the wire value is confirmed on the wire, not just as a DOM value attribute.",
+      "`etag` genuinely round-trips (see the etag field).",
+      "The NAMED SUBMIT BUTTON is posted as `button-save-and-continue=Save+and+continue`. The spec previously inferred from SAVE_ACTIONS_SCHEMA that 'the server branches on which save action was posted'; the POST body now confirms the button name/value really is transmitted, which is the mechanism that makes the 'Save and review' / 'Save and return to hub' variants (see secondaryActions) coherent. The button's `value` is user-visible COPY doubling as a wire token — a rebuild that renames the button text changes the payload.",
+      "POST/Redirect/GET: the response is 302, not a rendered page — see the 'Save and continue' behaviour."
+    ],
+    "confidence": "confirmed",
+    "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada request 1021 (POST page-5). Body resource read directly from the trace's own resource store. The crumb token has been REDACTED here — it is a live session credential and must not be transcribed. The request Cookie header likewise carries session credentials (returnurl_0, new_access_0, crumb, _ui_cookie) which are deliberately not reproduced."
+  },
+  "behaviours": [
+    {
+      "behaviour": "'Save and continue' on this page POSTs and receives a 302 redirect to the NOTIFICATION HUB at /notification/vnet/protected/notifications/:draftId/overview — it does NOT render a further linear question page. This page is the last step of the 'about the consignment' section; the hub is then the launchpad for the next section, which the user enters by clicking a hub link.",
+      "confidence": "confirmed",
+      "appliesTo": "CHED-PP, both the manual and the CSV branch (they land on the hub and then click DIFFERENT hub links).",
+      "evidence": "UPGRADED FROM `inferred` TO `confirmed` 2026-07-17 — this is a real correction. The previous revision established the hub landing only from QA-workflow shape (i.e. 'the next thing the test touches is a hub link') and rated it `inferred`. The trace settles it DIRECTLY: trace 9a918b862ad1b3599fc13659f757c25aaec78ada request 1021 = POST .../consignment/page-5 → `302 Found` with response header `Location: /notification/vnet/protected/notifications/DRAFT.GB.2026.1526023/overview`. The redirect target is observed rendered reality, so the hub landing is CONFIRMED and the hub's real URL (`/overview` — never recorded by any previous revision) is now known. The three QA corroborations still stand and remain useful for the branch-divergence detail: (1) MANUAL branch — ched-pp-workflows.ts:324-325 checks radioInternalMarket + clicks btnSaveAndContinue, and the very next action is :328 `await pages.notificationHub.linkCommodity.click();` under the verbatim comment '// Notification Hub Page' (:327), with no intervening page interaction. (2) CSV branch — ched-pp-workflows.ts:287-288 does the same and the next action is :290 `await pages.notificationHub.linkAdditionalDetails.click();`, i.e. the SAME hub but a DIFFERENT link. (3) tests/accessibility/ched-pp-accessibility-tests.spec.ts:58 clicks btnSaveAndContinue on this page and :61 immediately runs `await checkPageAccessibility(pages.page, 'Notification Hub Page');` BEFORE clicking any link (:62). All three re-verified verbatim 2026-07-17. This is a real journey-shape requirement for the rebuild (hub-and-spoke, not linear) and it explains why the page carries a 'Save and return to hub' button on some variants."
+    },
+    {
+      "behaviour": "The page follows POST/Redirect/GET — a successful submit never renders HTML directly, it 302s to the hub. Response is Content-Length: 0 with Cache-Control: no-store, no-cache, must-revalidate, max-age=0.",
+      "confidence": "confirmed",
+      "appliesTo": "CHED-PP",
+      "evidence": "NEW 2026-07-17 — not recorded by any previous revision. trace 9a918b862ad1b3599fc13659f757c25aaec78ada request 1021: status '302 Found', Content-Length: 0, Location header present. The preceding GET of the same URL (request 1004) returns 200 text/html 6.1K. So the render/submit split is the standard PRG pattern, which the rebuild should preserve (it is also what makes browser back/refresh after submit behave). Worth recording because the ERROR path is the open question — an invalid POST presumably re-renders 200 rather than redirecting, but no trace or test ever exercised it (see openQuestions)."
+    },
+    {
+      "behaviour": "Amending the country of origin CLEARS the previously-chosen purpose, forcing the user back through this page to re-answer it.",
+      "confidence": "inferred",
+      "appliesTo": "CHED-P confirmed by test comment + flow. For CHED-PP this is SUSPECTED but NOT established — see openQuestions.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-p/ched-p-manipulation.spec.ts:47-49 — line 47 is the comment '// Purpose is cleared after amending country of origin', line 48 clicks radioReEntry on this page and line 49 clicks btnSaveAndReturnToHub, with NO navigation to this page in between (the preceding line 45 clicks btnSaveAndContinue on the country-of-origin page, so IPAFFS routes the user here of its own accord). This is a human-stated rule corroborated by the flow's shape, hence a requirement. If it holds for CHED-PP it is a real cross-field dependency the rebuild must reproduce or consciously drop. Correctly rated `inferred` — it is a test-code comment, not observed behaviour, and it is about CHED-P."
+    },
+    {
+      "behaviour": "Purpose is amendable post-submission: an already-submitted CHED-PP notification can be amended to change purpose from Internal market to Re-entry, re-submitted, and the change persists.",
+      "confidence": "inferred",
+      "appliesTo": "CHED-PP",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-manipulation.spec.ts:56-95 ('should be able to amend notification') — RE-VERIFIED 2026-07-17 by direct read of :72-95: amends purpose via #consignment-purpose-change-link (:73), selects Re-entry (:74), saves via btnSaveAndReview (:75), then changes transport (:77-79), clicks review and submit (:81), re-declares (:83-84), searches the dashboard for the reference number (:88-90), opens the notification (:91) and asserts view-details shows 'For re-entry' (:93) alongside country of origin 'Austria' (:92) and the amended transport (:94). All line numbers exact. Rated `inferred` — no trace exercises the amend route."
+    },
+    {
+      "behaviour": "This page is inside the CHED-PP accessibility regression suite — axe runs against it on every a11y run, under the label 'About The Consignment Page', in the Internal-market state (radio checked, not yet submitted).",
+      "confidence": "inferred",
+      "appliesTo": "CHED-PP",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:56-58 — RE-VERIFIED VERBATIM 2026-07-17 by direct read of :54-63: :55 `await pages.aboutTheConsignment.radioInternalMarket.check();`, :56 `await checkPageAccessibility(pages.page, 'About The Consignment Page');`, :57 `await pages.aboutTheConsignment.btnSaveAndContinue.click();`, then :60 `await checkPageAccessibility(pages.page, 'Notification Hub Page');` and :61 `await pages.notificationHub.linkCommodity.click();` (line numbers shift by one from the previous revision's citation; the SEQUENCE is exact and is what matters). The enclosing test is the CHED-PP accessibility workflow test tagged @accessibility. This CONFIRMS the attribution of the a11y-test.log block to CHED-PP by a second route: the log's worker line 'ched-pp-accessibility-tests.spec.ts:17:7' is that test's declaration line. TWO CAVEATS for the rebuild: (a) axe is scanned in the RADIO-CHECKED state only — the pristine and error states of this page have never been a11y-scanned by anyone; (b) the scan is tag-restricted to wcag2a/2aa/21a/21aa (accessibility-utils.ts:119), so a green a11y run does NOT clear the missing-legend, duplicate-id or missing-aria-describedby defects recorded in nonStandardPatterns."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Purpose",
+      "field": "purpose",
+      "layer": "backend microservice (ipaffs-notification-microservice) — SECOND validation layer, distinct from the frontend Joi layer",
+      "trigger": "A CHED-PP notification reaches the backend with a null `purpose` object. Bean Validation @NotNull for the NotificationChedppFieldValidation group fires.",
+      "confidence": "legacy",
+      "note": "This RESOLVES the serverSideContract caveat that 'a second backend validation layer may exist with its own rules and copy'. It exists, and this is its message for the purpose object. It is a TERSE FIELD-LABEL style message ('Purpose'), NOT user-facing sentence copy like the frontend's 'Select the purpose of the consignment' — the backend layer is a schema guard, not the primary user-facing validator, so the rebuild should treat the frontend Joi copy as the page's real error text and this as a defence-in-depth backstop. Records mandatoriness for CHED-PP either way.",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:27 (`uk.gov.defra.tracesx.notificationschema.representation.partone.purpose.not.null=Purpose`). Bound to PartOne.java:347-358,372 (@NotNull groups include NotificationChedppFieldValidation on `private Purpose purpose;`), message key `{partone.purpose.not.null}`. Read verbatim 2026-07-17."
+    },
+    {
+      "message": "Purpose group",
+      "field": "purpose (purposeGroup)",
+      "layer": "backend microservice (ipaffs-notification-microservice) — SECOND validation layer",
+      "trigger": "A CHED-PP notification reaches the backend with a non-null purpose object but a null `purposeGroup` (i.e. no radio choice recorded). @NotNull for NotificationChedppFieldValidation fires.",
+      "confidence": "legacy",
+      "note": "purposeGroup is the model field the radio selection maps to (PurposeGroupEnum — see the purpose field's radioToModelMapping). This backend message confirms purposeGroup is independently mandatory for CHED-PP. Again a terse field-label message, not user-facing sentence copy.",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:29 (`...partone.purpose.purposeGroup.not.null=Purpose group`). Bound to Purpose.java:66-78 (@NotNull groups include NotificationChedppFieldValidation on `private PurposeGroupEnum purposeGroup;`). Read verbatim 2026-07-17."
+    },
+    {
+      "message": "Select the main reason for importing the consignment",
+      "field": "purpose",
+      "layer": "backend microservice — NotificationSingleCedValidation group (NOT CHED-PP)",
+      "trigger": "NOT reachable on the CHED-PP path. Recorded as legacy CONTEXT because it is the backend variant that DOES echo this page's H1 wording ('What is the main reason for importing the consignment?'), unlike the CHED-PP-applicable messages.",
+      "confidence": "legacy",
+      "note": "CONTENT-DESIGN SIGNAL for the rebuild: IPAFFS already owns error copy that matches the H1 — 'Select the main reason for importing the consignment' (singleced) — but the CHED-PP path uses the mismatched frontend Joi copy 'Select the purpose of the consignment' instead. The mismatch flagged in the first validationMessages entry is therefore a wiring/consistency gap in IPAFFS, not an absence of good copy. Do NOT port the singleced key to CHED-PP blindly; use it as evidence that the H1-echoing wording is the intended direction.",
+      "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:28 (`...partone.singleced.purpose.not.null=Select the main reason for importing the consignment`). Bound to PartOne.java:359-362 (@NotNull group NotificationSingleCedValidation, key `{partone.singleced.purpose.not.null}`). The frontend Joi layer has a parallel CHED-D-only variant with the same wording (en.js:57, CONSIGNMENT_PURPOSE_REQUIRED_EU_CHEDD) already noted in the first validationMessages entry. Read verbatim 2026-07-17."
+    },
+    {
+      "message": "Select the purpose of the consignment",
+      "field": "purpose",
+      "trigger": "Submit 'Save and continue' with no purpose radio selected.",
+      "confidence": "legacy",
+      "confidenceHistory": "Was `inferred` under the trace-only evidence rules; UPGRADED to `legacy` 2026-07-17 when the IPAFFS application source was explicitly authorised as an admissible `legacy` source for COPY and VALIDATION RULES. The message string is read verbatim from the frontend Joi message catalogue (en.js:56) — that is exactly what `legacy` denotes. It is still NOT `confirmed` (no trace or test ever rendered it), so its PRESENTATION — error-summary vs inline govuk-error-message, summary-link target, error-state page <title> prefix — remains unobserved. See openQuestions ERROR-STATE PRESENTATION.",
+      "evidence": "SOURCE-DERIVED, now authorised as `legacy` (see the resolved provenance flag in openQuestions). Chain RE-VERIFIED INDEPENDENTLY 2026-07-17 by this adversarial pass, every link checked by fresh grep/read: (1) /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_purpose_validation.js:267-268 — `case CHEDPP: { schema = getChedppSchema()`; (2) :247-253 — `const getChedppSchema = () => { return Joi.object().keys({ ...PURPOSE_VALIDATION_RULES(['internalmarket', 'import', 'reconformity']), ...ETAG_SCHEMA, ...SAVE_ACTIONS_SCHEMA }) }` — quoted verbatim from the file; (3) :14-21 — `PURPOSE_VALIDATION_RULES` maps `[ANY_REQUIRED]: errorMessages.CONSIGNMENT_PURPOSE_REQUIRED`; (4) /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:56 — `CONSIGNMENT_PURPOSE_REQUIRED: 'Select the purpose of the consignment',`. All four exact. Correctly marked `inferred` NOT `confirmed`: the message is read verbatim from source, but no trace or test ever rendered it, so its placement (error summary vs inline govuk-error-message), its summary-link target and the resulting page <title> prefix are all still unobserved. NOTE THE COPY MISMATCH: the error says 'the purpose of the consignment' while the H1 asks 'What is the main reason for importing the consignment?' — GOV.UK guidance is that error text should echo the question. CHED-D has a message that DOES match the H1 ('Select the main reason for importing the consignment', en.js:57, CONSIGNMENT_PURPOSE_REQUIRED_EU_CHEDD — re-verified exact) but CHED-PP does not use it. There is also a third variant at en.js:58 (CONSIGNMENT_PURPOSE_REQUIRED_HIGH_RISK_EU: 'Select the main reason for importing the animals'). Looks like the H1 was reworded and the error copy was not. Flag to content design; do not port blindly."
+    },
+    {
+      "message": "What is the purpose of the consignment? is not valid",
+      "field": "purpose",
+      "trigger": "Submit a `purpose` value outside internalmarket|import|reconformity — e.g. a tampered payload, or a CHED-A/CHED-P value such as 'transit'/'tranship'/'temporary'/'re-entry' posted against a CHED-PP draft. Not reachable through the UI, since the only three radios rendered are the three valid values.",
+      "confidence": "legacy",
+      "confidenceHistory": "Was `inferred`; UPGRADED to `legacy` 2026-07-17 (IPAFFS source authorised). It is COMPOSED from two legacy source facts (the invalidMessage template en.js:19-21 + the label en.js:28), so it is a legacy-derived string rather than a single verbatim catalogue entry — treat its exact form with slightly more caution than the required-message above, but the composition is a bare string concat with no interpolation subtlety, so it is reliable. Still not `confirmed` — never rendered.",
+      "evidence": "COMPOSED from source, never observed — treat the exact string with more caution than the required-message above. COMPOSITION RE-VERIFIED INDEPENDENTLY 2026-07-17: consignment_purpose_validation.js:18 maps `[ANY_VALID]: errorMessages.invalidMessage(labels.CONSIGNMENT_PURPOSE)`; `invalidMessage` is defined at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:19-21 as `const invalidMessage = field => { return field + ' is not valid' }` — read verbatim, a bare string concat with no interpolation subtleties; and `labels.CONSIGNMENT_PURPOSE` = 'What is the purpose of the consignment?' at /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/labels/en.js:28 — re-verified exact. So the composed string is reliable, but the rendered result is itself a COPY DEFECT: it interpolates a whole question, question mark included, into a sentence — 'What is the purpose of the consignment? is not valid'. Evidence that IPAFFS's label vocabulary drifted from its page copy (the label says 'purpose', the H1 says 'main reason for importing'). The rebuild should write real error copy, not port this."
+    }
+  ],
+  "serverSideContract": {
+    "summary": "Derived from the IPAFFS frontend source (see the provenance flag in openQuestions — source is NOT one of this exercise's two admissible evidence sources). The CHED-PP POST schema is small, explicit, and independently confirms three things the trace evidence could only suggest. AS OF 2026-07-17 several of its claims are no longer source-only: the observed POST body (see observedPostBody) corroborates them from rendered reality.",
+    "schema": "getChedppSchema() = Joi.object().keys({ purpose: Joi.string().valid('internalmarket','import','reconformity').empty('').required(), ...ETAG_SCHEMA, ...SAVE_ACTIONS_SCHEMA })",
+    "confirms": [
+      "purpose IS MANDATORY — .required() server-side. The absence of a DOM `required` attribute is not evidence of optionality. Still source-only: no trace or test ever submitted an empty purpose.",
+      "The CHED-PP purpose set is EXACTLY the 3 observed values and no more — .valid('internalmarket','import','reconformity') matches the 3 rendered radios one-for-one. The radio set is NOT conditional on commodity/origin/anything upstream; it is a fixed literal in the schema. Corroborated by trace: the set is identical across a manual flow, a CSV flow AND an EU CHED-PP flow.",
+      "CHED-PP has NO conditional-reveal fields behind purpose. getChedppSchema spreads ONLY the purpose rule plus etag and save-actions — it does NOT spread INTERNAL_MARKET_VALIDATION_RULES, TRANSIT_*, TRANSHIPMENT_*, TEMPORARY_ADMISSION_*, CUSTOMS_*, FREE_ZONE_*, SHIP_* or any of the other conditional rule blocks that the CHED-A (:198-220) and CHED-P (:222-245) schemas do. NOW CORROBORATED BY TRACE: the observed POST body carries exactly 4 fields (observedPostBody), so no reveal data is transmitted in practice either.",
+      "The etag hidden field is a genuine part of the contract (ETAG_SCHEMA is spread into every CHED schema), not incidental markup. NOW CONFIRMED BY TRACE — the observed POST body contains etag=%220000000000BD2C0B%22.",
+      "The named submit button is part of the contract too (SAVE_ACTIONS_SCHEMA) — the server branches on which save action was posted, which is consistent with the inferred 'Save and review' amend variant in secondaryActions. NOW CONFIRMED BY TRACE — the observed POST body contains button-save-and-continue=Save+and+continue."
+    ],
+    "confidence": "inferred",
+    "evidence": "/Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_purpose_validation.js. KEY LINES RE-VERIFIED INDEPENDENTLY 2026-07-17 by fresh grep + read, and the schema block quoted verbatim: :247-253 (getChedppSchema — exact, 3 valid options), :267-268 (validate() dispatch `case CHEDPP`), :211 (CVEDA purpose options: internalmarket/import/tranship/transit/re-entry/temporary), :225 (CVEDP: internalmarket/tranship/import/transit), :234 (a third set: tranship/transit/customs/free/supplier/ship), :14-21 (PURPOSE_VALIDATION_RULES — exact, including the `.empty('').required()` and both message mappings). Marked `inferred` throughout: this is source, not observed behaviour. Caveat — this is the FRONTEND's Joi layer only; ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties also mentions this field, so a second backend validation layer may exist with its own rules and copy. RESOLVED 2026-07-17 — see backendModelContract below; the second layer was found and read.",
+    "backendModelContract": {
+      "summary": "LEGACY (authorised 2026-07-17). The 'second backend validation layer' the caveat above flagged has now been investigated: it is the ipaffs-imports-notification-schema Bean Validation model plus the ipaffs-notification-microservice ValidationMessages.properties. This is the AUTHORITATIVE record of CHED-PP mandatoriness — a schema-level guard behind the frontend Joi layer.",
+      "confirms": [
+        "purpose (the object) is @NotNull for CHED-PP — PartOne.java:347-358, group NotificationChedppFieldValidation, message 'Purpose' (ValidationMessages.properties:27). Corroborates the frontend .required() from the authoritative model.",
+        "purposeGroup (the radio's model field, a PurposeGroupEnum) is @NotNull for CHED-PP — Purpose.java:66-78, same group, message 'Purpose group' (ValidationMessages.properties:29).",
+        "NO conditional sub-field behind the CHED-PP purpose radios at the model layer. Purpose.internalMarketPurpose (an InternalMarketPurpose enum) is @NotNull ONLY for the PurposeForInternalMarket group (Purpose.java:45-51), which is NOT in the CHED-PP group set — so it is not enforced for CHED-PP and, consistently, is not rendered on the CHED-PP page (trace: 3 radios, POST: 4 fields). This is a THIRD independent corroboration (after trace DOM and frontend Joi) that CHED-PP has no reveal behind purpose. NOTE for the rebuild: the model CAN carry an internalMarketPurpose (23-value enum, InternalMarketPurpose.java:6-23) and other CHED types collect it behind their 'Internal market' radio via a conditional reveal — CHED-PP deliberately does not. Do not port that reveal.",
+        "The purposeGroup enum has 9 constants (PurposeGroupEnum.java:6-14) but CHED-PP uses only 3: IMPORT ('For Import'), RE_IMPORT ('For Re-Import'), RE_CONFORMITY_CHECK ('For Import Re-Conformity Check'). The remaining 6 (NON_CONFORMING_CONSIGNMENTS, TRANSHIPMENT_TO, TRANSIT_TO_3RD_COUNTRY, PRIVATE_IMPORT, TRANSFER_TO, NON_INTERNAL_MARKET) belong to other CHED types. See the purpose field's radioToModelMapping for the wire-value→enum mapping."
+      ],
+      "confidence": "legacy",
+      "evidence": "PartOne.java:347-372 + Purpose.java:41-101 + PurposeGroupEnum.java:5-14 + InternalMarketPurpose.java:5-23 under /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/; messages at /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:27,29,32. All read verbatim 2026-07-17. This is legacy application source, admissible for VALUES/COPY/MANDATORINESS under the 2026-07-17 authorisation; mandatoriness is 'as the old system had it' and may be a policy the rebuild revisits — though for a required discriminator field that is low-risk."
+    }
+  },
+  "confidence": "confirmed",
+  "adversarialReview": {
+    "date": "2026-07-17",
+    "verdict": "corrected — the spec was overwhelmingly sound; corrections are upgrades, not retractions",
+    "whatWasChecked": "Every `confirmed` copy string was re-derived from the raw trace DOM and diffed character-for-character (caption, H1, all three labels, both hints, button text, page title) — ALL EXACT, no invented or tidied copy. The evidence pointer was verified to land on the right page (action 29 is a Check on the Internal market radio, page title 'Purpose of the consignment', H1 matches). The control inventory was re-run independently and diffed against the field list — no missed controls in main. All three evidence traces were re-opened and confirmed to render byte-identical main innerText. Every source citation (IPAFFS templates, Joi validation, en.js message/label catalogues, QA page objects, workflows and specs) was re-checked by fresh grep/read — all exact, including the four-times-duplicated re-entry-hint id and the `for=\"a_impadm2\"` oddity on a <div>.",
+    "findings": [
+      "NO invented copy found. NO fabricated options found. NO confidence inflation found. NO wrong-page error. The spec's `confirmed` claims are all genuinely observed and its `inferred` claims are all genuinely source-only and honestly labelled — including the ones it flags against itself.",
+      "The only defects found were UNDER-claiming and one uncited claim: (1) `url` was the sole claim in the whole spec with no evidence — now confirmed from trace network evidence; (2) the hub-landing behaviour was rated `inferred` from QA-workflow shape when the trace's own POST 302 Location header confirms it outright — upgraded to `confirmed`, and the hub's real URL /overview recorded for the first time; (3) the actual POST body had never been recovered from the trace, so several serverSideContract claims sat at `inferred` when trace evidence was available to corroborate them — added as observedPostBody; (4) POST/Redirect/GET was unrecorded; (5) the three option pseudo-fields carry `required: false`, a category artefact that could mislead a rebuilder into reading options as optional inputs — annotated, not restructured.",
+      "One cosmetic provenance smell, not corrected: several entries were dated '2026-07-18', which postdates both the trace corpus (2026-07-16) and this review (2026-07-17). The content those entries assert verifies exactly, so this is a clock/labelling artefact rather than a substantive problem, but future-dated verification claims should not be trusted on their face."
+    ],
+    "networkEvidenceIsUnderused": "GENERAL NOTE FOR OTHER PAGE SPECS IN THIS EXERCISE. This spec — like, presumably, its siblings — was built almost entirely from DOM snapshots, and treated the request/response layer as out of reach. It is not. `trace requests` / `trace request <id>` expose the real GET, the real POST body (via the trace's own resource store) and the real response headers, and they resolved in one pass three things that the DOM alone had left as `inferred` or uncited: the page's absolute URL, the redirect target, and the exact wire payload. Any sibling spec whose open questions include 'what does this page actually submit?' or 'where does Save and continue go?' can likely close them the same way, WITHOUT resorting to the legacy source that the exercise's evidence rules exclude. Recommend a network-evidence sweep across the other CHED-PP page specs."
+  },
+  "openQuestions": [
+    "PROVENANCE FLAG — LARGELY RESOLVED 2026-07-17. The IPAFFS application source (Handlebars templates, route handlers, Joi validation, en.js catalogues, AND the backend schema model + ValidationMessages.properties) is NOW AN AUTHORISED `legacy` evidence source for COPY, FIELD VALUES, VALIDATION RULES and MANDATORINESS. Accordingly, the previously-quarantined source-derived findings have been promoted from `inferred` to `legacy` where they are verbatim reads (both validationMessages entries, and the new backendModelContract / requiredNoteLegacy / radioToModelMapping additions). What legacy does NOT settle: PRESENTATION of the error state (never rendered — still an evidence gap; see ERROR-STATE PRESENTATION below), and whether the old system's mandatoriness is a policy the REBUILD should keep — legacy tells you what IPAFFS required, not what the new service must require. The two known copy DEFECTS remain findings for content design, not things to port: 'What is the purpose of the consignment? is not valid' interpolates a question-mark into a sentence, and the required-message 'Select the purpose of the consignment' does not echo the H1 (IPAFFS itself owns better H1-echoing copy for the singleced/CHED-D variants — see validationMessages). ORIGINAL FLAG PRESERVED FOR HISTORY: This exercise's admissible sources are exactly TWO: the rendered frontend (traces) and the QA automation repo. The IPAFFS application source (Handlebars templates, route handlers, Joi validation, en.js message catalogues) was explicitly OUT OF SCOPE, on the stated grounds that inferring requirements from the legacy implementation is the thing this exercise is trying to avoid, and that an honest `gap` is the correct answer where the two admissible sources are silent. A previous revision nevertheless consulted that source and used it to author the entire `serverSideContract` block, BOTH entries in `validationMessages`, the `requiredNote` on the purpose field, and parts of the sharedPageWarning evidence. Those findings are PRESERVED here, not deleted — they are internally consistent, carefully cited to file:line, honestly marked `inferred`, they have now been independently re-verified line-by-line by the 2026-07-17 adversarial pass and found exact, and they are the only validation copy anyone has. But a human should know their provenance before they harden into requirements: they are legacy-implementation-derived, they were gathered outside this exercise's evidence rules, and NOTHING in the traces or the QA repo corroborates them. Under the wave's own rules the correct status of 'what error message does this page show?' is `gap`. Recommend either (a) a human explicitly blesses the source-derived copy as admissible, or (b) it is re-marked `gap` and the copy is written fresh by content design — which the entries themselves recommend anyway, since both messages are demonstrably defective ('What is the purpose of the consignment? is not valid' interpolates a question-mark into a sentence, and the required-message does not echo the H1).",
+    "RESOLVED 2026-07-17 (was: journey shape, partially open). 'Save and continue' on this page is now CONFIRMED to land on the NOTIFICATION HUB — the POST returns 302 with `Location: /notification/vnet/protected/notifications/:draftId/overview` (trace 9a918b86 request 1021). The IPAFFS shape is hub-and-spoke, not linear, and the hub lives at /overview. The CSV and manual branches then diverge by clicking DIFFERENT hub links (linkAdditionalDetails vs linkCommodity, ched-pp-workflows.ts:290 vs :328). STILL OPEN as a DESIGN question, not an evidence one: the trace-derived spec records this page at 'journey position 12', which implies a linear journey and is misleading. Is the rebuild reproducing hub-and-spoke, or flattening to a linear journey? That changes what 'position 12' means and whether the 'Save and return to hub' button in secondaryActions has any meaning in the new app at all.",
+    "ERROR-STATE PRESENTATION — the most significant genuinely-open item after the provenance flag. No trace and no test has ever RENDERED either validation message, so while the copy is known from source, the error PRESENTATION is entirely unobserved: error-summary markup, whether an inline govuk-error-message appears above the radios, the summary link target (which is non-obvious here, because the fieldset has no legend to link to and the radios have no aria-describedby), and the error-state page <title> prefix. NEW 2026-07-17 — the PRG evidence sharpens this: a successful submit 302s, so the error path must be the one case that re-renders 200, and nobody has seen it. If error-state fidelity matters, the cheapest next step is the CHED-D sibling snapshot fixture ipaffs-frontend-notification/service/test/handlers/importer/chedd/snapshots/consignment_purpose_validation_POST.html, which is a rendered error state of this same shared template — but it is CHED-D, so take its STRUCTURE and not its COPY. (Note this route re-enters the out-of-scope legacy source; see the provenance flag.)",
+    "'For import re-conformity check' (value=reconformity) is exercised by NEITHER source — no trace selects it and the shared page object has no getter for it at all (independently re-confirmed 2026-07-17). Its downstream behaviour is completely unknown: does it change any later page, any hub task, any downstream document? THE SINGLE HIGHEST-RISK UNCOVERED ITEM ON THIS PAGE. By contrast 'Re-entry' (value=import) IS proven end-to-end for CHED-PP by the QA suite on the AMEND route: ched-pp-manipulation.spec.ts:74 selects it, the notification re-submits successfully, and view-details renders 'For re-entry' (:93) — and it did not branch the journey in that test.",
+    "NEW 2026-07-17 — is the `.first()` on the page object's radioInternalMarket getter (AboutTheConsignmentPage.ts:11) masking a LOCATOR BUG rather than disambiguating a second radio group? Playwright's getByRole name matching is substring-based and case-insensitive by default, so getByRole('radio', { name: 'Internal market' }) will ALSO match a radio whose accessible name is 'Non-internal market'. Re-verified by independent grep 2026-07-17: the two getters carrying .first() are EXACTLY radioInternalMarket (:11) and radioNonInternalMarket (:23) — no other radio getter in the file has it. That is consistent with the two names colliding with each other on the CHED-D variant, where a single test checks both in sequence (ched-d-workflows.ts:216 then :218). If that is what is happening, the inference that CHED-A/CHED-P carry a SECOND radio group on this page (sharedPageWarning.otherChedTypesHaveMultipleRadioGroups) loses its mechanical argument — though that inference has independent support from the workflows checking two radios per page visit with no intervening submit (ched-a-workflows.ts:286-287, ched-p-workflows.ts:693-694), which the substring theory does NOT explain away. NO IMPACT ON THE CHED-PP REBUILD (3 radios, no name collision, no second group — confirmed by trace control inventory). Flagged because it may be a live defect worth reporting to the QA team, and because it slightly weakens a claim elsewhere in this spec.",
+    "LARGELY RESOLVED — 'does `purpose` gate anything on CHED-PP?' Answer: NO conditional fields on THIS page, now established from FOUR independent directions: trace DOM (no reveal markup, no aria-controls/data-aria-controls post-init), QA page object (no CHED-PP reveal getters), server schema (getChedppSchema spreads only the purpose rule + etag + save-actions, none of the INTERNAL_MARKET_*/TRANSIT_*/TRANSHIPMENT_*/TEMPORARY_ADMISSION_*/CUSTOMS_*/FREE_ZONE_*/SHIP_* blocks that CHED-A :198-220 and CHED-P :222-245 spread), and NEW 2026-07-17 the observed POST body (exactly 4 fields on the wire). STILL OPEN, narrower: this settles same-page reveals, NOT whether purpose routes the user to different LATER pages in the journey. Page routing lives in the route handler src/routes/handlers/importer/consignment_purpose.js, not the Joi schema — not read. The 302 Location observed for the internalmarket case is /overview; whether the other two values redirect elsewhere is unobserved (no trace submits them). 'For import re-conformity check' remains the untested path.",
+    "Does amending the country of origin clear `purpose` on CHED-PP, as it demonstrably does on CHED-P (ched-p-manipulation.spec.ts:47, verbatim comment 'Purpose is cleared after amending country of origin')? The CHED-PP amend spec changes country of origin and THEN changes purpose (ched-pp-manipulation.spec.ts:68-75) — consistent with the same rule, but it navigates via an explicit change link (:73) so the test does not prove the clearing. If the rule holds it is a real cross-field dependency for the rebuild. SME/source question.",
+    "STALE-ARTEFACT QUESTION. The April a11y log records a CRITICAL dangling aria-controls on #radio-internalmarket; the July trace corpus shows no such attribute. A previous revision reconciled these by claiming govuk-frontend's radios JS rewrites data-aria-controls to aria-controls at init, so a post-JS snapshot would show only the rewritten form. That explanation FAILS on two counts and has been withdrawn: (a) it predicts the trace would show aria-controls, but the trace shows NEITHER aria-controls NOR data-aria-controls (independently re-confirmed 2026-07-17 — the control inventory returns ac=null and dac=null for every input, and 'aria-controls' does not appear anywhere in main.outerHTML); (b) govuk-frontend's radios JS only performs that rewrite when the reveal target EXISTS — if the target is missing it leaves data-aria-controls untouched and never sets aria-controls, so the JS cannot manufacture a dangling aria-controls. The simpler and better-supported reading is that the two artefacts are ~3.5 months apart (log mtime 1 Apr 2026 vs traces 16 Jul 2026) and the markup CHANGED in between — i.e. the dangling wiring was removed, leaving only the inert govuk-radios--conditional class. Worth someone confirming against IPAFFS source/changelog, because if true the April log should not be cited as current evidence of anything. Related and worth noting: the QA repo's axe runner disables the 'aria-allowed-attr' rule outright with the comment 'GOV.UK Frontend v6 adds aria-expanded to conditional radio inputs at runtime — third-party behaviour, not fixable in application code (IMTA-20937)' (accessibility-utils.ts:118-119) — so govuk-frontend v6 DOES mutate conditional radios at runtime, which is presumably what inspired the withdrawn reconciliation, but the mutation it makes is aria-expanded, not aria-controls.",
+    "The hidden `etag` field round-trips an optimistic-concurrency token on POST — NOW DIRECTLY OBSERVED on the wire (etag=%220000000000BD2C0B%22, trace 9a918b86 request 1021), not merely implied by the hidden field's presence. Does the rebuild need equivalent lost-update protection on the draft notification, or is that an artefact of IPAFFS's architecture that the new CDP app should drop? What the system DOES on a stale etag is still completely unobserved — no test in the QA repo asserts anything about it, and no trace ever submitted a stale one. Product/architecture decision, not a traceable one.",
+    "The submitted value for 'Re-entry' is `import`, not `re-entry` — and its id is `radio-reimport`, and the view-details page displays it as 'For re-entry' (pinned by ched-pp-manipulation.spec.ts:93). Sharpened 2026-07-17: `re-entry` IS a valid value elsewhere in this system — the CHED-A schema accepts it literally (consignment_purpose_validation.js:211) — so the CHED-PP choice of `import` for the same-labelled option is an active trap for anyone generalising across CHED types. Is the wire value `internalmarket|import|reconformity` a contract the new app must preserve (backend/downstream consumers), or is the rebuild free to use clean values? Same question for the display strings 'For internal market' / 'For re-entry'. NEW: the submit button's VALUE is also on the wire (button-save-and-continue=Save+and+continue), so button copy is coupled to the payload too — another contract to break deliberately rather than accidentally.",
+    "'For import re-conformity check' is the only option with no hint text, while the other two have substantial explanatory hints. Is that a deliberate content decision or a content gap in IPAFFS? Worth a content-designer view for the rebuild — the term is not self-explanatory. (Note it is also the only option no test drives, which may itself hint that it is little-used or semi-dead surface.)",
+    "This page is SHARED across all four CHED types in IPAFFS (one page object, one URL pattern .../consignment/page-5, one template serving CHED-A/P/PP/D with different radio sets — see sharedPageWarning). The rebuild is CHED-PP-only, so the 3-radio CHED-PP set is the whole requirement. Is the CHED-PP radio set genuinely fixed at 3, or is it itself conditional on something upstream (e.g. commodity, EU/ROW origin)? LARGELY ANSWERED 2026-07-17: the schema hardcodes 3 as a literal, and the 3 render identically across a manual flow (e10b7cd5), a CSV flow (9a918b86) AND an EU CHED-PP flow (1f5b6eef, titled 'should hold checks and request amendment on EU CHED-PP after B2B notifier submission') — so it does not vary by EU/ROW origin at least. Residual: all traced runs use the default config, which hardcodes Internal market and exposes no purpose knob.",
+    "Page numbering CONFIRMED: all three traces render this page at .../consignment/page-5, and the absolute URL is now directly observed as /notification/vnet/protected/notifications/:draftId/consignment/page-5 (trace 9a918b86 request 1004, a real 200 text/html GET). So the 219b882e 'page-4' label is wrong. Independently corroborated by the QA a11y log, which records this page at '/consignment/page-5' (a11y-test.log:9592) and the PRECEDING page (Commodity Basic Description) at '/consignment/page-4' (a11y-test.log:9583) — so 'page-4' is a real CHED-PP page, just a different one."
+  ]
+}

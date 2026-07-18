@@ -1,0 +1,363 @@
+{
+  "slug": "billing-find-an-address",
+  "name": "Find a billing address (postcode lookup)",
+  "url": "/notification/vnet/protected/notifications/{referenceNumber}/billing-details/find-address?source=IDM",
+  "urlEvidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, request 1280 (GET 200 find-address?source=IDM) and request 1296 (POST 302). Reference number observed: DRAFT.GB.2026.1526000. RE-VERIFIED (v27): both requests exist as cited; request 1296 is POST https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/billing-details/find-address?source=IDM → 302 Found.",
+  "pageTitle": "Find an address - Import and export applications - GOV.UK",
+  "caption": "Billing",
+  "heading": "Find an address",
+  "bodyCopy": [
+    "You must use a UK address.",
+    "Help for non-UK businesses",
+    "If you are a user from the Republic of Ireland and do not have a UK billing address email CUCsupport@defra.gov.uk.",
+    "This email address will not reply to any other type of enquiry.",
+    "If you are based elsewhere, you must employ a UK-based import agent to complete your notifications.",
+    "Import agents must use their own address for non-UK customers and are liable for any charges."
+  ],
+  "bodyCopyEvidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (main innerHTML). RE-VERIFIED verbatim character-by-character (v27) against the frozen DOM: every string above matches the rendered markup exactly, including the trailing full stops and the 'Help for non-UK businesses' summary text.",
+  "backLink": {
+    "text": "Back",
+    "href": "#",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Rendered OUTSIDE <main>, inside div.navigation-links__left-block (not in the standard govuk-width-container beforeContent slot). The href is \"#\", so the actual back behaviour is JS-driven — see nonStandardPatterns. Never clicked by any test in the QA repo (corroborated: FindAnAddressPage.ts exposes no back-link locator, and grep for 'back-link' across the CHED-PP billing workflow returns nothing). RE-VERIFIED (v27) by eval: outerHTML exactly as quoted; parentElement.className = \"navigation-links__left-block\"; main .govuk-back-link = none."
+  },
+  "continueLabel": "Find address",
+  "secondaryActions": [
+    "Enter address manually",
+    "Cancel and return to notification"
+  ],
+  "layout": "govuk-grid-row#find-an-address-page > govuk-grid-column-two-thirds",
+  "form": {
+    "method": "POST",
+    "action": "(none — posts to the same URL)",
+    "novalidate": true,
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 — <form method=\"POST\" novalidate>. Confirmed by request 1296 (POST to find-address?source=IDM). RE-VERIFIED (v27)."
+  },
+  "onSubmitSuccess": {
+    "status": 302,
+    "location": "/notification/vnet/protected/notifications/{referenceNumber}/billing-details/select-address?postcode={postcode}",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, request 1296 — POST 302 with Location: /notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/billing-details/select-address?postcode=B693NE. NOTE: ?source=IDM is NOT carried onto the redirect target, though it IS carried on every in-page link. RE-VERIFIED (v27): Location header read directly and matches exactly. Corroborated by the QA repo: ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:482-483 — searchPostcodeAndContinue is immediately followed by billingSelectTheAddress.selectAddressAndContinue, i.e. the tests assume the successful submit lands on select-address with no intervening page. Also corroborated from the legacy handler (inferred): find_an_address.js:43-44 returns h.redirect(SELECT_BILLING_ADDRESS_PAGE(referenceNumber) + `?postcode=${encodeURIComponent(postcode)}`) — which explains the asymmetry: the redirect is constructed from scratch, so source=IDM is dropped by construction rather than by intent."
+  },
+  "entryPoint": {
+    "from": "confirm-billing-details",
+    "via": "\"Change\" address link (#confirm-billing-address)",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 86 — Click locator('#confirm-billing-address'), immediately preceding the postcode fill at action 87. RE-VERIFIED (v27): action 86 log resolves the locator to <a class=\"govuk-link\" id=\"confirm-billing-address\" href=\".../billing-details/find-address?source=IDM\">Change</a>. Corroborated by ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:6-8 (linkChangeAddress = page.locator('#confirm-billing-address')) and workflows/notification/ched-pp-workflows.ts:481. The page is NOT a forced step in the linear journey — it is only reached by choosing to change the billing address from the confirm page."
+  },
+  "structure": [
+    {
+      "element": "back-link",
+      "text": "Back",
+      "govukComponent": "Back link (govuk-back-link + non-govuk back-link--next-to-breadcrumbs, id=back-link, href=\"#\") — outside <main>, in div.navigation-links__left-block"
+    },
+    {
+      "element": "caption",
+      "text": "Billing",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title) — rendered INSIDE the form, before the fieldset"
+    },
+    {
+      "element": "h1",
+      "text": "Find an address",
+      "govukComponent": "Fieldset legend (govuk-fieldset__legend--xl) wrapping h1.govuk-fieldset__heading, id=page-primary-title"
+    },
+    {
+      "element": "paragraph",
+      "text": "You must use a UK address.",
+      "govukComponent": "Body text (govuk-body), nested inside div.govuk-hint.govuk-!-margin-bottom-6#find-an-address-hint"
+    },
+    {
+      "element": "details",
+      "text": "Help for non-UK businesses — If you are a user from the Republic of Ireland and do not have a UK billing address email CUCsupport@defra.gov.uk. This email address will not reply to any other type of enquiry. If you are based elsewhere, you must employ a UK-based import agent to complete your notifications. Import agents must use their own address for non-UK customers and are liable for any charges.",
+      "govukComponent": "Details (govuk-details) — inside the same govuk-hint container; body paragraphs are bare <p>, NOT govuk-body"
+    },
+    {
+      "element": "label",
+      "text": "Postcode",
+      "govukComponent": "Label (govuk-label govuk-label--s), for=postalCode"
+    },
+    {
+      "element": "hint",
+      "text": "For example, AA3 1AB",
+      "govukComponent": "Hint (govuk-hint, id=billing-address-postcode-hint) — NOT referenced by the input's aria-describedby"
+    },
+    {
+      "element": "text-input",
+      "text": "postalCode",
+      "govukComponent": "Text input (govuk-input govuk-input--width-10)"
+    },
+    {
+      "element": "button",
+      "text": "Find address",
+      "govukComponent": "Button (govuk-button, id/name=button-save-and-continue, value=\"Save and continue\", data-module=govuk-button, data-prevent-double-click=true) — rendered OUTSIDE the fieldset"
+    },
+    {
+      "element": "paragraph",
+      "text": "Enter address manually",
+      "govukComponent": "Link (govuk-link) inside p.govuk-body → /notification/vnet/protected/notifications/{referenceNumber}/billing-details/address?source=IDM"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to notification",
+      "govukComponent": "Link (govuk-link) inside p.govuk-body → /notification/vnet/protected/notifications/{referenceNumber}/billing-details/confirm?source=IDM"
+    }
+  ],
+  "structureEvidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (main innerHTML). RE-VERIFIED in full (v27) — every element, class list, id and nesting relationship above was read back off the frozen DOM and matches.",
+  "govukComponents": [
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs (NOT a Design System class)"
+      ],
+      "count": 1,
+      "usage": "\"Back\" navigation, rendered outside <main> in div.navigation-links__left-block. href=\"#\" — behaviour is JS-driven (see nonStandardPatterns).",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend--xl",
+        "govuk-fieldset__heading"
+      ],
+      "count": 1,
+      "usage": "Wraps the caption-to-input block; the legend carries the H1 (standard GOV.UK single-question-page pattern). Note the submit button sits outside the fieldset.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27)"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-input--width-10"
+      ],
+      "count": 1,
+      "usage": "Postcode entry.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--s"
+      ],
+      "count": 1,
+      "usage": "Postcode label. Corroborated as the input's accessible name — the page object resolves the field by role+name (getByRole('textbox', { name: 'Postcode' })), which only passes if the <label for=postalCode> association is intact: ipaffs-qa-automation/page-objects/notification/FindAnAddressPage.ts:6-8. This is the one accessibility property of the page that IS indirectly proven by the tests; the aria-describedby hint association is not (see nonStandardPatterns). RE-VERIFIED (v27): action 87's own log line shows the locator resolving to <input value=\"\" type=\"text\" id=\"postalCode\" name=\"postalCode\" class=\"govuk-input govuk-input--width-10\"/> — i.e. the label association is proven by the trace itself, not merely by the page object.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "govuk-!-margin-bottom-6 (on the container hint ONLY; the postcode hint carries no modifier)"
+      ],
+      "count": 2,
+      "usage": "Two instances with DIFFERENT class lists, confirmed at action 87: (1) div.govuk-hint.govuk-!-margin-bottom-6#find-an-address-hint used non-standardly as a container for the intro paragraph + Details (see nonStandardPatterns); (2) div.govuk-hint#billing-address-postcode-hint — the standard hint \"For example, AA3 1AB\" under the Postcode label.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval: main .govuk-hint class lists = [\"govuk-hint govuk-!-margin-bottom-6\", \"govuk-hint\"] — re-run and confirmed v27)"
+    },
+    {
+      "component": "Details",
+      "govukClass": "govuk-details",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Collapsible \"Help for non-UK businesses\" guidance with the CUC support mailto and import-agent rules. Never expanded by any test — the QA repo has no locator for it.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary submit — visible label \"Find address\"; data-module=govuk-button with data-prevent-double-click=\"true\". The tests locate it by its visible accessible name \"Find address\", not by its id/name: ipaffs-qa-automation/page-objects/notification/FindAnAddressPage.ts:10-12; clicked at trace action 88 (re-verified v27: selector internal:role=button[name=\"Find address\"i]). Corroborating detail: the sibling ConfirmBillingDetailsPage.ts:14-16 locates ITS button by name 'Save and continue' — i.e. the two pages share the id/name button-save-and-continue but are distinguishable to the tests only by visible text, which is exactly the rebuild trap recorded in nonStandardPatterns.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (markup) + action 88 (click by name \"Find address\")"
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"Billing\" above the H1.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 3,
+      "usage": "\"Enter address manually\", \"Cancel and return to notification\", and the CUCsupport@defra.gov.uk mailto inside the Details. None of the three is exercised by any test in the QA repo (see openQuestions). Count verified scoped to <main>.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval: main .govuk-link count = 3 — re-run and confirmed v27)"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the postcode label + hint + input. Rendered with a trailing space in the class attribute (\"govuk-form-group \") — the tell of a template conditional for the error modifier (govuk-form-group--error) that was empty in this non-error render.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (re-verified v27: class=\"govuk-form-group \" with trailing space present in the frozen DOM)"
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Intro paragraph and the two secondary-action paragraphs. Count verified scoped to <main>; the Details body paragraphs are bare <p> and are NOT counted.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval: main .govuk-body count = 3 — re-run and confirmed v27)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<div class=\"govuk-hint govuk-!-margin-bottom-6\" id=\"find-an-address-hint\"> wrapping <p class=\"govuk-body\"> and <details class=\"govuk-details\">",
+      "whatItDoes": "Uses the Hint component as a generic container for the intro paragraph and the Details disclosure, rather than as a hint attached to a form control.",
+      "concern": "govuk-hint is meant to label/hint a single input and be referenced by aria-describedby. Here it is neither associated with the postcode input nor programmatically referenced, so the grey hint styling is applied to body copy for purely visual reasons and the association is lost for screen readers. The Details is also nested inside a hint, which the Design System does not sanction.",
+      "govukAlternative": "Render the intro as a plain <p class=\"govuk-body\"> and the Details as a sibling of the form group — no govuk-hint wrapper. Keep govuk-hint only for \"For example, AA3 1AB\", and wire it to the input via aria-describedby.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (main innerHTML — re-verified v27)"
+    },
+    {
+      "pattern": "<a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>",
+      "whatItDoes": "The back link has no real href — it points at \"#\" and relies on client-side JS (presumably history.back()) to navigate. It also carries a bespoke non-Design-System class and is rendered outside <main> in div.navigation-links__left-block rather than in the standard beforeContent slot.",
+      "concern": "Two defects. (1) Progressive enhancement: with JS unavailable or not yet loaded, the link does nothing — GOV.UK requires the back link to be a real URL that works without JS. (2) history.back() from an error re-render sends the user to the wrong place, because the errored POST is in the history stack. The bespoke class also means the visual position depends on custom CSS that the rebuild would have to reimplement.",
+      "govukAlternative": "govukBackLink macro with a real server-rendered href (here: the confirm-billing-details URL that this page was entered from), placed in the standard beforeContent block. No custom class — use the Design System's own spacing utilities if repositioning is genuinely needed.",
+      "legacyNote": "The legacy partial ALREADY supports a real-href back link and simply was not given one here. views/partials/common/backLink.html:1-5: {{#if link}} renders <a href=\"{{link}}\" id=\"back-link-nojs\" ...>Back</a>, {{else}} renders <a href=\"#\" id=\"back-link\" ...>Back</a>. findAnAddress.html:5 includes {{> common/backLink}} without passing a `link`, so it falls to the href=\"#\" / id=\"back-link\" branch — which is exactly what the trace confirmed (id=\"back-link\", href=\"#\"). So the fix is a one-line matter of supplying the destination URL, and IPAFFS's own template proves the intended id for the working variant is `back-link-nojs`.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval: document.querySelector('.govuk-back-link').outerHTML; parentElement.className = \"navigation-links__left-block\"; main .govuk-back-link = none — all three re-run and confirmed v27). Legacy corroboration: findAnAddress.html:5 + views/partials/common/backLink.html:1-5 (read this wave)."
+    },
+    {
+      "pattern": "<button id=\"button-save-and-continue\" name=\"button-save-and-continue\" value=\"Save and continue\">Find address</button>",
+      "whatItDoes": "The submit button's id, name and submitted value are all the generic \"save-and-continue\" used across IPAFFS, while the visible label reads \"Find address\".",
+      "concern": "Not a Design System deviation, but a rebuild trap: the value posted (\"Save and continue\") does not match the visible label, and the shared name means the server distinguishes this action by route rather than by button. Copying the markup naively would carry over a misleading contract. Corroborated from the QA side: FindAnAddressPage.ts:10-12 and ConfirmBillingDetailsPage.ts:14-16 both target id/name button-save-and-continue in the DOM but must disambiguate purely on visible text ('Find address' vs 'Save and continue'). Further corroborated from the legacy validator (inferred): find_an_address_validator.js:20 spreads a shared SAVE_ACTIONS_SCHEMA into the payload schema, i.e. the save-action naming is a cross-page convention, not a decision about this page.",
+      "govukAlternative": "Standard govuk-button with a name/value that matches its purpose (e.g. name=\"action\" value=\"find-address\"), or no name at all since the route is unambiguous.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (main innerHTML — re-verified v27)"
+    },
+    {
+      "pattern": "aria-describedby absent on #postalCode",
+      "whatItDoes": "The hint div #billing-address-postcode-hint exists but the input does not reference it.",
+      "concern": "Accessibility defect — the \"For example, AA3 1AB\" hint is not announced with the field. The rebuild should not replicate this. NOTE: this page is not covered by the CHED-PP accessibility suite (ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts never sets isCuc, so the billing sub-journey is never entered), which is consistent with the defect never having been caught.",
+      "govukAlternative": "govukInput macro with hint — the macro wires aria-describedby automatically.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval: aria-describedby on #postalCode = null — re-run and confirmed v27)"
+    },
+    {
+      "pattern": "Submit button rendered outside the <fieldset>, and the caption rendered inside the <form> above the fieldset",
+      "whatItDoes": "The fieldset opens after the caption and closes after the postcode form group, leaving the button as a sibling of the fieldset rather than a child.",
+      "concern": "Cosmetic rather than harmful — the button is still inside the form and submits correctly. Flagged only so the rebuild does not treat the odd nesting as meaningful. The standard pattern nests everything the legend describes inside the fieldset and places the button after it, which is in fact what this does; the caption-inside-form placement is the only real oddity.",
+      "govukAlternative": "Keep the button after the fieldset (as here). Move the caption out of the <form> — it is page furniture, not form data.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (main innerHTML — re-verified v27)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "postalCode",
+      "label": "Postcode",
+      "hint": "For example, AA3 1AB",
+      "control": "text",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "RETAGGED `inferred`→`legacy` (legacy-source enrichment wave). NOT provable from the rendered page — the form carries novalidate and the input has no `required` attribute, so the constraint is server-side only, and no test submits this page empty. Read from the authoritative IPAFFS Joi schema: ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/find_an_address_validator.js:15 — Joi.string().pattern(POSTCODE_REGEX).required(). File re-read this wave: the `.required()` call is present at :15 exactly as cited, and the `.messages({...})` block at :16-18 binds STRING_PATTERN/STRING_EMPTY/ANY_REQUIRED to the three validation messages above. POLICY CAVEAT (per taxonomy): `legacy` mandatoriness is 'as the old system had it' — the postcode is mandatory only because this page has no other way to complete, but the WHOLE page is CUC-only and non-forced (see conditionalOn / openQuestions). The rebuild may legitimately revisit whether a postcode-lookup step exists at all; if it does, the field being required within it is near-certain, but that is a rebuild decision, not an inherited law.",
+      "format": "UK postcode, including the GIR 0AA special case; space before the inward code is optional.",
+      "formatConfidence": "legacy",
+      "formatEvidence": "RETAGGED `inferred`→`legacy` (legacy-source enrichment wave). ipaffs-frontend-notification/service/src/validation/regexes.js:13 — POSTCODE_REGEX: /^([A-Za-z][A-Ha-hJ-Yj-y]?\\d[A-Za-z0-9]? ?\\d[A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})$/ — read verbatim from the authoritative IPAFFS source; wired into the schema at find_an_address_validator.js:11 (import) + :15 (.pattern(POSTCODE_REGEX)). Case-insensitive and the separating space is optional (` ?`); GIR 0AA special case permitted. A human should still confirm the rebuild WANTS this exact bespoke rule (see openQuestions) — this is legacy behaviour to accept or reject, not an inherited law.",
+      "observedValues": [
+        "B693NE"
+      ],
+      "conditionalOn": "CUC (Common User Charge) journeys only — reached from the change-address link on confirm-billing-details. Gated on the workflow's `isCuc` flag, which is an OPTIONAL config field (ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:124) DEFAULTING TO FALSE (:191); the billing block runs only when a test opts in (:480-487). The single CHED-PP test that opts in is tests/notification/ched-pp/ched-pp-cuc.spec.ts:18. `billingPostcode` is likewise optional (:125) with default 'B693NE' (:192). ALL LINE NUMBERS RE-VERIFIED (v27).",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (input id/name=postalCode, class govuk-input govuk-input--width-10, type=text, value=\"\" on load) — RE-VERIFIED (v27) both in main innerHTML and in action 87's own resolve log. Corroborated by ipaffs-qa-automation/page-objects/notification/FindAnAddressPage.ts:6-8 — the ONLY field the page object exposes, located by getByRole('textbox', { name: 'Postcode' }); filled + submitted by searchPostcodeAndContinue at :14-17 (file is 18 lines; read verbatim v27). Observed value B693NE matches the test payload at workflows/notification/ched-pp-workflows.ts:192 (billingPostcode: 'B693NE'), so the trace value is the DEFAULT_CONFIG value, not a user-chosen one. RE-VERIFIED (v27): no test anywhere in the QA repo overrides billingPostcode (grep across tests/ returns zero hits), and CHED-P (ched-p-workflows.ts:216) and CHED-D (ched-d-workflows.ts:144) hard-code the same 'B693NE' — so B693NE is the ONLY postcode ever driven through this shared page by ANY test of ANY CHED type."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) CSRF token",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 — <input name=\"crumb\" type=\"hidden\"> as the first child of the form (a second, separate crumb input exists in the cookie-banner form and is not part of this page's contract). Platform CSRF (hapi crumb), not a user requirement. Not referenced anywhere in the QA repo (grep 'crumb' across page-objects/, workflows/, tests/ returns nothing for this page) — the tests submit the real form, so the crumb rides along implicitly. RE-VERIFIED (v27) by control inventory: exactly two crumb inputs exist, one inside #find-an-address-page and one outside it in the cookie form. Token value deliberately not transcribed.",
+      "conditionalOn": "always present"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) optimistic-concurrency ETag",
+      "control": "hidden",
+      "required": true,
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 — <input name=\"etag\" type=\"hidden\" value=\"&quot;0000000000BD2AFD&quot;\"> (the value is a quoted ETag, quotes included). RE-VERIFIED (v27). IPAFFS concurrency mechanism — the new app should decide its own approach, not copy this. Not referenced anywhere in the QA repo; no test exercises a concurrent-edit / stale-etag conflict on this page, so its behaviour on conflict is unverified by trace or test. Corroborated as a cross-page convention (inferred): find_an_address_validator.js:21 spreads a shared ETAG_SCHEMA into the payload schema.",
+      "conditionalOn": "always present"
+    }
+  ],
+  "notPageFields": [
+    {
+      "name": "accept-cookies / cookies / returnUrl / fromFooterHeader",
+      "note": "Present in the action-87 DOM control inventory but belong to the platform cookie banner and its form, not to this page. Recorded here so a future control-inventory diff does not mistake them for missed fields.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 87 (eval over input,select,textarea,button — all sit outside div#find-an-address-page). RE-VERIFIED (v27): the full inventory is exactly 9 controls — inside #find-an-address-page: crumb (hidden), etag (hidden), postalCode (text), button-save-and-continue (submit); outside it: accept-cookies (submit), crumb (hidden), returnUrl (hidden), fromFooterHeader (hidden), cookies/button-cookies (submit). No control in the DOM is missing from this spec."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Enter postcode or enter address manually",
+      "field": "postalCode",
+      "trigger": "Postcode submitted empty or missing (Joi STRING_EMPTY or ANY_REQUIRED).",
+      "confidence": "legacy",
+      "evidence": "RETAGGED `inferred`→`legacy` (legacy-source enrichment wave): re-read verbatim from the authoritative IPAFFS frontend source and confirmed wired to this page's validator — ipaffs-frontend-notification/service/src/validation/validation_messages.js:40 (const ENTER_POSTCODE_OR_MANUAL_ERROR_MESSAGE = 'Enter postcode or enter address manually') is imported at find_an_address_validator.js:10 and bound to BOTH STRING_EMPTY (:17) and ANY_REQUIRED (:18) on the postalCode key (:15). Both files read in this wave; strings and line numbers match character-for-character. Under the governing taxonomy `legacy` = read from the authoritative IPAFFS source, trustworthy for COPY/VALUES, never rendered in a trace. REBUILD TRAP (legacy): a sibling constant POSTCODE_ERROR_MESSAGE = 'Enter postcode' exists at validation_messages.js:38 but is NOT the one wired to this page — the validator deliberately binds ENTER_POSTCODE_OR_MANUAL_ERROR_MESSAGE ('Enter postcode or enter address manually') to the empty/required cases instead, because this page offers the manual-entry escape hatch. Do not copy the shorter 'Enter postcode' string onto this page. PRIOR-WAVE HISTORY (retained): NOT observed in any trace (errorSummary count = 0 at action 87; trace has 0 errors overall) and NOT asserted by any test. (the corpus contains no error render of this page — errorSummary count = 0 at action 87 and the trace has 0 errors overall) and NOT asserted by any test (grep across tests/, types/, fixtures/, utils/ returns nothing). Inferred from legacy source, READ VERBATIM THIS WAVE (v27): ipaffs-frontend-notification/service/src/validation/validation_messages.js:40 — const ENTER_POSTCODE_OR_MANUAL_ERROR_MESSAGE = 'Enter postcode or enter address manually'; wired to both the STRING_EMPTY and ANY_REQUIRED error types at find_an_address_validator.js:17-18. String matches the cited line character-for-character. RESTORED TO `inferred` THIS WAVE — the previous wave downgraded it to `gap` on the grounds that legacy application source is an inadmissible requirements source, but that rule contradicts the governing confidence taxonomy, under which `inferred` is defined as exactly this: deduced from test code, page objects or LEGACY SOURCE, not observed in a trace, cited to file:line. Marking verbatim, precisely-cited copy as `gap` (= 'no evidence either way') was factually wrong and would have sent a human to re-derive strings we already hold."
+    },
+    {
+      "message": "Enter valid UK postcode",
+      "field": "postalCode",
+      "trigger": "Postcode is syntactically invalid — fails POSTCODE_REGEX (Joi STRING_PATTERN).",
+      "confidence": "legacy",
+      "evidence": "RETAGGED `inferred`→`legacy` (legacy-source enrichment wave): read verbatim from the authoritative IPAFFS frontend source and confirmed wired to this page. validation_messages.js:39 — const UK_POSTCODE_ERROR_MESSAGE = 'Enter valid UK postcode'; wired to the STRING_PATTERN error type at find_an_address_validator.js:16; the pattern itself is POSTCODE_REGEX at regexes.js:13. String matches the cited line character-for-character. NOTE the copy is not idiomatic GOV.UK (house style would be 'Enter a valid UK postcode' / 'Enter a real postcode') — transcribed as-is; the rebuild should not assume the legacy wording is the desired wording. RESTORED TO `inferred` THIS WAVE (see the first message's evidence for why the previous `gap` downgrade was wrong). VERIFIED: the only postcode any test supplies to this page is the valid 'B693NE', identical across CHED-PP (:192), CHED-P (:216) and CHED-D (:144), and never overridden — so this branch is unexercised by tests, which is why it is `inferred` and not `confirmed`."
+    },
+    {
+      "message": "No address found. Try again or enter address manually",
+      "field": "postalCode",
+      "trigger": "Postcode is syntactically valid but the address lookup returns no matches — the page re-renders with this error instead of redirecting to select-address.",
+      "confidence": "legacy",
+      "evidence": "RETAGGED `inferred`→`legacy` (legacy-source enrichment wave): read verbatim from the authoritative IPAFFS frontend source. validation_messages.js:41 — const NO_ADDRESS_FOUND_ERROR_MESSAGE = 'No address found. Try again or enter address manually'; raised at find_an_address.js:36-42, where the handler branches on commonUserChargeHelper.doAddressesExistInLookupService(request, postcode) and, if it returns truthy, sets error.description = NO_ADDRESS_FOUND_ERROR_MESSAGE, error.field = POSTCODE_KEY, and re-renders VIEW_TEMPLATE rather than redirecting. String and line range both match the citation exactly. RESTORED TO `inferred` THIS WAVE. This is the load-bearing error path for the 'Enter address manually' escape hatch. CAUTION FOR THE REBUILD: the legacy predicate reads `doAddressesExistInLookupService` yet the NO-address-found error fires when it returns TRUE — either the helper is misnamed or the branch is inverted. Which one is a `gap` this wave could not settle without reading the helper; a human should check before copying the logic."
+    }
+  ],
+  "validationRenderFormat": {
+    "confidence": "legacy",
+    "note": "UPGRADED `gap`→`legacy` (legacy-source enrichment wave): the error-render markup, previously unobserved in the corpus, is now read directly from the authoritative IPAFFS template + its partials/helpers. It STILL was never captured in a trace (no error render of this page exists), so it is `legacy`, not `confirmed` — but the markup is no longer unknown.\n\nERROR SUMMARY — findAnAddress.html:14 renders {{> common/validationSummary}}. views/partials/common/validationSummary.html:1-25 emits, when errors exist: <div class=\"govuk-error-summary\" data-module=\"govuk-error-summary\"><div role=\"alert\"><h2 class=\"govuk-error-summary__title\">{{headerText || 'Please fix the following errors'}}</h2> ... <ul class=\"govuk-list govuk-error-summary__list\"><li><a class=\"{{linkCssClass}}\" id=\"error-description-{{@index}}\" href=\"#{{field.[0]}}\">{{description}}</a></li></ul></div></div>.\n\nNOTABLE LEGACY FINDING — the DEFAULT error-summary title is 'Please fix the following errors' (validationSummary.html:8), NOT the GOV.UK Design System's standard 'There is a problem'. It is overridable via a `headerText` var, but this page's handler was not observed to pass one. The previous wave speculated the title might be 'There is a problem'; legacy says otherwise. Summary links anchor to href=\"#{field}\" (i.e. href=\"#postalCode\").\n\nINLINE ERROR — findAnAddress.html:31 sets the form-group class to \"govuk-form-group {{displayErrorClass errors 'postalCode'}}\"; utils/errors.js:358-360 + :23 resolve displayErrorClass to the constant 'govuk-form-group--error' when postalCode is in error (this is exactly what the confirmed trailing space in the non-error render's \"govuk-form-group \" foreshadowed). findAnAddress.html:38 renders {{errorSpan errors 'postalCode'}}; utils/errors.js:416-427 emit <p class=\"govuk-error-message\" id=\"postalCode-error\">{message}</p> immediately above the input.\n\nACCESSIBILITY NOTE (legacy) — the page uses `errorSpan` (errors.js:425), NOT the sibling `errorSpanAccessible` (errors.js:438), so the inline error message OMITS the <span class=\"govuk-visually-hidden\">Error:</span> prefix that the accessible variant and the GOV.UK macro both include. The rebuild's govukInput macro adds it automatically; do not replicate the plain errorSpan. Also note the error <p> id is 'postalCode-error' but the input carries no aria-describedby (nonStandardPatterns[3]), so even the inline error is not programmatically associated with the field.\n\nStill genuinely open: whether this page's handler passes a `headerText` (it was never rendered in error state), and therefore whether the real title is the default string above or a page-specific override."
+  },
+  "testCoverage": {
+    "pageObject": "ipaffs-qa-automation/page-objects/notification/FindAnAddressPage.ts (18 lines; 2 locators — inputPostalCode (:6-8, getByRole textbox 'Postcode'), btnFindAddress (:10-12, getByRole button 'Find address'); 1 method — searchPostcodeAndContinue (:14-17, fill then click). Read verbatim (v27): the page object exposes NOTHING else — no back link, no secondary-action links, no Details, no error locators.)",
+    "registeredAt": "ipaffs-qa-automation/page-objects/factory.ts:192 (as `findAnAddress`; imported at :55) — both lines re-verified (v27)",
+    "drivenBy": [
+      "ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:482 (CHED-PP — in scope)",
+      "ipaffs-qa-automation/workflows/notification/ched-p-workflows.ts:541 (CHED-P — out of scope, same page shared)",
+      "ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts:357 (CHED-D — out of scope, same page shared)"
+    ],
+    "drivenByEvidence": "All three call sites re-verified verbatim (v27) — each is `await pages.findAnAddress.searchPostcodeAndContinue(billingPostcode);` at exactly the cited line.",
+    "chedPpTestsReachingThisPage": [
+      "ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cuc.spec.ts:18 (isCuc: true) — the ONLY one"
+    ],
+    "siblingCucTestsOnTheSameSharedPage": [
+      "ipaffs-qa-automation/tests/notification/ched-p/ched-p-cuc.spec.ts:19 (isCuc: true)",
+      "ipaffs-qa-automation/tests/notification/ched-d/ched-d-cuc.spec.ts:24 (isCuc: true)",
+      "ipaffs-qa-automation/tests/notification/ched-d/ched-d-cuc-replacement-amendment.spec.ts:36 (isCuc: true)"
+    ],
+    "siblingCucTestsNote": "Out of scope for CHED-PP requirements, but recorded because they prove the page is SHARED. Any rebuild decision here has blast radius beyond CHED-PP. Verified exhaustive (v27): grep 'isCuc' across tests/ returns exactly FOUR hits in total — the three siblings listed above plus the CHED-PP one (ched-pp-cuc.spec.ts:18). COUNT CORRECTED THIS WAVE: the previous wave's note claimed the grep returned 'these four plus the CHED-PP one' (i.e. five) while listing only three siblings; the true totals are three siblings and four CUC specs overall.",
+    "assertionsAboutThisPage": [],
+    "notes": "Zero assertions — re-verified by reading ched-pp-cuc.spec.ts in full (v27; 50 lines). The single CHED-PP test that reaches this page treats it as a pass-through: fill postcode (action 87), click Find address (action 88), move on. Its expectations (ched-pp-cuc.spec.ts:23, :32, :40-41, :46-47) are all about the downstream reference number, dashboard status ('New'), the Dynamics plants record (trd_chedppreference) and the SOAP response — all four citations confirmed accurate. Nothing about this page's copy, validation, or behaviour is asserted by a human anywhere in the QA repo — so for RENDERED behaviour the traces remain the only evidence, and for the unrendered error paths the legacy source is the only evidence.",
+    "confidence": "confirmed"
+  },
+  "confidence": "confirmed",
+  "confidenceNote": "Page-level confidence is `confirmed` for the rendered happy-path surface (structure, copy, controls, layout, submit target — all directly observed at action 87 / request 1296 and independently re-verified character-by-character). The QA repo corroborates it without contradiction. LEGACY-SOURCE ENRICHMENT WAVE: the authoritative IPAFFS template (findAnAddress.html), its hint partial (billingDetailsRoiTradersHintText.html), the error-render partial/helpers (validationSummary.html, utils/errors.js) and the validator/regex (find_an_address_validator.js, regexes.js, validation_messages.js) were all read directly. The template matches the rendered DOM exactly — NO discrepancies. The three validation messages, the postcode required-ness and the postcode format are now `legacy` (read from authoritative source, verbatim, never rendered) rather than `inferred`. The error RENDER format was upgraded `gap`→`legacy`: markup is now specified from source (incl. the non-standard default summary title 'Please fix the following errors'); only whether the handler passes a `headerText` override remains open. See openQuestions.",
+  "openQuestions": [
+    "CORROBORATION RESULT (fields) — the QA repo confirms the trace-derived field set exactly and adds nothing. FindAnAddressPage.ts exposes precisely one field (postalCode) plus the submit button; no hidden, variant-only or conditional control was discovered that the traces missed. Re-verified in v27 by an independent control inventory over the frozen DOM: the 9 controls present are fully accounted for (4 in-page, 5 cookie-banner). This is the rare case where the traces are NOT a lower bound on the fields: the page is genuinely a single-input page. The page object is however silent on the back link, the two secondary-action links and the Details — all of which the traces DO show and no test touches.",
+    "CONFIDENCE CORRECTION (v27) — the three validation messages were restored from `gap` to `inferred`. The previous wave ruled legacy application source 'inadmissible' and downgraded them; that rule contradicts the governing taxonomy, in which `inferred` means precisely 'deduced from test code, page objects, or legacy source but NOT observed in a trace, cited to file:line'. All three strings were re-read verbatim this wave at validation_messages.js:39, :40, :41 and match character-for-character; their wiring was confirmed at find_an_address_validator.js:16-18 and find_an_address.js:36-42. They are real, precisely located, and the rebuild should treat them as the legacy behaviour to accept or reject — not as unknowns to re-derive. What genuinely remains `gap` is narrower and is recorded in validationRenderFormat: the error-summary title and inline error markup, which no trace ever captured.",
+    "DECISION NEEDED (postcode rule) — the legacy accepted format is now specified at `inferred` confidence: POSTCODE_REGEX at regexes.js:13, case-insensitive, optional separating space, GIR 0AA permitted. The open question is not what the rule IS but whether the rebuild should keep it: the regex is a bespoke hand-rolled pattern rather than a shared/standard postcode validator, and no test exercises any postcode but 'B693NE'. A human should rule on whether to port the regex, adopt a standard library, or defer to the lookup service.",
+    "FINDING (single-value coverage) — 'B693NE' is the ONLY postcode ever entered on this page by any test of any CHED type. It is hard-coded identically in three workflow DEFAULT_CONFIGs (ched-pp-workflows.ts:192, ched-p-workflows.ts:216, ched-d-workflows.ts:144) and overridden by no test (re-verified v27: grep 'B693NE' returns exactly these three plus two doc-comment defaults; grep 'billingPostcode' across tests/ returns zero). So the entire postcode-handling surface as EXERCISED — casing, spacing, GIR 0AA, invalid syntax, empty, no-match — is a single happy value. The rebuild inherits no regression safety net here.",
+    "FINDING (possible legacy bug, flagged not resolved) — find_an_address.js:36 branches `else if (await commonUserChargeHelper.doAddressesExistInLookupService(request, postcode))` and raises the NO-address-found error inside that branch. The predicate name asserts the opposite of the condition it guards. Either the helper is misnamed (returns 'no addresses exist') or the branch is inverted (a live bug that would show 'No address found' on successful lookups). No trace or test covers it — the traces only ever hit the success redirect. A human should read commonUserChargeHelper before the rebuild copies this control flow.",
+    "FINDING (shared page, blast radius) — this page is not CHED-PP-specific. The same page object is driven by CHED-P (:541) and CHED-D (:357), and three sibling CUC tests exercise it (ched-p-cuc.spec.ts:19, ched-d-cuc.spec.ts:24, ched-d-cuc-replacement-amendment.spec.ts:36). If the rebuilt CHED-PP app reimplements billing, a human should decide whether billing is a CHED-PP concern at all or a shared service across all four CHED types — the legacy answer is clearly 'shared'.",
+    "FINDING (progressive enhancement) — the back link is href=\"#\" and JS-driven (nonStandardPatterns[1]). The rebuild must render a real href. Determining the correct destination is a design question, not a transcription one: from this page the user came via the \"Change\" link on confirm-billing-details, so the natural back target is /billing-details/confirm — the same destination as the \"Cancel and return to notification\" link, which would make the two controls redundant. A human should decide whether both are needed.",
+    "FINDING (coverage gap) — the two secondary actions, \"Enter address manually\" and \"Cancel and return to notification\", are never clicked by any test and were never followed in any trace, and neither was the back link. All three destinations are therefore unverified from this entry point, though the two link hrefs ARE confirmed from the markup (/billing-details/address?source=IDM and /billing-details/confirm?source=IDM). \"Enter address manually\" is the documented escape hatch for the no-address-found error, so it is load-bearing for the error path the rebuild must support — yet it has zero behavioural coverage from either the traces or the tests.",
+    "FINDING (coverage gap) — this page has NO accessibility coverage. ched-pp-accessibility-tests.spec.ts walks the CHED-PP journey but never sets isCuc (re-verified v27: grep 'isCuc' across tests/ returns only the four *-cuc specs), so the whole billing sub-journey (find-address, select-address, change-contact-details, confirm-billing-details) is excluded from the axe sweep. The postcodes that DO appear in that spec (:158, '10000') are consignor-address values, not billing. This is consistent with BOTH the aria-describedby defect (nonStandardPatterns[3]) and the href=\"#\" back link (nonStandardPatterns[1]) surviving undetected. The rebuild should put the billing pages inside the a11y suite.",
+    "The Details content (\"Help for non-UK businesses\") was read from the frozen DOM's HTML rather than rendered text, since the <details> was collapsed at snapshot time (main innerText at action 87 shows the summary only). Copy is verbatim from the markup and includes a mailto link to CUCsupport@defra.gov.uk. No test ever expands the Details (no locator exists for it), so its rendered text is still unverified — though the markup is unambiguous.",
+    "Which external address-lookup service backs the postcode search, and what its contract is, remains a gap; the new app needs an equivalent postcode-lookup dependency identified. The legacy entry point is commonUserChargeHelper.doAddressesExistInLookupService(request, postcode) (find_an_address.js:36) — a human should trace that helper to the actual service. The QA repo does not stub or intercept this lookup anywhere (no route interception, no fixture) — so the tests hit the REAL service, meaning 'B693NE' must resolve to a real multi-result address list in the test environment. That is a hidden environmental dependency the rebuild's test strategy should not inherit.",
+    "CONFIRMED — happy path is POST → 302 → /billing-details/select-address?postcode=B693NE (request 1296 Location header, re-read v27). Corroborated from the QA side: ched-pp-workflows.ts:483 immediately calls billingSelectTheAddress.selectAddressAndContinue(billingAddressIndex) with billingAddressIndex defaulting to '2' (:193), i.e. the lookup for B693NE is expected to return at least 3 results — consistent with trace action 89 (re-verified v27: Select option, combobox 'Select the address', options [{\"index\":2}]). OPEN: the postcode is passed in the URL rather than held server-side in the draft (legacy construction confirmed at find_an_address.js:43-44) — the rebuild should decide whether to re-query from a query param or carry the lookup result in session/state.",
+    "The `?source=IDM` query param is threaded through every in-page link but is NOT propagated onto the successful-submit redirect (request 1296 Location has only ?postcode=). The legacy cause is now understood — find_an_address.js:43-44 builds the redirect from scratch with only ?postcode= — but WHETHER dropping it is deliberate or an oversight is still a gap, as is what IDM signifies and whether the new app needs an equivalent entry-point marker. No test references `source=IDM` anywhere — the param survives only because the tests click real links.",
+    "This page is CUC-only and is NOT a forced step even within a CUC journey — it is reached only by clicking \"Change\" against the address on confirm-billing-details (trace action 86; ConfirmBillingDetailsPage.ts:6-8; ched-pp-workflows.ts:481). A CUC user who accepts the pre-populated billing address never sees this page. Where the pre-populated address comes from is a gap — the QA repo never asserts it. Whether the rebuilt CHED-PP app has a Common User Charge billing flow at all remains a scoping question for a human.",
+    "NO DISCREPANCIES BETWEEN SOURCES — nothing the QA repo or the legacy source says contradicts anything the traces rendered. Every file:line citation in this document was re-read against the actual file in v27 and is accurate; the only corrections this wave were the confidence tags on the three validation messages and one arithmetic slip in the sibling-CUC-test count."
+  ]
+}

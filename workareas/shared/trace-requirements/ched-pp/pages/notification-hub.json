@@ -1,0 +1,640 @@
+{
+  "slug": "notification-hub",
+  "name": "Notification overview (task list hub)",
+  "url": "/notification/vnet/protected/notifications/:reference/overview",
+  "urlNote": "The :reference segment is the notification reference, NOT always a DRAFT id: it reads DRAFT.GB.2026.1526011 pre-submission (trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31) and CHEDPP.GB.2026.1526075 in amend mode (trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144). Template hrefs are authored as /protected/notifications/{{referenceNumber}}/... and are served under an additional /notification/vnet prefix.",
+  "pageTitle": "Notification Overview - Import and export applications - GOV.UK",
+  "caption": {
+    "draft": "DRAFT.GB.2026.1526011 - CHEDPP",
+    "amend": "CHEDPP.GB.2026.1526075 - V2",
+    "structure": "<span class=\"heading-tertiary\"> containing <span id=\"reference-number\"> plus a second span. In DRAFT the second span is an UNNAMED <span> - CHEDPP</span> (the CHED type suffix). In AMEND the second span is <span id=\"cved-version-number\"> - V2</span> and the type suffix is ABSENT. The two captions are therefore structurally different, not just different values.",
+    "confidence": "confirmed",
+    "evidence": "draft: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned outerHTML '<span class=\"heading-tertiary\"><span id=\"reference-number\">DRAFT.GB.2026.1526011</span><span> - CHEDPP</span></span>', #cved-version-number ABSENT. amend: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — eval returned '<span class=\"heading-tertiary\"><span id=\"reference-number\">CHEDPP.GB.2026.1526075</span><span id=\"cved-version-number\"> - V2</span></span>', parent innerText 'CHEDPP.GB.2026.1526075 - V2'. Both outside main (inMain=false)."
+  },
+  "heading": "Notification Hub",
+  "bodyCopy": [
+    "These sections can be completed in any order. You can save your progress and return at any time.",
+    "Amendment required",
+    "Amendment requested by automated test"
+  ],
+  "backLink": "Back",
+  "continueLabel": null,
+  "secondaryActions": [
+    "Dashboard",
+    "Attachments"
+  ],
+  "layout": "govuk-grid-row (id=hub-page) > govuk-grid-column-full",
+  "routeBehaviour": {
+    "summary": "THE HUB IS NOT FREELY REACHABLE — the route handler redirects away unless prerequisites are complete. This is a real behaviour of the page and was missing from earlier passes of this spec.",
+    "detail": "importer/overview.js:113-121: `if (prerequisitesCompleted(notification) || notification.status === SUBMITTED) { ...return h.view(isChedA ? 'importer/singleChedaOverview' : 'importer/overview', viewContext) } else { return h.redirect(prerequisites.getNextPageBasedOnPrerequisites(notification, null)) }`. prerequisitesCompleted (overview.js:166-168) = notification exists AND status is DRAFT or AMEND AND prerequisites.reviewPagePrerequisitesCompleted(notification). So a user who has not finished the prerequisite pages is bounced to the next prerequisite page rather than shown the hub. This explains why every trace enters the hub from 'About The Consignment' via Save and continue — the hub is the first page reachable once prerequisites clear, not a page you can jump to.",
+    "templateSplit": "SAME HANDLER SERVES TWO DIFFERENT HUB TEMPLATES: CHED-A renders importer/singleChedaOverview, every other type (including CHED-PP) renders importer/overview. This spec describes importer/overview only.",
+    "confidence": "inferred",
+    "evidence": "ipaffs-frontend-notification/service/src/routes/handlers/importer/overview.js:113-121 (view/redirect branch and the isChedA ternary), :166-168 (prerequisitesCompleted). No trace shows the redirect leg — every hub trace is already past prerequisites."
+  },
+  "structure": [
+    {
+      "element": "beta-banner",
+      "text": "Beta",
+      "govukComponent": "Phase banner (govuk-tag govuk-phase-banner__content__tag), rendered above main via common/betaBanner partial"
+    },
+    {
+      "element": "back-link",
+      "text": "Back",
+      "govukComponent": "Back link — id=back-link, class=\"govuk-back-link back-link--next-to-breadcrumbs\", href=\"#\" (JS-driven, not a real URL)"
+    },
+    {
+      "element": "breadcrumbs",
+      "text": "Dashboard",
+      "govukComponent": "Breadcrumbs (govuk-breadcrumbs__link), href=/notification/vnet/protected/notifications. Rendered via common/navigationLinks hideHubLink=true, alongside the back link."
+    },
+    {
+      "element": "caption",
+      "text": "DRAFT.GB.2026.1526011 - CHEDPP (draft) | CHEDPP.GB.2026.1526075 - V2 (amend)",
+      "govukComponent": "(bespoke span.heading-tertiary, rendered above main — see caption block for the two variants)"
+    },
+    {
+      "element": "secondary-button",
+      "text": "Attachments",
+      "govukComponent": "Button (govuk-button--secondary), rendered above main inside div#attachment-button"
+    },
+    {
+      "element": "h1",
+      "text": "Notification Hub",
+      "govukComponent": "govuk-heading-xl (id=page-primary-title)"
+    },
+    {
+      "element": "notification-banner",
+      "text": "Amendment required / Amendment requested by automated test",
+      "govukComponent": "Notification banner — amend mode only. Its title is itself an <h2> inside main."
+    },
+    {
+      "element": "paragraph",
+      "text": "These sections can be completed in any order. You can save your progress and return at any time.",
+      "govukComponent": "govuk-body govuk-!-margin-bottom-8"
+    },
+    {
+      "element": "h2",
+      "text": "About the consignment",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Origin of the import — status tag id=origin-of-import; link id=origin-of-the-import, aria-describedby=origin-of-import, href=<base>/consignment/page-2?source=hub",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Purpose of the consignment — status tag id=consignment-purpose; link id=purpose-of-consignment, aria-describedby=consignment-purpose, href=<base>/consignment/page-5?source=hub",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "h2",
+      "text": "Description of the goods",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Commodity — status tag id=commodity. Link id/href varies by commodity input method (see fields).",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Additional details — status tag id=additional-details; aria-describedby=additional-details, href=<base>/consignment/details (link has no id attribute)",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Transport to the Border Control Post (BCP) — status tag id=transport-before-bip; aria-describedby=transport-before-bip, href=<base>/transport/before-bip (link has no id attribute)",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Goods movement services — status tag id=goods-movement-services; aria-describedby=goods-movement-services, href=<base>/goods-movement-services (link has no id attribute). CHED-PP only within this template — see openQuestions (RESOLVED).",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Contact details — status tag id=responsible-person-contact-details; aria-describedby=responsible-person-contact-details, href=<base>/responsible-person/contact-details (link has no id attribute)",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Nominated contacts (optional) — status tag id=nominated-contacts; aria-describedby=nominated-contacts, href=<base>/nominated-contact (link has no id attribute)",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "h2",
+      "text": "Document",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Accompanying documents — status tag id=documents; aria-describedby=documents, href=<base>/documents/page-1 (link has no id attribute)",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "h2",
+      "text": "Traders",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Importer, Packer, Delivery address and Consignor — status tag id=traders; aria-describedby=traders, href=<base>/traders (link has no id attribute). This label is the isChedpp variant.",
+      "govukComponent": "Task list"
+    },
+    {
+      "element": "h2",
+      "text": "Complete notification",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "task-list-item",
+      "text": "Review and submit — status tag id=review, HARDCODED to 'To do'/grey in the template; link id=review-link, aria-describedby=review, href=<base>/review",
+      "govukComponent": "Task list"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Task list",
+      "govukClass": "govuk-task-list",
+      "modifiers": [
+        "govuk-task-list__item",
+        "govuk-task-list__item--with-link",
+        "govuk-task-list__link",
+        "govuk-task-list__name-and-hint",
+        "govuk-task-list__status"
+      ],
+      "count": 5,
+      "usage": "FIVE separate <ul class=\"govuk-task-list\"> lists render for CHED-PP, one per section H2, carrying 11 spokes in total. Each item is a link plus a status tag. The template defines SEVEN such sections; the 'Transport' and 'Billing' sections do not render for CHED-PP in any observed trace (see fields / openQuestions).",
+      "evidence": "confirmed: DOM count = 5 in all three hub traces — e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (eval: tasklists=5, spokeLinks=11), 9a918b862ad1b3599fc13659f757c25aaec78ada action 37 (tasklists=5, 11 spokes), 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (tasklists=5). Template's seven <ul class=\"govuk-task-list\"> VERIFIED at ipaffs-frontend-notification/service/src/views/importer/overview.html:38,78,211,291,367,432,453."
+    },
+    {
+      "component": "Tag",
+      "govukClass": "govuk-tag",
+      "modifiers": [
+        "govuk-tag--grey",
+        "govuk-tag--blue"
+      ],
+      "count": 11,
+      "usage": "Eleven per-spoke status tags inside main, EACH CARRYING A STABLE id equal to the owning link's aria-describedby (origin-of-import, consignment-purpose, commodity, additional-details, transport-before-bip, goods-movement-services, responsible-person-contact-details, nominated-contacts, documents, traders, review). grey = 'To do', blue = 'Started', red = 'Expired'. RED/EXPIRED IS NOT REACHABLE FOR MOST SPOKES — see the status-vocabulary openQuestion; only the Commodity and Accompanying-documents spokes can ever be Expired, and neither was observed. A twelfth .govuk-tag exists on the page (the 'Beta' phase-banner tag) but is outside main and unrelated. The QA automation repo exposes NO locator for any status tag, despite every tag having an id.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval enumerated 12 .govuk-tag, of which 11 are inMain=true with class 'govuk-tag phase-tag govuk-tag--grey|--blue', and index 0 is 'govuk-tag govuk-phase-banner__content__tag' text 'Beta' inMain=false. Status ids confirmed by a second eval over 'main .govuk-task-list__status strong' returning all 11 with non-empty ids. inferred (grey/blue/red mapping): ipaffs-frontend-notification/service/src/utils/handlebars.js:778-787 (progressTagClass: TODO->govuk-tag--grey, EXPIRED->govuk-tag--red, default->govuk-tag--blue). Absence of any status locator: ipaffs-qa-automation/page-objects/notification/NotificationHubPage.ts:1-25 (5 getters, all link locators, none for status)."
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-xl",
+        "govuk-heading-m"
+      ],
+      "count": 6,
+      "usage": "H1 'Notification Hub' at xl (id=page-primary-title); FIVE section H2s at m (About the consignment / Description of the goods / Document / Traders / Complete notification). In amend mode a sixth H2 appears inside main — but it is the notification banner's title ('Amendment required', class govuk-notification-banner__title), not a section heading. A further H2 'Support links' (govuk-visually-hidden) sits in the footer, outside main.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval over h1,h2,h3 returned exactly: H1.govuk-heading-xl 'Notification Hub' inMain=true; H2.govuk-heading-m x5 inMain=true; H2.govuk-visually-hidden 'Support links' inMain=false. H1 outerHTML = '<h1 class=\"govuk-heading-xl \" id=\"page-primary-title\">Notification Hub</h1>'. Amend-mode banner-title H2 at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — eval over 'main h2' returned ['H2|govuk-notification-banner__title|Amendment required', then the same five govuk-heading-m section H2s]."
+    },
+    {
+      "component": "Notification banner",
+      "govukClass": "govuk-notification-banner",
+      "modifiers": [
+        "notification-banner--inspection-alert",
+        "govuk-notification-banner__header",
+        "govuk-notification-banner__title",
+        "govuk-notification-banner__content"
+      ],
+      "count": 1,
+      "usage": "Amend-mode only. Title 'Amendment required', body = the inspector's free-text amendment reason. role=alert, id=success-banner. The observed body copy 'Amendment requested by automated test' is the literal string the test types into the inspector's amendment-reason box — it is test data, not product copy.",
+      "evidence": "confirmed: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — eval returned class='govuk-notification-banner notification-banner--inspection-alert', id='success-banner', role='alert', innerText='Amendment required\\n\\nAmendment requested by automated test'; title element = H2.govuk-notification-banner__title. Absent from both non-amend hub traces. String origin (inferred): ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:721."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-button--secondary",
+        "button-small",
+        "action-button"
+      ],
+      "count": 1,
+      "usage": "'Attachments' shortcut link styled as a secondary button, rendered ABOVE main (outside the grid) inside div.action-button-container#attachment-button. It is an <a>, not a <button> and not a form submit. Template-gated on NOT (isHighRiskEuCed or isChedD), so it always renders for CHED-PP. No test in the QA repo ever clicks it — the page object has no locator for it.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned outerHTML '<div class=\"action-button-container\" id=\"attachment-button\"><a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/documents/page-1\" class=\"govuk-button govuk-button--secondary button-small action-button\">Attachments</a></div>', inMain=false. Present in amend mode too: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (href=/notification/vnet/protected/notifications/CHEDPP.GB.2026.1526075/documents/page-1). inferred (gating): overview.html:10-16. Untested: NotificationHubPage.ts:1-25 has no Attachments locator."
+    },
+    {
+      "component": "Breadcrumbs",
+      "govukClass": "govuk-breadcrumbs__link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "A single 'Dashboard' breadcrumb link to the notifications list, rendered above main next to the back link. Rendered by the shared common/navigationLinks partial with hideHubLink=true.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned 'Dashboard' | class=govuk-breadcrumbs__link | href=/notification/vnet/protected/notifications | inMain=false. Also present in amend mode: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (Dashboard | /notification/vnet/protected/notifications). inferred (partial): overview.html:2-8."
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "id=back-link, href=\"#\" — a JS-driven back link, not a real URL. Carries a bespoke 'back-link--next-to-breadcrumbs' modifier because it sits alongside the Dashboard breadcrumb.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned 'Back' | id=back-link | class='govuk-back-link back-link--next-to-breadcrumbs' | href=# | inMain=false. Present in amend mode: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (#back-link PRESENT)."
+    },
+    {
+      "component": "Phase banner",
+      "govukClass": "govuk-phase-banner",
+      "modifiers": [
+        "govuk-phase-banner__content__tag"
+      ],
+      "count": 1,
+      "usage": "'Beta' tag above main, from the shared common/betaBanner partial. Service-wide chrome, not hub-specific.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — .govuk-tag index 0 = class 'govuk-tag govuk-phase-banner__content__tag', text 'Beta', inMain=false. inferred (partial): overview.html:1."
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": [
+        "govuk-grid-column-full"
+      ],
+      "count": 1,
+      "usage": "Full-width single column: div.govuk-grid-row#hub-page > div.govuk-grid-column-full. Note: full width, not the two-thirds default for a task list.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned #hub-page outerHTML '<div class=\"govuk-grid-row\" id=\"hub-page\"><div class=\"govuk-grid-column-full\"><h1 class=\"govuk-heading-xl \" ...'."
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "modifiers": [
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Intro paragraph under the H1.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — first main <p> = class 'govuk-body govuk-!-margin-bottom-8', text 'These sections can be completed in any order. You can save your progress and return at any time.'"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 11,
+      "usage": "Every task-list spoke link carries govuk-link alongside govuk-task-list__link (class='govuk-link govuk-task-list__link').",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval enumerated 11 .govuk-task-list__link, all with class 'govuk-link govuk-task-list__link'."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "phase-tag",
+      "whatItDoes": "Co-applied to all 11 status tags: class=\"govuk-tag phase-tag govuk-tag--grey\".",
+      "concern": "Legacy pre-v3 govuk-frontend class (the old beta/alpha phase-banner tag component), reused here as a styling hook on task-list status tags. Note the page's REAL phase banner uses a different class (govuk-phase-banner__content__tag), so 'phase-tag' here is bespoke and semantically meaningless in this position — dead weight carried forward from an old design system version, exactly the kind of accreted markup the rebuild should not copy.",
+      "govukAlternative": "Drop it entirely. govuk-tag + a colour modifier is the whole component; the GOV.UK Task list already styles govuk-task-list__status.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (all 11 in-main tags carry 'phase-tag'); template ipaffs-frontend-notification/service/src/views/importer/overview.html:48,69,97,129,162 (and every other spoke)"
+    },
+    {
+      "pattern": "'Review and submit' status is a HARDCODED literal, not a computed status",
+      "whatItDoes": "Unlike the other ten spokes — which render {{progressTagClass pages.<key>}} against a computed status — the Review spoke's tag is written into the template as a fixed string: <strong class=\"govuk-tag phase-tag govuk-tag--grey\" id=\"review\">To do</strong>. There is no variable. It reads 'To do' in grey forever, in every state, for every user.",
+      "concern": "The tag looks like a status and is indistinguishable from the ten real ones, but carries ZERO information — it cannot change. A user who has completed every section still sees 'Review and submit — To do', which is exactly what the amend trace shows. This is worse than having no tag: it is a status display that lies by omission, and it is the single clearest example of the hub's task-list being cargo-culted rather than modelled. The rebuild must either compute this status or omit the tag.",
+      "govukAlternative": "Either compute a real status for the review task, or drop the tag and render Review as a plain call-to-action outside the task list (the GOV.UK Task list pattern puts the submit action after the list, not inside it as a fake task).",
+      "evidence": "confirmed (rendering): trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 and 9a918b862ad1b3599fc13659f757c25aaec78ada action 37 and 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — 'Review and submit' reads 'To do' grey in all three, including the amend trace where nine other spokes read 'Started'. confirmed (hardcoding): overview.html:515-531 — the <strong class=\"govuk-tag phase-tag govuk-tag--grey\" id=\"review\">To do</strong> literal, contrasted with {{progressTagClass pages.X}} at overview.html:48,69,97,113,129,145,162,183,200,228,249,265,281,302,323,338,355,378,416,443. No 'review' key exists in setPageStatus (overview.js:196-233)."
+    },
+    {
+      "pattern": "Back link (href=\"#\") and Breadcrumbs rendered together",
+      "whatItDoes": "The page shows a 'Back' link AND a 'Dashboard' breadcrumb side by side, with a bespoke 'back-link--next-to-breadcrumbs' modifier to make them sit together. The back link's href is literally '#', so it depends on JavaScript to do anything.",
+      "concern": "The GOV.UK Design System says use a back link OR breadcrumbs, not both — they are alternative ways to express the same 'go up/back' affordance, and showing both is redundant and confusing. Worse, href=\"#\" means the back link is inert without JS, which fails progressive enhancement: a no-JS user gets a link that does nothing.",
+      "govukAlternative": "Pick one. For a hub the user re-enters repeatedly, breadcrumbs (or a single 'Back to dashboard' link) is usually right. If a back link stays, give it a real href so it works without JS.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — 'Back' id=back-link class='govuk-back-link back-link--next-to-breadcrumbs' href=#; 'Dashboard' class=govuk-breadcrumbs__link href=/notification/vnet/protected/notifications. inferred (partials): overview.html:2-8"
+    },
+    {
+      "pattern": "notification-banner--inspection-alert",
+      "whatItDoes": "Custom modifier on the amend-mode govuk-notification-banner, presumably recolouring it for the inspection/amendment case.",
+      "concern": "Bespoke CSS extending a Design System component beyond its published modifiers. The Notification banner only ships a 'success' variant; anything else is meant to be the default (blue) banner.",
+      "govukAlternative": "Use the default govuk-notification-banner with no modifier, or the Warning text component if the intent is 'you must act'.",
+      "evidence": "confirmed: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — eval returned class='govuk-notification-banner notification-banner--inspection-alert'"
+    },
+    {
+      "pattern": "id=\"success-banner\" with role=\"alert\" on the 'Amendment required' banner",
+      "whatItDoes": "The amendment-required banner reuses the id and the success-banner role wiring from the success-banner partial.",
+      "concern": "Semantic mismatch — an amendment-required message is not a success message. The id is a misleading hook and role=alert on a banner present at page load is heavier than the Design System's default role=region. Suggests one banner partial was copy-pasted for a second purpose.",
+      "govukAlternative": "govuk-notification-banner with role=\"region\" and aria-labelledby, distinct id, no success framing.",
+      "evidence": "confirmed: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (id=success-banner, role=alert observed directly)"
+    },
+    {
+      "pattern": "action-button-container / action-button / button-small",
+      "whatItDoes": "Wraps the 'Attachments' link (in div#attachment-button) and shrinks it, positioning it outside main above the page heading.",
+      "concern": "Bespoke layout + a non-existent 'small button' size (GOV.UK Buttons have no small variant). It is also a navigation link dressed as a button, sitting outside the main landmark, which is both a11y-awkward and outside the grid.",
+      "govukAlternative": "If it must stay, a plain govuk-link inside main. The Attachments spoke is already reachable via the 'Accompanying documents' task-list item — this shortcut may be redundant in the rebuild.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (outerHTML observed) and 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144; inferred (markup): overview.html:10-16"
+    },
+    {
+      "pattern": "Five sibling <ul class=\"govuk-task-list\"> lists instead of one",
+      "whatItDoes": "Each section H2 opens its own govuk-task-list <ul> rather than one list with section headings. Five render for CHED-PP; the template defines seven.",
+      "concern": "Not wrong per se — the GOV.UK Task list pattern does document multiple lists under headings — but worth naming because the rebuild should decide deliberately rather than inherit. Only 11 spokes across 5 sections is a thin ratio (three sections — Document, Traders, Complete notification — hold exactly one item each).",
+      "govukAlternative": "Standard Task list with headings; consider collapsing single-item sections.",
+      "evidence": "confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (tasklists=5, 11 spokes, 5 section H2s); same in 9a918b862ad1b3599fc13659f757c25aaec78ada action 37 and 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144"
+    },
+    {
+      "pattern": "The tests ignore the handles the markup already provides",
+      "whatItDoes": "Of the 11 spoke links, the QA repo can reach only two by role+name ('Commodity', 'Goods movement services'). 'Additional details' is reached by getByText('Additional details', {exact:true}) — a text locator that does not assert the thing clicked is a link at all. Eight spokes have no locator whatsoever. Six of the eleven LINKS carry no id attribute.",
+      "concern": "CORRECTED FROM AN EARLIER PASS OF THIS SPEC, which asserted the hub 'gives automation almost nothing to hold onto (no ids...)'. That is false for the statuses: ALL ELEVEN status tags carry a stable id (origin-of-import, consignment-purpose, commodity, additional-details, transport-before-bip, goods-movement-services, responsible-person-contact-details, nominated-contacts, documents, traders, review) — the exact values the links point at via aria-describedby. So the accessible association and the test handles both already exist; the tests simply never use them. The real disease is thinner than previously stated: (a) six spoke LINKS lack ids, and (b) the suite has chosen prose locators over the ids that are sitting there. The 'Additional details' getByText locator remains genuinely brittle.",
+      "govukAlternative": "Address statuses by their existing ids and links by role+name; add ids to the six links that lack them. No new markup contract is needed for statuses — only test discipline.",
+      "evidence": "confirmed (status ids exist): trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval over 'main .govuk-task-list__status strong' returned all 11 with non-empty ids matching each link's aria-describedby. confirmed (missing link ids): same eval over '.govuk-task-list__link' — additional-details, transport-before-bip, goods-movement-services, responsible-person-contact-details, nominated-contacts, documents and traders links render id=NONE. inferred (locator choices): ipaffs-qa-automation/page-objects/notification/NotificationHubPage.ts:6-8 (getByText, not getByRole), :10-12 and :18-20 (the only two getByRole link locators), :14-16 (#commodity-details-link — the sole id-based locator, and it is the CHED-D branch)."
+    },
+    {
+      "pattern": "Spoke labels are not stable text — they are template variables switched on CHED type",
+      "whatItDoes": "At least three spoke labels swap string per CHED type: the transport spoke renders 'Transport to the Border Control Post (BCP)' for CHED-PP but 'Transport to the port of entry' for CHED-P; 'Purpose of the consignment' and 'Importer, Packer, Delivery address and Consignor' are likewise conditional branches.",
+      "concern": "One hub template serving three products by string-switching (CHED-A has its own template — see routeBehaviour). The QA repo has to model this as separate locators (linkTransportToPortOfEntry vs the CHED-PP label), which is direct evidence the divergence is real and user-visible, not cosmetic. The rebuild is CHED-PP-only and should hard-code the CHED-PP strings rather than inherit a variable.",
+      "govukAlternative": "Fixed labels for the single product this service covers.",
+      "evidence": "inferred: ipaffs-qa-automation/page-objects/notification/NotificationHubPage.ts:22-24 (linkTransportToPortOfEntry) used only by CHED-P at tests/notification/ched-p/ched-p-poe-validation.spec.ts:52. confirmed (CHED-PP rendering): trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31"
+    }
+  ],
+  "fields": [
+    {
+      "name": null,
+      "label": "(no form controls on this page)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned controlsInMain=0, buttonsInMain=0. The hub is a pure navigation page: 11 links + 11 status tags, no visible inputs, no form, no primary submit button. CORRECTED FROM AN EARLIER PASS, which stated the document has '3 controls and 4 buttons ... cookie banner Accept/Settings, footer Cookies link' — that conflated two different element sets. The verified counts are: docControls=3, all HIDDEN inputs and none of them cookie-related (INPUT|hidden|crumb — a CSRF token; INPUT|hidden|returnUrl; INPUT|hidden|fromFooterHeader); docButtons=2 (BUTTON 'Accept Cookies' class 'govuk-button button--cookie'; BUTTON 'Cookies' class 'govuk-footer__link footer__button-link'). A third .govuk-button element exists ('Cookie Settings') but is an <a>, as is the 'Attachments' shortcut — hence 3 .govuk-button elements but only 2 <button> tags. All are shared chrome outside main. Corroborated by the page object, which exposes only link locators and no button/input: ipaffs-qa-automation/page-objects/notification/NotificationHubPage.ts:6-24."
+    },
+    {
+      "name": "origin-of-the-import",
+      "label": "Origin of the import",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "Started"
+      ],
+      "confidence": "confirmed",
+      "evidence": "SPOKE (not a field) — trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31: label 'Origin of the import', link id=origin-of-the-import, aria-describedby=origin-of-import, status tag id=origin-of-import, href=/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/consignment/page-2?source=hub. Status 'Started' observed in all three hub traces (e10b7cd action 31, 9a918b action 37, 1f5b6ee action 144). OPTIONS CORRECTED: 'Expired' REMOVED — this spoke's status comes from getStatus (overview.js:197-202), which delegates to getStatusForCondition (overview.js:174-176: `return condition ? STARTED : TODO`) and is strictly BINARY. Expired is unreachable here. Label corroborated by ipaffs-qa-automation/page-objects/notification/AmendNotificationPage.ts:6-8."
+    },
+    {
+      "name": "purpose-of-consignment",
+      "label": "Purpose of the consignment",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "Started"
+      ],
+      "confidence": "confirmed",
+      "evidence": "SPOKE — trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31: link id=purpose-of-consignment, aria-describedby=consignment-purpose, status tag id=consignment-purpose, href=<base>/consignment/page-5?source=hub. Status 'Started' in all three hub traces. OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:203), binary STARTED/TODO per overview.js:174-176. Label is the CHED-PP branch of a 3-way conditional (inferred: overview.html:59-65)."
+    },
+    {
+      "name": "bulk-commodity-details-link | bulk-upload-commodity-details-link",
+      "label": "Commodity",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started",
+        "Expired"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "Link target varies by commodity input method: CSV upload -> id=bulk-upload-commodity-details-link, href=<base>/commodity/bulk-upload-review?fromHubPage=true. Manual entry (CHED-PP) -> id=bulk-commodity-details-link, href=<base>/commodity/details/bulk. A third branch (id=commodity-details-link, href=<base>/commodity/details) exists in the template but is the NON-CHED-PP fallback and is unreachable for CHED-PP — CORROBORATED by the tests: the page object's #commodity-details-link locator (linkCommodityNonBulk) is referenced exactly once in the whole repo, from the CHED-D workflow.",
+      "confidence": "confirmed",
+      "destination": "Commodity Extended Description page — inferred (test-confirmed, not trace-confirmed): clicking this spoke in manual mode is immediately followed by commodityExtendedDescription interactions at ched-pp-workflows.ts:328->332, and the a11y suite names the resulting page 'Commodity Extended Description Page' at tests/accessibility/ched-pp-accessibility-tests.spec.ts:62-65.",
+      "evidence": "manual variant: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — eval returned Commodity id=bulk-commodity-details-link href=/notification/vnet/protected/notifications/DRAFT.GB.2026.1526011/commodity/details/bulk, status 'To do'; the action-31 click log independently resolves getByRole('link',{name:'Commodity'}) to that exact element. CSV variant: trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 37 — eval returned Commodity id=bulk-upload-commodity-details-link href=<base>/commodity/bulk-upload-review?fromHubPage=true, status 'Started'. Status tag id=commodity in both. 'Expired' RETAINED for this spoke ALONE (with 'Origin'/'documents' excepted below) and is genuinely reachable but NOT observed — inferred: overview.js:204 uses getCommodityStatus, and overview.js:234-236 `getCommodityStatus = (fieldList, notification, isValid) => isValid === false ? getStatus(fieldList, notification) : EXPIRED`, i.e. an invalid/expired commodity code yields EXPIRED (rendered red via handlebars.js:778-787). inferred (conditional): overview.html:82-91. Test corroboration: NotificationHubPage.ts:10-12 (linkCommodity = getByRole('link', {name: 'Commodity'})); used at workflows/notification/ched-pp-workflows.ts:328 and :833. NotificationHubPage.ts:14-16 (linkCommodityNonBulk = #commodity-details-link) used ONLY at workflows/notification/ched-d-workflows.ts:612 — CHED-D, never CHED-PP. The 'Commodity' accessible name is the ONLY hub locator shared by all four CHED types — ched-a-workflows.ts:295/:574/:965, ched-p-workflows.ts:326/:707/:887, ched-d-workflows.ts:225 and all four a11y specs (ched-pp:62, ched-a:55, ched-p:70, ched-d:53) all click it, so it is the single most load-bearing string on this page."
+    },
+    {
+      "name": "additional-details",
+      "label": "Additional details",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "Unconditional in the template. No id attribute on the link (status tag id=additional-details). NOTE: in CSV-upload mode this spoke — not the Commodity spoke — is the tests' hub exit. The CHED-PP CSV workflow clicks 'Additional details' from the hub and lands on the Commodity Extended Description page (total gross weight), i.e. the spoke label and its destination do not obviously correspond. The manual-entry mode's 'Commodity' spoke lands on that SAME Commodity Extended Description page, so the two modes reach one destination via two differently-labelled spokes with different hrefs.",
+      "confidence": "confirmed",
+      "evidence": "SPOKE — trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (status 'To do'); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (status 'Started'). aria-describedby=additional-details, href=<base>/consignment/details, link id=NONE. Clicked at trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 37 — the trace action log confirms locator getByText('Additional details', {exact: true}) resolved to the href=<base>/consignment/details link and navigated there. OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:207), binary per overview.js:174-176. Test corroboration: NotificationHubPage.ts:6-8; CSV-mode hub exit at workflows/notification/ched-pp-workflows.ts:290, immediately followed by commodityExtendedDescription.inputTotalGrossWeightinKgs at :292 (the workflow's own comment at :289 reads '// Additional Details Page' but the very next comment at :291 reads '// Commodity Extended Description Page' — the test author noticed the jump and did not explain it). Manual-mode counterpart landing on the same page: ched-pp-workflows.ts:328 (linkCommodity.click()) followed by commodityExtendedDescription.btnAddCommodity at :332, and independently at tests/accessibility/ched-pp-accessibility-tests.spec.ts:62-65."
+    },
+    {
+      "name": "transport-before-bip",
+      "label": "Transport to the Border Control Post (BCP)",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "Rendered when NOT (isHighRiskEuCveda or isNewJourneyChedD or isChedp) — so always shown for CHED-PP. No link id (status tag id=transport-before-bip). Label comes from a {{transportToBipTitle}} variable, so the string is type-dependent; 'Transport to the Border Control Post (BCP)' is the CHED-PP rendering. The CHED-P rendering is 'Transport to the port of entry' — the tests carry a separate locator for it, which independently confirms the label really does switch. NOTE: this spoke sits under the 'Description of the goods' H2, NOT under the template's separate 'Transport' section (which does not render for CHED-PP).",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (status 'To do', aria-describedby=transport-before-bip, href=<base>/transport/before-bip); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (status 'Started'). OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:209), binary per overview.js:174-176. inferred (condition/label): overview.html:152, label variable at overview.html:158. Variant corroboration: NotificationHubPage.ts:22-24 (linkTransportToPortOfEntry), used only at tests/notification/ched-p/ched-p-poe-validation.spec.ts:52 (CHED-P). No CHED-PP test ever clicks this spoke from the hub."
+    },
+    {
+      "name": "goods-movement-services",
+      "label": "Goods movement services",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "Template wraps this in {{#if isChedpp}} (overview.html:169-171), i.e. CHED-PP only WITHIN THIS TEMPLATE. The apparent contradiction with a CHED-A test clicking the same spoke is now RESOLVED — CHED-A renders a different hub template entirely (see openQuestions). No link id (status tag id=goods-movement-services). CAVEAT: the same goodsMovementServices partial is ALSO included twice inside the 'Transport' section (overview.html:386 and :391), so a CHED-PP notification that triggers that section could render this spoke TWICE.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (status 'To do', aria-describedby=goods-movement-services, href=<base>/goods-movement-services); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (status 'Started'). OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:227), binary per overview.js:174-176. confirmed (gate): overview.html:169-171 read directly — `{{#if isChedpp}}{{> importer/overview/goodsMovementServices}}{{/if}}`. confirmed (four include sites): grep of views/importer/ returns overview.html:170, overview.html:386, overview.html:391, singleChedaOverview.html:224."
+    },
+    {
+      "name": "responsible-person-contact-details",
+      "label": "Contact details",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "COMPOUND GATE (an earlier pass of this spec recorded only the inner half): outer {{#and (or isHighRiskEuImport isChedpp) (not isChedp)}} at overview.html:172, AND inner {{#if (not (or isHighRiskEuCveda isHighRiskEuCed))}} at overview.html:173. For CHED-PP the outer is satisfied (isChedpp true, isChedp false), so the conclusion is unchanged — always shown for CHED-PP. No link id (status tag id=responsible-person-contact-details).",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (status 'To do', aria-describedby=responsible-person-contact-details, href=<base>/responsible-person/contact-details); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (status 'Started'). OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:219), binary per overview.js:174-176. confirmed (compound gate): overview.html:172-173 read directly. No test clicks this spoke from the hub — the QA repo has no locator for it."
+    },
+    {
+      "name": "nominated-contacts",
+      "label": "Nominated contacts (optional)",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "To do"
+      ],
+      "conditionalOn": "Rendered when showNominatedContactsLink. The only spoke whose label carries the '(optional)' suffix. No link id (status tag id=nominated-contacts).",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — label 'Nominated contacts (optional)', aria-describedby=nominated-contacts, href=<base>/nominated-contact. Status 'To do' in ALL three hub traces, including the amend trace where every other exercised section reads 'Started' (1f5b6eef3d110815e713ed79998cec2cb53026ee action 144) — this spoke is never exercised. OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus(['nominatedContacts'], notification) (overview.js:220), binary per overview.js:174-176. 'Started' remains unobserved but is reachable. inferred (condition): overview.html:190. Never exercised by any CHED-PP test: NominatedContactsPage.ts exists but no CHED-PP workflow or spec navigates to it from the hub."
+    },
+    {
+      "name": "documents",
+      "label": "Accompanying documents",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started",
+        "Expired"
+      ],
+      "observedValues": [
+        "To do",
+        "Started"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 (status 'To do', aria-describedby=documents, href=<base>/documents/page-1, link id=NONE); trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 (status 'Started'). href is the same target as the 'Attachments' shortcut button above main — confirmed identical in the action 31 eval. 'Expired' RETAINED and genuinely reachable but NOT observed — inferred: overview.js:210-213 uses getVeterinaryInfoStatus, and overview.js:245-251 returns EXPIRED when `notification.status === DRAFT && await approvedEstablishments.hasExpiredEstablishment(request, notification) && notification.type !== CVEDP` — an expired approved-establishment yields a red 'Expired' tag on this spoke. The CHED-PP workflow reaches the documents page linearly (via Save and continue), never by clicking this spoke: workflows/notification/ched-pp-workflows.ts:38-127 exposes a stopAtAccompanyingDocuments flag but no hub-click path."
+    },
+    {
+      "name": "traders",
+      "label": "Importer, Packer, Delivery address and Consignor",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "observedValues": [
+        "Started"
+      ],
+      "conditionalOn": "Label is the {{#if isChedpp}} branch of a 3-way conditional (overview.html:313-319); other CHED types render a different string. No link id (status tag id=traders).",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — aria-describedby=traders, href=<base>/traders. Status 'Started' in all three hub traces. OPTIONS CORRECTED: 'Expired' REMOVED — status is getStatus (overview.js:214), binary per overview.js:174-176. 'To do' remains unobserved for this spoke but is reachable. inferred (conditional): overview.html:313-319."
+    },
+    {
+      "name": "review-link",
+      "label": "Review and submit",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do"
+      ],
+      "observedValues": [
+        "To do"
+      ],
+      "conditionalOn": "The status is NOT computed — it is a hardcoded literal in the template. 'To do' (grey) is the ONLY value this tag can ever display, in any state. See the nonStandardPatterns entry.",
+      "confidence": "confirmed",
+      "evidence": "trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — link id=review-link, aria-describedby=review, status tag id=review, href=<base>/review. Clicked in amend mode at trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — the click log resolves getByRole('link',{name:'Review and submit'}) to <a id=\"review-link\" aria-describedby=\"review\" href=\"/notification/vnet/protected/notifications/CHEDPP.GB.2026.1526075/review\"> and navigates there. Status 'To do' in ALL three hub traces — including the amend trace where every other exercised spoke reads 'Started'. OPTIONS CORRECTED from ['To do','Started','Expired'] to ['To do'] ONLY: overview.html:515-531 hardcodes <strong class=\"govuk-tag phase-tag govuk-tag--grey\" id=\"review\">To do</strong> with no {{progressTagClass}} helper and no variable, and setPageStatus (overview.js:196-233) defines no 'review' key at all. The constant 'To do' across traces is therefore not evidence about gating — it is a static string. Behaviour corroborated by the amend workflow: workflows/notification/ched-pp-workflows.ts:730-737 opens the amend hub and clicks 'Review and submit' as the VERY NEXT action, touching no other spoke, and the test passes. The locator is misfiled on ReviewNotificationPage.ts:18-19 even though the link lives on the hub — used from the hub at ched-pp-workflows.ts:734, ched-d-workflows.ts:538, ched-a-workflows.ts:502."
+    },
+    {
+      "name": "(Transport section — whole H2 + task list)",
+      "label": "Transport",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "An ENTIRE additional section (H2 'Transport' + its own <ul class=\"govuk-task-list\">) gated on {{#or isCveda transporterDetailsRequired isNewJourneyChedD isChedp}}. Crucially 'transporterDetailsRequired' is NOT CHED-type-gated — it is read straight off the notification at overview.js:118 (`viewContext.transporterDetailsRequired = _.get(notification, 'partOne.transporterDetailsRequired', false)`) — so a CHED-PP notification requiring transporter details may render this whole section. Never rendered in any CHED-PP trace examined (all three show exactly 5 task lists).",
+      "confidence": "gap",
+      "evidence": "confirmed (gate + H2/ul): ipaffs-frontend-notification/service/src/views/importer/overview.html:363-367 read directly — `{{#or isCveda transporterDetailsRequired isNewJourneyChedD isChedp }}<h2 class=\"govuk-heading-m\">Transport</h2><ul class=\"govuk-task-list\">`. confirmed (the flag is notification-driven, not type-driven): overview.js:118. No trace evidence either way — tasklists=5 in e10b7cd action 31, 9a918b action 37 and 1f5b6ee action 144, and no 'Transport' H2 appears in main in any of them. Its spokes, labels and statuses are unknown. See openQuestions."
+    },
+    {
+      "name": "(Billing section — whole H2 + task list)",
+      "label": "Billing",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "An entire additional section gated on {{#if (and showBillingSection isChedD)}} — explicitly CHED-D only, therefore NOT reachable for CHED-PP. Recorded here only so the rebuild knows it was considered and excluded.",
+      "confidence": "inferred",
+      "evidence": "confirmed (gate): ipaffs-frontend-notification/service/src/views/importer/overview.html:430-432 read directly — `{{#if (and showBillingSection isChedD)}}<h2 class=\"govuk-heading-m\">Billing</h2><ul class=\"govuk-task-list\">`. The isChedD conjunct hard-excludes CHED-PP. Consistent with all three CHED-PP traces showing tasklists=5 and no 'Billing' H2."
+    },
+    {
+      "name": "catch-certificates",
+      "label": "Catch certificates",
+      "control": "text",
+      "required": false,
+      "options": [
+        "To do",
+        "Started"
+      ],
+      "conditionalOn": "Rendered when (not containsNonSPSIUUCommodities) AND showCatchCertificatesLink. Never rendered in any CHED-PP trace examined, and never driven by any CHED-PP test.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/overview.html:103-119 — condition is NOT gated on CHED type, so it may be reachable for CHED-PP. Status would be getStatus (overview.js:205), binary STARTED/TODO. No trace evidence either way. Test corroboration of the gap: the QA repo has catch-certificate page objects (AddCatchCertificateDetailsPage.ts, AttachCatchCertificatePage.ts, CatchCertificateNeededPage.ts, ManageCatchCertificatesPage.ts) but no CHED-PP spec or workflow references them, and NotificationHubPage.ts has no catch-certificates locator."
+    },
+    {
+      "name": "catch-certificatesIUU",
+      "label": "(label not observed — 3-way conditional on isCatchCertificateRequired / anyCatchCertificatesUploaded)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Rendered when containsNonSPSIUUCommodities. Never rendered in any CHED-PP trace examined.",
+      "confidence": "gap",
+      "evidence": "overview.html:212-234. Status would be getStatus (overview.js:206), binary. Not type-gated in the template; unknown whether a CHED-PP consignment can carry non-SPS IUU commodities. No test in the QA repo drives this spoke for any CHED type."
+    },
+    {
+      "name": "latest-health-cert-status",
+      "label": "(label not observed)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Rendered under the Document section; content varies on isRetrospectiveCloningEnabled / isLatestHealthCertificateCloned. Never rendered in any CHED-PP trace examined.",
+      "confidence": "gap",
+      "evidence": "overview.html:239-244. The QA repo has LatestHealthCertificatePage.ts and a clone entry point (AmendNotificationPage.ts:29-31, btnCloneDigitalHealthCertificate = #cloning-search-button), but the only test exercising cloning is CHED-A (tests/notification/ched-a/ched-a-version.spec.ts:57). No CHED-PP coverage."
+    },
+    {
+      "name": "charity",
+      "label": "(label not observed)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Rendered under the Traders section when showCharityInformation. Never rendered in any CHED-PP trace examined.",
+      "confidence": "gap",
+      "evidence": "overview.html:292-307 (status tag id=charity at overview.html:302, status from getStatus(['importingFromCharity'], notification) at overview.js:221 — binary). No charity page object and no test reference anywhere in the QA repo — this branch is untested for every CHED type."
+    },
+    {
+      "name": "cved-version-number",
+      "label": "(version suffix on the reference number — observed value ' - V2')",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Amend/version context only. Element id=cved-version-number is a <span> inside <span class=\"heading-tertiary\">, ABOVE main, immediately after <span id=\"reference-number\">. PRESENT in amend mode; ABSENT in draft mode, where the sibling span instead carries the CHED type suffix ' - CHEDPP' and has no id.",
+      "confidence": "confirmed",
+      "evidence": "CONFIDENCE UPGRADED FROM 'inferred' — an earlier pass of this spec marked this a gap and asked a human whether an amended CHED-PP hub shows a version suffix, but the amend trace it already cited answers it directly. Presence confirmed: trace 1f5b6eef3d110815e713ed79998cec2cb53026ee action 144 — eval returned outerHTML '<span id=\"cved-version-number\"> - V2</span>', innerText '- V2', textContent ' - V2', tagName SPAN, className '' (no class), inMain=false, parent '<span class=\"heading-tertiary\"><span id=\"reference-number\">CHEDPP.GB.2026.1526075</span><span id=\"cved-version-number\"> - V2</span></span>', parent innerText 'CHEDPP.GB.2026.1526075 - V2'. Absence in draft confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31 — #cved-version-number ABSENT, .heading-tertiary innerText 'DRAFT.GB.2026.1526011 - CHEDPP'. So the element DOES live on the hub, and an amended CHED-PP hub DOES display '- V2'. Consumed by ipaffs-qa-automation/page-objects/notification/AmendNotificationPage.ts:25-27 and :33-43 (versionNumber() parses /-V(\\d+)/i); exercised only by CHED-A at tests/notification/ched-a/ched-a-version.spec.ts:33 and :69."
+    },
+    {
+      "name": "(hub return target — 'Save and return to hub' on downstream spoke pages)",
+      "label": "Save and return to hub",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Not an element OF the hub, but a behaviour that defines it: downstream spoke pages render a btnSaveAndReturnToHub that returns the user here, making the hub a genuine re-entry point rather than a one-way gate. CHED-PP tests never use it — they use btnSaveAndReview instead, which returns to the Review page.",
+      "confidence": "inferred",
+      "evidence": "Used from the hub by other CHED types: tests/notification/ched-a/ched-a-manipulation.spec.ts:44 and :50 (countryOfOrigin.btnSaveAndReturnToHub, goodsMovementServices.btnSaveAndReturnToHub — both VERIFIED by reading the file), ched-d-manipulation.spec.ts:46, ched-p-manipulation.spec.ts:58. Every CHED-PP amend path instead uses btnSaveAndReview: tests/notification/ched-pp/ched-pp-manipulation.spec.ts:71, :75, :79. No CHED-PP trace shows a return-to-hub round trip."
+    }
+  ],
+  "validationMessages": [],
+  "legacyEnrichment": {
+    "outcome": "No validation copy or field mandatoriness to add — this page is a pure navigation task-list hub with zero form controls (confirmed: trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 31, controlsInMain=0, buttonsInMain=0). Validation belongs to the downstream spoke pages, not the hub.",
+    "validationSearch": "legacy: grep for 'overview'/'hub'/'Notification Hub' in ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties returned NO matches — there is no hub-level validation message. validationMessages[] therefore correctly stays empty. Any CHED-PP validation copy lives against the spoke pages' own fields (Origin/Purpose/Commodity/etc.), which are separate page specs.",
+    "copyReconciliation": "legacy: template ipaffs-frontend-notification/service/src/views/importer/overview.html corroborates every confirmed rendered string with NO discrepancy — primaryTitle 'Notification Hub' (overview.html:25 via common/pageTitle), intro paragraph 'These sections can be completed in any order. You can save your progress and return at any time.' (overview.html:33-34), and the five CHED-PP section H2s 'About the consignment' (:37), 'Description of the goods' (:77), 'Document' (:210), 'Traders' (:290), 'Complete notification' (:452). The two non-CHED-PP section H2s 'Transport' (:366) and 'Billing' (:431) are template-present but gated out for CHED-PP, matching the openQuestions.",
+    "mandatoriness": "legacy: the model @NotNull CHED-PP groups (PartOne.java etc.) govern whether each SECTION's underlying data is mandatory for submission, but they do NOT translate to a 'required' flag on this page — the hub carries no form fields, only navigation spokes, so every field entry here keeps required=false meaning 'no form control on this page'. Spoke-level mandatoriness is a property of each spoke's OWN page spec, not the hub. The one requiredness signal the hub itself surfaces is the 'Nominated contacts (optional)' label (overview.html:190 region; the only spoke carrying the '(optional)' suffix) — legacy-consistent with nominated contacts being non-mandatory for CHED-PP. Do not conflate section data-mandatoriness with a hub form-field requiredness.",
+    "confidence": "legacy"
+  },
+  "confidence": "gap",
+  "openQuestions": [
+    "STATUS VOCABULARY — 'Expired' IS NOT REACHABLE FOR NINE OF THE ELEVEN SPOKES, and there is no 'Completed' at all. CORRECTED THIS PASS: an earlier version listed options ['To do','Started','Expired'] on all 11 spokes at confidence 'confirmed'. The constant set is indeed exactly three values (hubPageStatus at constants.js:107-111 — STARTED: 'Started' (:108), TODO: 'To do' (:109), EXPIRED: 'Expired' (:110), read verbatim), mapped to blue/grey/red at handlebars.js:778-787. But the generic status function is BINARY: getStatusForCondition (overview.js:174-176) is literally `return condition ? STARTED : TODO`, and getStatus (overview.js:170-172) just delegates to it. Only THREE helpers can ever emit EXPIRED — getCommodityStatus (:234-236, expired commodity code), getVeterinaryInfoStatus (:245-251, expired approved establishment) and getEstablishmentStatus (:253-259) — and of the eleven CHED-PP spokes only 'Commodity' (:204) and 'Accompanying documents' (:210) use one. The other nine call plain getStatus and are Started/To-do only. 'Review and submit' is narrower still: its tag is a HARDCODED literal (overview.html:515-531), so its only possible value is 'To do'. Separately, no 'Completed' status exists anywhere: a user can never see a spoke marked done, and the amend trace (1f5b6eef action 144) shows a fully-completed notification whose sections ALL still read 'Started'. That is a significant departure from the GOV.UK Task list pattern (which expects 'Completed') and the rebuild should decide deliberately whether to introduce a real completed state. 'Expired' (red) was not observed in any trace. CORROBORATION: the only 'Completed' string in the entire QA repo is asserted against the INSPECTOR's decision hub, a different page (tests/notification/ched-pp/ched-pp-hmi-checks.spec.ts:44).",
+    "RESOLVED THIS PASS — 'Goods movement services' IS CHED-PP-only within this template; the CHED-A contradiction was a different template. An earlier pass left this 'DISPUTED — a human should confirm', because tests/notification/ched-a/ched-a-manipulation.spec.ts:47 clicks pages.notificationHub.linkGoodsMovementServices from the hub in a CHED-A amend flow (VERIFIED by reading :42-52 — the comment reads 'Amend GVMS/CTC settings (required when changing EU country)'). Two greps settle it. (1) The route handler picks the hub template by CHED type: routes/handlers/importer/overview.js:119 — `return h.view(isChedA ? 'importer/singleChedaOverview' : 'importer/overview', viewContext)`. CHED-A gets a DIFFERENT hub template. (2) grep of views/importer/ for the goodsMovementServices partial returns four include sites: overview.html:170 (inside {{#if isChedpp}}), overview.html:386 and :391 (both inside the Transport section), and singleChedaOverview.html:224 (the CHED-A hub). So the CHED-A test clicks a GMS spoke rendered by singleChedaOverview.html, and the {{#if isChedpp}} gate in overview.html stands unchallenged. Nothing here needs a human. NEW SUB-QUESTION worth a human, though: because the partial is ALSO included at overview.html:386/:391 inside the Transport section, a CHED-PP notification that triggers that section (see the Transport open question) would render the 'Goods movement services' spoke TWICE on one page — which would also break the tests' getByRole('link', {name:'Goods movement services'}) strict-mode locator. Nobody appears to have hit this.",
+    "THE HUB IS PREREQUISITE-GATED AND IS NOT A FREELY-ADDRESSABLE PAGE — missing from earlier passes. routes/handlers/importer/overview.js:113-121 renders the hub only `if (prerequisitesCompleted(notification) || notification.status === SUBMITTED)`, and otherwise `return h.redirect(prerequisites.getNextPageBasedOnPrerequisites(notification, null))`. prerequisitesCompleted (:166-168) requires the notification to exist, its status to be DRAFT or AMEND, and prerequisites.reviewPagePrerequisitesCompleted(notification) to pass. This is why every trace enters the hub from 'About The Consignment' via Save and continue and why no test can jump straight to it. The rebuild needs to decide whether its hub is reachable at any time (the honest reading of the 'complete these sections in any order' promise) or gated like this one. No trace shows the redirect leg — it is inferred from source and is a real behavioural requirement a human should confirm.",
+    "MISSING SECTION — can CHED-PP render the 'Transport' section? The template defines SEVEN task-list sections but only FIVE render for CHED-PP in every trace. One of the two absentees, 'Transport' (overview.html:363-367), is gated on {{#or isCveda transporterDetailsRequired isNewJourneyChedD isChedp}} — and 'transporterDetailsRequired' is NOT CHED-type-gated: overview.js:118 reads it straight off the notification (`_.get(notification, 'partOne.transporterDetailsRequired', false)`). So a CHED-PP consignment that requires transporter details may render an entire extra H2 section with its own spokes, none of which are captured here — and, per the GMS question above, may render 'Goods movement services' a second time. A human must confirm. (The other absentee, 'Billing', is gated on {{#if (and showBillingSection isChedD)}} at overview.html:430 and is safely out of scope.)",
+    "NO TEST ASSERTS ANY HUB SPOKE STATUS, EVEN THOUGH EVERY STATUS TAG HAS AN ID. NotificationHubPage.ts (RE-VERIFIED IN FULL this pass — exactly 25 lines) has exactly five getters, all link locators: linkAdditionalDetails (:6-8), linkCommodity (:10-12), linkCommodityNonBulk (:14-16), linkGoodsMovementServices (:18-20), linkTransportToPortOfEntry (:22-24). There is no locator for a govuk-tag, the H1, the intro paragraph, the Attachments button, the Dashboard breadcrumb, the amend banner, or the section H2s. NOTE THE CORRECTION: an earlier pass framed this as the markup offering nothing to hold onto. In fact all 11 status tags carry stable ids matching their link's aria-describedby (verified by eval at trace e10b7cd action 31) — the handles exist and the suite simply ignores them. Consequence stands regardless: the status vocabulary, the tag colours, the intro copy and the amend banner have ZERO test coverage and rest entirely on trace evidence. If the rebuild wants those behaviours pinned, they are new test requirements, not ported ones.",
+    "'Review and submit' is not gated — but the traces are NOT the evidence for that, because its status is a hardcoded literal. The link renders active and reads 'To do' in all three hub traces including the amend trace where nine other spokes read 'Started'; an earlier pass read that constancy as proof the hub does not gate Review. It is not proof of anything — overview.html:515-531 hardcodes the tag, and setPageStatus (overview.js:196-233) has no 'review' key, so 'To do' is a static string that would appear whatever the gating. The REAL evidence that Review is ungated is behavioural: the CHED-PP amend workflow (ched-pp-workflows.ts:730-737) opens the hub and clicks 'Review and submit' as its next action with no other spoke touched, and the test passes; and trace 1f5b6eef action 144 shows that click navigating to /review successfully. Validation is therefore deferred entirely to the Review page. Confirm this is intended before copying the behaviour.",
+    "There is no primary button and no form on this page — navigation is entirely via the 11 task-list links. Confirmed by eval (controlsInMain=0, buttonsInMain=0) and corroborated by the page object exposing only link locators. The document's only <button> elements are shared chrome outside main ('Accept Cookies', footer 'Cookies'), and its only inputs are three hidden ones (crumb — a CSRF token — plus returnUrl and fromFooterHeader). The rebuild will need its own CSRF story; note the hub itself posts nothing.",
+    "BACK LINK AND BREADCRUMBS BOTH RENDER, and the back link is inert without JS (href=\"#\", id=back-link, bespoke class back-link--next-to-breadcrumbs), sitting next to a 'Dashboard' breadcrumb. The Design System treats these as alternatives. The rebuild should pick one and give it a working href. Neither is covered by any test.",
+    "The 'Attachments' secondary button (above main, in div#attachment-button) targets <base>/documents/page-1, the exact same URL as the 'Accompanying documents' task-list spoke — verified identical in the action 31 eval. Two routes to one page — is the shortcut still needed? No test clicks it, so nothing in the suite would notice if it were dropped.",
+    "TWO DIFFERENT AMEND ROUTES EXIST and only one lands on this page. Route A (inspector-requested amendment): the inspector requests an amendment with a free-text reason (ched-pp-workflows.ts:717-723), the notifier opens it (openAmendNotification) and lands on THIS hub with the 'Amendment required' banner, then goes straight to Review (ched-pp-workflows.ts:730-737) — this is trace 1f5b6eef. Route B (self-service amend): dashboard -> View details -> Amend button lands on the REVIEW page with per-field change links (#country-of-origin-change-link, #consignment-purpose-change-link, #transport-to-bip-change-link), never touching the hub (tests/notification/ched-pp/ched-pp-manipulation.spec.ts:67-81). Confirm the rebuild needs both routes, and that Route A's hub really is the same template with no field-level locking.",
+    "THE CAPTION HAS TWO STRUCTURALLY DIFFERENT VARIANTS — earlier passes recorded only the draft one. Draft: <span class=\"heading-tertiary\"><span id=\"reference-number\">DRAFT.GB.2026.1526011</span><span> - CHEDPP</span></span> — the CHED type suffix, in an UNNAMED span. Amend: <span class=\"heading-tertiary\"><span id=\"reference-number\">CHEDPP.GB.2026.1526075</span><span id=\"cved-version-number\"> - V2</span></span> — the real CHED reference plus a version suffix, and NO type suffix at all. So on amend the user loses the 'CHEDPP' type label and gains a version. Both variants sit ABOVE main, not as a govuk-caption-xl inside the heading. The rebuild should use the standard caption pattern and decide deliberately what the caption says in each state. (This also fully answers the earlier 'where does #cved-version-number live?' question: on the hub, above main — see the cved-version-number field.)",
+    "MINOR TEST BUG SPOTTED, worth flagging to the IPAFFS team rather than the rebuild: the rendered version suffix is ' - V2' (textContent, with a space between the hyphen and the V — verified in trace 1f5b6eef action 144), but AmendNotificationPage.ts:33-43 parses it with /-V(\\d+)/i, which requires '-V' adjacent and would not match ' - V2'. Only CHED-A exercises versionNumber() (ched-a-version.spec.ts:33, :69), so if the CHED-A hub template renders the suffix differently the regex may work there and be latently broken for CHED-PP. Not load-bearing for the rebuild; do not port the regex.",
+    "The page is govuk-grid-column-full (full width) rather than the two-thirds column normally used for a Task list.",
+    "WHY TRACE COVERAGE OF THIS PAGE IS THIN — and it is a deliberate test-design choice, not an accident. The CHED-PP journey as automated is essentially LINEAR: ChedPPNotificationConfig (ched-pp-workflows.ts:38-127) offers stopAtAccompanyingDocuments and stopAtReview but has NO stopAtNotificationHub option, whereas the CHED-P config does (used at ched-p-poe-validation.spec.ts:47). Every CHED-PP run therefore touches the hub once, clicks one spoke ('Commodity' in manual mode at :328, 'Additional details' in CSV mode at :290) and never returns; downstream pages use btnSaveAndReview, not btnSaveAndReturnToHub. So the 'complete sections in any order' promise in the intro copy is asserted by nothing — and, given the prerequisite gate above, is only half-true anyway. If the rebuild keeps a hub, out-of-order navigation is unproven behaviour and needs new tests.",
+    "'/overview' IS NOT A UNIQUE URL: THREE DIFFERENT PAGES IN THREE AREAS END IN IT. This page is /notification/vnet/protected/notifications/:reference/overview. But (a) the INSPECTOR has a 'View notification overview' link that lands on **/{referenceNumber}/overview in the DECISION area (page-objects/decision/DecisionHubPage.ts:40-42; awaited at tests/notification/ched-pp/ched-pp-eu-harmonisation.spec.ts:36 and :67), and (b) page-objects/control/ControlCHEDOverviewPage.ts:15 builds `${chedReference}/overview` under areas.control (config/areas.ts:26 — protectedPath 'ov-notifications'). The inspector's /overview is demonstrably NOT this task-list hub: the eu-harmonisation spec lands there and immediately asserts commodityExtendedDescription.reviewTableCommodityAttributes (a read-only commodity REVIEW TABLE, spec lines 37-42 and 68-73), and the CHED-PP amend workflow lands there and clicks decisionHub.linkRequestAmendment (ched-pp-workflows.ts:719-720) — a link that does not exist on the notifier hub. So 'overview' names at least three distinct pages across the notification/decision/control areas, and the tests' waitForURL('**/{ref}/overview') glob is area-blind and would pass on any of them. The rebuild must NOT assume '/overview' means 'the hub'; pick a distinct, unambiguous path for the notifier task list.",
+    "ONE HANDLER, TWO HUB TEMPLATES — routes/handlers/importer/overview.js:119 renders importer/singleChedaOverview for CHED-A and importer/overview for everything else (CHED-PP, CHED-P, CHED-D). Everything in this spec describes importer/overview. This matters twice over: it resolves the GMS dispute above, and it means any claim of the form 'the hub does X for all CHED types' is unsafe — CHED-A's hub is a separate file that can drift independently. The rebuild is CHED-PP-only and should not inherit either template's polymorphism.",
+    "THE HUB'S JOURNEY POSITION IS TEST-CONFIRMED: it is entered directly from 'About The Consignment' via btnSaveAndContinue, in BOTH commodity input modes and in the a11y suite. inferred: ched-pp-workflows.ts:286-290 (CSV: aboutTheConsignment.btnSaveAndContinue -> hub -> linkAdditionalDetails) and :325-328 (manual: aboutTheConsignment.btnSaveAndContinue -> hub -> linkCommodity); tests/accessibility/ched-pp-accessibility-tests.spec.ts:55-62 (aboutTheConsignment.btnSaveAndContinue, then checkPageAccessibility(page, 'Notification Hub Page')). Note this means the hub is NOT reached via a 'save and continue' from a hub-owned form — it is the automatic landing page after the About The Consignment step, which is consistent with the traces, with there being no form on the hub itself, and with the prerequisite gate at overview.js:113-121.",
+    "ROUTE B'S OWN TEST COMMENTS SAY 'HUB' WHILE DRIVING REVIEW-PAGE LOCATORS, which is probably how the hub/review confusion took root and is worth knowing before interviewing anyone about this page. tests/notification/ched-pp/ched-pp-manipulation.spec.ts:62 comments '// Navigate to dashboard and amend directly from hub' and :80 comments '// Click review and submit on hub' — but every locator in that block is a review-page one (amendNotification.linkCountryOfOriginChangeLink :68, linkConsignmentPurposeChangeLink :73, linkTransportToBipChangeLink :77, reviewNotification.btnSaveAndContinue :81). The test never touches the hub. Treat the word 'hub' in the QA repo's comments as unreliable; the locators are the truth. (Same trap in reverse: ReviewNotificationPage.ts:18-19 holds linkReviewAndSubmit, which is a HUB link. And ched-a-manipulation.spec.ts:52 comments '// Click review and submit on hub' where the hub is genuinely the CHED-A hub — a third template again.)",
+    "Four conditional spokes exist in the template but never rendered in any CHED-PP trace: Catch certificates, catch-certificatesIUU, latest-health-cert-status, and charity. None are gated on CHED type in the template, so they MAY be reachable for CHED-PP. Their labels and statuses are unknown (all four use plain getStatus, so binary Started/To do). The tests do not close this gap — the QA repo has catch-certificate and latest-health-certificate page objects but wires them to no CHED-PP spec, and has nothing at all for charity. A human needs to confirm whether CHED-PP can trigger any of them — if yes, those spokes are missing requirements.",
+    "Spoke labels for 'Purpose of the consignment', 'Transport to the Border Control Post (BCP)' and 'Importer, Packer, Delivery address and Consignor' are all CHED-type-conditional in the template. The strings recorded here are the CHED-PP renderings, which is what the rebuild needs, but they are not universal. The transport variance is independently proven by the tests carrying a separate 'Transport to the port of entry' locator for CHED-P (NotificationHubPage.ts:22-24, used at ched-p-poe-validation.spec.ts:52).",
+    "SPOKE HREFS: the values recorded in this spec are the RENDERED ones, prefixed with /notification/vnet/protected/notifications/<reference>/. Earlier passes recorded them root-relative (e.g. 'href=/consignment/page-2?source=hub'), which matched neither the DOM nor the template. The template authors them as /protected/notifications/{{referenceNumber}}/consignment/page-2?source=hub (overview.html:42), i.e. an additional /notification/vnet prefix is applied at serve time. Where this spec writes <base> it means /notification/vnet/protected/notifications/<reference>.",
+    "The hub is covered by an automated axe check under the name 'Notification Hub Page' (tests/accessibility/ched-pp-accessibility-tests.spec.ts:61) and evidently passes despite the phase-tag, the outside-main Attachments button, the back-link-plus-breadcrumbs duplication, role=alert on a load-time banner and a permanently-'To do' fake status. Axe passing is not the same as the patterns being right — do not read the green a11y test as endorsement of the non-standard patterns listed above."
+  ]
+}

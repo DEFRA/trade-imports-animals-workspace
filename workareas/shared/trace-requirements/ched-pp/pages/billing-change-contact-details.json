@@ -1,0 +1,408 @@
+{
+  "slug": "billing-change-contact-details",
+  "name": "Change billing contact details",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/billing-details/contact",
+  "pageTitle": "Change billing contact details - Import and export applications - GOV.UK",
+  "caption": "Billing",
+  "heading": "Change billing contact details",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Continue",
+  "secondaryActions": [
+    "Cancel and return to notification"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "urlEvidence": {
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, request 1330 — GET https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/billing-details/contact (200)."
+  },
+  "entryPoint": {
+    "from": "confirm-billing-details",
+    "trigger": "The 'change' link #confirm-billing-address-email on the Confirm billing details page.",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 91 — Click locator('#confirm-billing-address-email'), immediately followed by request 1330 GET .../billing-details/contact. Corroborated by ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConfirmBillingDetailsPage.ts:10-12 (linkChangeEmailAddress = #confirm-billing-address-email) and driven at workflows/notification/ched-pp-workflows.ts:484-485."
+  },
+  "exitPoint": {
+    "to": "confirm-billing-details",
+    "trigger": "Continue POSTs to the same /billing-details/contact URL and 302s to /billing-details/confirm; 'Cancel and return to notification' links straight there without submitting.",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, request 1346 — POST .../billing-details/contact → 302 with Location: /notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/billing-details/confirm, followed by request 1347 GET confirm (200). Cancel-link href observed at action 92 (same /billing-details/confirm target). Corroborated by ched-pp-workflows.ts:486 (confirmBillingDetails.btnSaveAndContinue.click() immediately after this page)."
+  },
+  "form": {
+    "method": "POST",
+    "action": "(none — posts to the page's own URL)",
+    "confidence": "confirmed",
+    "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — <form method=\"POST\"> with no action attribute; request 1346 confirms the POST target is the page URL itself."
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Billing",
+      "govukComponent": "Caption (span.govuk-caption-xl#page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Change billing contact details",
+      "govukComponent": "Heading (h1.govuk-heading-xl#page-primary-title)"
+    },
+    {
+      "element": "hidden-input",
+      "text": "crumb (CSRF token)",
+      "govukComponent": "None — bare <input type=\"hidden\">"
+    },
+    {
+      "element": "hidden-input",
+      "text": "etag (optimistic-concurrency token)",
+      "govukComponent": "None — bare <input type=\"hidden\">"
+    },
+    {
+      "element": "text-input",
+      "text": "Email address / We'll send the invoice to this email address",
+      "govukComponent": "Text input (with label--s and hint)"
+    },
+    {
+      "element": "text-input",
+      "text": "Phone number / For example, the payments team",
+      "govukComponent": "Text input (type=tel, with label--s and hint)"
+    },
+    {
+      "element": "button",
+      "text": "Continue",
+      "govukComponent": "Button (name/id button-save-and-continue, value=Continue)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to notification",
+      "govukComponent": "Link (govuk-body > govuk-link)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-!-width-three-quarters"
+      ],
+      "count": 2,
+      "usage": "Email address and Phone number entry. Both constrained to three-quarters width.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (attribute dump: class=\"govuk-input govuk-!-width-three-quarters\" on both #email and #telephone)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-label--s"
+      ],
+      "count": 2,
+      "usage": "Field labels 'Email address' (for=email) and 'Phone number' (for=telephone), rendered at small heading weight rather than as an H1-as-label single-question page. The accessible names are corroborated by the page object, which resolves both inputs by role+name.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (label eval: LABEL|govuk-label govuk-label--s|email and |telephone); corroborated ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/BillingChangeContactDetailsPage.ts:6-12 (getByRole('textbox', { name: 'Email address' }) and { name: 'Phone number' }) — VERIFIED, the accessible names match the rendered labels exactly."
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Per-field hint text, wired via aria-describedby (email-hint, telephone-hint).",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (hint eval: DIV#email-hint 'We'll send the invoice to this email address', DIV#telephone-hint 'For example, the payments team')"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Wraps each label+hint+input trio.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (main .govuk-form-group count = 2)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary submit. Visible label is 'Continue' but its name/id is 'button-save-and-continue' and it posts button-save-and-continue=Continue in the body. Margin overrides suggest the layout once sat beside a second button.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (control inventory: BUTTON|submit|button-save-and-continue|button-save-and-continue|value=Continue|govuk-button govuk-!-margin-right-1 govuk-!-margin-bottom-4); POST body at request 1346 contains button-save-and-continue=Continue; corroborated BillingChangeContactDetailsPage.ts:14-16 (btnContinue = role=button name='Continue')"
+    },
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Billing' above the H1, in a span#page-secondary-title.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (structure eval)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 (id=page-primary-title).",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (structure eval)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Cancel and return to notification' — links to /billing-details/confirm without submitting the form. NOT exposed by the page object; no test ever exercises it.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (control inventory, href /notification/vnet/protected/notifications/DRAFT.GB.2026.1526000/billing-details/confirm)"
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Paragraph wrapper for the cancel link.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (main .govuk-body count = 1)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs (bespoke, non-govuk)"
+      ],
+      "count": 1,
+      "usage": "'Back' in the shared IPAFFS chrome above the content region. href=\"#\" — history-back driven by JS, not a real URL.",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (link eval: 'Back|#|govuk-back-link back-link--next-to-breadcrumbs')"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "Bespoke shell classes outside the content region",
+      "detail": "The <main> content region is 100% govuk-* — zero bespoke classes. The surrounding legacy IPAFFS chrome is NOT: 19 non-govuk classes render page-wide (global-cookie-message, global-cookie-wrapper, cookie-buttons, cookie-button, cookie-button-accept, button--cookie, cookie-button-settings, global-accepted-cookie-message, application-title, app-width-container--wide, navigation-links, information-banner, information-banner__content, navigation-links__left-block, back-link--next-to-breadcrumbs, navigation-links__divider, breadcrumbs--next-to-back, heading-tertiary, footer__button-link). All are shared chrome, not page-specific content — but the page is not 'zero non-standard classes' at page scope.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — 'main *' class scan returns no non-govuk classes; 'body *' scan returns the 19 listed above."
+    },
+    {
+      "pattern": "Two questions on one page",
+      "detail": "Deviates from the GDS one-thing-per-page pattern: two fields under a generic H1 with govuk-label--s labels rather than a label-as-H1.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 (structure eval)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": null,
+      "hint": null,
+      "control": "hidden",
+      "required": true,
+      "observedValues": [
+        "[REDACTED]"
+      ],
+      "conditionalOn": null,
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — <input type=\"hidden\" name=\"crumb\" value=\"[REDACTED]\">; submitted in the POST body at request 1346 (crumb=[REDACTED]). CSRF token; the matching 'crumb=Fe26.2**…' cookie on request 1330 identifies this as the hapi crumb plugin. Value redacted — it is a credential.",
+      "note": "ARCHITECTURAL: the rebuild needs its own CSRF protection. Do not copy the hapi crumb mechanism, but do not drop the protection either. NOT modelled by the page object (BillingChangeContactDetailsPage.ts exposes only inputEmail, inputTelephone, btnContinue) — trace-only evidence."
+    },
+    {
+      "name": "etag",
+      "label": null,
+      "hint": null,
+      "control": "hidden",
+      "required": true,
+      "observedValues": [
+        "\"0000000000BD2B12\""
+      ],
+      "conditionalOn": null,
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — <input type=\"hidden\" name=\"etag\" value=\"&quot;0000000000BD2B12&quot;\">; submitted in the POST body at request 1346 (etag=%220000000000BD2B12%22, i.e. the quotes are part of the value).",
+      "note": "ARCHITECTURAL: an optimistic-concurrency token round-tripped through the form, implying the notification record is version-checked on write. The rebuild must make a deliberate decision about concurrent-edit handling; this is a requirement the legacy app encodes silently. Conflict behaviour (what the user sees on a stale etag) was never exercised in the corpus — see openQuestions. NOT modelled by the page object — trace-only evidence."
+    },
+    {
+      "name": "email",
+      "label": "Email address",
+      "hint": "We'll send the invoice to this email address",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": {
+        "confidence": "legacy",
+        "evidence": "Server-side MANDATORY. (1) Frontend Joi validator: ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/billing_contact_details_validator.js:23-29 — Joi.string().max(100).lowercase().email(...).required(). (2) Model: ~/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/BillingInformation.java:20-21 — emailAddress is @NotBlank. The rendered markup carried NO HTML `required` attribute (that remains a confirmed rendered fact) — requiredness is enforced server-side, not by the browser. NOTE: this is legacy mandatoriness 'as the old system had it'; the rebuild may revisit whether billing contact is mandatory, but the legacy rule is that both email and phone are required."
+      },
+      "constraints": {
+        "maxLength": 100,
+        "normalisation": "lowercased server-side before validation",
+        "format": "email format, TLD not required to be a known TLD (tlds.allow=false), length not re-checked by the email rule (ignoreLength:true) — length is capped by the separate max(100)",
+        "confidence": "legacy",
+        "evidence": "billing_contact_details_validator.js:23 — Joi.string().max(100).lowercase().email({ ignoreLength: true, tlds: { allow: false } })"
+      },
+      "observedValues": [
+        "email@mailinator.com"
+      ],
+      "conditionalOn": "TWO gates, both of which must hold. (1) CUC (Common User Charge) notifications only — the whole billing sub-journey is gated behind `if (isCuc)`, which defaults to false. (2) INFERRED, NEW: a Sevington border-control post also appears to be required — every CUC test in the QA suite, across all three CHED types, deliberately overrides the default BCP to route via Sevington, and none reaches billing on the default BCP. Reached via the change-email link (#confirm-billing-address-email) on confirm-billing-details.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — <input class=\"govuk-input govuk-!-width-three-quarters\" id=\"email\" name=\"email\" type=\"text\" aria-describedby=\"email-hint\" value=\"email@mailinator.com\">. No `required` attribute. CUC gate corroborated by ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:480-487 (`if (isCuc) { ... }`) and :191 (`isCuc: false` in DEFAULT_CONFIG). Test payload value corroborated at ched-pp-workflows.ts:194 (`billingEmail: 'email@mailinator.com'`). Sevington gate is INFERRED from tests/notification/ched-pp/ched-pp-cuc.spec.ts:18-21 (isCuc: true WITH entryBorderControlPost: 'Folkstone - GBFOL4PP' + inspectionPremises: 'Sevington IBF', overriding DEFAULT_CONFIG's bcp.controlPointParent/cp.barfootsOfBotleyChichester at ched-pp-workflows.ts:160-161) — see openQuestions.",
+      "prefillSource": {
+        "confidence": "legacy",
+        "evidence": "billing_contact_details.js:62-87 (getContactDetails) — the input is bound to billingContactDetails.email in the template (billingContactDetails.html:29). Prefill is sourced from notification.partOne.billingInformation.emailAddress; if that is absent (or ?source=IDM), it falls back to cucHelper.getBillingDetails(request) — i.e. the IDM/account billing profile. This RESOLVES the trace-only openQuestion about where the email prefill came from: it is the stored notification billing block, else the IDM account profile."
+      },
+      "note": "LEGACY: email is lowercased server-side, so mixed-case input is normalised. Requiredness firmed up from false→true off the legacy source this pass (was rendered-markup-only false)."
+    },
+    {
+      "name": "telephone",
+      "label": "Phone number",
+      "hint": "For example, the payments team",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": {
+        "confidence": "legacy",
+        "evidence": "Server-side MANDATORY. (1) Frontend Joi validator: billing_contact_details_validator.js:30-37 — Joi.string().pattern(BILLING_TELEPHONE_REGEX).min(9).max(20).required(). (2) Model: BillingInformation.java:23-24 — phoneNumber is @NotBlank. No HTML `required` attribute rendered (confirmed) — enforcement is server-side. NOTE: legacy mandatoriness; the rebuild may revisit whether billing phone is mandatory, but the legacy rule requires it."
+      },
+      "constraints": {
+        "minLength": 9,
+        "maxLength": 20,
+        "pattern": "^[ 0-9+().\\/-]+$ — only digits, spaces, and the characters + ( ) . / -",
+        "confidence": "legacy",
+        "evidence": "billing_contact_details_validator.js:30 (min(9).max(20)); regex BILLING_TELEPHONE_REGEX at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/regexes.js:9 (/^[ 0-9+().\\/-]+$/)."
+      },
+      "observedValues": [
+        "07440311981"
+      ],
+      "conditionalOn": "Same two gates as `email` (CUC + apparent Sevington BCP); same page, always filled in the same submit — the page object's only journey method fills both fields then clicks Continue in one go, so the two fields are never exercised independently.",
+      "confidence": "confirmed",
+      "evidence": "trace a61cf55bc26138194f50d589181543a2714db2ec, action 92 — <input class=\"govuk-input govuk-!-width-three-quarters\" id=\"telephone\" name=\"telephone\" type=\"tel\" aria-describedby=\"telephone-hint\" autocomplete=\"tel\" value=\"07440311981\">. No `required` attribute. Test payload value corroborated at ched-pp-workflows.ts:195 (`billingTelephone: '07440311981'`). Joint-fill corroborated at BillingChangeContactDetailsPage.ts:18-22 (updateContactDetailsAndContinue fills email, fills telephone, clicks Continue).",
+      "prefillSource": {
+        "confidence": "legacy",
+        "evidence": "billing_contact_details.js:62-87 (getContactDetails) — bound to billingContactDetails.phoneNumber (billingContactDetails.html:39). Sourced from notification.partOne.billingInformation.phoneNumber, falling back to cucHelper.getBillingDetails(request) (IDM/account billing profile) when absent or ?source=IDM."
+      },
+      "note": "LEGACY: input type is `tel` with autocomplete=`tel`. Requiredness firmed up from false→true off the legacy source this pass."
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "email",
+      "trigger": "Empty (submitted blank)",
+      "message": "Enter an email address",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_EMPTY→ENTER_EMAIL at billing_contact_details_validator.js:26; message string at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/validation_messages.js:47 (ENTER_EMAIL = 'Enter an email address'). NEVER rendered in the corpus — trace never submitted this page empty."
+    },
+    {
+      "field": "email",
+      "trigger": "Missing entirely from payload (field absent)",
+      "message": "Enter an email address",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi ANY_REQUIRED→ENTER_EMAIL at billing_contact_details_validator.js:28; string at validation_messages.js:47."
+    },
+    {
+      "field": "email",
+      "trigger": "Malformed (not a valid email format)",
+      "message": "Enter an email address in the correct format, like name@example.com",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_EMAIL→EMAIL_ADDRESS_REGEX_ERROR_MESSAGE at billing_contact_details_validator.js:25; string at validation_messages.js:49 (EMAIL_ADDRESS_REGEX_ERROR_MESSAGE)."
+    },
+    {
+      "field": "email",
+      "trigger": "Too long (more than 100 characters)",
+      "message": "Email address must be 100 characters or fewer",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_MAX→EMAIL_ADDRESS_MAX_ERROR_MESSAGE at billing_contact_details_validator.js:27; string at validation_messages.js:48 (EMAIL_ADDRESS_MAX_ERROR_MESSAGE)."
+    },
+    {
+      "field": "telephone",
+      "trigger": "Empty (submitted blank)",
+      "message": "Enter a telephone number",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_EMPTY→ENTER_TELEPHONE_NUMBER at billing_contact_details_validator.js:33; string at validation_messages.js:44 (ENTER_TELEPHONE_NUMBER = 'Enter a telephone number')."
+    },
+    {
+      "field": "telephone",
+      "trigger": "Missing entirely from payload (field absent)",
+      "message": "Enter a telephone number",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi ANY_REQUIRED→ENTER_TELEPHONE_NUMBER at billing_contact_details_validator.js:34; string at validation_messages.js:44."
+    },
+    {
+      "field": "telephone",
+      "trigger": "Invalid characters (anything outside 0-9 space + ( ) . / -)",
+      "message": "Enter a telephone number using only these characters: 0-9 / + ().-",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_PATTERN→TELEPHONE_NUMBER_REGEX_ERROR_MESSAGE at billing_contact_details_validator.js:32; string at validation_messages.js:46; regex BILLING_TELEPHONE_REGEX at regexes.js:9 (/^[ 0-9+().\\/-]+$/)."
+    },
+    {
+      "field": "telephone",
+      "trigger": "Too short (fewer than 9 characters)",
+      "message": "Enter a telephone number that is between 9 and 20 characters",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_MIN→TELEPHONE_NUMBER_MIN_MAX_ERROR_MESSAGE at billing_contact_details_validator.js:36; string at validation_messages.js:45 (TELEPHONE_NUMBER_MIN_MAX_ERROR_MESSAGE)."
+    },
+    {
+      "field": "telephone",
+      "trigger": "Too long (more than 20 characters)",
+      "message": "Enter a telephone number that is between 9 and 20 characters",
+      "confidence": "legacy",
+      "evidence": "validator maps Joi STRING_MAX→TELEPHONE_NUMBER_MIN_MAX_ERROR_MESSAGE at billing_contact_details_validator.js:35; string at validation_messages.js:45."
+    },
+    {
+      "field": "etag",
+      "trigger": "Missing from payload",
+      "message": "ETAG is missing",
+      "confidence": "legacy",
+      "evidence": "ETAG_SCHEMA maps Joi ANY_REQUIRED→ETAG_REQUIRED at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/common_schemas.js:50; string at ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/messages/en.js:77 (ETAG_REQUIRED = 'ETAG is missing'). Technical hidden-field error — not user-facing copy the rebuild should reuse verbatim; captured for completeness."
+    },
+    {
+      "field": "etag",
+      "trigger": "Wrong length (not 16-18 chars)",
+      "message": "ETAG is not valid",
+      "confidence": "legacy",
+      "evidence": "ETAG_SCHEMA ruleset min(16).max(18) with message invalidMessage(errorLabels.ETAG) at common_schemas.js:46-47; invalidMessage builds '<field> is not valid' (messages/en.js:19-21); ETAG label = 'ETAG' (labels/en.js:52). Technical field message."
+    },
+    {
+      "field": "etag",
+      "trigger": "Wrong type (not a string)",
+      "message": "ETAG must be a string",
+      "confidence": "legacy",
+      "evidence": "ETAG_SCHEMA maps Joi STRING_TYPE→typeMessage(errorLabels.ETAG, 'string') at common_schemas.js:49; typeMessage builds '<label> must be a <type>' (messages/en.js:27-29). Technical field message."
+    }
+  ],
+  "legacyFindings": [
+    {
+      "finding": "Heading is dynamic: 'Add' vs 'Change'",
+      "detail": "The page's H1 (and page title) is prefixed 'Add' or 'Change' by getPageTitle: 'Add' when BOTH email and phoneNumber are empty, otherwise 'Change'. The confirmed trace rendered 'Change billing contact details' because both fields were prefilled — that remains the confirmed value for that scenario. But legacy source shows the first-time (no existing billing contact) heading is 'Add billing contact details', reached via a different entry link (#confirm-billing-address... 'Add' variant) on confirm-billing-details.",
+      "confidence": "legacy",
+      "evidence": "billing_contact_details.js:89-94 (getPageTitle returns 'Add' if !email && !phoneNumber else 'Change'), :52-53 (prepended to BILLING_CONTACT_DETAILS constant). Template binds pageName at billingContactDetails.html:15-17."
+    },
+    {
+      "finding": "Cancel link URL is computed by cucHelper.getCancelLink",
+      "detail": "The 'Cancel and return to notification' href is not hard-coded — it is cancelUrl from cucHelper.getCancelLink(notification, request). The confirmed trace resolved it to /billing-details/confirm; legacy confirms it is dynamically derived, so the rebuild should treat the cancel target as computed, not a literal.",
+      "confidence": "legacy",
+      "evidence": "billing_contact_details.js:47 (cancelUrl = await cucHelper.getCancelLink(...)); template a href=\"{{cancelUrl}}\" at billingContactDetails.html:49."
+    },
+    {
+      "finding": "POST re-renders the same template with errors on validation failure; no double-submit",
+      "detail": "On validation failure the POST handler re-renders VIEW_TEMPLATE with the mapped errors and does NOT patch the notification; only on success does it doPatchOperations then redirect to CONFIRM_BILLING_DETAILS_PAGE. The submit button also carries data-prevent-double-click=true. This confirms the error-summary/error-message partials (validationSummary at billingContactDetails.html:14, errorSpanAccessible at :27/:36) are the error render path the trace never exercised.",
+      "confidence": "legacy",
+      "evidence": "billing_contact_details.js:21-41 (POST: validate → if errors re-view, else patch+redirect); template validationSummary partial at billingContactDetails.html:14, per-field errorSpanAccessible at :27 and :36, displayErrorClass on form-groups at :22 and :31; data-prevent-double-click at :47."
+    },
+    {
+      "finding": "Model carries a contactName billing field not shown on this page",
+      "detail": "BillingInformation.java has isConfirmed, emailAddress, phoneNumber, contactName and postalAddress, all @NotBlank/@Valid. This page renders ONLY emailAddress and phoneNumber; contactName is not collected here (nor rendered in the trace). Noted so the rebuild does not assume this page owns the full billing contact model — contactName is populated elsewhere (or unused).",
+      "confidence": "legacy",
+      "evidence": "BillingInformation.java:15-31 (fields incl. @NotBlank contactName at :26-27); template billingContactDetails.html renders only #email and #telephone."
+    }
+  ],
+  "corroboration": {
+    "pageObject": "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/BillingChangeContactDetailsPage.ts (registered at page-objects/factory.ts:194)",
+    "workflow": "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:480-487",
+    "drivingTest": "~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ched-pp-cuc.spec.ts:11-25 — the ONLY CHED-PP test that sets isCuc: true (grep for isCuc across tests/ returns exactly four hits, one per CHED type: ched-pp-cuc.spec.ts:18, ched-p-cuc.spec.ts:19, ched-d-cuc.spec.ts:24, ched-d-cuc-replacement-amendment.spec.ts:36), hence the single trace for this page.",
+    "result": "AGREEMENT ON VISIBLE SURFACE, WITH GAPS THE PAGE OBJECT CANNOT SEE. RE-VERIFIED THIS PASS: every QA-repo citation in this spec was checked line-by-line and all hold — the page object exposes exactly three controls (inputEmail, inputTelephone, btnContinue at BillingChangeContactDetailsPage.ts:6-16), and the trace rendered exactly those. The rendered form carries TWO further submitted inputs the page object does not model — hidden `crumb` (CSRF) and `etag` (optimistic concurrency), both in the POST body at request 1346 — plus a cancel link the page object does not model. No field, option or branch in the QA repo is absent from the trace, and no trace element contradicts the QA repo. NO NEW FIELDS were found in the QA repo this pass: the page object models a strict subset of the rendered form, so the field inventory (4) stands. TWO NEW BEHAVIOURAL FINDINGS were added from the QA repo — the apparent Sevington BCP gate, and the byte-identical shared CUC branch across CHED-P/-D/-PP (see openQuestions). ZERO ASSERTION COVERAGE: the page object has no assertion or getter methods beyond the three locators, and no test asserts anything about this page — it is pure fire-and-forget pass-through en route to the confirmation page. Nothing about this page's behaviour is pinned by a human-stated expectation anywhere in the QA suite."
+  },
+  "confidence": "confirmed",
+  "openQuestions": [
+    "No validation was ever exercised on this page in the corpus — the .govuk-error-summary and .govuk-error-message were both absent from the DOM in every snapshot taken (re-verified by direct selector query at action 92, not just by reading the a11y tree). CORROBORATED AS A REAL GAP, not a sampling accident: the page object's only journey method is updateContactDetailsAndContinue(email, telephone) (BillingChangeContactDetailsPage.ts:18-22), which always fills BOTH fields with valid values before clicking Continue, and no test anywhere asserts a billing error message (re-verified this pass — grep -i for 'billing' across tests/ returns exactly ONE hit, ched-d-cuc-replacement-amendment.spec.ts:80, which is an unrelated console-log comment about the billing queue). So the QA suite has NEVER submitted this page empty or malformed. The exact messages for empty email, malformed email, empty phone and malformed phone remain a GAP and must be sourced from a human before the rebuild fixes copy.",
+    "NEW THIS PASS — IS THE BILLING SUB-JOURNEY GATED ON SEVINGTON, NOT JUST ON CUC? The spec previously recorded the gate as `if (isCuc)` alone. The tests suggest a second gate. Every CUC test in the suite deliberately overrides the default border-control post to route via Sevington, and each names it in its test-step title ('creates a CUC CHEDxx notification via Sevington'): ched-pp-cuc.spec.ts:18-21 sets entryBorderControlPost: 'Folkstone - GBFOL4PP' + inspectionPremises: 'Sevington IBF'; ched-p-cuc.spec.ts:17-19 sets poe.sevington; ched-d-cuc.spec.ts:21-24 sets poe.sevington. All three override values that DEFAULT_CONFIG would otherwise supply (ched-pp-workflows.ts:160-161). No test reaches the billing pages on a default BCP. This is INFERRED, not confirmed — the override may be incidental (a data/test-account requirement) rather than a real product rule. But if CUC billing genuinely only applies at Sevington, that is a routing rule the rebuild must encode and which appears NOWHERE in the trace evidence. Confirm with a human: is CUC billing BCP-conditional, and if so on which BCPs?",
+    "Neither input carries the HTML `required` attribute (confirmed by a full attribute dump at action 92 — the only attributes are class/id/name/type/aria-describedby/value, plus autocomplete on telephone). So `required: false` reflects the rendered markup only — it is NOT evidence that the fields are optional. The QA repo cannot settle this either: `billingEmail`/`billingTelephone` are optional in the ChedPPNotificationConfig interface (ched-pp-workflows.ts:127-128, re-verified this pass) but have non-empty defaults in DEFAULT_CONFIG (:194-195), so both are ALWAYS populated in every run. Server-side requiredness is unknown and needs confirming with a human.",
+    "BOTH fields arrive PRE-POPULATED with the existing billing contact details — not just the phone. Evidence: at action 92's `before` snapshot (i.e. before ANY fill on this page has run) the email input's `value` ATTRIBUTE is already \"email@mailinator.com\" and the telephone input's is already \"07440311981\". Playwright's fill() sets the DOM property rather than the attribute, so both values are server-rendered. Where the prefill is sourced from (account profile, earlier CUC step, or the notification's stored billing block) is not determinable from the trace, and the QA repo does not reveal it. NOTE: both prefilled attribute values happen to equal the DEFAULT_CONFIG values (:194-195), which suggests the prefill is a leak from an earlier run by the same test account rather than genuinely independent data — a human should confirm the prefill source. This also means the test is tautological: it fills the fields with the values they already contain, so it would still pass if the submit silently did nothing.",
+    "ARCHITECTURAL — the `etag` hidden field means the legacy page does optimistic-concurrency control on the notification record. What happens on a STALE etag (a conflicting concurrent edit) was never exercised in the corpus, so the conflict UX and copy are a GAP. The rebuild must decide deliberately whether to keep version-checking on write; silently dropping it would be a behaviour change, not a simplification.",
+    "The `crumb` hidden field plus the matching `crumb=Fe26.2**…` cookie identify hapi's crumb CSRF plugin. The rebuild must not copy the mechanism but must retain equivalent CSRF protection on this POST.",
+    "This page is SHARED across CHED types, not CHED-PP-specific, and the sharing is deeper than previously recorded. RE-VERIFIED + STRENGTHENED THIS PASS: the identical page object + method is driven from ched-p-workflows.ts:544, ched-d-workflows.ts:360 and ched-pp-workflows.ts:485 (grep for billingChangeContactDetails across the repo returns exactly those three call sites plus the factory registration at factory.ts:194). Moreover the whole six-line CUC branch is BYTE-IDENTICAL in all three workflows (ched-pp-workflows.ts:480-487, ched-p-workflows.ts:539-546, ched-d-workflows.ts:355-362): confirmBillingDetails.linkChangeAddress → findAnAddress → billingSelectTheAddress → confirmBillingDetails.linkChangeEmailAddress → billingChangeContactDetails → confirmBillingDetails.btnSaveAndContinue. So the billing sub-journey is a genuinely CHED-type-agnostic module, not a CHED-PP page that happens to be reused. Any rebuild decision here has blast radius beyond CHED-PP; conversely, if the new CDP app is CHED-PP-only, confirm whether the billing contact page should be forked or shared.",
+    "The 'Cancel and return to notification' link is rendered (action 92) but is NOT modelled by the page object and is exercised by no test. It is a plain link to /billing-details/confirm outside the form, so it cannot submit — but whether the server discards the in-progress edit or the edit was never staged server-side is not determinable. Confirm with a human that cancelling genuinely discards.",
+    "The <main> content region is 100% govuk-* markup — zero bespoke classes, no third-party widgets, no accessible-autocomplete — so the content can be rebuilt inside the govuk-frontend toolbox with no custom CSS. The surrounding legacy chrome is NOT clean (19 bespoke classes page-wide; see nonStandardPatterns), but none of it is page-specific.",
+    "The Continue button carries govuk-!-margin-right-1, which normally spaces a primary button from an adjacent secondary. Only one button renders, so the override may be vestigial.",
+    "The submit button's name/id is `button-save-and-continue` while its visible label is 'Continue' — and the name/value pair IS posted (request 1346 body). If the server branches on that key, the rebuild must either preserve it or replace the branching deliberately. Whether it is load-bearing or vestigial is a GAP.",
+    "The 'Back' link is already a govuk-back-link component, but its href is \"#\" (JS-driven history back) rather than a real URL, and it carries a bespoke back-link--next-to-breadcrumbs modifier. The rebuild should keep the component and give it a real href — the fix is the href and the modifier, not the component choice.",
+    "The `email` input is type=\"text\", not type=\"email\", and has no autocomplete attribute (whereas telephone has autocomplete=\"tel\"). The rebuild should use type=\"email\" + autocomplete=\"email\".",
+    "This page appears in NO accessibility spec — RE-VERIFIED this pass: grep -i for 'billing' OR 'cuc' across tests/accessibility/ returns ZERO hits, so the a11y suite never reaches the billing sub-journey at all. It has never been axe-scanned; the a11y posture of the rebuild cannot lean on the legacy suite.",
+    "ZERO ASSERTION COVERAGE — the QA suite states no requirement about this page whatsoever. The page object has three locators and one fire-and-forget method, no assertions and no getters; no test expects anything of this page. Combined with the tautological prefill (above), the page could be substantially broken and the suite would stay green. Treat every behaviour here as unpinned: the trace is the ONLY evidence, and the tests corroborate the page's existence and field names but not one rule about it."
+  ]
+}

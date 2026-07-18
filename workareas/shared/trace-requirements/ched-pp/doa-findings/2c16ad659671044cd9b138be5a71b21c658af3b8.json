@@ -1,0 +1,140 @@
+{
+  "hash": "2c16ad659671044cd9b138be5a71b21c658af3b8",
+  "title": "auth/DoA/doa-importer-access.spec.ts:7 › Delegated Organisation - Notification Visibility › Carol Clark (agent for Plant Org 1) submits → Isabel Irwin (Plant Org 1 member) can see it",
+  "specFile": "ipaffs-qa-automation/tests/auth/DoA/doa-importer-access.spec.ts:7",
+  "kind": "visibility",
+  "note": "Two-actor visibility trace that ALSO renders the full delegated-agent CHED-PP creation journey end-to-end. The primary value is the authorization/visibility rules, but the trace uniquely exercises the delegated-agent creation surface (org selection, org picker, importer auto-population, Trade Partner badge) that the main CHED-PP run never touched.",
+  "actors": {
+    "agent": "Carol Clark — delegated agent; own org is 'IPAFFS Plant Agency C'; holds delegated authority for IPAFFS Plant Organisation 1 and 2 (and Plant Agency F). Auth file AUTH_FILES.b2cDoaAgent.",
+    "orgMember": "Isabel Irwin — member of IPAFFS Plant Organisation 1. Auth file AUTH_FILES.b2cOrg1. Dashboard shown under 'Current Organisation: IPAFFS Plant Organisation 1'."
+  },
+  "pagesTouched": [
+    "consignment-for",
+    "consignment-organisation",
+    "consignment-organisation-picker",
+    "country-of-origin",
+    "commodity-details",
+    "traders-addresses",
+    "accompanying-documents",
+    "declaration",
+    "confirmation",
+    "notification-dashboard"
+  ],
+  "pageDetails": [
+    {
+      "slug": "consignment-for",
+      "url": "/notification (What are you importing?)",
+      "pageTitle": "What are you importing?",
+      "heading": "About the consignment",
+      "question": "What are you importing?",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 8 eval",
+      "radios": [
+        "Live animals",
+        "Products of animal origin, germinal products or animal by-products",
+        "High risk food and feed of non-animal origin",
+        "Plants, plant products and other objects"
+      ],
+      "selected": "Plants, plant products and other objects (→ CHED-PP)",
+      "notes": "Standard notification-type page; agent journey enters it the same way as a direct user."
+    },
+    {
+      "slug": "consignment-organisation",
+      "pageTitle": "Who are you creating this notification for - Import and export applications - GOV.UK",
+      "heading": "About the consignment",
+      "question": "Who are you creating this notification for?",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 10 eval",
+      "delegatedAgentSurface": true,
+      "radios": [
+        "IPAFFS Plant Agency C  (the agent's OWN organisation)",
+        "A different organisation"
+      ],
+      "selected": "A different organisation",
+      "notes": "DELEGATED-AGENT-ONLY page. Only rendered because the signed-in user is a delegated agent. The first radio is auto-labelled with the agent's own org name (IPAFFS Plant Agency C). Choosing the agent's own org makes an ordinary own-org notification (no Trade Partner badge, not visible to other orgs). Choosing 'A different organisation' routes to the org picker below. Selecting own org here is the 'useOwnOrganisation:true' workflow branch in the QA suite."
+    },
+    {
+      "slug": "consignment-organisation-picker",
+      "pageTitle": "Which company is this notification for - Import and export applications - GOV.UK",
+      "heading": "About the consignment",
+      "question": "Which company is this notification for",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 12 eval",
+      "delegatedAgentSurface": true,
+      "radios": [
+        "IPAFFS Plant Agency F — 22 Acacia Avenue, London, N17 8LR",
+        "IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT",
+        "IPAFFS Plant Organisation 2 — KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT"
+      ],
+      "selected": "IPAFFS Plant Organisation 1",
+      "notes": "DELEGATED-AGENT-ONLY org picker. Lists every organisation the agent holds delegated authority for, each rendered as name + full postal address (radio option). The chosen org becomes the owning organisation of the notification and drives importer auto-population + Trade Partner badge + downstream visibility. This is the org-selection surface the main CHED-PP run flagged as an unexercised gap."
+    },
+    {
+      "slug": "traders-addresses",
+      "pageTitle": "Addresses - Import and export applications - GOV.UK",
+      "heading": "Traders",
+      "subheading": "Importer, Packer, Delivery address and Consignor",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 77 eval",
+      "delegatedAgentSurface": true,
+      "autoPopulated": {
+        "Importer": "IPAFFS Plant Organisation 1 — KAINOS SOFTWARE LTD, 4-6, UPPER CRESCENT, BELFAST, BT7 1NT — United Kingdom of Great Britain and Northern Ireland"
+      },
+      "notes": "AUTO-POPULATION SURFACE. The Importer row is pre-filled with the delegated organisation selected on the org picker (IPAFFS Plant Organisation 1) and its registered address — the agent never types it. Importer == the org the notification is for. Packer (optional) and Delivery address left empty (Delivery has a 'Same as consignee' shortcut); Consignor 'Linus George Ltd' was entered manually by the agent. Each row has a Change link."
+    },
+    {
+      "slug": "declaration",
+      "pageTitle": "Declaration - Import and export applications - GOV.UK",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 80 eval",
+      "delegatedAgentSurface": true,
+      "accountNav": "Carol Clark | Address book | Manage account | Manage trade partners | Sign out",
+      "notes": "Same standard CHED-PP declaration copy (APHA/SASA terms). The delegated-agent surface here is the account nav bar: a delegated agent's header carries 'Manage trade partners' and 'Address book' links. Reference shown as DRAFT.GB.2026.1525738 - CHEDPP pre-submit."
+    },
+    {
+      "slug": "notification-dashboard",
+      "pageTitle": "Your import notifications - Import and export applications - GOV.UK",
+      "confidence": "confirmed",
+      "evidence": "trace 2c16ad65, action 93 eval + tag query",
+      "delegatedAgentSurface": true,
+      "orgContextSwitcher": "Header shows 'Current Organisation: IPAFFS Plant Organisation 1 / Shad Price / Change' — org members (and agents) operate under a selectable current-organisation context, with a Change link to switch.",
+      "accountNav": "Address book | Manage account | Manage trade partners | Sign out (present for the org member Isabel too, not just the agent).",
+      "resultCard": {
+        "referenceNumber": "CHEDPP.GB.2026.1525738",
+        "commodity": "06011010",
+        "arrivalAtBcpOrPoe": "18 July 2026",
+        "chedStatusTag": "New (govuk-tag--blue)",
+        "tradePartnerBadge": "Trade Partner (govuk-tag--teal, class 'govuk-tag tag--fixed-width govuk-tag--teal govuk-!-margin-top-1', rendered directly beneath the CHED status tag)",
+        "consignee": "IPAFFS Plant Organisation 1",
+        "consignor": "Linus George Ltd",
+        "origin": "France",
+        "inspectionTag": "Required (govuk-tag--red)",
+        "actions": ["Copy as new", "View details", "Amend", "Show notification"]
+      },
+      "notes": "The org member's dashboard, searched by the reference number, returns the agent-submitted notification. The teal 'Trade Partner' badge marks it as created by a delegated agent on the org's behalf. View details / Copy as new / Amend are all available to the org member."
+    }
+  ],
+  "tradePartnerBadge": {
+    "confidence": "legacy",
+    "label": "Trade Partner",
+    "cssClass": "govuk-tag tag--fixed-width govuk-tag--teal govuk-!-margin-top-1",
+    "renderCondition": "type == 'CHEDPP' AND agencyOrganisationId is set",
+    "source": "ipaffs-frontend-notification/service/src/views/partials/common/notificationList.html:28-30",
+    "confirmedBy": "Rendered in trace 2c16ad65 action 93 (teal tag beneath 'New' status).",
+    "note": "The badge is CHED-PP-specific and gated on agencyOrganisationId (the id of the agent/trade-partner org that created the notification on behalf of the owning org). No agencyOrganisationId => no badge (ordinary own-org notification)."
+  },
+  "newSurface": "This DoA trace exercises delegated-agent creation surface that the standard CHED-PP journey never renders: (1) a delegated-agent-only 'Who are you creating this notification for?' page whose first radio is auto-labelled with the agent's OWN org (IPAFFS Plant Agency C) alongside 'A different organisation'; (2) a 'Which company is this notification for' org picker listing every org the agent holds delegated authority for (Plant Agency F, Plant Organisation 1, Plant Organisation 2) as name + full postal address; (3) importer auto-population on the Traders/Addresses page — the Importer row is pre-filled with the chosen delegated org (IPAFFS Plant Organisation 1) and its registered address, never typed by the agent; (4) a 'Manage trade partners' + 'Address book' account-nav for delegated users; (5) a current-organisation context switcher in the dashboard header ('Current Organisation: IPAFFS Plant Organisation 1 / Change'); and (6) a teal 'Trade Partner' badge on the notification list card, rendered for CHED-PP notifications that carry an agencyOrganisationId, signalling agent-created-on-behalf-of.",
+  "authorizationRules": [
+    "Agent SUBMITS for a delegated org (Carol Clark → IPAFFS Plant Organisation 1): a member of that org (Isabel Irwin) CAN see the submitted notification on their dashboard and can View details, Copy as new, and Amend it. [confirmed — this trace]",
+    "Agent DRAFTS for a delegated org (stops before submit): the org member CANNOT see the draft on their dashboard — drafts are not shared to the owning org until submitted. [legacy — doa-importer-access.spec.ts:34]",
+    "Agent submits for a delegated org: the AGENT also sees the notification on their OWN dashboard and can View details, Copy as new, Amend it. [legacy — doa-agent-access.spec.ts:34]",
+    "Agent submits for their OWN org (useOwnOrganisation, IPAFFS Plant Agency C): a member of a DIFFERENT org (Isabel Irwin / Plant Org 1) CANNOT see it — visibility is scoped to the owning organisation, and no Trade Partner badge is set. [legacy — doa-agent-access.spec.ts:60]",
+    "Ordinary org member submits for their own org (Franklyn D / IPAFFS Plant Organisation Test): another member of the SAME org (David D) CAN view, copy and amend it — same-org members share visibility, no delegation involved. [legacy — doa-importer-access.spec.ts:60]",
+    "The teal 'Trade Partner' badge is displayed on a notification list card iff the notification is a CHED-PP AND carries an agencyOrganisationId (i.e. was created by a delegated agent on behalf of the owning org). Own-org notifications get no badge. [legacy+confirmed — notificationList.html:28; trace action 93]"
+  ],
+  "discrepancies": [],
+  "gaps": [
+    "The agent's own org label on the consignment-organisation page reads 'IPAFFS Plant Agency C', but that org does not appear in the org picker on the next page (picker lists Plant Agency F, Plant Org 1, Plant Org 2). This is expected — the picker is the 'different organisation' delegated set, own org is chosen on the prior radio — but the two-page own-vs-delegated split is worth an explicit spec ruling in the rebuild.",
+    "No trace evidence for how amend/copy-as-new by an org member on an agent-created notification affects the Trade Partner badge or agencyOrganisationId (does an org-member amend strip the badge?). Question for a human."
+  ]
+}

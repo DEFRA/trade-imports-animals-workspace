@@ -1,0 +1,164 @@
+{
+  "hash": "b701cc405623fb2d2e2b2dedcf2bec3d10dfb954",
+  "title": "auth/DoA/doa-importer-access.spec.ts:34 › Delegated Organisation - Notification Visibility › Carol Clark (agent for Plant Org 1) drafts → Isabel Irwin (Plant Org 1 member) cannot see it",
+  "kind": "agent-access",
+  "specFile": "auth/DoA/doa-importer-access.spec.ts:34",
+  "wrote": true,
+  "summary": "Combined delegated-agent CHED-PP creation + negative-visibility trace. Agent Carol Clark (member of her own org 'IPAFFS Plant Agency C') drafts a CHED-PP on behalf of a DIFFERENT organisation, IPAFFS Plant Organisation 1, chosen from her trade-partner list. Isabel Irwin, a genuine member of Plant Organisation 1, then searches for that DRAFT reference on her own dashboard and CANNOT find it. Asserts that an agent's DRAFT stage is private to the agent and not yet surfaced to the trade-partner org's members.",
+  "pagesTouched": [
+    "consignment-for",
+    "consignment-organisation",
+    "consignment-organisation-picker",
+    "country-of-origin",
+    "commodity-search",
+    "commodity-details",
+    "purpose",
+    "packages",
+    "transport",
+    "bcp",
+    "ched-reference-documents",
+    "dashboard"
+  ],
+  "pages": [
+    {
+      "slug": "consignment-for",
+      "confidence": "confirmed",
+      "evidence": "trace b701cc40 action 8 snapshot before@call@355",
+      "pageTitleTab": "What are you importing?",
+      "h1": "What are you importing?",
+      "note": "Commodity-type radio group; agent selects the CHED-PP option 'Plants, plant products and...' (accessible name truncated in trace). Standard first page, not delegated-specific, but the entry point.",
+      "fields": [
+        {
+          "control": "radio group",
+          "optionObserved": "Plants, plant products and... (CHED-PP)",
+          "confidence": "confirmed",
+          "evidence": "action 8 Check radio 'Plants, plant products and'"
+        }
+      ]
+    },
+    {
+      "slug": "consignment-organisation",
+      "confidence": "confirmed",
+      "evidence": "trace b701cc40 snapshot 11 (before@call@361), page URL .../consignment-for?type=CHEDPP",
+      "pageTitleTab": "Who are you creating this notification for - Import and export applications - GOV.UK",
+      "h1": "Who are you creating this notification for?",
+      "sectionCaption": "About the consignment",
+      "newSurface": "DELEGATED-AGENT SURFACE. This whole-of-org choice page appears ONLY for a delegated agent. It lets the agent choose between filing under their OWN organisation or a trade partner they act for.",
+      "fields": [
+        {
+          "control": "radio group (no visible legend text beyond H1)",
+          "confidence": "confirmed",
+          "evidence": "snap11 lines 61-65",
+          "options": [
+            {
+              "label": "IPAFFS Plant Agency C",
+              "meaning": "the agent's (Carol Clark's) own organisation",
+              "confidence": "confirmed"
+            },
+            {
+              "label": "A different organisation",
+              "meaning": "file on behalf of a trade partner; selecting this routes to the org picker page",
+              "selectedInTrace": true,
+              "confidence": "confirmed"
+            }
+          ]
+        }
+      ],
+      "chromeObserved": {
+        "signedInAs": "Carol Clark",
+        "accountNavLinks": [
+          "Address book (/notification/vnet/protected/notifications/address-book)",
+          "Manage account (/notification/vnet/protected/manage)",
+          "Manage trade partners (/notification/vnet/protected/notifications/trade-partners/filter)",
+          "Sign out (/protected/logout)"
+        ],
+        "note": "'Manage trade partners' link in the account bar is the delegated-authority admin surface; present because Carol is an agent.",
+        "confidence": "confirmed",
+        "evidence": "snap11 lines 32-44"
+      }
+    },
+    {
+      "slug": "consignment-organisation-picker",
+      "confidence": "confirmed",
+      "evidence": "trace b701cc40 snapshot 13 (before@call@365)",
+      "pageTitleTab": "Which company is this notification for - Import and export applications - GOV.UK",
+      "h1": "Which company is this notification for",
+      "sectionCaption": "About the consignment",
+      "newSurface": "DELEGATED-AGENT SURFACE — the trade-partner picker. Shown after choosing 'A different organisation'. Lists every organisation the agent is authorised to act for, each rendered as bold org name + full postal address block. Agent selects the target org (IPAFFS Plant Organisation 1) here; that org becomes the notification owner.",
+      "fields": [
+        {
+          "control": "radio group (each option = org name in <strong> + multi-line address)",
+          "confidence": "confirmed",
+          "evidence": "snap13 lines 54-73",
+          "options": [
+            {
+              "label": "IPAFFS Plant Agency F",
+              "address": "22 Acacia Avenue, London, N17 8LR",
+              "confidence": "confirmed"
+            },
+            {
+              "label": "IPAFFS Plant Organisation 1",
+              "address": "KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT",
+              "selectedInTrace": true,
+              "confidence": "confirmed"
+            },
+            {
+              "label": "IPAFFS Plant Organisation 2",
+              "address": "KAINOS SOFTWARE LTD, 4-6 UPPER CRESCENT, BELFAST, BT7 1NT",
+              "confidence": "confirmed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "dashboard",
+      "confidence": "confirmed",
+      "evidence": "trace b701cc40 snapshot 66 (before@call@472), page 'Your import notifications'",
+      "pageTitleTab": "Your import notifications - Import and export applications - GOV.UK",
+      "h1": "Your import notifications",
+      "context": "Isabel Irwin's dashboard (a genuine member of IPAFFS Plant Organisation 1)",
+      "newSurface": "Dashboard org-context switcher: 'Current Organisation:' combobox with a 'Change' button. Determines which org's notifications the list scopes to.",
+      "chromeObserved": {
+        "signedInAs": "Isabel Irwin",
+        "currentOrganisationCombobox": {
+          "label": "Current Organisation:",
+          "options": ["IPAFFS Plant Organisation 1 (selected)", "Shad Price"],
+          "changeButton": true,
+          "confidence": "confirmed",
+          "evidence": "snap66 lines 241-245"
+        },
+        "keywordSearch": {
+          "control": "textbox 'Keywords or notification...'",
+          "confidence": "confirmed",
+          "evidence": "action 65"
+        }
+      },
+      "assertion": {
+        "action": "Isabel searches keyword 'DRAFT.GB.2026.1525739' then Search",
+        "expected": "locator [id='view-details-DRAFT.GB.2026.1525739'] toBeHidden — no result row for the agent's draft",
+        "confidence": "confirmed",
+        "evidence": "actions 65-67"
+      }
+    }
+  ],
+  "draftReference": {
+    "value": "DRAFT.GB.2026.1525739",
+    "regex": "DRAFT\\.GB\\.\\d{4}\\.\\d+",
+    "confidence": "confirmed",
+    "evidence": "action 60 getText(/DRAFT\\.GB\\.\\d{4}\\.\\d+/); action 65 fill value"
+  },
+  "newSurface": "This trace exposes the full delegated-authority (DoA) plant-org create path plus a negative visibility rule the main CHED-PP run never exercised. (1) A CHED-PP filed by a delegated agent begins with a two-step organisation-selection sub-journey inserted before the normal consignment pages: 'Who are you creating this notification for?' (own-org vs 'A different organisation') then 'Which company is this notification for' (a radio list of the agent's authorised trade partners, each shown as org name + postal address). (2) The agent's account chrome carries a 'Manage trade partners' link and an 'Address book' link — the DoA admin surface. (3) The recipient org's dashboard has a 'Current Organisation:' switcher (combobox + Change) that scopes the notification list. (4) Crucially, an agent's DRAFT-stage notification for a trade partner is NOT visible to that partner org's own members: Isabel Irwin, a member of IPAFFS Plant Organisation 1, searches for Carol Clark's draft reference and gets no row (view-details link hidden). Contact/importer auto-population from the selected org was NOT directly rendered in a snapshot in this trace (the journey advanced through country-of-origin straight after org selection), so that specific auto-population claim remains a gap for this hash.",
+  "authorizationRules": [
+    "A delegated agent (Carol Clark, member of 'IPAFFS Plant Agency C') can create a CHED-PP on behalf of a DIFFERENT organisation she is authorised to act for, chosen from a trade-partner picker (IPAFFS Plant Organisation 1, Plant Organisation 2, Plant Agency F observed as her partners). [confirmed: snap11, snap13]",
+    "The organisation-selection sub-journey ('Who are you creating this notification for?' + 'Which company is this notification for') is inserted only for delegated agents; it precedes the standard consignment pages. [confirmed: snap11, snap13]",
+    "An agent's notification while at DRAFT stage is private to the agent and is NOT visible to members of the trade-partner organisation it was created for: Isabel Irwin, a genuine member of IPAFFS Plant Organisation 1 (the very org Carol drafted for), searches her dashboard for the exact draft reference DRAFT.GB.2026.1525739 and finds no result. [confirmed: actions 65-67, test title]",
+    "A member's dashboard is scoped to a 'Current Organisation' selected from a switcher (Isabel's options: 'IPAFFS Plant Organisation 1' [selected] and 'Shad Price'); the visibility assertion holds with Plant Organisation 1 active. [confirmed: snap66 lines 241-245]",
+    "The agent surface exposes DoA management entry points in the account bar: 'Manage trade partners' (/notification/vnet/protected/notifications/trade-partners/filter) and 'Address book'. [confirmed: snap11 lines 34-41]"
+  ],
+  "gaps": [
+    "Contact/importer auto-population from the selected trade-partner org was not rendered in a captured snapshot for this hash — the journey moved from org-picker directly into country-of-origin. Whether the draft would become visible to Plant Org 1 members after SUBMISSION (as opposed to DRAFT) is asserted only negatively here (draft stage); the positive submitted-visibility rule lives in a sibling DoA trace, not this one.",
+    "The CHED-PP commodity-type radio accessible name is truncated to 'Plants, plant products and' in the trace; full copy is legacy-sourced elsewhere."
+  ],
+  "notes": "Visibility/agent-access trace with an embedded full creation journey. Two browser contexts: Carol Clark (agent) creates the draft; Isabel Irwin (org member) fails to find it. Snapshots captured: snap8 (What are you importing?), snap11 (Who are you creating this notification for?), snap13 (Which company is this notification for), snap66 (Isabel's dashboard). Trace closed."
+}

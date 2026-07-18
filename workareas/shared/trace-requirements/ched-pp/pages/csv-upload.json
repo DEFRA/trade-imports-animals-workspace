@@ -1,0 +1,424 @@
+{
+  "slug": "csv-upload",
+  "name": "Upload commodity details CSV (and check uploaded details)",
+  "url": "/upload/vnet/protected/upload/{notificationRef}/commodity-details-upload  (step 1)  ->  /upload/vnet/protected/upload/{notificationRef}/commodity-details-upload  (step 1b, interstitial re-render)  ->  /notification/vnet/protected/notifications/{notificationRef}/commodity/bulk-upload-review  (step 2)",
+  "pageTitle": "STEP 1: 'Upload commodity details using a CSV file - Import and export applications - GOV.UK'. STEP 2: 'Check uploaded commodity details - Import and export applications - GOV.UK'. (This spec covers TWO pages — see openQuestions; it should be SPLIT downstream.)",
+  "caption": "Description of the goods (step 1 only — step 2 has no caption)",
+  "heading": "STEP 1: 'Upload commodity details using a CSV file'. STEP 2: 'Check uploaded commodity details'.",
+  "bodyCopy": [
+    "How to do this",
+    "Download the CSV template and read the guide on how to complete this (opens in new tab)",
+    "Import the CSV template using spreadsheet software (such as Excel, Numbers, OpenOffice Calc, Google Sheets or similar)",
+    "Enter your information into the CSV template exactly as shown in the guide",
+    "Save the file in CSV format",
+    "Upload your completed CSV file – we’ll check the data and highlight any errors you need to fix",
+    "STEP 2 (Check uploaded commodity details): Upload successful",
+    "STEP 2: 5 commodity lines added",
+    "STEP 2: Showing 1 - 5 of 5 results",
+    "STEP 2: If details are incorrect or missing",
+    "STEP 2: You will need to upload commodity details CSV file again. This will replace your previous upload.",
+    "LEGACY / INTERSTITIAL (step 1b, never captured in a trace) — heading 'Uploading CSV...'; body 'The page will refresh until upload is complete.'; a <noscript> fallback: 'To check if upload has finished, refresh this page.' (the word 'refresh this page' is a link back to the same upload URL with ?requestId=...). Source: ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/views/upload/commodity_details_upload.html:57-66. confidence: legacy.",
+    "LEGACY / RE-UPLOAD WARNING (shown only when re-uploading over an existing upload; never rendered in the traced first-upload) — 'This will delete and replace your previous upload' (govuk-warning-text, prefixed by a visually-hidden 'Warning'). Source: commodity_details_upload.html:104-113. confidence: legacy.",
+    "LEGACY / ERROR SUMMARY (shown only on a failed upload; never rendered in the traced happy path) — 'There is a problem' (govuk-error-summary__title); an optional validation heading 'There are {N} errors in your file'; and either a single link 'Correct your file and then upload it again' -> #fileUpload, or a bulleted list of per-row event errors each with an 'Affected rows' details disclosure. Source: commodity_details_upload.html:16-54 + handler commodity_details_upload.js:121-124. confidence: legacy."
+  ],
+  "bodyCopyEvidence": "All step-1 rendered strings verified verbatim (including the en-dash in '– we’ll' and the curly apostrophe) against trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (main.innerText). All step-2 rendered strings verified verbatim against action 34 (main.innerText). The four LEGACY-tagged entries (interstitial, re-upload warning, error summary) are read from the IPAFFS upload app's Handlebars template and were behind conditional {{#if}} branches that the happy-path trace never triggered.",
+  "backLink": "Back",
+  "continueLabel": "Upload",
+  "secondaryActions": [
+    "Cancel (link to /notification/vnet/protected/notifications/{notificationRef}/commodity/input-method — href confirmed verbatim, trace action 32; template renders it as <a class=\"govuk-link\" href=\"{{cancelLink}}\">Cancel</a>, commodity_details_upload.html:132-134)",
+    "STEP 2 primary button: Confirm and continue"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds (step 1). Step 2 mixes govuk-grid-column-full, -two-thirds, -one-half and -one-quarter.",
+  "entryCondition": "Reached from the 'Description of the goods' page by selecting the radio 'Upload from a CSV file' (the alternative is 'Manual entry', which routes to the Search commodity journey instead). CHED-PP only. Confidence: CONFIRMED at the radio level — trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 29 checks getByRole('radio', { name: 'Upload from a CSV file' }) and action 30 clicks 'Save and continue', landing on this page. The sibling branch is inferred from ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DescriptionOfGoodPage.ts:10-12 and workflows/notification/ched-pp-workflows.ts:278-285 (the isCSVUpload branch).",
+  "structure": [
+    { "element": "caption", "text": "Description of the goods", "govukComponent": "Caption (govuk-caption-xl)" },
+    { "element": "h1", "text": "Upload commodity details using a CSV file", "govukComponent": "Heading (govuk-heading-xl)" },
+    { "element": "h2", "text": "How to do this", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "numbered-list", "text": "Download the CSV template and read the guide on how to complete this (opens in new tab) / Import the CSV template using spreadsheet software (such as Excel, Numbers, OpenOffice Calc, Google Sheets or similar) / Enter your information into the CSV template exactly as shown in the guide / Save the file in CSV format / Upload your completed CSV file – we’ll check the data and highlight any errors you need to fix", "govukComponent": "List (govuk-list govuk-list--number)" },
+    { "element": "error-summary", "text": "LEGACY (conditional, {{#if showErrorSummary}}) — 'There is a problem' + optional 'There are {N} errors in your file' heading + validation link 'Correct your file and then upload it again' (-> #fileUpload) OR a bulleted event-error list with 'Affected rows' details. Never rendered on the happy path.", "govukComponent": "Error summary (govuk-error-summary, data-module='govuk-error-summary'). Source commodity_details_upload.html:16-54. confidence: legacy." },
+    { "element": "alert-box", "text": "LEGACY / INTERSTITIAL (conditional, {{#if notification.isBulkUploadInProgress}}) — 'Uploading CSV...' (h3.govuk-heading-m) + 'The page will refresh until upload is complete.' + a spinner + <noscript> 'To check if upload has finished, refresh this page.'", "govukComponent": "Bespoke .alert-box.alert-box--info with .spinner (NOT a govuk-frontend component). Source commodity_details_upload.html:57-66. confidence: legacy." },
+    { "element": "warning-text", "text": "LEGACY (conditional, {{#if showReuploadWarningMessage}}) — 'This will delete and replace your previous upload', wrapped in govuk-inset-text. Shown only when re-uploading. Never rendered on the traced first upload.", "govukComponent": "Warning text (govuk-warning-text) inside Inset text (govuk-inset-text). Source commodity_details_upload.html:104-113. confidence: legacy." },
+    { "element": "file-upload", "text": "Upload your completed CSV file", "govukComponent": "File upload (govuk-file-upload) — PLAIN, un-enhanced native input; no data-module, no drop zone. Template adds a {{#if notification.isBulkUploadInProgress}}disabled{{/if}} attribute during upload (not rendered on the traced first load). See govukComponents." },
+    { "element": "button", "text": "Upload", "govukComponent": "Button (govuk-button govuk-!-margin-bottom-4), id=button-upload, value='Upload'; template adds disabled during upload. commodity_details_upload.html:125-131." },
+    { "element": "link", "text": "Cancel", "govukComponent": "Link (govuk-link)" },
+    { "element": "PAGE BREAK", "text": "--- step 1b: an INTERSTITIAL re-render of the SAME upload URL is served while the CSV is processed (~11s observed). LEGACY RESOLVED — its rendered copy IS now known from the template (see the alert-box element above and bodyCopy): 'Uploading CSV...' / 'The page will refresh until upload is complete.' + a no-JS 'refresh this page' fallback. ---" },
+    { "element": "PAGE BREAK", "text": "--- everything below is the SECOND page: Check uploaded commodity details ---" },
+    { "element": "notification-banner", "text": "Upload successful / 5 commodity lines added", "govukComponent": "Notification banner (govuk-notification-banner--success), id=upload-banner" },
+    { "element": "h1", "text": "Check uploaded commodity details", "govukComponent": "Heading (govuk-heading-xl)" },
+    { "element": "paragraph", "text": "Showing 1 - 5 of 5 results", "govukComponent": "Body (govuk-body)" },
+    { "element": "repeated key/value block per commodity line", "text": "Commodity code / EPPO / Genus and species / Net weight / Packages / Package type / Quantity / Quantity type / Controlled atmosphere container", "govukComponent": "NONE — bespoke .commodity-summary grid, see nonStandardPatterns" },
+    { "element": "h2", "text": "If details are incorrect or missing", "govukComponent": "Heading (govuk-heading-s)" },
+    { "element": "paragraph", "text": "You will need to upload commodity details CSV file again. This will replace your previous upload.", "govukComponent": "Body (govuk-body)" },
+    { "element": "button", "text": "Confirm and continue", "govukComponent": "Button (govuk-button)" }
+  ],
+  "govukComponents": [
+    { "component": "Caption", "govukClass": "govuk-caption-xl", "count": 1, "usage": "Section caption 'Description of the goods' above the H1 (step 1 only — step 2's class inventory contains no caption class, confirming its absence)", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (class inventory of main) vs action 34 (class inventory of main — no govuk-caption-* present)" },
+    { "component": "Heading", "govukClass": "govuk-heading-xl", "modifiers": ["govuk-heading-xl", "govuk-heading-m", "govuk-heading-s"], "count": 4, "usage": "H1 on each page; H2 'How to do this' (step 1, -m); H2 'If details are incorrect or missing' (step 2, -s)", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, actions 32 and 34. Class inventories confirm: step 1 main has govuk-heading-xl + govuk-heading-m (no -s); step 2 main has govuk-heading-xl + govuk-heading-s (no -m)." },
+    { "component": "List", "govukClass": "govuk-list", "modifiers": ["govuk-list--number"], "count": 1, "usage": "Numbered 5-step 'How to do this' instructions", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (class inventory: govuk-list + govuk-list--number)" },
+    {
+      "component": "File upload",
+      "govukClass": "govuk-file-upload",
+      "count": 1,
+      "usage": "The CSV file input. RENDERED MARKUP (verbatim, action 32): <div class=\"govuk-form-group \"> <label class=\"govuk-label govuk-label--m\" for=\"fileUpload\">Upload your completed CSV file</label> <div class=\"\"> <input class=\"govuk-file-upload\" id=\"fileUpload\" name=\"fileUpload\" type=\"file\" accept=\".csv\"> </div> </div>. This is a PLAIN, UN-ENHANCED native file input: there is NO data-module attribute, NO govuk-drop-zone, NO govuk-file-upload__button/__wrapper, and no hint text. Note the empty-class wrapper <div class=\"\"> and the trailing space in \"govuk-form-group \" — both are template artefacts. LEGACY corroboration of the template source (commodity_details_upload.html:97-123): the empty inner <div class=\"\"> is the {{#if showReuploadWarningMessage}}govuk-inset-text{{/if}} wrapper collapsed to empty on a first upload; on error the form-group gains govuk-form-group--error and a govuk-error-message <p id=\"fileUpload-error\"> is injected; during upload the input gains a disabled attribute. The page object drives it by id selector '#fileUpload'.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (.govuk-form-group outerHTML + class inventory); corroborated by ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CsvUploadPage.ts:6-8; template source ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/views/upload/commodity_details_upload.html:97-123 (legacy)"
+    },
+    { "component": "Label", "govukClass": "govuk-label", "modifiers": ["govuk-label--m"], "count": 1, "usage": "Label for the file upload: 'Upload your completed CSV file', correctly associated via for=\"fileUpload\"", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (.govuk-form-group outerHTML); template commodity_details_upload.html:98 (legacy)" },
+    { "component": "Button", "govukClass": "govuk-button", "count": 2, "usage": "Primary 'Upload' submit (step 1, id=button-upload per CsvUploadPage.ts:10-12; value='Upload'); primary 'Confirm and continue' submit (step 2, matched by exact text per CsvUploadPage.ts:14-16). Neither page uses govuk-button--secondary — 'Cancel' is a plain govuk-link.", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, actions 32 and 34 (class inventories show govuk-button only, no modifier); id corroborated by ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CsvUploadPage.ts:11; template commodity_details_upload.html:125-131 (legacy)" },
+    { "component": "Error summary", "govukClass": "govuk-error-summary", "modifiers": ["data-module=govuk-error-summary"], "count": 0, "usage": "LEGACY — NEVER RENDERED on the traced happy path. Shown by the upload app when a submitted CSV fails validation or parsing. Title 'There is a problem' (govuk-error-summary__title); optional validation heading 'There are {N} errors in your file' (h3.govuk-heading-s, id=validation-heading); then EITHER a single-item govuk-error-summary__list linking 'Correct your file and then upload it again' to #fileUpload, OR a govuk-list--bullet of per-row event errors, each a bold message with a '({rows} lines)' suffix and an 'Affected rows' <details> disclosure.", "evidence": "template ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/views/upload/commodity_details_upload.html:16-54 (legacy); heading text from handler commodity_details_upload.js:123 (legacy)" },
+    { "component": "Warning text", "govukClass": "govuk-warning-text", "count": 0, "usage": "LEGACY — NEVER RENDERED on the traced first upload. Shown ({{#if showReuploadWarningMessage}}) when a user re-uploads over an existing upload: 'This will delete and replace your previous upload', with a visually-hidden 'Warning' prefix, wrapped in govuk-inset-text.", "evidence": "template commodity_details_upload.html:104-113 (legacy)" },
+    { "component": "Back link", "govukClass": "govuk-back-link", "modifiers": ["back-link--next-to-breadcrumbs (NON-STANDARD — see nonStandardPatterns)"], "count": 1, "usage": "Back navigation on both steps. RENDERED MARKUP (verbatim, action 32): <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Sits outside <main>, in the service-information bar.", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (anchor outerHTML)" },
+    { "component": "Notification banner", "govukClass": "govuk-notification-banner", "modifiers": ["govuk-notification-banner--success"], "count": 1, "usage": "STEP 2 ONLY — success banner, id=upload-banner, title 'Upload successful' (rendered as <h2 id=\"govuk-notification-banner-title\" class=\"govuk-notification-banner__title\">Upload successful</h2>), content '5 commodity lines added'. Sub-classes present: __header, __title, __content.", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (class inventory + main.innerText); the h2 markup is quoted verbatim in the action-33 resolution log; corroborated by ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CsvUploadPage.ts:18-20" },
+    { "component": "Body text", "govukClass": "govuk-body", "usage": "Paragraph copy and — on step 2 — every key/value cell of the bespoke commodity summary", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, actions 32 and 34" },
+    { "component": "Link", "govukClass": "govuk-link", "count": 2, "usage": "'Download the CSV template and read the guide on how to complete this (opens in new tab)' -> https://www.gov.uk/government/publications/ipaffs-upload-commodity-details-using-a-csv-file, target=_blank, rel=\"noreferrer noopener\" (correctly set — no finding; verbatim in template commodity_details_upload.html:74-75); and 'Cancel' -> /notification/vnet/protected/notifications/{ref}/commodity/input-method (no target).", "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (anchor hrefs + outerHTML); template commodity_details_upload.html:74-75, 132-134 (legacy)" }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": ".commodity-summary",
+      "whatItDoes": "STEP 2 ONLY. Wrapper for each uploaded commodity line. Inside it every key/value pair is hand-built from 'govuk-grid-row govuk-!-margin-bottom-2' > two 'govuk-grid-column-one-half' divs each containing a 'span.govuk-body.govuk-!-margin-0'; the label span additionally carries 'govuk-!-font-weight-bold'.",
+      "whatItDoesEvidenceNote": "Verified against the raw main.outerHTML and independently re-confirmed against the step-2 class inventory, which contains commodity-summary, govuk-grid-row, govuk-grid-column-one-half, govuk-body, govuk-!-margin-0, govuk-!-margin-bottom-2 and govuk-!-font-weight-bold — and contains NO govuk-summary-list or govuk-table class.",
+      "concern": "This is a Summary list re-implemented out of the grid system plus font-weight override utilities. It is not a semantic description list, so the key/value association is invisible to assistive technology — it reads as a flat run of spans. It also hard-codes visual weight via '!' overrides instead of using the component. In the rebuild this should be a govuk-summary-list per commodity line, which gets the semantics, the responsive behaviour and the styling for free.",
+      "govukAlternative": "Summary list (govuk-summary-list), one per commodity line — or a Table (govuk-table) for the whole set",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (main.outerHTML + class inventory)"
+    },
+    {
+      "pattern": "alert-box / alert-box--info / .spinner / .visible-with-javascript (interstitial)",
+      "whatItDoes": "STEP 1b INTERSTITIAL. The 'Uploading CSV...' processing state is a bespoke .alert-box.alert-box--info containing an h3.govuk-heading-m 'Uploading CSV...', a .visible-with-javascript paragraph 'The page will refresh until upload is complete.', a .visible-with-javascript .spinner, and a <noscript> paragraph 'To check if upload has finished, <a ...>refresh this page</a>.' The onward advance is driven by commodity_details_upload.js (loaded only while notification.isBulkUploadInProgress).",
+      "whatItDoesEvidenceNote": "LEGACY — read from the template, not a trace. No snapshot captured the interstitial. This RESOLVES openQuestion (a): the copy the user sees while waiting is now known. It also RESOLVES (c): a no-JS user is NOT stranded — there is an explicit <noscript> 'refresh this page' link to the same upload URL with ?requestId, so advancement degrades gracefully. And it clarifies (b): the reload IS JS-driven (commodity_details_upload.js), with a manual server-side refresh fallback for no-JS.",
+      "concern": "The 'refresh until complete' loop is bespoke JS (commodity_details_upload.js). The measured ~11s for a 5-row file will not scale linearly. The rebuild should prefer a synchronous parse with an explicit row/size cap, or GOV.UK's meta-refresh 'we are checking your file' pattern — the IPAFFS <noscript> fallback shows the no-JS path already exists and should be the baseline.",
+      "govukAlternative": "n/a — architectural. GOV.UK's pattern is a server-side meta-refresh interstitial that works without JS.",
+      "evidence": "template ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/views/upload/commodity_details_upload.html:57-66, 140-142 (legacy); handler commodity_details_upload.js:34-53, 87-128 (legacy)"
+    },
+    {
+      "pattern": "display-desktop--none / display-tablet--none / display-mobile--none",
+      "whatItDoes": "STEP 2 ONLY. Custom responsive-visibility utilities. IPAFFS renders the SAME commodity data twice in the DOM — one block hidden on desktop, another hidden on mobile/tablet — to fake a responsive table. This is why main.innerText reads back with duplicated/interleaved headers: the observed run is literally 'Net weight / Packages / Package type / Quantity' as a header block, THEN '1234.0 / 1 / Bag / 2.0' as a value block, then 'Quantity type / Controlled atmosphere container' then 'Pieces / Yes'.",
+      "concern": "Duplicated DOM for the same data: doubles the payload and risks screen-reader users hitting both copies. It is a bespoke breakpoint utility set with no govuk-frontend equivalent in use. The rebuild should render the data ONCE and let a Summary list or a responsive Table handle small screens natively.",
+      "govukAlternative": "govuk-summary-list or govuk-table (both responsive without duplicate markup); govuk-frontend also ships govuk-!-display-none for genuine breakpoint hiding",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (class inventory + main.outerHTML + main.innerText header/value interleave)"
+    },
+    {
+      "pattern": "govuk-grid-row--bordered",
+      "whatItDoes": "STEP 2 ONLY. A non-standard modifier on govuk-grid-row that draws a rule between commodity lines.",
+      "concern": "'--bordered' is not a govuk-frontend modifier; it is IPAFFS custom CSS reaching into the grid layer to add decoration. Mixing bespoke visual modifiers into the grid means the grid can no longer be upgraded cleanly with the package.",
+      "govukAlternative": "Summary card (govuk-summary-card) gives a bordered container per line as a first-class component; or govuk-section-break--visible for a plain rule",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (class inventory)"
+    },
+    {
+      "pattern": "govuk (bare class, no BEM block)",
+      "whatItDoes": "STEP 2 ONLY. A bare 'govuk' class appears in the step-2 class inventory.",
+      "concern": "Not a govuk-frontend class — almost certainly a local styling hook squatting on the design-system namespace. Easy to collide with a future govuk-frontend release.",
+      "govukAlternative": "Drop it; namespace any bespoke hook as 'app-*' per the Design System's own guidance",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (class inventory)"
+    },
+    {
+      "pattern": "back-link--next-to-breadcrumbs + href=\"#\" back link",
+      "whatItDoes": "BOTH STEPS. The back link is <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. Two separate deviations: (1) 'back-link--next-to-breadcrumbs' is a bespoke modifier on the govuk-back-link component, used to reposition it relative to breadcrumbs; (2) the href is '#', not a real URL — so the link does nothing without JavaScript.",
+      "concern": "An href='#' back link is JS-dependent: with scripts blocked or failed it is a dead control, which is a GOV.UK Service Manual progressive-enhancement failure and an a11y problem (it also announces as a same-page link). The bespoke '--next-to-breadcrumbs' modifier is custom CSS reaching into a component's own namespace, which blocks clean govuk-frontend upgrades — the same anti-pattern as govuk-grid-row--bordered. Note the page's CSP is 'script-src self', so JS is expected to load, but that does not make a JS-only back link acceptable.",
+      "govukAlternative": "Render govuk-back-link with a real server-known href (the previous page's URL); position it with layout classes on a wrapper rather than a modifier on the component.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (anchor outerHTML); CSP header confirmed on request 987 response ('Content-Security-Policy: default-src self; style-src self; font-src self data:; script-src self;')"
+    },
+    {
+      "pattern": "Cross-application hop: step 1 served from /upload/vnet/..., step 2 from /notification/vnet/...",
+      "whatItDoes": "The upload step is served by a SEPARATE application (ipaffs-frontend-upload) mounted at /upload/vnet, carries its own crumb + etag + returnUrl hidden fields, and posts multipart/form-data (Content-Type: multipart/form-data; boundary=----WebKitFormBoundary..., Content-Length: 934). The review step is back under /notification/vnet (ipaffs-frontend-notification). Both are on the same host (importnotification-static-snd.azure.defra.cloud), so the hop is a path-mount split, not a cross-origin one.",
+      "whatItDoesEvidenceNote": "LEGACY corroboration: the upload page template + handler + validation live in a distinct repo, ~/git/defra/ipaffs/ipaffs-frontend-upload, confirming the two-app split at source level (not just in the URL).",
+      "concern": "The journey hops between two apps mid-flow purely to handle a file upload. That is why the hidden-field set is unusually large (returnUrl x2, crumb x3, etag, fromFooterHeader) and why the account bar DIFFERS between the two steps — step 1 exposes only 'Your address book'; step 2 exposes 'Address book' plus 'Manage trade partners'. The two apps have drifted in their shared chrome, which is exactly the failure mode a split like this produces. This is IPAFFS architecture and explicitly must not be copied.",
+      "govukAlternative": "n/a — architectural, not a component. In the new app keep the upload in-app (single service, in-app multipart route or CDP uploader) so no cross-app hop is needed.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 (control inventory; form enctype='multipart/form-data') vs action 34 (URL /notification/vnet/.../bulk-upload-review). Account-bar drift CONFIRMED by direct comparison: action 32 anchors matching /address|partner/i = ['Your address book']; action 34 = ['Address book', 'Manage trade partners']. POST content-type/length confirmed on request 975. Two-repo split corroborated by ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/routes/handlers/upload/commodity_details_upload.js (legacy)."
+    },
+    {
+      "pattern": "Poll-by-reload interstitial: POST -> 302 back to SELF -> JS-driven re-request -> 302 onward to the review page",
+      "whatItDoes": "The full mechanism is RECOVERED from BOTH the network log and the legacy handler. Handler logic (commodity_details_upload.js): the POST validates the file, calls fileUploadService.uploadCommodityFile, patches the notification to isBulkUploadInProgress=true with a requestId, and 302s back to the SAME upload URL (lines 55-79). On the subsequent GET, when isBulkUploadInProgress is true it polls the event service (updateViewContextForGetBulkUpload, lines 87-128): if the bulk-upload result is SUCCESS it patches and 302s onward to COMMODITY_BULK_UPLOAD_REVIEW (lines 106-109); if FAILURE it re-renders the upload page with an error summary + per-row event errors (lines 111-125); if still in progress it re-renders the 'Uploading CSV...' interstitial, which loads commodity_details_upload.js to auto-refresh. There is also a TIMEOUT branch (config.commodityBulkUpload.timeout) that shows UPLOAD_ERROR 'The selected file could not be uploaded - try again' (lines 92-102). Observed network sequence (trace requests 965-988) matches exactly: (965) GET form 200; (975) POST -> 302 back to self in 1.3s; (976) GET -> 200 5.8K interstitial; (980) GET commodity_details_upload.js 845 bytes; (987) GET -> 302 onward to bulk-upload-review; (988) GET review 200. Elapsed POST->review ≈ 11s for a 5-row file.",
+      "concern": "So the upload is NOT server-blocking (the POST returns in 1.3s). The advance depends on a bespoke JS refresh loop, BUT the template ships a <noscript> 'refresh this page' fallback (commodity_details_upload.html:62-64), so a no-JS user is not stranded — this was previously an open gap and is now legacy-resolved. Remaining rebuild concerns: (1) the ~11s for a FIVE-ROW file is a real measured cost that will not scale linearly to a large CSV without a proper progress affordance; (2) there is a server-side timeout branch whose duration lives in config (commodityBulkUpload.timeout) — a human should read the deployed value. A synchronous parse with an explicit row/size cap is almost certainly right for this data volume.",
+      "govukAlternative": "n/a — architectural. If async is genuinely needed, GOV.UK's pattern is an explicit 'we are checking your file' page that refreshes server-side (meta refresh) so it works without JS — IPAFFS's own <noscript> fallback is exactly this and should be the baseline, not the JS loop.",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada — network requests 965, 975, 976, 980, 987, 988; timing corroborated by action 33 (duration 11.2s). Handler + interstitial mechanism read directly from ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/routes/handlers/upload/commodity_details_upload.js:55-128 and views/upload/commodity_details_upload.html:57-66, 140-142 (legacy). The 120000ms figure in CsvUploadPage.ts:18-20 is a test-side CEILING, not a duration; measured duration ~11s."
+    }
+  ],
+  "fields": [
+    {
+      "name": "fileUpload",
+      "label": "Upload your completed CSV file",
+      "control": "file",
+      "required": true,
+      "requiredEvidence": "LEGACY — the upload app REQUIRES a file server-side. validateCommodityDetailsUpload -> validate() returns FILE_NOT_SELECTED ('Select a file') when the filename is empty (~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/validation/file_upload_validation.js:88-90, message ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:4). This UPGRADES the previous required=false, which was only the RENDERED html attribute and did not reflect server-side enforcement (see discrepancies).",
+      "observedValues": ["(a .csv file was set via setInputFiles at action 31; filename not recorded in the action params)"],
+      "confidence": "confirmed",
+      "confidenceNote": "The field's EXISTENCE and the accept='.csv' hint are confirmed-rendered. Its REQUIREDNESS is legacy (server-side), not confirmed — no trace exercised an empty submit. Accept='.csv' is a client hint only; server-side extension checking (ALLOWED_EXTENSIONS=['csv']) is the real gate (file_upload_validation.js:97-98, validation_constants.js:53).",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 — control inventory reads INPUT|file|fileUpload|fileUpload|req=false|accept=.csv; enclosing form enctype='multipart/form-data' (POST content-type confirmed on request 975). Corroborated: ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/CsvUploadPage.ts:6-8 drives '#fileUpload'; workflows/notification/ched-pp-workflows.ts:282 supplies 'resources/file-upload/2-Commodity.csv'. Server-side requiredness: file_upload_validation.js:88-90 (legacy)."
+    },
+    {
+      "name": "returnUrl",
+      "label": "(no visible label — hidden field)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always present; carries the path to return to after the cross-app upload hop",
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 — control inventory: INPUT|hidden|returnUrl (x2, both with empty id). NOTE: the upload template itself renders only crumb + etag hidden fields (commodity_details_upload.html:94-95); the returnUrl/fromFooterHeader pairs come from shared chrome partials (back link + footer), consistent with the two-app split."
+    },
+    {
+      "name": "crumb",
+      "label": "(no visible label — hidden field)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always present; hapi crumb CSRF token, appears 3x (once per form on the page). A 'crumb' cookie is also set (observed on request 975/987 request headers, value redacted). Template emits it as <input type=\"hidden\" name=\"crumb\" value=\"{{crumb}}\"/> in the upload form (commodity_details_upload.html:94).",
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 — control inventory: INPUT|hidden|crumb (x3, all with empty id); template commodity_details_upload.html:94 (legacy)"
+    },
+    {
+      "name": "etag",
+      "label": "(no visible label — hidden field)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always present; optimistic-concurrency token for the notification draft. Template emits <input type=\"hidden\" name=\"etag\" value=\"{{notification.etag}}\"/> (commodity_details_upload.html:95); the POST handler threads it through the patch operations (commodity_details_upload.js:74-75, 130-132), CONFIRMING the optimistic-concurrency purpose that was previously only inferred from the name.",
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 — control inventory: INPUT|hidden|etag; purpose now legacy-corroborated by template commodity_details_upload.html:95 + handler commodity_details_upload.js:74-75, 130-132 (legacy)."
+    },
+    {
+      "name": "fromFooterHeader",
+      "label": "(no visible label — hidden field)",
+      "control": "text",
+      "required": false,
+      "conditionalOn": "belongs to the footer cookies form — platform chrome, not a journey requirement",
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 32 — control inventory: INPUT|hidden|fromFooterHeader (last control on the page, after the footer's own crumb/returnUrl pair)"
+    },
+    {
+      "name": "(none)",
+      "label": "STEP 2 'Check uploaded commodity details' has NO form controls at all — only the 'Confirm and continue' submit button.",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 — the class inventory of main contains no input/select/textarea class and the page is display-only. There is no per-row 'edit' or 'remove' affordance ON THIS PAGE: the only remedy offered here is re-uploading the whole CSV. (But see openQuestions — a later 'change commodity details' route DOES reach an editable bulk-details page.)"
+    },
+    {
+      "name": "csvColumn:Commodity code",
+      "label": "Commodity code (CSV column 1)",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "LEGACY — a commodity must be selected for a CHED-PP: PartOne.commodities carries @NotNull for NotificationChedppFieldValidation (PartOne.java:302-313, message partone.commodities.not.null) and Commodities-level 'A commodity must be selected' (ValidationMessages.properties:91). The commodity code is the commodity's identity (CommodityComplement.commodityID). NOTE: the model does NOT put @NotNull directly on commodityID; requiredness here is at the enclosing commodity level. This is 'as the old system had it' and the rebuild may model per-line identity differently.",
+      "options": ["(free text — a commodity/CN code; not enumerated by the CSV template)"],
+      "observedValues": ["0808108090", "84321000"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: the rendered VALUES are confirmed; the column NAME and its ORDINAL POSITION are inferred from a test fixture, not from any trace (the CSV template itself is never rendered by the app). 'required: true' is now LEGACY-backed (commodity mandatory for CHED-PP) rather than fixture-inferred.",
+      "evidence": "COLUMN NAME + ORDINAL + fixture values: ~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1-6 (inferred). RENDERED VALUES confirmed: trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 displays 'Commodity code' 0808108090 (x4) and 84321000 — matching the fixture exactly. Mandatoriness: PartOne.java:302-313 + ValidationMessages.properties:91 (legacy)."
+    },
+    {
+      "name": "csvColumn:Genus and Species",
+      "label": "Genus and Species (CSV column 2)",
+      "control": "text",
+      "required": false,
+      "requiredEvidence": "LEGACY — the schema model does NOT place a @NotNull on the species fields of CommodityComplement (speciesName / speciesID / speciesCommonName etc. are all un-annotated, CommodityComplement.java:29-49). So genus/species is NOT model-mandatory for CHED-PP. This SUPERSEDES the earlier fixture-inferred 'required: true'. Consistent with the observed discrepancy (the service resolves 'Farm Machinery' rather than echoing the fixture's 'no plants'), suggesting species/description is server-resolved from the commodity code, not a mandatory user input.",
+      "observedValues": ["Malus angustifolia", "Malus baccata", "Malus bracteata", "Malus brevipes", "(fixture says 'no plants' — app rendered 'Farm Machinery')"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: the four Malus values are confirmed round-tripped; the column name/ordinal are inferred from the fixture; requiredness is now LEGACY (model has no @NotNull) = optional, revised down from the previous fixture-inferred true. See discrepancies.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1-6. The four Malus values round-trip verbatim (trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34). CONFIRMED DISCREPANCY: the fixture's 5th row supplies 'no plants' (2-Commodity.csv:6) but the trace rendered 'Farm Machinery' for that line — both ends verified directly. Model mandatoriness: CommodityComplement.java:29-49 (legacy). See openQuestions."
+    },
+    {
+      "name": "csvColumn:EPPO code",
+      "label": "EPPO code (CSV column 3)",
+      "control": "text",
+      "required": false,
+      "requiredEvidence": "LEGACY — CommodityComplement.eppoCode carries NO @NotNull (CommodityComplement.java:29). The EPPO code is therefore NOT model-mandatory for CHED-PP at the schema level. This revises the earlier fixture-inferred 'required: true' down to optional. (Whether the CSV PARSER separately requires an EPPO for plant lines is unevidenced — the placeholder 'NNNXX' on the non-plant line suggests EPPO is expected but may accept a not-a-plant sentinel; a gap for a human.)",
+      "observedValues": ["MABAN", "MABBA", "MABBR", "MABBV", "NNNXX"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: all five values confirmed rendered; column name/ordinal inferred from the fixture; requiredness now LEGACY (model has no @NotNull) = optional, revised down from fixture-inferred true. See discrepancies.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1-6; all five values confirmed rendered on trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34. 'NNNXX' is INFERRED to be a placeholder EPPO for a non-plant line. Domain vocabulary at ~/git/defra/ipaffs/ipaffs-qa-automation/types/eppo-code.ts. Model mandatoriness: CommodityComplement.java:29 (legacy)."
+    },
+    {
+      "name": "csvColumn:Variety",
+      "label": "Variety (CSV column 4)",
+      "control": "text",
+      "required": false,
+      "requiredEvidence": "LEGACY — 'variety' is a ComplementParameterSet key-data-pair key (ComplementParameterSet.VARIETY, ComplementParameterSet.java:47) but carries NO @NotNull/@NotNullKeyDataPair for any CHED-PP validation group. So it is NOT mandatory for CHED-PP. Consistent with the fixture leaving it blank in every row.",
+      "observedValues": ["(empty in all 5 fixture rows)"],
+      "confidence": "gap",
+      "confidenceNote": "The column's EXISTENCE is inferred from the fixture header AND corroborated as a real domain key (ComplementParameterSet.VARIETY, legacy). Its optionality is now LEGACY-backed (no @NotNull). What remains a GAP: its permitted values, its validation, and whether it renders on the review page when populated — none of these have evidence in the traces or QA repo.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1 (header only). NEVER EXERCISED — blank in every fixture row. Domain key: ComplementParameterSet.java:47 (legacy). Optionality: no @NotNull on VARIETY anywhere in the schema (legacy)."
+    },
+    {
+      "name": "csvColumn:Class",
+      "label": "Class (CSV column 5)",
+      "control": "select",
+      "required": false,
+      "requiredEvidence": "LEGACY — 'class' is a ComplementParameterSet key-data-pair key (ComplementParameterSet.CLASS, ComplementParameterSet.java:48) with NO @NotNull for any CHED-PP group. Not mandatory. Consistent with the fixture leaving it blank.",
+      "options": ["Class I", "Class II", "Extra Class"],
+      "observedValues": ["(empty in all 5 fixture rows)"],
+      "confidence": "gap",
+      "confidenceNote": "The column's optionality is now LEGACY-backed (no @NotNull on CLASS). The three OPTIONS are verified verbatim against source but describe the MANUAL-ENTRY dropdown — there is NO evidence the CSV column accepts these same labels rather than codes. Given 'Type of package' and 'Quantity type' take CODES in the CSV while showing LABELS in the UI, assuming labels here would be unsafe.",
+      "evidence": "COLUMN: ~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1 (header). Domain key: ComplementParameterSet.java:48 (legacy). OPTIONS: ~/git/defra/ipaffs/ipaffs-qa-automation/types/commodity-class.ts:1-5 — verified verbatim; these are the MANUAL-entry 'Commodity class' dropdown values (ched-pp-workflows.ts:313-316). Whether the CSV column takes labels or a code is UNKNOWN — never traced."
+    },
+    {
+      "name": "csvColumn:Intended for final users (or commercial flower production)",
+      "label": "Intended for final users (or commercial flower production) (CSV column 6)",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP but DEFERRABLE past the CSV upload step. Commodities.commodityIntendedFor carries @NotNull for NotificationSingleCedValidation (Commodities.java:221-229, message commodities.commodityintendedfor.not.null = 'Add what the commodity is intended for', ValidationMessages.properties:88). There is also a 'finished or propagated' mandatory rule (ValidationMessages.properties:93 = 'You must select whether the commodity is intended for final users or propagating'). BUT the QA evidence shows this column is blank at upload and completed AFTERWARDS on the bulk-details page — so mandatoriness is enforced later in the journey, not at CSV parse. This is a policy the rebuild may revisit (it could require the column in the CSV, or keep the deferred model).",
+      "options": ["Yes", "No"],
+      "observedValues": ["(empty in all 5 fixture rows)"],
+      "confidence": "inferred",
+      "confidenceNote": "The column's existence is inferred from the fixture header. Its underlying model field (commodityIntendedFor / finished_or_propagated) is MANDATORY for CHED-PP (legacy) but enforced downstream, not at upload — the strongest evidence that a CSV column may legitimately be blank at upload and completed later. Its 'Yes'/'No' options are inferred from the later bulk-details dropdown, not from the CSV.",
+      "evidence": "COLUMN: ~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1 (header). Corroborated as a real, later-editable field by ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ChedppCommodityBulkDetailsPage.ts:6-8 (dropdown 'select[id$=\"finished-or-propagated\"]' set to 'Yes' on the post-upload bulk-details page). Mandatoriness: Commodities.java:221-229 + ValidationMessages.properties:88,93 (legacy). Whether the CSV column itself takes 'Yes'/'No' or a code is UNKNOWN."
+    },
+    {
+      "name": "csvColumn:Number of packages",
+      "label": "Number of packages (CSV column 7)",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP. The number_package key-data-pair is required for the CHED-PP group: @ChedppMinValueKeyDataPair(groups=NotificationChedppFieldValidation, field=NUMBER_PACKAGE) with message chedpp.number_package.message = 'Add the number of packages' (PartOne.java:314-319, ValidationMessages.properties:130). (A parallel singleced.number_package.message = 'Add number of packages' applies to the single-CED group, ComplementParameterSet.java:110-115, ValidationMessages.properties:126.)",
+      "observedValues": ["1"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: rendered value confirmed; column name/ordinal inferred from the fixture; 'required: true' now LEGACY-backed (was fixture-inferred).",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:1-6 (all rows = 1); rendered as 'Packages' = 1 on trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34. Mandatoriness: PartOne.java:314-319 + ValidationMessages.properties:130 (legacy). NOTE the CSV header says 'Number of packages' but the review page labels it 'Packages'. This is the ONE numeric column NOT given a decimal place on render (1, not 1.0)."
+    },
+    {
+      "name": "csvColumn:Type of package",
+      "label": "Type of package (CSV column 8)",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP. @ChedppNotNullKeyDataPair(groups=NotificationChedppFieldValidation, field=TYPE_PACKAGE), message chedpp.type_package.message = 'Add the package type' (PartOne.java:320-325, ValidationMessages.properties:131). (Parallel singleced.type_package.message = 'Add package type', ComplementParameterSet.java:126-131, ValidationMessages.properties:125.)",
+      "options": ["Bag", "Bale", "Balloon Protected", "Block", "Bottle, flask and other glass packages", "Box", "Bulk solid granular particles (\"grains\")", "Can", "Carton", "Case", "Cask", "Coffer", "Container", "Container, not otherwise specified as transport equipment", "Crate", "Drum", "In Bulk", "Jar", "Other", "Package", "Pail", "Pallet", "Pallet Box", "Polystyrene Box", "Tank", "Tote", "Tray", "Tube", "Vial", "Wood bundle", "Wood crate", "Wooden barrel", "Wooden case with pallet base"],
+      "observedValues": ["BG (in the CSV) — rendered as 'Bag' on the review page"],
+      "confidence": "inferred",
+      "confidenceNote": "DOWNGRADED from 'confirmed' for the OPTIONS. Exactly ONE of the 33 options ('Bag') was ever rendered, and its CSV code ('BG') is the only code known. The other 32 labels are verified verbatim against source but were NEVER observed on this page and are the MANUAL-entry dropdown's vocabulary; their CSV codes are unknown. Requiredness is now LEGACY-confirmed (mandatory for CHED-PP).",
+      "evidence": "CSV value: ~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:2-6 = 'BG'. Rendered value: trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 = 'Bag' (CONFIRMED — the only evidenced code->label mapping). THE CSV TAKES A CODE, THE UI SHOWS A LABEL. The 33-label vocabulary is ~/git/defra/ipaffs/ipaffs-qa-automation/types/package-type.ts:1-35 (INFERRED — manual-entry labels; CSV codes for the other 32 unknown). Mandatoriness: PartOne.java:320-325 + ValidationMessages.properties:131 (legacy)."
+    },
+    {
+      "name": "csvColumn:Quantity",
+      "label": "Quantity (CSV column 9)",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP. @ChedppNotNullKeyDataPair AND @ChedppIsPositiveDoubleKeyDataPair(groups=NotificationChedppFieldValidation, field=QUANTITY), message chedpp.quantity.message = 'Add the quantity' (PartOne.java:332-343, ValidationMessages.properties:134). The positive-double rule also legacy-confirms Quantity is numeric and must be > 0.",
+      "observedValues": ["2", "1"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: rendered values confirmed; column name/ordinal inferred from the fixture; 'required: true' now LEGACY-backed, plus a legacy positive-double constraint.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:2-6 (2,2,2,2,1); rendered on trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 as 2.0, 2.0, 2.0, 2.0, 1.0 — integers rendered back with one decimal place. Mandatoriness + positive-double: PartOne.java:332-343 + ValidationMessages.properties:134 (legacy)."
+    },
+    {
+      "name": "csvColumn:Quantity type",
+      "label": "Quantity type (CSV column 10)",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP. @ChedppNotNullKeyDataPair(groups=NotificationChedppFieldValidation, field=TYPE_QUANTITY), message chedpp.type_quantity.message = 'Add the quantity type' (PartOne.java:326-331, ValidationMessages.properties:133).",
+      "options": ["Stems", "Bulbs", "Corms and rhizomes", "Plants in tissue culture", "Seeds", "Kilograms", "Pieces"],
+      "observedValues": ["PCS (in the CSV) — rendered as 'Pieces' on the review page"],
+      "confidence": "inferred",
+      "confidenceNote": "DOWNGRADED from 'confirmed' for the OPTIONS. Only 'Pieces'/'PCS' was ever observed; the other 6 labels are verified verbatim against source but never rendered on this page, and their CSV codes are unknown. Requiredness is now LEGACY-confirmed (mandatory for CHED-PP).",
+      "evidence": "CSV value: ~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:2-6 = 'PCS'. Rendered value: trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 = 'Pieces' (CONFIRMED — the only evidenced mapping). Label vocabulary: ~/git/defra/ipaffs/ipaffs-qa-automation/types/quantity-type.ts:1-9 (7 labels, INFERRED; CSV codes for the other 6 unknown). Mandatoriness: PartOne.java:326-331 + ValidationMessages.properties:133 (legacy)."
+    },
+    {
+      "name": "csvColumn:Net weight (kg)",
+      "label": "Net weight (kg) (CSV column 11)",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "LEGACY — MANDATORY for CHED-PP at the commodity-line level. net_weight key-data-pair carries @MinValueKeyDataPair(groups=NotificationSingleCedValidation, field=NET_WEIGHT), message chedpp.net_weight.message = 'Add the net weight' (ComplementParameterSet.java:73-80, ValidationMessages.properties:132). (Note: this is the SingleCed / per-line rule; the separate consignment-level totalNetWeight is @NotNull for both NotificationChedppFieldValidation and NotificationSingleCedValidation, Commodities.java:91-98, ValidationMessages.properties:85 — that total lives on the consignment-details page, not this one.)",
+      "observedValues": ["1234", "123"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: rendered values confirmed; column name/ordinal inferred from the fixture; 'required: true' now LEGACY-backed.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:2-6 (1234,1234,123,123,123); rendered on trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 as 1234.0, 1234.0, 123.0, 123.0, 123.0 — one decimal place added. The review page label drops '(kg)' and reads just 'Net weight' — CONFIRMED, a real clarity concern. Mandatoriness: ComplementParameterSet.java:73-80 + ValidationMessages.properties:132 (legacy)."
+    },
+    {
+      "name": "csvColumn:Controlled atmosphere container",
+      "label": "Controlled atmosphere container (CSV column 12)",
+      "control": "select",
+      "required": false,
+      "requiredEvidence": "LEGACY — NOT model-mandatory. 'container' is a ComplementParameterSet key-data-pair key (ComplementParameterSet.CONTAINER, ComplementParameterSet.java:53) with NO @NotNull/@NotNullKeyDataPair for any CHED-PP validation group. This REVISES the earlier fixture-inferred 'required: true' down to optional (the fixture happened to set 'Yes' in every row, which is weak evidence of requiredness). See discrepancies.",
+      "options": ["Yes", "No"],
+      "observedValues": ["Yes"],
+      "confidence": "confirmed",
+      "confidenceNote": "MIXED: the 'Yes' round-trip is confirmed-rendered; 'No' has NEVER been observed and is inferred from a shared yes-no type. Requiredness is now LEGACY (no @NotNull) = optional, revised down from fixture-inferred true.",
+      "evidence": "~/git/defra/ipaffs/ipaffs-qa-automation/resources/file-upload/2-Commodity.csv:2-6 (all 'Yes'); rendered verbatim as 'Yes' on trace 9a918b862ad1b3599fc13659f757c25aaec78ada, action 34 (CONFIRMED). Unlike Type of package / Quantity type this column takes the LABEL, not a code — the CSV format is INCONSISTENT between columns, itself a finding. 'No' is INFERRED from ~/git/defra/ipaffs/ipaffs-qa-automation/types/yes-no.ts. Optionality: no @NotNull on CONTAINER in the schema (ComplementParameterSet.java:53, legacy)."
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "fileUpload",
+      "message": "Select a file",
+      "trigger": "No file chosen when 'Upload' is pressed (empty filename). Server-side; the client accept='.csv' does not enforce presence.",
+      "confidence": "legacy",
+      "evidence": "message ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js:4 (FILE_NOT_SELECTED); triggered at ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/validation/file_upload_validation.js:88-90 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "The selected file must be a CSV",
+      "trigger": "Uploaded file's extension is not .csv (ALLOWED_EXTENSIONS=['csv'], ALLOWED_EXTENSIONS_FOR_MESSAGE='CSV'). The template '%s' is resolved with 'CSV'.",
+      "confidence": "legacy",
+      "evidence": "template message 'The selected file must be a %s' at validation_constants.js:5 (FILE_TYPE_IS_INCORRECT_TEMPLATE); 'CSV' substituted from validation_constants.js:53-54; triggered at file_upload_validation.js:97-98 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "The selected file is empty",
+      "trigger": "Uploaded file has no content (empty fileContent).",
+      "confidence": "legacy",
+      "evidence": "message validation_constants.js:8 (FILE_IS_EMPTY); triggered at file_upload_validation.js:102-104 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "The selected file must be larger than 1KB",
+      "trigger": "Uploaded file content is smaller than the minimum. NOTE: the message says '1KB' but the enforced threshold is 200 BYTES (TWO_HUNDRED_B=200) — a copy/threshold mismatch worth carrying as a finding.",
+      "confidence": "legacy",
+      "evidence": "message validation_constants.js:7 (FILE_TOO_SMALL); threshold TWO_HUNDRED_B=200 at validation_constants.js:15; triggered at file_upload_validation.js:106-108 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "The selected file must be smaller than 10MB",
+      "trigger": "Uploaded file exceeds the 10MB limit (TEN_MB=10485760). Surfaced via the GET handler's validateQueryParams when the platform redirects back with ?fileTooLarge=true. This legacy-confirms a MAX FILE SIZE of 10MB for the CSV upload (previously an open question).",
+      "confidence": "legacy",
+      "evidence": "message validation_constants.js:6 (FILE_TOO_LARGE); TEN_MB at validation_constants.js:16; query-param path at file_upload_validation.js:159-163; wired in GET at commodity_details_upload.js:46-49 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "Correct your file and then upload it again",
+      "trigger": "Shown as the validation link/heading when the uploaded CSV parses but contains row-level errors (bulk-upload result FAILURE), or when the GET query params flag a prior validation failure. Sits above the per-row event-error list.",
+      "confidence": "legacy",
+      "evidence": "message validation_constants.js:50 (CORRECT_YOUR_FILE); set at commodity_details_upload.js:48 (query-param path) and :121 (parse-failure path); rendered at commodity_details_upload.html:26-32 (legacy)"
+    },
+    {
+      "field": "fileUpload",
+      "message": "The selected file could not be uploaded - try again",
+      "trigger": "Shown when the bulk-upload processing TIMES OUT (elapsed exceeds config.commodityBulkUpload.timeout). Distinct from a row-validation failure.",
+      "confidence": "legacy",
+      "evidence": "message validation_constants.js:51 (UPLOAD_ERROR); timeout branch at commodity_details_upload.js:92-102 (legacy)"
+    },
+    {
+      "field": "fileUpload (error-summary heading)",
+      "message": "There are {N} errors in your file",
+      "trigger": "Dynamic error-summary sub-heading rendered above the per-row event-error list when the CSV parse returns N row errors (errorRowCount > 0). N is interpolated at runtime.",
+      "confidence": "legacy",
+      "evidence": "constructed at commodity_details_upload.js:122-124 (`There are ${errorRowCount} errors in your file`); rendered at commodity_details_upload.html:22-24 (legacy)"
+    },
+    {
+      "field": "fileUpload (per-row event errors)",
+      "message": "{per-row parser message}  ({N} lines)  + 'Affected rows' details disclosure",
+      "trigger": "For each distinct row-level parse error the upload page renders the parser's own message, suffixed with '({rows.length} lines)' when >0, and an expandable 'Affected rows' <details> listing the 1-indexed row numbers. The individual parser message strings originate in the notification microservice bulk-upload parser and are NOT enumerated in the frontend — their exact copy is a GAP (the microservice's CHED-PP commodity messages, e.g. 'Add the package type' / 'Add the quantity type' / 'Add the net weight', are the mandatory-field family those row errors draw on).",
+      "confidence": "legacy",
+      "evidence": "rendered at commodity_details_upload.html:34-49 ('Affected rows', '({rows.length} lines)'); event errors fetched at commodity_details_upload.js:113 (eventService.getEventErrors); underlying CHED-PP commodity messages at ValidationMessages.properties:130-134 (legacy). Exact per-row parser copy is a GAP — see openQuestions."
+    }
+  ],
+  "validationMessagesNote": "PREVIOUSLY EMPTY (no message rendered in any trace; the happy-path QA test asserts none). NOW POPULATED FROM LEGACY SOURCE — this was the single biggest unmined surface. The nine entries above are the file-upload app's own validation copy (~/git/defra/ipaffs/ipaffs-frontend-upload) plus the dynamic error-summary heading and the per-row event-error mechanism. All are confidence='legacy' (read from source, never rendered in a trace). The per-ROW parser message strings themselves live in the notification microservice and remain a GAP for exact copy; the CHED-PP mandatory-field messages (ValidationMessages.properties:130-134: 'Add the number of packages / Add the package type / Add the quantity type / Add the quantity' + :132 'Add the net weight') are the family those row errors draw on and are cited on the relevant csvColumn fields. Nothing here is invented; a human should still walk a deliberately-broken CSV to capture the per-row copy verbatim.",
+  "discrepancies": [
+    "fileUpload requiredness — RENDERED vs LEGACY: the rendered HTML attribute is required=false (trace action 32 control inventory), but the upload app enforces the file server-side ('Select a file', file_upload_validation.js:88-90). Rendered attribute retained as an observation; effective requiredness is TRUE (legacy). Not a copy conflict — a rendered-attribute-vs-server-behaviour gap. For Reconcile: treat the field as required.",
+    "csvColumn:Controlled atmosphere container requiredness — FIXTURE-INFERRED vs LEGACY-MODEL: the spec previously marked this required=true (inferred from the fixture setting 'Yes' in every row). The schema model places NO @NotNull on the 'container' key-data-pair for any CHED-PP group (ComplementParameterSet.java:53). Revised to required=false (legacy). For Reconcile: confirm whether the CSV parser separately mandates it.",
+    "csvColumn:Genus and Species requiredness — FIXTURE-INFERRED vs LEGACY-MODEL: previously required=true; the model has no @NotNull on any species field of CommodityComplement (CommodityComplement.java:29-49). Revised to required=false (legacy). Reinforced by the confirmed 'no plants' -> 'Farm Machinery' overwrite, which suggests species/description is server-resolved from the commodity code rather than a mandatory user input.",
+    "csvColumn:EPPO code requiredness — FIXTURE-INFERRED vs LEGACY-MODEL: previously required=true; CommodityComplement.eppoCode has no @NotNull (CommodityComplement.java:29). Revised to required=false (legacy). The 'NNNXX' placeholder on the non-plant line hints the parser may still expect a value with a not-a-plant sentinel — unconfirmed, a gap.",
+    "FILE_TOO_SMALL copy vs threshold — INTERNAL LEGACY INCONSISTENCY: the message reads 'The selected file must be larger than 1KB' but the enforced minimum is 200 bytes (TWO_HUNDRED_B), not 1024 (validation_constants.js:7 vs :15). Carry as a finding; the rebuild should align copy and threshold."
+  ],
+  "confidence": "confirmed",
+  "confidenceNote": "Page-level 'confirmed' applies to the RENDERED SURFACE of both steps (copy, structure, controls, CSS patterns, links, account bar) — all independently re-verified against the trace. LEGACY-sourced additions (validation messages, the interstitial/error-summary/warning conditionals, and per-field mandatoriness from the schema model + ValidationMessages.properties) are tagged confidence='legacy' at the item level: trustworthy for VALUES and COPY, and for MANDATORINESS 'as the old system had it' — a policy the rebuild may revisit. The CSV column contract remains fixture-derived for names/ordinals, and the option vocabularies remain source-derived (manual-entry dropdowns, not proven CSV contracts).",
+  "openQuestions": [
+    "ONE PAGE OR TWO — SETTLED: TWO (plus an interstitial). Action 32 ('Upload') is on 'Upload commodity details using a CSV file'. Action 34 ('Confirm and continue') is on a DISTINCT page 'Check uploaded commodity details' (/commodity/bulk-upload-review), served by a different app mount. This spec covers both because the brief scoped them together, but they should be SPLIT downstream. The THIRD, interstitial render is now legacy-resolved (see below). The 'Upload successful' banner lives on the SECOND page.",
+    "URLs FULLY CONFIRMED. step 1 = https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/{ref}/commodity-details-upload; step 2 = https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/{ref}/commodity/bulk-upload-review (Location header of request 987). Observed ref = DRAFT.GB.2026.1526023. SND (sandbox) environment.",
+    "VALIDATION SURFACE — LARGELY MINED FROM LEGACY (was the single biggest gap). The file-upload app's validation copy is now captured verbatim in validationMessages (Select a file / The selected file must be a CSV / is empty / must be larger than 1KB / must be smaller than 10MB / Correct your file and then upload it again / could not be uploaded - try again / There are {N} errors in your file). Source: ~/git/defra/ipaffs/ipaffs-frontend-upload/service/src/utils/validation_constants.js + validation/file_upload_validation.js + routes/handlers/upload/commodity_details_upload.js. WHAT REMAINS A GAP: the PER-ROW parser messages (rendered as bold '{message} ({N} lines)' with an 'Affected rows' disclosure) come from the notification microservice bulk-upload parser and are NOT enumerated in the frontend — a human should upload a deliberately-broken CSV to capture them verbatim. The CHED-PP commodity mandatory-field messages (ValidationMessages.properties:130-134) are the family they draw on.",
+    "FILE CONSTRAINTS — NOW LEGACY-KNOWN: min size 200 bytes (message says 1KB — a copy/threshold mismatch, see discrepancies), max size 10MB (TEN_MB), allowed extension .csv only (server-side, not just the client accept hint). Client accept='.csv' is a hint and is trivially bypassed; the server extension check is the real gate. Source: validation_constants.js:15-16,53-54 + file_upload_validation.js:92-108 (legacy). Max ROW COUNT is still unevidenced (the parser lives in the microservice).",
+    "INTERSTITIAL — NOW LEGACY-RESOLVED. The step-1b 'processing' render is the same template under {{#if notification.isBulkUploadInProgress}}: heading 'Uploading CSV...', body 'The page will refresh until upload is complete.', a spinner, and a <noscript> 'To check if upload has finished, refresh this page.' (commodity_details_upload.html:57-66). So (a) the waiting copy is known; (b) the loop is JS-driven (commodity_details_upload.js, loaded only in-progress, html:140-142) with a manual server-side refresh fallback; (c) a no-JS user is NOT stranded — the <noscript> link advances them. There is also a server-side TIMEOUT branch showing 'The selected file could not be uploaded - try again' whose duration is config.commodityBulkUpload.timeout — a human should read the deployed value. Measured POST->review ~11s for a 5-row file.",
+    "RE-UPLOAD WARNING — NOW LEGACY-KNOWN: re-uploading over an existing upload shows a govuk-warning-text 'This will delete and replace your previous upload' inside govuk-inset-text ({{#if showReuploadWarningMessage}}, commodity_details_upload.html:104-113). Never rendered in the traced first upload.",
+    "CSV COLUMN CONTRACT IS FIXTURE-DERIVED for names/ordinals (the app never renders the CSV header). Requiredness, however, is now LEGACY-backed per column from the schema model: MANDATORY for CHED-PP = Number of packages, Type of package, Quantity, Quantity type, Net weight (per-line), plus commodity identity (Commodity code) and commodityIntendedFor (deferrable). OPTIONAL in the model = Genus/Species, EPPO, Variety, Class, Controlled atmosphere container. A human MUST still reconcile the 12-column header + per-column codes against the live gov.uk template.",
+    "CSV TAKES CODES, THE UI SHOWS LABELS — and INCONSISTENTLY. 'Type of package' = 'BG'/'Bag'; 'Quantity type' = 'PCS'/'Pieces'; but 'Controlled atmosphere container' = 'Yes'/'Yes' (a label). The rebuild needs an explicit, documented code list per column. Only ONE code per enum (BG, PCS) is known; the rest live in the external gov.uk guide.",
+    "DISCREPANCY (both ends verified): the fixture's 5th row supplies Genus and Species = 'no plants' but the trace rendered 'Farm Machinery'. The CSV value is NOT echoed — IPAFFS resolves the species/description from the commodity code (84321000) or EPPO placeholder (NNNXX). Reinforced by the LEGACY finding that species is not model-mandatory (CommodityComplement.java:29-49). So 'Genus and Species' may be advisory / server-resolved. Materially affects whether the rebuild needs the column.",
+    "The 5th line is EPPO 'NNNXX' under commodity code 84321000 — machinery in a CHED-PP. Combined with the above this LOOKS deliberate ('NNNXX' = a sanctioned 'not a plant' placeholder EPPO). Still inference from two data points; worth human confirmation that non-plant commodity lines are policy, not a validation hole.",
+    "BLANK COLUMNS ARE PERMITTED AT UPLOAD AND COMPLETED LATER — now with a LEGACY backbone. commodityIntendedFor ('Intended for final users') is @NotNull for CHED-PP (Commodities.java:221-229, ValidationMessages.properties:88) yet is blank at upload and set afterwards on the bulk-details page (ChedppCommodityBulkDetailsPage.ts:6-17). So a CSV column can be MANDATORY overall yet deferred past the upload step — the per-column 'required in the CSV vs deferrable' split is a real design decision for the rebuild.",
+    "Step 2 field set (per commodity line, all confirmed): Commodity code, EPPO, Genus and species, Net weight, Packages, Package type, Quantity, Quantity type, Controlled atmosphere container — NINE of the twelve CSV columns. The review page does NOT display Variety, Class, or Intended for final users (all blank in the fixture). Gap: never shown, or shown only when populated?",
+    "Number formatting: integers in the CSV (Quantity 2, Net weight 1234) render back as 2.0 and 1234.0; but 'Number of packages' = 1 renders as '1'. Per-column decimal treatment. Whether decimals are accepted on input, and to what precision, is a gap (the QUANTITY positive-double rule, PartOne.java:338-343, legacy-confirms Quantity is a double).",
+    "Label drift CSV template -> review page (all confirmed): 'Number of packages' -> 'Packages', 'Net weight (kg)' -> 'Net weight' (unit DROPPED), 'EPPO code' -> 'EPPO', 'Genus and Species' -> 'Genus and species' (case). The rebuild should pick one vocabulary; the dropped kg unit has real potential to mislead.",
+    "ENTRY CONDITION corroborated and partly CONFIRMED: action 29 checks radio 'Upload from a CSV file', action 30 clicks 'Save and continue' immediately before this page (request 964 POST 302 input-method -> 965 GET commodity-details-upload). Sibling 'Manual entry' branch inferred from DescriptionOfGoodPage.ts:6-12 + ched-pp-workflows.ts:294-320. 'Cancel' returns to /commodity/input-method (href confirmed, template commodity_details_upload.html:132-134).",
+    "The CSV template itself is external guidance at https://www.gov.uk/government/publications/ipaffs-upload-commodity-details-using-a-csv-file — CONFIRMED as the literal href of the download link (trace action 32; verbatim in template commodity_details_upload.html:74-75). The authoritative column list AND per-column code lists live there, not in the app. The rebuild inherits a fragile coupling between a GOV.UK publication and the app's parser — worth designing out.",
+    "NO ACCESSIBILITY COVERAGE for this page. ched-pp-accessibility-tests.spec.ts takes the MANUAL-entry branch and never visits CSV upload or the bulk-upload review page. Given the bespoke .commodity-summary markup on step 2 is the most a11y-suspect thing on the page, this is a notable hole."
+  ]
+}

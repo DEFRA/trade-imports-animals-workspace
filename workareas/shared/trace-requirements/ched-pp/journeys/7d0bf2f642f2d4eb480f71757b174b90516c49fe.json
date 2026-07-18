@@ -1,0 +1,160 @@
+{
+  "hash": "7d0bf2f642f2d4eb480f71757b174b90516c49fe",
+  "title": "B2C Importer Submits Valid Cloned CHEDPP Notification",
+  "spec": "notification/ched-pp/ched-pp-cloning.spec.ts:10 › Cloned CHED-PP notification › B2C Importer Submits Valid Cloned CHEDPP Notification",
+  "relevance": "variant",
+  "outcome": "The test drove the CHED-PP clone-a-certificate flow — dashboard → 'Clone a certificate' → picked the 'Plants, plant products and other objects' commodity radio → filled the four certificate search fields (country FR, ref PHYTO.FR.2026.0000064, issue date 15/04/2026, party 'WorldUSIN74 Co') → Search — but the app returned the 'You cannot clone this certificate' dead-end page instead of a clonable result, so the expected 'Clone' button never rendered and the test failed on a 30s timeout; despite the title, no notification was ever submitted.",
+  "failed": true,
+  "errorSummary": "TimeoutError: locator.click: Timeout 30000ms exceeded waiting for getByRole('button', { name: 'Clone' }) at ched-pp-workflows.ts:951:39. Not flaky infrastructure — the app deliberately rendered the 'Unable to clone' page (title 'Unable to clone - Import and export applications - GOV.UK') at /protected/notifications/cloning/summary.",
+  "errorPageCopy": {
+    "pageTitle": "Unable to clone - Import and export applications - GOV.UK",
+    "heading": "You cannot clone this certificate",
+    "body": [
+      "This certificate is missing some of the details needed to create a new notification",
+      "What you can do instead",
+      "You can create a new notification with this certificate already attached to your accompanying documents"
+    ],
+    "actions": [
+      "Download the certificate (PDF) — link to /notification/vnet/protected/notifications/cloning/pdf?ehcRef=PHYTO.FR.2026.0000064&origin=FR&certType=CHEDPP&issueDate=2026-04-15&partyName=WorldUSIN74%20Co",
+      "Create a new notification with attachment — button"
+    ]
+  },
+  "notes": [
+    "Clone entry page copy: 'You can copy details from a health or phytosanitary certificate to create a new import notification, depending on the type of commodity and country you're importing from.' — cloning eligibility is conditional on commodity type AND country of origin.",
+    "Clone entry page lists the four details required up front: country of origin of the certificate, certificate reference number, certificate date of issue, consignor/consignee/importer name.",
+    "Commodity radio group 'What are you importing?' offers exactly three options: 'Live animals' (CHED-A), 'Products of animal origin, germinal products or animal by-products' (CHED-P), 'Plants, plant products and other objects' (CHED-PP). No CHED-D option on this page.",
+    "certType=CHEDPP is carried through the cloning flow as a query param, alongside ehcRef, origin, certificateDateOfIssue and partyName — the search criteria are round-tripped in the URL rather than held in session.",
+    "The search DID resolve a certificate (the summary URL echoes all four criteria) — the failure is a data-completeness gate, not a not-found. The 'missing details' fallback offers PDF attachment as the degraded path.",
+    "ARCHITECTURE ANTI-PATTERN — the 'Unable to clone' page is served with HTTP 406 Not Acceptable (GET /protected/notifications/cloning/summary?...). 406 is a content-negotiation status; using it for a domain-level 'this record is incomplete' outcome is a misuse that breaks caching, monitoring and client error handling. The new CDP app must NOT copy this: a 200 with an alternate view, or a redirect to a dedicated route, is correct.",
+    "Country of origin is a <select id='country-of-origin' name='country-of-origin' class='govuk-select govuk-!-width-one-half'> taking ISO codes ('FR').",
+    "Date of issue is a three-part GOV.UK date input (Day / Month / Year textboxes), serialised to certificateDateOfIssue=2026-04-15 / issueDate=2026-04-15.",
+    "Signed-in user 'Michael Scott'; service header offers Address book, Manage account, Manage trade partners, Sign out.",
+    "Certificate details page H1 = 'Certificate details' with hint 'We will use these details to search for a matching digital health certificate.' Field hints: country of origin = 'Select a country from the list of available countries'; certificate reference number = 'You can get this from your export certifier'. The reference field's full accessible name is 'Certificate reference number' (the page object matches on the 'Certificate reference' substring).",
+    "Country of origin list is EU/EEA-only — 31 options plus 'Select a country' placeholder: Austria, Belgium, Bulgaria, Canary Islands, Croatia, Cyprus, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Iceland, Italy, Latvia, Liechtenstein, Lithuania, Luxembourg, Malta, Netherlands, Norway, Poland, Portugal, Republic of Ireland, Romania, Slovakia, Slovenia, Spain, Sweden, Switzerland. No rest-of-world origins are clonable.",
+    "The date of issue group includes a 'Choose date' datepicker button (with ❮ ❯ month nav) alongside the three Day/Month/Year textboxes.",
+    "On the 'Unable to clone' page the Back link degrades to href='#' — it does not return the user to the search criteria, so re-searching means restarting the flow.",
+    "The date of issue group depends on a bespoke jQuery datepicker (jquery.js + datepicker.min.js + datepickers.js) layered over the GOV.UK date input. The new app should use the standard GDS date input without the custom datepicker dependency.",
+    "COVERAGE GAP — despite the test title ('Submits Valid Cloned CHEDPP Notification'), this run died at the search-result stage. The clone summary page, the 'Clone' button, the pre-populated cloned notification form and the whole submission path are UNEXERCISED by this trace. Those requirements are a lower bound only and must be corroborated from other CHED-PP traces, templates or page objects — treat the uncovered surface as a finding, not as absent requirement."
+  ],
+  "pagesVisited": [
+    {
+      "pageGuess": "Notifications dashboard",
+      "url": "/notification/vnet/protected/notifications",
+      "firstActionId": 13,
+      "lastActionId": 14
+    },
+    {
+      "pageGuess": "Clone a health or phytosanitary certificate — certificate type ('What are you importing?')",
+      "url": "/notification/vnet/protected/notifications/cloning/type",
+      "firstActionId": 15,
+      "lastActionId": 16
+    },
+    {
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search",
+      "firstActionId": 17,
+      "lastActionId": 23
+    },
+    {
+      "pageGuess": "Unable to clone — 'You cannot clone this certificate'",
+      "url": "/notification/vnet/protected/notifications/cloning/summary?ehcRef=PHYTO.FR.2026.0000064&origin=FR&certificateDateOfIssue=2026-04-15&partyName=WorldUSIN74%20Co&certType=CHEDPP",
+      "firstActionId": 24,
+      "lastActionId": 24
+    }
+  ],
+  "steps": [
+    {
+      "actionId": 13,
+      "kind": "navigate",
+      "locator": "page.goto",
+      "value": "/notification/vnet/protected/notifications",
+      "pageGuess": "Notifications dashboard",
+      "url": "/notification/vnet/protected/notifications"
+    },
+    {
+      "actionId": 14,
+      "kind": "click",
+      "locator": "getByRole('link', { name: 'Clone a certificate' })",
+      "pageGuess": "Notifications dashboard",
+      "url": "/notification/vnet/protected/notifications"
+    },
+    {
+      "actionId": 15,
+      "kind": "check",
+      "locator": "getByRole('radio', { name: 'Plants, plant products and' })",
+      "value": "Plants, plant products and other objects",
+      "pageGuess": "Clone a health or phytosanitary certificate — certificate type",
+      "url": "/notification/vnet/protected/notifications/cloning/type"
+    },
+    {
+      "actionId": 16,
+      "kind": "click",
+      "locator": "getByRole('button', { name: 'Continue' })",
+      "pageGuess": "Clone a health or phytosanitary certificate — certificate type",
+      "url": "/notification/vnet/protected/notifications/cloning/type"
+    },
+    {
+      "actionId": 17,
+      "kind": "select",
+      "locator": "getByRole('combobox', { name: 'Country of origin of certificate' })",
+      "value": "FR",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 18,
+      "kind": "fill",
+      "locator": "getByRole('textbox', { name: 'Certificate reference' })",
+      "value": "PHYTO.FR.2026.0000064",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 19,
+      "kind": "fill",
+      "locator": "getByRole('textbox', { name: 'Day' })",
+      "value": "15",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 20,
+      "kind": "fill",
+      "locator": "getByRole('textbox', { name: 'Month' })",
+      "value": "04",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 21,
+      "kind": "fill",
+      "locator": "getByRole('textbox', { name: 'Year' })",
+      "value": "2026",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 22,
+      "kind": "fill",
+      "locator": "getByRole('textbox', { name: 'Consignor, consignee or importer name' })",
+      "value": "WorldUSIN74 Co",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 23,
+      "kind": "click",
+      "locator": "getByRole('button', { name: 'Search' })",
+      "pageGuess": "Search for health or phytosanitary certificate — Certificate details",
+      "url": "/notification/vnet/protected/notifications/cloning/search"
+    },
+    {
+      "actionId": 24,
+      "kind": "click",
+      "locator": "getByRole('button', { name: 'Clone' })",
+      "value": "FAILED — 30s timeout; app rendered 'You cannot clone this certificate' instead",
+      "pageGuess": "Unable to clone — 'You cannot clone this certificate'",
+      "url": "/notification/vnet/protected/notifications/cloning/summary?ehcRef=PHYTO.FR.2026.0000064&origin=FR&certificateDateOfIssue=2026-04-15&partyName=WorldUSIN74%20Co&certType=CHEDPP"
+    }
+  ]
+}

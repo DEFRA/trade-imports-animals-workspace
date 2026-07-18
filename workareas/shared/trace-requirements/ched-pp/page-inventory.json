@@ -1,0 +1,670 @@
+{
+  "generated": "2026-07-17",
+  "source": {
+    "traces": 59,
+    "traceDir": "workareas/trace-requirements/ched-pp/journeys/",
+    "corroboration": [
+      "~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts — createChedPPNotificationUpToTransportDetails + createChedPPNotification are the authoritative statement of intended order",
+      "~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts — names every page on the happy path",
+      "~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/*.ts — per-page field surface"
+    ],
+    "urlBase": {
+      "notifier": "https://importnotification-static-snd.azure.defra.cloud",
+      "decision": "https://importnotification-int-static-snd.azure.defra.cloud",
+      "note": "The /upload/... attach pages are served by a third app, on the same host as whichever app linked to them."
+    },
+    "urlNormalisation": "pageGuess URLs in the journey JSONs are LLM-extracted and inconsistent: some drop the /notifications/:draftId/ prefix, some substitute a /consignment/ segment for the real one. urlPattern below is the MAJORITY form across all 59 traces, cross-checked against the three fully-qualified traces (219b882e, e10b7cd5, 1f5b6eef). Where the majority disagreed with a single trace, the majority won.",
+    "primaryEvidenceTraces": {
+      "219b882ee3b4fbe040b824d146d38991d6b70149": "B2C Article 72 create->submit. Fully-qualified URLs, cleanest core journey. Preferred evidence from transport onwards. CAVEAT: its URL labels lag by one page across the commodity region (it puts 'Internal market' on page-4 when the workflow + e10b7cd5 put it on page-5), so commodity-region evidence comes from e10b7cd5 instead.",
+      "e10b7cd5117799d60c1e0fbeddc3322eefde1572": "HMI auto-completion. Clean URLs and the ONLY trace covering variety-of-genus-and-species + commodity/summary. Preferred evidence for the commodity region.",
+      "1f5b6eef3d110815e713ed79998cec2cb53026ee": "63 pages: create->submit->inspect->amend->resubmit. Fullest trace; preferred evidence for the decision app.",
+      "9a918b862ad1b3599fc13659f757c25aaec78ada": "CSV upload + DoA agent org selection. ONLY trace covering consignment-for / consignment-organisation / csv-upload.",
+      "a61cf55bc26138194f50d589181543a2714db2ec": "CUC billing. ONLY trace covering the four billing pages.",
+      "ebd5a5d267ae02ba27210c7c670bbba60a9ff667": "Cloning entry pages (all three cloning traces fail at the summary — see notes).",
+      "fe6d46dd47acde1900760ac281d272ab2cd841c9": "Delete notification.",
+      "e1089761b027497068678616998961b638ecf2e0": "Split consignment confirm + Valid/Rejected tabs.",
+      "60687c60b95ddc993966606d163a2b1628d236da": "Inspector risk-decision override (3 pages).",
+      "0fb606641813b926b26df0fffc9993c79d389d88": "Inspector document upload.",
+      "83305f894e68429b8978019ac787af0a9b803ef8": "Inspector CHED-overview."
+    },
+    "keyDedupRulings": [
+      "commodity-class and variety-of-genus-and-species are ONE page, not two. Trace e10b7cd5 action 26 fires getByLabel('Select class') while the page URL is /commodity/variety-of-genus-and-species?commodity-selected-code=08059000. CommodityClassPage.ts is a page object over a control that lives on the variety page — it is not a page of its own.",
+      "The 'Notification Hub' (/overview), the amend-mode landing (/overview?source=dashboard) and the copy-as-new landing are the SAME page in different states — merged into notification-hub.",
+      "The post-split review with Valid/Rejected tabs is the SAME URL and heading as review-notification — merged, with the tabs recorded as a conditional state rather than a separate page.",
+      "EconomicOperatorsOverview / SelectEconomicOperator / AddEconomicOperator / ConfirmEconomicOperator (used by the cloning workflow) are the same four pages as traders-addresses / consignor-search / consignor-create / consignor-confirmation under a different label. Merged; aliases noted per page.",
+      "csv-upload and the 'Check uploaded commodity details' state are recorded as ONE page: CsvUploadPage.ts exposes btnChooseFile, btnUpload, the success banner and btnConfirmAndContinue as one page object, and neither trace block carries a URL. Evidence deliberately includes BOTH action 32 and action 34 so the snapshot wave settles one page vs two."
+    ]
+  },
+  "journeyOrder": [
+    "notifications-dashboard",
+    "import-type",
+    "consignment-for",
+    "consignment-organisation",
+    "country-of-origin",
+    "origin-of-import",
+    "commodity-input-method",
+    "csv-upload",
+    "commodity-search",
+    "commodity-basic-description",
+    "variety-of-genus-and-species",
+    "commodity-summary",
+    "about-the-consignment",
+    "notification-hub",
+    "commodity-bulk-details",
+    "commodity-additional-details",
+    "gms-declaration",
+    "transport-before-bip",
+    "goods-movement-services",
+    "contact-details",
+    "nominated-contact",
+    "accompanying-documents",
+    "document-upload",
+    "traders-addresses",
+    "consignor-search",
+    "consignor-create",
+    "consignor-confirmation",
+    "confirm-billing-details",
+    "billing-find-an-address",
+    "billing-select-the-address",
+    "billing-change-contact-details",
+    "review-notification",
+    "declaration",
+    "confirmation"
+  ],
+  "pages": [
+    {
+      "slug": "notifications-dashboard",
+      "name": "Your import notifications (dashboard)",
+      "order": 0,
+      "urlPattern": "/notification/vnet/protected/notifications",
+      "conditional": "always — journey entry point. Also the entry for search, copy-as-new, clone, amend and delete.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 7, "note": "navigate to dashboard; action 8 is the 'Create a new notification' click that leaves the page" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 10 }
+      ]
+    },
+    {
+      "slug": "import-type",
+      "name": "What are you importing? (certificate type)",
+      "order": 1,
+      "urlPattern": "/notification/vnet/protected/notifications/consignment/page-1?source=dashboard",
+      "conditional": "always — CHED-PP is the 'Plants, plant products and other objects' radio.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 9, "note": "check radio 'Plants, plant products and'" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 12 }
+      ]
+    },
+    {
+      "slug": "consignment-for",
+      "name": "Who are you creating this notification for?",
+      "order": 2,
+      "urlPattern": "/notification/vnet/protected/notifications/consignment-for?type=CHEDPP",
+      "conditional": "DoA agent only — shown when the signed-in user may act on behalf of another organisation. Options: own organisation, or 'A different organisation'.",
+      "evidence": [
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 22, "note": "check radio 'A different organisation'" }
+      ]
+    },
+    {
+      "slug": "consignment-organisation",
+      "name": "Which company is this notification for?",
+      "order": 3,
+      "urlPattern": "/notification/vnet/protected/notifications/consignment-organisation?type=CHEDPP",
+      "conditional": "DoA agent only, and only after choosing 'A different organisation' on consignment-for. Selecting the agent's own org skips this page. Sets the orgId carried on the next page's query string.",
+      "evidence": [
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 24, "note": "check radio 'IPAFFS Plant Organisation 1'" }
+      ]
+    },
+    {
+      "slug": "country-of-origin",
+      "name": "Origin of the plants, plant product or other objects (country of origin)",
+      "order": 4,
+      "urlPattern": "/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP[&orgId=:orgId]",
+      "conditional": "always — single 'Country of origin' select. EU vs ROW origin changes downstream behaviour but not the page set.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 11, "note": "select Country of origin = AT" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 14 }
+      ]
+    },
+    {
+      "slug": "origin-of-import",
+      "name": "Origin of the import / add a reference number for this consignment",
+      "order": 5,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignment/page-2",
+      "conditional": "always — the page where the DRAFT.GB.YYYY.NNNNNNN id first appears in the URL. Carries an optional consignment reference plus (per OriginOfImportPage.ts) 'Does this consignment conform...', 'Does your consignment require a health certificate?' and 'Will the consignment change after BCP...'. Every CHED-PP trace accepts the defaults and clicks straight through, so those three questions are NEVER exercised — see notes.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 13, "note": "the page's only action in every core trace; the 'before' snapshot shows the rendered page" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 16 },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 15 }
+      ]
+    },
+    {
+      "slug": "commodity-input-method",
+      "name": "How do you want to add your commodity details?",
+      "order": 6,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/commodity/input-method",
+      "conditional": "always — the branch point: 'Manual entry' vs 'Upload from a CSV file'.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 14, "note": "check radio 'Manual entry'" },
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 29, "note": "check radio 'Upload from a CSV file' — the other branch" }
+      ]
+    },
+    {
+      "slug": "csv-upload",
+      "name": "Upload commodity details CSV (and check uploaded details)",
+      "order": 7,
+      "urlPattern": "(no URL captured in any trace)",
+      "conditional": "CSV branch only — when 'Upload from a CSV file' was chosen on commodity-input-method. Replaces commodity-search / commodity-basic-description / commodity-bulk-details entirely: the CSV path runs csv-upload -> about-the-consignment -> notification-hub -> 'Additional details' -> commodity-additional-details.",
+      "evidence": [
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 32, "note": "click #button-upload; action 33 asserts the 'Upload successful' banner in #upload-banner" },
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 34, "note": "click 'Confirm and continue' — the LLM attributed this to a separate 'Check uploaded commodity details' page. Snapshot BOTH 32 and 34 to settle one page vs two." }
+      ]
+    },
+    {
+      "slug": "commodity-search",
+      "name": "Search commodities (commodity code search)",
+      "order": 8,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignment/page-3?tab=commodity-code-search",
+      "conditional": "manual-entry branch only. Revisited once per additional commodity (reached from commodity-bulk-details 'Add commodity'). The bare /consignment/page-3 URL is the tab-chooser state before the 'Commodity code search' link is clicked.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 20, "note": "fill 'Enter commodity code' = 08059000" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 19, "note": "first commodity 06011010" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 28, "note": "second commodity 06042090 — proves the page is re-entered per commodity" }
+      ]
+    },
+    {
+      "slug": "commodity-basic-description",
+      "name": "Commodity basic description / select species of commodity",
+      "order": 9,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignment/page-4?commodity-selected-code=:commodityCode",
+      "conditional": "manual-entry branch only, once per commodity. Carries an optional EPPO-code species search ('EPPO code' textbox + Search + Add) — exercised only when the commodity requires a species. For simple commodities (e.g. 06011010 hyacinths) the page is a single Add + Save and continue. NOTE: traces 1f5b6eef/219b882e attribute the 'Add' click to the page-3 URL while e10b7cd5 and the workflow's own comments put btnAddSpecies on this page; the page-3/page-4 boundary is the one thing the snapshot wave should confirm.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 24, "note": "click 'Add' species — unambiguously inside this trace's page-4 block (22-25)" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 22, "note": "fill 'EPPO code' = CIDAC" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 22, "note": "the simple no-EPPO case" }
+      ]
+    },
+    {
+      "slug": "variety-of-genus-and-species",
+      "name": "Variety of genus (and species) — includes 'Select class'",
+      "order": 10,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/commodity/variety-of-genus-and-species?commodity-selected-code=:commodityCode",
+      "conditional": "Only for commodities whose species requires variety/class detail (e.g. 08059000 citrus with EPPO CIDAC). Skipped for the default 06011010/06042090 commodities, so ONLY trace e10b7cd5 covers it. This page also hosts the 'Select class' dropdown that CommodityClassPage.ts models — commodity-class is NOT a separate page.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 26, "note": "select 'Select class' = 'Extra Class' while the page URL is /commodity/variety-of-genus-and-species — the proof that class and variety share one page" }
+      ]
+    },
+    {
+      "slug": "commodity-summary",
+      "name": "Commodity (summary)",
+      "order": 11,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/commodity/summary",
+      "conditional": "Appears on the same species/variety path as variety-of-genus-and-species. ONLY trace e10b7cd5 covers it, and only as a single 'Save and continue' — the page's actual content is unverified.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 28, "note": "the page's only action; snapshot the 'before' state" }
+      ]
+    },
+    {
+      "slug": "about-the-consignment",
+      "name": "Purpose of the consignment (about the consignment)",
+      "order": 12,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignment/page-5",
+      "conditional": "always — 'Internal market' radio. Reached on BOTH the manual and CSV branches. 219b882e mislabels this page as page-4; e10b7cd5, 1f5b6eef and the CSV trace all agree it is page-5.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 29, "note": "check radio 'Internal market'" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 23 },
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 35, "note": "CSV branch reaches the same page" }
+      ]
+    },
+    {
+      "slug": "notification-hub",
+      "name": "Notification overview (task list hub)",
+      "order": 13,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/overview",
+      "conditional": "always — the task-list hub. Spokes per NotificationHubPage.ts: 'Commodity', #commodity-details-link (non-bulk), 'Additional details', 'Goods movement services', 'Transport to the port of entry'. Same page as the amend-mode landing (/notifications/:chedId/overview?source=dashboard) and the copy-as-new landing.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 31, "note": "click 'Commodity' spoke (manual branch)" },
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 37, "note": "click 'Additional details' spoke (CSV branch) — a different spoke off the same hub" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 144, "note": "amend-mode landing, /notifications/CHEDPP.../overview?source=dashboard" }
+      ]
+    },
+    {
+      "slug": "commodity-bulk-details",
+      "name": "Commodity details — bulk entry",
+      "order": 14,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/commodity/details/bulk",
+      "conditional": "manual-entry branch only (the CSV branch skips it). Bulk-applies packages / type of package / quantity / quantity type / net weight / controlled atmosphere container / intended use / test-and-trial to all selected commodities via 'Select all' + 'Apply'. Also hosts the 'Add commodity' button that loops back to commodity-search.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 36, "note": "select 'Select quantity type' = Bulbs — middle of the 32-40 range" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 28 },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 26, "note": "the 'Add commodity' loop-back state" }
+      ]
+    },
+    {
+      "slug": "commodity-additional-details",
+      "name": "Consignment details — total gross weight",
+      "order": 15,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignment/details?commodityDetailsPage=1",
+      "conditional": "always — reached on both branches. A single 'Total gross weight (kg)' textbox in every trace.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 41, "note": "fill 'Total gross weight (kg)' = 12" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 33 },
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 38, "note": "CSV branch, gross weight 3000" }
+      ]
+    },
+    {
+      "slug": "gms-declaration",
+      "name": "Goods movement services declaration",
+      "order": 16,
+      "urlPattern": "(unknown — never exercised)",
+      "conditional": "Only when gmsDeclaration = 'Yes'. NO CHED-PP SPEC SETS THIS, so zero traces cover it. Known only from ched-pp-workflows.ts (pages.gmsDeclaration.radioConfirmAboveStatement + btnSaveAndContinue) and GMSDeclarationPage.ts. Uncovered surface — a finding, not an absence of requirement.",
+      "evidence": []
+    },
+    {
+      "slug": "transport-before-bip",
+      "name": "Transport before the BIP (point of entry, inspection premises, transport, arrival)",
+      "order": 17,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/transport/before-bip",
+      "conditional": "always — the densest page in the journey: 'Entry border control post', 'Inspection premises', 'Choose from:' (transport method), 'Transport identification', 'Transport document reference', arrival Day/Month/Year + Hour/Minutes.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 47, "note": "fill 'Transport document reference' — middle of the 43-53 range" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 39 }
+      ]
+    },
+    {
+      "slug": "goods-movement-services",
+      "name": "Goods movement services",
+      "order": 18,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/goods-movement-services",
+      "conditional": "always — two radio groups: 'Are you using the Common Transit Convention...' and 'Will the transport use the...' service.",
+      "evidence": [
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 55, "note": "check 'Will the transport use the' = No" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 47 }
+      ]
+    },
+    {
+      "slug": "contact-details",
+      "name": "Contact details (responsible person)",
+      "order": 19,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/responsible-person/contact-details",
+      "conditional": "always — pre-populated from the signed-in user; every trace clicks straight through, so the page's field surface is unverified.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 49, "note": "the page's only action" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 57 }
+      ]
+    },
+    {
+      "slug": "nominated-contact",
+      "name": "Nominated contacts",
+      "order": 20,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/nominated-contact",
+      "conditional": "always — every trace clicks straight through; field surface unverified.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 50, "note": "the page's only action" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 58 }
+      ]
+    },
+    {
+      "slug": "accompanying-documents",
+      "name": "Accompanying documents",
+      "order": 21,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/documents/page-1",
+      "conditional": "always — 'Document type', 'Document reference', issue-date Day/Month/Year, then 'Add attachment' hands off to document-upload and the user returns here.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 52, "note": "fill 'Document reference' = REF-124 — middle of the 51-56 range" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 59, "note": "the return-after-upload state" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 60 }
+      ]
+    },
+    {
+      "slug": "document-upload",
+      "name": "Upload attachment (upload service)",
+      "order": 22,
+      "urlPattern": "/upload/vnet/protected/upload/:draftId/0/notification/attach",
+      "conditional": "Only when 'Add attachment' is clicked on accompanying-documents. A SEPARATE app (/upload/...), not the notification app — the strongest architectural signal in the corpus. Error states (file too large, empty file, disallowed type) render here: see traces 55fcf6fd (LARGE invoice) and bff12637 (empty file).",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 57, "note": "set input files example.png; action 58 is the 'Next' that leaves" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 65 }
+      ]
+    },
+    {
+      "slug": "traders-addresses",
+      "name": "Addresses / traders (consignor, consignee, place of destination)",
+      "order": 23,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/traders",
+      "conditional": "always — a mini-hub. Links: 'Add a consignor or exporter', 'Add a consignee'; buttons: 'Same as consignee', #populate-importer, #populate-place-of-destination. Re-entered after each trader is added. The cloning workflow reaches the same page as 'Economic operators overview'.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 60, "note": "click 'Add a consignor or exporter' — the empty state" },
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 73, "note": "click 'Same as consignee' — the populated state, after the consignor exists" }
+      ]
+    },
+    {
+      "slug": "consignor-search",
+      "name": "Search for an existing consignor or exporter (address book)",
+      "order": 24,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/traders/consignor/search[?page=1]",
+      "conditional": "Only when adding a consignor. The address-book search; carries the 'Create a new consignor or exporter' link. Every CHED-PP trace clicks straight through to create-new — the SEARCH ITSELF IS NEVER EXERCISED, so results/paging/no-results are uncovered.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 61, "note": "the page's only action: click 'Create a new consignor or'" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 69 }
+      ]
+    },
+    {
+      "slug": "consignor-create",
+      "name": "Add a consignor or exporter (create new)",
+      "order": 25,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/traders/consignor/new",
+      "conditional": "Only after 'Create a new consignor or exporter'. Full address form: name, Address line 1/2/3 (2 and 3 optional), City or town, Postcode or ZIP code, Telephone number, Country, Email address.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 66, "note": "fill 'City or town' — middle of the 62-71 range" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 74 }
+      ]
+    },
+    {
+      "slug": "consignor-confirmation",
+      "name": "Create consignor or exporter confirmation",
+      "order": 26,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/consignor/confirmation/:uuid?fromCreate=true",
+      "conditional": "Only after creating a consignor. A single 'Add to notification' button in every trace. Note the URL drops the /traders/ segment and keys on a trader UUID.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 72, "note": "the page's only action" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 80 }
+      ]
+    },
+    {
+      "slug": "confirm-billing-details",
+      "name": "Confirm billing details (Common User Charge)",
+      "order": 27,
+      "urlPattern": "(no URL captured — the CUC trace has no URLs)",
+      "conditional": "CUC notifications only (isCuc). Sits between traders-addresses and review-notification. Hosts the #confirm-billing-address and #confirm-billing-address-email change links, and the final 'Save and continue'.",
+      "evidence": [
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 86, "note": "click #confirm-billing-address (change address)" },
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 91, "note": "click #confirm-billing-address-email (change email) — the return state" }
+      ]
+    },
+    {
+      "slug": "billing-find-an-address",
+      "name": "Find a billing address (postcode lookup)",
+      "order": 28,
+      "urlPattern": "(no URL captured)",
+      "conditional": "CUC only, reached from the change-address link on confirm-billing-details. 'Postcode' textbox + 'Find address' button.",
+      "evidence": [
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 87, "note": "fill 'Postcode' = B693NE" }
+      ]
+    },
+    {
+      "slug": "billing-select-the-address",
+      "name": "Select the billing address",
+      "order": 29,
+      "urlPattern": "(no URL captured)",
+      "conditional": "CUC only, follows the postcode lookup. 'Select the address' combobox + 'Continue'.",
+      "evidence": [
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 89, "note": "select 'Select the address'" }
+      ]
+    },
+    {
+      "slug": "billing-change-contact-details",
+      "name": "Change billing contact details",
+      "order": 30,
+      "urlPattern": "(no URL captured)",
+      "conditional": "CUC only, reached from the change-email link on confirm-billing-details. 'Email address' + 'Phone number' + 'Continue'.",
+      "evidence": [
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 92, "note": "fill 'Email address'" },
+        { "hash": "a61cf55bc26138194f50d589181543a2714db2ec", "actionId": 93, "note": "fill 'Phone number'" }
+      ]
+    },
+    {
+      "slug": "review-notification",
+      "name": "Review your notification (check your answers)",
+      "order": 31,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/review  (submitted: /notifications/:chedId/review[?source=dashboard])",
+      "conditional": "always. Reached with :draftId pre-submission and :chedId post-submission. This page is TABBED post-submission and carries far more than a check-answers summary: a 'Checks' tab with an 'Accompanying documents' table (trace 83305f89 actions 145-148), the Valid/Rejected tabs after a split, the 'Split consignment' link, the delete route, and (amend mode) 'Review and submit'. Every create trace does a bare 'Save and continue' here, so the check-answers CONTENT is never asserted — see notes.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 75, "note": "the page's only action in the create journey" },
+        { "hash": "e1089761b027497068678616998961b638ecf2e0", "actionId": 169, "note": "post-split state: asserts the 'Valid' tab is visible — same URL, tabbed content" },
+        { "hash": "83305f894e68429b8978019ac787af0a9b803ef8", "actionId": 146, "note": "post-submission 'Checks' tab, asserting the 'Accompanying documents' table — the richest rendered state of this page in the corpus" }
+      ]
+    },
+    {
+      "slug": "declaration",
+      "name": "Declaration",
+      "order": 32,
+      "urlPattern": "/notification/vnet/protected/notifications/:draftId/declaration",
+      "conditional": "always — 'I/We have read and understood' checkbox + 'Submit notification'. Also the final step of the amend and copy-as-new journeys.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 76, "note": "check 'I/We have read and understood'; action 77 submits and leaves" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 84 }
+      ]
+    },
+    {
+      "slug": "confirmation",
+      "name": "Import notification sent (submission confirmation)",
+      "order": 33,
+      "urlPattern": "/notification/vnet/protected/notifications/:chedId/confirmation",
+      "conditional": "always — terminal page of the create journey. Carries #reference-number (the CHEDPP.GB.YYYY.NNNNNNN) and a 'Return to dashboard' link. NOTE the URL flips from :draftId to :chedId here.",
+      "evidence": [
+        { "hash": "219b882ee3b4fbe040b824d146d38991d6b70149", "actionId": 82, "note": "assert #reference-number contains CHEDPP.GB.2026.1525990" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 90 }
+      ]
+    },
+    {
+      "slug": "consignee-search",
+      "name": "Search for an existing consignee",
+      "order": -1,
+      "urlPattern": "(unknown — never exercised; by analogy /notifications/:draftId/traders/consignee/search)",
+      "conditional": "Spoke off traders-addresses via the 'Add a consignee' link. NEVER EXERCISED in the CHED-PP corpus — every trace uses 'Same as consignee' / #populate-importer instead. Known only from TradersAddressesPage.linkAddConsignee + SearchExistingConsigneePage.ts. Uncovered surface — a finding.",
+      "evidence": []
+    },
+    {
+      "slug": "consignee-create",
+      "name": "Add a consignee (create new)",
+      "order": -1,
+      "urlPattern": "(unknown — never exercised)",
+      "conditional": "Spoke off traders-addresses. Never exercised in the CHED-PP corpus; known only from ConsigneeCreationPage.ts. Uncovered surface — a finding.",
+      "evidence": []
+    },
+    {
+      "slug": "consignee-confirmation",
+      "name": "Consignee confirmation",
+      "order": -1,
+      "urlPattern": "(unknown — never exercised)",
+      "conditional": "Spoke off traders-addresses. Never exercised in the CHED-PP corpus; known only from ConsigneeConfirmationPage.ts. Uncovered surface — a finding.",
+      "evidence": []
+    },
+    {
+      "slug": "split-consignment-confirm",
+      "name": "Split consignment — confirm split",
+      "order": -1,
+      "urlPattern": "(no URL captured)",
+      "conditional": "Post-submission only, and only once an inspector has recorded mixed compliant/non-compliant check outcomes. Reached from the 'Split consignment' link on review-notification; a single 'Yes, split this consignment' button. Returns to review-notification with Valid/Rejected tabs and generates child CHEDs (…V / …R).",
+      "evidence": [
+        { "hash": "e1089761b027497068678616998961b638ecf2e0", "actionId": 167, "note": "click 'Yes, split this consignment' — the page's only action" }
+      ]
+    },
+    {
+      "slug": "delete-notification",
+      "name": "Confirm you want to delete this notification",
+      "order": -1,
+      "urlPattern": "/notification/vnet/protected/notifications/:chedId/delete",
+      "conditional": "Post-submission only. Reached from the dashboard/review of a submitted notification. Single confirm action.",
+      "evidence": [
+        { "hash": "fe6d46dd47acde1900760ac281d272ab2cd841c9", "actionId": 99, "note": "the page's only action" }
+      ]
+    },
+    {
+      "slug": "cloning-type",
+      "name": "Clone a health or phytosanitary certificate — certificate type",
+      "order": -1,
+      "urlPattern": "/notification/vnet/protected/notifications/cloning/type",
+      "conditional": "Cloning entry journey (an alternative to create-from-scratch), reached from the dashboard. Same 'Plants, plant products and other objects' radio as import-type but a distinct URL and heading.",
+      "evidence": [
+        { "hash": "ebd5a5d267ae02ba27210c7c670bbba60a9ff667", "actionId": 13, "note": "check the CHEDPP radio" }
+      ]
+    },
+    {
+      "slug": "cloning-search",
+      "name": "Search for a certificate to clone (certificate details)",
+      "order": -1,
+      "urlPattern": "/notification/vnet/protected/notifications/cloning/search?certType=CHEDPP",
+      "conditional": "Cloning journey. Country + certificate reference + date of issue + party name, then Search.",
+      "evidence": [
+        { "hash": "ebd5a5d267ae02ba27210c7c670bbba60a9ff667", "actionId": 17, "note": "middle of the 15-21 range" }
+      ]
+    },
+    {
+      "slug": "cloning-summary",
+      "name": "Cloning summary / 'You cannot clone this certificate'",
+      "order": -1,
+      "urlPattern": "/notification/vnet/protected/notifications/cloning/summary?ehcRef=:ref&origin=:country&certificateDateOfIssue=:date&partyName=:party&certType=CHEDPP",
+      "conditional": "Cloning journey. ALL THREE cloning traces (ebd5a5d2, 470cd3de, 7d0bf2f6) render the 'You cannot clone this certificate' ERROR state here — the 'Clone' button never appears and the test times out. The successful clone path (Clone -> review -> transport -> GMS -> contacts -> economic operators -> commodity -> declaration, per submitClonedChedPPNotification) is therefore ENTIRELY UNCOVERED. Snapshot this to capture the error copy.",
+      "evidence": [
+        { "hash": "ebd5a5d267ae02ba27210c7c670bbba60a9ff667", "actionId": 22, "note": "the timed-out wait for the 'Clone' button — the snapshot shows the error page" }
+      ]
+    },
+    {
+      "slug": "sign-in",
+      "name": "How do you want to sign in? (SCP / Defra ID)",
+      "order": -1,
+      "urlPattern": "(external identity provider — no in-app URL captured)",
+      "conditional": "Auth journey, before the dashboard. Only surfaced in trace 9a918b (B2C agent); every other trace reuses a stored storageState and never renders it. Out of scope for the CHED-PP rebuild but recorded for completeness.",
+      "evidence": [
+        { "hash": "9a918b862ad1b3599fc13659f757c25aaec78ada", "actionId": 14, "note": "middle of the 12-18 sign-in block" }
+      ]
+    },
+    {
+      "slug": "decision-dashboard",
+      "name": "Assess consignments — BIP notifications search (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications",
+      "conditional": "SEPARATE APP (the BIP inspector decision service, on a different host). Not part of the CHED-PP create journey — recorded because 75 trace blocks land here. 'Keywords or CHED number' search + result links.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 94, "note": "middle of the 92-97 block" },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 96 }
+      ]
+    },
+    {
+      "slug": "decision-hub",
+      "name": "Decision hub for a CHED (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/hub",
+      "conditional": "Inspector app. Carries 'Record PHSI checks', 'override the risk decision', 'View notification overview', 'Request amendment', and #hmi-status (which auto-completes when the risk decision is 'no inspection').",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 98 },
+        { "hash": "e10b7cd5117799d60c1e0fbeddc3322eefde1572", "actionId": 103, "note": "reads #hmi-status" }
+      ]
+    },
+    {
+      "slug": "decision-select-checks",
+      "name": "Record PHSI checks — select check types (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/select-checks",
+      "conditional": "Inspector app. Documentary / Physical / Identity checkboxes; re-entered once per check type. Physical and Identity are only offered for commodities that require them.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 100, "note": "documentary" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 110, "note": "physical" }
+      ]
+    },
+    {
+      "slug": "decision-phsi-checks-multiple",
+      "name": "Record PHSI checks — multi-commodity (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/phsi-checks-multiple?{documentaryChecks|physicalChecks|identityChecks}=true",
+      "conditional": "Inspector app. Per-commodity checkboxes plus status (Compliant / Hold / Non compliant) and a reason. The query string selects which check type is being recorded.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 103, "note": "documentary; middle of the 102-105 block" },
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 124, "note": "identity, with failing status + reason" }
+      ]
+    },
+    {
+      "slug": "decision-phsi-checks-confirmation",
+      "name": "Checks recorded confirmation (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/phsi-checks-confirmation",
+      "conditional": "Inspector app. Links: 'Submit more checks', 'Return to decision hub', 'Return to work order'. 'Submit more checks' is absent when the commodity requires no further check types.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 107, "note": "middle of the 106-108 block" }
+      ]
+    },
+    {
+      "slug": "decision-notification-overview",
+      "name": "Notification overview (inspector view)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/overview",
+      "conditional": "Inspector app. Reached from 'View notification overview' on the decision hub; the step before 'Request amendment'.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 135, "note": "the page's only action" }
+      ]
+    },
+    {
+      "slug": "decision-ched-overview",
+      "name": "CHED overview (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/CHED-overview",
+      "conditional": "Inspector app. Landed on after 'Return to Decision hub' in the rejection/document-access flow. Distinct from decision-notification-overview (different URL); only trace 83305f89 covers it. WARNING: NO action ever fires on this page — action 137 is the click ON the PHSI-confirmation page that lands here, and the trace jumps straight to a navigate away (139). The page's existence is evidenced only by the post-137 URL.",
+      "evidence": [
+        { "hash": "83305f894e68429b8978019ac787af0a9b803ef8", "actionId": 137, "note": "SNAPSHOT THE 'AFTER' STATE, NOT THE 'BEFORE'. Action 137 is 'Return to Decision hub' clicked on phsi-checks-confirmation; only its after-snapshot shows CHED-overview. A before-snapshot here yields the wrong page." }
+      ]
+    },
+    {
+      "slug": "decision-request-amendment",
+      "name": "Request amendment (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/amend",
+      "conditional": "Inspector app. Amendment-reason textbox + 'Request amendment' button. Pushes the notification back to the notifier, who re-enters at notification-hub in amend mode.",
+      "evidence": [
+        { "hash": "1f5b6eef3d110815e713ed79998cec2cb53026ee", "actionId": 136 }
+      ]
+    },
+    {
+      "slug": "decision-documents",
+      "name": "Accompanying documents / attachments tab (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/documents",
+      "conditional": "Inspector app. Mirrors the notifier's accompanying-documents page (Document type / reference / date / 'Add attachment') but writes to #inspector-documents-table. Remains reachable after rejection (trace 83305f89).",
+      "evidence": [
+        { "hash": "0fb606641813b926b26df0fffc9993c79d389d88", "actionId": 102, "note": "middle of the 100-105 block" },
+        { "hash": "0fb606641813b926b26df0fffc9993c79d389d88", "actionId": 108, "note": "post-upload assertion on #inspector-documents-table" }
+      ]
+    },
+    {
+      "slug": "decision-document-upload",
+      "name": "Upload attachment — decision context (upload service)",
+      "order": -1,
+      "urlPattern": "/upload/vnet/protected/upload/:chedId/0/decision/attach",
+      "conditional": "Inspector-app hand-off to the same separate /upload/ service the notifier uses, but with a /decision/ context segment and a :chedId rather than a :draftId. Error states (invalid ZIP, empty file) render here — traces b5379598, bff12637.",
+      "evidence": [
+        { "hash": "0fb606641813b926b26df0fffc9993c79d389d88", "actionId": 106, "note": "set input files" }
+      ]
+    },
+    {
+      "slug": "decision-override-risk-decision",
+      "name": "Do you want to override this risk decision? (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/override-risk-decision-chedpp",
+      "conditional": "Inspector app, CHED-PP specific (note the -chedpp URL suffix). Reached from the 'override the risk decision' link on the decision hub. Only trace 60687c60 covers it.",
+      "evidence": [
+        { "hash": "60687c60b95ddc993966606d163a2b1628d236da", "actionId": 97, "note": "click 'Continue' — the page's only action" }
+      ]
+    },
+    {
+      "slug": "decision-override-risk-reason",
+      "name": "Why are you overriding this consignment risk decision? (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/override-risk-reason-chedpp",
+      "conditional": "Inspector app, CHED-PP specific. Reason radios (e.g. 'No inspector available') + 'Confirm override'.",
+      "evidence": [
+        { "hash": "60687c60b95ddc993966606d163a2b1628d236da", "actionId": 98, "note": "check radio 'No inspector available'" }
+      ]
+    },
+    {
+      "slug": "decision-override-risk-confirmation",
+      "name": "This consignment no longer requires inspection (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications/:chedId/override-risk-decision-confirmation-chedpp",
+      "conditional": "Inspector app, CHED-PP specific. Terminal confirmation of the override.",
+      "evidence": [
+        { "hash": "60687c60b95ddc993966606d163a2b1628d236da", "actionId": 100, "note": "assert heading 'This consignment no longer...'" }
+      ]
+    }
+  ],
+  "notes": "SCOPE: 59 journey files were present (the brief said 54). 34 pages sit on the linear create journey (order 0-33); 22 more are off-path (traders spokes, cloning, delete, split, auth, and the separate BIP inspector app).\n\nTOP DEDUP RULING — commodity-class is NOT a page. Trace e10b7cd5 action 26 fires getByLabel('Select class') while the URL is /commodity/variety-of-genus-and-species. CommodityClassPage.ts models a dropdown on the variety page. Any inventory listing commodity-class and variety-of-genus-and-species as two pages is double-counting.\n\nURL FIDELITY WARNING for the snapshot wave: the pageGuess URLs are LLM-extracted and the two richest traces (1f5b6eef, 219b882e) LAG BY ONE PAGE across the commodity region — 219b882e puts 'Internal market' on page-4 when the workflow, the a11y spec, e10b7cd5 and the CSV trace all put it on page-5. Commodity-region evidence is therefore taken from e10b7cd5 (clean URLs), NOT from the higher-action-count traces. The one boundary still unsettled is page-3 vs page-4: the workflow's comments put btnAddSpecies on page-4 (Commodity Basic Description) while 1f5b6eef/219b882e attribute the 'Add' click to the page-3 URL. Evidence for both pages was chosen to be safe under either reading.\n\nUNCOVERED SURFACE (findings, not absences of requirement):\n1. gms-declaration — no CHED-PP spec sets gmsDeclaration:'Yes'. Zero traces. Known only from ched-pp-workflows.ts + GMSDeclarationPage.ts. Empty evidence.\n2. The consignee sub-journey (consignee-search / consignee-create / consignee-confirmation) — reachable via 'Add a consignee' on traders-addresses, but every trace uses 'Same as consignee' / #populate-importer. Empty evidence.\n3. The successful CLONE path — all three cloning traces (ebd5a5d2, 470cd3de, 7d0bf2f6) hit 'You cannot clone this certificate' at cloning/summary and time out. Everything submitClonedChedPPNotification does after the Clone button (review -> transport -> GMS -> contacts -> economic operators -> commodity -> declaration) is unexercised.\n4. origin-of-import's three questions ('Does this consignment conform...', 'Does your consignment require a health certificate?', 'Will the consignment change after BCP...') — every trace accepts the defaults and clicks through, so the page renders but its fields are never touched.\n5. The consignor address-book SEARCH — consignor-search is only ever used as a pass-through to 'Create a new'. Results, paging and no-results states are uncovered.\n6. review-notification's check-answers CONTENT — every create trace does a bare 'Save and continue'. The summary rows the new service must render are not evidenced by any assertion.\n7. contact-details and nominated-contact — clicked straight through in every trace; field surface unverified.\n8. decision-ched-overview — the URL is reached but NO action ever fires on it, so only an 'after' snapshot of trace 83305f89 action 137 can capture it.\n\nWATCH OUT — review-notification is heavier than its name suggests. Post-submission it is a TABBED page (Checks tab with an 'Accompanying documents' table; Valid/Rejected tabs after a split) served under the SAME URL and heading as the pre-submission check-your-answers page. Treating it as one simple summary page would under-specify it badly; treating each tab as its own page would double-count. It is one page with several states.\n\nARCHITECTURAL SIGNALS worth carrying into the rebuild: (a) attachments are handled by a SEPARATE /upload/ app on both the notifier and inspector sides, keyed /upload/:id/0/{notification|decision}/attach; (b) the id flips from DRAFT.GB.YYYY.NNNNNNN to CHEDPP.GB.YYYY.NNNNNNN at submission, and the same page (review, overview) is served under both; (c) the URL scheme is incoherent legacy — positional page-1..page-5 names sit alongside semantic ones (/commodity/input-method, /transport/before-bip), and the same logical step appears under /consignment/details and /commodity/details in different traces. The rebuild should not inherit any of this.\n\nSECRETS: no credentials were copied into this file. Trace e10b7cd5 action 105 contains an OAuth token POST — already redacted at extraction time."
+}

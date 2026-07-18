@@ -1,0 +1,319 @@
+{
+  "slug": "commodity-input-method",
+  "name": "How do you want to add your commodity details?",
+  "url": "/notification/vnet/protected/notifications/:draftId/commodity/input-method",
+  "pageTitle": "How do you want to add your commodity details? - Import and export applications - GOV.UK",
+  "caption": "Description of the goods",
+  "heading": "How do you want to add your commodity details?",
+  "bodyCopy": [],
+  "conditionalCopy": [
+    {
+      "text": "If you upload from a CSV file now, you will lose the commodity details you entered manually.",
+      "renderedWhen": "The draft already has commodities (partOne.commodities.commodityComplement is non-empty) AND notification.isBulkUploadInProgress is UNDEFINED — i.e. the commodities were entered manually. Rendered as govuk-warning-text between the H1 and the form. See openQuestions for the definedness-vs-truthiness trap in this condition.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/routes/handlers/importer/commodity_input_method.js:19 (MANUAL_WARNING_MESSAGE, transcribed verbatim), selected at :115 (the else branch of isBulkUploadInProgressFlagSet); rendered by views/importer/commodityInputMethod.html:17-25. NEVER observed in a trace — both evidence traces are fresh drafts hitting the page once, and no QA Playwright test revisits this page. CORROBORATED by the legacy repo's own unit test, which pins this exact string as expected view context: ipaffs-frontend-notification/service/test/handlers/importer/commodity_input_method_test.js:123. So the string is fixed by a passing test, not merely read off the handler — but its RENDERED form remains unverified."
+    },
+    {
+      "text": "If you select manual entry now, you will lose the commodity details you uploaded from a CSV file.",
+      "renderedWhen": "The draft already has commodities (partOne.commodities.commodityComplement is non-empty) AND notification.isBulkUploadInProgress is DEFINED (any value, including false — see the openQuestions trap). Rendered as govuk-warning-text between the H1 and the form.",
+      "confidence": "inferred",
+      "evidence": "ipaffs-frontend-notification/service/src/routes/handlers/importer/commodity_input_method.js:20 (BULK_UPLOAD_WARNING_MESSAGE, transcribed verbatim), selected at :112; rendered by views/importer/commodityInputMethod.html:17-25. NEVER observed in a trace. CORROBORATED by the legacy unit test at ipaffs-frontend-notification/service/test/handlers/importer/commodity_input_method_test.js:108, which pins this exact string — and which sets isBulkUploadInProgress = false at :102 to reach it, proving the definedness quirk is deliberate, tested behaviour."
+    }
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row (#commodity-input-method-page) > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "error-summary",
+      "text": "CONDITIONAL. Rendered above the caption/H1 when validation fails — from the common/validationSummary partial. Title is 'Please fix the following errors' (NOT the GDS standard 'There is a problem'); body is a govuk-list of links, here a single link reading 'Select how you want to add your commodity details' with href='#input-method'. Not observed rendered in any trace, and no QA test submits this page empty.",
+      "govukComponent": "Error summary"
+    },
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "How do you want to add your commodity details?",
+      "govukComponent": "Heading XL (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "warning-text",
+      "text": "CONDITIONAL — only when the draft already has commodities. Text is one of the two conditionalCopy strings depending on whether the existing commodities came from CSV or manual entry. No QA Playwright test revisits this page to change input method, so this branch is untraced — but the legacy unit suite does cover both branches of the handler context (commodity_input_method_test.js:99-129).",
+      "govukComponent": "Warning text"
+    },
+    {
+      "element": "radios",
+      "text": "Visually-hidden legend: 'How would you like to enter your information?' — then 'Manual entry' (value=manual, hint 'Enter one commodity line at a time.') and 'Upload from a CSV file' (value=csv, hint 'Add all details at once, by uploading a file you can prepare with most spreadsheet software. Recommended for consignments with many commodity lines.'), each label bold. On revisit with existing commodities one radio is pre-selected (see 'Sticky selection' in openQuestions).",
+      "govukComponent": "Radios inside Fieldset"
+    },
+    {
+      "element": "error-message",
+      "text": "CONDITIONAL. Inline error rendered INSIDE the fieldset, above the radios: <p class=\"govuk-error-message\" id=\"input-method-error\">Select how you want to add your commodity details</p>. Rendered WITHOUT the GDS-mandated visually-hidden 'Error:' prefix, and not wired to the fieldset via aria-describedby (the fieldset gets aria-describedby only when a group-level hintText is passed, which this page does not — confirmed absent in the rendered DOM). Never observed rendered.",
+      "govukComponent": "Error message"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (id=button-save-and-continue, data-prevent-double-click=true)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": [
+        "govuk-radios__item",
+        "govuk-radios__input",
+        "govuk-radios__label",
+        "govuk-radios__hint",
+        "govuk-!-font-weight-bold"
+      ],
+      "count": 1,
+      "usage": "The single question on the page — the branch point between manual commodity entry and CSV upload. Two items, each with hint text. Labels carry govuk-!-font-weight-bold, which is the standard GDS treatment when radio items have hints. Exactly two items for CHED-PP: the QA page object's two extra radios ('Approved bodies', 'Registered equidae') belong to CHED-A only — see openQuestions.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 29 (identical innerText); corroborated by page object ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DescriptionOfGoodPage.ts:6-12"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-visually-hidden"
+      ],
+      "count": 1,
+      "usage": "Wraps the radio group. The legend is visually hidden and reads 'How would you like to enter your information?' — different text from the visible H1. The fieldset carries NO aria-describedby (verified in the rendered DOM).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); template legendText at views/importer/commodityInputMethod.html:31"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "govuk-radios__hint"
+      ],
+      "count": 2,
+      "usage": "One hint per radio item, wired via aria-describedby to input-method-item-hint / input-method-2-item-hint. VERBATIM: 'Enter one commodity line at a time.' and 'Add all details at once, by uploading a file you can prepare with most spreadsheet software. Recommended for consignments with many commodity lines.' Both are real content requirements — they explain the trade-off between the two branches and the rebuild needs an equivalent.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump — both hint divs rendered); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 29 (main innerText, identical strings); source of truth ipaffs-frontend-notification/service/src/routes/handlers/importer/commodity_input_method.js:74,84"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 1,
+      "usage": "Primary submit. type=submit, name=button-save-and-continue, value='Save and continue', data-module=govuk-button, data-prevent-double-click=true. The QA page object addresses it by accessible name 'Save and continue', confirming that string is the button's accessible name and not just its visual label. Only one action is passed (actions: [SAVE_AND_CONTINUE_ACTION]), so no 'Save and return to hub' or 'Cancel' appears on this page. Because the button is a NAMED submit control it is part of the POST payload and is validated by SAVE_AND_CONTINUE_SCHEMA.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DescriptionOfGoodPage.ts:42-44; single-action wiring at commodity_input_method.js:65 rendered by views/partials/common/saveButtons.html:28-36; payload schema at validation/routes/handlers/importer/commodity_input_method.js:15"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the fieldset. Gains govuk-form-group--error in the error state via the displayErrorClass helper.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); error class at views/partials/govuk/radios.html:1"
+    },
+    {
+      "component": "Warning text",
+      "govukClass": "govuk-warning-text",
+      "modifiers": [
+        "govuk-warning-text__icon",
+        "govuk-warning-text__text"
+      ],
+      "count": 1,
+      "usage": "CONDITIONAL, never observed in a trace and never exercised by a QA Playwright test. Rendered between the H1 and the form when the draft already has commodities, warning that switching input method destroys existing commodity data. Includes a visually-hidden 'Warning' prefix.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/commodityInputMethod.html:17-25 (markup, incl. the visually-hidden 'Warning' span at :21); handler ipaffs-frontend-notification/service/src/routes/handlers/importer/commodity_input_method.js:106-118. No counterpart in the QA repo: no CHED-PP spec under ~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ navigates back to this page to change method. The legacy unit suite DOES cover the showWarningBanner context both ways at test/handlers/importer/commodity_input_method_test.js:99-129."
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [
+        "govuk-error-summary__title",
+        "govuk-error-summary__body",
+        "govuk-error-summary__list"
+      ],
+      "count": 1,
+      "usage": "CONDITIONAL, never observed in a trace. The common/validationSummary partial renders ABOVE the caption and H1 (not below, as is more usual) when the radio is not selected. Its H2 reads 'Please fix the following errors' — the partial's hard-coded default, since this page passes no headerText. Each error is an <a> to '#<field>', so here '#input-method'. The summary sits inside a role=alert wrapper.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/commodityInputMethod.html:15 (placement); ipaffs-frontend-notification/service/src/views/partials/common/validationSummary.html:8 (the hard-coded default title, inside the h2 at :4-10), :3 (role=alert), :15 (govuk-list govuk-error-summary__list), :18 (link href pattern href='#{{field.[0]}}')"
+    },
+    {
+      "component": "Error message",
+      "govukClass": "govuk-error-message",
+      "modifiers": [],
+      "count": 1,
+      "usage": "CONDITIONAL, never observed in a trace. Inline error inside the fieldset above the radios, id='input-method-error'. Rendered by the errorSpan helper, which — unlike its sibling errorSpanAccessible — omits the visually-hidden 'Error:' prefix. See nonStandardPatterns.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/partials/govuk/radios.html:15 (calls errorSpan); ipaffs-frontend-notification/service/src/utils/errors.js:416-427 (errorSpan markup, no 'Error:' prefix; id = field + '-error' at :426) vs :429-439 (errorSpanAccessible, which has the prefix)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "The back link IS a genuine Design System component: <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. What is non-standard is (a) its href='#' (JS-driven history back, not a real URL) and (b) the IPAFFS-specific 'navigation-links' wrapper it sits in, OUTSIDE <main>, alongside a breadcrumbs list and an information banner. Do not read the wrapper's non-standardness as the component being non-standard.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (a11y ref e48; .navigation-links outerHTML eval shows the exact anchor markup above); commodityInputMethod.html:2-8 (wrapper), partial common/backLink at :5"
+    },
+    {
+      "component": "Breadcrumbs",
+      "govukClass": "govuk-breadcrumbs",
+      "modifiers": [
+        "govuk-breadcrumbs__list",
+        "govuk-breadcrumbs__list-item",
+        "govuk-breadcrumbs__link",
+        "breadcrumbs--next-to-back"
+      ],
+      "count": 1,
+      "usage": "A single-item breadcrumbs component sitting next to the back link inside the navigation-links wrapper, outside <main>. Its one item is 'Dashboard' -> /notification/vnet/protected/notifications. Rendered by the common/navigationLinks partial with hideHubLink=true (so the hub link is suppressed on this page, leaving only Dashboard). Documented for completeness — it is service chrome, not part of this page's question.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (.navigation-links outerHTML eval; a11y ref e53 'Dashboard'); commodityInputMethod.html:6 (partial invocation with hideHubLink=true)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<legend class=\"govuk-fieldset__legend govuk-visually-hidden\">How would you like to enter your information?</legend> alongside a separate visible <h1 class=\"govuk-heading-xl\">How do you want to add your commodity details?</h1>",
+      "whatItDoes": "The page asks one question, but the question is expressed twice with two different wordings: a visible H1 outside the fieldset, and a visually-hidden legend inside it. Screen-reader users hear 'How would you like to enter your information?' as the group name; sighted users read 'How do you want to add your commodity details?'.",
+      "concern": "The GDS 'one question per page' pattern says the legend SHOULD BE the page heading (legend wraps the h1, legendIsPageHeading: true). IPAFFS instead duplicates the question in two divergent wordings, so the accessible name of the radio group does not match the visible heading. This is a WCAG 2.5.3 (Label in Name) smell and a copy-maintenance trap — the two strings can drift. The rebuild should collapse this to a single legend-as-page-heading with one agreed wording. NOTE: the QA suite runs axe against this page (as 'Description of Goods Page') and it passes, so this is NOT an automated-tooling failure — it is a design/content judgement that automated a11y checks cannot catch. Do not treat the passing axe check as evidence the pattern is fine. NOTE ALSO: the shared radios partial DOES support legendIsPageHeading (radios.html:4-6) — this page simply does not pass it.",
+      "govukAlternative": "govuk-frontend Radios macro with fieldset.legend.isPageHeading = true and classes 'govuk-fieldset__legend--xl', dropping the separate h1.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); ipaffs-frontend-notification/service/src/views/importer/commodityInputMethod.html:16,30-36; partial support at views/partials/govuk/radios.html:4-6; axe check at ~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-pp-accessibility-tests.spec.ts:40-41"
+    },
+    {
+      "pattern": "Inline error rendered via the errorSpan helper — <p class=\"govuk-error-message\" id=\"input-method-error\">…</p> with NO visually-hidden 'Error:' prefix",
+      "whatItDoes": "When validation fails, the radios partial calls {{errorSpan errors name}}, which emits a govuk-error-message paragraph containing only the message text. The codebase has a second helper, errorSpanAccessible, which emits the identical markup PLUS <span class=\"govuk-visually-hidden\">Error:</span> — but the radios partial does not use it. The fieldset is also not given an aria-describedby pointing at the error id (radios.html:2 wires aria-describedby only for a group-level hintText, which this page does not pass — the rendered fieldset has no aria-describedby at all).",
+      "concern": "The Design System Error message component specifies the visually-hidden 'Error:' prefix so screen-reader users are told the text is an error and not a hint. Omitting it, and omitting the aria-describedby wiring, means a screen-reader user tabbing into the radio group may not learn an error occurred. That IPAFFS has a correct helper and this partial calls the wrong one makes this look like an oversight rather than a decision. Unverified in rendered form — no trace or QA test ever produced the error state on this page — so this is inferred from source. The rebuild should use the standard component and wire aria-describedby.",
+      "govukAlternative": "govuk-frontend Radios macro with errorMessage set — it renders the 'Error:' prefix and the fieldset aria-describedby wiring automatically.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/partials/govuk/radios.html:2,15; ipaffs-frontend-notification/service/src/utils/errors.js:416-427 (errorSpan) vs :429-439 (errorSpanAccessible)"
+    },
+    {
+      "pattern": "Error summary titled 'Please fix the following errors', placed above {{> common/pageTitle}}",
+      "whatItDoes": "The common/validationSummary partial renders the error summary above the section caption and the H1, with a hard-coded default H2 of 'Please fix the following errors' (this page passes no headerText override).",
+      "concern": "Two deviations in one component. (1) COPY: the Design System error summary title is 'There is a problem'. 'Please fix the following errors' is off-pattern, and 'Please' is against GOV.UK style. (2) PLACEMENT: GDS places the error summary at the top of the main content; IPAFFS puts it above the caption so the caption/H1 shift down when an error appears. Never observed rendered and never exercised by a QA test, so the actual visual result is unverified. The rebuild should use the standard title and a deliberate, consistent position.",
+      "govukAlternative": "Standard govuk-error-summary with titleText 'There is a problem', at the top of govuk-grid-column-two-thirds with a decided position relative to the heading.",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/commodityInputMethod.html:15-16 (placement); ipaffs-frontend-notification/service/src/views/partials/common/validationSummary.html:8 (hard-coded default title, h2 block :4-10)"
+    },
+    {
+      "pattern": "<div class=\"navigation-links\"> / navigation-links__left-block wrapper, rendered outside <main>, holding a govuk-back-link with href='#', a govuk-breadcrumbs list and an information banner",
+      "whatItDoes": "IPAFFS-specific navigation chrome. The wrapper is bespoke, but the components inside it are real DS components: govuk-back-link (href='#', id=back-link) and govuk-breadcrumbs (single 'Dashboard' item). The information banner carries the user name and Address book / Manage account / Manage trade partners / Sign out links.",
+      "concern": "The WRAPPER is not a Design System component and sits outside the main landmark; the back link and breadcrumbs inside it are standard components used in a non-standard container. The back link's href='#' means it depends on JS and does not degrade without it — that, not the class, is the real defect. Noted for completeness — the <main> region itself is 100% govuk-*.",
+      "govukAlternative": "Keep govuk-back-link but give it a real href, and place back link / breadcrumbs in the standard position above main content without the bespoke wrapper.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (a11y refs e47-e53; .navigation-links outerHTML eval); commodityInputMethod.html:2-8"
+    }
+  ],
+  "fields": [
+    {
+      "name": "input-method",
+      "label": "How would you like to enter your information?",
+      "hint": "",
+      "hintNote": "No group-level hint — the partial's hintText slot is unused on this page. Each OPTION carries its own hint; see options[].hint.",
+      "control": "radio",
+      "required": true,
+      "requiredNote": "MANDATORINESS PROVENANCE (legacy): required is enforced ONLY by frontend Joi — Joi.string().required().valid('manual','csv') at ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/commodity_input_method.js:10-13 (re-verified this pass). There is NO server-side model @NotNull group behind it: 'input-method' is a transient UI routing choice, not a persisted field on PartOne/Commodities/Notification. Confirmed by grepping the schema model — the only related field is Notification.isBulkUploadInProgress, a plain Boolean with NO @NotNull annotation (ipaffs-imports-notification-schema/notification-schema-java/.../representation/Notification.java:185), and there is no inputMethod field anywhere in the model. So this is 'the old system required a selection before it would route you' — a UI-flow policy the rebuild is free to revisit (e.g. defaulting to manual, or collapsing the two branches behind one data model). Keep required=true as confirmed rendered behaviour; treat the mandatoriness as policy, not domain law.",
+      "options": [
+        "Manual entry",
+        "Upload from a CSV file"
+      ],
+      "optionDetail": [
+        {
+          "label": "Manual entry",
+          "value": "manual",
+          "id": "input-method",
+          "hint": "Enter one commodity line at a time."
+        },
+        {
+          "label": "Upload from a CSV file",
+          "value": "csv",
+          "id": "input-method-2",
+          "hint": "Add all details at once, by uploading a file you can prepare with most spreadsheet software. Recommended for consignments with many commodity lines."
+        }
+      ],
+      "optionsTruncated": false,
+      "optionCount": 2,
+      "observedValues": [
+        "manual",
+        "csv"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (checks value=manual, id=input-method, aria-describedby=input-method-item-hint per the action log; main outerHTML dump carries BOTH radios, both labels and both hint divs verbatim); trace 9a918b862ad1b3599fc13659f757c25aaec78ada action 29 (checks value=csv, id=input-method-2; main innerText identical to trace 1, so the copy is stable across both branches). Hint strings additionally corroborated in source at commodity_input_method.js:74,84 — DOM and source agree exactly. Option labels independently corroborated by the QA page object, which addresses both radios by accessible name: 'Manual entry' at ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DescriptionOfGoodPage.ts:7 and 'Upload from a CSV file' at :11 — the two sources agree exactly, so the labels ARE the accessible names. Both branches are driven in journey context at ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-pp-workflows.ts:279 (csv) and :295 (manual), gated on the isCSVUpload config flag; both line refs re-verified against the trace action Source blocks. The `label` above is the verbatim visually-hidden legend text — the visible H1 is 'How do you want to add your commodity details?'. required=true is server-side (Joi .string().required().valid(MANUAL, CSV)), NOT an HTML required attribute — no control on this page carries one: ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/commodity_input_method.js:10. No QA Playwright test submits the page without a selection, but the legacy repo's own validation unit test DOES assert the required behaviour: test/validation/routes/handlers/importer/commodity_input_method_test.js. CORROBORATION RESULT (page object + workflows + all 10 CHED-PP specs re-checked): the QA repo confirms the two option labels and the button name and adds NOTHING else — no third option, no conditional control, no variant-only branch. The two-option, single-question shape of this page is agreed by every source and can be treated as settled."
+    }
+  ],
+  "hiddenFields": [
+    {
+      "name": "crumb",
+      "purpose": "CSRF token.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump); commodityInputMethod.html:27. NOTE: a second, unrelated 'crumb' input exists in the cookie-banner form outside <main> — the page's own crumb is the one inside the notification form."
+    },
+    {
+      "name": "etag",
+      "purpose": "Optimistic-concurrency token for the draft. Observed value is an HTTP-style quoted ETag — the literal attribute value INCLUDES the double quotes: \"0000000000BD29A9\". Validated as part of the POST schema (ETAG_SCHEMA).",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 14 (main outerHTML dump renders value=\"&quot;0000000000BD29A9&quot;\"; control-inventory eval reports the DOM value as \"0000000000BD29A9\" with the quotes present); commodityInputMethod.html:28; schema at validation/routes/handlers/importer/commodity_input_method.js:14"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select how you want to add your commodity details",
+      "field": "input-method",
+      "trigger": "Submitting 'Save and continue' with no radio selected (Joi any.required), or with a value other than 'manual'/'csv' (Joi any.only) — both error types map to the same message.",
+      "confidence": "legacy",
+      "confidenceNote": "Re-tagged inferred -> legacy: the copy is a verbatim read from authoritative IPAFFS frontend source (en.js:52), which the legacy taxonomy treats as trustworthy for VALUES and COPY. What remains unverified is only its RENDERED form and on-screen placement (source says it appears twice — as the error-summary link and as the inline govuk-error-message), never captured in a trace.",
+      "evidence": "String transcribed verbatim from ipaffs-frontend-notification/service/src/validation/messages/en.js:52 (COMMODITY_INPUT_METHOD_REQUIRED), re-verified against source this pass; wired at ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/commodity_input_method.js:10-13, where ANY_REQUIRED ('any.required') and ANY_VALID ('any.only') both map to it (Joi.string().required().valid(MANUAL, CSV), re-verified this pass). No microservice-side counterpart exists — grep of ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties for input-method returns nothing; this is a frontend Joi-only validation. NOT observed rendered in any trace — both evidence traces selected a radio immediately. NOT asserted by any QA Playwright test either: no spec under ~/git/defra/ipaffs/ipaffs-qa-automation/tests/notification/ched-pp/ submits this page empty, every workflow path checks a radio before clicking continue (ched-pp-workflows.ts:279,295), and the page object carries no error locator at all (DescriptionOfGoodPage.ts:1-45) so the QA suite has no handle to assert it with. HOWEVER the string IS corroborated by the legacy repo's OWN unit tests, which pin it verbatim in two places: test/handlers/importer/commodity_input_method_test.js:13 and test/validation/routes/handlers/importer/commodity_input_method_test.js:6. So the copy is fixed by passing tests and is NOT something a human has to reconstruct from scratch — what remains unverified is its RENDERED form and placement (source says it appears TWICE on screen: as the error summary link and as the inline govuk-error-message). Confidence stays 'inferred' because no trace ever rendered it."
+    },
+    {
+      "message": "ETAG is missing",
+      "field": "etag",
+      "trigger": "POST with the hidden 'etag' field absent (Joi any.required on ETAG_SCHEMA). Technical / tamper-only — the field is always populated by the rendered form, so a real user never sees this; it fires on a hand-crafted or stale POST.",
+      "confidence": "legacy",
+      "confidenceNote": "Verbatim legacy copy for a hidden POST-schema field of THIS page. Not user-facing under normal use; added for completeness of the page's server-side validation surface. Never rendered in a trace, never asserted by a QA test.",
+      "evidence": "Value 'ETAG is missing' at ipaffs-frontend-notification/service/src/validation/messages/en.js:77 (ETAG_REQUIRED); wired via ETAG_SCHEMA (ANY_REQUIRED -> ETAG_REQUIRED) in ipaffs-frontend-notification/service/src/validation/common_schemas.js:47-52, which this page's schema spreads at validation/routes/handlers/importer/commodity_input_method.js:14 (...ETAG_SCHEMA). No microservice ValidationMessages.properties counterpart."
+    },
+    {
+      "message": "ETAG is not valid",
+      "field": "etag",
+      "trigger": "POST with an 'etag' value whose length is outside 16-18 chars (Joi ruleset .min(16).max(18)). Technical / tamper-only.",
+      "confidence": "legacy",
+      "confidenceNote": "Verbatim legacy copy, composed from the invalidMessage template + the ETAG label. Hidden POST-schema field; not user-facing under normal use.",
+      "evidence": "Composed by invalidMessage(field) = field + ' is not valid' (ipaffs-frontend-notification/service/src/validation/messages/en.js:19-21) with field = errorLabels.ETAG = 'ETAG' (validation/labels/en.js:52); wired as the ruleset rule message in ETAG_SCHEMA at common_schemas.js:48-50, spread into this page's schema at commodity_input_method.js:14."
+    },
+    {
+      "message": "ETAG must be a string",
+      "field": "etag",
+      "trigger": "POST with an 'etag' of a non-string JSON type (Joi string.base / STRING_TYPE). Technical / tamper-only.",
+      "confidence": "legacy",
+      "confidenceNote": "Verbatim legacy copy, composed from the typeMessage template + the ETAG label. Hidden POST-schema field; not user-facing under normal use.",
+      "evidence": "Composed by typeMessage(label, type) = `${label} must be a ${type}` (ipaffs-frontend-notification/service/src/validation/messages/en.js:27-29) with label = 'ETAG' (labels/en.js:52) and type = 'string' (hard-coded in ETAG_SCHEMA); wired STRING_TYPE -> typeMessage in common_schemas.js:50-51, spread at commodity_input_method.js:14."
+    },
+    {
+      "message": "Enter a valid save and continue button",
+      "field": "button-save-and-continue",
+      "trigger": "POST where the named submit control 'button-save-and-continue' carries a value other than 'Save and continue' (Joi any.only via SAVE_AND_CONTINUE_SCHEMA). Technical / tamper-only — the rendered button always submits the correct value.",
+      "confidence": "legacy",
+      "confidenceNote": "Verbatim legacy copy, composed from the invalidEntryMessage template + the button label. The submit control is a named field in this page's POST payload; message added for completeness of the server-side validation surface. Note the lower-cased 'save and continue button' is a byproduct of the template's .toLowerCase() — a copy smell the rebuild need not carry.",
+      "evidence": "Composed by invalidEntryMessage(field) = 'Enter a valid ' + field.toLowerCase() (ipaffs-frontend-notification/service/src/validation/messages/en.js:23-25) with field = errorLabels.SAVE_AND_CONTINUE_BUTTON = 'Save and continue button' (validation/labels/en.js:87); wired ANY_VALID -> invalidEntryMessage in SAVE_AND_CONTINUE_SCHEMA at common_schemas.js:14-21, which this page's schema spreads at commodity_input_method.js:15 (...SAVE_AND_CONTINUE_SCHEMA)."
+    }
+  ],
+  "legacyEnrichmentNote": "Legacy pass (IPAFFS source authorised). Confirmed: template ipaffs-frontend-notification/service/src/views/importer/commodityInputMethod.html matches the spec's structure/copy exactly (H1, hidden legend, two radios+hints, warning-text branch, validationSummary, saveButtons). Mandatoriness: input-method required is frontend-Joi-only (commodity_input_method.js:10-13) with NO backing model @NotNull — it is a UI routing policy, not a persisted PartOne/Commodities field; the nearest model field, Notification.isBulkUploadInProgress, is an un-annotated Boolean (Notification.java:185). Added four legacy validation messages for this page's hidden/named POST-schema fields (etag x3, save-and-continue button x1) from en.js + common_schemas.js — all technical/tamper-only, never user-facing under normal use, added for completeness of the server-side validation surface, not as user copy. The single real user-facing validation message ('Select how you want to add your commodity details') was already present and re-verified verbatim at en.js:52. No copy discrepancy between template and any confirmed rendered value.",
+  "confidence": "confirmed",
+  "confidenceNote": "The page's core — URL, title, caption, H1, both radios with labels/values/hints, the submit button, the back link and breadcrumbs — is confirmed from two independent traces, re-verified character-for-character against fresh DOM dumps. Everything conditional (error summary, inline error message, warning banner, sticky selection) is inferred: never rendered in any trace and never asserted by any QA Playwright test, though the legacy repo's own unit suite does pin the error and warning strings and the sticky-selection context.",
+  "openQuestions": [
+    "THIS PAGE'S ANSWER RESHAPES THE WHOLE DOWNSTREAM JOURNEY, not just the next page (inferred, and the single most important thing the QA workflow adds over the traces). The two branches are not 'same questions, different entry mechanism' — they collect different things in different places. CSV branch (ched-pp-workflows.ts:278-292): input-method -> CSV upload page (choose file, upload, wait for a success banner, confirm and continue) -> About The Consignment (internal-market radio) -> back at the notification HUB, where the user clicks 'Additional details' -> Commodity Extended Description, where TOTAL GROSS WEIGHT is entered ONCE for the whole consignment (:291). Manual branch (ched-pp-workflows.ts:294 onward): input-method -> Search Commodity -> Commodity Basic Description, per commodity line, with EPPO codes/species and per-line detail. So the CSV branch re-enters via the hub and captures consignment-level weight, while the manual branch walks a per-commodity loop. The rebuild must decide whether it wants ONE data model behind both branches (strongly preferable) or whether, as in IPAFFS, choosing CSV genuinely changes what is asked and where. Treat this as a design question for a human, not a routing detail.",
+    "LEGACY TRAP — THE WARNING BRANCHES ON DEFINEDNESS, NOT TRUTHINESS (inferred, verified in source and in the legacy unit test). isBulkUploadInProgressFlagSet is `notification.isBulkUploadInProgress !== undefined` (commodity_input_method.js:103-104). So a draft with `isBulkUploadInProgress: false` is treated as a CSV-upload draft: it gets the CSV pre-selection and the 'you will lose the commodity details you uploaded from a CSV file' warning, even though the flag says the bulk upload is NOT in progress. This is not a hypothesis — the legacy unit test sets the flag to false precisely to reach that branch (test/handlers/importer/commodity_input_method_test.js:100-108). Whether that is intended or a long-standing bug is a question for a human. The rebuild should branch on an explicit, tri-state-free notion of 'how were these commodities entered' rather than on whether a boolean happens to be defined.",
+    "THE QA PLAYWRIGHT SUITE STRUCTURALLY CANNOT ASSERT THIS PAGE'S ERROR STATE (inferred, corroboration finding). The whole page object is 45 lines and exposes ONLY controls to drive: four radios, five text inputs and one button (~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/DescriptionOfGoodPage.ts:1-45). There is NO locator for the H1, the caption, the error summary, the inline error message or the warning banner. So the absence of any assertion on this page's copy or validation is not an oversight a test could quietly fix — the page object has no handle to assert with. Note this limits the QA repo specifically; the legacy frontend repo's own unit tests DO pin the error and warning copy (see validationMessages and conditionalCopy). When judging what is corroborated, weigh all three sources: traces, the QA repo, and the legacy unit suite.",
+    "QA TESTS DRIVE THIS PAGE, THEY DO NOT VERIFY IT (inferred). Across all 10 CHED-PP specs, every interaction with this page is check-a-radio-then-click-continue — there is not a single `expect` against it. The one exception is the axe check (ched-pp-accessibility-tests.spec.ts:40-41), which asserts accessibility but nothing about content. So the QA repo corroborates this page's OPTION LABELS (via getByRole accessible names) and the BUTTON NAME, and nothing else.",
+    "Both evidence pointers were CORRECT and were independently re-verified. Action 14 of 219b882e (ched-pp-article72.spec.ts, 0 errors) is Check on the 'Manual entry' radio — the action log resolves it to <input type=\"radio\" value=\"manual\" id=\"input-method\" aria-describedby=\"input-method-item-hint\">, source ched-pp-workflows.ts:295. Action 29 of 9a918b86 (ched-pp-notification-csv.spec.ts, 0 errors) is Check on the 'Upload from a CSV file' radio — resolves to value=\"csv\" id=\"input-method-2\", source ched-pp-workflows.ts:279. Both are on this page: H1, caption and page title match the spec exactly in both, and the two main innerText dumps are byte-identical. No correction needed.",
+    "STICKY SELECTION (inferred): the radios partial pre-checks an option via {{#eq ../selectedValue item.value}}checked{{/eq}} (views/partials/govuk/radios.html:27), and the handler sets context.selectedValue ONLY inside updateContextWithWarningMessage — i.e. only when the draft already has commodities (commodity_input_method.js:111,114). So on a FIRST visit nothing is pre-selected (CONFIRMED: neither trace's DOM has a checked attribute on either radio — verified by eval on both), but on a revisit the current method is pre-selected alongside the warning (corroborated by the legacy unit test's expected context, test/handlers/importer/commodity_input_method_test.js:104,117). The revisit state was never observed rendered. The rebuild should decide deliberately whether this page pre-selects the current answer.",
+    "LEGACY BUG WORTH NOT COPYING (inferred): on a validation-error re-render the POST handler calls createViewContext WITHOUT updateContextWithWarningMessage (commodity_input_method.js:38-42, contrast the GET at :26-27). So a user who has existing commodities, lands on the page (sees the warning + a pre-selected radio), somehow clears the selection and submits, gets the error page with the destructive-switch warning GONE and the pre-selection GONE. The safety-critical message disappears exactly when the user is already erring. Untraced and not covered by any test. Confirm with a human before replicating any of this control flow.",
+    "PAGE-OBJECT SHARING — IMPORTANT, do not mistake for CHED-PP surface. The QA page object for this page is DescriptionOfGoodPage.ts and it is SHARED ACROSS CHED TYPES. It exposes two further radios — radioApprovedBodies ('Approved bodies', :14-16) and radioRegisteredEquidae ('Registered equidae', :18-20) — plus five text inputs (identification details, description, horse name, microchip, passport, :22-40, two of them marked //todo). Every one of those is used EXCLUSIVELY by ched-a-workflows.ts and by the CHED-A a11y spec; NO CHED-PP workflow or spec touches them, and neither evidence trace's DOM contains them. The control inventory at action 14 is exactly: crumb, etag, input-method, input-method-2, button-save-and-continue — plus cookie-banner chrome outside the form (accept-cookies button, a second crumb, returnUrl, fromFooterHeader, cookies button). The CHED-A controls are live-animals surface rendered by a different page behind the same page-object class. They are therefore NOT fields of the CHED-PP commodity-input-method page and have deliberately not been added. Flagging because a future reader grepping the page object WILL trip over this: the QA repo's page objects are not 1:1 with pages.",
+    "NAMING MISMATCH between sources: the QA suite calls this page 'Description of Goods Page' (ched-pp-accessibility-tests.spec.ts:41, and the pages.descriptionOfGood factory key at page-objects/factory.ts:159), the rendered caption is 'Description of the goods', the H1 asks about 'commodity details', and the URL segment is /commodity/input-method. Four names for one page. The rebuild should settle on one name across URL, heading and test vocabulary.",
+    "NO trace ever rendered the error state for this page, and no QA Playwright test asserts the message — but the copy is NOT unknowable: 'Select how you want to add your commodity details' is pinned verbatim by two legacy unit tests (see validationMessages). What a human still needs to settle is (a) whether to keep that wording in the rebuild, and (b) the error summary title, which legacy renders as 'Please fix the following errors' rather than the GDS 'There is a problem'. Both are content decisions, not archaeology.",
+    "NO trace ever rendered the conditional warning banner, and no QA Playwright test exercises it either. It appears only when the draft ALREADY has commodities and the user returns to change input method — both evidence traces were fresh drafts hitting the page once, and every CHED-PP spec runs the journey forwards in a single pass. The two warning strings are transcribed verbatim from the handler (commodity_input_method.js:19-20) AND pinned by legacy unit tests (test/handlers/importer/commodity_input_method_test.js:108,123), so the copy is solid; only the rendered appearance is unverified. The rebuild MUST decide whether it keeps this destructive-switch warning — it is a real requirement that the traces and the QA repo would BOTH have missed entirely, and it is the strongest argument in this spec for reading legacy source rather than trusting the trace corpus alone.",
+    "Destructive side effect worth flagging to design: when the draft has CSV-uploaded commodities and the user re-selects 'Manual entry', the handler PATCHes the notification (commodity_input_method.js:45-49) — i.e. switching input method mutates data on submit, not just navigation. The reverse (manual -> CSV) shows a warning but the code path only patches on the CSV -> manual direction, because the patch is gated on isBulkUploadInProgressFlagSet(notification) && inputMethod === MANUAL (:45). Confirm whether that asymmetry is intentional or a legacy bug before copying the behaviour. No test covers either direction of the switch.",
+    "Branch routing (inferred, commodity_input_method.js:91-101): 'csv' -> COMMODITY_DETAILS_UPLOAD_PAGE(referenceNumber); 'manual' -> IMPORTER_CONSIGNMENT_PAGE_3(referenceNumber), the latter passed through formActions.getAction so a change-answer/return-to-hub flow can override the next page. Both destinations are corroborated by the QA workflow: after checking csv it goes straight to the CSV upload page (ched-pp-workflows.ts:280-283 sets input files on pages.csvUpload), and after checking manual it goes to the commodity search page (:298-301 pages.searchCommodity). The new app needs an equivalent 'where did the user come from' concept or an explicit decision to drop it.",
+    "COVERAGE SKEW worth knowing: DEFAULT_CONFIG sets isCSVUpload: false (ched-pp-workflows.ts:140), and exactly ONE CHED-PP spec overrides it to true (tests/notification/ched-pp/ched-pp-notification-csv.spec.ts:16). There are 10 CHED-PP specs (verified by listing the directory), so 9 of them take the manual branch. The CSV branch — including the whole downstream upload page, its success banner and its confirm step — rests on a single test. If the rebuild treats CSV upload as a first-class path, its evidence base here is thin.",
+    "The page carries a hidden 'etag' input alongside the CSRF 'crumb'. The etag is validated as part of the POST schema (ETAG_SCHEMA) — an optimistic-concurrency mechanism. Decide whether the rebuild needs concurrency control on draft edits or whether that is IPAFFS architecture the new app should not copy.",
+    "The visible H1 and the accessible legend ask the same question in two different wordings. Product/content design need to pick ONE for the rebuild — see nonStandardPatterns.",
+    "ACCESSIBILITY IS AN ASSERTED REQUIREMENT: the QA suite runs an axe check against this page with 'Manual entry' selected (ched-pp-accessibility-tests.spec.ts:40-41). The rebuild must hold that bar. Note the check passes today despite the legend/H1 divergence AND despite the missing 'Error:' prefix (the latter only because the error state is never rendered under axe), which tells you axe will not protect you from either problem."
+  ]
+}

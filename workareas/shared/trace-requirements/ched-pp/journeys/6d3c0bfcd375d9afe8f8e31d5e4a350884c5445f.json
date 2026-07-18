@@ -1,0 +1,232 @@
+{
+  "hash": "6d3c0bfcd375d9afe8f8e31d5e4a350884c5445f",
+  "title": "B2C notifier cannot upload an invalid TXT commercial invoice attachment",
+  "spec": "document/document-upload-invalid-commercial-invoice.spec.ts:65 › Invalid commercial invoice attachment upload › CHED-PP › B2C notifier cannot upload an invalid TXT commercial invoice attachment",
+  "relevance": "validation",
+  "outcome": "A B2C notifier builds a complete CHED-PP draft (DRAFT.GB.2026.1525765) from the dashboard through commodity code search (06011010, 06042090), bulk commodity details, consignment details, transport/BCP, goods movement services and contacts, then on the Documents page selects a Phytosanitary certificate and attempts to attach a .txt file, and the separate upload service rejects it with the error-summary alert 'The selected file must be a DOC, JPEG, PDF, PNG or XLS'.",
+  "draftId": "DRAFT.GB.2026.1525765",
+  "host": "https://importnotification-static-snd.azure.defra.cloud",
+  "errorCopy": {
+    "alertHeading": "Please fix the following errors",
+    "message": "The selected file must be a DOC, JPEG, PDF, PNG or XLS",
+    "container": "div[role=alert]",
+    "assertedAtActionId": 67
+  },
+  "notes": [
+    "Trace has 0 errors — the validation message IS the test's expected outcome, not a failure.",
+    "The attachment upload runs on a SEPARATE service/base path (/upload/vnet/...) from the notification app (/notification/vnet/...). 'Add attachment' hands off to it, and that service owns the file-type validation. Architectural split worth noting for the rebuild — the new CDP app should not copy this cross-app hop.",
+    "Rejected file: /app/resources/file-upload/example.txt (TXT). Permitted types per the message: DOC, JPEG, PDF, PNG, XLS.",
+    "File input is <input type=file id=fileUpload name=fileUpload class=govuk-file-upload>.",
+    "Spec title says 'commercial invoice' but the document type actually selected is 'Phytosanitary certificate' (option value phytosanitaryCertificate) — title/behaviour mismatch in the spec itself.",
+    "The upload page's continue control is ambiguous in the app — the spec matches it with regex /^(Next|Continue)$/ rather than a fixed label.",
+    "Page routes are opaque positional names (consignment/page-1..page-5, documents/page-1) rather than meaningful slugs — a legacy trait the rebuild should not copy.",
+    "Commodity search flow is: page-3 (Search Commodities) -> click 'Commodity code search' tab -> page-3?tab=commodity-code-search (enter code + Search) -> POST redirects to page-4?commodity-selected-code=<code> 'Select species of commodity' where the per-species 'Add' button and 'Save and continue' live. Confirmed via per-action input snapshots for actions 19/20 and 28/29.",
+    "Action 44 (Inspection premises) logged 'element is not visible' yet still resolved to value INSPBAR1 — the control is conditionally revealed.",
+    "Actions 14 (reference number), 57 (contact details) and 58 (nominated contacts) were submitted with NO field entry — defaults/prefill carried them. Those pages' fields are therefore NOT covered by this trace (uncovered surface = finding, not absence of requirement).",
+    "Journey never reaches review/declaration/submit — it is cut short by the upload validation, by design.",
+    "CAUTION for later waves: this trace zip's network log bundles traffic beyond this test (2493 requests, 7 pages, other drafts). Only the action timeline and its bound snapshots are reliably this test's. This test's draft is 1525765, confirmed via every page's cookie-banner returnUrl. Do NOT derive URLs by reading the request log in order.",
+    "No credential-like fill values were present in this trace; nothing required redaction."
+  ],
+  "pagesVisited": [
+    {
+      "pageGuess": "Your import notifications (dashboard)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications",
+      "firstActionId": 8,
+      "lastActionId": 9
+    },
+    {
+      "pageGuess": "What are you importing?",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment/page-1?source=dashboard",
+      "firstActionId": 10,
+      "lastActionId": 11
+    },
+    {
+      "pageGuess": "Origin of the animal or product",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP",
+      "firstActionId": 12,
+      "lastActionId": 13
+    },
+    {
+      "pageGuess": "Add a reference number for this consignment",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-2",
+      "firstActionId": 14,
+      "lastActionId": 14
+    },
+    {
+      "pageGuess": "How do you want to add your commodity details?",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/input-method",
+      "firstActionId": 15,
+      "lastActionId": 16
+    },
+    {
+      "pageGuess": "Search Commodities (1st commodity)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3",
+      "firstActionId": 17,
+      "lastActionId": 17
+    },
+    {
+      "pageGuess": "Search Commodities — commodity code search tab (1st commodity)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search",
+      "firstActionId": 18,
+      "lastActionId": 19
+    },
+    {
+      "pageGuess": "Select species of commodity (06011010)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06011010",
+      "firstActionId": 20,
+      "lastActionId": 21
+    },
+    {
+      "pageGuess": "Purpose of the consignment",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-5",
+      "firstActionId": 22,
+      "lastActionId": 23
+    },
+    {
+      "pageGuess": "Notification Overview (task list)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/overview",
+      "firstActionId": 24,
+      "lastActionId": 24
+    },
+    {
+      "pageGuess": "Commodity details (bulk) — Add commodity",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk",
+      "firstActionId": 25,
+      "lastActionId": 25
+    },
+    {
+      "pageGuess": "Search Commodities (2nd commodity)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3",
+      "firstActionId": 26,
+      "lastActionId": 26
+    },
+    {
+      "pageGuess": "Search Commodities — commodity code search tab (2nd commodity)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search",
+      "firstActionId": 27,
+      "lastActionId": 28
+    },
+    {
+      "pageGuess": "Select species of commodity (06042090)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06042090",
+      "firstActionId": 29,
+      "lastActionId": 30
+    },
+    {
+      "pageGuess": "Commodity details (bulk edit — apply values to all commodities)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk",
+      "firstActionId": 31,
+      "lastActionId": 39
+    },
+    {
+      "pageGuess": "Commodity details (bulk values applied)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk?bulkValuesApplied=true&commodityDetailsPage=1",
+      "firstActionId": 40,
+      "lastActionId": 40
+    },
+    {
+      "pageGuess": "Consignment Details (total gross weight)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/details?commodityDetailsPage=1",
+      "firstActionId": 41,
+      "lastActionId": 42
+    },
+    {
+      "pageGuess": "Transport Before BIP",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip",
+      "firstActionId": 43,
+      "lastActionId": 53
+    },
+    {
+      "pageGuess": "Goods movement services",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/goods-movement-services",
+      "firstActionId": 54,
+      "lastActionId": 56
+    },
+    {
+      "pageGuess": "Contact details (responsible person)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/responsible-person/contact-details",
+      "firstActionId": 57,
+      "lastActionId": 57
+    },
+    {
+      "pageGuess": "Nominated Contacts",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/nominated-contact",
+      "firstActionId": 58,
+      "lastActionId": 58
+    },
+    {
+      "pageGuess": "Documents (add document)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1",
+      "firstActionId": 59,
+      "lastActionId": 64
+    },
+    {
+      "pageGuess": "Accompanying documents — upload attachment (separate upload service)",
+      "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1525765/0/notification/attach",
+      "firstActionId": 65,
+      "lastActionId": 67
+    }
+  ],
+  "steps": [
+    { "actionId": 8, "kind": "navigate", "locator": "Navigate to \"/notification/vnet/protected/notifications\"", "value": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications", "pageGuess": "Your import notifications (dashboard)" },
+    { "actionId": 9, "kind": "click", "locator": "getByRole('link', { name: 'Create a new notification' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications", "pageGuess": "Your import notifications (dashboard)" },
+    { "actionId": 10, "kind": "check", "locator": "getByRole('radio', { name: 'Plants, plant products and' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment/page-1?source=dashboard", "pageGuess": "What are you importing?" },
+    { "actionId": 11, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment/page-1?source=dashboard", "pageGuess": "What are you importing?" },
+    { "actionId": 12, "kind": "select", "locator": "getByLabel('Country of origin')", "value": "FR", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP", "pageGuess": "Origin of the animal or product" },
+    { "actionId": 13, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/consignment-origin?type=CHEDPP", "pageGuess": "Origin of the animal or product" },
+    { "actionId": 14, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-2", "pageGuess": "Add a reference number for this consignment" },
+    { "actionId": 15, "kind": "check", "locator": "getByRole('radio', { name: 'Manual entry' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/input-method", "pageGuess": "How do you want to add your commodity details?" },
+    { "actionId": 16, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/input-method", "pageGuess": "How do you want to add your commodity details?" },
+    { "actionId": 17, "kind": "click", "locator": "getByRole('link', { name: 'Commodity code search' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3", "pageGuess": "Search Commodities (1st commodity)" },
+    { "actionId": 18, "kind": "fill", "locator": "getByRole('textbox', { name: 'Enter commodity code' })", "value": "06011010", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search", "pageGuess": "Search Commodities — commodity code search tab (1st commodity)" },
+    { "actionId": 19, "kind": "click", "locator": "getByRole('button', { name: 'Search' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search", "pageGuess": "Search Commodities — commodity code search tab (1st commodity)" },
+    { "actionId": 20, "kind": "click", "locator": "getByRole('button', { name: 'Add ' }).first()", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06011010", "pageGuess": "Select species of commodity (06011010)" },
+    { "actionId": 21, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06011010", "pageGuess": "Select species of commodity (06011010)" },
+    { "actionId": 22, "kind": "check", "locator": "getByRole('radio', { name: 'Internal market' }).first()", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-5", "pageGuess": "Purpose of the consignment" },
+    { "actionId": 23, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-5", "pageGuess": "Purpose of the consignment" },
+    { "actionId": 24, "kind": "click", "locator": "getByRole('link', { name: 'Commodity' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/overview", "pageGuess": "Notification Overview (task list)" },
+    { "actionId": 25, "kind": "click", "locator": "getByRole('button', { name: 'Add commodity' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk) — Add commodity" },
+    { "actionId": 26, "kind": "click", "locator": "getByRole('link', { name: 'Commodity code search' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3", "pageGuess": "Search Commodities (2nd commodity)" },
+    { "actionId": 27, "kind": "fill", "locator": "getByRole('textbox', { name: 'Enter commodity code' })", "value": "06042090", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search", "pageGuess": "Search Commodities — commodity code search tab (2nd commodity)" },
+    { "actionId": 28, "kind": "click", "locator": "getByRole('button', { name: 'Search' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-3?tab=commodity-code-search", "pageGuess": "Search Commodities — commodity code search tab (2nd commodity)" },
+    { "actionId": 29, "kind": "click", "locator": "getByRole('button', { name: 'Add ' }).first()", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06042090", "pageGuess": "Select species of commodity (06042090)" },
+    { "actionId": 30, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/page-4?commodity-selected-code=06042090", "pageGuess": "Select species of commodity (06042090)" },
+    { "actionId": 31, "kind": "check", "locator": "getByRole('checkbox', { name: 'Select all' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 32, "kind": "fill", "locator": "getByRole('textbox', { name: 'Number of packages' }).first()", "value": "2", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 33, "kind": "select", "locator": "getByLabel('Select type of package')", "value": "Box", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 34, "kind": "fill", "locator": "getByRole('textbox', { name: 'Quantity', exact: true })", "value": "1", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 35, "kind": "select", "locator": "getByLabel('Select quantity type')", "value": "Bulbs", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 36, "kind": "fill", "locator": "getByRole('textbox', { name: 'Net weight (kg)' })", "value": "1", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 37, "kind": "select", "locator": "getByText('Controlled atmosphere container', { exact: true })", "value": "Yes", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 38, "kind": "select", "locator": "locator('[id$=\"finished-or-propagated\"]')", "value": "Yes (resolved option value: Finished)", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 39, "kind": "click", "locator": "getByRole('button', { name: 'Apply' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk", "pageGuess": "Commodity details (bulk edit)" },
+    { "actionId": 40, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/commodity/details/bulk?bulkValuesApplied=true&commodityDetailsPage=1", "pageGuess": "Commodity details (bulk values applied)" },
+    { "actionId": 41, "kind": "fill", "locator": "getByRole('textbox', { name: 'Total gross weight (kg)', exact: true })", "value": "12", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/details?commodityDetailsPage=1", "pageGuess": "Consignment Details (total gross weight)" },
+    { "actionId": 42, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/consignment/details?commodityDetailsPage=1", "pageGuess": "Consignment Details (total gross weight)" },
+    { "actionId": 43, "kind": "select", "locator": "getByLabel('Entry border control post')", "value": "CONPNT", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 44, "kind": "select", "locator": "getByLabel('Inspection premises')", "value": "INSPBAR1", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 45, "kind": "select", "locator": "getByLabel('Choose from:')", "value": "plane", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 46, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport identification' })", "value": "F12345", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 47, "kind": "fill", "locator": "getByRole('textbox', { name: 'Transport document reference' })", "value": "certificate", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 48, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "18", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 49, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "07", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 50, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2026", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 51, "kind": "fill", "locator": "getByRole('textbox', { name: 'Hour', exact: true })", "value": "18", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 52, "kind": "fill", "locator": "getByRole('textbox', { name: 'Minutes' })", "value": "54", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 53, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/transport/before-bip", "pageGuess": "Transport Before BIP" },
+    { "actionId": 54, "kind": "check", "locator": "getByRole('group', { name: 'Are you using the Common' }).getByLabel('No', { exact: true })", "value": "No", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/goods-movement-services", "pageGuess": "Goods movement services" },
+    { "actionId": 55, "kind": "check", "locator": "getByRole('group', { name: 'Will the transport use the' }).getByLabel('No')", "value": "No", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/goods-movement-services", "pageGuess": "Goods movement services" },
+    { "actionId": 56, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/goods-movement-services", "pageGuess": "Goods movement services" },
+    { "actionId": 57, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/responsible-person/contact-details", "pageGuess": "Contact details (responsible person)" },
+    { "actionId": 58, "kind": "click", "locator": "getByRole('button', { name: 'Save and continue' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/nominated-contact", "pageGuess": "Nominated Contacts" },
+    { "actionId": 59, "kind": "select", "locator": "getByLabel('Document type')", "value": "Phytosanitary certificate (option value: phytosanitaryCertificate)", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 60, "kind": "fill", "locator": "getByRole('textbox', { name: 'Document reference' })", "value": "REF-124", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 61, "kind": "fill", "locator": "getByRole('textbox', { name: 'Day' })", "value": "04", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 62, "kind": "fill", "locator": "getByRole('textbox', { name: 'Month' })", "value": "12", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 63, "kind": "fill", "locator": "getByRole('textbox', { name: 'Year' })", "value": "2025", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 64, "kind": "click", "locator": "getByRole('button', { name: 'Add attachment' })", "url": "https://importnotification-static-snd.azure.defra.cloud/notification/vnet/protected/notifications/DRAFT.GB.2026.1525765/documents/page-1", "pageGuess": "Documents (add document)" },
+    { "actionId": 65, "kind": "other", "locator": "Set input files — locator('input[type=\"file\"]') resolved to <input type=\"file\" id=\"fileUpload\" name=\"fileUpload\" class=\"govuk-file-upload\">", "value": "/app/resources/file-upload/example.txt", "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1525765/0/notification/attach", "pageGuess": "Accompanying documents — upload attachment" },
+    { "actionId": 66, "kind": "click", "locator": "getByRole('button', { name: /^(Next|Continue)$/ })", "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1525765/0/notification/attach", "pageGuess": "Accompanying documents — upload attachment" },
+    { "actionId": 67, "kind": "assert", "locator": "expect(getByRole('alert')).toContainText('The selected file must be a DOC, JPEG, PDF, PNG or XLS')", "value": "The selected file must be a DOC, JPEG, PDF, PNG or XLS", "url": "https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1525765/0/notification/attach", "pageGuess": "Accompanying documents — upload attachment (invalid file type error)" }
+  ]
+}

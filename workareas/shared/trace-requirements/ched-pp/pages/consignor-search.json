@@ -1,0 +1,457 @@
+{
+  "slug": "consignor-search",
+  "name": "Search for an existing consignor or exporter (address book)",
+  "url": "/notification/vnet/protected/notifications/:draftId/traders/consignor/search[?page=N]",
+  "pageTitle": "Search for an existing consignor or exporter",
+  "caption": "Traders",
+  "heading": "Search for an existing consignor or exporter",
+  "bodyCopy": [
+    "Traders search results table"
+  ],
+  "backLink": "Back — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>. It IS the GOV.UK Back link component (with a bespoke back-link--next-to-breadcrumbs modifier), but it is rendered in the IPAFFS service bar ABOVE <main> and its href is \"#\" (JS history back), not a real URL.",
+  "continueLabel": "Search",
+  "secondaryActions": [
+    "Create a new consignor or exporter (link, id=add-economic-operator, href=/notification/vnet/protected/notifications/:draftId/traders/consignor/new)",
+    "View (per result row, submit button name=view-id value=<operator uuid>, id=view-button-<uuid>)",
+    "Select (per result row, submit button name=add-id value=<same operator uuid as that row's view-id>, no id attribute)",
+    "Next page (pagination link, href=?page=2, rel=next, id=next-page). Visible copy is \"Next page\" + arrow icon + \"2 of 3257\"; a govuk-visually-hidden \":\" sits between them, so textContent reads \"Next page : 2 of 3257\" but the colon is never seen."
+  ],
+  "layout": "govuk-grid-row#search-economic-operators-page > govuk-grid-column-full; the three search inputs sit in a nested govuk-grid-row > 3x govuk-grid-column-one-third",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Traders",
+      "govukComponent": "Caption (govuk-caption-xl, id=page-secondary-title)"
+    },
+    {
+      "element": "h1",
+      "text": "Search for an existing consignor or exporter",
+      "govukComponent": "Heading (govuk-heading-xl, id=page-primary-title)"
+    },
+    {
+      "element": "form",
+      "text": "GET form, action=\"search\" — the search form. class=govuk-!-margin-bottom-6",
+      "govukComponent": "-"
+    },
+    {
+      "element": "fieldset-legend",
+      "text": "Search",
+      "govukComponent": "Fieldset (govuk-fieldset__legend govuk-fieldset__legend--m), wrapped in a non-standard div.form-group.search-panel"
+    },
+    {
+      "element": "text-input",
+      "text": "Name",
+      "govukComponent": "Text input (govuk-input) in govuk-grid-column-one-third"
+    },
+    {
+      "element": "text-input",
+      "text": "Address",
+      "govukComponent": "Text input (govuk-input) in govuk-grid-column-one-third"
+    },
+    {
+      "element": "select",
+      "text": "Country",
+      "govukComponent": "Select (govuk-select govuk-!-width-full) in govuk-grid-column-one-third"
+    },
+    {
+      "element": "button",
+      "text": "Search",
+      "govukComponent": "Button (govuk-button govuk-!-margin-bottom-0, id=search, no name attribute)"
+    },
+    {
+      "element": "hidden-input",
+      "text": "crumb — CSRF token. Present in BOTH results POST forms (mobile and desktop), not in the GET search form. SCOPING NOTE for future passes: a bare document-wide input[type=hidden] sweep returns SEVEN hidden inputs, not four — a THIRD crumb plus returnUrl and fromFooterHeader belong to a cookie-preferences form (action=/notification/vnet/protected/notifications/cookies, method=POST) that sits OUTSIDE <main>. That form is site-wide chrome and is deliberately excluded from this page's fields; do not add returnUrl/fromFooterHeader as page requirements. The three forms in <main> are the GET search form and the two results POST forms.",
+      "govukComponent": "-"
+    },
+    {
+      "element": "hidden-input",
+      "text": "etag — optimistic-concurrency token for the draft notification (observed value \"0000000000BD29F5\", quoted). Present in BOTH results POST forms.",
+      "govukComponent": "-"
+    },
+    {
+      "element": "section-break",
+      "text": "26 visible section breaks, EVERY ONE inside form.traders-search-results-form-mobile (25 result rows + 1). There is NO section break between the search panel and the results, and none anywhere in the desktop form. CORRECTION vs earlier draft, which asserted a 'visible horizontal rule between the search panel and the results' — that element does not exist in the DOM.",
+      "govukComponent": "Section break (govuk-section-break govuk-section-break--visible)"
+    },
+    {
+      "element": "visually-hidden-paragraph",
+      "text": "Traders search results table",
+      "govukComponent": "Visually hidden (govuk-visually-hidden, id=tradersSearchResultsTableDesc) — aria-describedby target for the results table"
+    },
+    {
+      "element": "table",
+      "text": "Columns: Name | Address | Country | View | Select. 25 result rows observed. View/Select column headers carry a govuk-visually-hidden span (verified). The Name/Address/Country th elements carry ids transporter-company-name / transporter-company-address / transporter-company-country — copy-paste from the transporter journey. Table id=Table-SearchResults, class=govuk-table traders-search-results, aria-describedby=tradersSearchResultsTableDesc. This is the ONLY <table> element in the document.",
+      "govukComponent": "Table (govuk-table) wrapped in non-standard div.table-responsive"
+    },
+    {
+      "element": "link",
+      "text": "Create a new consignor or exporter",
+      "govukComponent": "Link (govuk-link govuk-!-font-size-19)"
+    },
+    {
+      "element": "pagination",
+      "text": "Next page (+ visually-hidden \":\") 2 of 3257",
+      "govukComponent": "NONE — bespoke nav.pagination, not govuk-pagination"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"Traders\" above the H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — #page-secondary-title textContent \"Traders\""
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — h1 textContent \"Search for an existing consignor or exporter\"; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (identical H1)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend--m"
+      ],
+      "count": 1,
+      "usage": "Groups the three search criteria under the legend \"Search\"",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — the only legend in main: \"Search\" :: class=\"govuk-fieldset__legend govuk-fieldset__legend--m\""
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Name and Address search criteria",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": [
+        "govuk-!-width-full"
+      ],
+      "count": 1,
+      "usage": "Country search criterion — 254 options",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — #country option count 254; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (also 254)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Labels for Name, Address, Country. All three render with a BARE govuk-label class — no size modifier. (These are the only three <label> elements in the entire document.)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — document.querySelectorAll('label') returns exactly 3, classes: \"govuk-label\" (Name), \"govuk-label\" (Address), \"govuk-label\" (Country). CORRECTION vs earlier draft: govuk-label--s is NOT a modifier on any label — see the non-standard pattern 'govuk-label--s on 75 H3 elements' below."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-bottom-0"
+      ],
+      "count": 1,
+      "usage": "Primary \"Search\" submit (id=search, type=submit, value=\"Search\", NO name attribute). It is a genuine govuk-frontend Button component — data-module=\"govuk-button\" and it has been initialised (data-govuk-button-init=\"\") — and it opts in to double-click protection via data-prevent-double-click=\"true\". That last attribute is a real behavioural requirement, not chrome: the rebuild's search submit should make an explicit decision about double-submit protection.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — the only .govuk-button in main; verbatim markup <button class=\"govuk-button govuk-!-margin-bottom-0\" id=\"search\" type=\"submit\" value=\"Search\" data-module=\"govuk-button\" data-prevent-double-click=\"true\" data-govuk-button-init=\"\">Search</button>. The value/data-module/data-prevent-double-click attributes were MISSED BY THE EARLIER DRAFT, which recorded only 'id=search, no name attribute'."
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-table__head",
+        "govuk-table__header",
+        "govuk-table__cell"
+      ],
+      "count": 1,
+      "usage": "Search results — Name / Address / Country / View / Select, 25 rows per page. Note: govuk-table also appears as a class on DIV elements in the mobile form (see non-standard patterns) — only the desktop form uses a real <table>.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — one <table id=\"Table-SearchResults\" class=\"govuk-table traders-search-results\">, 25 tbody rows, th text [Name, Address, Country, View, Select]"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs (bespoke, not a Design System modifier)"
+      ],
+      "count": 1,
+      "usage": "\"Back\" — rendered outside <main> in the IPAFFS service bar. Uses the real Design System class but with href=\"#\".",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>; .govuk-back-link count in document = 1"
+    },
+    {
+      "component": "Section break",
+      "govukClass": "govuk-section-break",
+      "modifiers": [
+        "govuk-section-break--visible"
+      ],
+      "count": 26,
+      "usage": "26 rules, ALL of them inside form.traders-search-results-form-mobile — one per result row (25) plus one. Every govuk-section-break on the page is also govuk-section-break--visible. There is NO rule separating the search panel from the results, and zero section breaks in the desktop form. This is therefore purely mobile-row chrome, and it is another instance of the duplicated-markup problem (see non-standard patterns), not page structure the rebuild needs.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — .govuk-section-break count = 26, .govuk-section-break--visible count = 26 (identical set); .traders-search-results-form-mobile .govuk-section-break = 26; .traders-search-results-form-desktop .govuk-section-break = 0; section breaks outside BOTH results forms = 0 (so none between the search panel and the results). Independently reproduced in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (also 26, also 0 outside the mobile form). CORRECTION vs earlier draft, which claimed count=1 'separating the search panel from the results' with 'a further' one in the mobile form — both halves of that were wrong: the separator does not exist and the mobile count is 26."
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "\"Create a new consignor or exporter\" — the only route CHED-PP traces ever take from this page",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/traders/consignor/new\" class=\"govuk-link govuk-!-font-size-19\" id=\"add-economic-operator\">Create a new consignor or exporter</a>; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (same markup, draft DRAFT.GB.2026.1526011)"
+    },
+    {
+      "component": "Visually hidden",
+      "govukClass": "govuk-visually-hidden",
+      "modifiers": [],
+      "count": 4,
+      "usage": "Inside <main>: the table description paragraph (\"Traders search results table\"), the View column-header span, the Select column-header span, and the \":\" separator inside the pagination link.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — main .govuk-visually-hidden count = 4: [P#tradersSearchResultsTableDesc \"Traders search results table\", SPAN \"View\", SPAN \"Select\", SPAN \":\"]. CORRECTION vs earlier draft, which said 3 and omitted the pagination colon."
+    },
+    {
+      "component": "Grid",
+      "govukClass": "govuk-grid-row",
+      "modifiers": [
+        "govuk-grid-column-full",
+        "govuk-grid-column-one-third"
+      ],
+      "count": 228,
+      "usage": "The page's INTENT is two grid rows (full-width outer column; three one-third columns for the search criteria) — but the rendered DOM contains 228 govuk-grid-row elements, all inside <main>, because the mobile results form lays every result row out on its own nested grid. Column counts: govuk-grid-column-full = 27 (1 outer + 26 in the mobile form), govuk-grid-column-one-third = 3 (the search criteria only). Treat 228 as a symptom of the duplicated mobile markup, not as page structure to reproduce; the rebuild's grid need only be the 2 rows of intent.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — document.querySelectorAll('.govuk-grid-row').length = 228 (and 'main .govuk-grid-row' = 228, i.e. none outside main); .govuk-grid-column-full = 27, of which 26 are inside .traders-search-results-form-mobile; .govuk-grid-column-one-third = 3; #search-economic-operators-page className = \"govuk-grid-row\". Independently reproduced in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (also 228). CORRECTION vs earlier draft, which recorded count=2 — that was the design intent, not the DOM; the real figure is 228."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "nav.pagination > ul.pagination-list > li.pagination-item.pagination-item-next > a.pagination-link (with .pagination-link-title, .pagination-link-label, inline SVG .pagination-link-icon)",
+      "whatItDoes": "Bespoke pagination showing only a forward link. Visible copy is \"Next page\" + a hand-rolled inline arrow SVG + \"2 of 3257\", with a govuk-visually-hidden \":\" between them. No previous link on page 1, no numbered pages.",
+      "concern": "Entirely hand-rolled — predates or ignores the GOV.UK Pagination component. The label format is not standard GDS copy, and 3257 pages of results is itself a usability signal that search, not paging, is the intended path. The new app should not reproduce this.",
+      "govukAlternative": "GOV.UK Pagination component (govuk-pagination / govuk-pagination--block)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <nav class=\"pagination\" aria-label=\"Pagination\"> … <a href=\"?page=2\" class=\"pagination-link\" rel=\"next\" id=\"next-page\"><span class=\"pagination-link-title\">Next page <svg class=\"pagination-link-icon\" …></span><span class=\"govuk-visually-hidden\">:</span><span class=\"pagination-link-label\">2 of 3257</span></a>; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (also \"2 of 3257\")"
+    },
+    {
+      "pattern": "button.link-button (50 instances — 25 View + 25 Select, duplicated across desktop and mobile forms, so 50 name=\"view-id\" and 50 name=\"add-id\" controls in total)",
+      "whatItDoes": "A submit button styled to look like a link. Each row's View button is name=\"view-id\" value=\"<uuid>\" with id=\"view-button-<uuid>\"; each Select button is name=\"add-id\" value=\"<the same row uuid>\" with no id at all. Both POST to the same search URL and are dispatched server-side by which name was submitted.",
+      "concern": "Not a Design System class. Buttons-as-links is a known GDS anti-pattern where the action is navigational (View is arguably a navigation, not a state change). The POST-dispatch-by-button-name trick also couples the results table to a single form endpoint. Because the desktop and mobile forms are both in the DOM, each uuid appears on four separate controls.",
+      "govukAlternative": "For View: a plain govuk-link to a detail URL. For Select: govuk-button--secondary, or restructure the results as a radios + single Continue (the standard GDS 'pick one from a list' pattern).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — [name=add-id] count 50, [name=view-id] count 50 for 25 rows; first add-id value = first view-id value = 461d1e8b-2c53-4cfd-bb5d-418d6a9643c0; markup <button type=\"submit\" class=\"link-button\" name=\"add-id\" value=\"021595af-915d-4a0a-bfbd-13e9d19849b4\">"
+    },
+    {
+      "pattern": "form.traders-search-results-form-desktop and form.traders-search-results-form-mobile — the same 25 results rendered twice, once per breakpoint, in two structurally DIFFERENT markup shapes",
+      "whatItDoes": "Two complete parallel POST forms containing duplicate View/Select buttons for every row, shown/hidden by CSS breakpoint. The desktop form uses a real <table class=\"govuk-table\">; the mobile form uses div.transporter-table-mobile#transporter-table-mobile wrapping DIVs that carry the govuk-table class (there is no second <table> element in the document — verified: .traders-search-results-form-mobile table count = 0).",
+      "concern": "Doubles the DOM, duplicates every control name/value, and hard-codes a responsive strategy in markup rather than CSS. An automated or assistive-tech consumer sees each result twice. The class/id name .transporter-table-mobile / #transporter-table-mobile on a *traders/consignor* page indicates copy-paste from the transporter journey — and so do the desktop table header ids (transporter-company-name, transporter-company-address, transporter-company-country). Applying govuk-table to a DIV is also a Design System misuse.",
+      "govukAlternative": "One govuk-table; use the Design System's responsive table guidance/CSS rather than duplicate markup.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — three forms in main: [GET action=search class=govuk-!-margin-bottom-6], [POST action=/…/traders/consignor/search class=traders-search-results-form-mobile], [POST action=/…/traders/consignor/search class=traders-search-results-form-desktop]; document.querySelectorAll('table').length = 1; th ids [transporter-company-name, transporter-company-address, transporter-company-country]"
+    },
+    {
+      "pattern": "govuk-label--s applied to 75 <h3> elements inside the mobile results form",
+      "whatItDoes": "The mobile results layout renders each of the 25 rows as a stack of three <h3 class=\"govuk-label--s\"> headings reading \"Name\", \"Address\", \"Country\" (25 x 3 = 75). Every one of these is inside form.traders-search-results-form-mobile; not one is inside the desktop form or the search panel.",
+      "concern": "TWO distinct problems. (1) A label class on a heading element — govuk-label--s exists to size a <label>, and using it for typography on an <h3> is Design System misuse; the visual result is right, the semantics are not. (2) It injects 75 H3s into the page's heading outline, so the document heading structure is dominated by repeated 'Name/Address/Country' headings. Note axe still passes the page (see behaviourRequirements), so this is a conformance/maintainability finding, not an a11y failure.",
+      "govukAlternative": "Use a govuk-table with proper header association for the responsive layout, or if a stacked layout is genuinely needed, use the GDS Summary list component — not headings styled as labels.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — document.querySelectorAll('.govuk-label--s').length = 75, all with tagName H3, textContent cycling Name/Address/Country; every one closest('form').className = 'traders-search-results-form-mobile'. Meanwhile document.querySelectorAll('label').length = 3, all bare govuk-label."
+    },
+    {
+      "pattern": "div.form-group.search-panel",
+      "whatItDoes": "Wraps the search fieldset. `form-group` (unprefixed) is the legacy GOV.UK Elements class, superseded by govuk-form-group; `search-panel` is bespoke chrome.",
+      "concern": "Mixing legacy GOV.UK Elements classes with modern govuk-frontend classes on the same page — evidence of an incomplete migration. The new app should use govuk-form-group only.",
+      "govukAlternative": "govuk-form-group (already used correctly on the inner fields)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — document.querySelectorAll('div.form-group').length = 1 and .search-panel length = 1"
+    },
+    {
+      "pattern": "div.table-responsive",
+      "whatItDoes": "Horizontal-scroll wrapper around the results table.",
+      "concern": "Bespoke (Bootstrap-derived name). Low-risk but not in the toolbox.",
+      "govukAlternative": "No direct DS component; a plain overflow-x wrapper is acceptable, but it should not carry a Bootstrap-flavoured class name.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — document.querySelectorAll('.table-responsive').length = 1"
+    },
+    {
+      "pattern": "td.economic-operator-name, td.economic-operator-address, .name-address-and-country",
+      "whatItDoes": "IPAFFS-specific cell classes for styling the result columns; .name-address-and-country appears to be the mobile combined-cell layout.",
+      "concern": "Domain-named presentational classes. Harmless in isolation but they signal bespoke table styling rather than govuk-table defaults.",
+      "govukAlternative": "govuk-table__cell (+ govuk-table__cell--numeric where relevant)",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — class inventory"
+    },
+    {
+      "pattern": "Back link rendered outside <main> as <a href=\"#\"> in the IPAFFS service bar, alongside a \"| Dashboard\" breadcrumb list, and carrying a bespoke back-link--next-to-breadcrumbs modifier",
+      "whatItDoes": "Browser-history back via JS rather than a real URL.",
+      "concern": "href=\"#\" breaks without JS and cannot be opened in a new tab. NOTE — CORRECTION vs earlier draft: this IS the govuk-back-link component (class=\"govuk-back-link back-link--next-to-breadcrumbs\"), so the deviation is narrower than previously stated. The non-standard parts are (a) the href=\"#\" JS-history behaviour, (b) the bespoke back-link--next-to-breadcrumbs modifier, and (c) its placement outside <main> next to a breadcrumb trail — not the component choice itself.",
+      "govukAlternative": "Keep the GOV.UK Back link component but give it a real href, drop the bespoke modifier, and place it per DS guidance.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <a href=\"#\" id=\"back-link\" class=\"govuk-back-link back-link--next-to-breadcrumbs\">Back</a>, closest('main') = null"
+    },
+    {
+      "pattern": "Search form is GET with action=\"search\" (relative), but the results table forms POST to the absolute /…/traders/consignor/search — the same URL serves both search and row-selection",
+      "whatItDoes": "One endpoint multiplexed by HTTP method and by which submit button name arrives.",
+      "concern": "Not RESTful and not a clean page model. Worth flagging against the workspace's REST guidance for the rebuild.",
+      "govukAlternative": "Separate the search results page (GET with query params) from the selection action (POST to a distinct resource, or a link to a confirm page).",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — form action=\"search\" method=\"GET\" vs form action=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1525990/traders/consignor/search\" method=\"POST\" (x2)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "name",
+      "label": "Name",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <input class=\"govuk-input\" id=\"name\" name=\"name\" type=\"text\" value=\"\">, <label class=\"govuk-label\" for=\"name\">Name</label>; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (INPUT|text|name present). NOT CORROBORATED BY THE QA REPO: page-objects/notification/SearchExistingConsignorOrExporterPage.ts:1-9 exposes only linkCreateNewConsignorOrExporter — no locator for this input, so no test in the suite ever types into it. required=false is trace-derived only (the input carries no required attribute and no aria-required); the QA repo can neither confirm nor refute it. LEGACY CONFIRMS required=false: the search validator declares this field Joi.string().max(255).allow('') — validation/routes/handlers/importer/traders/search.js:20-22 — i.e. name is an OPTIONAL search criterion, permitted to be empty; there is no @NotNull-equivalent and no 'at least one criterion' rule. maxLength=255 is legacy (same schema line, .max(255)); it is unobserved (no trace ever typed a 256-char name)."
+    },
+    {
+      "name": "address",
+      "label": "Address",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <input class=\"govuk-input\" id=\"address\" name=\"address\" type=\"text\" value=\"\">, <label class=\"govuk-label\" for=\"address\">Address</label>; corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69. NOT CORROBORATED BY THE QA REPO: SearchExistingConsignorOrExporterPage.ts:1-9 exposes no locator for this input — no test ever types into it. LEGACY CONFIRMS required=false: Joi.string().max(255).allow('') at validation/routes/handlers/importer/traders/search.js:23-25 — an optional search criterion, allowed empty. maxLength=255 is legacy (same schema line), unobserved."
+    },
+    {
+      "name": "country",
+      "label": "Country",
+      "control": "select",
+      "required": false,
+      "optionCount": 254,
+      "optionsTruncated": true,
+      "options": [
+        "Select country",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Barbados"
+      ],
+      "observedValues": [],
+      "confidence": "confirmed",
+      "legacyNote": "required=false confirmed by legacy: Joi.string().valid(...countries).allow('') at validation/routes/handlers/importer/traders/search.js:35-37 — country is an optional filter, allowed empty (the placeholder option value=\"\" is a legitimate submitted value). The country dropdown only renders at all when showCountryDropDown is true, i.e. !isReimport(notification) — routes/handlers/importer/traders/search.js:187; for a normal (non-reimport) CHED-PP consignor it renders, matching the trace. The valid-set is the union of countries+regions codes fetched from the countries service (search.js:155-161), which is why the UK-nations subdivisions appear.",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — select name=country id=country, 254 options (option count re-verified independently in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69: also 254). Placeholder option has value=\"\" and text \"Select country\"; the 21 options listed above were read verbatim from the rendered option list, in order. Reference data — the new app should source this from a reference-data service, not hardcode it. NOTE: the list is not purely ISO — it substitutes England / Scotland / Wales / Northern Ireland for \"United Kingdom\" (verified: they render in that order between \"United Arab Emirates\" and \"United States Minor Outlying Islands\"), and includes non-ISO entries such as \"Canary Islands\" and \"Kosovo\". CORROBORATED BY THE QA REPO (types/country.ts) — the tests' country vocabulary carries exactly these non-ISO entries with their codes: England='GB-ENG' (types/country.ts:238), NorthernIreland='GB-NIR' (:239), Scotland='GB-SCT' (:240), Wales='GB-WLS' (:241), CanaryIslands='ES-CN' (types/country.ts:43), Kosovo='XK' (types/country.ts:121) — all line numbers re-verified. So the UK-nations substitution is not a rendering quirk of one trace — it is the domain vocabulary the whole suite uses, and the codes are ISO 3166-2 subdivision codes, not ISO 3166-1 alpha-2. There is no 'GB'/'United Kingdom' entry in types/country.ts at all (verified: grep for UnitedKingdom returns nothing). NOTE: this select is never driven by any test — SearchExistingConsignorOrExporterPage.ts:1-9 exposes no locator for it; the country vocabulary is used on the consignor CREATION page instead (workflows/notification/ched-pp-workflows.ts:186 — 'country: country.England,' inside the consignorAddress fixture, consumed at ched-pp-workflows.ts:470 via pages.consignorCreation.fillAddress(consignorAddress)). The earlier draft cited :185 for the country line; re-verification shows :185 is 'telephone' and the country assignment is at :186."
+    },
+    {
+      "name": "crumb",
+      "label": "(none — hidden input)",
+      "control": "hidden",
+      "required": true,
+      "observedValues": [
+        "[REDACTED — CSRF token, 43-char opaque string]"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <input name=\"crumb\" type=\"hidden\" value=\"[REDACTED]\"> as the first child of BOTH results POST forms (traders-search-results-form-mobile and traders-search-results-form-desktop). Absent from the GET search form. Corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (INPUT|hidden|crumb present). This is the hapi crumb CSRF plugin's token. MISSED BY THE EARLIER DRAFT — recorded here because the rebuild must make an explicit CSRF decision for any state-changing POST; it is a real requirement, not chrome."
+    },
+    {
+      "name": "etag",
+      "label": "(none — hidden input)",
+      "control": "hidden",
+      "required": true,
+      "observedValues": [
+        "\"0000000000BD29F5\""
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — <input name=\"etag\" type=\"hidden\" value=\"&quot;0000000000BD29F5&quot;\"> (the value is a quoted ETag string, quotes included) in BOTH results POST forms. Absent from the GET search form. Corroborated trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 (INPUT|hidden|etag present). MISSED BY THE EARLIER DRAFT. Implication for the rebuild: selecting an operator carries an optimistic-concurrency token for the draft notification, i.e. the server rejects a Select made against a stale draft. What the user sees when that check FAILS is a gap — no trace ever submits this form, so the conflict error copy has never been observed."
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "name",
+      "message": "Name must be 255 characters or fewer",
+      "trigger": "Name search input exceeds 255 characters",
+      "confidence": "legacy",
+      "evidence": "validation/routes/handlers/importer/traders/search.js:20-22 — Joi.string().max(255) with messages[STRING_MAX] = maxLengthMessage(labels.NAME, 255). maxLengthMessage(label, max) = `${label} must be ${max} characters or fewer` (validation/messages/en.js:3-5); labels.NAME = 'Name' (validation/labels/en.js:67). This is the ONLY error name can raise — the field is otherwise .allow(''). NEVER RENDERED IN ANY TRACE (no trace ever typed into this input); the search form is GET and the page carries a {{> common/validationSummary}} partial (views/importer/traders/search.html:15) that would surface it on re-render with the error mapped by errorHelper.mapErrors (search.js:178-179)."
+    },
+    {
+      "field": "address",
+      "message": "Address must be 255 characters or fewer",
+      "trigger": "Address search input exceeds 255 characters",
+      "confidence": "legacy",
+      "evidence": "validation/routes/handlers/importer/traders/search.js:23-25 — Joi.string().max(255), messages[STRING_MAX] = maxLengthMessage(labels.ADDRESS, 255). labels.ADDRESS = 'Address' (validation/labels/en.js:3). Never rendered in any trace."
+    },
+    {
+      "field": "country",
+      "message": "Country is not valid",
+      "trigger": "country query param is a value outside the fetched countries+regions code set (not reachable via the normal dropdown UI — only by tampering/stale codes)",
+      "confidence": "legacy",
+      "evidence": "validation/routes/handlers/importer/traders/search.js:35-37 — Joi.string().valid(...countries).allow(''), messages[ANY_VALID] = invalidMessage(labels.COUNTRY). invalidMessage(field) = `${field} is not valid` (validation/messages/en.js:19-21); labels.COUNTRY = 'Country' (validation/labels/en.js:34). The valid list is built at runtime from countriesService (search.js:161), so this only fires on an out-of-set submitted code. On error the handler returns zero results (economicOperators = [] when validationResult.error, search.js:164) and re-renders with the error summary. Never rendered in any trace."
+    },
+    {
+      "field": "page",
+      "message": "Page must be a undefined",
+      "trigger": "page query param is non-numeric",
+      "confidence": "legacy",
+      "evidence": "validation/routes/handlers/importer/traders/search.js:44-46 — [PAGE_KEY]: Joi.number().optional() with messages[NUMBER_TYPE] = typeMessage(labels.PAGE). typeMessage(label, type) = `${label} must be a ${type}` (validation/messages/en.js:27-29) but the validator calls typeMessage(labels.PAGE) with the second arg omitted, so `type` interpolates as 'undefined' → literal copy 'Page must be a undefined'. labels.PAGE = 'Page' (validation/labels/en.js:76). This is the pagination query param, not a visible form control, and the string is a legacy defect (missing second argument). FLAGGED as a bug the rebuild should not reproduce, not a message to port verbatim. LINE RANGE :44-46 RE-VERIFIED THIS PASS by reading the schema in full."
+    }
+  ],
+  "legacyNotes": [
+    "TEMPLATE CONFIRMED: views/importer/traders/search.html is this page. The heading is dynamic — {{concat 'Search for an existing ' traderDisplayValues.singular}} (search.html:16) — and for a normal CHED-PP consignor traderDisplayValues.singular resolves to the consignor displayValue 'consignor or exporter' (routes/handlers/importer/traders/search.js:39-56 + economic_operator settings), which matches the confirmed rendered H1 exactly. No copy discrepancy.",
+    "NO MISSED FIELDS FOR CONSIGNOR: the template renders inputs conditionally from economicOperatorSettings.inputs (search.html:26-94), and consignor's set is exactly [name, address, country] (utils/economic_operator.js:37-39). The other template branches — Type (otherIdentifier), Approval Number, Post Code — belong to OTHER trader types and never render for consignor, so they are correctly absent from this page's fields. The three observed inputs are the complete set.",
+    "MANDATORINESS (legacy, and a policy the rebuild should revisit): all three search criteria are OPTIONAL — every field in the Joi schema is .allow('') (validation/routes/handlers/importer/traders/search.js:20-37) and there is NO 'at least one criterion' / not-empty rule anywhere. This is consistent with, and explains, the confirmed default behaviour of listing the whole address book unfiltered. NOTE for the rebuild: the open question 'is an empty search rejected, or does it return everything?' is answered by legacy — legacy returns everything. Given ~81,400 entries (3257 pages) that is a poor default; making at least one search criterion mandatory is a legitimate rebuild policy change, not a regression.",
+    "SEARCH IS A GET, VALIDATION SURFACES VIA THE STANDARD SUMMARY: the search form is method=GET action=\"search\" (search.html:19); on validation error the handler maps errors with errorHelper.mapErrors and re-renders (search.js:161-179), and the template includes {{> common/validationSummary}} (search.html:15). So although no trace ever rendered an error, the page HAS a validation-summary surface — it is not error-free by design, just never exercised.",
+    "POST DISPATCH (resolves two open questions about View/Select routing, legacy): the results POST is dispatched by button name in routes/handlers/importer/traders/search.js:201-208 — if payload has 'view-id' the server 302-redirects to `${IMPORTER_URL_PATH}/${referenceNumber}/${type}/view/${view-id}` (a detail/view page), otherwise it calls selectTheTrader(request, h, referenceNumber) (the 'add-id' select path that attaches the chosen operator to the draft). The etag hidden input is the optimistic-concurrency guard on that attach. The exact conflict/stale-etag copy is still a gap (not in this handler).",
+    "LEGACY RE-VERIFICATION THIS PASS (full chain, all citations survived): (1) TEMPLATE — views/importer/traders/search.html re-read in full; the search fieldset renders inputs conditionally via {{#inArray economicOperatorSettings.inputs ...}} for name (:26-36), address (:37-47), otherIdentifier/Type (:48-61), approvalNumber (:62-72), country (:73-83, additionally gated on showCountryDropDown), postCode (:84-94). Country is the ONLY criterion authored as raw <select> markup rather than a govuk partial (:77). The Search button markup at :99-100 matches the confirmed trace verbatim (value=\"Search\", data-module, data-prevent-double-click=true). (2) INPUT SET — economic_operator.js:37-40 confirms consignor.inputs = [NAME, ADDRESS, COUNTRY] (and columns NAME/ADDRESS/COUNTRY/MASTER_TYPE); the Type/Approval/Post-Code branches belong to other trader types (approvedEstablishment uses [NAME, APPROVAL_NUMBER, POST_CODE] at :73; otherIdentifier set at :66-67) and are correctly absent for consignor. So [name, address, country] is the complete, verified field set — NO missed fields. (3) VALIDATION SCHEMA — validation/routes/handlers/importer/traders/search.js read in full: name .max(255).allow('') (:20-22), address .max(255).allow('') (:23-25), country .valid(...countries).allow('') (:35-37), page Joi.number().optional() (:44-46) — every applicable field OPTIONAL, no not-empty / at-least-one rule. The type/postcode/approvalNumber validators (:26-34) never fire for consignor because those inputs never render. (4) MESSAGE HELPERS re-read verbatim in messages/en.js: maxLengthMessage = `${label} must be ${maxLength} characters or fewer` (:3-5), invalidMessage = `${field} is not valid` (:19-21), typeMessage = `${label} must be a ${type}` (:27-29). (5) LABELS re-read in labels/en.js: NAME='Name' (:67), ADDRESS='Address' (:3), COUNTRY='Country' (:34), PAGE='Page' (:76). All four rendered validation strings reconstruct exactly. Nothing in the legacy source contradicts any confirmed rendered value; no discrepancies found."
+  ],
+  "behaviourRequirements": [
+    {
+      "requirement": "The page must render with zero axe-core violations against WCAG 2.0/2.1 levels A and AA (rule 'aria-allowed-attr' excluded suite-wide as a known govuk-frontend v6 issue, IMTA-20937).",
+      "confidence": "inferred",
+      "evidence": "Asserted by tests/accessibility/ched-pp-accessibility-tests.spec.ts:148 — checkPageAccessibility(pages.page, 'Search Existing Consignor Or Exporter Page'). CITATION CORRECTED THIS PASS (third value, and the tie-breaker): the exact lines are :147 = the '// Search Existing Consignor Or Exporter Page' comment, :148 = the checkPageAccessibility call, :149 = the link click. An earlier draft cited :148, a later draft 'corrected' it to :147; the re-verification shows the ORIGINAL :148 was right and the correction introduced an off-by-one. Independently confirmed by grep, which reports the click at ched-pp-accessibility-tests.spec.ts:149 — so the check must be :148. The rule set + threshold are defined in utils/accessibility-utils.ts:119 (withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa']).disableRules(['aria-allowed-attr'])) and utils/accessibility-utils.ts:20-24 (maxViolations: 0, failOnViolations: true). RESULT OBSERVED IN TEST OUTPUT: the page passes with 0 violations — a11y-test.log:10676, :10799, :10801 ('Search Existing Consignor Or Exporter Page [...traders/consignor/search]: no violations') and a11y-rerun.log:220, :311, :321. Marked inferred rather than confirmed because this is test-harness output, not a trace snapshot. IMPORTANT FOR THE REBUILD: every non-standard pattern listed above is a Design System deviation, NOT an accessibility failure — axe passes this page clean. The case for changing them is consistency, maintainability and GDS conformance, not a11y remediation."
+    },
+    {
+      "requirement": "In the CHED-PP journey this page is a pure pass-through: the only action taken is following the 'Create a new consignor or exporter' link. The address-book reuse path (search / View / Select / pagination) is never exercised.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-pp-workflows.ts:466-467 — the workflow's entire treatment of this page is a comment ('// Search Existing Consignor Or Exporter Page') plus pages.searchExistingConsignorOrExporter.linkCreateNewConsignorOrExporter.click(), landing straight on the Consignor Creation Page (ched-pp-workflows.ts:469-471: fillAddress + btnSaveAndContinue.click()). Line range re-verified. Same in the a11y journey at tests/accessibility/ched-pp-accessibility-tests.spec.ts:147-149 (comment :147, a11y check :148, click :149 — line range corrected this pass). CONFIRMED-SIDE COROBORATION: both evidence traces reach this page and their next action is the click on that link (trace 219b88… action 61, source ched-pp-workflows.ts:467:82; trace e10b7c… action 69, same source line) — so no trace ever searches or selects, and that is by design of the suite, not a sampling accident."
+    },
+    {
+      "requirement": "The 'Create a new consignor or exporter' link is the only control the test suite depends on, and it is matched by accessible name (role=link, name prefix 'Create a new consignor or').",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/SearchExistingConsignorOrExporterPage.ts:6-8 — getByRole('link', { name: 'Create a new consignor or' }) (re-verified: the file is 9 lines and exposes this one getter and nothing else). Note the truncated name: the locator deliberately prefix-matches, so the suite would not catch a change to the tail of the link text. Corroborates the trace-confirmed link copy 'Create a new consignor or exporter'."
+    },
+    {
+      "requirement": "The results table is populated on first load, unfiltered — the page lists the whole address book by default rather than starting empty and waiting for a search.",
+      "confidence": "confirmed",
+      "evidence": "trace 219b882ee3b4fbe040b824d146d38991d6b70149 action 61 — on arrival (before any interaction) the desktop form's tbody already contains 25 rows and the pagination reads '2 of 3257'; the three search inputs are all empty (value=\"\"). Independently reproduced in trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 69 — also 25 rows, also '2 of 3257', a different draft and a different spec file. Two independent traces agreeing on 3257 pages means the default listing is genuinely unfiltered, not a fixture artefact of one run."
+    },
+    {
+      "requirement": "NEGATIVE EVIDENCE, EXHAUSTIVE — no automated test anywhere in the QA repo touches ANY control on this page other than the 'Create a new consignor or exporter' link. The search inputs, the Search button, View, Select and pagination are, across the entire suite, never located and never driven.",
+      "confidence": "inferred",
+      "evidence": "Repo-wide grep this pass over all *.ts for every distinguishing identifier the traces recorded on this page's controls — 'add-id', 'view-id', 'Table-SearchResults', 'traders-search-results', 'next-page', 'add-economic-operator' — returns ZERO matches in ~/git/defra/ipaffs/ipaffs-qa-automation. Combined with SearchExistingConsignorOrExporterPage.ts being a 9-line file whose only member is linkCreateNewConsignorOrExporter (:6-8, re-read in full this pass), this upgrades the earlier draft's claim from 'the page object exposes no locator' (absence of a locator) to 'no identifier belonging to these controls appears anywhere in the automation codebase' (exhaustive absence). This is why the traces show no search: the suite cannot search this page. The uncovered surface is a test-coverage finding, not a sampling accident."
+    },
+    {
+      "requirement": "The address-book search page objects are bare BY EXCEPTION, not by repo convention — the suite models search controls perfectly well on other pages. So the untested address-book search is a genuine coverage gap, not an artefact of how this repo writes page objects.",
+      "confidence": "inferred",
+      "evidence": "CONTRAST FOUND THIS PASS — page-objects/notification/SearchCommodityPage.ts:6-12 models a search page properly: inputEnterCommodityCode (getByRole('textbox', { name: 'Enter commodity code' }), :6-8) AND btnSearch (getByRole('button', { name: 'Search' }), :10-12). Meanwhile all four address-book search page objects expose ONLY a create-new link and nothing else — SearchExistingConsignorOrExporterPage.ts:6-8, SearchExistingConsigneePage.ts:6-8, SearchExistingTransporterPage.ts:6-8, SelectEconomicOperatorPage.ts:6-8 (all four re-read in full this pass; each is exactly 9 lines). This rules out the innocent explanation that the repo simply does not model search inputs. It does — just not for the address book. Corroborating counterpart: the CREATE path by contrast is modelled in full (AddEconomicOperatorPage.ts:7-45 exposes nine field locators plus a fillAddress helper at :47-57), so the create/reuse asymmetry in test coverage is stark and deliberate-looking."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "THE BRIEF UNDERSTATED THIS PAGE. The task description says the search itself is never exercised and that results/paging are uncovered. In fact the results table renders FULLY POPULATED on first load with 25 rows and pagination reading '2 of 3257' — i.e. the page lists the entire address book unfiltered by default. What IS uncovered is the act of searching: no CHED-PP trace ever fills Name/Address/Country or clicks the Search button, and none clicks View or Select. So the results TABLE is confirmed; the search BEHAVIOUR (what filtering does, what a filtered result set looks like, what happens on Select) is a gap.",
+    "No-results state is a gap — never observed. Is there an empty-state message, and what is its verbatim copy?",
+    "Validation is a gap — no error state was ever rendered on this page and there is no .govuk-error-summary in the DOM (verified 0 in BOTH traces). Is an empty search rejected, or does it simply return everything (which is what the default load appears to do)? Does searching require at least one criterion?",
+    "The 'View' action (name=view-id) is never clicked in any CHED-PP trace. Where does it go — a modal, a detail page, an expanded row? Unknown. Note the View button is the only one of the pair with an id (view-button-<uuid>), which hints at client-side JS binding to it, but no such behaviour was observed.",
+    "The 'Select' action (name=add-id) is never clicked in any CHED-PP trace. The assumption is it attaches the chosen operator to the draft and returns to the consignor page, but that is unverified.",
+    "NEW — the etag hidden input means Select is guarded by optimistic concurrency on the draft. What does the user see when the etag is stale (another tab or user edited the draft)? No trace submits this form, so the conflict copy and recovery path are entirely unobserved. This is a real requirement question for the rebuild, not a cosmetic one.",
+    "Pagination shows 3257 pages of 25 = ~81,400 address-book entries visible to this test user, independently reproduced across two traces. Is the address book scoped per-organisation in production, or is this test-data bloat? If genuinely this large, an unfiltered default listing is the wrong default for the rebuild and search should be mandatory. (Supporting signal: the 25 rows on page 1 are only two distinct operators — 'Astra Rosales' and 'Linus George Ltd' — repeated over and over, so the corpus is at minimum heavily duplicated.)",
+    "No .govuk-hint anywhere on the page (verified: 0 hint elements in both traces). The three search fields carry labels only — no guidance on partial matching, case sensitivity, or minimum characters.",
+    "Every CHED-PP trace bypasses this page entirely via 'Create a new consignor or exporter'. The address-book reuse path is therefore effectively untested by the E2E suite — a test-coverage finding in its own right, independent of the rebuild. CORROBORATED AND WIDENED BY SOURCE 2: this is not a CHED-PP quirk but a SYSTEMIC gap across the whole trader family. Every 'search existing X' page object in the repo is identically minimal — exposing ONLY the create-new link and nothing else: SearchExistingConsignorOrExporterPage.ts:6-8, SearchExistingConsigneePage.ts:6-8, SearchExistingTransporterPage.ts:6-8, SelectEconomicOperatorPage.ts:6-8 (delivery address). And every CHED type clicks straight past: ched-pp-workflows.ts:467, ched-p-workflows.ts:391/747/953, ched-d-workflows.ts:257. So across ALL FOUR CHED journeys and ALL FOUR address-book pages, not one test has ever typed a search term, clicked View, clicked Select, or paged. The address book is, in automation terms, write-only.",
+    "REBUILD DECISION NEEDED, and the evidence supports asking it: given the address-book reuse path is unexercised by every trace AND every test across all four CHED types, is it actually used by real users? Before rebuilding search/results/paging, get production analytics on how often Select is clicked versus 'Create a new'. If the real-world answer matches the test-world answer, the rebuild may be able to drop the unfiltered listing entirely and lead with either search-only or create-only. This is the single biggest scope question on this page.",
+    "The 'Select' (name=add-id) destination is unverified, but there is a weak hint worth testing rather than trusting: the create path lands on a confirmation page whose sole control is a govuk button 'Add to notification' (page-objects/notification/ConsignorConfirmationPage.ts:6-8), and the parallel delivery-address flow has the same shape (ConfirmEconomicOperatorPage.ts:6-8). It is PLAUSIBLE that Select routes to the same confirmation page, making create and reuse converge. This is explicitly NOT evidence — no test or trace exercises it. A human should confirm the routing.",
+    "URL prefix varies by environment and the spec's recorded URL should not be treated as canonical: traces show /notification/vnet/protected/notifications/:draftId/traders/consignor/search, while the a11y run recorded /0/dev/protected/notifications/:draftId/traders/consignor/search (a11y-test.log:10676). The stable, meaningful part is the suffix /notifications/:draftId/traders/consignor/search; the leading segments are environment/routing chrome.",
+    "Validation remains a genuine gap after corroboration — SOURCE 2 CONFIRMS THE ABSENCE RATHER THAN FILLING IT. No test anywhere asserts any error message, empty-state copy or search rule for this page (the only CHED-PP assertion touching consignor at all is tests/notification/ched-pp/ched-pp-manipulation.spec.ts:48-49, which checks the consignor NAME appears on the View Details page — nothing about search). So there is no test-asserted string to promote to 'inferred'. The validationMessages array stays empty by evidence, not by oversight. Questions for a human: is an empty search rejected or does it return everything? Is there a minimum character count? Is there an empty-state message and what is its verbatim copy?",
+    "The three search inputs are invisible to the automation suite (no locators exist for name/address/country on this page object). If the rebuild keeps a search, the new test suite should cover it — otherwise the rebuild will inherit the same blind spot it is meant to fix.",
+    "NEW THIS PASS — the 'is the address book actually used?' question is now the strongest-evidenced item on this page, and the contrast finding sharpens it. A reasonable objection to the coverage argument was 'maybe this QA repo just doesn't model search pages'. That objection is now dead: SearchCommodityPage.ts:6-12 models a search input AND a Search button, and AddEconomicOperatorPage.ts:7-57 models the create path in full (nine locators + a fillAddress helper). The repo models what it exercises. The address book's search/View/Select is bare across all four trader page objects because nobody exercises it. That does not prove real users don't use it — automation coverage is not usage data — but it removes the only benign explanation for the gap and makes the production-analytics question (below) the deciding input for the rebuild's scope.",
+    "NEW THIS PASS — citation hygiene warning for whoever consumes this spec: the a11y evidence line has now been 'corrected' in both directions across drafts (:148 → :147 → back to :148). The verified truth is comment :147 / checkPageAccessibility :148 / click :149, cross-checked against grep's independent report of the click at :149. If a future pass re-reads this, do not re-correct it without cross-checking both lines together — the single-line read is what caused the off-by-one.",
+    "NEW THIS PASS (adversarial re-verification) — TWO CONFIRMED-TAGGED CLAIMS WERE WRONG AND ARE NOW FIXED, both in the same direction: the earlier draft recorded DESIGN INTENT as if it were observed DOM. (1) Section break was count=1 described as 'a visible horizontal rule between the search panel and the results' — no such element exists; all 26 section breaks live inside the mobile results form. (2) Grid was count=2 — the DOM has 228 govuk-grid-row elements. Both errors are the same species and both were invisible to the citation because the citation pointed at a real trace/action but at a fact never actually queried there. Lesson for future passes: when a component's count is small and round (1, 2) and the page is known to duplicate its markup across breakpoints, re-run the count — the mobile form inflates nearly every DOM-wide tally on this page (26 section breaks, 27 grid-column-full, 50 add-id, 50 view-id, 75 h3.govuk-label--s, 228 grid-row). Everything else in this spec survived character-by-character re-verification, including all copy, the 21 country options and their codes, the UK-nations ordering, every count in the results table, and every QA-repo line citation.",
+    "NEW — heading structure: the mobile results form injects 75 <h3> elements (25 rows x Name/Address/Country) styled with govuk-label--s. axe passes, but a human should sanity-check the screen-reader experience of a page whose heading outline is 75 repeated 'Name/Address/Country' headings before deciding the rebuild's responsive-table approach."
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "generated": "2026-07-17",
+  "precedence": [
+    "rendered-trace — what the app actually displayed. Wins on copy, labels, options, structure, components.",
+    "legacy-source — read from the authoritative IPAFFS source (template/enum/validation message/model mandatoriness). Trustworthy for VALUES and COPY; for a RULE it is 'as the old system had it', a policy the rebuild may deliberately revisit. Sits ABOVE inferred, BELOW rendered-trace.",
+    "test-assertion — an expect(...) a human wrote deliberately. Wins on intent where traces are silent.",
+    "page-object / workflow-config — reveals a control exists and what values are used; weakest evidence of intent."
+  ],
+  "note": "A conflict is the audit trail of a decision, not a failure. The precedence winner is adopted into journey-spec.json. needsHuman:true only where precedence genuinely cannot settle it. This register continues the c-NNN numbering from the previous pass: c-001..c-017 are carried forward verbatim; c-018..c-028 are new this wave, sourced almost entirely from the two new evidence streams — the legacy IPAFFS source enrichment (frontend Joi catalogue + backend Jakarta ValidationMessages.properties + submission-model @NotNull groups) and the delegated-authority (DoA) trace findings. The dominant new pattern is LEGACY-vs-LEGACY divergence between the frontend per-page Joi validation layer and the backend submission-model layer — same field, two mechanisms, two strings/rules — which no rendered trace can settle because no error state was ever exercised.",
+  "conflicts": [
+    {
+      "id": "c-004",
+      "topic": "Error-summary title copy across the journey",
+      "pageSlug": "import-type",
+      "alsoAffects": ["commodity-input-method", "commodity-additional-details", "cloning-type", "document-upload", "consignor-create", "notifications-dashboard"],
+      "sources": ["rendered-trace", "workflow-config"],
+      "detail": "Most pages render the shared common/validationSummary fallback title 'Please fix the following errors' (template partials/common/validationSummary.html:8; corroborated as real rendered copy by ched-a-workflows.ts:505 regex /fix the following errors/i). BUT notifications-dashboard renders the GDS-standard 'There is a problem' (confirmed on-page), and the IPAFFS overdueDebtWarning review variant also uses 'There is a problem'. IPAFFS is internally inconsistent.",
+      "ruling": "Rebuild adopts the GDS-standard 'There is a problem' everywhere (already used on the dashboard and overdue-debt variant). This is a deliberate copy change from the majority IPAFFS pages, not a faithful port.",
+      "needsHuman": true,
+      "humanReason": "Content-designer sign-off on the deliberate copy change, and a QA migration dependency: the CHED-A workflow guard ched-a-workflows.ts:505 matches /fix the following errors/i and would silently stop matching (passing a page full of errors) if the title changes."
+    },
+    {
+      "id": "c-007",
+      "topic": "What triggers the CUC billing sub-journey",
+      "pageSlug": "confirm-billing-details",
+      "alsoAffects": ["billing-find-an-address", "billing-select-the-address", "billing-change-contact-details"],
+      "sources": ["workflow-config", "test-assertion"],
+      "detail": "The QA workflow gates the whole billing block behind `if (isCuc)` (ched-pp-workflows.ts:480), i.e. a free-standing config flag. A sibling test comment says the block is 'CUC only — triggered by Sevington port' (ched-p-workflows.ts:538), and every CUC test pairs isCuc:true with entryBorderControlPost Folkstone-GBFOL4PP + inspectionPremises 'Sevington IBF' — implying a real dependency on the port chosen on transport-before-bip. No trace and no assertion pins the actual server rule.",
+      "ruling": "Provisionally model billing as conditional on a CUC flag (workflow-config precedence), but do not treat the trigger as settled.",
+      "needsHuman": true,
+      "humanReason": "Precedence cannot settle it — both sources are page-object/workflow tier and neither rendered-trace nor a test-assertion pins whether CUC is a free-standing flag or derived from the Sevington port. A product/IPAFFS answer is needed before the rebuild wires the condition."
+    },
+    {
+      "id": "c-013",
+      "topic": "commodity-input-method question wording — H1 vs legend",
+      "pageSlug": "commodity-input-method",
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "The visible H1 asks 'How do you want to add your commodity details?' while the (visually-hidden) fieldset legend asks the same question in different words: 'How would you like to enter your information?'. Both are rendered.",
+      "ruling": "Adopt the visible H1 wording ('How do you want to add your commodity details?') as the single question; drop the divergent hidden legend, folding the question into the legend-as-heading in the rebuild.",
+      "needsHuman": true,
+      "humanReason": "Content design must pick one canonical wording; two rendered strings ask the same question differently."
+    },
+    {
+      "id": "c-014",
+      "topic": "Radio group has no accessible name (empty legend, H1 outside fieldset)",
+      "pageSlug": "import-type",
+      "alsoAffects": ["consignment-for", "consignment-organisation", "about-the-consignment", "sign-in"],
+      "sources": ["rendered-trace", "test-assertion"],
+      "detail": "Multiple radio pages render an EMPTY <legend> with the H1 outside the fieldset, so the radio group has no accessible group name (trace a11y tree shows `group` with no name). The shared govuk/radios partial already supports the correct legend-as-heading pattern and a sibling page uses it. axe passes because no A/AA rule requires a radio group name — a blind spot, not a clearance.",
+      "ruling": "Rebuild adopts the standard GDS radios pattern: H1 inside the fieldset legend (legendIsPageHeading), caption above. Deliberate accessibility fix, recorded as a behaviour change from IPAFFS.",
+      "needsHuman": true,
+      "humanReason": "a11y/design lead should confirm the rebuild fixes the missing group name rather than faithfully porting the defect."
+    },
+    {
+      "id": "c-015",
+      "topic": "Are accompanying documents mandatory for CHED-PP?",
+      "pageSlug": "accompanying-documents",
+      "sources": ["legacy-source", "test-assertion"],
+      "detail": "An earlier reading concluded CHED-PP makes documents mandatory, based on the legacy `isChedp` flag. `isChedp` in the legacy source means CHED-P (CVEDP), NOT CHED-PP — a trap. No trace and no test drives this page into a validation error, so whether a document is required for CHED-PP is unproven from both admissible sources.",
+      "ruling": "Left unresolved in the spec (field required=inferred/unknown); do not assert mandatory without evidence.",
+      "needsHuman": true,
+      "humanReason": "Neither rendered-trace nor test-assertion establishes whether at least one accompanying document is mandatory for CHED-PP; a product/legal answer is required."
+    },
+    {
+      "id": "c-001",
+      "topic": "Is 'commodity-class' a separate page?",
+      "pageSlug": "variety-of-genus-and-species",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "CommodityClassPage.ts models a 'Select class' page of its own. Trace e10b7cd5 action 26 fires getByLabel('Select class') while the page URL is /commodity/variety-of-genus-and-species — the class dropdown lives on the variety page.",
+      "ruling": "ONE page. commodity-class is the 'Select class' dropdown hosted on variety-of-genus-and-species, not a page. rendered-trace beats the page object.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-002",
+      "topic": "about-the-consignment page number (page-4 vs page-5)",
+      "pageSlug": "about-the-consignment",
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "Trace 219b882e labels this page /consignment/page-4; traces e10b7cd5, 1f5b6eef and the CSV trace, plus the workflow and the a11y spec, all put it at /consignment/page-5. 219b882e's URL labels lag by one page across the commodity region.",
+      "ruling": "page-5. Majority of clean-URL traces wins; 219b882e's one-page lag is an LLM-extraction artefact.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-003",
+      "topic": "Which page hosts 'Add species' (page-3 vs page-4)",
+      "pageSlug": "commodity-basic-description",
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "Traces 1f5b6eef/219b882e attribute the 'Add' species click to the /consignment/page-3 URL; the clean-URL trace e10b7cd5 (actions 22-25 all render page title 'Select species of commodity') and the workflow comments put btnAddSpecies on page-4.",
+      "ruling": "page-4 (commodity-basic-description). The clean-URL trace e10b7cd5 wins over the lagged higher-action-count traces.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-005",
+      "topic": "CHED type radio labels — rendered vs type-constant",
+      "pageSlug": "import-type",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "types/ched-descriptions.ts records CHEDA as 'Live Animals' (capital A) and CHEDD as 'High risk food of non-animal origin' (no 'and feed'); the rendered page shows 'Live animals' and 'High risk food and feed of non-animal origin'. The CHEDPP label matches across both.",
+      "ruling": "Adopt the rendered labels for on-page copy. The ched-descriptions constants drive a different surface (View details) and may legitimately differ; flag if the rebuild reuses one vocabulary for both.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-006",
+      "topic": "'Re-entry' radio submitted value (about-the-consignment)",
+      "pageSlug": "about-the-consignment",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The 'Re-entry' radio has id='radio-reimport' and submits value='import' (not 're-entry'); View details displays it as 'For re-entry'. 're-entry' is also a valid enum value in source.",
+      "ruling": "Adopt the observed submitted value 'import' as ground truth, but flag the id/value/label mismatch (radio-reimport / import / 'Re-entry') as an IPAFFS inconsistency the rebuild should NOT copy — use a coherent value.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-008",
+      "topic": "consignment-for own-organisation radio label",
+      "pageSlug": "consignment-for",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The first radio's label is dynamic — the signed-in user's companyDisplayName from the JWT (consignment_for.js:72-73). The page object hardcodes it as the literal 'IPAFFS Plant Agency C'.",
+      "ruling": "rendered-trace: the label is dynamic user data, not fixed copy. The page-object literal is a test fixture, not a requirement.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-009",
+      "topic": "Document issue-date label — visible header vs hidden legend",
+      "pageSlug": "accompanying-documents",
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "The visible column header reads 'Date of issue'; the visually-hidden fieldset legend reads 'Document issue date'. Two rendered labels for one field.",
+      "ruling": "Adopt the visible copy 'Date of issue' for the rebuild.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-010",
+      "topic": "Postcode label vs validation label (consignor-create)",
+      "pageSlug": "consignor-create",
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The visible label is 'Postcode or ZIP code' but the validation label constant is POSTCODE='Post code' (labels/en.js:81), so the error reads 'Post code must be 32 characters or fewer'.",
+      "ruling": "Adopt the visible label 'Postcode or ZIP code'; fix the error copy to match in the rebuild.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-011",
+      "topic": "Telephone label vs validation label (consignor-create)",
+      "pageSlug": "consignor-create",
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The visible label is 'Telephone number' but the schema binds TELEPHONE='Telephone' (labels/en.js:97), giving the un-idiomatic error 'Enter a telephone'.",
+      "ruling": "Adopt the visible label 'Telephone number'; fix the error copy in the rebuild.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-012",
+      "topic": "Country name 'Republic of Ireland' vs 'Ireland'",
+      "pageSlug": "consignor-create",
+      "alsoAffects": ["country-of-origin", "consignor-search", "origin-of-import"],
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The rendered country select option reads 'Republic of Ireland' (value IE); types/country.ts:110 names the IE entry 'Ireland'. Tests select by value, so the divergence is invisible to them.",
+      "ruling": "rendered-trace: adopt 'Republic of Ireland' as the displayed label.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-016",
+      "topic": "Document-type reference data duplication (Sea waybill)",
+      "pageSlug": "accompanying-documents",
+      "sources": ["page-object", "legacy-source"],
+      "detail": "types/document-type.ts carries both seaWaybill:'Sea waybill' and a capitalised variant — a fossilised inconsistency the QA repo preserved rather than fixed.",
+      "ruling": "Adopt a single canonical 'Sea waybill'; the rebuild's document-type reference data must dedupe casing variants.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-017",
+      "topic": "Billing button copy inconsistency ('Continue' vs 'Save and continue')",
+      "pageSlug": "billing-select-the-address",
+      "alsoAffects": ["confirm-billing-details"],
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "billing-select-the-address renders a button reading 'Continue' but carrying value='Save and continue' (the value is dead); confirm-billing-details renders 'Save and continue'. Inconsistent button copy within one sub-journey.",
+      "ruling": "Adopt the visible 'Continue' on the select-address page (the value attribute is dead); standardise button copy across the billing section in the rebuild.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-018",
+      "topic": "Two-layer validation copy divergence — frontend Joi ('Enter/Select the …') vs backend Jakarta submission model ('Add the …')",
+      "pageSlug": "commodity-bulk-details",
+      "alsoAffects": ["transport-before-bip", "commodity-search", "commodity-basic-description", "commodity-additional-details", "contact-details", "consignor-create"],
+      "sources": ["legacy-source", "legacy-source"],
+      "detail": "The two enrichment sources surface the same field's validation copy from two different layers that do not agree. The frontend per-page Joi catalogue (ipaffs-frontend-notification/service/src/validation/messages/en.js) phrases required-field errors as 'Enter the …' / 'Select the …', fired client-side on the per-page save. The backend submission-model Jakarta catalogue (ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties) phrases the SAME field's error as 'Add the …', fired on final server submission. Concrete instances: entry BCP — 'Select the entry border control post' (en.js:76) vs 'Add the entry Border Control Post' (ValidationMessages.properties:36); and five commodity-bulk-details fields ('Enter/Select the …' vs 'Add the …', commodity-bulk-details provenance note). NO error-state trace exists for any of these pages, so NO validation message was ever observed rendered — this is LEGACY-vs-LEGACY.",
+      "ruling": "Rebuild must ship ONE string per field. Provisionally prefer the frontend Joi wording ('Enter/Select the …') as the page-level copy (it is the message a user sees first, on the per-page save, and is closer to GDS 'Select …'/'Enter …' conventions), but this is not settled by evidence.",
+      "needsHuman": true,
+      "humanReason": "Precedence cannot settle it: both strings are legacy (same tier), no rendered trace exists, and which the user actually sees depends on WHERE validation fires first (client per-page save vs server submission) — an ordering never observed in the corpus. Content design must choose one canonical string per field and the rebuild must decide whether validation is single-layer."
+    },
+    {
+      "id": "c-019",
+      "topic": "Mandatoriness split — field optional at frontend draft-save but @NotEmpty/@NotNull at backend submission",
+      "pageSlug": "transport-before-bip",
+      "alsoAffects": ["commodity-bulk-details", "commodity-search", "contact-details", "consignor-create", "accompanying-documents"],
+      "sources": ["legacy-source", "legacy-source"],
+      "detail": "Several fields are Joi.string()...allow('').optional() in the frontend per-page validator (so the page SAVES with them empty) yet carry a backend @NotEmpty/@NotNull under the NotificationChedppFieldValidation group in the submission model (so the notification cannot SUBMIT with them empty). Confirmed instances on transport-before-bip: `identification` — frontend optional (transport_before_bip.js:43-45) vs MeansOfTransportBeforeBip.id @NotEmpty CHED-PP 'Add identification details' (MeansOfTransportBeforeBip.java:40-44 / ValidationMessages.properties:51); `document` — frontend optional (transport_before_bip.js:46-48) vs MeansOfTransportBeforeBip.document @NotEmpty CHED-PP 'Add document details' (java:120-124 / properties:56). The general CHED-PP @NotNull groups (e.g. partone.consignor.chedpp.not.null, partone.deliveryaddress.chedpp.not.null) are the submission-layer mandatoriness for most data fields. No rendered trace exercises any of these error states.",
+      "ruling": "Reconciled as a lifecycle split, not a true contradiction: draft-save tolerates empty; submission requires non-empty. The spec sets required:true for these fields (the notification cannot be completed without them) and records that the frontend allows an empty DRAFT save. The rebuild should decide deliberately whether it keeps the two-stage (save-lenient / submit-strict) model or validates once.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-020",
+      "topic": "One field, three names — 'Mobile number' vs input `telephone` vs error 'Telephone number' vs fieldset error 'mobile number'",
+      "pageSlug": "nominated-contact",
+      "alsoAffects": ["contact-details"],
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "On nominated-contact the same field surfaces under three terms: the rendered column header is 'Mobile number' (confirmed, trace 219b882e action 50) and the input name/id is `telephone` (confirmed, same action); the max-length error resolves to 'Telephone number must be 30 characters or fewer' via labels/en.js:98 TELEPHONE_NUMBER (legacy); and the fieldset-level 'at least one of' error says 'Enter an email address or mobile number' (messages/en.js:73, legacy). So the same validator module names the field both 'Telephone number' and 'mobile number' depending on which rule fires.",
+      "ruling": "rendered-trace wins: adopt 'Mobile number' as the single field term (it matches the stated purpose and the visible column header) and fix the error copy so the max-length and fieldset messages both say 'mobile number'. Confirmed rendered header beats the legacy error-copy constant.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-021",
+      "topic": "File-upload requiredness — rendered HTML attribute required=false vs server-side enforcement",
+      "pageSlug": "csv-upload",
+      "alsoAffects": ["document-upload", "accompanying-documents"],
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The rendered <input type=file> carries required=false (trace action 32 control inventory — confirmed), but the upload app enforces file presence server-side ('Select a file', file_upload_validation.js:88-90 — legacy). This is not a copy conflict; it is a rendered-attribute-vs-server-behaviour gap. The same shape recurs wherever a page's Joi/server layer enforces a field the HTML does not mark required (radios on import-type etc. — no HTML `required` attribute, required enforced by server Joi).",
+      "ruling": "Effective requiredness is TRUE: server-side enforcement is the requirement, the missing HTML attribute is not evidence of optionality. The rebuild must not read a rendered required=false as 'optional', and should not rely on browser-native validation.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-022",
+      "topic": "Empty-file upload error copy — 'The selected file is empty' vs stale 'must be larger than 1KB'",
+      "pageSlug": "document-upload",
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The current qa-automation suite AND the rendered trace agree the EMPTY-file case shows 'The selected file is empty' (trace bff12637 action 108; constant FILE_IS_EMPTY at validation_constants.js:8; branch order filename→extension→isEmpty→<200B confirms FILE_IS_EMPTY precedes FILE_TOO_SMALL). An older ipaffs-release-tests/documentUpload.feature:29 expected 'must be larger than 1KB' for the same EMPTY case.",
+      "ruling": "rendered-trace + current suite win: adopt 'The selected file is empty'. The ipaffs-release-tests feature file is stale and should not be treated as a requirement source.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-023",
+      "topic": "Antivirus / upload-failure copy casing — 'could not be uploaded - Try again' vs '- try again'",
+      "pageSlug": "document-upload",
+      "sources": ["legacy-source", "legacy-source"],
+      "detail": "The file-compression microservice pins 'The selected file could not be uploaded - Try again' with a CAPITAL 'Try' (FileStoreAntiVirusScanner.java template, asserted verbatim in FileStoreAntiVirusScannerTest.java:119). The frontend-upload service carries near-identical copy with a LOWERCASE 't' — 'could not be uploaded - try again' — but those constants belong to the commodityDetailsUpload and multiUpload surfaces, not this single-file accompanyingDocument page. Neither casing was observed rendered on this page (an infrastructure-failure path the suite cannot easily drive).",
+      "ruling": "Unresolved: which casing a user sees on the single-file accompanying-document page is unverified. The rebuild should standardise on GDS sentence case ('Try again' as its own sentence, or a single agreed string) rather than port either constant.",
+      "needsHuman": true,
+      "humanReason": "Both strings are legacy (same tier) and neither was observed rendered on this page; which constant is actually wired to the accompanying-document single-file surface is not evidenced. A one-off manual reproduction of the AV-failure path, or a content-designer decision, is needed."
+    },
+    {
+      "id": "c-024",
+      "topic": "DoA overdue-debtor exemption is applied on GET but DROPPED on the POST validation-error re-render (import-type)",
+      "pageSlug": "import-type",
+      "sources": ["legacy-source", "legacy-source"],
+      "detail": "The GET builds the view with `createInitialViewContext((overdueDebtor && !isUserInDoA))` (consignment_importing.js:16) — an overdue debtor who HOLDS delegations is exempted and sees an enabled CHED-PP radio. The POST validation-error re-render uses `createInitialViewContext(overdueDebtor)` (:33) — the `&& !isUserInDoA` guard is absent — while the POST throw-gate keeps it (:26, `if (isUserOverdueDebtor && !isUserInDoA)`). So a DoA agent who is also an overdue debtor and submits with no radio selected gets the CHED-PP radio re-rendered DISABLED and hinted 'This option is not available', even though the same request would have let them select it. Three of the four sites that test the overdue-debtor condition include `&& !isUserInDoA`; one does not. Never observed, never tested — there is no overdue-debtor persona anywhere in the QA repo.",
+      "ruling": "Do NOT port this logic shape. If the rebuild inherits the overdue-debtor gate at all, derive the flag once per request so the exemption is applied consistently across render paths, and never render a permitted option as disabled. Report the inconsistency to the IPAFFS team as a latent bug independent of the rebuild.",
+      "needsHuman": true,
+      "humanReason": "Two decisions a human must take: (1) does the new simple CHED-PP app inherit the overdue-debtor gate at all, and if so what does the POST-throw path look like as a graceful GDS error rather than an unhandled 500; (2) confirm the GET/POST inconsistency is a bug to be fixed, not a rule to be preserved. Zero trace and zero QA coverage means there is no regression net today."
+    },
+    {
+      "id": "c-025",
+      "topic": "'Manage trade partners' / address-book affordance is NOT delegated-agent-gated",
+      "pageSlug": "notifications-dashboard",
+      "alsoAffects": ["import-type", "consignment-for", "consignment-organisation"],
+      "sources": ["rendered-trace", "rendered-trace"],
+      "detail": "An earlier reading of the DoA model treated the 'Manage trade partners' entry point (/notification/vnet/protected/notifications/trade-partners/filter) and the Address book link as delegated-agent-only affordances. The traces show both render for a plain org member (Isabel, trace b701cc40) and for a plain B2C importer (base notifications-dashboard.json line 48, trace 219b882e), not just for the delegated agent (Carol).",
+      "ruling": "rendered-trace: both links are service chrome present for every user type, NOT a delegated-authority-only affordance. The delegated-only surface is the two-step org selector (consignment-for → consignment-organisation), which a non-delegated user never sees.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-026",
+      "topic": "Dashboard country filter — trace shows a flat list with GROUP pseudo-options; source emits real <optgroup>s",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The trace enumerated the country combobox as a flat 257-option list containing 3 GROUP pseudo-options and 4 UK nations appended out of alphabetical order (a11y-tree flattening). The legacy template actually emits real <optgroup>s when `isHighRiskEuImportEnabled` is on — <optgroup label='Countries'>, <optgroup label='Country'>, <optgroup label='United Kingdom of Great Britain and Northern Ireland'> — and degrades to a flat 'All' + countries when the flag is off (searchAndFilter.html:77-121).",
+      "ruling": "Not a true conflict — the trace 'flat list with pseudo-options' is an a11y-tree flattening of real optgroups that already exist in source. The rebuild should model the groupings explicitly (optgroup or a reference-data-driven grouped control) and source countries from a reference-data service, not hardcode the flat list.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-027",
+      "topic": "Notification status casing — displayed status tags vs Status-filter option labels",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["test-assertion", "rendered-trace"],
+      "detail": "Tests assert status text case-insensitively for most values (/new|in progress/i, /valid/i, /completed/i) but case-sensitively for 'Partially rejected' (ched-pp-notification.spec.ts:117; ched-pp-cuc.spec.ts:31-32 'New'). The displayed status tag casing and the Status filter's option-label casing are not guaranteed to match.",
+      "ruling": "Low severity: adopt one consistent, GDS-sentence-case status vocabulary shared between the status tags and the filter options. The case-insensitive assertions hide the drift rather than resolve it.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-028",
+      "topic": "Cancel-link href — rendered includes /notification/vnet deployment prefix, legacy template does not",
+      "pageSlug": "delete-notification",
+      "sources": ["rendered-trace", "legacy-source"],
+      "detail": "The rendered cancel link is /notification/vnet/protected/notifications/CHEDPP.GB.2026.1526017/review?source=dashboard; the legacy template source is href='/protected/notifications/{{referenceNumber}}/review?source=dashboard' (delete.html:34-36) and the handler builds the same shape via IMPORTER_REVIEW_PAGE(referenceNumber)+'?source=dashboard' (delete.js:44-46). The only difference is the '/notification/vnet' deployment mount prefix the served app prepends.",
+      "ruling": "Not a semantic conflict — a deployment base-path artefact. Rendered value stays confirmed; the /review target and ?source=dashboard query agree across both sources. The rebuild owns its own URL scheme, so neither path is ported literally.",
+      "needsHuman": false
+    }
+  ]
+}
