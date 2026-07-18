@@ -99,7 +99,12 @@ silently adopted. 8 VM gaps remain, spread thin: `cloning-summary` (2), and one 
 `needsHuman:true` means precedence genuinely cannot settle it, or a content/product/a11y sign-off is
 required. Full detail + evidence in `conflicts.json`.
 
-### Needs a human (8)
+### Needs a human (8) — ALL RULED 2026-07-18 (see `RULINGS.md` / `conflicts.json` `humanRuling`)
+
+> Resolved: c-004 → GDS 'There is a problem'; c-007 → free-standing `isCuc` (provisional); c-013 →
+> visible H1; c-014 → fix radios; c-015 → documents MANDATORY; c-018 → frontend Joi voice; c-023 →
+> GDS sentence case; c-024 → overdue-debtor gate OUT (report bug to IPAFFS). Scope: DoA out, CUC in,
+> cloning out. The table below is the original review framing.
 
 | id | topic | why a human |
 |---|---|---|

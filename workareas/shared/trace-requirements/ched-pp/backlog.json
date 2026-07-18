@@ -1,6 +1,20 @@
 {
   "generated": "2026-07-18",
   "regenerationOf": "backlog.json (prior pass)",
+  "scopeDecisions": {
+    "ruledBy": "Sam",
+    "ruledDate": "2026-07-18",
+    "firstPass": {
+      "delegatedAuthority": "OUT — first pass is a single-org, own-behalf journey. inc-032 (DoA ownership/visibility/auto-population), inc-033 (consignment-for) and inc-034 (consignment-organisation) are deferred to a later programme.",
+      "cucBilling": "IN — build the CUC billing sub-journey (inc-036), gated provisionally on a free-standing isCuc flag (c-007); confirm the real trigger with IPAFFS before finalising.",
+      "cloning": "OUT — cloning (inc-041) deferred; success path was never observed in the corpus."
+    },
+    "residualBlockersResolved": {
+      "inc-014": "Build the REAL commodity search now (tree browse + EPPO species typeahead, server round-trip), not a canned fixture code-pick. Store eppoCode as the species join key (Open Q 1). Fixture-backed lookup in pass 1, real integration later.",
+      "inc-020": "Hub has 12 spokes: Origin of the import, Purpose, Commodity, Additional details, Transport to the BCP, Goods movement services, Contact details, Nominated contacts (optional), Accompanying documents, Traders, Billing (conditional on isCuc), Review and submit. Catch certificates / charity / latest-health-cert sections OMITTED (not evidenced for CHED-PP). Hub OWNS navigation ('Save and return to hub'); every mandatory section must be Completed before 'Review and submit' unlocks; optional spokes do not gate.",
+      "inc-040": "Build a server-side placeholder rule hook (no-op) in pass 1 so Article 72 can be dropped in later without rework; the country×commodity condition + effect are supplied by product later."
+    }
+  },
   "source": [
     "journey-spec.json (39 pages, 354 field rows, 310 validation messages — 228 grounded)",
     "target-model.md (house-parity Notification document; ownership/DoA layer; reference-data catalogue)",
@@ -265,14 +279,14 @@
       "kind": "page",
       "milestone": "m3",
       "sizeGuess": "L",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "todo",
+      "gate": null,
       "dependsOn": ["inc-005", "inc-012", "inc-013"],
-      "blockedQuestion": "This page's confidence is `gap` and it fronts the ONE lookup that cannot be hardcoded (commodity codes + EPPO species — integrations.md). Two things need a human: (1) which fixture commodity codes + species to ship for pass 1, and whether the manual path should be verifiable against a simple fixture code-pick while the real tree browse/typeahead is deferred; (2) Open Q 1 — is the internal species id (add-species-<id>) stable across reference-data refreshes, or must eppoCode be the stored join key? Do not author the ruling.",
+      "ruling": "RESOLVED (Sam, 2026-07-18): build the REAL commodity search now — the commodity-code tree browse + EPPO genus/species typeahead as a server round-trip (POST->302->GET, no client XHR), not a canned fixture code-pick. Backed by the inc-005 commodity-code client (fixture-backed in pass 1, the real ref-data integration later). Store eppoCode as the species join key (Open Q 1) — the internal add-species-<id> numeric id is treated as transient UI state, not persisted.",
       "acceptanceCriteria": [
         "Caption 'Description of the goods'; H1 'Commodity'; a 'Commodity code search' tab (govuk-input 'Enter commodity code' + 'Search' button) and a 'Genus and species search' tab (govuk-input 'Enter genus and species').",
         "The whole search is a server round-trip (POST -> 302 -> GET) — no client XHR (integrations.md connect-src 'self').",
-        "Selecting a code writes commodityComplement[].commodityCode; a species selection resolves an EPPO species onto the line.",
+        "Selecting a code writes commodityComplement[].commodityCode; a species selection resolves an EPPO species onto the line and stores species[].eppoCode as the join key (not the internal add-species-<id>).",
         "Validation copy (page-level Joi): 'Enter a commodity code' (empty), 'Commodity code must be a number', 'You cannot add the same commodity code twice', 'Enter a genus and species' (species tab)."
       ]
     },
@@ -364,15 +378,16 @@
       "kind": "page",
       "milestone": "m4",
       "sizeGuess": "L",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "todo",
+      "gate": null,
       "dependsOn": ["inc-011", "inc-019"],
-      "blockedQuestion": "This page's confidence is `gap`: no create trace exercised the hub's task-list structure — only the dynamic caption (DRAFT.GB… - CHEDPP) is confirmed. A human must confirm the hub's SECTIONS and the completeness/gating rules: which spokes appear (Origin of the import, Purpose, Commodity, Additional details, Transport to the BCP, Goods movement services, Contact details, Nominated contacts (optional), Accompanying documents, Traders, Review and submit — plus conditional Billing / Catch certificates / charity sections that are gap-confidence), the status tags per section, and what unlocks 'Review and submit'. Also confirm whether the linear spine or the hub owns navigation. Do not author the ruling.",
+      "ruling": "RESOLVED (Sam, 2026-07-18): 12 spokes — Origin of the import, Purpose, Commodity, Additional details, Transport to the BCP, Goods movement services, Contact details, Nominated contacts (optional), Accompanying documents, Traders, Billing (conditional on isCuc), Review and submit. Catch certificates / charity / latest-health-cert-status sections OMITTED (not evidenced for CHED-PP). The HUB owns navigation ('Save and return to hub' from each spoke); every mandatory section must show 'Completed' before 'Review and submit' unlocks; optional spokes (Nominated contacts) do not gate.",
       "acceptanceCriteria": [
         "Caption is the dynamic reference (e.g. 'DRAFT.GB.2026.1526011 - CHEDPP') — data, not fixed copy; do NOT inherit the DRAFT->CHEDPP id-flip / dual caption structure (modelGap id-flip-draft-to-ched).",
-        "Renders a govuk task-list of confirmed spokes with per-section status and links; 'Save and return to hub' on downstream pages returns here.",
+        "Renders a govuk task-list of the 12 confirmed spokes with per-section status tags and links; the Billing spoke renders only when isCuc; 'Save and return to hub' on downstream pages returns here.",
         "No form controls / no data captured on the hub itself (navigation + derived completeness only).",
-        "Conditional sections (Billing, Catch certificates, charity, latest-health-cert-status) are gap-confidence — do not render them without a ruling."
+        "The hub OWNS navigation: 'Review and submit' unlocks only when every mandatory section is Completed; the optional 'Nominated contacts' spoke does not gate submission.",
+        "Catch certificates, charity and latest-health-cert-status sections are OMITTED (Sam ruling 2026-07-18 — not evidenced for CHED-PP)."
       ],
       "notes": "Downstream m4 pages depend on the SPINE, not the hub, so they are not blocked by this increment."
     },
@@ -445,14 +460,15 @@
       "kind": "page",
       "milestone": "m4",
       "sizeGuess": "M",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "todo",
+      "gate": null,
       "dependsOn": ["inc-007", "inc-003"],
-      "blockedQuestion": "c-015 (needsHuman): whether at least one accompanying document (a phytosanitary certificate) is MANDATORY for CHED-PP is unproven from admissible sources — the earlier 'isChedp' reading was a trap (that flag means CHED-P/CVEDP, not CHED-PP), and no trace/test drives this page into a validation error. The submission layer carries 'Add a phytosanitary certificate' but that mandatoriness was never observed. A product/legal answer is needed before the page asserts a required document. The page shell (fields below) is buildable now; only the required-vs-optional ruling is blocked. Do not author the ruling.",
+      "ruling": "RESOLVED (Sam, 2026-07-18, c-015): accompanying documents ARE mandatory for CHED-PP — at least one document (a phytosanitary certificate) is required to submit. The earlier 'isChedp' (CHED-P) trap reading is moot. Build with required=true.",
       "acceptanceCriteria": [
         "Caption 'Documents'; H1 'Accompanying documents'; a govuk-select 'Document type' (17 options), govuk-input 'Document reference', a govuk-date-input 'Date of issue' (adopt the visible 'Date of issue' label, not the hidden 'Document issue date' — c-009), and an 'Add attachment' affordance routing to the separate upload page (inc-037).",
+        "At least one accompanying document is MANDATORY to submit (c-015 ruled mandatory) — submission is blocked with a required-document error until one is added.",
         "Persists to the SEPARATE accompanying_documents collection (metadata only pass 1), joined on notificationReferenceNumber (modelGap separate-app-boundary).",
-        "Validation copy: 'Select a document type', 'Enter a reference', 'Document reference must be 100 characters or fewer', and the full date-of-issue set ('Enter a date of issue', 'Date of issue must include a day', 'Day must be from 1 to 31', 'Month must be from 1 to 12', 'Year must be 4 numbers', 'Date of issue must be a real date').",
+        "Validation copy: 'Select a document type', 'Enter a reference', 'Document reference must be 100 characters or fewer', a submit-time 'Add a phytosanitary certificate'-style required-document message, and the full date-of-issue set ('Enter a date of issue', 'Date of issue must include a day', 'Day must be from 1 to 31', 'Month must be from 1 to 12', 'Year must be 4 numbers', 'Date of issue must be a real date').",
         "'Add another document' appends a metadata row."
       ]
     },
@@ -559,10 +575,10 @@
       "kind": "model-extension",
       "milestone": "m5",
       "sizeGuess": "L",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "deferred",
+      "gate": null,
       "dependsOn": ["inc-002", "inc-028"],
-      "blockedQuestion": "IS DELEGATED AUTHORITY (DoA) IN SCOPE FOR THIS REBUILD? The house Notification is single-tenant with no org field at all — tenancy is entirely NEW surface (target-model.md deviation). Six sub-questions ride on the answer: G-1 which member of the owning org becomes 'Responsible person' (blocks POP-2 auto-population); G-2 does an org-member amend/copy of an agent-created notification strip agencyOrganisationId / the Trade Partner badge; G-3 do co-member Amend/Copy actions actually SUCCEED (VIS-1/VIS-5 only prove the controls render); G-4 is draft-privacy-to-author deliberate policy or an artefact (VIS-4); G-5 the org picker flips radios->autocomplete at >=8 delegations (frontend-only); G-6 collapse the two-page org selector into one radio group. Do not author the ruling.",
+      "ruling": "DEFERRED — OUT of first-pass scope (Sam, 2026-07-18): delegated authority is not in the first pass. The first pass is a single-org, own-behalf journey; the ownership/visibility/auto-population tenancy layer becomes a later programme. G-1..G-6 remain open for that programme. See scopeDecisions.firstPass.delegatedAuthority.",
       "acceptanceCriteria": [
         "Model gains ownership.{assignedOrganisationId (owning tenant, @Indexed, server-enforced), assignedOrganisationName, agencyOrganisationId (acting agent's own org — the on-behalf-of marker), createdByUserId (audit)} (OWN-1..3, AGT-1/2).",
         "Dashboard visibility becomes a QUERY rule scoped by assignedOrganisationId in {user's member orgs ∪ delegated orgs} AND == currently-selected org context (session state, VIS-6, NOT stored); drafts private to author until submit (VIS-4); non-authors get the full action set — no read-only downgrade (CAP-1).",
@@ -578,10 +594,10 @@
       "kind": "page",
       "milestone": "m5",
       "sizeGuess": "S",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "deferred",
+      "gate": null,
       "dependsOn": ["inc-032"],
-      "blockedQuestion": "Behind inc-032: this page only exists if DoA is in scope, and G-6 asks whether to collapse it with consignment-organisation into one radio group (own org alongside delegated orgs) rather than a boolean-then-picker. Do not author the ruling.",
+      "ruling": "DEFERRED — OUT of first-pass scope (Sam, 2026-07-18): behind DoA (inc-032), which is out of the first pass. A non-delegated user never sees this page, so the single-org first pass does not need it. G-6 (collapse the two-page selector) is settled with the DoA programme.",
       "acceptanceCriteria": [
         "Caption 'About the consignment'; H1 'Who are you creating this notification for?' as a govuk-radios legend-as-heading (own organisation vs 'A different organisation') — FIX the empty-legend/no-accessible-name defect (c-014).",
         "The 'for-own-organisation' answer is a ROUTING input (not persisted directly); its outcome sets ownership.agencyOrganisationId (set on 'different', null on own).",
@@ -595,10 +611,10 @@
       "kind": "page",
       "milestone": "m5",
       "sizeGuess": "S",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "deferred",
+      "gate": null,
       "dependsOn": ["inc-032", "inc-033"],
-      "blockedQuestion": "Behind inc-032/inc-033: only renders when 'a different organisation' was chosen; G-5 — the picker switches from radios to a JS autocomplete <select> at >=8 delegations (never traced). Do not author the ruling.",
+      "ruling": "DEFERRED — OUT of first-pass scope (Sam, 2026-07-18): behind DoA (inc-032/inc-033), which is out of the first pass. G-5 (the >=8-delegation autocomplete variant) is settled with the DoA programme.",
       "acceptanceCriteria": [
         "Caption 'About the consignment'; H1 'Which company is this notification for'; a govuk-radios list of the agent's delegated orgs (per-user data, NOT reference data).",
         "Selection sets ownership.assignedOrganisationId + assignedOrganisationName (the owning tenant); the agent's own org becomes agencyOrganisationId (AGT-1).",
@@ -630,10 +646,10 @@
       "kind": "variant",
       "milestone": "m5",
       "sizeGuess": "M",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "todo",
+      "gate": null,
       "dependsOn": ["inc-004", "inc-029"],
-      "blockedQuestion": "c-007 (needsHuman): what actually TRIGGERS the CUC billing block is unsettled — the QA gate is a free-standing isCuc flag, but every CUC test pairs it with the Sevington port (Folkstone GBFOL4PP + 'Sevington IBF'), implying a real dependency on the port chosen on transport-before-bip; no trace/assertion pins the server rule. Also Open Q 11/14: is CUC billing in scope for pass 1 at all, and what is its (thinly-evidenced) shape? Do not author the ruling.",
+      "ruling": "RESOLVED (Sam, 2026-07-18): CUC billing IS in first-pass scope. Gate the billing block provisionally on a free-standing isCuc flag (c-007 provisional ruling) — do NOT treat the trigger as settled; confirm with IPAFFS whether the real server rule derives CUC from the Sevington port before finalising the condition.",
       "acceptanceCriteria": [
         "confirm-billing-details: H1 'Confirm billing details' (caption 'Billing') — a display-only summary of billing address + Email address + Phone number (billing.address.*, billing.email, billing.telephone).",
         "billing-find-an-address: H1 'Find an address' — govuk-input 'Postcode', 'Find address' (postcode lookup, stubbed/deferred address service). Validation: 'Enter postcode or enter address manually', 'Enter valid UK postcode', 'No address found. Try again or enter address manually'.",
@@ -648,10 +664,10 @@
       "kind": "variant",
       "milestone": "m5",
       "sizeGuess": "M",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "deferred",
+      "gate": null,
       "dependsOn": ["inc-025"],
-      "blockedQuestion": "Attachments are a SEPARATE /upload/ app (ipaffs-frontend-upload) with an async virus scan, so embedding the bytes would make the scan callback rewrite the notification (modelGap separate-app-boundary) — pass 1 defers bytes and keeps metadata only. Plus c-023 (needsHuman): the AV-failure copy casing ('could not be uploaded - Try again' vs '- try again') is unverified on the single-file accompanying-document surface and was never observed rendered. Decide whether file bytes are in scope for pass 1 and the canonical AV copy. Do not author the ruling.",
+      "ruling": "DEFERRED (Sam, 2026-07-18): file BYTES stay out of the first pass — pass 1 keeps document metadata only (captured by inc-025); the bytes + async antivirus work (separate /upload/ app) is a later increment. c-023 RULED: the AV/upload-failure copy standardises on GDS sentence case (not either legacy casing) when this increment is built.",
       "acceptanceCriteria": [
         "H1 'Accompanying documents'; a govuk-file-upload 'Select a file'; on the CHED-PP route the primary button is 'Next' (trace-confirmed).",
         "Persists AccompanyingDocument.files[] metadata ({fileId, filename}) — bytes deferred pass 1.",
@@ -698,13 +714,14 @@
       "kind": "business-rule",
       "milestone": "m5",
       "sizeGuess": "S",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "todo",
+      "gate": null,
       "dependsOn": [],
-      "blockedQuestion": "Article 72 is a business rule with NO UI of its own (completeness-critique.md) — traces show rule OUTPUTS, never the rule. There is no rendered evidence of what triggers it, what it changes in the journey, or which fields it gates. A human/product source must define the rule (the country×commodity classification and its effect) before it can be built. Do not author the ruling.",
+      "ruling": "RESOLVED (Sam, 2026-07-18): build a server-side placeholder rule hook (no-op) in pass 1 so Article 72 can be dropped in later without rework. The country×commodity condition and its journey effect are supplied by product later; the hook holds the extension point over the notification document.",
       "acceptanceCriteria": [
-        "Once defined: encode the Article 72 condition as a server-side rule over the notification document (not a page), and record which pages/fields it gates and any stored classification flag.",
-        "Until defined: no build — flagged as an uncovered business rule."
+        "A server-side Article 72 rule hook exists over the notification document (not a page) as a no-op extension point in pass 1 — a single evaluation seam the later rule slots into, with no journey effect until defined.",
+        "The seam is placed so a future rule can gate pages/fields and set a stored classification flag without restructuring; document where it fires.",
+        "Once product defines the country×commodity condition + effect: encode it in the hook and record which pages/fields it gates and the stored classification flag."
       ]
     },
     {
@@ -713,10 +730,10 @@
       "kind": "variant",
       "milestone": "m5",
       "sizeGuess": "M",
-      "status": "blocked",
-      "gate": "sam",
+      "status": "deferred",
+      "gate": null,
       "dependsOn": ["inc-002"],
-      "blockedQuestion": "The successful CLONE path is an uncovered surface: all three corpus cloning traces hit the 406 'You cannot clone this certificate' (modelGap uncovered-surface-findings). The happy-path clone (data + documents copy) was never observed, and cloning is a separate front door with its own remit. Confirm whether cloning is in scope for pass 1 and source the success-state flow before building. Do not author the ruling.",
+      "ruling": "DEFERRED — OUT of first-pass scope (Sam, 2026-07-18): cloning is not in the first pass. The successful clone path was never observed (all three corpus traces hit the 406 'You cannot clone this certificate'); when re-opened it needs the success-state flow sourced first. See scopeDecisions.firstPass.cloning.",
       "acceptanceCriteria": [
         "cloning-type: H1 'Clone a health or phytosanitary certificate' — a govuk-radios certificate-type question.",
         "cloning-search: H1 'Certificate details' — govuk-select 'Country of origin of certificate', govuk-inputs 'Certificate reference number', a date-of-issue and 'Consignor, consignee or importer name'. Validation: 'Select the country of origin of the certificate', 'You must enter the certificate reference number', 'You must enter the certificate date of issue', 'You must enter consignor, consignee or importer name'.",
@@ -739,16 +756,23 @@
       ]
     }
   ],
-  "bornBlocked": [
-    "inc-014 commodity-search (page gap + the one real lookup; Open Q 1 species-id stability)",
-    "inc-020 notification-hub (page gap — task-list structure/completeness rules unshown)",
-    "inc-025 accompanying-documents (c-015 — is a phytosanitary certificate mandatory for CHED-PP?)",
-    "inc-032 DoA ownership/visibility/auto-population (is delegated authority in scope? G-1..G-6)",
-    "inc-033 consignment-for (behind DoA; G-6 collapse the two-page selector)",
-    "inc-034 consignment-organisation (behind DoA; G-5 >=8-delegation autocomplete)",
-    "inc-036 CUC billing (c-007 trigger; Open Q 11/14 in scope for pass 1?)",
-    "inc-037 document-upload file bytes + AV (separate-app boundary; c-023 AV copy)",
-    "inc-040 Article 72 (business rule with no UI evidence)",
-    "inc-041 cloning front door (success path never observed — all traces 406)"
-  ]
+  "bornBlockedResolution": {
+    "resolvedDate": "2026-07-18",
+    "resolvedBy": "Sam",
+    "note": "All 10 born-blocked increments are settled — none remain blocked. 5 unblocked to 'todo', 5 deferred out of first-pass scope.",
+    "unblocked": [
+      "inc-014 commodity-search — build the REAL search now (tree browse + EPPO typeahead); store eppoCode join key (Open Q 1).",
+      "inc-020 notification-hub — 12 spokes, hub-owned navigation, all-mandatory-complete gating; catch-cert/charity/latest-health-cert omitted.",
+      "inc-025 accompanying-documents — c-015 ruled MANDATORY (required=true).",
+      "inc-036 CUC billing — IN scope; gated provisionally on the isCuc flag (c-007), pending IPAFFS confirmation of the real trigger.",
+      "inc-040 Article 72 — build a no-op placeholder rule hook in pass 1; rule dropped in later."
+    ],
+    "deferred": [
+      "inc-032 DoA ownership/visibility/auto-population — OUT of first pass (DoA deferred to a later programme; G-1..G-6 open).",
+      "inc-033 consignment-for — OUT (behind DoA).",
+      "inc-034 consignment-organisation — OUT (behind DoA).",
+      "inc-037 document-upload file bytes + AV — file bytes OUT of pass 1 (metadata only via inc-025); c-023 AV copy ruled GDS sentence case for when built.",
+      "inc-041 cloning front door — OUT of first pass (success path never observed)."
+    ]
+  }
 }

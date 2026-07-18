@@ -69,7 +69,12 @@ const CHED_CONFIG = {
   },
 }
 
-const CHED_TYPE = (typeof args === 'object' && args && args.chedType) ? args.chedType : 'ched-pp'
+// args may arrive as a real object OR (Workflow-tool footgun) as a JSON string —
+// tolerate both so a stringified `{chedType:...}` doesn't silently default to ched-pp.
+const parsedArgs = typeof args === 'string'
+  ? (() => { try { return JSON.parse(args) } catch { return {} } })()
+  : args
+const CHED_TYPE = (parsedArgs && typeof parsedArgs === 'object' && parsedArgs.chedType) ? parsedArgs.chedType : 'ched-pp'
 const CHED = CHED_CONFIG[CHED_TYPE]
 if (!CHED) throw new Error(`Unknown chedType "${CHED_TYPE}" — expected one of: ${Object.keys(CHED_CONFIG).join(', ')}`)
 log(`Mining requirements for ${CHED.name} — ${CHED.what}`)

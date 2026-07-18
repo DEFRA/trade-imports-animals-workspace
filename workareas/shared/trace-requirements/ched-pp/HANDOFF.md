@@ -9,12 +9,29 @@ exactly what to do next. Last updated 2026-07-18.
 
 The IPAFFS **CHED-PP** journey (plants pre-notification) has been reverse-engineered from its
 Playwright trace corpus into a reviewable requirements spec, a target data model, and a buildable
-backlog for a new CDP app. **The mining pipeline is COMPLETE.** What remains is human: review the
-spec gate, rule the open conflicts, confirm scope — then build.
+backlog for a new CDP app. **The mining pipeline is COMPLETE, and the spec gate is now PASSED** —
+Sam ruled all 8 conflicts, set first-pass scope, and resolved every born-blocked increment on
+2026-07-18. **What remains is to BUILD.**
 
 - Branch: **`spike/trace-to-requirements`** (pushed to origin).
 - Everything here: `workareas/shared/trace-requirements/ched-pp/`.
-- **Start by reading `SPEC-GATE.md`** — it is the review artefact.
+- **The decisions are in `RULINGS.md`** (human decision log) — read it with `SPEC-GATE.md` (review
+  artefact). Machine form: `conflicts.json` (`humanRuling` per conflict) + `backlog.json`
+  (`scopeDecisions`, per-increment `ruling`, `bornBlockedResolution`).
+
+### The decisions in one glance (2026-07-18)
+
+- **Conflicts:** c-004 → GDS 'There is a problem'; c-007 → free-standing `isCuc` flag (provisional,
+  confirm with IPAFFS); c-013 → visible H1 wording; c-014 → fix radios (legend-as-heading);
+  c-015 → documents MANDATORY; c-018 → frontend Joi copy voice; c-023 → GDS sentence case;
+  c-024 → overdue-debtor gate OUT (report bug to IPAFFS).
+- **Scope:** DoA **out**, CUC billing **in**, cloning **out**.
+- **Born-blocked (all cleared):** inc-014 (build real search + `eppoCode`), inc-020 (12 spokes,
+  hub-owned, all-mandatory gating), inc-025 (mandatory docs), inc-036 (CUC in, `isCuc`),
+  inc-040 (placeholder rule hook) → unblocked; inc-032/033/034 (DoA), inc-037 (file bytes),
+  inc-041 (cloning) → deferred.
+- **Follow-ups outside the build:** report c-024 bug to IPAFFS; confirm c-007 CUC trigger with
+  IPAFFS; QA migration for c-004 guard `ched-a-workflows.ts:505`. See `RULINGS.md` §4.
 
 ---
 
@@ -57,39 +74,33 @@ pass. Both passes have already run for CHED-PP.
 
 ## WHAT TO DO NEXT (the actual "continue" steps)
 
-### 1. Review the spec gate
-Read `SPEC-GATE.md`. It surfaces the weak parts at the top (validation still thin on some pages;
-15 of 39 pages have lower confidence). Sanity-check a few `pages/*.json` against your knowledge.
+### 1. Review the spec gate — DONE (2026-07-18)
+`SPEC-GATE.md` reviewed. Weak parts noted (two `gap` pages `notification-hub` + `commodity-search`;
+source-only behaviours). Those informed the rulings below.
 
-### 2. Rule the 8 conflicts that need a human (`conflicts.json`, `needsHuman: true`)
-These cannot be settled by evidence precedence — they are decisions:
+### 2. Rule the 8 conflicts — DONE (2026-07-18)
+All 8 ruled by Sam. See `RULINGS.md` §1 and `conflicts.json` (`humanRuling` per conflict).
+Summary: c-004 GDS 'There is a problem'; c-007 free-standing `isCuc` (provisional); c-013 visible
+H1; c-014 fix radios; c-015 documents MANDATORY; c-018 frontend Joi voice; c-023 GDS sentence case;
+c-024 debtor gate OUT + report to IPAFFS.
 
-- **c-018** — Frontend (Joi) and backend (Jakarta) give **different error copy for the same field**
-  ("Enter/Select the …" vs "Add the …"). Pick one voice for the rebuild.
-- **c-024** — A DoA overdue-debtor exemption is applied on GET but **dropped on the POST error
-  re-render** (import-type). Real IPAFFS bug — decide the correct behaviour.
-- **c-015** — Are accompanying documents **mandatory** for CHED-PP? The "yes" reading rested on an
-  `isChedp` flag = CHED-**P** (a trap), so this is genuinely unknown — product/legal call.
-- **c-007** — What triggers the **CUC billing** sub-journey? (`isCuc` flag vs a "Sevington port" comment.)
-- **c-013** — commodity-input-method question wording: visible H1 vs hidden legend differ.
-- **c-014** — Radio groups have **no accessible name** (a11y defect). Adopt standard GDS radios?
-- **c-004** — Error-summary title "Please fix the following errors" vs GDS "There is a problem".
-- **c-023** — AV/upload-failure copy casing.
+### 3. Confirm first-pass scope — DONE (2026-07-18)
+DoA **out**, CUC billing **in**, cloning **out**. All 10 born-blocked increments resolved
+(5 unblocked, 5 deferred) — see `RULINGS.md` §3 and `backlog.json` `bornBlockedResolution`.
 
-### 3. Confirm scope for the first pass
-The born-blocked increments hinge on these (see `backlog.md`, `status: blocked`):
-- Is **delegated authority (DoA)** in scope? If yes, `consignment-for` + `consignment-organisation`
-  + the ownership/visibility model (`authorization-rules.md`) are in; if no, drop them.
-- Is **CUC billing** in scope? Is **cloning** in scope? (all currently deferred/blocked)
-- Data questions: is `commodity-class` one page or two? Is "intended use" a Yes/No or the
-  FINISHED/PROPAGATED enum? Full value-sets + branching for `reasonForImport` and
-  `finishedOrPropagated` (only one option of each was ever exercised)?
+**Data questions still open (do NOT block the pass-1 build, confirm as the pages are built):**
+`commodity-class` is ONE page (a dropdown on variety-of-genus-and-species — c-001, already ruled);
+whether "intended use" is a Yes/No or the FINISHED/PROPAGATED enum; and the full value-sets +
+branching for `reasonForImport` and `finishedOrPropagated` (only one option of each was ever
+exercised — Open Q 5). These are per-page confirmations, not gate blockers.
 
-### 4. Then build
-Once the above are ruled, `backlog.json` is the build plan for the new CHED-PP CDP app: a journey
-that builds up the `target-model.md` JSON object and persists it to Mongo, in `trade-imports-animals`
-house style. Options: raise tickets from the backlog, or run a journey-builder-style serial build
-loop. Milestone 1 is scaffolding + persistence + the first pages.
+### 4. Then build — THIS IS NOW THE NEXT STEP
+`backlog.json` is the build plan for the new CHED-PP CDP app: a journey that builds up the
+`target-model.md` JSON object and persists it to Mongo, in `trade-imports-animals` house style.
+Options: raise tickets from the backlog, or run a journey-builder-style serial build loop.
+Milestone 0 is scaffolding + persistence spine; the m0→m4 own-org happy path is fully unblocked.
+Remember the follow-ups outside the build (`RULINGS.md` §4): report the c-024 bug to IPAFFS,
+confirm the c-007 CUC trigger, and the c-004 QA-guard migration.
 
 ### 5. Residual policy questions (not mineable)
 `completeness-critique.md` lists business rules with no UI and no message key — Article 72

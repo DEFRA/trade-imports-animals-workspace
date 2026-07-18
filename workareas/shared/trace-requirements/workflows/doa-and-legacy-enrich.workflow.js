@@ -23,7 +23,12 @@ const CHED_CONFIG = {
   'ched-d': { name: 'CHED-D', what: 'high-risk food and feed of non-animal origin', qaSlug: 'ched-d', notificationEnum: 'CED', ipaffsViews: 'views/importer/chedd/ + shared templates', doaTerm: 'the food/feed org named in the test' },
 }
 
-const CHED_TYPE = (typeof args === 'object' && args && args.chedType) ? args.chedType : 'ched-pp'
+// args may arrive as a real object OR (Workflow-tool footgun) as a JSON string —
+// tolerate both so a stringified `{chedType:...}` doesn't silently default to ched-pp.
+const parsedArgs = typeof args === 'string'
+  ? (() => { try { return JSON.parse(args) } catch { return {} } })()
+  : args
+const CHED_TYPE = (parsedArgs && typeof parsedArgs === 'object' && parsedArgs.chedType) ? parsedArgs.chedType : 'ched-pp'
 const CHED = CHED_CONFIG[CHED_TYPE]
 if (!CHED) throw new Error(`Unknown chedType "${CHED_TYPE}" — expected one of: ${Object.keys(CHED_CONFIG).join(', ')}`)
 
@@ -133,7 +138,7 @@ phase('DoA-discover')
 // DoA (delegated-authority) traces live under auth/DoA/ and name an org by commodity type, so the
 // main run's spec-path filter misses them. For CHED-PP these were a known set of 10; for other
 // types we discover them from the raw index. An explicit args.doaHashes overrides discovery.
-let DOA_HASHES = (typeof args === 'object' && args && Array.isArray(args.doaHashes)) ? args.doaHashes : null
+let DOA_HASHES = (parsedArgs && typeof parsedArgs === 'object' && Array.isArray(parsedArgs.doaHashes)) ? parsedArgs.doaHashes : null
 if (!DOA_HASHES) {
   const disc = await agent(`
 Find the delegated-authority (DoA) traces for **${CHED.name}** (${CHED.what}) in the trace index.

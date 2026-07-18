@@ -1,5 +1,6 @@
 {
   "generated": "2026-07-17",
+  "humanRulingsSession": "2026-07-18 — Sam ruled all 8 needsHuman conflicts (c-004, c-007, c-013, c-014, c-015, c-018, c-023, c-024). Each now carries a humanRuling and needsHuman is flipped to false. First-pass scope also set: DoA out, CUC billing in, cloning out. See backlog.json scopeDecisions and RULINGS.md.",
   "precedence": [
     "rendered-trace — what the app actually displayed. Wins on copy, labels, options, structure, components.",
     "legacy-source — read from the authoritative IPAFFS source (template/enum/validation message/model mandatoriness). Trustworthy for VALUES and COPY; for a RULE it is 'as the old system had it', a policy the rebuild may deliberately revisit. Sits ABOVE inferred, BELOW rendered-trace.",
@@ -16,8 +17,9 @@
       "sources": ["rendered-trace", "workflow-config"],
       "detail": "Most pages render the shared common/validationSummary fallback title 'Please fix the following errors' (template partials/common/validationSummary.html:8; corroborated as real rendered copy by ched-a-workflows.ts:505 regex /fix the following errors/i). BUT notifications-dashboard renders the GDS-standard 'There is a problem' (confirmed on-page), and the IPAFFS overdueDebtWarning review variant also uses 'There is a problem'. IPAFFS is internally inconsistent.",
       "ruling": "Rebuild adopts the GDS-standard 'There is a problem' everywhere (already used on the dashboard and overdue-debt variant). This is a deliberate copy change from the majority IPAFFS pages, not a faithful port.",
-      "needsHuman": true,
-      "humanReason": "Content-designer sign-off on the deliberate copy change, and a QA migration dependency: the CHED-A workflow guard ched-a-workflows.ts:505 matches /fix the following errors/i and would silently stop matching (passing a page full of errors) if the title changes."
+      "needsHuman": false,
+      "humanReason": "Content-designer sign-off on the deliberate copy change, and a QA migration dependency: the CHED-A workflow guard ched-a-workflows.ts:505 matches /fix the following errors/i and would silently stop matching (passing a page full of errors) if the title changes.",
+      "humanRuling": "CONFIRMED (Sam, 2026-07-18): adopt GDS-standard 'There is a problem' as the error-summary title on every page. Migration task: update the CHED-A QA guard at ched-a-workflows.ts:505 so it keeps detecting error states after the title change."
     },
     {
       "id": "c-007",
@@ -27,8 +29,9 @@
       "sources": ["workflow-config", "test-assertion"],
       "detail": "The QA workflow gates the whole billing block behind `if (isCuc)` (ched-pp-workflows.ts:480), i.e. a free-standing config flag. A sibling test comment says the block is 'CUC only — triggered by Sevington port' (ched-p-workflows.ts:538), and every CUC test pairs isCuc:true with entryBorderControlPost Folkstone-GBFOL4PP + inspectionPremises 'Sevington IBF' — implying a real dependency on the port chosen on transport-before-bip. No trace and no assertion pins the actual server rule.",
       "ruling": "Provisionally model billing as conditional on a CUC flag (workflow-config precedence), but do not treat the trigger as settled.",
-      "needsHuman": true,
-      "humanReason": "Precedence cannot settle it — both sources are page-object/workflow tier and neither rendered-trace nor a test-assertion pins whether CUC is a free-standing flag or derived from the Sevington port. A product/IPAFFS answer is needed before the rebuild wires the condition."
+      "needsHuman": false,
+      "humanReason": "Precedence cannot settle it — both sources are page-object/workflow tier and neither rendered-trace nor a test-assertion pins whether CUC is a free-standing flag or derived from the Sevington port. A product/IPAFFS answer is needed before the rebuild wires the condition.",
+      "humanRuling": "PROVISIONAL (Sam, 2026-07-18): model CUC billing as gated by a free-standing isCuc flag (workflow-config precedence). Flagged not-settled — confirm with IPAFFS whether the real server rule derives CUC from the Sevington port before finalising the condition. CUC billing IS in first-pass scope."
     },
     {
       "id": "c-013",
@@ -37,8 +40,9 @@
       "sources": ["rendered-trace", "rendered-trace"],
       "detail": "The visible H1 asks 'How do you want to add your commodity details?' while the (visually-hidden) fieldset legend asks the same question in different words: 'How would you like to enter your information?'. Both are rendered.",
       "ruling": "Adopt the visible H1 wording ('How do you want to add your commodity details?') as the single question; drop the divergent hidden legend, folding the question into the legend-as-heading in the rebuild.",
-      "needsHuman": true,
-      "humanReason": "Content design must pick one canonical wording; two rendered strings ask the same question differently."
+      "needsHuman": false,
+      "humanReason": "Content design must pick one canonical wording; two rendered strings ask the same question differently.",
+      "humanRuling": "CONFIRMED (Sam, 2026-07-18): adopt the visible H1 wording 'How do you want to add your commodity details?' as the single question, folded into a legend-as-heading. Drop the divergent hidden legend."
     },
     {
       "id": "c-014",
@@ -48,8 +52,9 @@
       "sources": ["rendered-trace", "test-assertion"],
       "detail": "Multiple radio pages render an EMPTY <legend> with the H1 outside the fieldset, so the radio group has no accessible group name (trace a11y tree shows `group` with no name). The shared govuk/radios partial already supports the correct legend-as-heading pattern and a sibling page uses it. axe passes because no A/AA rule requires a radio group name — a blind spot, not a clearance.",
       "ruling": "Rebuild adopts the standard GDS radios pattern: H1 inside the fieldset legend (legendIsPageHeading), caption above. Deliberate accessibility fix, recorded as a behaviour change from IPAFFS.",
-      "needsHuman": true,
-      "humanReason": "a11y/design lead should confirm the rebuild fixes the missing group name rather than faithfully porting the defect."
+      "needsHuman": false,
+      "humanReason": "a11y/design lead should confirm the rebuild fixes the missing group name rather than faithfully porting the defect.",
+      "humanRuling": "CONFIRMED (Sam, 2026-07-18): FIX the defect. Adopt the standard GDS radios pattern (H1 inside the fieldset legend via legendIsPageHeading, caption above) on all affected pages. Recorded as a deliberate behaviour change from IPAFFS, not a port."
     },
     {
       "id": "c-015",
@@ -58,8 +63,9 @@
       "sources": ["legacy-source", "test-assertion"],
       "detail": "An earlier reading concluded CHED-PP makes documents mandatory, based on the legacy `isChedp` flag. `isChedp` in the legacy source means CHED-P (CVEDP), NOT CHED-PP — a trap. No trace and no test drives this page into a validation error, so whether a document is required for CHED-PP is unproven from both admissible sources.",
       "ruling": "Left unresolved in the spec (field required=inferred/unknown); do not assert mandatory without evidence.",
-      "needsHuman": true,
-      "humanReason": "Neither rendered-trace nor test-assertion establishes whether at least one accompanying document is mandatory for CHED-PP; a product/legal answer is required."
+      "needsHuman": false,
+      "humanReason": "Neither rendered-trace nor test-assertion establishes whether at least one accompanying document is mandatory for CHED-PP; a product/legal answer is required.",
+      "humanRuling": "RULED (Sam, 2026-07-18, from domain knowledge): accompanying documents ARE mandatory for CHED-PP — at least one document (a phytosanitary certificate) is required to submit. Field required=true. This corrects the earlier isChedp (CHED-P) trap reading, which is now moot."
     },
     {
       "id": "c-001",
@@ -179,8 +185,9 @@
       "sources": ["legacy-source", "legacy-source"],
       "detail": "The two enrichment sources surface the same field's validation copy from two different layers that do not agree. The frontend per-page Joi catalogue (ipaffs-frontend-notification/service/src/validation/messages/en.js) phrases required-field errors as 'Enter the …' / 'Select the …', fired client-side on the per-page save. The backend submission-model Jakarta catalogue (ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties) phrases the SAME field's error as 'Add the …', fired on final server submission. Concrete instances: entry BCP — 'Select the entry border control post' (en.js:76) vs 'Add the entry Border Control Post' (ValidationMessages.properties:36); and five commodity-bulk-details fields ('Enter/Select the …' vs 'Add the …', commodity-bulk-details provenance note). NO error-state trace exists for any of these pages, so NO validation message was ever observed rendered — this is LEGACY-vs-LEGACY.",
       "ruling": "Rebuild must ship ONE string per field. Provisionally prefer the frontend Joi wording ('Enter/Select the …') as the page-level copy (it is the message a user sees first, on the per-page save, and is closer to GDS 'Select …'/'Enter …' conventions), but this is not settled by evidence.",
-      "needsHuman": true,
-      "humanReason": "Precedence cannot settle it: both strings are legacy (same tier), no rendered trace exists, and which the user actually sees depends on WHERE validation fires first (client per-page save vs server submission) — an ordering never observed in the corpus. Content design must choose one canonical string per field and the rebuild must decide whether validation is single-layer."
+      "needsHuman": false,
+      "humanReason": "Precedence cannot settle it: both strings are legacy (same tier), no rendered trace exists, and which the user actually sees depends on WHERE validation fires first (client per-page save vs server submission) — an ordering never observed in the corpus. Content design must choose one canonical string per field and the rebuild must decide whether validation is single-layer.",
+      "humanRuling": "RULED (Sam, 2026-07-18): adopt the frontend Joi voice ('Enter the …' / 'Select the …') as the single canonical string per field — closer to GDS conventions and what the user hits first. Ship ONE string per field, not both layers' copy."
     },
     {
       "id": "c-019",
@@ -228,8 +235,9 @@
       "sources": ["legacy-source", "legacy-source"],
       "detail": "The file-compression microservice pins 'The selected file could not be uploaded - Try again' with a CAPITAL 'Try' (FileStoreAntiVirusScanner.java template, asserted verbatim in FileStoreAntiVirusScannerTest.java:119). The frontend-upload service carries near-identical copy with a LOWERCASE 't' — 'could not be uploaded - try again' — but those constants belong to the commodityDetailsUpload and multiUpload surfaces, not this single-file accompanyingDocument page. Neither casing was observed rendered on this page (an infrastructure-failure path the suite cannot easily drive).",
       "ruling": "Unresolved: which casing a user sees on the single-file accompanying-document page is unverified. The rebuild should standardise on GDS sentence case ('Try again' as its own sentence, or a single agreed string) rather than port either constant.",
-      "needsHuman": true,
-      "humanReason": "Both strings are legacy (same tier) and neither was observed rendered on this page; which constant is actually wired to the accompanying-document single-file surface is not evidenced. A one-off manual reproduction of the AV-failure path, or a content-designer decision, is needed."
+      "needsHuman": false,
+      "humanReason": "Both strings are legacy (same tier) and neither was observed rendered on this page; which constant is actually wired to the accompanying-document single-file surface is not evidenced. A one-off manual reproduction of the AV-failure path, or a content-designer decision, is needed.",
+      "humanRuling": "RULED (Sam, 2026-07-18): do not port either legacy casing. Standardise on GDS sentence case ('Try again' as its own sentence, or a single agreed string) for the upload/AV-failure copy."
     },
     {
       "id": "c-024",
@@ -238,8 +246,9 @@
       "sources": ["legacy-source", "legacy-source"],
       "detail": "The GET builds the view with `createInitialViewContext((overdueDebtor && !isUserInDoA))` (consignment_importing.js:16) — an overdue debtor who HOLDS delegations is exempted and sees an enabled CHED-PP radio. The POST validation-error re-render uses `createInitialViewContext(overdueDebtor)` (:33) — the `&& !isUserInDoA` guard is absent — while the POST throw-gate keeps it (:26, `if (isUserOverdueDebtor && !isUserInDoA)`). So a DoA agent who is also an overdue debtor and submits with no radio selected gets the CHED-PP radio re-rendered DISABLED and hinted 'This option is not available', even though the same request would have let them select it. Three of the four sites that test the overdue-debtor condition include `&& !isUserInDoA`; one does not. Never observed, never tested — there is no overdue-debtor persona anywhere in the QA repo.",
       "ruling": "Do NOT port this logic shape. If the rebuild inherits the overdue-debtor gate at all, derive the flag once per request so the exemption is applied consistently across render paths, and never render a permitted option as disabled. Report the inconsistency to the IPAFFS team as a latent bug independent of the rebuild.",
-      "needsHuman": true,
-      "humanReason": "Two decisions a human must take: (1) does the new simple CHED-PP app inherit the overdue-debtor gate at all, and if so what does the POST-throw path look like as a graceful GDS error rather than an unhandled 500; (2) confirm the GET/POST inconsistency is a bug to be fixed, not a rule to be preserved. Zero trace and zero QA coverage means there is no regression net today."
+      "needsHuman": false,
+      "humanReason": "Two decisions a human must take: (1) does the new simple CHED-PP app inherit the overdue-debtor gate at all, and if so what does the POST-throw path look like as a graceful GDS error rather than an unhandled 500; (2) confirm the GET/POST inconsistency is a bug to be fixed, not a rule to be preserved. Zero trace and zero QA coverage means there is no regression net today.",
+      "humanRuling": "RULED (Sam, 2026-07-18): the overdue-debtor gate is OUT of first-pass scope — the rebuild does not implement it at all. The GET/POST inconsistency is confirmed a latent IPAFFS bug and must be reported to the IPAFFS team independently of the rebuild. If the gate is added in a later pass, derive the flag once per request and never render a permitted option disabled."
     },
     {
       "id": "c-025",
