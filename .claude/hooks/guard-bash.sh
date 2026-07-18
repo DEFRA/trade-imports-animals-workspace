@@ -5,7 +5,7 @@
 # Incident that started this (2026-06-10): a denied `node scan.mjs` was re-run by
 # copying the script into an allowlisted scripts/** path and chmod +x-ing it.
 #
-# Checks (each emits a deny/ask + exit 0; a clean command exits 0 with no output
+# Checks (each emits a deny + exit 0; a clean command exits 0 with no output
 # and falls through to the normal allow/deny rules):
 #   1. chmod in command position (any path form; behind sudo/timeout/etc; and via
 #      find -exec / xargs) — adding execute bits is how a fresh file becomes runnable.
@@ -18,8 +18,12 @@
 #   4. [EUDPA-221] git commit --no-verify — deny (bypasses pre-commit hooks/gates).
 #   5. [EUDPA-221] git commit --amend when HEAD is already on a remote branch —
 #      deny (rewriting pushed history).
-#   6. [EUDPA-221] Foot-gun NUDGES via permissionDecision "ask" (recoverable — the
-#      user gets a prompt naming the sanctioned alternative, not a hard block):
+#   6. [EUDPA-221] Foot-gun REDIRECTS via permissionDecision "deny" — each names
+#      the sanctioned alternative in its reason, so an unattended agent reads it
+#      and retries instead of stalling on an unanswerable "ask" (the prior design
+#      hung subagents and spammed the user with prompts). A human keeps the `! cmd`
+#      escape hatch for a genuine one-off. These carry no security weight — worst
+#      case is a missed redirect, never a missed deny:
 #        - a literal /Users/<user>/ path (use ~/ — the matcher treats them differently)
 #        - raw `npx playwright test` (use `npm run test:local`)
 #        - `npm --prefix` over the workspace symlink (canonicalize with cd && pwd -P)
@@ -34,7 +38,7 @@
 # Exemptions for check 2: node_modules (installed artifacts) and system prefixes.
 # Bare commands (node, npm, git...) are left to the normal rules.
 #
-# stdin: PreToolUse hook JSON. Deny/ask via hookSpecificOutput JSON, exit 0.
+# stdin: PreToolUse hook JSON. Deny via hookSpecificOutput JSON, exit 0.
 
 set -uf
 
@@ -47,14 +51,6 @@ CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty')
 deny() {
   jq -n --arg reason "$1" \
     '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
-  exit 0
-}
-
-# ask() — a recoverable nudge: surfaces a prompt naming the sanctioned alternative
-# rather than hard-blocking. Used for the EUDPA-221 foot-gun redirects.
-ask() {
-  jq -n --arg reason "$1" \
-    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$reason}}'
   exit 0
 }
 
@@ -152,29 +148,47 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+commit\b[^|;&]*--amend'; then
   fi
 fi
 
-# --- [EUDPA-221] foot-gun nudges (whole-string, ASK — recoverable) ---------------
+# --- [EUDPA-221] foot-gun redirects (whole-string, DENY — names the alternative) --
+# Each denial names the sanctioned form so an unattended agent self-corrects and
+# retries, rather than stalling on an unanswerable "ask". A human uses `! cmd` for
+# a genuine one-off. No security weight — the real deny checks operate on raw $CMD.
+
 # Literal /Users/<user>/ path — the permission matcher treats ~/ and /Users/ as
 # different prefixes, so literal /Users/ triggers avoidable prompts.
 if printf '%s' "$CMD" | grep -Eq '/Users/[A-Za-z0-9._-]+/'; then
-  ask "Use ~/ instead of a literal /Users/<user>/ path — the permission matcher treats them as different prefixes, so /Users/ triggers avoidable prompts."
+  deny "Use ~/ instead of a literal /Users/<user>/ path — the permission matcher treats them as different prefixes, so /Users/ triggers avoidable prompts."
 fi
 
 # Raw `npx playwright test` — skips the project wrapper's setup.
 if printf '%s' "$CMD" | grep -Eq 'npx[[:space:]].*playwright[[:space:]]+test'; then
-  ask "Use the project wrapper 'npm run test:local' rather than raw 'npx playwright test' — the wrapper does setup the raw invocation skips."
+  deny "Use the project wrapper 'npm run test:local' rather than raw 'npx playwright test' — the wrapper does setup the raw invocation skips."
 fi
 
 # npm --prefix over the workspace symlink — can corrupt the lockfile.
-if printf '%s' "$CMD" | grep -Eq 'npm[[:space:]].*--prefix[[:space:]]+[^[:space:]]*trade-imports-animals-workspace'; then
-  ask "npm --prefix across the workspace symlink can corrupt the lockfile. Canonicalize first (cd <path> && pwd -P) and run npm install on the real path."
+if printf '%s' "$CMD" | grep -Eq 'npm[[:space:]].*--prefix[[:space:]]+[^[:space:]]*trade-imports-animals-workspace[^[:space:]]*[[:space:]]+(install|i|ci|add|update|dedupe|prune|uninstall)([[:space:]]|$)'; then
+  deny "npm --prefix across the workspace symlink can corrupt the lockfile. Canonicalize first (cd <path> && pwd -P) and run npm install on the real path."
 fi
 
 # `&&` command chaining — one command per Bash call (exit codes come back in the
 # tool result). NOTE: ';' and '|' are intentionally NOT guarded here — ';' is used
 # by legitimate for/while loops and '|' by ordinary pipes, so guarding them would
 # fire on nearly every command. Add them below only if you want the stricter rule.
-if printf '%s' "$CMD" | grep -Eq '&&'; then
-  ask "Prefer one command per Bash call — this chains commands with '&&'. Split into separate Bash calls; the tool result already carries each command's exit code."
+#
+# Only an UNQUOTED '&&' is shell chaining. A '&&' inside a quoted string is DATA,
+# not an operator — e.g. `awk 'NR>=10 && NR<=20' f`, `jq 'select(.a && .b)'`,
+# `grep -E 'x&&y'`. Matching the raw command string false-positives on all of
+# those: under a DENY a wrongly-blocked one-liner cannot be click-approved, only
+# reworded, so stripping quoted spans first is load-bearing, not cosmetic. ONE
+# pass with an alternation, not two sequential passes: scanning left to right,
+# whichever quote opens FIRST consumes through to its own closer, so a single-quoted
+# span inside a double-quoted string (and vice versa) is handled correctly. Two
+# sequential passes would strip the INNER single quotes first and mangle the outer
+# double-quoted span, leaving '&&' residue that re-triggers the false positive.
+# Style redirect, not a security control: worst case is a missed redirect, never a
+# missed deny — the deny checks above/below still operate on the raw $CMD.
+CMD_UNQUOTED=$(printf '%s' "$CMD" | sed -E "s/'[^']*'|\"[^\"]*\"//g")
+if printf '%s' "$CMD_UNQUOTED" | grep -Eq '&&'; then
+  deny "Prefer one command per Bash call — this chains commands with '&&'. Split into separate Bash calls; the tool result already carries each command's exit code."
 fi
 
 # --- pull out command-substitution bodies: $( ... ) and ` ... ` -----------------
