@@ -133,9 +133,13 @@ stack invokes the repo-owned script rather than keeping its own copy:
 | Script | Owner | Path in owning repo |
 |---|---|---|
 | Mongo replica-set init (`10-database-setup.js`) | workspace | `docker/stack/scripts/mongodb/` |
-| Mongo notification seed fixtures (`20-…`, `21-…`) | tests repo | `seeds/mongodb/` |
+| Mongo notification seed scripts | tests repo | `seeds/mongodb/` |
 | Floci provisioning (`start-floci.sh`) | backend | `compose/start-floci.sh` |
 | ASB emulator entity config (`servicebus-config.json`) | dynamics-gateway | `servicebus/servicebus-config.json` |
+
+The tests repo's `seeds/mongodb/` may currently stage nothing — tests now
+seed notification state at test level through the front door (the backend
+API) rather than the back door (writing directly into Mongo).
 
 `run-stack.sh` and `bounce-mongo.sh` call `stage_init_scripts`
 (`lib/init-scripts.sh`), which rebuilds `docker/stack/.staged/` — generated,
