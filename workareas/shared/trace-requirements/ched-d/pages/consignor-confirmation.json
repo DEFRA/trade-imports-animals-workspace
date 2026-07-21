@@ -1,0 +1,137 @@
+{
+  "slug": "consignor-confirmation",
+  "name": "Consignor confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/consignor/confirmation/{consignorId}?fromCreate=true",
+  "pageTitle": "Create consignor or exporter confirmation - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1526057 - CHEDD",
+  "heading": "The consignor or exporter has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The consignor or exporter has been created",
+      "govukComponent": "Panel"
+    },
+    {
+      "element": "h1",
+      "text": "The consignor or exporter has been created",
+      "govukComponent": "Panel (govuk-panel__title)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Confirmation banner announcing the consignor/exporter has been created. The H1 is the panel title (govuk-panel__title), not a standalone page heading. Legacy confirms the H1 copy is a conditional: with fromCreate=true it renders 'The {{displayType}} has been created'; without fromCreate (the edit path) it renders 'The {{displayType}} details have been changed'. {{displayType}} resolves to 'consignor or exporter' for a CHED-D consignor, so the rendered 'The consignor or exporter has been created' is legacy-corroborated, not a discrepancy.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 53; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 57 (byte-identical main HTML); legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:17-35 (fromCreate conditional); legacy displayType /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/utils/constants.js:464 (CONSIGNOR displayValue = 'consignor or exporter')"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary action 'Add to notification' — submits the POST form (id=button-add, value='Add to notification', data-prevent-double-click) which navigates to /traders. Adds the just-created consignor to the CHED-D notification. Corroborated by the QA page object (getByRole('button', { name: 'Add to notification' })) and the CHED-D workflow, which clicks it as the sole action on this page and next lands on the Traders Addresses page (linkAddConsignee), confirming the /traders destination. Legacy note: the button VALUE is itself conditional in the shared template — for a normal trader (consignor) it is 'Add to notification'; for an ORGANISATION_BRANCH_ADDRESS trader type it renders 'Return to notification' (id still button-add). The organisation-branch branch does not apply to the CHED-D consignor path.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 53; page object /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/ConsignorConfirmationPage.ts:6-8 (btnAddToNotification); workflow /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts:264 (click) -> :266-267 (returns to Traders Addresses); legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:48-51 (button-value conditional)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) linking to /traders/consignor/search. Styled as a large body-text link inside the same form, not a secondary button. NOT exposed by the QA page object — the tests never drive this link, so it is trace-only evidence and its post-click behaviour is not covered by any test. Legacy confirms the href is the server-computed returnToSearchUrl (the trader search URL for the trader type; consignor -> /traders/consignor/search), and that this link is rendered only on the non-organisation-branch branch of the shared template.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 53 (rendered); ConsignorConfirmationPage.ts exposes only btnAddToNotification, i.e. no test corroboration for this link; legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:52-54; legacy handler /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/economic_operator/confirmation.js:69-90 (getReturnToSearchUrl)"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 53 — <input name=\"crumb\" type=\"hidden\"> platform anti-CSRF token, not a user-facing requirement; legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:43"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency token)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 53 — <input name=\"etag\" type=\"hidden\"> ETag for optimistic concurrency, not a user-facing requirement; legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:44"
+    },
+    {
+      "name": "fromImporterReview",
+      "label": "(hidden flow-context flag)",
+      "control": "text",
+      "required": false,
+      "confidence": "legacy",
+      "evidence": "Conditional hidden input no trace rendered — present only when actionsModel.fromImporterReview is set (i.e. the confirmation was reached from the importer Review page). Legacy template /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47 (<input name=\"fromImporterReview\" ...> inside {{#if actionsModel.fromImporterReview}}); handler /Users/samfarrington/git/defra/ipaffs/ipaffs-frontend-notification/service/src/routes/handlers/importer/economic_operator/confirmation.js:57-59 (POST forwards fromImporterReview) and :81-83 (appends ?fromImporterReview=true onto returnToSearchUrl). Both observed CHED-D traces reached this page NOT from importer Review, so the flag was absent — this is a legacy-only, flow-dependent field.",
+      "notes": "Platform flow-context token, not user-facing data. Non-mandatory by nature (present-or-absent depending on entry path). The rebuild need not replicate this exact mechanism if it tracks flow provenance differently."
+    }
+  ],
+  "behaviours": [
+    {
+      "name": "add-to-notification-navigation",
+      "description": "Clicking 'Add to notification' adds the newly-created consignor to the notification and returns the user to the Traders Addresses page (/traders), where the next trader (consignee) can be added.",
+      "confidence": "inferred",
+      "evidence": "workflow /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts:263-267 — consignorConfirmation.btnAddToNotification.click() is immediately followed by tradersAddresses.linkAddConsignee.click(), i.e. the click lands back on Traders Addresses"
+    },
+    {
+      "name": "accessibility-compliant",
+      "description": "The page must pass automated WCAG accessibility checks. The CHED-D accessibility spec visits this page in journey order and runs an axe check against it.",
+      "confidence": "inferred",
+      "evidence": "test /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-d-accessibility-tests.spec.ts:108-109 — checkPageAccessibility(pages.page, 'Consignor Confirmation Page')"
+    },
+    {
+      "name": "reached-only-via-create-new-consignor",
+      "description": "This confirmation interstitial is reached only after CREATING a new consignor (Traders Addresses → Search Existing → 'Create new consignor or exporter' → Consignor Creation → save). The tests never select an existing consignor from search, so the existing-consignor path (which may skip this confirmation entirely) is uncovered by both traces and tests.",
+      "confidence": "inferred",
+      "evidence": "workflow /Users/samfarrington/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts:254-264 (only create-new path exercised); consignorAddress is always populated (DEFAULT_CONFIG :100), so the create-new consignor is a mandatory step of every scripted CHED-D journey — the select-existing branch is a gap"
+    },
+    {
+      "name": "underlying-consignor-is-mandatory-for-ched-d",
+      "description": "The consignor this page's 'Add to notification' button commits is a MANDATORY field for CHED-D at the model level. PartOne.consignor carries @NotNull for the NotificationSingleCedValidation group (the CHED-D / single-CED validation group), so a CHED-D notification cannot be submitted without a consignor. This confirmation page has no user-input fields of its own and renders no error — the 'Add a consignor' validation fires earlier, on the trader-selection page, not on this interstitial.",
+      "confidence": "legacy",
+      "evidence": "model /Users/samfarrington/git/defra/ipaffs/ipaffs-imports-notification-schema/notification-schema-java/src/main/java/uk/gov/defra/tracesx/notificationschema/representation/PartOne.java:205-214 — private EconomicOperator consignor with @NotNull(groups = {NotificationSingleCedValidation.class, ...}, message = partone.singleced.consignor.not.null); message copy /Users/samfarrington/git/defra/ipaffs/ipaffs-notification-microservice/service/src/main/resources/ValidationMessages.properties:18 (partone.singleced.consignor.not.null=Add a consignor)",
+      "notes": "Legacy mandatoriness = 'as IPAFFS enforced it'. The rebuild may revisit whether the single-CED consignor stays mandatory, but the CHED-D group treated it as required."
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This page has NO summary list. The page-brief description ('summary of created consignor') does not match rendered reality: the page is a plain govuk-panel--confirmation with only the panel title, an 'Add to notification' button and a 'Return to search' link. The consignor's details are NOT shown back to the user on this interstitial. Confirm whether the new app should show a summary of the created consignor here (a genuine UX improvement) or replicate IPAFFS's bare confirmation.",
+    "The page is served after creating a NEW consignor from the trader search flow (fromCreate=true). It is an interstitial confirmation, not a data-entry step. Both observed traces reached it via the 'create new consignor/exporter' path; the QA workflow and a11y test likewise only ever exercise the create-new path (ched-d-workflows.ts:254-264). A page reached when selecting an EXISTING consignor from search may skip this confirmation entirely — not exercised in any trace or test (gap).",
+    "The form has method=post with no explicit action, so 'Add to notification' POSTs to the current /consignor/confirmation/{id} URL and the server redirects to /traders. Corroborated by the workflow, which lands back on the Traders Addresses page after the click (ched-d-workflows.ts:264-267). No visible controls carry data other than the platform crumb/etag hidden inputs (plus the conditional fromImporterReview flag, absent on the traced journeys).",
+    "No validation messages exist for this page: it is a confirmation interstitial with no user input, no trace rendered an error, and no CHED-D test asserts any error copy here. validationMessages is intentionally empty (not a gap). Legacy corroborates this — the shared traders/confirmation.html template carries no field inputs beyond hidden platform tokens, so there is nothing on this page to validate. The consignor's own mandatoriness (PartOne.consignor @NotNull for CHED-D / NotificationSingleCedValidation, message 'Add a consignor') is enforced on the earlier trader-selection page, not here — captured as the underlying-consignor-is-mandatory-for-ched-d behaviour.",
+    "'Return to search' (id=manage-notifications → /traders/consignor/search) is trace-only: the QA page object (ConsignorConfirmationPage.ts) exposes only btnAddToNotification, so this secondary link is never driven or asserted by any test. Its exact destination/behaviour is confirmed from the rendered href only; legacy corroborates it is the server-computed returnToSearchUrl (economic_operator/confirmation.js:69-90). Confirm it is still wanted in the rebuild.",
+    "Legacy shows the H1 and page title are conditional on fromCreate. The traced page (fromCreate=true) is the CREATE confirmation ('The consignor or exporter has been created' / pageTitle 'Create consignor or exporter confirmation'). The same template also serves the EDIT confirmation (fromCreate absent): H1 'The consignor or exporter details have been changed', pageTitle 'Update consignor or exporter confirmation' (economic_operator/confirmation.js:43-48). The edit path was not traced — confirm whether the rebuild needs both create and edit confirmation variants.",
+    "The page is 100% GOV.UK Design System markup — no non-standard/custom/third-party classes in main. Directly rebuildable inside the govuk-frontend toolbox with Panel + Button + Link."
+  ]
+}

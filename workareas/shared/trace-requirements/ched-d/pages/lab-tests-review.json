@@ -1,0 +1,215 @@
+{
+  "slug": "lab-tests-review",
+  "name": "Laboratory tests review",
+  "url": "/decision/vnet/protected/bip-notifications/{chedRef}/lab-test/lab-tests-to-be-performed",
+  "pageTitle": "Laboratory Tests To Be Performed - Import and export applications - GOV.UK",
+  "caption": "CHEDD.GB.2026.1526057 - V1",
+  "heading": "Laboratory tests",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return",
+    "Add another test",
+    "Remove",
+    ".MACROLIDES (row test-name link — edits/opens that recorded test)"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "flowContext": "This page belongs to the BCP/inspector DECISION flow (URL prefix /decision/...), not the notifier's pre-notification journey. It is the review/list endpoint of a multi-page lab-test sub-flow reached from the decision hub 'Laboratory tests' link (ched-d-workflows.ts:410). The data-entry happens on prior pages: Lab tests intro (Yes/No/Random) -> [Reason (Suspicion) — CHED-P only] -> Commodity select -> Commodity test search -> Commodity sample -> Record laboratory test information. Confirmed by the QA page-object set under page-objects/decision/ (LabTestsIntroPage, LabTestsReasonPage, LabTestsCommoditySelectPage, LabTestsCommodityTestPage, LabTestsCommoditySamplePage, RecordLaboratoryTestInformationPage, LabTestsReviewPage) and the CHED-D workflow at ched-d-workflows.ts:410-449. LEGACY: the IPAFFS template for this page is ipaffs-frontend-decision/service/src/views/bip/labTestsToBePerformed.html and its route handler is ipaffs-frontend-decision/service/src/routes/handlers/bip/lab_tests/lab_tests_to_be_performed.js — this is a decision-frontend (BIP) surface, NOT the notifier frontend (ipaffs-frontend-notification), so the notifier ValidationMessages.properties and PartOne validation groups do not govern it.",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "CHEDD.GB.2026.1526057 - V1",
+      "govukComponent": "Heading (span.heading-tertiary inside H1, NOT govuk-caption-*)"
+    },
+    {
+      "element": "h1",
+      "text": "Laboratory tests",
+      "govukComponent": "Heading xl (span#page-primary-title inside the govuk-heading-xl). LEGACY: rendered by the pageTitleWithReferenceNumber partial with pageTitle=\"Laboratory tests\" (labTestsToBePerformed.html:19)."
+    },
+    {
+      "element": "h2",
+      "text": "Review",
+      "govukComponent": "Heading m (wrapped in a govuk-form-group div). LEGACY: labTestsToBePerformed.html:21-23."
+    },
+    {
+      "element": "table",
+      "text": "Columns: Test | Commodity code | Description | Species | Analysis type | Result | Remove (last header label visually hidden). One recorded row observed: .MACROLIDES | 10064000 | Broken rice | (empty) | Initial | Satisfactory | Remove. LEGACY: column data sources are testName, commodityCode, commodityDescription, speciesName, applicant.analysisType, laboratoryTestResult.conclusion (labTestsToBePerformed.html:41-56). commodityDescription is derived server-side by matching partOne.commodities.commodityComplement by commodityID (handler :82-84); Result conclusion defaults to 'Pending' when unset (handler :79-81).",
+      "govukComponent": "Table (custom id=LabTestsTable, extra class lab-test-table, aria-label \"Lab tests table\")"
+    },
+    {
+      "element": "empty-state-row",
+      "text": "LEGACY: when there are no recorded lab tests the table body renders a single row 'There are no laboratory tests to be performed' (colspan=5). No CHED-D trace exercised the empty state — both observed traces had exactly one row. Confirms the review/list surface is reachable with zero tests (it does not redirect away), which bears on the GATING open question.",
+      "govukComponent": "Table row (labTestsToBePerformed.html:59-62)",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-decision/service/src/views/bip/labTestsToBePerformed.html:59-62"
+    },
+    {
+      "element": "button",
+      "text": "Add another test",
+      "govukComponent": "None — bespoke class link-button (submit button styled as a link, name=add-labTest value=add). LEGACY: routes to the Lab test choose-commodity page (LAB_TEST_CHOOSE_COMMODITY_PATH) when add-labTest is in the payload (handler :42-43, 61-63)."
+    },
+    {
+      "element": "button",
+      "text": "Save and return",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1, name=save-button value=\"Save and return\"). LEGACY: id=button-save-and-return, data-prevent-double-click=true (labTestsToBePerformed.html:72-79)."
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button govuk-!-margin-right-1, name=save-button value=\"Save and continue\"). LEGACY: id=button-save-and-continue, data-prevent-double-click=true. This button is rendered ONLY when editTestsOnly is false; when the notification status is VALIDATED or REJECTED (editTestsOnly true) it is REPLACED by a hidden input return-to-certificate-overview=true (labTestsToBePerformed.html:80-91, handler :91-92)."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 — contains a nested reference-number/version span (heading-tertiary) plus the primary title span 'Laboratory tests'",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated LEGACY ipaffs-frontend-decision/service/src/views/bip/labTestsToBePerformed.html:19"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-m",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Review' sub-heading above the recorded-tests table",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated LEGACY labTestsToBePerformed.html:22"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": ["govuk-table__head", "govuk-table__body", "govuk-table__row", "govuk-table__header", "govuk-table__cell"],
+      "count": 1,
+      "usage": "Lists the laboratory tests recorded against the notification (one row per test): Test, Commodity code, Description, Species, Analysis type, Result, plus a Remove action column",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151; LEGACY labTestsToBePerformed.html:24-65"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the 'Review' H2 (used purely as a spacing container here, no field inside)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated LEGACY labTestsToBePerformed.html:21-23"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1"],
+      "count": 2,
+      "usage": "Two primary submit buttons in one row: 'Save and return' and 'Save and continue' (both share name=save-button, disambiguated by value). data-prevent-double-click=true on both. Both are named controls on the page object (LabTestsReviewPage.ts:10 btnSaveAndReturn, :14 btnSaveAndContinue). 'Save and continue' is a genuinely-used path — driven twice on the review page in the CHED-P decision workflow (ched-p-workflows.ts:1056-1057) — though in the CHED-D workflow only 'Save and return' is clicked (ched-d-workflows.ts:449). LEGACY: 'Save and continue' is conditional — hidden and replaced by a return-to-certificate-overview hidden input when editTestsOnly (status VALIDATED/REJECTED) is true, so the count is 2 only in the in-progress state observed by the traces (labTestsToBePerformed.html:80-91).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; page object page-objects/decision/LabTestsReviewPage.ts:10,14; CHED-P usage workflows/notification/ched-p-workflows.ts:1056-1057; LEGACY labTestsToBePerformed.html:71-92, handler lab_tests_to_be_performed.js:91-92"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "button.link-button",
+      "whatItDoes": "A submit <button> styled to look like a text link. Used for three in-table/row actions: the test-name cell (name=testResult value=<index>, opens/edits that recorded test), the Remove cell (name=remove-labTest value=<index>), and the 'Add another test' control below the table (name=add-labTest value=add). Each posts back to the same form to mutate the lab-test list server-side. LEGACY: the handler routes on payload key — remove-labTest re-renders the list, add-labTest goes to choose-commodity, testResult goes to the Record lab test results page for that index (handler :38-51). The test-name row link is the only one of the three the tests actually drive: LabTestsReviewPage.ts:6 exposes btnLabTest(name) and it is clicked in the CHED-P workflow (ched-p-workflows.ts:1116) to re-open a recorded test — corroborating that the row test-name link opens/edits that test. 'Add another test' and 'Remove' have NO page-object counterpart, so they were never test-driven (trace-render + legacy-template evidence only).",
+      "concern": "Not a GOV.UK Design System class. IPAFFS renders link-styled actions as submit buttons so each mutation is a POST. In the new app these should be modelled explicitly: 'Add another test' as a standard action, and per-row 'Change'/'Remove' actions. The row-level pattern maps cleanly to a GOV.UK Summary list with actions or a Table with an actions column using govuk-link.",
+      "govukAlternative": "govuk-summary-list (with __actions Change/Remove links) for the recorded-tests list, OR govuk-table + govuk-link action cells; 'Add another test' as a secondary govuk-button or govuk-link",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146 (main HTML: three button.link-button elements); LEGACY labTestsToBePerformed.html:41-70; handler lab_tests_to_be_performed.js:38-67; row test-name link corroborated page-objects/decision/LabTestsReviewPage.ts:6 + workflows/notification/ched-p-workflows.ts:1116"
+    },
+    {
+      "pattern": "span.heading-tertiary",
+      "whatItDoes": "A bespoke span inside the govuk-heading-xl H1 that carries the notification reference number (#reference-number) and version (#cved-version-number) above the primary page title (#page-primary-title). Acts as a visual caption but is not built with the Design System caption pattern.",
+      "concern": "IPAFFS uses a custom in-heading caption instead of the standard govuk-caption-xl span. Semantically the reference/version is caption-like context for the page title.",
+      "govukAlternative": "govuk-caption-xl span before the H1 text (standard 'section caption' pattern)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146 (H1 innerHTML); LEGACY pageTitleWithReferenceNumber partial invoked at labTestsToBePerformed.html:19"
+    },
+    {
+      "pattern": "table.lab-test-table (id=LabTestsTable)",
+      "whatItDoes": "The govuk-table carries an extra bespoke class lab-test-table and a custom id, presumably for IPAFFS-specific CSS/JS hooks.",
+      "concern": "Low concern — it is still a standard govuk-table underneath. The extra class is an app-specific styling hook the new app would not need if it uses the standard component.",
+      "govukAlternative": "Plain govuk-table (or govuk-summary-list) with no bespoke class",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; LEGACY labTestsToBePerformed.html:24"
+    },
+    {
+      "pattern": "span.hidden (Remove column header)",
+      "whatItDoes": "Visually hides the 'Remove' text in the final table header cell while keeping it available to assistive tech.",
+      "concern": "IPAFFS uses a bespoke .hidden utility rather than the Design System visually-hidden class.",
+      "govukAlternative": "govuk-visually-hidden",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146 (<span class=\"hidden\">Remove</span>); LEGACY labTestsToBePerformed.html:33"
+    }
+  ],
+  "fields": [
+    {
+      "name": "testResult (row link)",
+      "label": "Test",
+      "hint": "Table column 1 — the reagent/analyte-group name, rendered as a link-button (name=testResult value=<index>) that re-opens/edits that recorded test. LEGACY: bound to {{testName}} of each labTest (labTestsToBePerformed.html:41-44); clicking it (payload key testResult) routes to the Record lab test results page for that index (handler :44-45, RECORD_LAB_TEST_RESULTS_PATH). Chosen upstream by searching on the Lab tests commodity-test page (ched-d-workflows.ts:420-422). The row link is exercised by the tests: page object btnLabTest(name) re-opens a recorded test in CHED-P (ched-p-workflows.ts:1116). Observed value: .MACROLIDES. Domain vocabulary (lab-test.ts:1-7) also includes: .ANTITHYROID AGENTS, .CARBAMATES, .PHENICOLES, .AMINOGLYCOSIDE/AMINOSIDE.",
+      "control": "text",
+      "required": false,
+      "options": [".MACROLIDES", ".ANTITHYROID AGENTS", ".CARBAMATES", ".PHENICOLES", ".AMINOGLYCOSIDE/AMINOSIDE"],
+      "observedValues": [".MACROLIDES"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151. Row-link edit behaviour + template binding from LEGACY labTestsToBePerformed.html:41-44 + handler lab_tests_to_be_performed.js:44-45, page-objects/decision/LabTestsReviewPage.ts:6, workflows/notification/ched-p-workflows.ts:1116 and types/lab-test.ts:1-7 (the 4 non-observed options are inferred, not seen in a CHED-D trace)."
+    },
+    {
+      "name": "commodity-code (display)",
+      "label": "Commodity code",
+      "hint": "Table column 2 — read-only display of the commodity code the test applies to (bound to {{commodityCode}} — labTestsToBePerformed.html:46). Observed value: 10064000",
+      "control": "text",
+      "required": false,
+      "observedValues": ["10064000"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151; LEGACY labTestsToBePerformed.html:46"
+    },
+    {
+      "name": "description (display)",
+      "label": "Description",
+      "hint": "Table column 3 — read-only commodity description. LEGACY: derived server-side, not stored on the lab test — the handler looks up partOne.commodities.commodityComplement whose commodityID matches the test's commodityCode and reads its commodityDescription (defaulting to '' if not found), then binds {{commodityDescription}} (handler :82-84, labTestsToBePerformed.html:47). Observed value: Broken rice",
+      "control": "text",
+      "required": false,
+      "observedValues": ["Broken rice"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151; LEGACY lab_tests_to_be_performed.js:82-84 + labTestsToBePerformed.html:47"
+    },
+    {
+      "name": "species (display)",
+      "label": "Species",
+      "hint": "Table column 4 — read-only species (bound to {{speciesName}} — labTestsToBePerformed.html:48). Empty in both observed CHED-D rows. HRFNAO (CHED-D) commodities are of non-animal origin, so Species is expected to be empty for CHED-D; the QA suite only drives Species selection for CHED-A/CHED-P (commodityBasicDescription.checkboxSpecies — ched-a-workflows.ts:277, ched-p-workflows.ts:298), never in the CHED-D workflow.",
+      "control": "text",
+      "required": false,
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146 (empty cell); corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151 (empty cell); LEGACY labTestsToBePerformed.html:48; CHED-D workflow drives no Species (workflows/notification/ched-d-workflows.ts has no checkboxSpecies call)"
+    },
+    {
+      "name": "analysis-type (display)",
+      "label": "Analysis type",
+      "hint": "Table column 5 — read-only analysis type (bound to {{applicant.analysisType}} — labTestsToBePerformed.html:49). LEGACY resolves the earlier gap: the handler maps a stored applicant.analysisType through analysisTypeMap before display — 'Initial analysis'->'Initial', 'Counter analysis'->'Counter', 'Second expert analysis'->'Second expert' (handler :26-30, :88). So the full displayed value set is Initial / Counter / Second expert. Observed value: Initial.",
+      "control": "text",
+      "required": false,
+      "options": ["Initial", "Counter", "Second expert"],
+      "observedValues": ["Initial"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151. Full value set (Initial/Counter/Second expert) is LEGACY from the analysisTypeMap in lab_tests_to_be_performed.js:26-30,88; only 'Initial' was observed in a trace."
+    },
+    {
+      "name": "result (display)",
+      "label": "Result",
+      "hint": "Table column 6 — read-only test result (bound to {{laboratoryTestResult.conclusion}} — labTestsToBePerformed.html:50). LEGACY: entered upstream on the Record lab test results page as a radio with three options Satisfactory / Not satisfactory / Not interpretable (labTestResults.html:223-238); when no result has been recorded yet the handler defaults the displayed conclusion to 'Pending' (handler :79-81). So the full displayed value set is Pending (default) / Satisfactory / Not satisfactory / Not interpretable. Observed value: Satisfactory.",
+      "control": "text",
+      "required": false,
+      "options": ["Pending", "Satisfactory", "Not satisfactory", "Not interpretable"],
+      "observedValues": ["Satisfactory"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 146; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 151. 'Not satisfactory' + 'Not interpretable' options and 'Pending' default are LEGACY from labTestResults.html:223-238 and lab_tests_to_be_performed.js:79-81 (only 'Satisfactory' seen in a CHED-D trace)."
+    }
+  ],
+  "validationMessages": [],
+  "validationMessagesNote": "LEGACY: this review/list page has NO server-side validation of its own — its route handler POST is a no-op (lab_tests_to_be_performed.js:99-101) and there is no validation schema wired to this path. The nearby laboratory_tests_validation.js (Joi, name field max 255 with a max-length message) governs the upstream lab-test name/search field, NOT this review page. So validationMessages is correctly empty; the earlier 'error copy is a gap' open question is resolved to 'no page-level validation exists' rather than 'unknown'.",
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This is a read-only review/list page: the six columns (Test, Commodity code, Description, Species, Analysis type, Result) are displayed here, not entered here. The actual data entry happens on the per-test detail pages upstream (Lab tests commodity-test search, Lab tests commodity-sample, Record laboratory test information). The 'fields' recorded here are the displayed columns, transcribed verbatim from the table headers/cells — they are display columns, not inputs on this page. LEGACY confirms this: the template only binds each column to a lab-test property and the POST handler is a no-op (labTestsToBePerformed.html:37-63, handler :99-101).",
+    "FLOW CONTEXT (corroborated by QA repo + LEGACY handler routing): This page is part of the BCP/inspector DECISION flow (URL /decision/...), not the notifier pre-notification journey. The sub-flow that populates it is: decision hub 'Laboratory tests' link -> Lab tests intro (Yes/No/Random) -> [Reason (Suspicion) — CHED-P only] -> Commodity select -> Commodity test search -> Commodity sample (Laboratory, Sample reference number, Number of samples, Sample type, Storage temperature) -> Record laboratory test information (Sample use-by date, Released date, Laboratory test method, Results, Satisfactory/Not satisfactory) -> THIS review page. See ched-d-workflows.ts:410-449 and the page-objects/decision/LabTests* set. LEGACY: the add-labTest button routes to LAB_TEST_CHOOSE_COMMODITY_PATH and testResult routes to RECORD_LAB_TEST_RESULTS_PATH (handler :42-45).",
+    "GATING: On the Lab tests intro page choosing 'No' (radioNo) records no lab test and this review page is skipped — the CHED-D 'permit'/'reject' workflows go intro(No) -> straight to decision scope (ched-d-workflows.ts:483-486, 506-509). LEGACY nuance: the template itself does NOT redirect when the list is empty — it renders an empty-table row 'There are no laboratory tests to be performed' (labTestsToBePerformed.html:59-62). So the review surface is reachable with zero tests; whether the new app should show an empty state or skip the page is a design choice, not an IPAFFS constraint.",
+    "The Species column was EMPTY in both observed CHED-D rows and the CHED-D workflow drives no Species selection. HRFNAO commodities are non-animal-origin, so Species is expected to be permanently empty for CHED-D — confirm whether the column should exist at all on the CHED-D surface. (The IPAFFS template renders the Species column unconditionally for all CHED types — labTestsToBePerformed.html:30,48.)",
+    "Only one lab-test row (.MACROLIDES / Broken rice) was observed in both CHED-D traces. LEGACY confirms multi-row rendering (the table {{#each labTestsToBePerformed}} loops all recorded tests — labTestsToBePerformed.html:38-58) and the empty-table state copy. The exact server targets are now LEGACY-known: add-labTest -> choose-commodity, testResult -> record-results(index), remove-labTest -> re-render list (handler :38-51). The test-name row link is also corroborated by the page object (btnLabTest, LabTestsReviewPage.ts:6) and CHED-P usage (ched-p-workflows.ts:1116).",
+    "'Save and continue' is a real, exercised path (page object LabTestsReviewPage.ts:14; driven twice in the CHED-P decision workflow ched-p-workflows.ts:1056-1057) but its destination was NOT exercised in the CHED-D traces. LEGACY resolves the routing: with no add/remove/testResult/return-to-certificate-overview key in the payload, the save button falls through to DECISION_PATH — the decision hub (handler :46-49). In the CHED-D workflow only 'Save and return' is clicked (ched-d-workflows.ts:449), returning to the decision hub (observed post-click URL .../CHEDD.GB.2026.1526057/hub) — consistent. NEW LEGACY finding: when notification status is VALIDATED or REJECTED (editTestsOnly), 'Save and continue' is hidden and 'Save and return' instead posts return-to-certificate-overview=true, routing to the certificate overview (CHED_OVERVIEW_PATH) rather than the decision hub (labTestsToBePerformed.html:80-91, handler :46-47,53-55,91-92).",
+    "The 'Analysis type' column showed 'Initial' in both CHED-D traces. RESOLVED by LEGACY: the displayed value comes from analysisTypeMap in the handler — the full set is Initial / Counter / Second expert (from stored 'Initial analysis' / 'Counter analysis' / 'Second expert analysis' — lab_tests_to_be_performed.js:26-30,88). CHED-A drives 'Random' and CHED-P drives 'Suspicion' upstream, but those are intro/reason selections, not this column's values.",
+    "No validation error state was captured — both evidence traces are happy-path (no govuk-error-summary present) and no CHED-D test asserts an error message on this page. RESOLVED by LEGACY: this page has no server-side validation of its own (no-op POST handler, lab_tests_to_be_performed.js:99-101), so there is no page-level error copy to capture — the review surface has no validation, rather than validation copy being merely unobserved.",
+    "The page is titled 'Laboratory Tests To Be Performed' but the H1 primary title is 'Laboratory tests' and the URL slug is 'lab-tests-to-be-performed' — three slightly different names for the same surface. LEGACY confirms this is intentional: the browser <title> constant is LAB_TESTS_TO_PERFORM_TITLE='Laboratory Tests To Be Performed' (constants.js:204) while the in-page H1 is pageTitle=\"Laboratory tests\" (labTestsToBePerformed.html:19).",
+    "The QA LabTestsReviewPage page object exposes only three controls (btnLabTest(name), btnSaveAndReturn, btnSaveAndContinue) and no CHED-D test asserts on the table contents — so this corroboration confirms the interactive surface but adds no new asserted validation rule. The six display columns and their values remain trace-confirmed; their full value sets and data sources are now LEGACY-backed (see the analysis-type and result fields)."
+  ]
+}

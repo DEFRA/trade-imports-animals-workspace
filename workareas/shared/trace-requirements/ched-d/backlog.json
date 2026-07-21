@@ -1,0 +1,664 @@
+{
+  "generated": "2026-07-21",
+  "regenerationOf": "backlog.json (prior CHED-D pass)",
+  "journey": "ched-d",
+  "source": [
+    "journey-spec.json (41 pages — 29 notifier create-journey pages orders 0-28, 4 CUC billing pages, 8 inspector/decision/lab pages order -1; 283 field entries; every create-journey page is confidence=confirmed)",
+    "target-model.md (house-parity Notification document mirroring trade-imports-animals CHED-A; ownership/DoA layer; transit block; HRFNAO commodity leaves; reference-data catalogue; 12 open questions)",
+    "integrations.md (fully server-side-rendered IPAFFS; the notification store IS the build-JSON-persist-to-Mongo boundary; what to hardcode/fixture vs stub vs defer)",
+    "conflicts.json (c-001..c-044; 39 conflicts, 26 needsHuman, 13 settled; legacy now authorised, flipped c-006/c-014/c-017 to settled)",
+    "authorization-rules.md (OWN/AGT/VIS/BDG/POP rules + G-1..G-6; the CHED-D corpus has ZERO DoA traces — the layer is adapted from the CHED-PP DoA corpus and marked per-rule for CHED-D applicability)"
+  ],
+  "brief": "A new CDP-based CHED-D (High risk food and feed of non-animal origin — internal type code CED) app, built like trade-imports-animals: a notifier journey that builds up ONE JSON notification document and persists it whole to MongoDB (no JSON-Patch, no etag/If-Match, no per-microservice split). It gathers the SAME information as IPAFFS but must NOT inherit IPAFFS's architecture, URL scheme, bespoke CSS or accessibility defects. First pass persists to Mongo; reference data hardcoded/fixtured; auth, address book, file bytes + antivirus, risk assessment, customs/Dynamics, TRACES SOAP and Notify stubbed or deferred.",
+  "scopeExclusions": [
+    "POST-SUBMISSION is OUT of scope entirely: the BIP inspector/decision app is a separate service (modelGap separate-app-boundary; integrations.md /decision/ reverse-proxy prefix). The order=-1 inspector/decision pages — consignment-checks, inspector-attachments-upload, lab-tests-choose-test, lab-tests-commodity-select, lab-tests-required, lab-tests-review, lab-tests-sample-details, record-decision-status, record-lab-test-information, and the 4 spec-less decision pages (decision-notifications-search/-hub/-outcome/-confirmation) — belong to a decision document, not the notification the create journey builds. Their fields (check results, sample type, laboratory, lab-test taxonomy, decision, risk outcome) are NOT modelled.",
+    "confirmation risk-outcome variants (Required at <BCP> / Not required / Check GVMS — chedd/confirmation.js) are DERIVED from a risk assessment that runs post-submission; the risk engine is stubbed (integrations.md). Only a confirmed H1-bearing confirmation panel is built (c-020).",
+    "File BYTES + antivirus scan: handled by a SEPARATE /upload/ app (ipaffs-frontend-upload) with an async scan callback; pass 1 keeps document METADATA only (see inc-023 / born-blocked inc-034).",
+    "Address book (economic-operator search/create): pass 1 hand-enters consignor + consignee inline into the JSON (inc-025/inc-026); the search-existing pages are a deferred stub (inc-035).",
+    "Stubbed integrations (integrations.md): Defra ID / customer (fixed signed-in user 'Michael Scott', mirror FE AUTH_ENABLED=false), permissions (allow-all), risk assessment (stubbed), customs declaration reference + document code (server-derived stub), Dynamics/CRM, TRACES SOAP onward submission, GOV.UK Notify, GVMS/NCTS MRN live validation (fields captured only)."
+  ],
+  "deviations": [
+    "Whole-document Mongo write on every save — drop IPAFFS's JSON-Patch + etag/If-Match optimistic concurrency (modelGap optimistic-concurrency-etag; Open Q 10). Two-tab editing is last-write-wins by deliberate decision (the house Notification has no @Version either).",
+    "One stable id; status moves DRAFT->SUBMITTED->AMEND->DELETED. Reject IPAFFS's DRAFT.GB.YYYY.NNNN -> CHEDD.GB.YYYY.NNNN id-flip and dual-id URLs (target-model.md; Open Q 1).",
+    "chedType is a constant 'CED' — the app is CHED-D-only; on the wire CHED-D = CED (SOAP SearchCriterionCED). Legacy display name 'CHED-D'.",
+    "govuk-frontend toolbox only — no bespoke CSS partials, no defra-datepicker overlay, no dt/dd faux-table grids, no link-buttons, no duplicate mobile/desktop DOM (JB-7). Use govuk-table / govuk-summary-list / govuk-summary-card.",
+    "GDS-standard error summary title 'There is a problem' everywhere (do NOT port IPAFFS's 'Please fix the following errors' — transport-details / review-notification). Radios/selects use legend-as-heading with the H1 inside the fieldset legend (fixes the empty-legend accessible-name gap on import-type and about-the-consignment).",
+    "ALWAYS render an H1 on the confirmation page (c-020 — IPAFFS drops the panel title on the inspection-required variant, leaving no H1; axe's default ruleset never caught it). Fix the commodity-basic-description <title>/H1 mismatch (c-015) and origin-of-import <title>/H1 mismatch (c-016) — adopt the rendered H1, drop the legacy tab-title bug.",
+    "Real-href govuk-back-link (not a JS history back). Use the CDP platform cookie banner (not IPAFFS's implied-consent .global-cookie-message).",
+    "For CHED-D the FRONTEND Joi form is the authoritative mandatoriness layer — the backend CED @NotNull group is materially looser (no CED @NotNull on address/contact/accompanying-document rows; JB-2, c-038). Pass 1 adopts frontend-parity mandatoriness and enforces it server-side in ONE place (Open Q 2).",
+    "ownership.* tenancy layer ADDED (the house NotificationBase is single-tenant with no org field at all). Ownership + visibility APPLY to CHED-D (inferred); the delegated-agent creation route and the Trade Partner badge do NOT (CHED-PP-only, AGT-1/BDG-1). onBehalfOfOrganisationId is carried but DORMANT for CHED-D; the badge is NOT modelled."
+  ],
+  "sequencingNotes": [
+    "m0 (scaffold + persistence spine) first (agent rails Phase 0, then the Mongo document, then the session/routing/validation spine). m1 (reference data) can run in parallel once inc-001 exists.",
+    "Reference data is sequenced explicitly across inc-004..inc-007. TWO distinct country lists are required (JB-3, c-009): a 219-entry third-country list (legacy filters origin countries to !country.eu for CED via HIGH_RISK_TYPES) for origin.countryCode, and a 254-entry full list (4-nation UK split GB-ENG/SCT/WLS/NIR, no single 'United Kingdom') for consigned-country + every address. The CN commodity tree + species/EPPO is the ONE lookup that cannot be hardcoded wholesale (integrations.md) — ship a small fixture (chapters 07-23,39; codes 10064000, 09081100…).",
+    "The commodity COLLECTION is sequenced explicitly: inc-012 extends the model for the depth-2 repeating group (commodity.commodityComplement[] -> species[]) BEFORE any commodity page is built (modelGap repeating-group-in-repeating-group). It is a model-extension gate — halt for review.",
+    "The linear journey interleaves the notification-hub (order 7) between about-the-consignment (order 6) and commodity-extended-description (order 8). Downstream m3/m4 pages depend on the page-owned SPINE, not the hub, so the hub is NOT a blocker for them.",
+    "GDS defaults (error-summary title 'There is a problem', legend-as-heading radios, always-render-H1) are recorded ONCE in the spine (inc-003) and applied by every page — not re-litigated per increment.",
+    "The frontend-vs-backend mandatoriness decision (JB-2, c-038, Open Q 2) and the concurrency drop (Open Q 10) are recorded ONCE in inc-003 for all downstream pages.",
+    "Variants deferred to m5 and several BORN BLOCKED: the delegated-authority ownership/visibility/auto-population layer (is DoA in scope? G-1..G-6), the about-the-consignment flag-OFF 'tranship' variant (which feature-flag state is canonical? c-011/c-042), the CUC billing sub-journey (in scope for pass 1? trigger?), and document file bytes + antivirus (separate-app boundary + copy alignment). Address-book search, draft lifecycle and the auth stub are deferred-but-buildable (todo).",
+    "CHED-D has NO CSV commodity branch, NO Article 72 UI and NO cloning front door in its journey-spec (those are CHED-PP surfaces) — they are deliberately absent from this backlog."
+  ],
+  "milestones": [
+    { "id": "m0", "name": "Scaffold & persistence spine", "goal": "CDP app skeleton (agent rails first), the Notification JSON document (house-parity + ownership.* + transit block + HRFNAO commodity leaves), whole-document Mongo persistence + reference minting, session draft save/resume, the page-owned routing/validation spine + the once-for-all mandatoriness/concurrency/GDS-default decisions." },
+    { "id": "m1", "name": "Reference data", "goal": "House-style server-side reference-data clients over hardcoded JSON / fixtures: TWO country lists (219 third-country + 254 full 4-nation); the CN commodity tree + type/class/family + species/EPPO fixture; BCPs/ports of entry (~31); 25 CHED-D package types + 14 document types + the static enums." },
+    { "id": "m2", "name": "Consignment basics", "goal": "Certificate type (const CED), country of origin, origin of import (countries + region code + internal reference), main reason for import (the confirmed flag-ON transit variant)." },
+    { "id": "m3", "name": "Commodity capture", "goal": "The heart of CHED-D — the depth-2 repeating commodity collection (commodity.commodityComplement[] -> species[]), the code search/tree browse, type/class/family + species selection, per-line weight/packages/package-type + total gross weight, and consignment intended-for + temperature." },
+    { "id": "m4", "name": "Details, contacts, traders, review & submit", "goal": "Task-list hub, transport to the port of entry, goods-movement services, contact details + nominated contacts, contact/branch address, accompanying-document metadata, hand-entered consignor + consignee, dashboard, review, declaration (no checkbox) and confirmation — completing the manual own-org happy path." },
+    { "id": "m5", "name": "Variants & deferred", "goal": "The delegated-authority ownership/visibility/auto-population layer, the about-the-consignment flag-OFF tranship variant, the CUC billing sub-journey, file bytes + antivirus, address-book search, draft lifecycle (delete/amend/copy) and the auth stub. Four are born blocked." }
+  ],
+  "increments": [
+    {
+      "id": "inc-001",
+      "title": "Scaffold the CDP CHED-D app skeleton",
+      "kind": "scaffold",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "A new Node service is scaffolded in the trade-imports-animals house style (hapi + Nunjucks + govuk-frontend), mirroring repos/trade-imports-animals-frontend (src/server, common/clients, config, a /health route).",
+        "Agent rails land FIRST (Phase 0): .claude/ + CLAUDE.md + guard hooks + a settings.json allowlist before any feature code.",
+        "GOV.UK Design System wired via govuk-frontend only (no bespoke CSS partials, no defra-datepicker overlay); a base template exposes beforeContent for a real-href govuk-back-link and renders a govuk-phase-banner 'Beta'.",
+        "The CDP platform cookie banner is used (NOT IPAFFS's bespoke implied-consent .global-cookie-message).",
+        "A 'Create a new notification' entry point exists (button copy 'Create a new notification', matching the dashboard link) that routes into the journey at import-type."
+      ],
+      "notes": "Sub-project rails first (Phase 0), not hello-world. House neighbour = repos/trade-imports-animals-frontend."
+    },
+    {
+      "id": "inc-002",
+      "title": "Notification Mongo document + persistence spine",
+      "kind": "persistence",
+      "milestone": "m0",
+      "sizeGuess": "L",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "A Notification model mirrors the house Notification extends NotificationBase shape (target-model.md): id (Mongo @Id), referenceNumber (@Indexed unique sparse), status ('DRAFT'|'SUBMITTED'|'AMEND'|'DELETED'), chedType const 'CED', origin, transit, commodity (commodityIntendedFor + temperature + commodityComplement[]), additionalDetails.totalGrossWeight, parties (consignor/consignee/importer/destination/contactAddress as Operator), responsiblePerson/nominatedContacts (Contact), transport, goodsMovementServices, declaration, customsDeclarationReference, customsDocumentCode, submittedBaseline, created, updated.",
+        "The model carries the NEW ownership.* tenancy layer (target-model.md deviation — the house NotificationBase has no org field at all): ownership.assignedOrganisationId (@Indexed owning tenant, server-enforced, never a form field), assignedOrganisationName, createdByUserId (audit), onBehalfOfOrganisationId (carried but DORMANT for CHED-D). Do NOT model a Trade Partner badge (BDG-1 — never renders for CHED-D).",
+        "AccompanyingDocument is a SEPARATE Mongo collection 'accompanying_documents' joined on notificationReferenceNumber (async scan boundary — modelGap separate-app-boundary), holding documentType/documentReference/issueDate/files[] metadata.",
+        "Persisted to a Mongo collection named 'notification' (house parity — @Document(collection = \"notification\")).",
+        "Whole-document write: every save POSTs the entire document; blank referenceNumber => create (status DRAFT, created=now, mint ref); present => overwrite (updated=now). NO JSON-Patch, NO etag/If-Match (deviation; Open Q 10).",
+        "referenceNumber minted server-side on first create. Format is a DELIBERATE choice (Open Q 1: house GBN-AG-{YY}-{XXXXXX} vs a CHED-D discriminator vs IPAFFS's CHEDD.GB.YYYY.NNNN) — record the decision; do NOT inherit the DRAFT.*->CHEDD.* id-flip.",
+        "Public model records carry compact-constructor null guards at the persistence boundary.",
+        "A round-trip persistence test proves create-then-read and overwrite-updates-timestamp; a tenancy test proves the notification index on ownership.assignedOrganisationId (compound with status) exists."
+      ],
+      "notes": "This replaces the IPAFFS notification-microservice patch-per-page pattern (integrations.md: 'this IS the persistence — replace with Mongo')."
+    },
+    {
+      "id": "inc-003",
+      "title": "Session draft save/resume + page-owned routing/validation spine",
+      "kind": "scaffold",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-002"],
+      "acceptanceCriteria": [
+        "Each page's answers are held in session; on 'Save and continue' / 'Save and return to hub' the WHOLE document is rebuilt and POSTed — no per-page partial write. Draft resume rehydrates session from the persisted document.",
+        "A page-owned spine drives page order, real-href back-links and per-page server-side validation. Mandatoriness is enforced SERVER-SIDE everywhere (JB-1) — a rendered HTML required=false attribute is NEVER read as optional.",
+        "RECORD ONCE, for all downstream pages: for CHED-D the FRONTEND Joi form is the authoritative mandatoriness layer; the backend CED @NotNull group is materially looser (no CED @NotNull on address/contact/accompanying-document rows). Pass 1 adopts frontend-parity mandatoriness in one enforcement point (JB-2, c-038, Open Q 2 — modelGap frontend-vs-model-mandatoriness-divergence).",
+        "RECORD ONCE: whole-document save drops the ETag/If-Match optimistic-concurrency layer (two-tab editing is last-write-wins, deliberate — Open Q 10).",
+        "Error rendering uses govuk-error-summary titled 'There is a problem' linking to govuk-error-message inline errors (do NOT port IPAFFS's 'Please fix the following errors'); radios/selects use legend-as-heading (H1 inside the fieldset legend); the confirmation page ALWAYS renders an H1 (c-020).",
+        "Hidden IPAFFS plumbing (crumb CSRF, etag, returnUrl/fromFooterHeader/fromImporterReview/source routing inputs) is NOT data — it maps to the new app's own session/CSRF, never to the document."
+      ],
+      "notes": "Records the mandatoriness-layer, concurrency and GDS-default decisions once, for all downstream pages."
+    },
+
+    {
+      "id": "inc-004",
+      "title": "Countries reference data — two distinct lists",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "A house-style server-side countries client (mirrors -frontend/src/server/common/clients/countries-client) serves TWO hardcoded JSON lists (JB-3, c-009): a ~219-entry third-country list for origin.countryCode (legacy filters origin to !country.eu for CED — HIGH_RISK_TYPES=[CVEDA,CVEDP,CED], prompt option 'Select a country'), and a ~254-entry FULL list for consigned-country + every address (prompt 'Select country from where consigned' / 'Please select your country').",
+        "The full list uses the four-nation UK split (GB-ENG/GB-NIR/GB-SCT/GB-WLS) alongside ISO alpha-2 codes — there is NO single 'United Kingdom' option (c-008; Open Q 12). Values stored by code, never free text.",
+        "FLAG (needsHuman, do not author the ruling): c-008 — is the alpha-2 + GB-subdivision value-space (vs ISO 3166-2) the right modelling for the four home nations? c-009 — the on-page copy says 'EU and EFTA' whereas the legacy filter is !country.eu; confirm the exact EFTA handling and the full-vs-third-country reference-data sources.",
+        "FLAG: in every trace origin.countryOfConsignmentCode == origin.countryCode (Open Q 12) — confirm the two fields are genuinely independent before finalising."
+      ]
+    },
+    {
+      "id": "inc-005",
+      "title": "CN commodity tree + type/class/family + species/EPPO fixture",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "A house-style commodity-code client serves a fixture CN/HS commodity tree (chapters 07,08,09,10,11,12,13,14,15,17,18,19,20,21,23,39 — the 16 top-level chapters rendered on search-commodity; codes 10064000 'Broken rice', 09081100…). This is the ONE lookup that cannot be hardcoded wholesale (integrations.md).",
+        "Per code, a dynamic type/class/family hierarchy: commodity category 'types', 'classes' filtered by type, 'families' filtered by class (the commodity-basic-description selects; typeOfCommodity/classOfCommodity/familyOfCommodity).",
+        "Per code, a species list (Species.value/text) with EPPO metadata (eppoCode + genusAndSpecies) where the species carries one — many HRFNAO codes have NONE (lab-tests '(no species)'); species is optional per line.",
+        "A species selection resolves to a stable key. FLAG (Open Q 8, do not author the ruling): is Species.value the stable stored key, or is eppoCode the safer join across ref-data refreshes? Persist a code/id, not the display label."
+      ],
+      "notes": "Buildable now against a fixture; the search-commodity PAGE is inc-013."
+    },
+    {
+      "id": "inc-006",
+      "title": "Border control posts / ports of entry reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "A house-style BIP client serves a hardcoded JSON list of the ~31 CHED-D ports of entry (transport.portOfEntry; bip svc ?includeControlPoints=true&types=CED) — e.g. BRISTOL (GBBRS), DOVER EAST (SEVINGTON BCP) (GBSEV), FELIXSTOWE (GBFXT), MANCHESTER AIRPORT (GBMAN), HEATHROW AIRPORT - HEATHROW PERISHABLE CENTRE (GBLHRA), prompt option 'Select port of entry'.",
+        "The SAME list backs transit.exitBorderControlPost (the flag-OFF tranship variant — inc-032) and the dashboard 'BCP or POE' filter. Values stored by BCP code.",
+        "Note: CHED-D has NO control-point / inspection-premise sub-select — that is CHEDPP-only (c-012, POINT_OF_ENTRY_CONTROL_POINT_CODE added only for CHEDPP). Do not carry the transport-details variant selects (entry-border-control-post / inspection-premises)."
+      ]
+    },
+    {
+      "id": "inc-007",
+      "title": "Package types + document types + static enums reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "Hardcoded JSON lists served house-style: 25 CHED-D package types (isCed excludes 'Balloon Protected' + 'Pallet Box' from the shared list — c-006; e.g. Bag, Bale, Block, Box, Can, Carton, Case, Cask, Coffer, Crate, Drum, In Bulk, Jar, Package, Pail, Pallet, Polystyrene Box, Tank, Tote, Tray, Tube, Vial, Other, prompt 'Select type of package'), and 14 CHED-D document types (documentTypeMap keys — c-005; Health certificate, Air waybill, Bill of lading, Certificate of origin, Commercial invoice, Ingredients list, Laboratory sampling results, Packing list, Phytosanitary certificate, Rail waybill, Road consignment (CMR) note, Sea waybill, Other, prompt 'Select document type').",
+        "Static enums in the model: means of transport (AIRPLANE|RAILWAY|ROAD_VEHICLE|VESSEL, rendered with a placeholder = 5 options), commodity intended-for (Feedingstuff|Further process|Human consumption|Other), storage temperature (Ambient|Chilled|Frozen), CTC (Yes-add MRN now|Yes-add MRN later|No), GVMS (Yes|No), consignment-in-container (Yes|No).",
+        "All measures stored by code/enum, not display string. The 25/14 rendered lists ARE the authoritative CHED-D allow-lists (the 34/27-entry QA domain maps are cross-CHED supersets — c-005/c-006).",
+        "FLAG (needsHuman, do not author the ruling): c-005 — whether the QA domain map's longer document label ('Laboratory Sampling results for Aflatoxin (Reg 2019/1793)') is stale or CHED-D deliberately re-labels to 'Laboratory sampling results'."
+      ]
+    },
+
+    {
+      "id": "inc-008",
+      "title": "import-type — certificate type",
+      "kind": "page",
+      "milestone": "m2",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-003"],
+      "acceptanceCriteria": [
+        "Page renders caption 'About the consignment' (govuk-caption-xl) and H1 'What are you importing?' inside a govuk-radios fieldset legend (legend-as-heading — fixes the empty-legend accessible-name gap).",
+        "Selecting 'High risk food and feed of non-animal origin' (value CED) sets chedType='CED' and, on first save, mints the referenceNumber (status DRAFT). The app is CHED-D-only; record whether the new app keeps a shared four-way entry point (Live animals=CVEDA / Products of animal origin…=CVEDP / High risk food…=CED / Plants…=CHEDPP) or ships a CHED-D-only start with no choice (c-003 — if the latter, this page and its mandatoriness disappear).",
+        "Validation: 'Save and continue' with no radio selected shows error summary 'There is a problem' with message 'Select the type of import' (legacy en.js:94, cert-type Joi .required()).",
+        "FLAG (do NOT port): c-039 overdue-debtor gate — legacy renders the CHEDPP option disabled with hint 'This option is not available' and blocks CHEDPP POSTs for overdue debtors; this gates the CHED-PP option ONLY, never CED. Whether the overdue-debtor policy is in scope for the rebuild at all is a human decision, not built here."
+      ]
+    },
+    {
+      "id": "inc-009",
+      "title": "country-of-origin — origin of the animal or product",
+      "kind": "page",
+      "milestone": "m2",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-008"],
+      "acceptanceCriteria": [
+        "Caption 'About the consignment'; H1 'Origin of the animal or product'; a govuk-select 'Country of origin' sourced from the 219-entry third-country list (prompt 'Select a country'). Persists to origin.countryCode.",
+        "Validation: empty submit shows 'Select the country of origin of the animal or product'.",
+        "This is one logical origin-country field rendered over TWO consecutive pages (here + origin-of-import) — modelGap duplicate-origin-country (c-001); the second render is a restatement of the same obligation, not a new field."
+      ]
+    },
+    {
+      "id": "inc-010",
+      "title": "origin-of-import — countries, region code, internal reference",
+      "kind": "page",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-009"],
+      "acceptanceCriteria": [
+        "Caption 'About the consignment'; H1 'Origin of the import' (adopt the rendered H1 — the legacy tab-title 'Add a reference number for this consignment' is a bug, do not copy; c-016).",
+        "Controls: govuk-select 'Country of origin' (restatement -> origin.countryCode, 219 list), govuk-radios 'Does your consignment require a region code?' (Yes/No -> origin.requiresRegionCode), a conditional govuk-input 'Enter the region code' revealed on Yes (hint 'Enter up to 5 characters.' -> origin.regionCode; optional even when Yes, no @NotNull), a govuk-select 'Country from where consigned' (254 full list, prompt 'Select country from where consigned' -> origin.countryOfConsignmentCode), and an optional govuk-input 'Your internal reference number for this consignment (optional)' (hint 'Enter any internal reference number you want to use to identify this consignment, or leave blank.' -> origin.internalReference).",
+        "Validation: country-of-origin and country-from-where-consigned are required; region-code-option is required. Persist regionCode and derive requiresRegionCode from its presence, or store the boolean (IPAFFS derives regionOfOriginOption = !isEmpty(regionOfOrigin)).",
+        "FLAG (needsHuman, do not author the ruling): c-037 — the current IPAFFS template gates the whole region-code question OFF for CED, yet a CED trace RENDERED it. Decide whether CHED-D should carry a region-code question at all (the legacy trajectory appears to be removing it). c-001 — the QA page object's phantom health-certificate radio renders on neither CHED-D page; confirm it is genuine cross-type leakage."
+      ]
+    },
+    {
+      "id": "inc-011",
+      "title": "about-the-consignment — main reason for import (transit variant)",
+      "kind": "page",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-008"],
+      "acceptanceCriteria": [
+        "Caption 'About the consignment'; H1 'What is the main reason for importing the consignment?' as a govuk-radios legend-as-heading with 2 options: 'Internal market' (hint 'The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).') and 'Non-internal market' (hint 'The consignment is not intended for sale or use in Great Britain and will be exported to another country.'). Persists reasonForImport as normalised INTERNAL_MARKET | NON_INTERNAL_MARKET (do NOT inherit the wire values internalmarket|noninternalmarket).",
+        "Cross-page conditionality (modelGap): when 'Non-internal market' is chosen, reveal a free-text govuk-input 'Point of exit' (hint 'Place of departure from Great Britain' -> transit.pointOfExit), a govuk-date-input 'When the consignment will leave Great Britain' (Day/Month/Year, hint 'For example, 27 3 2023' -> transit.exitDate) and a time input (24-hour Hour/Minutes, hint '24 hour format, for example, 14 50' -> transit.exitTime). All three required only in the Non-internal-market branch (Joi.when). Absent for Internal market.",
+        "Validation: 'Select the main reason for importing the consignment'; 'Enter the point of exit'; 'Point of exit must be 255 characters or fewer'; 'Enter the date the consignment will leave Great Britain'; 'Enter the time the consignment will leave Great Britain'.",
+        "This is the CONFIRMED flag-ON transit variant (enableCheddLandbridge ON — the only surface either trace captured). FLAG (needsHuman, do not author the ruling): c-011/c-042 — the page serves ONE OF TWO feature-flag templates; the flag-OFF 'tranship' variant (radios 'For internal market'/'For transfer to' + an 'Exit Border Control Post' select, NO free-text point-of-exit) is a materially different capture, built separately and born-blocked as inc-032. Confirm which flag state is canonical (and whether enableCheddLandbridge survives)."
+      ]
+    },
+
+    {
+      "id": "inc-012",
+      "title": "Commodity collection model extension (depth-2 repeating group)",
+      "kind": "model-extension",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": "model-extension",
+      "dependsOn": ["inc-002", "inc-005"],
+      "acceptanceCriteria": [
+        "The model gains the consignment-level commodity wrapper (commodity.commodityIntendedFor + commodity.temperature) and commodity.commodityComplement[] (CommodityLine) -> species[] (Species), mirroring house Commodity/CommodityComplement/Species with HRFNAO leaves and livestock leaves dropped (target-model.md).",
+        "CommodityLine leaves: commodityCode, commodityDescription, typeOfCommodity, classOfCommodity, familyOfCommodity, netWeight, numberOfPackages, packageType, species[], uniqueComplementId (stable line key behind the {commodityCode}- field prefix).",
+        "Species leaves: value, text, eppoCode, genusAndSpecies (livestock noOfAnimals/earTag/passport dropped; EPPO identity added).",
+        "The persistence spine round-trips the whole nested collection whole-document (modelGap repeating-group-in-repeating-group: the page-owned spine cannot express the nesting; it is modelled as pages re-entered once per commodity line / once per species).",
+        "This is a MODEL-EXTENSION GATE — halt for review before building the commodity pages."
+      ]
+    },
+    {
+      "id": "inc-013",
+      "title": "search-commodity — code search + chapter tree browse",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-005", "inc-012"],
+      "acceptanceCriteria": [
+        "Caption 'Description of the goods'; H1 'Commodity'; a 'Commodity code search' tab with a govuk-input 'Enter commodity code' + a 'Search' button, and a chapter tree-browse (16 top-level chapter submit buttons: '07 EDIBLE VEGETABLES…' … '39 PLASTICS AND ARTICLES THEREOF') that drills into a chapter.",
+        "The whole search is a server round-trip (POST -> 302 -> GET) — no client XHR (integrations.md CSP connect-src 'self'). Selecting a code writes commodityComplement[].commodityCode + commodityDescription.",
+        "Validation copy (page-level Joi): 'Enter a commodity code' (empty), 'Commodity code must be a number', 'You cannot add the same commodity code twice', 'A commodity must be selected'.",
+        "Built against the inc-005 fixture tree (integrations.md pass-1 path: seed a small CHED-D tree / hardcode the exercised chapters) — the real service typeahead is future integration."
+      ]
+    },
+    {
+      "id": "inc-014",
+      "title": "commodity-basic-description — type/class/family + species",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-005", "inc-012", "inc-013"],
+      "acceptanceCriteria": [
+        "Caption 'Description of the goods'; H1 'Commodity' (adopt the rendered H1 — the legacy <title> 'Select species of commodity' is a bug, do not copy; c-015).",
+        "Controls, each required when the reference data offers more than one option: govuk-select 'Type of commodity' (typeOfCommodity), 'Class of commodity' (classOfCommodity, filtered by type), 'Family of commodity' (familyOfCommodity, filtered by class); a species govuk-checkboxes list 'Select species of commodity' (hint 'Select all that apply.'; when species carry EPPO codes they render in a table with Genus (and Species) / EPPO code columns -> species[].{value,text,eppoCode,genusAndSpecies}); and a govuk-radios 'Do you want to add another commodity?' (hint 'You can only add another commodity if it has the same country of origin. If not, create a separate notification.' — Yes routes back to search-commodity to append a line).",
+        "Validation copy: 'Select at least one species'; 'Select yes if you want to add another commodity'; the max-lines guard 'Commodity lines must be fewer than {maxCommodityLines + 1}'; 'A commodity must be selected'.",
+        "Re-entered once per commodity line (nested repeating group). Species is optional for codes that carry none (many HRFNAO codes have '(no species)')."
+      ]
+    },
+    {
+      "id": "inc-015",
+      "title": "commodity-extended-description — per-line measures + total gross weight",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-007", "inc-012", "inc-014"],
+      "acceptanceCriteria": [
+        "Caption 'Description of the goods'; H1 'Commodity'; per commodity line: govuk-input 'Net weight (kg/units)' ({code}-.net-weight -> commodityComplement[].netWeight), govuk-input 'Number of packages' ({code}-.num-packages -> numberOfPackages), govuk-select 'Type of package' ({code}-.package-type, 25-option list, prompt 'Select type of package' -> packageType); plus a consignment-level govuk-input 'Total gross weight (kg/units)' (gross-weight -> additionalDetails.totalGrossWeight).",
+        "Read-only rollups ('Total for this consignment': Σ net weight, Σ packages) are DERIVED and rendered read-only — never stored.",
+        "Validation copy: 'Add the net weight', 'Add number of packages', 'Add package type', 'Add the total gross weight', 'Add the total net weight', 'Total gross weight is less than the total net weight'.",
+        "FLAG (do not author the ruling): the legacy gross>=net cross-field check (@MinCommoditiesGrossWeight) OMITS the SingleCed group, so it may not fire on the new single-commodity CHED-D journey (c-007); confirm the exact numeric bounds. All four per-line/total fields are legacy-required (@NotNull under NotificationSingleCedValidation)."
+      ]
+    },
+    {
+      "id": "inc-016",
+      "title": "commodity-additional-details — intended-for + temperature",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-007", "inc-012"],
+      "acceptanceCriteria": [
+        "Caption 'Description of the goods'; H1 'Additional details'; govuk-radios 'Commodity intended for' (hint \"You'll find this on the health or phytosanitary certificate (also known as the 'official certificate') if you have one.\" — 4 options Feedingstuff/Further process/Human consumption/Other -> commodity.commodityIntendedFor) and govuk-radios 'Temperature' (3 options Ambient/Chilled/Frozen -> commodity.temperature).",
+        "Both are @NotNull under the CED group — mandatory server-side (legacy). Modelled at the commodity WRAPPER (consignment-level, matching IPAFFS Commodities), not per line.",
+        "Validation copy: 'Add what the commodity is intended for'; 'Add the temperature of the consignment'.",
+        "FLAG (Open Q 7, do not author the ruling): confirm intended-for / temperature are not intended per-commodity-line when the untraced multi-commodity 'Yes' branch is exercised."
+      ]
+    },
+
+    {
+      "id": "inc-017",
+      "title": "notification-hub — task-list hub",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-011", "inc-016"],
+      "acceptanceCriteria": [
+        "Caption is the dynamic reference (e.g. 'DRAFT.GB.2026.1525931 - CHEDD') — data, not fixed copy; do NOT inherit the DRAFT->CHEDD id-flip / dual caption structure.",
+        "Renders a govuk task-list of the confirmed CHED-D spokes with per-section status and links: Commodity, Additional details, Goods movement services, Transport to the port of entry, Review and submit (plus Billing details ONLY when the CUC variant applies — inc-033).",
+        "No form controls / no data captured on the hub itself (navigation + derived completeness only). 'Save and return to hub' on downstream pages returns here.",
+        "Do NOT render the cross-type leakage sections exposed by the shared template — 'Means of transport after Border Control Post (BCP)', 'Catch certificates', 'Latest health certificate', 'Charity Information' — none is a CHED-D spoke (shared-page-object-cross-type-leakage).",
+        "Downstream m4 pages depend on the SPINE, not the hub, so they are not blocked by this increment."
+      ]
+    },
+    {
+      "id": "inc-018",
+      "title": "transport-details — port of entry, means, arrival, containers",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "L",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-006", "inc-003"],
+      "acceptanceCriteria": [
+        "Caption 'Transport'; H1 'Transport to the port of entry'.",
+        "Controls: an accessible-autocomplete 'Port of entry' (31-option BCP list, prompt 'Select port of entry' -> transport.portOfEntry), govuk-select 'Choose from:' means of transport (prompt 'Select means of transport to port of entry', 4 options -> transport.meansOfTransport), govuk-input 'Transport identification' (hint lists flight/train/reg/vessel -> transportIdentification), govuk-input 'Transport document reference' (-> transportDocumentReference), a govuk-date-input 'Estimated arrival at port of entry' (Day/Month/Year -> transport.arrivalDate) and a time input (24-hour Hour/Minutes -> transport.arrivalTime), and a govuk-radios 'Are any road trailers or shipping containers being used to transport the consignment?' (Yes/No -> transport.usesContainers; server-defaults to No) revealing a repeating 'Container or trailer number' / 'Seal number' / 'Official seal' checkbox group (transport.containers[]).",
+        "Validation copy: 'Identification must be 50 characters or fewer', 'Document must be 32 characters or fewer', 'You cannot enter a date more than 5 days in the past or 120 days in the future', 'Enter a valid time in 24 hour format'. Error summary titled 'There is a problem' (do NOT port 'Please fix the following errors').",
+        "arrivalTime and the container/seal group are CHED-D additions over the house Transport (which has arrivalDate only).",
+        "FLAG (needsHuman, do not author the ruling): c-012 — whether CHED-D ever has a two-leg (after-BCP) transport capture (the shared BCP-or-port / entry-BCP / inspection-premises / means-after-BCP / journey-time-hours selects are CHEDPP/other-CHED leakage, EXCLUDED). c-013 — whether the container/seal reveal is a genuine CHED-D requirement or shared markup. c-040 — align error copy to the on-screen labels ('Transport identification'/'Transport document reference'), not the legacy internal short labels ('Identification'/'Document')."
+      ]
+    },
+    {
+      "id": "inc-019",
+      "title": "goods-movement-services — CTC / MRN / GVMS",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-003"],
+      "acceptanceCriteria": [
+        "Caption 'Transport'; H1 'Goods movement services'. This is DATA, not an integration (integrations.md: no live GVMS/NCTS call fires).",
+        "Controls: govuk-radios 'Are you using the Common Transit Convention (CTC) to move goods between countries?' (hint 'If yes, you must provide the Movement Reference Number (MRN) that will have been generated by NCTS.' — 3 options 'Yes – add MRN now' | 'Yes – add MRN later' | 'No' -> goodsMovementServices.commonTransitConvention), a conditional govuk-input 'Movement Reference Number (MRN)' (hint on the 18-char format -> movementReferenceNumber, required iff 'Yes – add MRN now'; no live validation), and govuk-radios 'Will the transport use the Goods Vehicle Movement Service (GVMS)?' (Yes/No -> usingGvms).",
+        "Validation copy: 'Select if using the Common Transit Convention (CTC)', 'Select if using the Goods Vehicle Movement Service (GVMS)', 'Enter a valid Movement Reference Number'."
+      ]
+    },
+    {
+      "id": "inc-020",
+      "title": "contact-details — responsible person",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-003"],
+      "acceptanceCriteria": [
+        "Caption 'Contacts'; H1 'Contact details'; govuk-input 'Name' (required), 'Email address', 'Mobile number' (adopt 'Mobile number' as the display label even though the field name is 'telephone' — c-022). Persists to responsiblePerson.{name,email,telephone}, PRE-POPULATED from the signed-in account ('Michael Scott') — NOT from a delegated org (POP-1 resolution, c-043).",
+        "Validation copy: 'Enter your name', 'Name must be 32 characters or fewer', 'Enter an email address in the correct format, like name@example.com', 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982'.",
+        "FLAG (Open Q 9, do not author the ruling): email and telephone are each individually optional and there is NO at-least-one rule for CED (unlike CHED-PP — no CED @NotNull, c-038). The legacy 'Enter an email address or mobile number' fieldset message exists but the at-least-one rule is not enforced for CED; confirm the rebuild's contactability rule."
+      ]
+    },
+    {
+      "id": "inc-021",
+      "title": "nominated-contacts — repeating optional contacts",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-020"],
+      "acceptanceCriteria": [
+        "Caption 'Contacts'; H1 'Nominated contacts (optional)'; a repeating group ('Add another person' / 'Remove', capped by contactsCount) of Name / Email address / Mobile number rows -> nominatedContacts[].{name,email,telephone}.",
+        "Each contact optional; the whole page may be skipped empty (never filled in a trace). When a row is started the legacy field rules apply.",
+        "Validation copy: 'Enter a name', 'Name must be 32 characters or fewer', 'Enter an email address or mobile number', 'Enter an email address in the correct format, like name@example.com', 'Email address must be 255 characters or fewer', 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982', 'Telephone number must be 30 characters or fewer'."
+      ]
+    },
+    {
+      "id": "inc-022",
+      "title": "contact-address + branch-address — contact address for consignment",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-003"],
+      "acceptanceCriteria": [
+        "contact-address: Caption 'Contacts'; H1 'Contact address for consignment'; a govuk-radios 'Select an address' picking an existing branch address (hint 'If the correct address is not shown, add a new branch address, then return to this page.') with an 'add a new branch address' link -> contactAddress.* (an Operator DISTINCT from destination).",
+        "branch-address-creation: H1 'Add branch address'; govuk-inputs 'Branch address name' (required), 'Address line 1' (required), 'Address line 2 (optional)', 'Address line 3 (optional)', 'City or town' (required), 'Postcode or ZIP code' (optional), 'Telephone number' (required), a govuk-select 'Country' (254 list, prompt 'Please select your country', required), 'Email address' (required) -> contactAddress.name / contactAddress.address.{addressLine1,2,3,city,postcode,country} / contactAddress.telephone / .email. branch-address-confirmation: H1 'The address has been added to your address book', primary action 'Return to notification' (no data).",
+        "Validation copy (create sub-form): 'Enter a branch name', 'Branch name must be 255 characters or fewer', 'Enter an address line 1', 'Enter a city or town', 'Enter an email address', 'Enter an email address in the correct format, like name@example.com', 'Post code must be 32 characters or fewer', 'Enter a telephone', 'Country is not valid'. The select-an-existing message is legacy \"Organisation Branch Address\" is required / 'Add the contact address for consignment'.",
+        "FLAG: no address-page validation error was rendered in any CHED-D trace (happy path only); the messages are legacy-recovered. Fix the mislabelled legacy copy where sensible ('Post code' -> 'Postcode or ZIP code', 'Enter a telephone' -> 'Enter a telephone number') consistent with the on-screen labels."
+      ]
+    },
+    {
+      "id": "inc-023",
+      "title": "accompanying-documents — document metadata",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-007", "inc-003"],
+      "acceptanceCriteria": [
+        "Caption 'Documents'; H1 'Accompanying documents'; a govuk-select 'Document type' (14-option CHED-D list, prompt 'Select document type'), a govuk-input 'Document reference', a govuk-date-input 'Date of issue' (Day/Month/Year), and an 'Add attachment' affordance routing to the separate upload page (born-blocked inc-034). 'Add a document' appends a metadata row.",
+        "Persists to the SEPARATE accompanying_documents collection (metadata only pass 1 — files[] deferred), joined on notificationReferenceNumber (modelGap separate-app-boundary).",
+        "Validation copy: 'Select a document type', 'Enter a reference', 'Document reference must be 100 characters or fewer', and the full date-of-issue set ('Enter a date of issue', 'Date of issue must include a day'/'…a month'/'…a year' + combinations, 'Day must be from 1 to 31', 'Month must be from 1 to 12', 'Year must be 4 numbers', 'Year must be later than 1969', 'Date of issue must be a real date').",
+        "When a row is started, type + reference + issue-date are frontend-required (no CED @NotNull — c-038). File-type/size hint copy is aligned in the born-blocked upload increment (c-030/c-031/c-041).",
+        "FLAG (needsHuman, do not author the ruling): c-005 — the 'Laboratory sampling results' label vs the QA domain's longer 'Laboratory Sampling results for Aflatoxin (Reg 2019/1793)'."
+      ]
+    },
+    {
+      "id": "inc-024",
+      "title": "traders-addresses — traders table",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-003"],
+      "acceptanceCriteria": [
+        "Caption 'Traders'; H1 'Addresses'; a table of address sections: Consignor or exporter ('Add a consignor or exporter' -> inc-025), Consignee ('Add a consignee' -> inc-026), Importer (set via #populate-importer 'Same as consignee', hint 'This is usually the same as the consignee…', OR add/select), and Place of destination (set via #populate-place-of-destination 'Same as consignee', hint 'This is where the consignment will be sent for final unloading, and must be in Great Britain…', OR add/select).",
+        "CHED-D HAND-ENTERS consignor + consignee (POP-1 / c-043 — there is NO org auto-population on this route, that is the CHED-PP delegated route only); importer + destination default via 'Same as consignee'. Persists consignor/consignee/importer/destination as house Operator. All four are required.",
+        "Validation copy (legacy-recovered, no trace rendered errors): 'Add a consignor', 'Who is the consignor or exporter', 'Add a consignee', 'Who is the consignee', 'Add an importer', 'Who is the importer', 'Add the place of destination', 'What is the place of destination'.",
+        "Do NOT carry the 'Transporter authorisation number' (approval-number) field — transporter is not collected for CHED-D (page-object leakage). The address-book search sub-forms (economic-operator search) are deferred (inc-035)."
+      ]
+    },
+    {
+      "id": "inc-025",
+      "title": "consignor-creation (+ confirmation) — hand-entered consignor",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-024"],
+      "acceptanceCriteria": [
+        "H1 'Add consignor or exporter' (caption = the dynamic reference); govuk-inputs 'Consignor or exporter name' (required), 'Address line 1' (required), 'Address line 2 (optional)', 'Address line 3 (optional)', 'City or town' (required), 'Postcode or ZIP code' (optional), 'Telephone number' (required), a govuk-select 'Country' (254 list, prompt 'Please select your country', required), 'Email address' (required).",
+        "Persists consignor.name/telephone/email + consignor.address.{addressLine1,addressLine2,addressLine3,city,postcode,country}. consignor-confirmation: H1 'The consignor or exporter has been created', primary action 'Add to notification' (no data).",
+        "Validation copy: 'Enter a consignor or exporter name', 'Consignor or exporter name must be 255 characters or fewer', 'Enter an address line 1', 'Address line 1 must be 255 characters or fewer', 'Enter a city or town', 'City or town must be 58 characters or fewer', 'Post code must be 32 characters or fewer', 'Enter a telephone', 'Telephone must be 30 characters or fewer', 'Enter an email address', 'Enter an email address in the correct format, like name@example.com', 'Email address must be 255 characters or fewer', 'Enter a country', 'Country is not valid'. Fix the mislabelled legacy 'Post code'/'Enter a telephone' to match the on-screen labels.",
+        "For CHED-D these fields are mandatory at the FRONTEND only (no CED @NotNull on the address — c-018/c-038); enforce per the inc-003 mandatoriness decision."
+      ]
+    },
+    {
+      "id": "inc-026",
+      "title": "consignee-creation (+ confirmation) — hand-entered consignee",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-004", "inc-024"],
+      "acceptanceCriteria": [
+        "H1 'Add consignee' (caption = the dynamic reference); govuk-inputs 'Consignee name' (required), 'Address line 1' (required), 'Address line 2 (optional)', 'Address line 3 (optional)', 'City or town' (required), 'Postcode or ZIP code' (optional), 'Telephone number' (required), a govuk-select 'Country' (254 list, required), 'Email address' (required).",
+        "Persists consignee.name/telephone/email + consignee.address.*. consignee-confirmation: H1 'The consignee has been created', primary action 'Add to notification' (no data).",
+        "Validation copy: 'Enter a consignee name', 'Consignee name must be 255 characters or fewer', + the same address/email/telephone/country message set as consignor-creation.",
+        "Same reusable 9-field address form as consignor/branch (modelGap cross-surface-shared-page); telephone + email are frontend-required for CHED-D but carry no CED @NotNull (c-018/c-038 — adopted required:true per inc-003)."
+      ]
+    },
+    {
+      "id": "inc-027",
+      "title": "notifications-dashboard — list own notifications",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-002", "inc-004"],
+      "acceptanceCriteria": [
+        "H1 'Your import notifications'; a results list of the signed-in user's notifications with status tags, and a 'Create a new notification' button. Use govuk-table / govuk-summary-card — do NOT port IPAFFS's bespoke dt/dd faux-table grid (c-032, JB-7).",
+        "Filters (all optional): 'Keywords or notification number', 'Commodity' (code or description), 'BCP or POE' (select), 'Status' (select), 'Country of origin' (select — model the real optgroups: European Union/EEA and Northern Ireland / Great Britain and Channel Islands / Rest of World), 'Consignee / Importer', 'Notification type' (select), and a start/end arrival date range. Omit 'Microchip number' (CHED-A only).",
+        "Backed by the notification collection indexed on ownership.assignedOrganisationId (compound with status). For pass 1 (own-org) the query scopes to the stubbed user's org; full DoA visibility scoping (VIS-1/VIS-2, current-org switcher) is deferred to inc-031.",
+        "Validation copy (search): '\"Search\" must be 255 characters or less', '\"Commodity\" must be 255 characters or less', '\"Consignee\" must be 255 characters or less', 'Start date should be less than or equal to End date'.",
+        "FLAG (needsHuman, do not author the ruling): c-035 — define the CHED-D status vocabulary rather than inherit either IPAFFS dashboard verbatim (the create-side has 12 options, the decision-side 11). c-034 — do NOT assume status label==backend value; the full label->code mapping is a gap. c-033 — confirm whether a 'Yesterday' quick date-range renders (page-object only, not in any CHED-D trace)."
+      ]
+    },
+    {
+      "id": "inc-028",
+      "title": "review-notification — check your answers",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "L",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-016", "inc-018", "inc-019", "inc-020", "inc-023", "inc-024", "inc-025", "inc-026"],
+      "acceptanceCriteria": [
+        "Caption is the dynamic reference (e.g. 'DRAFT.GB.2026.1526057 - CHEDD'); H1 'Review your notification'; govuk-summary-list rows reading back every captured value with 'Change' links: Import type (High risk food of non-animal origin (CHED-D)), Country of origin, Country from where consigned, Main reason for importing + Point of exit + 'When the consignment will leave Great Britain' (date+time), commodity code rows + the goods table (Net weight / Packages / Package type), goods totals (Total net weight / Total packages / Total gross weight), Commodity intended for, Temperature, additional documents, Consignor or exporter, Consignee, Importer, Place of Destination, Port of entry, Means of transport, Transport identification, Transport document reference, Estimated arrival date + time, Using CTC, Using GVMS, contact details, nominated contacts, Contact address for consignment.",
+        "Read-only server-derived rows: CHED reference (referenceNumber, e.g. DRAFT.GB.2026.1526057), 'Reference for your customs declaration' (customsDeclarationReference, e.g. GBCHD2026.1526057), 'Customs document code' (customsDocumentCode, e.g. C678) — each with a Copy affordance. audit.lastUpdated + submissionStatus ('Not Submitted') are derived, not stored.",
+        "PRE-submission check-answers only. Missing-answer validation surfaces the section's 'Add …' / 'Select …' message (e.g. 'Add a consignor', 'Add the port of entry', 'Add the estimated arrival date at port of entry') and blocks continue to declaration. Error summary titled 'There is a problem' (do NOT port 'Please fix the following errors' / 'You need to update some details').",
+        "Do NOT render the shared-page-object variant rows that never rendered for CHED-D (Import risk category, Transport contacts, Permanent addresses). Primary action 'Save and continue' -> declaration."
+      ]
+    },
+    {
+      "id": "inc-029",
+      "title": "declaration — submit (no acknowledgement checkbox)",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-028"],
+      "acceptanceCriteria": [
+        "Caption is the dynamic reference; H1 'Declaration'; renders 'Date of declaration: <date>' (declaration.declaredAt); primary action 'Submit notification'. CHED-D has NO acknowledgement checkbox — consent is implicit in Submit (JB-5, c-019); the declaration POST validator runs only for CHEDPP/CHED-A, never for CED.",
+        "Submit transitions status DRAFT -> SUBMITTED and records declaration.declaredAt (no 'agreed' boolean to store). The submitted ref surfaces as CHEDD.GB.YYYY.NNNN but the rebuild keeps ONE stable id and moves status (reject the id-flip).",
+        "FLAG (needsHuman, do not author the ruling): c-019 — design call on whether to ADD an explicit acknowledgement checkbox to CHED-D for consistency (legacy has none). A conditional CUC declaration paragraph ('As my consignment is in scope of the common user charge…') applies to a billable CHED-D but was never rendered (both traces non-billable) — tie to the CUC variant (inc-033)."
+      ]
+    },
+    {
+      "id": "inc-030",
+      "title": "confirmation — submission confirmation",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-029"],
+      "acceptanceCriteria": [
+        "Renders a real govuk-panel confirmation H1 (ALWAYS — c-020: IPAFFS drops the panel title on the inspection-required variant, leaving NO H1, which the rebuild must fix). Shows the submitted CHED reference (referenceNumber, CHEDD.GB.YYYY.NNNN), 'Reference for your customs declaration' (customsDeclarationReference), 'Customs document code' (customsDocumentCode) — each with a Copy affordance — and links 'Return to your dashboard' + 'Create a new notification'.",
+        "The inspection/routing outcome panel body is DERIVED from a stubbed risk assessment (pass 1 — integrations.md). The three legacy risk variants ('Required at <BCP>' / 'Not required' / 'Check GVMS' — chedd/confirmation.js) are post-submission and out of scope; the page-object's fourth 'Go to place of destination' string is dead code, do not render (c-020)."
+      ]
+    },
+
+    {
+      "id": "inc-031",
+      "title": "Delegated-authority ownership, visibility & auto-population layer",
+      "kind": "model-extension",
+      "milestone": "m5",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": ["inc-002", "inc-027"],
+      "blockedQuestion": "IS DELEGATED AUTHORITY (DoA) IN SCOPE FOR THE CHED-D REBUILD? The CHED-D corpus has ZERO DoA traces — the whole layer is adapted from the CHED-PP DoA corpus (authorization-rules.md). The house Notification is single-tenant with no org field at all (target-model.md deviation), so tenancy is entirely NEW surface. Six sub-questions ride on the answer: G-1 is CHEDPP-only delegated creation a deliberate permanent boundary or an incomplete rollout (decides whether CHED-D needs an on-behalf-of design at all — consignment-for/consignment-organisation pages do NOT exist for CHED-D, AGT-1); G-4 if DoA extends to CHED-D the badge's type=='CHEDPP' literal + agencyOrganisationId plumbing must be generalised; G-5 would a CHED-D created by a registered-org member auto-populate consignee/contact (untraced — the corpus only has a plain B2C importer hand-entering, POP-1/c-043); G-2 do co-member Amend/Copy actions actually SUCCEED (VIS-1 only proves the controls render); G-3 is draft-privacy-to-author deliberate; G-6 the CHED-D cross-org isolation negative leg has no trace. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "IF in scope: ownership + visibility become server-enforced for CHED-D (OWN-1/OWN-2/VIS-1/VIS-2): a notification is owned by the org it was created FOR (assignedOrganisationId == createdFor); a same-org co-member sees it as their own with the FULL action set (View/Copy/Amend/Show — no read-only downgrade); the dashboard is scoped by a Current-Organisation context switcher (session state, VIS-2, NOT stored on the document); drafts are private to the author within their own org until submit.",
+        "The delegated-agent creation route (consignment-for / consignment-organisation org selector) is CHED-PP-only in legacy (AGT-1, consignment_for.js gates on type===CHEDPP) — for CHED-D it must be DESIGNED IN if wanted; it cannot be ported. onBehalfOfOrganisationId stays DORMANT unless designed in.",
+        "The Trade Partner badge is NOT modelled for CHED-D (BDG-1 — render condition type=='CHEDPP' && agencyOrganisationId; a CHED-D row satisfies neither). Do not add a CHED-D badge.",
+        "org auto-population of Importer/Consignee/Contact (POP-1) is NOT carried into CHED-D (that is the delegated route only) — CHED-D hand-enters consignor + consignee and pre-populates the contact from the signed-in account.",
+        "Add rebuild tests for the inferred CHED-D visibility rules (G-2/G-6): a CHED-D by member A appears on co-member B's dashboard with the full action set; a different org's member cannot see it."
+      ],
+      "notes": "Explicitly born blocked per instruction — the DoA ownership/visibility model. Fixtures: stub a fixed org (per-user data, not reference data)."
+    },
+    {
+      "id": "inc-032",
+      "title": "about-the-consignment — flag-OFF 'tranship' variant",
+      "kind": "variant",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": ["inc-006", "inc-011"],
+      "blockedQuestion": "c-011 / c-042 (needsHuman): about-the-consignment (page-5) serves ONE OF TWO feature-flag templates chosen by 'enableCheddLandbridge' (request.shouldRenderNonInternalMarket). Flag-ON = the transit variant built in inc-011 (free-text point-of-exit + leave date/time — the ONLY variant either trace captured). Flag-OFF = this tranship variant (radios 'For internal market'/'For transfer to'; 'For transfer to' reveals an 'Exit Border Control Post' select #bcp-transfer-to; NO free-text point-of-exit). Both are real CHED-D surfaces; which flag state is canonical for the rebuild (and whether the flag survives) is a human decision. If tranship is in scope, the point-of-exit obligation becomes an Exit-BCP SELECTION instead of free text — a materially different capture. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "IF the flag-OFF variant is canonical/in-scope: Caption 'About the consignment'; H1 'What is the main reason for importing the consignment?'; govuk-radios 'For internal market' / 'For transfer to'; 'For transfer to' reveals a govuk-select 'Exit Border Control Post' (UK BCP list from inc-006, prompt 'Select Border Control Post' -> transit.exitBorderControlPost).",
+        "Validation: 'Select the exit Border Control Post'. Persist transit.exitBorderControlPost instead of transit.pointOfExit; the leave date/time obligation still applies.",
+        "Records the resolved feature-flag decision once; the model already carries BOTH transit.pointOfExit and transit.exitBorderControlPost so no migration is needed either way."
+      ]
+    },
+    {
+      "id": "inc-033",
+      "title": "CUC billing sub-journey",
+      "kind": "variant",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": ["inc-028"],
+      "blockedQuestion": "Open Q 11 (needsHuman): is the CUC (Common User Charge) billing variant in scope for pass 1 at all, and what TRIGGERS it? The billing block is gated by an isCuc flag derived upstream (cross-page-conditionality — modelGap); no trace/assertion pins the exact server rule (both evidence traces were non-billable). The billing shape is provisional and the postcode lookup is deferred/stubbed (integrations.md customer-microservice address-lookup). Do not author the ruling.",
+      "acceptanceCriteria": [
+        "IF in scope: cuc-billing-contact-details — Caption 'Billing'; H1 'Change billing contact details'; govuk-inputs 'Email address' (hint \"We'll send the invoice to this email address\", required -> billing.email) and 'Phone number' (hint 'For example, the payments team', required -> billing.telephone). Button 'Continue'. Validation: 'Enter an email address', 'Enter an email address in the correct format, like name@example.com', 'Email address must be 100 characters or fewer', 'Enter a telephone number', 'Enter a telephone number that is between 9 and 20 characters', 'Enter a telephone number using only these characters: 0-9 / + ().-'.",
+        "cuc-find-an-address — Caption 'Billing'; H1 'Find an address'; govuk-input 'Postcode' (hint 'For example, AA3 1AB'), 'Find address' + 'Enter address manually'; then a govuk-select 'Select the address' from the postcode-lookup results (-> billing.address.*). Validation: 'Enter postcode or enter address manually', 'Enter valid UK postcode', 'No address found. Try again or enter address manually', 'Select address from the list'.",
+        "cuc-confirm-billing-details — Caption 'Billing'; H1 'Confirm billing details'; a display-only summary of Name/Organisation + billing address (addressLine1-4/cityOrTown/county/postalCode hidden inputs) + Email address + Phone number (-> billing.address.*, billing.email, billing.telephone).",
+        "Persists to billing.*; the postcode-lookup service is stubbed/deferred (canned addresses or manual entry). Ties the conditional CUC declaration paragraph (inc-029) to a billable notification."
+      ]
+    },
+    {
+      "id": "inc-034",
+      "title": "document-upload — file bytes + antivirus",
+      "kind": "variant",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": ["inc-023"],
+      "blockedQuestion": "Attachments are a SEPARATE /upload/ app (ipaffs-frontend-upload) with an async virus scan, so embedding the bytes would make the scan callback rewrite the notification (modelGap separate-app-boundary) — pass 1 defers bytes and keeps metadata only (inc-023). Decide whether file bytes are in scope for pass 1. Plus copy reconciles that are needsHuman: c-030/c-031 — the enforced allow-list is {csv,doc,docx,jpg,jpeg,pdf,png,xlsx,xls,gif} (ValidationService.java) but the on-page hint under-advertises 'DOC, JPEG, PDF, PNG or XLS'; c-041 — the hint says 'larger than 1KB' but the code floor is 200 bytes; c-036 — the upload sub-page primary button is 'Next' for CHED-D but the shared control also renders 'Continue'. Align the advertised copy with the enforced rules; do not author the ruling.",
+      "acceptanceCriteria": [
+        "IF in scope: Caption 'Documents'; H1 'Accompanying documents'; a govuk-file-upload 'Select a file'; on the CHED-D route the primary button is 'Next' (trace-confirmed — c-036).",
+        "Persists AccompanyingDocument.files[] metadata ({fileId, filename}) — bytes handled by the separate upload app, reverse-proxied onto the same origin so the relative 302 needs no client JS (integrations.md; fcp-sfd-portal-stub pattern).",
+        "Validation copy aligned to the ENFORCED allow-list/floor (JB-4): reject message 'The selected file must be a DOC, JPEG, PDF, PNG, XLS or GIF', 'The selected file is empty', a <200-byte floor (not the advertised '1KB'), 'The selected file must be smaller than 10MB', 'Select a file', 'The selected file contains a virus - upload failed', 'The selected file could not be uploaded - Try again'."
+      ]
+    },
+    {
+      "id": "inc-035",
+      "title": "consignor/consignee address-book search",
+      "kind": "variant",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-025", "inc-026"],
+      "acceptanceCriteria": [
+        "search-existing-consignor — Caption 'Traders'; H1 'Search for an existing consignor or exporter'; govuk-inputs 'Name', 'Address', a govuk-select 'Country' (prompt 'Select country'), primary action 'Search', with a 'Create a new consignor or exporter' escape. search-existing-consignee — H1 'Search for an existing consignee' with the same shape.",
+        "DEFERRED for pass 1 (integrations.md: economic-operator address book not built) — the create journey hand-types consignor + consignee (inc-025/inc-026); these pages are a thin stub / bypassed to 'Create new'. The search results / paging / no-results surface is an uncovered surface (always bypassed) — record the gap.",
+        "Validation copy: 'Name must be 255 characters or fewer', 'Address must be 255 characters or fewer', 'Country is not valid'."
+      ]
+    },
+    {
+      "id": "inc-036",
+      "title": "Draft lifecycle — delete, amend, copy-as-new",
+      "kind": "lifecycle",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-002", "inc-029"],
+      "acceptanceCriteria": [
+        "delete-notification: a confirm page (caption = the reference) soft-deletes (status -> DELETED); 'Cancel' returns to review — own URL scheme (do not port the /notification/vnet prefix).",
+        "Amend: a SUBMITTED notification transitions to AMEND capturing a submittedBaseline content snapshot (house parity, Notification.java:78-79).",
+        "Copy-as-new clones a notification into a fresh DRAFT (mint a new referenceNumber).",
+        "All reuse the house status transitions; no ETag/If-Match (deviation). amend-from-hub and delete-notification are untraced (inventory-pages-without-specs) — build against the house transitions and flag the gap."
+      ]
+    },
+    {
+      "id": "inc-037",
+      "title": "Auth stub / sign-in",
+      "kind": "stub",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": ["inc-001"],
+      "acceptanceCriteria": [
+        "A fixed signed-in user is stubbed ('Michael Scott', mirror FE AUTH_ENABLED=false — integrations.md); no real OIDC dance in pass 1.",
+        "The account-bar chrome renders for the CHED-D importer (AGT-2, confirmed CHED-D): 'Address book' + 'Manage trade partners' links are shared service chrome, NOT a delegated-create affordance — they lead to trade-partner/address-book admin, not to a CHED-D on-behalf-of flow.",
+        "The stubbed user supplies the org context the dashboard (inc-027) and ownership (inc-031) scope on."
+      ]
+    }
+  ],
+  "bornBlocked": [
+    "inc-031 Delegated-authority ownership/visibility/auto-population layer (is DoA in scope for CHED-D? G-1..G-6; the CHED-D corpus has zero DoA traces)",
+    "inc-032 about-the-consignment flag-OFF 'tranship' variant (which enableCheddLandbridge state is canonical? c-011/c-042 — Exit-BCP select vs free-text point-of-exit)",
+    "inc-033 CUC billing sub-journey (in scope for pass 1? what triggers isCuc? Open Q 11)",
+    "inc-034 document-upload file bytes + antivirus (separate-app boundary; align hint copy to the enforced allow-list/200-byte floor and 'Next' button — c-030/c-031/c-041/c-036)"
+  ]
+}

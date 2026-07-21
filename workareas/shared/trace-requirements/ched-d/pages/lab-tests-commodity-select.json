@@ -1,0 +1,215 @@
+{
+  "slug": "lab-tests-commodity-select",
+  "name": "Select commodity to test",
+  "url": "/decision/vnet/protected/bip-notifications/{chedRef}/lab-test/choose-commodity?source=notests",
+  "pageTitle": "Choose Commodity To Test - Import and export applications - GOV.UK",
+  "caption": "CHEDD.GB.2026.1526057 - V1",
+  "heading": "CHEDD.GB.2026.1526057 - V1 Laboratory tests",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "secondaryActions": [
+    "Cancel",
+    "Save and set as in progress"
+  ],
+  "secondaryActionNotes": {
+    "Cancel": "Cancel destination is source-conditional (MISSED BY TRACES — corpus only ever had source=notests): when source=='notests' the link returns to /protected/bip-notifications/{referenceNumber}/hub; otherwise it returns to .../lab-test/lab-tests-to-be-performed (chooseCommodity.html:48-55). Confidence: legacy.",
+    "Save and set as in progress": "The <form method=POST action=choose-commodity> exists solely to carry this status-bar button; the choose_commodity POST handler is a no-op (choose_commodity.js:32) whose only effect is setInProgressTransformer.updateNotificationStatusToInProgress (choose_commodity.js:36). The commodity choice itself is a GET link, not this POST. Confidence: legacy."
+  },
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "CHEDD.GB.2026.1526057 - V1",
+      "govukComponent": "(non-standard: .heading-tertiary span nested inside the H1, not a govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "CHEDD.GB.2026.1526057 - V1 Laboratory tests",
+      "govukComponent": "govuk-heading-xl"
+    },
+    {
+      "element": "h2",
+      "text": "Select the commodity sampled",
+      "govukComponent": "govuk-heading-m"
+    },
+    {
+      "element": "table",
+      "text": "Columns: Commodity code | Description | Species | (visually-hidden 'Select'). One row per commodity, each with a 'Select' action link.",
+      "govukComponent": "govuk-table"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel",
+      "govukComponent": "govuk-body > govuk-link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-table__head",
+        "govuk-table__body",
+        "govuk-table__row",
+        "govuk-table__header",
+        "govuk-table__cell"
+      ],
+      "count": 1,
+      "usage": "Lists the notification's commodities (code, description, species) with a per-row 'Select' link so the inspector picks which commodity line to sample/test. aria-label=\"select the commodity sampled table\".",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (main table outerHTML)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [
+        "govuk-heading-m"
+      ],
+      "count": 2,
+      "usage": "govuk-heading-xl for the page H1 (reference + 'Laboratory tests'); govuk-heading-m for the H2 'Select the commodity sampled'.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Per-row 'Select' action links (id=choose-commodity-N) that navigate to the choose-lab-test page for that commodity index; plus the 'Cancel' link (returns to the CHED hub). The 'Back' link is present as a top-of-page nav link.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (link resolved to <a class=\"govuk-link\" id=\"choose-commodity-0\" ...>Select</a>)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Save and set as in progress' button in the decision status bar above the main content (page-level workflow control, not part of the commodity-select form).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (a11y snapshot, button ref=e62)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<span class=\"heading-tertiary\"> nested inside the <h1 class=\"govuk-heading-xl\">, containing <span id=\"reference-number\"> and <span id=\"cved-version-number\">",
+      "whatItDoes": "Renders the CHED reference number and version (e.g. 'CHEDD.GB.2026.1526057 - V1') as a caption-like prefix inside the H1, followed by the page title span (id=page-primary-title, 'Laboratory tests').",
+      "concern": "The GOV.UK caption pattern is a separate govuk-caption-xl/-l element placed immediately before the H1, not a custom span nested inside it. IPAFFS folds the reference number into the H1 with a bespoke .heading-tertiary class. In the rebuild, use govuk-caption-xl above a plain H1.",
+      "govukAlternative": "govuk-caption-xl (page caption) + govuk-heading-xl (H1)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (h1 outerHTML)"
+    },
+    {
+      "pattern": "commodity-code / description / species (custom classes on <th class=\"govuk-table__header ...\">)",
+      "whatItDoes": "Bespoke CSS classes on the table column headers, presumably for column widths/styling of the Commodity code, Description and Species columns.",
+      "concern": "Custom CSS layered onto govuk-table headers rather than using govuk width override utilities. Minor; the govuk-table itself is standard. In the rebuild, drop these in favour of govuk-!-width-* utility classes or a plain govuk-table if column sizing is not needed.",
+      "govukAlternative": "govuk-!-width-one-quarter / govuk-!-width-one-half utility classes on govuk-table__header",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (table outerHTML)"
+    },
+    {
+      "pattern": "change (custom class on the action <td class=\"govuk-table__cell change\">)",
+      "whatItDoes": "Bespoke class on the cell holding the per-row 'Select' link.",
+      "concern": "Cosmetic custom class on an otherwise standard govuk-table cell. No functional concern; drop in the rebuild.",
+      "govukAlternative": "plain govuk-table__cell",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (table outerHTML)"
+    },
+    {
+      "pattern": "Row-selection via per-row 'Select' links instead of a form control",
+      "whatItDoes": "Each commodity row carries a govuk-link 'Select' (id=choose-commodity-N) that GETs the next page for that commodity index. There is no radio group and no primary submit button for the choice — clicking a link IS the selection.",
+      "concern": "This is a link-driven selection, not a form submission. It is an accepted GOV.UK table-action pattern, but if the new app wants a single-select-then-continue flow it could instead render radios + a Continue button. Worth a design decision at rebuild.",
+      "govukAlternative": "govuk-radios (one radio per commodity) + govuk-button 'Continue' — or keep the table-with-action-link pattern.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125"
+    }
+  ],
+  "fields": [
+    {
+      "name": "choose-commodity-{index}",
+      "label": "Select the commodity sampled",
+      "hint": "Rendered as a table (aria-label \"select the commodity sampled table\") with one row per commodity. Columns: Commodity code, Description, Species. The inspector picks a commodity by clicking that row's 'Select' link (id=choose-commodity-N), which carries the commodity index into the URL — there is no radio group or submit button.",
+      "control": "action-link",
+      "controlNote": "Spec previously carried control='radio' (template default). Corrected to 'action-link': the rendered trace shows a govuk-link 'Select' per row and no radio input, and the page object confirms the same — LabTestsCommoditySelectPage exposes only linkSelect = getByRole('link', { name: 'Select' }) (page-objects/decision/LabTestsCommoditySelectPage.ts:6-8), with the workflow driving it via labTestsCommoditySelect.linkSelect.click() (workflows/notification/ched-d-workflows.ts:417). The govuk-radios alternative is captured in nonStandardPatterns as a rebuild decision, not as observed behaviour.",
+      "required": true,
+      "options": [
+        "10064000 | Broken rice | (no species)"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 1,
+      "observedValues": [
+        "10064000 Broken rice (commodity index 0)"
+      ],
+      "conditionalOn": "Post-submission inspector laboratory-tests flow, reached from the Decision Hub 'Laboratory tests' link then the Lab tests intro page (radio Yes → this commodity-select page; the intro also offers No and Random — LabTestsIntroPage.ts:6-16 / ched-d-workflows.ts:410-417). The row list is the commodities on this CHED-D notification, so the row count == number of commodity lines. Clicking a row's Select link leads to the Lab tests commodity-test page (search + choose-laboratory-test-N — LabTestsCommodityTestPage.ts).",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 130 (both show a single row 10064000 Broken rice). Link pattern + selection corroborated (inferred) by page-objects/decision/LabTestsCommoditySelectPage.ts:6-8 and workflows/notification/ched-d-workflows.ts:417. Value corroborated (inferred) by types/commodity-code.ts (brokenRice='10064000') and ched-d-workflows.ts DEFAULT_CONFIG (commodityCode: commodityCode.brokenRice), which is why the whole corpus shows exactly one row.",
+      "legacyEnrichment": {
+        "source": "The lab-test flow renders from ipaffs-frontend-decision (the /decision/vnet host), not ipaffs-frontend-notification. Template: service/src/views/bip/chooseCommodity.html; handler: service/src/routes/handlers/bip/choose_commodity.js.",
+        "rowSource": "Rows come from partOne.commodities.commodityComplement (choose_commodity.js:17). Per-row cells are commodityID, commodityDescription and speciesName (chooseCommodity.html:35-37). The Select link href is /protected/bip-notifications/{referenceNumber}/lab-test/{@index}/choose-lab-test?source={source}, id=choose-commodity-{@index} (chooseCommodity.html:39-41) — @index is the commodityComplement index, corroborating the confirmed id=choose-commodity-N pattern.",
+        "woodPackagingExclusion": "MISSED BY TRACES: the row loop is wrapped in {{^if commodityComplement.isWoodPackaging}} (chooseCommodity.html:33), so commodity lines flagged isWoodPackaging are NOT offered for lab-test selection — the same filter used on the review/summary transformers (notification.js:249-254, commodities_summary.js:7). The single-row broken-rice corpus never exercised this; a notification with a wood-packaging commodity line would show that line hidden from this table. Confidence: legacy (chooseCommodity.html:33).",
+        "confidence": "legacy"
+      }
+    },
+    {
+      "name": "commodity-code (table column)",
+      "label": "Commodity code",
+      "hint": "Read-only table column showing the commodity/CN code for each notification line (e.g. 10064000).",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (th commodity-code; cell '10064000')"
+    },
+    {
+      "name": "description (table column)",
+      "label": "Description",
+      "hint": "Read-only table column showing the commodity description (e.g. Broken rice).",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (th description; cell 'Broken rice')"
+    },
+    {
+      "name": "species (table column)",
+      "label": "Species",
+      "hint": "Read-only table column for species. Empty in both observed CHED-D traces (species applies to CHED-A/CHED-P animal commodities, not CHED-D high-risk food/feed of non-animal origin).",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 125 (th species; cell empty). Corroborated empty in trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 130.",
+      "legacyNote": "Column value is bound to commodityComplement.speciesName (chooseCommodity.html:37). For CHED-D commodities speciesName is typically unset, hence the observed blank cell; the column is shared with the animal CHED types where it is populated. Confidence: legacy (chooseCommodity.html:37)."
+    },
+    {
+      "name": "source",
+      "label": "(hidden) source",
+      "hint": "Hidden input carrying the ?source query value into the form and into every per-row Select link (chooseCommodity.html:12, :41). Only observed value is 'notests' (constants.js:195 NOTESTS_QUERY_VALUE). Set when the inspector reaches commodity-select from the 'no lab tests recorded yet' state — the hub 'Laboratory tests' link routes here with ?source=notests when partTwo.laboratoryTests.singleLaboratoryTests is not yet completed (lab_tests_route_helper.js:8-15). It also switches the Cancel destination (see secondaryActions).",
+      "control": "hidden",
+      "required": false,
+      "confidence": "legacy",
+      "evidence": "chooseCommodity.html:12,41,48; choose_commodity.js:18-19; constants.js:192,195; lab_tests_route_helper.js:6,14. MISSED BY TRACES: rendered as a hidden input, never surfaced in a snapshot.",
+      "note": "Optional, not mandatory — the handler reads it via _.get(request,'query.source') and tolerates its absence (choose_commodity.js:19; sourceIfAvailableInRequest returns '' when unset, choose_commodity.js:25-28). Legacy behaviour; the rebuild may model arrival-state differently."
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden) crumb",
+      "hint": "Hidden CSRF token input (chooseCommodity.html:10). Present because the surrounding <form method=POST> exists to carry the 'Save and set as in progress' status action; the commodity choice itself is a GET link, not this POST.",
+      "control": "hidden",
+      "required": true,
+      "confidence": "legacy",
+      "evidence": "chooseCommodity.html:10. MISSED BY TRACES: hidden input. Requiredness is framework CSRF, not a CHED-D validation group — always present on the POST form.",
+      "note": "System-mandatory (CSRF), not a business field."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden) etag",
+      "hint": "Hidden optimistic-concurrency token for the notification, echoed back on the status-update POST (chooseCommodity.html:11).",
+      "control": "hidden",
+      "required": true,
+      "confidence": "legacy",
+      "evidence": "chooseCommodity.html:11. MISSED BY TRACES: hidden input. Requiredness is concurrency-control, not a CHED-D validation group.",
+      "note": "System-mandatory (concurrency), not a business field."
+    }
+  ],
+  "validationMessages": [],
+  "validationMessagesNote": "Empty is now LEGACY-CONFIRMED, not merely unrendered: the POST route handler is a no-op (choose_commodity.js:32) with no Joi validate options on the route (routes.js:328-333), and the commodity choice is a GET action-link. There is no user-submitted field on this page to validate, so IPAFFS has no ValidationMessages.properties entry for it. If the rebuild switches to radios + Continue, a 'select a commodity' error would be a NEW message with no legacy source (gap). Confidence: legacy (choose_commodity.js:32; routes.js:322-333).",
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Both observed CHED-D notifications had exactly ONE commodity (10064000 Broken rice), so multi-row behaviour (pagination, sorting, multiple species) is a gap — never exercised in the CHED-D corpus. The single row is explained by the test harness: types/commodity-code.ts brokenRice='10064000' and ched-d-workflows.ts DEFAULT_CONFIG adds one commodity (commodityCode.brokenRice), so no CHED-D test ever built a multi-commodity notification. A real CHED-D with multiple commodity lines would render multiple rows, each with its own 'Select' link (id=choose-commodity-0..N).",
+    "The Species column was empty in every CHED-D trace. Confirm whether Species is ever populated for CHED-D, or whether the column is inherited from a shared template used by CHED-A/CHED-P and is always blank for CHED-D (high-risk food/feed of non-animal origin). No CHED-D test drives or asserts a Species value here.",
+    "No validation was observed on this page (it is a link-driven selection, not a form submit), so there is no error copy — and no CHED-D test (tests/notification/ched-d/*.spec.ts) or the CHED-D accessibility test asserts any message on this page. validationMessages stays empty (gap). If the rebuild uses radios + Continue, an error message for 'no commodity selected' would be new and is a gap.",
+    "Selection is via per-row 'Select' links (GET), not a form control — confirmed by trace and corroborated by the page object (LabTestsCommoditySelectPage.ts:6-8) which exposes only linkSelect. Rebuild decision needed: keep the table-with-action-link pattern or switch to govuk-radios + Continue.",
+    "URL carries ?source=notests. RESOLVED (legacy): 'notests' is the only defined source value (constants.js:195 NOTESTS_QUERY_VALUE) and is set when the hub 'Laboratory tests' link routes here in the not-yet-completed lab-tests state (lab_tests_route_helper.js:8-15). It flows through a hidden input into every Select link and flips the Cancel destination (notests→hub, else→lab-tests-to-be-performed; chooseCommodity.html:48-55). No other source value exists in the decision service, so 'other source values' is a closed question, not a gap. The rebuild may model arrival-state differently (policy, not copy).",
+    "Wood-packaging commodity lines are hidden from this table (legacy: chooseCommodity.html:33 {{^if commodityComplement.isWoodPackaging}}). Never exercised in the single-row broken-rice corpus. If the rebuild reuses the same commodity list for lab-test selection it must decide whether to inherit this exclusion (wood packaging is not lab-testable in the legacy model) or list all lines.",
+    "The Lab tests intro page that precedes this page offers three options — Yes, No, Random (LabTestsIntroPage.ts:6-16). Only the Yes → commodity-select path is exercised by the CHED-D happy-path workflow. Whether 'Random' routes to this same commodity-select page or elsewhere is a gap. (There is also a separate LabTestsReasonPage with a 'Suspicion' radio — LabTestsReasonPage.ts — not observed in the CHED-D corpus; its position relative to this page is a gap.)"
+  ]
+}

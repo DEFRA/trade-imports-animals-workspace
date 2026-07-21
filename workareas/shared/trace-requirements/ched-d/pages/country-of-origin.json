@@ -1,0 +1,213 @@
+{
+  "slug": "country-of-origin",
+  "name": "Country of origin",
+  "url": "/notification/vnet/protected/notifications/consignment-origin?type=CED",
+  "pageTitle": "Origin of the animal or product - Import and export applications - GOV.UK",
+  "caption": "About the consignment",
+  "heading": "Origin of the animal or product",
+  "bodyCopy": [
+    "You can no longer select the EU and European Free Trade Association (EFTA) countries from this list."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    {
+      "label": "Save and review",
+      "role": "button",
+      "usage": "Variant-only primary submit rendered when the page is entered from the review/amend flow (edit-in-place) rather than the linear create flow. Never rendered in either happy-path evidence trace.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/CountryOfOriginPage.ts:13-15 exposes btnSaveAndReview (getByRole('button', { name: 'Save and review' })). Not observed in any CHED-D trace in the corpus."
+    },
+    {
+      "label": "Save and return to hub",
+      "role": "button",
+      "usage": "Variant-only primary submit rendered when the page is entered from the task-list hub (edit-a-single-section) flow rather than the linear create flow. Never rendered in either happy-path evidence trace.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/CountryOfOriginPage.ts:17-19 exposes btnSaveAndReturnToHub (getByRole('button', { name: 'Save and return to hub' })). Not observed in any CHED-D trace in the corpus."
+    }
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Origin of the animal or product",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "select",
+      "text": "Country of origin",
+      "govukComponent": "Select"
+    },
+    {
+      "element": "details",
+      "text": "If the country of origin is not listed / You can no longer select the EU and European Free Trade Association (EFTA) countries from this list. / Read more on EU and EFTA countries",
+      "govukComponent": "Details"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'About the consignment' above the H1",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (main.html: span#page-secondary-title)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Origin of the animal or product'",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (main.html: h1#page-primary-title)"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 1,
+      "usage": "Country of origin dropdown (id/name origin-country); options include a UK optgroup",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 12. Test-side locator getByLabel('Country of origin') at page-objects/notification/CountryOfOriginPage.ts:6-8."
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--m"],
+      "count": 1,
+      "usage": "Label 'Country of origin' for the select",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (main.html: label[for=origin-country])"
+    },
+    {
+      "component": "Details",
+      "govukClass": "govuk-details",
+      "modifiers": ["govuk-!-margin-top-4"],
+      "count": 1,
+      "usage": "Expander 'If the country of origin is not listed' revealing EU/EFTA guidance paragraph and an external link",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (main.html: details.govuk-details)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Primary submit 'Save and continue' (id button-save-and-continue, data-prevent-double-click). Two further variant-only submit buttons ('Save and review', 'Save and return to hub') are exposed by the page object but were never rendered in the corpus — see secondaryActions.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (main.html: button#button-save-and-continue); variants at page-objects/notification/CountryOfOriginPage.ts:13-19."
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "origin-country",
+      "label": "Country of origin",
+      "control": "select",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Mandatory for CHED-D (CED). (1) Frontend Joi validator: validation/routes/handlers/importer/consignment_origin.js:12,19-23 makes 'origin-country' Joi.string().required() for the non-CHEDPP ('otherwise') branch, which covers CED — missing/empty selection yields COUNTRY_REQUIRED. (2) Backend model: notification-schema-java/.../representation/Commodities.java:168-180 annotates countryOfOrigin with @NotNull for validation group NotificationHighRiskEuCedFieldValidation (the CED/CHED-D group). The rendered HTML select carried no 'required' attribute (validation is server-side), which is why the trace pass could only mark it functionally-mandatory; legacy confirms it IS mandatory. NOTE: this is the mandatoriness the OLD system enforced; the rebuild may revisit whether country of origin must be captured at this first create step vs later, but legacy treated it as required-to-proceed.",
+      "options": [
+        "Select a country",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Azerbaijan",
+        "Bahamas",
+        "Bahrain",
+        "Bangladesh",
+        "Barbados"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 219,
+      "observedValues": ["AF", "AU", "IN"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 14 (select#origin-country, 219 <option> incl. 'Select a country' placeholder and a UK optgroup 'United Kingdom of Great Britain and Northern Ireland' = England GB-ENG / Northern Ireland GB-NIR / Scotland GB-SCT / Wales GB-WLS); corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 12. Options use ISO alpha-2 codes as values (e.g. AF, US, CN). Full list is reference data — the new app should source it from a reference-data/country service, not hardcode it. NOTE: the HTML select had NO 'required' attribute, but selecting a country is functionally mandatory to proceed (placeholder value is empty ''). CORROBORATION (inferred from tests): the field is driven by selectOption, which accepts EITHER the ISO alpha-2 value OR the visible country label — workflows select by code (country.Afghanistan = 'AF', workflows/notification/ched-d-workflows.ts:87,200) while the amend test selects by label ('India', tests/notification/ched-d/ched-d-manipulation.spec.ts:44). Observed values across tests: AF (DEFAULT_CONFIG default, ched-d-workflows.ts:87), AU (Australia, ched-d-cuc.spec.ts:20), IN (India, via amend, ched-d-manipulation.spec.ts:44). The field is EDITABLE after submission (amend flow via AmendNotificationPage.ts:6 linkAmendCountryOfOrigin) and is SHOWN ON the review page (ReviewNotificationPage.ts:65 countryOfOriginValue; ched-d-manipulation.spec.ts:55,66 assert it reads 'India' after change)."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select the country of origin of the animal or product",
+      "field": "origin-country",
+      "trigger": "Submitting 'Save and continue' for a CHED-D (type=CED) notification with no country selected (placeholder value ''). This is the primary required-field error. Not rendered in either happy-path evidence trace; sourced from legacy — it now resolves the earlier gap entry below.",
+      "confidence": "legacy",
+      "evidence": "validation/messages/en.js:64 COUNTRY_REQUIRED = 'Select the country of origin of the animal or product'. Wired for CED via the non-CHEDPP ('otherwise') branch of the Joi validator: validation/routes/handlers/importer/consignment_origin.js:19-23 maps this string to both ANY_REQUIRED (field absent) and STRING_EMPTY (empty selection). NOTE: for CHEDPP the copy differs (COUNTRY_REQUIRED_PLANT, en.js:65 = 'Select the country of origin of plants, plant product or other objects') — CHED-D uses the animal/product wording."
+    },
+    {
+      "message": "Country of origin must be a string",
+      "field": "origin-country",
+      "trigger": "Edge case only — 'origin-country' submitted as a non-string type (e.g. array/object via tampered payload) on a CHED-D notification. Not reachable through the standard select UI.",
+      "confidence": "legacy",
+      "evidence": "validation/routes/handlers/importer/consignment_origin.js:21 maps STRING_TYPE to typeMessage(ORIGIN_COUNTRY, 'string'); typeMessage at validation/messages/en.js:27-29 = `${label} must be a ${type}`; ORIGIN_COUNTRY label at validation/labels/en.js:74 = 'Country of origin'. Composed string: 'Country of origin must be a string'."
+    },
+    {
+      "message": "Country of origin",
+      "field": "origin-country",
+      "trigger": "Backend model (part-one) @NotNull failure for commodities.countryOfOrigin under the CED validation group. This is the server-side model message (a bare field label, used in the microservice's validation output), distinct from the frontend Joi error copy above which is what the user actually sees on this page.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-notification-microservice ValidationMessages.properties:86 key partone.commodities.countryoforigin.not.null = 'Country of origin'; bound to countryOfOrigin @NotNull for group NotificationHighRiskEuCedFieldValidation at notification-schema-java/.../representation/Commodities.java:168-180."
+    },
+    {
+      "message": "",
+      "field": "origin-country",
+      "trigger": "Submitting 'Save and continue' with no country selected (placeholder 'Select a country' still selected). Not observed rendered in either evidence trace (both are happy-path, 0 errors).",
+      "confidence": "gap",
+      "evidence": "No error state captured in traces eddc6f6ec852d692c454d319ade1607727a84a4f or b3742f19b6eea5d9285f5c8739571523a0a13ec1. No CHED-D test in ipaffs-qa-automation asserts any error/validation copy for this page (no expect on an error message for country-of-origin — the only assertions are review-page value checks). RESOLVED by the legacy entry above (COUNTRY_REQUIRED, validation/messages/en.js:64) now that legacy sourcing is authorised; retained here for provenance. Awaits a confirmed error-bearing CHED-D trace to promote to 'confirmed'."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Exact validation/error-summary copy when no country is selected was not captured — both evidence traces are happy-path with 0 errors, and no CHED-D test asserts the error string. The select carries no HTML 'required' attribute, so validation is server-side; copy is a gap for a human.",
+    "The Details expander links to GOV.UK guidance 'import-high-risk-food-and-feed-not-of-animal-origin-from-the-eu-to-great-britain' — this HRFNAO-specific guidance URL and the EU/EFTA de-listing copy confirm the page is shared across CHED types but the guidance link is CHED-D (HRFNAO) specific. Confirm whether the new app keeps this EU/EFTA exclusion note.",
+    "Full country list (219 options) captured verbatim in work/p2/main.html; only first 20 transcribed here. The UK is presented as an optgroup with four home-nation sub-options (England/Northern Ireland/Scotland/Wales) rather than a single 'United Kingdom' — decide whether the rebuild preserves this home-nation granularity for country of origin.",
+    "Option-count delta: the rendered dropdown has 219 <option> entries, but the QA domain vocabulary (types/country.ts) enumerates 253 ISO countries/territories. The ~34-entry gap is consistent with the EU/EFTA de-listing note ('You can no longer select the EU and EFTA countries') plus the placeholder and UK optgroup restructuring. Confirm the de-list rule set the new app must apply when sourcing countries from reference data.",
+    "Variant submit buttons: the page object exposes 'Save and review' (CountryOfOriginPage.ts:13-15) and 'Save and return to hub' (CountryOfOriginPage.ts:17-19) alongside 'Save and continue', but neither was rendered in any corpus trace (both evidence traces are the linear create flow). These are the edit-from-review and edit-from-hub variants. Confirm the new app's navigation model reproduces both return-context buttons, or whether a single edit flow suffices.",
+    "URL/route: form posts to /notification/vnet/protected/notifications/consignment-origin with hidden field type=CED (the CHED-D discriminator). Page is shared by all CHED types via the 'type' param; H1 'Origin of the animal or product' is generic.",
+    "The country of origin is amendable after submission (AmendNotificationPage.ts:6) and surfaces on the review page (ReviewNotificationPage.ts:65). Confirm the rebuild treats country-of-origin as an editable single field reachable from both the hub and the review/amend surfaces."
+  ],
+  "hiddenFields": [
+    {
+      "name": "type",
+      "control": "hidden",
+      "value": "CED",
+      "required": true,
+      "confidence": "legacy",
+      "usage": "CHED-type discriminator posted with the form. Validated server-side as required and constrained to {CVEDA, CVEDP, CHEDPP, CED}; for this page it is CED (CHED-D). Drives the primaryTitle, the EU-country de-list filter, and the CED-only 'not listed' details expander.",
+      "evidence": "views/importer/consignmentOrigin.html:18 (<input name=\"type\" type=\"hidden\" value=\"{{type}}\"/>); validated at validation/routes/handlers/importer/consignment_origin.js:25 (Joi.string().required().valid(CVEDA, CVEDP, CHEDPP, CED)); type===CED filters EU countries at routes/handlers/importer/consignment_origin.js:112 and gates the details partial at consignmentOrigin.html:30-32."
+    },
+    {
+      "name": "orgId",
+      "control": "hidden",
+      "value": "",
+      "required": false,
+      "confidence": "legacy",
+      "usage": "Optional delegated-organisation id. Only meaningful for CHEDPP (agency-on-behalf-of flow); for CHED-D it is posted empty and ignored. Validated as optional/allow-empty.",
+      "evidence": "views/importer/consignmentOrigin.html:19 (<input name=\"orgId\" type=\"hidden\" value=\"{{orgId}}\"/>); validation/routes/handlers/importer/consignment_origin.js:30 (orgId: Joi.string().optional().allow('')). Consumed only on the CHEDPP branch of getInitialNotification (routes/handlers/importer/consignment_origin.js:171-193)."
+    },
+    {
+      "name": "crumb",
+      "control": "hidden",
+      "required": true,
+      "confidence": "legacy",
+      "usage": "CSRF token (hapi crumb). Framework-level, not a rebuild data field.",
+      "evidence": "views/importer/consignmentOrigin.html:17 (<input name=\"crumb\" type=\"hidden\" value=\"{{crumb}}\"/>)."
+    }
+  ]
+}

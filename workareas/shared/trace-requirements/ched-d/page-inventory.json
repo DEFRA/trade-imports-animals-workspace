@@ -1,0 +1,542 @@
+{
+  "chedType": "CHED-D",
+  "description": "Canonical page inventory for the IPAFFS CHED-D (HRFNAO) journey, deduplicated from 22 extracted trace timelines and reconciled against the ipaffs-qa-automation CHED-D workflow + accessibility spec (authoritative page names + intended order).",
+  "sources": {
+    "traces": 22,
+    "corroboration": [
+      "ipaffs-qa-automation/workflows/notification/ched-d-workflows.ts",
+      "ipaffs-qa-automation/tests/accessibility/ched-d-accessibility-tests.spec.ts"
+    ]
+  },
+  "journeyOrder": [
+    "notifications-dashboard",
+    "import-type",
+    "country-of-origin",
+    "origin-of-import",
+    "search-commodity",
+    "commodity-basic-description",
+    "about-the-consignment",
+    "notification-hub",
+    "commodity-extended-description",
+    "commodity-additional-details",
+    "accompanying-documents",
+    "document-upload",
+    "traders-addresses",
+    "search-existing-consignor",
+    "consignor-creation",
+    "consignor-confirmation",
+    "search-existing-consignee",
+    "consignee-creation",
+    "consignee-confirmation",
+    "transport-details",
+    "goods-movement-services",
+    "contact-details",
+    "nominated-contacts",
+    "contact-address",
+    "branch-address-creation",
+    "branch-address-confirmation",
+    "review-notification",
+    "declaration",
+    "confirmation"
+  ],
+  "pages": [
+    {
+      "slug": "notifications-dashboard",
+      "name": "Notifications dashboard",
+      "order": 0,
+      "urlPattern": "/notification/vnet/protected/notifications",
+      "conditional": "always (journey entry point; also hosts search, NEW-status check, copy-as-new and amend/delete lifecycle actions on result rows)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 11, "note": "click 'Create a new notification' from the dashboard" },
+        { "hash": "566993a8e644d92e502bbb170ae3a5122bf5053f", "actionId": 122, "note": "dashboard keyword search + NEW status verification on result row" },
+        { "hash": "54f17cd31397fff10a0ce2b4458c726fdde193e0", "actionId": 113, "note": "copy-as-new-<ref> button on a dashboard result row (clone lifecycle)" }
+      ]
+    },
+    {
+      "slug": "import-type",
+      "name": "Import notification type",
+      "order": 1,
+      "urlPattern": "/notification/.../import-notification-type",
+      "conditional": "always; radio 'High risk food and feed of non-animal origin' is what selects the CHED-D variant",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 10, "note": "check radio 'High risk food and feed of non-animal origin'" },
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 12, "note": "check CHED-D import type radio" }
+      ]
+    },
+    {
+      "slug": "country-of-origin",
+      "name": "Country of origin",
+      "order": 2,
+      "urlPattern": "/notification/.../country-of-origin",
+      "conditional": "always",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 14, "note": "select 'Country of origin' dropdown" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 12, "note": "select country of origin (value AF / Afghanistan)" }
+      ]
+    },
+    {
+      "slug": "origin-of-import",
+      "name": "Origin of the import",
+      "order": 3,
+      "urlPattern": "/notification/.../origin-of-import",
+      "conditional": "always; single 'Save and continue' interstitial (no user input observed in traces)",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 14, "note": "Save and continue past origin-of-import interstitial" },
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 16, "note": "Save and continue past origin-of-import" }
+      ]
+    },
+    {
+      "slug": "search-commodity",
+      "name": "Search commodities (enter commodity code)",
+      "order": 4,
+      "urlPattern": "/notification/.../commodity-search",
+      "conditional": "always",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 17, "note": "fill 'Enter commodity code' (10064000)" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 16, "note": "click Search for commodity code" }
+      ]
+    },
+    {
+      "slug": "commodity-basic-description",
+      "name": "Commodity basic description",
+      "order": 5,
+      "urlPattern": "/notification/.../commodity-basic-description",
+      "conditional": "always; Yes/No — 'No' (single commodity) taken in all traces; 'Yes' branch not exercised",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 19, "note": "check 'No' on commodity basic description" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 17, "note": "check 'No'" }
+      ]
+    },
+    {
+      "slug": "about-the-consignment",
+      "name": "About the consignment (purpose)",
+      "order": 6,
+      "urlPattern": "/notification/.../purpose",
+      "conditional": "always; 'Internal market' shows only the radio, 'Non-internal market' additionally reveals Point of exit + exit date/time fields on the same page",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 20, "note": "Non-internal market variant: fill 'Point of exit' (extra fields on this page)" },
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 21, "note": "check 'Internal market' radio (default variant)" }
+      ]
+    },
+    {
+      "slug": "notification-hub",
+      "name": "Notification hub (task list)",
+      "order": 7,
+      "urlPattern": "/notification/.../hub",
+      "conditional": "always; task-list hub returned to between commodity/address sub-journeys (spoke links: Commodity, Add a consignor, Add a consignee)",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 27, "note": "click 'Commodity' task link from the hub" },
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 23, "note": "click 'Commodity' link from hub" }
+      ]
+    },
+    {
+      "slug": "commodity-extended-description",
+      "name": "Commodity details (weight, packages, gross weight)",
+      "order": 8,
+      "urlPattern": "/notification/.../commodity-details",
+      "conditional": "always",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 26, "note": "select package type in row 1" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 30, "note": "select package type (Bag)" }
+      ]
+    },
+    {
+      "slug": "commodity-additional-details",
+      "name": "Commodity additional details (foodstuff/feedingstuff and storage temperature)",
+      "order": 9,
+      "urlPattern": "/notification/.../commodity-additional-details",
+      "conditional": "always; Feedingstuff/Foodstuff and Ambient/Chilled/Frozen radios",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 30, "note": "check 'Ambient' storage temperature" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 34, "note": "check 'Ambient' (after 'Feedingstuff')" }
+      ]
+    },
+    {
+      "slug": "accompanying-documents",
+      "name": "Accompanying documents",
+      "order": 10,
+      "urlPattern": "/notification/.../accompanying-documents",
+      "conditional": "always; document type + reference + document date, then 'Add attachment' opens the upload sub-page",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 33, "note": "fill 'Document reference'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 36, "note": "select 'Document type' (Health certificate)" }
+      ]
+    },
+    {
+      "slug": "document-upload",
+      "name": "Document upload",
+      "order": 11,
+      "urlPattern": "/notification/.../document-upload",
+      "conditional": "shown when adding an attachment to an accompanying document; sets the file then 'Next' returns to accompanying-documents",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 38, "note": "set input files on the file upload" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 42, "note": "set input files (document upload)" }
+      ]
+    },
+    {
+      "slug": "traders-addresses",
+      "name": "Traders addresses (consignor, consignee, importer and place of destination)",
+      "order": 12,
+      "urlPattern": "/notification/.../addresses",
+      "conditional": "always; hub page re-entered for consignor, consignee, then importer + place of destination populated inline (#populate-importer, #populate-place-of-destination)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 67, "note": "click #populate-importer on the addresses page" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 71, "note": "populate importer (copy from account)" }
+      ]
+    },
+    {
+      "slug": "search-existing-consignor",
+      "name": "Search existing consignor or exporter",
+      "order": 13,
+      "urlPattern": "/notification/.../consignor/search",
+      "conditional": "shown from the 'Add a consignor or exporter' link; can pick an existing party or 'Create a new consignor or exporter'",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 42, "note": "click 'Create a new consignor or exporter'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 46, "note": "click 'Create a new consignor or exporter'" }
+      ]
+    },
+    {
+      "slug": "consignor-creation",
+      "name": "Create consignor or exporter",
+      "order": 14,
+      "urlPattern": "/notification/.../consignor/create",
+      "conditional": "shown when creating a new consignor; full address form (name, address lines, city, postcode, phone, country, email)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 47, "note": "fill 'City or town' on consignor form" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 48, "note": "fill 'Address line 1' on consignor form" }
+      ]
+    },
+    {
+      "slug": "consignor-confirmation",
+      "name": "Consignor confirmation (add to notification)",
+      "order": 15,
+      "urlPattern": "/notification/.../consignor/confirm",
+      "conditional": "confirmation summary of the created consignor; 'Add to notification' attaches it",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 53, "note": "click 'Add to notification' for consignor" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 57, "note": "click 'Add to notification'" }
+      ]
+    },
+    {
+      "slug": "search-existing-consignee",
+      "name": "Search existing consignee",
+      "order": 16,
+      "urlPattern": "/notification/.../consignee/search",
+      "conditional": "shown from the 'Add a consignee' link; existing party or 'Create a new consignee'",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 55, "note": "click 'Create a new consignee'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 59, "note": "click 'Create a new consignee'" }
+      ]
+    },
+    {
+      "slug": "consignee-creation",
+      "name": "Create consignee",
+      "order": 17,
+      "urlPattern": "/notification/.../consignee/create",
+      "conditional": "shown when creating a new consignee; full address form ('Consignee name' + address block)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 60, "note": "fill 'City or town' on consignee form" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 61, "note": "fill 'Address line 1' on consignee form" }
+      ]
+    },
+    {
+      "slug": "consignee-confirmation",
+      "name": "Consignee confirmation (add to notification)",
+      "order": 18,
+      "urlPattern": "/notification/.../consignee/confirm",
+      "conditional": "confirmation summary of the created consignee; 'Add to notification' attaches it",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 66, "note": "click 'Add to notification' for consignee" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 70, "note": "click 'Add to notification'" }
+      ]
+    },
+    {
+      "slug": "transport-details",
+      "name": "Transport to the port of entry",
+      "order": 19,
+      "urlPattern": "/notification/.../transport",
+      "conditional": "always; port of entry (autocomplete), means of transport, transport ID + document reference, and arrival date/time. Arrival date must be within 5 days past to 120 days future (validation error state exercised).",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 74, "note": "fill 'Transport identification'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 77, "note": "select means of transport / port autocomplete + arrival date fields" },
+        { "hash": "e95111d9f2449732784429eceebefcbade588d35", "actionId": 230, "note": "ERROR STATE: arrival date >5 days past shows 'You cannot enter a date more than 5 days in the past or 120 days in the future'" }
+      ]
+    },
+    {
+      "slug": "goods-movement-services",
+      "name": "Goods movement services (Common Transit Convention / transport service)",
+      "order": 20,
+      "urlPattern": "/notification/.../goods-movement-services",
+      "conditional": "always; 'Are you using the Common Transit Convention?' + 'Will the transport use the [GVMS/CHEF] service?'. Answering the Common User Charge branch here triggers the downstream CUC billing pages.",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 82, "note": "check 'No' to Common Transit Convention" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 87, "note": "check 'No' to 'Will the transport use the service'" }
+      ]
+    },
+    {
+      "slug": "contact-details",
+      "name": "Contact details",
+      "order": 21,
+      "urlPattern": "/notification/.../contact-details",
+      "conditional": "always; pre-populated in traces (only 'Save and continue' observed)",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 89, "note": "Save and continue past contact details" }
+      ]
+    },
+    {
+      "slug": "nominated-contacts",
+      "name": "Nominated contacts (optional)",
+      "order": 22,
+      "urlPattern": "/notification/.../nominated-contacts",
+      "conditional": "always; optional — traces skip through with 'Save and continue'",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 90, "note": "Save and continue past nominated contacts" }
+      ]
+    },
+    {
+      "slug": "contact-address",
+      "name": "Contact address for consignment (branch address entry)",
+      "order": 23,
+      "urlPattern": "/notification/.../contact-address",
+      "conditional": "always; entry page offering 'add a new branch address' (or pick an existing one)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 87, "note": "click 'add a new branch address'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 91, "note": "click 'add a new branch address'" }
+      ]
+    },
+    {
+      "slug": "branch-address-creation",
+      "name": "Create branch address",
+      "order": 24,
+      "urlPattern": "/notification/.../branch-address/create",
+      "conditional": "shown when creating a new branch address; full address form ('Branch address name' + address block)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 90, "note": "fill 'City or town' on branch address form" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 93, "note": "fill 'Address line 1' on branch address form" }
+      ]
+    },
+    {
+      "slug": "branch-address-confirmation",
+      "name": "Branch address confirmation (return to notification)",
+      "order": 25,
+      "urlPattern": "/notification/.../branch-address/confirm",
+      "conditional": "confirmation of the saved branch address; 'Return to notification' then re-lands on contact-address which is saved through",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 98, "note": "click 'Return to notification'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 102, "note": "click 'Return to notification'" }
+      ]
+    },
+    {
+      "slug": "review-notification",
+      "name": "Review your notification",
+      "order": 26,
+      "urlPattern": "/notification/.../review",
+      "conditional": "always; summary of all entered data before declaration",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 99, "note": "Save and continue from review" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 104, "note": "Save and continue from review" }
+      ]
+    },
+    {
+      "slug": "declaration",
+      "name": "Declaration (submit notification)",
+      "order": 27,
+      "urlPattern": "/notification/.../declaration",
+      "conditional": "always; declaration then 'Submit notification'",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 101, "note": "click 'Submit notification'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 105, "note": "click 'Submit notification'" }
+      ]
+    },
+    {
+      "slug": "confirmation",
+      "name": "Import notification sent (confirmation with CHED reference)",
+      "order": 28,
+      "urlPattern": "/notification/.../confirmation",
+      "conditional": "always; shows the generated CHED reference (CHEDD.GB.YYYY.NNNNNNN) in #reference-number",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 102, "note": "read #reference-number (CHED-D reference generated)" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 110, "note": "assert #reference-number contains CHEDD.GB.2026.1525931" }
+      ]
+    },
+
+    {
+      "slug": "cuc-confirm-billing-details",
+      "name": "Confirm billing details (Common User Charge)",
+      "order": -1,
+      "urlPattern": "/notification/.../billing",
+      "conditional": "CUC (Common User Charge) notifications only; slots between branch-address and review. Summary with 'Change address' / 'Change email' links + Save and continue.",
+      "evidence": [
+        { "hash": "566993a8e644d92e502bbb170ae3a5122bf5053f", "actionId": 101, "note": "click #confirm-billing-address (change billing address)" },
+        { "hash": "1d9ca3928f909fac1df1d00383ad98ace9a51ea0", "actionId": 99, "note": "enter CUC billing address flow" }
+      ]
+    },
+    {
+      "slug": "cuc-find-an-address",
+      "name": "Find billing address (postcode lookup and select)",
+      "order": -1,
+      "urlPattern": "/notification/.../billing/find-address",
+      "conditional": "CUC only; enter postcode, 'Find address', then select from the address dropdown and Continue",
+      "evidence": [
+        { "hash": "566993a8e644d92e502bbb170ae3a5122bf5053f", "actionId": 102, "note": "fill 'Postcode' then Find address" },
+        { "hash": "566993a8e644d92e502bbb170ae3a5122bf5053f", "actionId": 104, "note": "select the billing address from the results dropdown" }
+      ]
+    },
+    {
+      "slug": "cuc-billing-contact-details",
+      "name": "Billing contact details (email and phone)",
+      "order": -1,
+      "urlPattern": "/notification/.../billing/contact",
+      "conditional": "CUC only; billing contact email + phone number",
+      "evidence": [
+        { "hash": "566993a8e644d92e502bbb170ae3a5122bf5053f", "actionId": 107, "note": "fill billing 'Email address'" },
+        { "hash": "1d9ca3928f909fac1df1d00383ad98ace9a51ea0", "actionId": 107, "note": "CUC billing contact details entry" }
+      ]
+    },
+
+    {
+      "slug": "decision-notifications-search",
+      "name": "Assess consignments / BIP notifications search (inspector)",
+      "order": -1,
+      "urlPattern": "/decision/vnet/protected/bip-notifications",
+      "conditional": "post-submission, inspector (decision) app; search by keyword or CHED number then open the CHED",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 110, "note": "fill 'Keywords or CHED number' and search" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 115, "note": "search for the submitted CHED-D" }
+      ]
+    },
+    {
+      "slug": "decision-hub",
+      "name": "Decision hub (consignment overview / task list)",
+      "order": -1,
+      "urlPattern": "/decision/.../consignment",
+      "conditional": "post-submission, inspector; overview with Checks / Laboratory tests / Decision spoke links",
+      "evidence": [
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 120, "note": "click 'Checks' from the decision hub" },
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 115, "note": "click 'Checks' link" }
+      ]
+    },
+    {
+      "slug": "consignment-checks",
+      "name": "Consignment checks (documentary / identity / physical)",
+      "order": -1,
+      "urlPattern": "/decision/.../checks",
+      "conditional": "post-submission, inspector; documentary, identity and physical check checkboxes with satisfactory/not-satisfactory outcomes",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 118, "note": "check identity check executed" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 121, "note": "check #documentaryCheck1" }
+      ]
+    },
+    {
+      "slug": "lab-tests-required",
+      "name": "Laboratory tests required (Yes/No)",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests",
+      "conditional": "post-submission, inspector; 'Yes' opens the lab-test sub-journey",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 123, "note": "check 'Yes' to laboratory tests required" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 128, "note": "check 'Yes'" }
+      ]
+    },
+    {
+      "slug": "lab-tests-commodity-select",
+      "name": "Select commodity to test",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests/select-commodity",
+      "conditional": "post-submission, inspector; pick which commodity line to sample",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 125, "note": "click 'Select' for the commodity to test" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 130, "note": "click 'Select'" }
+      ]
+    },
+    {
+      "slug": "lab-tests-choose-test",
+      "name": "Choose laboratory test (search and select)",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests/choose-test",
+      "conditional": "post-submission, inspector; search the test catalogue (e.g. MACROLIDES) and choose a test",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 126, "note": "search '.MACROLIDES' in the test catalogue" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 131, "note": "search lab test then choose result 0" }
+      ]
+    },
+    {
+      "slug": "lab-tests-sample-details",
+      "name": "Laboratory sample details",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests/sample",
+      "conditional": "post-submission, inspector; laboratory, sample reference, number of samples, sample type, storage temperature",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 130, "note": "fill 'Sample reference number'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 134, "note": "select 'Laboratory'" }
+      ]
+    },
+    {
+      "slug": "record-lab-test-information",
+      "name": "Record laboratory test information (results and outcome)",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests/record",
+      "conditional": "post-submission, inspector; sample use-by date, released date, test method, results, Satisfactory/Not satisfactory",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 142, "note": "fill 'Laboratory test method'" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 147, "note": "fill 'Laboratory test method'" }
+      ]
+    },
+    {
+      "slug": "lab-tests-review",
+      "name": "Laboratory tests review",
+      "order": -1,
+      "urlPattern": "/decision/.../laboratory-tests/review",
+      "conditional": "post-submission, inspector; review recorded tests then 'Save and return'",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 146, "note": "click 'Save and return' from lab tests review" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 151, "note": "click 'Save and return'" }
+      ]
+    },
+    {
+      "slug": "decision-outcome",
+      "name": "Record decision outcome (date/time and submit)",
+      "order": -1,
+      "urlPattern": "/decision/.../decision",
+      "conditional": "post-submission, inspector; decision date/time then 'Submit decision' (Acceptable / Not acceptable outcomes)",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 149, "note": "fill decision date 'Day' before submit" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 154, "note": "fill outcome decision 'Day'" }
+      ]
+    },
+    {
+      "slug": "decision-confirmation",
+      "name": "Decision submitted confirmation (view or print CHED)",
+      "order": -1,
+      "urlPattern": "/decision/.../confirmation",
+      "conditional": "post-submission, inspector; confirmation with 'View or print CHED' link",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 155, "note": "assert #bip-confirmation-page content after submit decision" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 160, "note": "assert #decision-outcome then 'View or print CHED'" }
+      ]
+    },
+    {
+      "slug": "record-decision-status",
+      "name": "Record decision — status verification",
+      "order": -1,
+      "urlPattern": "/decision/.../bip-notifications",
+      "conditional": "post-submission, inspector; re-search and open the CHED to verify #Status-Label reflects the recorded decision",
+      "evidence": [
+        { "hash": "eddc6f6ec852d692c454d319ade1607727a84a4f", "actionId": 161, "note": "fill 'Keywords or CHED number' to re-open and verify status" },
+        { "hash": "b3742f19b6eea5d9285f5c8739571523a0a13ec1", "actionId": 166, "note": "search then assert #Status-Label" }
+      ]
+    },
+    {
+      "slug": "inspector-attachments-upload",
+      "name": "Inspector attachments upload",
+      "order": -1,
+      "urlPattern": "/decision/.../attachments",
+      "conditional": "post-submission, inspector document feature; document type + reference + date + file, with valid/invalid file-type and size validation",
+      "evidence": [
+        { "hash": "0b4dcd0dec159e7c94583f4737ecaa8c4949acb9", "actionId": 115, "note": "fill 'Document reference' (INS-UPLOAD) on inspector attachments" },
+        { "hash": "0b4dcd0dec159e7c94583f4737ecaa8c4949acb9", "actionId": 119, "note": "click 'Add attachment' then set file" }
+      ]
+    }
+  ],
+  "notes": "PAGE NAMES + INTENDED ORDER are authoritative from ipaffs-qa-automation (accessibility spec walks every create page in order; workflow encodes the same). Where a trace's pageGuess disagreed, the spec name won for naming/order and the trace confirmed what rendered. LINEAR CREATE JOURNEY = orders 0-28 (journeyOrder). VARIANTS: (a) Non-internal market adds Point-of-exit + exit date/time fields to about-the-consignment (order 6), same page; (b) CUC (Common User Charge) inserts the three cuc-* billing pages between branch-address-confirmation and review-notification (order -1, evidence 566993a8 + 1d9ca392); (c) copy-as-new clones an existing CHED from a notifications-dashboard result row back into the create journey (evidence 54f17c action 113). The importer + place of destination are NOT separate pages — they are populated inline on traders-addresses (order 12). ERROR STATES: transport-details arrival-date window (5 days past / 120 days future) is the only field-validation error captured in the CHED-D subset (evidence e95111 action 230; sibling f30f7ca covers the 120-days-future bound). DECISION/INSPECTOR side (orders -1) is a separate app (/decision/...) reached only after submission; included for completeness but out of scope for the new CHED-D create app. GAPS (traces are a lower bound): amend-from-hub (index hash e2fa4486) and delete-notification (index hash dbcdf0d8) lifecycle journeys are in the corpus but were NOT among the 22 extracted timelines, so no actionId evidence is cited — snapshot them separately if their pages are needed. The 'Yes' branch of commodity-basic-description (add more commodity detail) and multi-commodity / split-consignment variants were never exercised in this subset."
+}

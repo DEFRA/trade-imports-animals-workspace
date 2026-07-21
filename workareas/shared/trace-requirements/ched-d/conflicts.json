@@ -1,0 +1,360 @@
+{
+  "journey": "ched-d",
+  "description": "Conflict register for the CHED-D journey spec. Every disagreement between rendered-trace, legacy IPAFFS source, test-assertion and page-object/workflow-config is recorded here, the precedence winner adopted into journey-spec.json, and the disagreement kept as the audit trail of a mapping decision. A conflict is not a failure. needsHuman:true only where precedence genuinely cannot settle it. REGENERATED 2026-07-18 with two new evidence sources folded in: (1) authorised legacy IPAFFS source - which RESOLVES several previously-human-flagged conflicts (c-006, c-014, c-017) and REFINES others (c-002/003/005/007/009/011/012/018/019/020/030/031), and (2) the delegated-authority (DoA) model, which contributes c-043/c-044. New legacy-vs-rendered and frontend-vs-model disagreements are c-037..c-042.",
+  "precedenceOrder": ["confirmed (rendered-trace)", "legacy (authoritative IPAFFS source)", "inferred (test-assertion / page-object / workflow-config)"],
+  "legacyNote": "Legacy source is now AUTHORISED. Precedence for the SAME fact: confirmed (rendered) > legacy (IPAFFS source) > inferred (tests). Where legacy render-conditions or copy DISAGREE with what a trace actually rendered, the rendered value is kept at 'confirmed' and the disagreement is a finding (IPAFFS source can lag what it serves) - see c-037, c-041, and the confirmation/region-code cases.",
+  "counts": {"total": 39, "needsHuman": 26, "settled": 13, "flippedHumanToSettledByLegacy": ["c-006", "c-014", "c-017"], "newThisRun": ["c-037", "c-038", "c-039", "c-040", "c-041", "c-042", "c-043", "c-044"]},
+  "conflicts": [
+    {
+      "id": "c-001",
+      "topic": "origin-country rendered on two consecutive pages; page object adds 3 phantom radio groups",
+      "pageSlug": "origin-of-import",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The origin stage renders as TWO pages: country-of-origin (order 2) then origin-of-import (order 3) which REPEATS its origin-country select and adds region-code/consigned-country/local-reference-number. The QA OriginOfImportPage page object additionally models three radio groups (conform-uk-regulations / health-certificate / transport-details-required) that render on NEITHER CHED-D trace page.",
+      "ruling": "rendered-trace wins: two origin-country selects render (page-3 is a restatement, one obligation). LEGACY PARTIAL RESOLUTION of the phantom radios: conform-uk-regulations is CVEDP-only (consignmentCountries.html:122 {{#eq countryData.type 'CVEDP'}}) and transport-details-required is CVEDP-only (consignment_countries.js:165 showTransportDetailsRequired = type===CVEDP) - both legacy-confirmed cross-type leakage, correctly excluded. The health-certificate radio remains unexplained by legacy.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-002",
+      "topic": "origin-country required-ness",
+      "pageSlug": "country-of-origin",
+      "sources": ["rendered-trace", "legacy", "test-assertion"],
+      "detail": "The HTML select carries no 'required' attribute (rendered required=false). The workflow selects a country on every CHED-D journey.",
+      "ruling": "required:true adopted. LEGACY corroborates via server-side handling; the workflow drives it on every journey (ched-d-workflows.ts:200). Settled.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-003",
+      "topic": "import-type radio HTML required=false vs mandatory; no-selection error copy",
+      "pageSlug": "import-type",
+      "sources": ["rendered-trace", "legacy", "workflow-config"],
+      "detail": "The import-type radios render with HTML required=false, but submission is gated on a choice server-side.",
+      "ruling": "Mandatory. LEGACY RESOLVES: Joi.string().valid(CVEDA,CVEDP,CED,CHEDPP).required() (consignment_importing.js:14); the previously-gap no-selection error copy is now legacy-confirmed 'Select the type of import' (validation/messages/en.js:94). Rendered reality never disagreed (happy-path traces). Confirm the rebuild keeps a shared four-way import-type entry point at all (it may ship CHED-D-only, dropping this page).",
+      "needsHuman": false
+    },
+    {
+      "id": "c-005",
+      "topic": "document-type option label 'Laboratory sampling results' vs domain 'Laboratory Sampling results for Aflatoxin'",
+      "pageSlug": "accompanying-documents",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The CHED-D dropdown renders 'Laboratory sampling results' for value laboratorySamplingResultsForAflatoxin, whereas the QA domain map (document-type.ts:15) labels the same value 'Laboratory Sampling results for Aflatoxin (Reg 2019/1793)'.",
+      "ruling": "rendered-trace wins: label is 'Laboratory sampling results' for CHED-D. LEGACY narrows it: the option set is data-driven from documentTypeMap(notification) keys (documents_validation.js:14,47), so the 14 rendered options ARE the authoritative CHED-D allow-list (the 27-entry domain vocab is a cross-CHED superset). Whether the domain map's longer label is stale or CHED-D deliberately re-labels is still a human call.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-006",
+      "topic": "package-type option set (25 rendered vs 34 domain)",
+      "pageSlug": "commodity-extended-description",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The CHED-D package-type dropdown rendered 25 options; the QA domain packageType dictionary lists 34; the shared template holds 27.",
+      "ruling": "RESOLVED BY LEGACY: 25 is canonical for CHED-D. isCed excludes 'Balloon Protected' and 'Pallet Box' from the shared list; the 34-entry QA domain is a cross-CHED superset. The rebuild should source the CHED-D-filtered 25-option list. No longer needs a human ruling.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-007",
+      "topic": "commodity weight/package fields required-ness",
+      "pageSlug": "commodity-extended-description",
+      "sources": ["rendered-trace", "legacy", "workflow-config"],
+      "detail": "net-weight / num-packages / package-type / gross-weight all render as text with HTML required=false, but every CHED-D journey fills all four.",
+      "ruling": "required:true. LEGACY upgrades from inferred to legacy-required (@NotNull / key-data-pair, NotificationSingleCedValidation group). NUANCE for Reconcile: the gross>=net cross-field check (@MinCommoditiesGrossWeight) OMITS the SingleCed group, so it may not fire on the new single-commodity CHED-D journey. Exact numeric bounds + rendered error wording remain a gap.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-008",
+      "topic": "country value-space (ISO alpha-2 + GB subdivisions; no 'United Kingdom')",
+      "pageSlug": "consignor-creation",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "Country selects mix ISO alpha-2 (AF) with GB-subdivision codes (GB-ENG/GB-NIR/GB-SCT/GB-WLS) for the four home nations; no single 'United Kingdom' option.",
+      "ruling": "rendered-trace wins: preserve the four-nation split. Reference data from a countries service; the value-space decision (alpha-2 + GB subdivisions vs ISO 3166-2) is a human/product call.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-009",
+      "topic": "two distinct country lists (219 origin vs 254 consigned/address)",
+      "pageSlug": "country-of-origin",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "origin-country renders 219 options; consigned-country and the address country render 254; the domain country.ts enumerates 253.",
+      "ruling": "rendered-trace wins: source TWO distinct lists. LEGACY RESOLVES the de-list mechanism: consignment_countries.js:38 filters origin countries to !country.eu for type===CED (HIGH_RISK_TYPES=[CVEDA,CVEDP,CED]). Remaining human nuance: the on-page copy says 'EU and EFTA' whereas the legacy filter is !country.eu - confirm the exact EFTA handling and the full-vs-third-country reference-data sources.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-010",
+      "topic": "about-the-consignment purpose options (2 rendered vs 8 in page object)",
+      "pageSlug": "about-the-consignment",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The CHED-D purpose page renders only Internal market / Non-internal market. The shared page object exposes 6 further purpose radios (Re-entry, Human consumption, Animal feedingstuff, Transfer of ownership - Rescue, Transit, Temporary admission horses).",
+      "ruling": "rendered-trace wins: 2 options for CHED-D. LEGACY confirms only two 2-radio CHED-D variants exist (transit + tranship, see c-042); the 6 extra page-object radios are cross-type leakage, excluded.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-011",
+      "topic": "point of exit: free-text vs BCP dropdown - now known to be feature-flag-driven",
+      "pageSlug": "about-the-consignment",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "For CHED-D, Non-internal market reveals a FREE-TEXT 'Point of exit' box (confirmed by trace). The shared page object also exposes exit-BCP dropdowns.",
+      "ruling": "MATERIALLY REVISED BY LEGACY. The BCP dropdown is NOT mere leakage - it is the OTHER feature-flag variant. about-the-consignment (page-5) serves one of two templates by the 'enableCheddLandbridge' flag: flag-ON = consignmentPurposeTransit.html (free-text point-of-exit, minLength 1 maxLength 255 - the observed variant); flag-OFF = consignmentPurposeTranship.html (radios 'For internal market'/'For transfer to' + an 'Exit Border Control Post' select #bcp-transfer-to, NO point-of-exit). Rendered wins for the observed (flag-ON) state; but the rebuild MUST decide which variant/flag state is canonical - both are real CHED-D surfaces. See c-042.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-012",
+      "topic": "transport port-of-entry label + variant controls",
+      "pageSlug": "transport-details",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "CHED-D renders 'Port of entry' (accessible-autocomplete). The shared page object exposes 'BCP or Port of entry', Entry border control post, Inspection premises, Means of transport after BCP, estimated-journey-time Hours - none rendered for CHED-D.",
+      "ruling": "rendered-trace wins: single-leg 'Port of entry'. LEGACY confirms the control-point/inspection-premise selection is CHEDPP-only (POINT_OF_ENTRY_CONTROL_POINT_CODE added only for CHEDPP, transport_before_bip.js validation:138-142) - so CHED-D has no control-point sub-select, corroborating the exclusion. Whether CHED-D ever has a two-leg (after-BCP) transport capture is still for a human.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-013",
+      "topic": "transport road-trailers/containers conditional controls absent from CHED-D page object",
+      "pageSlug": "transport-details",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The conditional container-number/seal-number/official-seal controls render in the trace (behind 'Yes') but are NOT in the CHED-D page object and are never exercised (happy path leaves 'No').",
+      "ruling": "rendered-trace wins: the controls exist on the CHED-D page. Whether they are genuinely part of the CHED-D requirement or shared markup only completed for other types is for a human.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-014",
+      "topic": "CTC question 3-option vs 2-option variant",
+      "pageSlug": "goods-movement-services",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The CHED-D trace renders a 3-option CTC group (Yes - add MRN now / Yes - add MRN later / No). The shared page object also carries a 2-option Yes/No id-based variant.",
+      "ruling": "RESOLVED BY LEGACY: the 3-option group is the CHED-D goods-movement-services page. The 2-option variant belongs to a SEPARATE page, add-ncts-mrn (addNctsMrn.html: 'Add MRN' YES pre-checked / 'MRN not needed - consignment no longer using CTC' NO), which reuses the same ctc-question control name - it is not a second rendering of this page. The CTC legend copy also has an isChedpp variant; CED shows 'between countries' (goods_movement_services.js:69). No human ruling needed.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-015",
+      "topic": "commodity-basic-description page <title> vs H1",
+      "pageSlug": "commodity-basic-description",
+      "sources": ["rendered-trace"],
+      "detail": "The page <title> is 'Select species of commodity' but the H1 is 'Commodity'.",
+      "ruling": "rendered H1 wins; the title is a legacy bug the rebuild must not copy.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-016",
+      "topic": "origin-of-import page <title> vs H1",
+      "pageSlug": "origin-of-import",
+      "sources": ["rendered-trace"],
+      "detail": "document.title reads 'Add a reference number for this consignment' while the H1 is 'Origin of the import'.",
+      "ruling": "rendered H1 wins; the tab title mismatch is a legacy bug, do not copy.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-017",
+      "topic": "consignor validation messages sourced from legacy Joi (previously out of scope)",
+      "pageSlug": "consignor-creation",
+      "sources": ["legacy"],
+      "detail": "The consignor-creation spec carries 16 field validation messages (required + max-length + email-format) lifted from the legacy Joi schema economic_operator.js. Under the OLD ground-rules, legacy source was excluded, so these were carried at 'inferred' only and flagged.",
+      "ruling": "RESOLVED BY THE PROVENANCE SHIFT: legacy source is now AUTHORISED. The 16 messages are promoted to 'legacy' confidence with file:line evidence - a legitimate, trustworthy source for validation copy. The out-of-scope objection is withdrawn. They remain unconfirmed against a rendered CHED-D error trace, but that is now the normal state of legacy copy, not a defect. No human ruling needed.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-018",
+      "topic": "address-party telephone/email required-ness (sibling forms disagreed)",
+      "pageSlug": "consignee-creation",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "The same reusable address form renders for consignor/consignee/branch. The earlier specs disagreed (required:true vs unknown vs gap). HTML required=false on all.",
+      "ruling": "LEGACY RESOLVES THE FRONTEND BEHAVIOUR, opening a deeper question: the frontend Joi validator REQUIRES telephone AND email (economic_operator.js:44-55), but the Java model marks NEITHER @NotNull for any group - the address model requires only addressLine1/city/countryISOCode and ONLY for the CVEDA (CHED-A) group; there is no CED @NotNull group on the address at all. So for CHED-D these fields are mandatory at the frontend only. Adopted required:true (frontend authority). The frontend-vs-model divergence itself is escalated as c-038.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-019",
+      "topic": "declaration acknowledgement checkbox (CHED-D none vs CHED-PP required)",
+      "pageSlug": "declaration",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "CHED-D's declaration has NO checkbox - consent is implicit in clicking 'Submit notification'. The shared DeclarationPage exposes an 'I/We have read and understood' checkbox ticked for CHED-PP.",
+      "ruling": "rendered-trace wins: no checkbox for CHED-D. LEGACY CONFIRMS: the declaration POST validator runs only 'if type===CHEDPP || isChedA' (declaration.js:38-46) - for CED it is never invoked, so there is genuinely no field-level validation and no checkbox. Note legacy also surfaces a conditional CUC declaration paragraph ('As my consignment is in scope of the common user charge...') that DOES apply to a billable CHED-D but was never rendered (both traces non-billable). Design call remains: add an explicit acknowledgement checkbox to CHED-D for consistency?",
+      "needsHuman": true
+    },
+    {
+      "id": "c-020",
+      "topic": "confirmation page no H1 + risk-outcome variants",
+      "pageSlug": "confirmation",
+      "sources": ["rendered-trace", "legacy", "page-object"],
+      "detail": "Both CHED-D traces render the panel--inspection-required variant, which drops the panel title so the page has NO H1. The shared page object implies four risk-outcome variants.",
+      "ruling": "rendered-trace documents the defect; the rebuild MUST always render an H1. LEGACY RESOLVES the variant set: the CHED-D confirmation route (chedd/confirmation.js:44-52) serves exactly THREE outcomes, now captured with full copy - (1) 'Required at <BCP>' inspection-required (OBSERVED), (2) 'Not required' inspection-not-required (legacy only), (3) 'Check GVMS' (legacy only). The page object's fourth string 'Go to place of destination' is DEAD code (ced_non_internal_market/notRiskAssessedConfirmation.html) NOT served for CHED-D. The missing-H1 is legacy-confirmed specific to the risk-assessed variants (the dead template DOES carry an H1); axe's default ruleset does not fail on a missing H1, so QA never caught it.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-021",
+      "topic": "nominated-contacts field name 'telephone' vs label 'Mobile number'",
+      "pageSlug": "nominated-contacts",
+      "sources": ["rendered-trace"],
+      "detail": "The HTML input name/id is 'telephone' but the visible column header/label is 'Mobile number'.",
+      "ruling": "Label wins for display ('Mobile number'). Confirm intended field semantics (mobile vs any phone).",
+      "needsHuman": false
+    },
+    {
+      "id": "c-022",
+      "topic": "contact-details field name 'telephone' vs label 'Mobile number'",
+      "pageSlug": "contact-details",
+      "sources": ["rendered-trace"],
+      "detail": "Same name/label mismatch as c-021 on the responsible-person contact-details page.",
+      "ruling": "Label wins for display ('Mobile number').",
+      "needsHuman": false
+    },
+    {
+      "id": "c-024",
+      "topic": "lab-tests-required 'Random' third option",
+      "pageSlug": "lab-tests-required",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The CHED-D trace renders only Yes/No. The shared LabTestsIntroPage exposes a third 'Random' radio driven only by CHED-A workflows.",
+      "ruling": "rendered-trace wins: Yes/No for CHED-D. Confirm whether the CHED-D page ever offers 'Random'.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-025",
+      "topic": "lab-tests-commodity-select control type (radio template default vs action-link)",
+      "pageSlug": "lab-tests-commodity-select",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "An earlier draft carried control='radio'. The rendered trace shows a per-row govuk-link 'Select' and no radio.",
+      "ruling": "rendered-trace + page-object agree: control is an action-link (selection == navigation). Resolved.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-029",
+      "topic": "record-lab-test-information 'Not interpretable' conclusion option",
+      "pageSlug": "record-lab-test-information",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The trace renders three conclusion radios (Satisfactory / Not satisfactory / Not interpretable). The page object exposes only the first two.",
+      "ruling": "rendered-trace wins: 3 options; the rebuild must support 'Not interpretable' (zero test coverage is a coverage gap, not absence).",
+      "needsHuman": false
+    },
+    {
+      "id": "c-030",
+      "topic": "inspector-upload accepted file types (guidance copy vs real allow-list)",
+      "pageSlug": "inspector-attachments-upload",
+      "sources": ["rendered-trace", "legacy", "test-assertion"],
+      "detail": "On-screen guidance names 'DOC, JPEG, PDF, PNG or XLS', but valid-upload tests successfully upload DOCX and XLSX too.",
+      "ruling": "RESOLVED BY LEGACY: the authoritative allow-list is {csv, doc, docx, jpg, jpeg, pdf, png, xlsx, xls, gif} (file-upload ValidationService.java:26-27); the reject message is 'The selected file must be a DOC, JPEG, PDF, PNG, XLS or GIF'. The on-page hint under-advertises (no GIF/CSV/DOCX/XLSX). Rendered on-page copy kept as confirmed; the rebuild must align advertised copy with the enforced allow-list. Same shared capability as c-031.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-031",
+      "topic": "accompanying-documents accepted file types (same DOCX/XLSX discrepancy)",
+      "pageSlug": "accompanying-documents",
+      "sources": ["rendered-trace", "legacy", "test-assertion"],
+      "detail": "The notifier accompanying-documents upload names only 'DOC ... or XLS' in the constraint hint, but tests upload DOCX successfully.",
+      "ruling": "RESOLVED BY LEGACY (shared capability with c-030): the enforced allow-list is {csv, doc, docx, jpg, jpeg, pdf, png, xlsx, xls, gif}; office-XML/CSV/GIF are accepted. Align the guidance copy. The three-way disagreement (hint vs reject message vs allow-list) is captured; the size-threshold copy discrepancy is c-041.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-032",
+      "topic": "dashboard results-row semantics (bespoke dt/dd grid vs page-object table addressing)",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "The trace rendered a bespoke notification-list dt/dd grid, but the QA page object addresses result rows via 'tbody tr' and cells via 'td'.",
+      "ruling": "rendered-trace wins: bespoke grid. Whether the markup is a true table or a CSS-grid faux-table is for a human. The rebuild should use govuk-table / summary-card either way.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-033",
+      "topic": "dashboard 'Yesterday' quick date-range",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["page-object"],
+      "detail": "The page object exposes a btnSearchByYesterday quick-range not observed in any CHED-D trace (traces show Today / Tomorrow / Next seven days / Clear).",
+      "ruling": "Recorded as inferred (traces are a lower bound). Confirm whether 'Yesterday' renders on the live dashboard.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-034",
+      "topic": "status filter option label vs backend value",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "Status filter options render display labels ('New', 'In Progress') but the page object selects by uppercase backend enum ('NEW', 'SUBMITTED'). Only a partial mapping is evidenced.",
+      "ruling": "Both retained: labels from rendered-trace, values from page-object. The full label->code mapping is a gap; the rebuild must not assume label==value.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-035",
+      "topic": "two different status vocabularies across the two dashboards",
+      "pageSlug": "record-decision-status",
+      "sources": ["rendered-trace"],
+      "detail": "The create-side notifications-dashboard status filter has 12 options; the decision-side record-decision-status filter has 11. Different apps, different vocabularies.",
+      "ruling": "Both real (separate IPAFFS apps). The notifier-facing rebuild should define its own status vocabulary rather than inherit either verbatim.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-036",
+      "topic": "document-upload primary button 'Next' vs 'Continue'",
+      "pageSlug": "document-upload",
+      "sources": ["rendered-trace", "page-object"],
+      "detail": "CHED-D renders the upload sub-page primary button as 'Next'; the shared page object matches /^(Next|Continue)$/ and also exposes 'Save and continue', so the label varies by context.",
+      "ruling": "rendered-trace wins for CHED-D: 'Next'. Legacy did not explain WHY the label varies between 'Next' and 'Continue'. Confirm a single standardised label for the rebuild.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-037",
+      "topic": "region-code fieldset: legacy template gates it OFF for CED, but the trace RENDERED it for CED",
+      "pageSlug": "origin-of-import",
+      "sources": ["rendered-trace", "legacy"],
+      "detail": "NEW (confirmed-vs-legacy disagreement). The current IPAFFS template gates the whole region-code question OFF for CED: consignmentCountries.html:40 wraps the fieldset in {{#if (not (eq type 'CHEDPP') (eq type 'CED'))}} (render only for types that are neither CHEDPP nor CED). Yet trace b3742f19 action 14 rendered region-code-option + region-code for a CED notification.",
+      "ruling": "rendered-trace wins: the region-code fields are KEPT as confirmed for CHED-D. The divergence means either (a) the traced app version predates the CED exclusion (IPAFFS has since moved to drop region-code for CHED-D), or (b) the two-arg 'not' helper does not evaluate as it reads. RECONCILE: decide whether CHED-D should carry a region-code question at all - the legacy trajectory appears to be removing it. This is exactly the case the precedence rule anticipates: IPAFFS source lagging/leading what it serves.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-038",
+      "topic": "frontend Joi mandatoriness EXCEEDS the backend CED model @NotNull (systemic)",
+      "pageSlug": "consignee-creation",
+      "sources": ["legacy"],
+      "detail": "NEW (frontend-vs-model divergence). For CHED-D (CED) the frontend Joi validators enforce more mandatory fields than the backend Java model validation groups do. Evidenced on: the address form (frontend requires telephone+email+line1+city+country; the model's only @NotNull group is CVEDA, none for CED - c-018), contact-details (frontend requires name and email-OR-telephone; no CED @NotNull - ContactDetails.java, responsible_person_contact_details.js), and accompanying-documents rows (frontend requires type+reference+date once a row is started; no CED @NotNull on AccompanyingDocument). Per-page CHED-D mandatoriness comes ENTIRELY from the shared frontend form.",
+      "ruling": "Both layers recorded. Adopted the FRONTEND (Joi) mandatoriness as the CHED-D requirement, because that is what the user actually experiences. But this is a genuine policy/architecture question for the rebuild: which layer is authoritative? A rebuild that validates only against the (looser) persisted model would drop mandatory fields the current UI enforces. modelGap: frontend-vs-model-mandatoriness-divergence.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-039",
+      "topic": "import-type overdue-debtor CHEDPP gating (legacy-surfaced policy)",
+      "pageSlug": "import-type",
+      "sources": ["legacy"],
+      "detail": "NEW (legacy-only, tangential to CHED-D). Legacy adds an overdue-debtor conditional: the CHEDPP radio option is rendered disabled with hint 'This option is not available' and CHEDPP POSTs are blocked for overdue debtors not in a DoA (common_util.js:58-72, consignment_importing.js:20-29). This gates the CHED-PP option only - the CED (CHED-D) option is never gated.",
+      "ruling": "Not a CHED-D requirement (CED is never gated). Recorded for completeness. RECONCILE: is the overdue-debtor payment policy in scope for the rebuild at all? A cross-type concern, not a CHED-D page requirement.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-040",
+      "topic": "transport-details error copy uses internal short labels differing from on-screen labels",
+      "pageSlug": "transport-details",
+      "sources": ["legacy", "rendered-trace"],
+      "detail": "NEW (copy reconcile). The legacy max-length error messages use internal short labels ('Identification', 'Document') that differ from the on-screen field labels ('Transport identification', 'Transport document reference').",
+      "ruling": "Rendered on-screen labels win for the field labels. The rebuild should decide its error copy and reuse the field label for consistency rather than the internal short label. A pure copy-alignment decision.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-041",
+      "topic": "file-upload size-threshold copy: hint says '1KB' but the code floor is 200 bytes",
+      "pageSlug": "accompanying-documents",
+      "sources": ["rendered-trace", "legacy"],
+      "detail": "NEW (copy-vs-code discrepancy). The confirmed on-page hint reads 'larger than 1KB'; the file-upload ValidationService rejects files < 200 bytes (TWO_HUNDRED_B), not 1KB (ValidationService.java:24-28,49-51). The >10MB upper bound matches the hint.",
+      "ruling": "Real code floor is 200 bytes; the advertised '1KB' is imprecise. Rendered copy kept as confirmed; align the advertised copy with the enforced 200-byte floor (or vice versa) in the rebuild. Same page/capability as c-031.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-042",
+      "topic": "about-the-consignment feature-flag variant (tranship: 'Exit Border Control Post' select, no point-of-exit)",
+      "pageSlug": "about-the-consignment",
+      "sources": ["legacy", "rendered-trace"],
+      "detail": "NEW (unobserved feature-flag variant). page-5 serves one of two templates by request.shouldRenderNonInternalMarket (from the 'enableCheddLandbridge' flag, routes.js:352,366). Flag-ON = transit (Internal/Non-internal market + free-text point-of-exit + leave date/time) - the ONLY variant either trace captured. Flag-OFF = tranship (consignmentPurposeTranship.html: radios 'For internal market'/'For transfer to', 'For transfer to' reveals an 'Exit Border Control Post' select #bcp-transfer-to, NO point-of-exit).",
+      "ruling": "rendered-trace documents the flag-ON transit variant only. The flag-OFF tranship variant is legacy-confirmed to exist but is unobserved and cross-page conditional. RECONCILE: which flag state is canonical for the rebuild? If tranship is in scope, the point-of-exit obligation becomes an Exit-BCP selection instead of free text - a materially different capture. Underpins the c-011 point-of-exit disagreement.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-043",
+      "topic": "DoA: org auto-population (CHED-PP) contradicts observed CHED-D hand-entry of traders",
+      "pageSlug": "traders-addresses",
+      "sources": ["legacy", "rendered-trace"],
+      "detail": "NEW (DoA). In the CHED-PP delegated route, Importer/Consignee/Contact AUTO-POPULATE from the owning organisation (POP-1; confirmed CHED-PP DoA traces 2c16ad65/e9b5e36b/545412266). Every CHED-D creation trace instead HAND-ENTERS consignor + consignee and sets Importer via 'Same as consignee'; the CHED-D contact-details page pre-populates from the signed-in account, not a delegated org.",
+      "ruling": "No contradiction of fact - these are different actor routes: org auto-population belongs to the delegated/registered-org route, which is CHEDPP-only; the plain CHED-D importer route hand-enters. POP-1 must NOT be carried into CHED-D as a confirmed CHED-D behaviour. GAP (G-5): whether a CHED-D created by a registered-ORG member (not the corpus's plain B2C importer) would auto-populate consignee/contact is untraced for CHED-D. The rebuild must decide whether CHED-D gets org auto-population.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-044",
+      "topic": "DoA: delegated-agent creation + Trade Partner badge are CHED-PP-only; does CHED-D need an on-behalf-of design?",
+      "pageSlug": "notifications-dashboard",
+      "sources": ["legacy"],
+      "detail": "NEW (DoA policy). Delegated-agent creation (the consignment-for -> consignment-organisation org selector) is gated to type===CHEDPP (consignment_for.js:33-39) and the Trade Partner dashboard badge requires type=='CHEDPP' AND agencyOrganisationId (notificationList.html:28). Neither surface exists or renders for CHED-D; no CHED-D consignment-for/consignment-organisation page specs exist because those pages provably do not render for CHED-D.",
+      "ruling": "Recorded as legacy fact: CHED-D has NO delegated-creation route and NEVER renders a Trade Partner badge (JB-6, AGT-1, BDG-1). It cannot be ported - it must be designed in if wanted. POLICY QUESTION (G-1): is CHEDPP-only a deliberate permanent boundary or an incomplete rollout? Decides whether the CHED-D rebuild needs an on-behalf-of design at all. If yes, the badge's type=='CHEDPP' literal + agencyOrganisationId plumbing must be generalised (G-4).",
+      "needsHuman": true
+    }
+  ]
+}

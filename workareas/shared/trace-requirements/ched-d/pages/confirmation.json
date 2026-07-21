@@ -1,0 +1,285 @@
+{
+  "slug": "confirmation",
+  "name": "Import notification sent (confirmation with CHED reference)",
+  "url": "/notification/.../confirmation",
+  "pageTitle": "Import notification sent - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "",
+  "bodyCopy": [
+    "Initial risk assessment",
+    "Inspection status",
+    "Required at Manchester Airport",
+    "You must use the correct reference and code on the customs declaration or your consignment will be delayed.",
+    "What you need to do",
+    "Tell the haulier that this consignment must go directly to Manchester Airport when it enters Great Britain.",
+    "If the consignment does not arrive in Great Britain at the entry point stated in this notification, it must go directly to the Border Control Post where it first arrives in Great Britain.",
+    "What happens next",
+    "An inspector may update the risk assessment.",
+    "If the risk assessment changes, IPAFFS will notify you and any nominated contacts by text message or email.",
+    "How to view or amend this notification",
+    "You can view or amend this notification from your dashboard.",
+    "Tell us what we can improve",
+    "What did you think of this service? (opens in new tab)"
+  ],
+  "backLink": "",
+  "continueLabel": "",
+  "secondaryActions": [
+    "Copy (CHED reference)",
+    "Copy (Reference for your customs declaration)",
+    "Copy (Customs document code)",
+    "Return to your dashboard",
+    "Create a new notification",
+    "What did you think of this service? (opens in new tab)"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "legacyTemplate": {
+    "note": "The CHED-D (legacy notification type CED / CVEDD) confirmation route serves ONE of three templates depending on the risk/GVMS outcome. The observed trace corresponds exactly to the inspection-required template. Template selection is in the route handler getView().",
+    "servedTemplates": {
+      "inspectionRequired": "ipaffs-frontend-notification/service/src/views/importer/common/confirmationGvmsInspection.html (OBSERVED variant)",
+      "inspectionNotRequired": "ipaffs-frontend-notification/service/src/views/importer/common/confirmationGvmsNoInspection.html (never observed)",
+      "checkGvms": "ipaffs-frontend-notification/service/src/views/importer/common/confirmationCheckGvms.html (never observed)"
+    },
+    "sharedPartials": {
+      "riskBanner": "views/partials/common/initialRiskAssessmentBanner.html",
+      "referenceRows": "views/partials/common/customsDeclarationReferenceAndDocCode.html (the 3-row summary list + warning text + section break)",
+      "exitLinks": "views/partials/chedp/commonExitLinks.html (CHED-D reuses the CHED-P exit links)",
+      "noInspectionInstructions": "views/partials/common/chedp/noInspectionInstructions.html",
+      "feedbackFooter": "views/partials/confirmation/feedbackFooter.html"
+    },
+    "routeHandler": "views selection at ipaffs-frontend-notification/service/src/routes/handlers/importer/chedd/confirmation.js:44-52 (checkGvmsAndCtcMrnValue -> confirmationCheckGvms; else !isInspectionRequired -> confirmationGvmsNoInspection; else -> confirmationGvmsInspection). canHandle: notification.type === CED (:55).",
+    "deadOrParallelTemplates": "NOTE: a separate, non-served template set exists with materially DIFFERENT copy/structure and is NOT what the CHED-D route renders: importer/confirmation/ced_non_internal_market/{inspectionRequired,inspectionNotRequired,gvms,notRiskAssessedConfirmation}.html and partials/confirmation/inspectionRequiredConfirmation.html. These variants use e.g. an <h1 class='govuk-panel__title'>Initial risk assessment</h1> (i.e. they DO have an H1), the link text 'Create a new import notification', and 'on entry to Great Britain' phrasing. This is legacy-internal inconsistency / probable dead code, not a rendered-vs-served conflict. The rebuild should not treat these as authoritative for CHED-D; the confirmationGvms* set is what serves.",
+    "confidence": "legacy",
+    "evidence": "ipaffs-frontend-notification/service/src/routes/handlers/importer/chedd/confirmation.js:11-13,44-56"
+  },
+  "structure": [
+    { "element": "notification-banner", "text": "Initial risk assessment", "govukComponent": "Notification banner (custom modifier notification-banner--inspection-required)" },
+    { "element": "panel", "text": "Inspection status / Required at Manchester Airport", "govukComponent": "Panel (custom modifier panel--inspection-required, border-top:none)" },
+    { "element": "summary-list", "text": "CHED reference: CHEDD.GB.2026.1526057 [Copy] / Reference for your customs declaration: GBCHD2026.1526057 [Copy] / Customs document code: C678 [Copy]", "govukComponent": "Summary list" },
+    { "element": "warning-text", "text": "You must use the correct reference and code on the customs declaration or your consignment will be delayed.", "govukComponent": "Warning text" },
+    { "element": "section-break", "text": "", "govukComponent": "Section break (visible, --l)" },
+    { "element": "h2", "text": "What you need to do", "govukComponent": "govuk-heading-m" },
+    { "element": "paragraph", "text": "Tell the haulier that this consignment must go directly to Manchester Airport when it enters Great Britain.", "govukComponent": "govuk-body" },
+    { "element": "paragraph", "text": "If the consignment does not arrive in Great Britain at the entry point stated in this notification, it must go directly to the Border Control Post where it first arrives in Great Britain.", "govukComponent": "govuk-body" },
+    { "element": "h2", "text": "What happens next", "govukComponent": "govuk-heading-m" },
+    { "element": "paragraph", "text": "An inspector may update the risk assessment.", "govukComponent": "govuk-body" },
+    { "element": "paragraph", "text": "If the risk assessment changes, IPAFFS will notify you and any nominated contacts by text message or email.", "govukComponent": "govuk-body" },
+    { "element": "h2", "text": "How to view or amend this notification", "govukComponent": "govuk-heading-m" },
+    { "element": "paragraph", "text": "You can view or amend this notification from your dashboard.", "govukComponent": "govuk-body" },
+    { "element": "link", "text": "Return to your dashboard", "govukComponent": "custom link-button (styled anchor)" },
+    { "element": "link", "text": "Create a new notification", "govukComponent": "custom link-button (styled anchor)" },
+    { "element": "h2", "text": "Tell us what we can improve", "govukComponent": "govuk-heading-s" },
+    { "element": "link", "text": "What did you think of this service? (opens in new tab)", "govukComponent": "govuk-link (Qualtrics survey, external)" }
+  ],
+  "govukComponents": [
+    {
+      "component": "Notification banner",
+      "govukClass": "govuk-notification-banner",
+      "modifiers": ["notification-banner--inspection-required", "govuk-!-margin-bottom-0"],
+      "count": 1,
+      "usage": "Header banner titled 'Initial risk assessment' shown when the consignment was routed for inspection. Uses only a __header with a custom title element (notification-banner__risk-title, id risk-assessment-banner-title); no standard __content/__title. Rendered from the shared initialRiskAssessmentBanner partial. NOTE (legacy): the banner MODIFIER and TITLE change per outcome - inspection-required uses notification-banner--inspection-required titled 'Initial risk assessment'; not-required uses notification-banner--green titled 'Initial risk assessment'; check-GVMS uses notification-banner--check-gvms titled 'Notification submitted'.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: views/partials/common/initialRiskAssessmentBanner.html:1-8; per-variant banners at confirmationGvmsNoInspection.html:11-19 and confirmationCheckGvms.html:11-24."
+    },
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": ["panel--inspection-required", "govuk-!-margin-bottom-8"],
+      "count": 1,
+      "usage": "Confirmation panel repurposed to show inspection status ('Inspection status' / 'Required at Manchester Airport') instead of the usual green success title + reference. Inline style border-top:none. Contains no govuk-panel__title (so no H1 on the page). The panel body is the risk-assessment / routing outcome text - for CHED-D the served route produces THREE outcomes (see risk-assessment-status field): 'Required at <BCP>' (panel--inspection-required, observed), 'Not required' (panel--inspection-not-required), 'Check GVMS' (rendered inside the banner __content on the check-GVMS template, not a separate panel). The page-object also lists a fourth string 'Go to place of destination' but that is NOT produced by the CHED-D confirmation route (it belongs to the dead ced_non_internal_market/notRiskAssessedConfirmation.html template).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102; page-objects/notification/ConfirmationPage.ts:40-54. Legacy: views/importer/common/confirmationGvmsInspection.html:13-20 (panel--inspection-required, border-top:none); confirmationGvmsNoInspection.html:21-28 (panel--inspection-not-required)."
+    },
+    {
+      "component": "Summary list",
+      "govukClass": "govuk-summary-list",
+      "modifiers": ["govuk-!-margin-bottom-1", "govuk-summary-list__row--no-border"],
+      "count": 1,
+      "usage": "Three rows presenting the key output references: CHED reference (#reference-number), Reference for your customs declaration (#reference-number-customs), Customs document code (#reference-number-document). Each row's __actions cell holds a Copy button. Keys are govuk-!-width-one-third. Rendered from the shared customsDeclarationReferenceAndDocCode partial, which is included by ALL THREE served CHED-D confirmation variants (so all three outputs and all three Copy buttons appear regardless of outcome). Note: the QA page object reads only #reference-number (ConfirmationPage.ts:6-7); the customs reference and document-code rows are not exercised by any test, so they are trace-confirmed only.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:4-44 (three rows: CHED reference :6-7, Reference for your customs declaration :19-20, Customs document code :32-33)."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-button--secondary", "govuk-!-margin-bottom-0", "copy-button"],
+      "count": 3,
+      "usage": "Copy-to-clipboard buttons, one per summary-list reference row. type=submit, data-prevent-double-click, data-copy-value holds the value to copy. Label 'Copy'. Rendered hidden by default (class 'hidden') and progressively enhanced by /public/javascripts/copy_reference_number.js. Not referenced by any page object or test. LEGACY BUG confirmed: the CHED-reference and customs-declaration-reference buttons BOTH have id 'copy-customs-declaration-reference-number' (duplicate id); the doc-code button has a distinct id 'copy-customs-doc-code'.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:9-16 (id copy-customs-declaration-reference-number), :22-28 (SAME id - duplicate), :35-41 (id copy-customs-doc-code)."
+    },
+    {
+      "component": "Warning text",
+      "govukClass": "govuk-warning-text",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Warns the user to use the correct reference and code on the customs declaration. Rendered via {{> govuk/warningText text=...}} inside the shared reference partial (so present on all three served variants).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:46 (exact copy 'You must use the correct reference and code on the customs declaration or your consignment will be delayed.')."
+    },
+    {
+      "component": "Section break",
+      "govukClass": "govuk-section-break",
+      "modifiers": ["govuk-section-break--l", "govuk-section-break--visible"],
+      "count": 1,
+      "usage": "Visible horizontal rule separating the reference/warning block from the guidance sections. Part of the shared reference partial.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:48."
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "External feedback link to a Qualtrics survey (opens in new tab). Href is built server-side from config.feedback.confirmationSurvey with query params link_location=notification and ched=<type> (surveyLinkFooter).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/confirmation/feedbackFooter.html:5; href assembly at routes/handlers/importer/chedd/confirmation.js:26 and utils/common_util.js:83-86."
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "copy-button (class on a govuk-button, plus data-copy-value attribute)",
+      "whatItDoes": "Copies the associated reference/code (CHED ref, customs ref, customs document code) to the clipboard via client-side JS reading data-copy-value.",
+      "concern": "Not a GOV.UK Design System component; a bespoke clipboard widget built on top of a secondary button. Requires custom JS (copy_reference_number.js) and is submit-typed inside a <dl>. Also carries a duplicate id (see Button component).",
+      "govukAlternative": "No Design System 'copy' component exists. In the rebuild keep a plain govuk-button (secondary) with a small progressively-enhanced copy behaviour, or omit copy and let users select the text.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:9-42."
+    },
+    {
+      "pattern": "panel--inspection-required (custom modifier on govuk-panel, inline style border-top:none) with no govuk-panel__title",
+      "whatItDoes": "Restyles the confirmation Panel to display inspection status ('Inspection status' / 'Required at Manchester Airport') rather than the standard green success title and reference number.",
+      "concern": "Non-standard use of the Panel component and - critically - the page renders NO H1 (the panel has no __title). This is an accessibility problem the rebuild must fix. The panel colour/border is overridden with bespoke CSS + inline style. Confirmed in the SERVED template (confirmationGvmsInspection.html) - the panel body has only two <div>s, no __title.",
+      "govukAlternative": "Use a standard Panel with a proper H1 (e.g. 'Import notification sent'), and present inspection status as normal body content or a Notification banner rather than by hijacking the Panel.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/importer/common/confirmationGvmsInspection.html:13-20 (no govuk-panel__title present)."
+    },
+    {
+      "pattern": "notification-banner--inspection-required / notification-banner__risk-title (custom modifier + custom title element on govuk-notification-banner)",
+      "whatItDoes": "Renders an 'Initial risk assessment' banner with a bespoke title element, shown when the consignment is routed for inspection.",
+      "concern": "Custom modifier and a non-standard title class (notification-banner__risk-title instead of govuk-notification-banner__title/__heading). Bespoke styling outside the toolbox. The modifier and even the title text vary by outcome (--inspection-required / --green / --check-gvms; 'Initial risk assessment' vs 'Notification submitted').",
+      "govukAlternative": "Standard Notification banner with govuk-notification-banner__title and __content, or an Inset text block for the risk-assessment status.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/common/initialRiskAssessmentBanner.html:1-8; confirmationCheckGvms.html:11-24 (--check-gvms, title 'Notification submitted')."
+    },
+    {
+      "pattern": "link-button (custom class on <a> exit links)",
+      "whatItDoes": "Styles the 'Return to your dashboard' and 'Create a new notification' anchors as button-like navigation links.",
+      "concern": "Bespoke class, not a Design System pattern; mixes link and button semantics.",
+      "govukAlternative": "Use plain govuk-link for navigation, or a govuk-button (start/secondary) if a button affordance is genuinely wanted.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: views/partials/chedp/commonExitLinks.html:1-15 (href /protected/notifications and /protected/notifications/consignment/page-1?source=dashboard; CHED-D reuses the CHED-P exit-links partial)."
+    },
+    {
+      "pattern": "footer_feedback (custom feedback block)",
+      "whatItDoes": "Wraps the 'Tell us what we can improve' heading and the external Qualtrics survey link at the foot of the page.",
+      "concern": "IPAFFS-specific custom class; purely presentational wrapper.",
+      "govukAlternative": "Standard govuk-heading + govuk-body + govuk-link; no custom class needed. Consider the phase-banner feedback link pattern instead.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy: views/partials/confirmation/feedbackFooter.html:1-8."
+    }
+  ],
+  "variantCopy": [
+    {
+      "variant": "inspection-required (OBSERVED)",
+      "servedWhen": "isInspectionRequired and not a check-GVMS case (route getView else-branch).",
+      "bannerModifier": "notification-banner--inspection-required",
+      "bannerTitle": "Initial risk assessment",
+      "panelModifier": "panel--inspection-required (inline border-top:none)",
+      "panelBody": ["Inspection status", "Required at {controlPointName}"],
+      "guidance": [
+        "What you need to do",
+        "Tell the haulier that this consignment must go directly to {controlPointName} when it enters Great Britain.",
+        "If the consignment does not arrive in Great Britain at the entry point stated in this notification, it must go directly to the Border Control Post where it first arrives in Great Britain.",
+        "What happens next",
+        "An inspector may update the risk assessment.",
+        "If the risk assessment changes, IPAFFS will notify you and any nominated contacts by text message or email.",
+        "How to view or amend this notification",
+        "You can view or amend this notification from your dashboard."
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102. Legacy corroboration: views/importer/common/confirmationGvmsInspection.html:11-44 - exact match to the rendered copy."
+    },
+    {
+      "variant": "inspection-not-required (NEVER OBSERVED - legacy only)",
+      "servedWhen": "not isInspectionRequired and not a check-GVMS case (route getView -> confirmationGvmsNoInspection).",
+      "bannerModifier": "notification-banner--green",
+      "bannerTitle": "Initial risk assessment",
+      "panelModifier": "panel--inspection-not-required (inline border-top:none)",
+      "panelBody": ["Inspection status", "Not required"],
+      "guidance": [
+        "What you need to do",
+        "Tell the haulier that this consignment does not need an inspection.",
+        "Initial risk assessments can change. (govuk-inset-text)",
+        "What happens next",
+        "An inspector may update the risk assessment.",
+        "If the risk assessment changes, IPAFFS will notify you and any nominated contacts by text message or email.",
+        "How to view or amend this notification",
+        "You can view or amend this notification from your dashboard."
+      ],
+      "confidence": "legacy",
+      "evidence": "views/importer/common/confirmationGvmsNoInspection.html:11-34 + views/partials/common/chedp/noInspectionInstructions.html:1-20."
+    },
+    {
+      "variant": "check-GVMS (NEVER OBSERVED - legacy only)",
+      "servedWhen": "checkGvmsAndCtcMrnValue(notification, 'NO', true) true (route getView -> confirmationCheckGvms).",
+      "bannerModifier": "notification-banner--check-gvms",
+      "bannerTitle": "Notification submitted",
+      "panelModifier": "(no separate panel - status shown inside the banner __content)",
+      "panelBody": ["Inspection status", "Check GVMS"],
+      "guidance": [
+        "What happens next",
+        "The Goods Vehicle Movement Service (GVMS) will notify the driver of all entry inspections.",
+        "The driver must check GVMS before arriving at the border location to find out if entry inspections are required. (govuk-inset-text)",
+        "How to view or amend this notification",
+        "You can view or amend this notification from your dashboard."
+      ],
+      "confidence": "legacy",
+      "evidence": "views/importer/common/confirmationCheckGvms.html:11-44. NOTE this variant's banner title is 'Notification submitted', NOT 'Initial risk assessment', and it omits the 'What you need to do' section."
+    }
+  ],
+  "fields": [
+    {
+      "name": "reference-number",
+      "label": "CHED reference",
+      "hint": "",
+      "control": "read-only output",
+      "required": false,
+      "observedValues": ["CHEDD.GB.2026.1526057", "CHEDD.GB.2026.1525931"],
+      "conditionalOn": "Read-only output value (govuk-summary-list__value #reference-number), from {{notification.referenceNumber}}. Always shown on all three served variants. Format asserted by the tests as regex ^CHEDD\\.GB\\.\\d{4}\\.\\d{7,8}$ (i.e. CHEDD.GB.YYYY.NNNNNNN with 7 OR 8 trailing digits - the observed 7-digit values are the lower end of that range). This is THE reference the QA suite reads off this page (ConfirmationPage.referenceNumber(), locator #reference-number) and the single value it asserts on the confirmation page. Mandatoriness N/A: this is a system-generated read-only output on a terminal page, not a user-input field, so no model @NotNull group governs it.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:6-7 (#reference-number). Corroborated (inferred): page-objects/notification/ConfirmationPage.ts:6-7 and :30-38; format regex types/ched-type.ts:17; asserted at tests/notification/ched-d/ched-d-notification.spec.ts:19,41,59, ched-d-manipulation.spec.ts:12,34, ched-d-cuc.spec.ts:27."
+    },
+    {
+      "name": "reference-number-customs",
+      "label": "Reference for your customs declaration",
+      "hint": "",
+      "control": "read-only output",
+      "required": false,
+      "observedValues": ["GBCHD2026.1526057", "GBCHD2026.1525931"],
+      "conditionalOn": "Read-only output value (#reference-number-customs), from {{customsDeclarationReferenceNumber}} (route handler viewContext, chedd/confirmation.js:22-23). Format GBCHDYYYY.NNNNNNN, derived from the CHED reference sequence. Present on all three served variants (shared reference partial). Not read or asserted by any QA page object/test - trace-confirmed only. Mandatoriness N/A (read-only output).",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: views/partials/common/customsDeclarationReferenceAndDocCode.html:19-20; chedd/confirmation.js:22-23."
+    },
+    {
+      "name": "reference-number-document",
+      "label": "Customs document code",
+      "hint": "",
+      "control": "read-only output",
+      "required": false,
+      "observedValues": ["C678"],
+      "conditionalOn": "Read-only output value (#reference-number-document), from {{customsDocCode}} (route handler viewContext via notificationUtils.getCustomsDocCode, chedd/confirmation.js:24). LEGACY-CONFIRMED as the FIXED CHED-D customs document code: constants.js defines CVEDD_CUSTOM_DOC_CODE: 'C678'. So C678 is not a per-notification value but the constant for CHED-D (CVEDD) - the observed 'C678' in both traces is correct and fixed. Present on all three served variants. Not read or asserted by any QA page object/test. Mandatoriness N/A (read-only output).",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 110. Legacy: value origin ipaffs-frontend-notification/service/src/utils/constants.js:47 (CVEDD_CUSTOM_DOC_CODE: 'C678'); template row views/partials/common/customsDeclarationReferenceAndDocCode.html:32-33."
+    },
+    {
+      "name": "risk-assessment-status",
+      "label": "Inspection status / routing outcome (panel body)",
+      "hint": "",
+      "control": "read-only output",
+      "required": false,
+      "observedValues": ["Required at Manchester Airport"],
+      "conditionalOn": "The banner/panel body reflects the risk-assessment / routing decision. LEGACY (route handler chedd/confirmation.js:44-52) resolves this to exactly THREE served CHED-D outcomes (not four): (1) 'Required at <BCP>' = inspection required (confirmationGvmsInspection.html, panel--inspection-required, banner 'Initial risk assessment' / --inspection-required) - OBSERVED as 'Required at Manchester Airport', confirmed; (2) 'Not required' = inspection not required (confirmationGvmsNoInspection.html, panel--inspection-not-required, banner 'Initial risk assessment' / --green) - legacy only, never observed; (3) 'Check GVMS' = check the Goods Vehicle Movement Service (confirmationCheckGvms.html, status inside a --check-gvms banner titled 'Notification submitted') - legacy only, never observed. The shared ConfirmationPage page object ALSO enumerates a fourth string 'Not required' locator and 'Go to place of destination'; 'Go to place of destination' is NOT produced by the served CHED-D confirmation route (it belongs to the dead/parallel ced_non_internal_market/notRiskAssessedConfirmation.html template, which is a standard green Panel with an H1 'Your notification has been submitted' and body 'Make sure the consignment goes directly to the place of destination on arriving in Great Britain'). The full copy for all three served variants is now captured in variantCopy above. Mandatoriness N/A (derived read-only status).",
+      "confidence": "confirmed",
+      "evidence": "OBSERVED variant: trace eddc6f6ec852d692c454d319ade1607727a84a4f action 102 ('Required at Manchester Airport'). LEGACY variant set + selection logic: routes/handlers/importer/chedd/confirmation.js:44-52; confirmationGvmsInspection.html:13-20, confirmationGvmsNoInspection.html:21-28, confirmationCheckGvms.html:11-24; fourth ('Go to place of destination') non-route template confirmation/ced_non_internal_market/notRiskAssessedConfirmation.html:10-28. Page-object branches (inferred): page-objects/notification/ConfirmationPage.ts:40-54."
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "The page has NO H1 in <main> on the served CHED-D inspection variants (the panel--inspection-required / panel--inspection-not-required bodies carry no govuk-panel__title, and the check-GVMS status sits inside a notification banner) - CONFIRMED against legacy: confirmationGvmsInspection.html:13-20 has no __title. Interestingly the DEAD ced_non_internal_market/notRiskAssessedConfirmation.html DOES render an H1 ('Your notification has been submitted'), so the missing-H1 defect is specific to the served risk-assessed variants. The QA a11y suite runs axe on this exact page (tests/accessibility/ched-d-accessibility-tests.spec.ts:204-205) but axe's default WCAG ruleset does not fail on a missing H1, which is why it was never caught. The rebuild must always render an H1.",
+    "RESOLVED (was a GAP): the three served non-observed CHED-D confirmation variants' exact copy, banner modifiers and panel styling are now captured from legacy source (see variantCopy + risk-assessment-status). CHED-D produces THREE outcomes via the confirmation route: 'Required at <BCP>', 'Not required', 'Check GVMS'. The page-object's fourth branch 'Go to place of destination' is NOT reachable through the served CHED-D confirmation route (it is the dead ced_non_internal_market/notRiskAssessedConfirmation.html template). A human should still confirm whether the rebuild wants three or four confirmation outcomes for CHED-D.",
+    "RESOLVED (was an open question): 'Customs document code' C678 is the FIXED CHED-D code, not a per-notification value - constants.js:47 defines CVEDD_CUSTOM_DOC_CODE: 'C678'. Both traces are consistent with this.",
+    "The customs-declaration reference (#reference-number-customs) and customs document code (#reference-number-document) rows and all three Copy buttons are exercised by no page object or test - the QA suite reads only #reference-number. They are trace-confirmed + legacy-confirmed (shared customsDeclarationReferenceAndDocCode partial, present on all three variants) but the rebuild should decide deliberately whether all three outputs remain.",
+    "The three Copy buttons are type=submit inside a <dl>; the CHED-reference and customs-declaration-reference buttons share the SAME id 'copy-customs-declaration-reference-number' (confirmed legacy: customsDeclarationReferenceAndDocCode.html:11 and :24) - a duplicate-id bug to avoid in the rebuild.",
+    "No back link or primary continue button on this terminal confirmation page (expected - end of the journey). Exit actions are the two link-button anchors from the shared chedp/commonExitLinks partial: 'Return to your dashboard' (-> /protected/notifications) and 'Create a new notification' (-> /protected/notifications/consignment/page-1?source=dashboard). Only 'Return to your dashboard' is modelled in the page object (ConfirmationPage.ts:10-12).",
+    "The CHED reference regex the tests assert allows 7 OR 8 trailing digits (^CHEDD\\.GB\\.\\d{4}\\.\\d{7,8}$); both observed traces show 7 digits. Confirm the true max length of the sequence number for the rebuild's field/format.",
+    "No validation messages apply to this page: it is a terminal, read-only confirmation with no user-input fields, so there are no ValidationMessages.properties keys for it (validationMessages intentionally empty)."
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "slug": "notification-hub",
+  "name": "Notification hub (task list)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/overview",
+  "pageTitle": "Notification Overview - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525931 - CHEDD",
+  "heading": "Notification Hub",
+  "bodyCopy": [
+    "These sections can be completed in any order. You can save your progress and return at any time."
+  ],
+  "backLink": "Back",
+  "continueLabel": null,
+  "secondaryActions": [
+    "Dashboard"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    { "element": "caption", "text": "DRAFT.GB.2026.1525931 - CHEDD", "govukComponent": null },
+    { "element": "h1", "text": "Notification Hub", "govukComponent": "Heading (govuk-heading-xl)" },
+    { "element": "paragraph", "text": "These sections can be completed in any order. You can save your progress and return at any time.", "govukComponent": "Body (govuk-body)" },
+    { "element": "h2", "text": "About the consignment", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Origin of the import — Started (blue)", "govukComponent": "Task list" },
+    { "element": "task-list", "text": "Main reason for importing the consignment — Started (blue)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Description of the goods", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Commodity — To do (grey)", "govukComponent": "Task list" },
+    { "element": "task-list", "text": "Additional details — To do (grey)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Document", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Accompanying documents — To do (grey)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Traders", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Addresses — To do (grey)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Transport", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Transport to the port of entry — To do (grey)", "govukComponent": "Task list" },
+    { "element": "task-list", "text": "Goods movement services — To do (grey)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Contacts", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Contact details — To do (grey)", "govukComponent": "Task list" },
+    { "element": "task-list", "text": "Nominated contacts (optional) — To do (grey)", "govukComponent": "Task list" },
+    { "element": "task-list", "text": "Contact address for consignment — To do (grey)", "govukComponent": "Task list" },
+    { "element": "h2", "text": "Complete notification", "govukComponent": "Heading (govuk-heading-m)" },
+    { "element": "task-list", "text": "Review and submit — To do (grey)", "govukComponent": "Task list" }
+  ],
+  "legacyStructureConfirmation": {
+    "summary": "The IPAFFS hub is a single SHARED Handlebars template (overview.html) whose section/task set is switched by CHED-type view flags. For CHED-D the resolved flags are isChedD=true, isNewJourneyChedD=true (isEuCheddOrSingleChedd), separateSection=true (isChedp||isChedD), isChedpp=false, isChedp=false, isChedA=false. Walking those branches reproduces EXACTLY the 7 sections / 12 tasks that the trace rendered, in the same order — legacy source and rendered reality AGREE, no discrepancies. The 'Contacts' h2 (rather than 'Contact') is emitted by the contactChedP partial specifically because isChedD is true; the Contact-details / Contact-address items move OUT of 'Complete notification' and into 'Contacts' because separateSection is true.",
+    "confidence": "legacy",
+    "evidence": "views/importer/overview.html:10 (Attachments suppressed for CHED-D), :59-65 (purpose label), :88-91 (non-bulk commodity link), :315-318 (Addresses label), :365-424 (Transport section), :426-428 (separateSection -> contactChedP), :452-531 (Complete notification); views/partials/importer/overview/contactChedP.html:1-57 (Contacts heading + 3 items); views/partials/importer/overview/goodsMovementServices.html:1-15; routes/handlers/importer/overview.js:70,87-95 (isChedD, isHighRiskEuCed, separateSection, isNewJourneyChedD), :45,158 (transportToBipTitle='Transport to the port of entry' for CHED-D)"
+  },
+  "govukComponents": [
+    {
+      "component": "Task list",
+      "govukClass": "govuk-task-list",
+      "modifiers": ["govuk-task-list__item", "govuk-task-list__item--with-link", "govuk-task-list__link", "govuk-task-list__name-and-hint", "govuk-task-list__status"],
+      "count": 7,
+      "usage": "One task list per section heading; each item is a link to a sub-journey page with a status pill. 12 task items across 7 sections. (Legacy: for CHED-D the template renders one <ul class=\"govuk-task-list\"> per section, confirmed in overview.html + contactChedP.html.)",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (class inventory + item map); corroborated views/importer/overview.html:38,78,211,291,367,453 and contactChedP.html:9"
+    },
+    {
+      "component": "Tag",
+      "govukClass": "govuk-tag",
+      "modifiers": ["govuk-tag--blue", "govuk-tag--grey"],
+      "count": 12,
+      "usage": "Status pill inside each task-list__status. Observed states: 'Started' = govuk-tag--blue, 'To do' = govuk-tag--grey. Every task item renders its status as a tag (including 'To do'), and each also carries the custom phase-tag class. (Legacy: the colour class is computed by the progressTagClass helper from pages.<key>; only the 'Review and submit' item hard-codes govuk-tag--grey 'To do' in the template — overview.html:525-528.)",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (status item map); corroborated views/importer/overview.html:47-51,525-528"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": ["govuk-heading-xl", "govuk-heading-m"],
+      "count": 8,
+      "usage": "govuk-heading-xl for the H1 'Notification Hub'; govuk-heading-m for the 7 section H2s.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (class inventory); H1 via common/pageTitle partial (overview.html:25)"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Intro paragraph under the H1.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (class inventory); corroborated views/importer/overview.html:33-35"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": ["govuk-task-list__link"],
+      "count": 12,
+      "usage": "Each task item is a govuk-link (also govuk-task-list__link) navigating to its sub-journey page. QA page objects confirm accessible names for 5 of the 12 links (Commodity, Additional details, Goods movement services, Transport to the port of entry, Review and submit); the remaining 7 are trace-only.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (a11y tree, links e65..e132); corroborated by page-objects/notification/NotificationHubPage.ts:6-24 and ReviewNotificationPage.ts:18-19"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs"],
+      "count": 1,
+      "usage": "A standard govuk-back-link ('Back', href='#', id='back-link') plus a 'Dashboard' govuk-breadcrumbs__link sit in a notification-links__left-block region above the notification caption. The back-link--next-to-breadcrumbs modifier is a custom IPAFFS class positioning it alongside the breadcrumb.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (a11y tree refs e48, e53; DOM class 'govuk-back-link back-link--next-to-breadcrumbs' on <a id=back-link href=#>, 'govuk-breadcrumbs__link' on <a href=/notification/vnet/protected/notifications>Dashboard); corroborated views/importer/overview.html:4-7 (navigation-links__left-block > backLink + navigationLinks partials)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "phase-tag",
+      "whatItDoes": "Custom IPAFFS class applied to every status tag alongside govuk-tag and its colour modifier (e.g. class=\"govuk-tag phase-tag govuk-tag--blue\").",
+      "concern": "It is the only non-govuk-* class on the page. The govuk-task-list already styles statuses; adding a bespoke phase-tag class layers IPAFFS-specific styling on top of the standard Tag component. The rebuild does not need it — use the plain govuk-frontend Task list status.",
+      "govukAlternative": "govuk-task-list status (plain govuk-tag with a colour modifier, or plain text for the completed state) — no custom class required.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (non-govuk class filter + status item map); the class is hard-coded on every <strong> in views/importer/overview.html + contactChedP.html"
+    },
+    {
+      "pattern": "All statuses rendered as tags, incl. 'To do'",
+      "whatItDoes": "IPAFFS renders every status as a coloured govuk-tag: 'Started' as blue, 'To do' as grey.",
+      "concern": "The GOV.UK Design System task-list guidance uses a tag only for statuses that need emphasis and renders the completed state as plain text, not a tag. IPAFFS also uses custom status labels ('Started', 'To do') rather than the canonical vocabulary. The rebuild should decide its own status vocabulary and follow the standard tag/plain-text convention.",
+      "govukAlternative": "govuk-task-list default status rendering (plain text 'Completed', tag for incomplete states).",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27; corroborated trace eddc6f6ec852d692c454d319ade1607727a84a4f action 23"
+    },
+    {
+      "pattern": "Single shared template branched by CHED-type flags",
+      "whatItDoes": "One overview.html serves CHED-A/-D/-P/-PP and IMP; ~20 {{#if}}/{{#or}}/{{#unless}} branches on view flags (isChedD, isNewJourneyChedD, isChedpp, isChedp, separateSection, showBillingSection, etc.) decide which sections, task items and label variants render. Several labels are themselves conditional (purpose, traders, transport titles).",
+      "concern": "The rebuild targets ONE CHED type (live animals / CHED-D) and should render that type's task set directly rather than porting the multi-type branch soup. The legacy branches are useful only as the source of truth for WHICH items belong to CHED-D and their exact copy — not as an architecture to copy.",
+      "govukAlternative": "A per-type task-list built from the type's own journey model; no cross-type conditionals in the view.",
+      "evidence": "views/importer/overview.html:10,59-65,82-91,152-171,313-319,365-424,426-428,430-450,454-514; routes/handlers/importer/overview.js:85-97,137-139"
+    }
+  ],
+  "fields": [
+    {
+      "name": "commodity-details-link",
+      "label": "Commodity",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always shown; navigation link (not a form control) to /commodity/details. CHED-D uses the NON-BULK commodity link (element id #commodity-details-link); the bulk variant is CHED-PP-specific. Legacy: overview.html:88-91 — the {{else}} branch (isChedpp false, showBulkUploadCommodityDetailsLink false) resolves to href .../commodity/details, id=commodity-details-link.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (link e77); trace eddc6f6ec852d692c454d319ade1607727a84a4f action 23; page object page-objects/notification/NotificationHubPage.ts:10-12 (linkCommodity = getByRole link 'Commodity') and :14-16 (linkCommodityNonBulk = #commodity-details-link); driven by workflows/notification/ched-d-workflows.ts:225 (main journey) and :612 (copy-as-new, non-bulk); legacy views/importer/overview.html:79-102"
+    },
+    {
+      "name": "additional-details-link",
+      "label": "Additional details",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always shown; navigation link (not a form control) to the Commodity Additional Details sub-journey (href .../consignment/details). Not clicked from the hub in CHED-D tests (the CHED-D journey reaches Additional Details by continuing on from Commodity), but the link is exposed on the shared hub page object. Legacy: overview.html:120-134 — unconditional.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (task item 'Additional details', structure); page object page-objects/notification/NotificationHubPage.ts:6-8 (linkAdditionalDetails = getByText 'Additional details'); legacy views/importer/overview.html:120-134"
+    },
+    {
+      "name": "goods-movement-services-link",
+      "label": "Goods movement services",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "shown in the Transport section for CHED-D; navigation link (not a form control) to .../goods-movement-services. In the CHED-D main journey this page is reached by continuing on from Transport rather than by clicking the hub link; the hub link itself is exercised from the hub in CHED-A (ched-a-manipulation.spec.ts:47). Legacy: for CHED-D the goodsMovementServices partial is included in the Transport section's else-branch when showMeansOfTransportAfterBcp is false (overview.html:390-392); it appears AFTER 'Means of transport after BCP' when that flag is true.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (task item 'Goods movement services', structure); page object page-objects/notification/NotificationHubPage.ts:18-20 (linkGoodsMovementServices = getByRole link 'Goods movement services'); legacy views/partials/importer/overview/goodsMovementServices.html:1-15, included at views/importer/overview.html:384-392"
+    },
+    {
+      "name": "transport-to-port-of-entry-link",
+      "label": "Transport to the port of entry",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "shown in the Transport section for CHED-D; navigation link (not a form control) to .../transport/before-bip. In the CHED-D main journey Transport is reached by continuing on from Traders; the hub link is exercised from the hub in CHED-P (ched-p-poe-validation.spec.ts:52). Legacy: the label is the value of transportToBipTitle, set to TRANSPORT_TO_BIP_TITLE_EU_CHEDD_CHEDP = 'Transport to the port of entry' for CHED-D (overview.js:45,157-159) — legacy copy AGREES with the rendered label.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (task item 'Transport to the port of entry', structure); page object page-objects/notification/NotificationHubPage.ts:22-24 (linkTransportToPortOfEntry = getByRole link 'Transport to the port of entry'); legacy views/importer/overview.html:368-383 + routes/handlers/importer/overview.js:45,157-159"
+    },
+    {
+      "name": "review-and-submit-link",
+      "label": "Review and submit",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "always shown; navigation link (not a form control) to the Review Notification page (href .../review, id=review-link). Exercised from the hub in the CHED-D amend-from-hub flow (ched-d-manipulation.spec.ts:49) after a sub-journey returns to the hub via 'Save and return to hub'. Legacy: overview.html:515-530 — the only item whose status is hard-coded (govuk-tag--grey 'To do'), never computed from a pages.<key>.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 27 (task item 'Review and submit', structure); page object page-objects/notification/ReviewNotificationPage.ts:18-19 (linkReviewAndSubmit = getByRole link 'Review and submit'); test tests/notification/ched-d/ched-d-manipulation.spec.ts:48-49; legacy views/importer/overview.html:515-530"
+    },
+    {
+      "name": "billing-details-link",
+      "label": "Billing details",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "CHED-D-SPECIFIC conditional task, NO TRACE RENDERED IT. Shown under its own 'Billing' h2 (a section that only exists for CHED-D) when showBillingSection is true — i.e. the notification is billable (commonUserChargeHelper.isBillable). href = {{billingUrl}}, id=billing-details, aria-describedby=details-of-billing. The traced CHED-D consignment was not billable, so neither the 'Billing' heading nor this task appeared. For CHED-D the billing task lives ABOVE 'Complete notification'; for other billable types it sits inside 'Complete notification' (the {{#if (and showBillingSection (not isChedD))}} branch).",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:430-450 (isChedD Billing section) + :497-514 (non-CHED-D placement); routes/handlers/importer/overview.js:137-139 (showBillingSection = commonUserChargeHelper.isBillable)"
+    },
+    {
+      "name": "means-of-transport-after-bcp-link",
+      "label": "Means of transport after Border Control Post (BCP)",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Conditional Transport task, NO TRACE RENDERED IT. Shown in the Transport section (before Goods movement services) when showMeansOfTransportAfterBcp is true (euChedHelper.meansOfTransportAfterBcpRequired). href = .../transport/details, id=transport-details. The label is transportAfterBipTitle, which for CHED-D stays at the default TRANSPORT_AFTER_BIP_TITLE = 'Means of transport after Border Control Post (BCP)' (only isChedA/isChedp override it). The traced consignment had the flag false, so only 'Goods movement services' rendered in Transport.",
+      "confidence": "legacy",
+      "evidence": "views/partials/importer/overview/meansOfTransportAfterBcp.html:1-15 (label + href) included at views/importer/overview.html:384-386; routes/handlers/importer/overview.js:46,85,98,152-163 (title constant, showMeansOfTransportAfterBcp, no CHED-D override)"
+    },
+    {
+      "name": "catch-certificates-link",
+      "label": "Catch certificates",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Conditional 'Description of the goods' task, NO TRACE RENDERED IT. Shown when (not containsNonSPSIUUCommodities) AND showCatchCertificatesLink. href = .../catch-certificates, aria-describedby=catch-certificates. Not part of the standard CHED-D live-animals task set observed.",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:103-119"
+    },
+    {
+      "name": "catch-certificates-iuu-link",
+      "label": "Catch certificates",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Conditional 'Document' task, NO TRACE RENDERED IT. Shown when containsNonSPSIUUCommodities is true. href varies: .../manage-catch-certificates (uploaded), .../upload-catch-certificates (required, none yet), or .../catch-certificates. aria-describedby=catch-certificatesIUU. Distinct from the Description-section catch-certificates item.",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:212-234"
+    },
+    {
+      "name": "latest-health-certificate-link",
+      "label": "Latest health certificate",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Conditional 'Document' task, NO TRACE RENDERED IT. Shown when showLatestHealthCertificate AND (not isRiskLevelLow). href = .../health-certificate-method (retrospective cloning, uncloned) or .../latest-certificate. aria-describedby=latest-health-cert-status.",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:235-255"
+    },
+    {
+      "name": "charity-information-link",
+      "label": "Charity Information",
+      "hint": null,
+      "control": "text",
+      "required": false,
+      "conditionalOn": "Conditional 'Traders' task, NO TRACE RENDERED IT. Shown when showCharityInformation is true. href = .../additional-details, aria-describedby=charity.",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:292-307"
+    }
+  ],
+  "validationMessages": [],
+  "behaviours": [
+    {
+      "behaviour": "Sub-journey pages return to the hub via a 'Save and return to hub' button (in amend/edit context) and via a '?source=hub' query on the sub-journey link. The hub is the central navigation point that all sub-journeys hang off. Legacy corroboration: the first two hub links carry ?source=hub in the template (overview.html:42,57).",
+      "confidence": "inferred",
+      "evidence": "page object page-objects/notification/AboutTheConsignmentPage.ts:50-52 (btnSaveAndReturnToHub = getByRole button 'Save and return to hub'); test tests/notification/ched-d/ched-d-manipulation.spec.ts:46 (returns to hub, then clicks Review and submit); ?source=hub in views/importer/overview.html:42,57"
+    },
+    {
+      "behaviour": "The hub page passes automated accessibility checks (axe) — asserted once per full CHED-D journey.",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-d-accessibility-tests.spec.ts:51-52 (checkPageAccessibility 'Notification Hub Page')"
+    },
+    {
+      "behaviour": "The 'Attachments' secondary button (rendered at the top of the hub for most types) is SUPPRESSED for CHED-D: the guard is {{#if (not (or isHighRiskEuCed isChedD))}}. So CHED-D users get no top-of-page Attachments button.",
+      "confidence": "legacy",
+      "evidence": "views/importer/overview.html:10-17"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This page has NO form controls — it is a task-list navigation hub. The 12 task items are links, not inputs (the schema's field.control enum has no 'link' value), so the 'fields' array is not the right home for them; the full task inventory is captured verbatim in 'structure' and in the Task list / Tag govukComponents entries. The 'fields' entries record the 5 confirmed task links that the QA page objects give explicit locators/accessible names for, PLUS (added in the legacy pass) the CHED-D conditional task links that no trace rendered — Billing details, Means of transport after BCP, Catch certificates (x2), Latest health certificate, Charity Information — each tagged confidence='legacy' with its gating flag in conditionalOn. control='text' is used as the nearest schema value for a nav link. Treat the 12 links in 'structure' as the authoritative BASE task inventory and the legacy conditional links as add-ons that appear only when their flag is set.",
+    "Full status vocabulary is only partially observed. Confirmed: 'Started' (govuk-tag--blue) and 'To do' (govuk-tag--grey). NOT observed in either evidence trace, and NOT asserted by any CHED-D test: a 'Completed' state (expected green) or a 'Cannot start yet' / locked state — both traces navigate sub-journeys by direct link/URL rather than repeatedly returning to the hub, so no later fully-completed hub snapshot was captured. Legacy note: the colour and label come from the progressTagClass helper + pages.<key> value (overview.html:48), so the exact 'Completed' rendering lives in that helper/status source, not the view — reading progressTagClass would resolve it. Whether IPAFFS renders 'Completed' as a green tag or as plain text remains a GAP for a human.",
+    "The 12 tasks and 7 sections are: About the consignment {Origin of the import, Main reason for importing the consignment}; Description of the goods {Commodity, Additional details}; Document {Accompanying documents}; Traders {Addresses}; Transport {Transport to the port of entry, Goods movement services}; Contacts {Contact details, Nominated contacts (optional), Contact address for consignment}; Complete notification {Review and submit}. LEGACY-RESOLVED (was a GAP): the hub is a single SHARED template (overview.html) branched by CHED-type flags, and walking the CHED-D branches (isChedD, isNewJourneyChedD, separateSection all true) reproduces this exact 7-section / 12-task base set in this exact order — legacy source and rendered trace AGREE. The section/task set is therefore largely COMMON across CHED types (same shared template), with CHED-D-specific details being: (a) non-bulk Commodity link, (b) 'Contacts' h2 + the three contact items in their own section via the contactChedP partial (separateSection), (c) 'Addresses'/'Main reason'/'Transport to the port of entry' label variants, (d) a CHED-D-only 'Billing' section placement, (e) 'Attachments' top button suppressed. See legacyStructureConfirmation.",
+    "The caption 'DRAFT.GB.2026.1525931 - CHEDD' is a notification-reference banner rendered as a sibling ABOVE <main> (the referenceNumberHeaderDiv partial, overview.html:19), not a govuk-caption-* inside main. It shows the draft notification id and the CHED type suffix ('CHEDD'). Recorded as caption per instructions; the new app may surface this differently.",
+    "The page URL pattern in the brief is '/notification/.../hub' but the observed route is '/notification/vnet/protected/notifications/{id}/overview' (page title 'Notification Overview'); template file is overview.html and the DOM wrapper id is 'hub-page' (overview.html:22). Sub-journey links return here via '?source=hub'. The hub and overview are the same page.",
+    "No validation messages are possible on this page — it is a pure navigation hub with no form submit. validationMessages is correctly empty (N/A, not a gap). The legacy ValidationMessages.properties has no keys for this route; field mandatoriness (PartOne.java etc.) governs the SUB-JOURNEY pages, not the hub, so there is no mandatoriness to set here. Any 'cannot proceed' gating would surface on the sub-journeys or on Review and submit, not here."
+  ]
+}

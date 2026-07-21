@@ -1,0 +1,334 @@
+{
+  "slug": "document-upload",
+  "name": "Document upload",
+  "url": "/upload/vnet/protected/upload/{reference}/{index}/notification/attach",
+  "pageTitle": "Accompanying documents - Import and export applications - GOV.UK",
+  "caption": "Documents",
+  "heading": "Accompanying documents",
+  "bodyCopy": [
+    "Your file must be:",
+    "smaller than 10MB",
+    "larger than 1KB",
+    "file type must be a DOC, JPEG, PDF, PNG or XLS",
+    "ZIP files are not allowed for security reasons"
+  ],
+  "backLink": "Back",
+  "continueLabel": "Next",
+  "secondaryActions": [
+    "Cancel"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "legacySource": {
+    "service": "ipaffs-frontend-upload (dedicated upload service — separate host/subdomain from the notification service)",
+    "template": "service/src/views/upload/attach.html + service/src/views/partials/common/fileUpload.html",
+    "handler": "service/src/routes/handlers/upload/attach.js",
+    "viewModel": "service/src/models/attach_document.js (getViewContext)",
+    "validation": "service/src/validation/file_upload_validation.js + service/src/utils/validation_constants.js",
+    "note": "CHED-D (legacy type CED) is NEITHER isRowCHEDA NOR isCvedp, so attach.html takes the {{else}} branch: it renders common/fileUpload with submitButtonText='Next' and title=FILE_UPLOAD_TITLE ('Accompanying documents'). The single-document upload route (.../notification/attach) validates via validateAccompanyingDocument -> validate() using the upload.accompanyingDocument criteria (NOT the multiUpload variant, which is the 'Add multiple documents' page)."
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Documents",
+      "govukComponent": "Caption"
+    },
+    {
+      "element": "h1",
+      "text": "Accompanying documents",
+      "govukComponent": "Heading (xl)"
+    },
+    {
+      "element": "label",
+      "text": "Select a file",
+      "govukComponent": "File upload (label--m)"
+    },
+    {
+      "element": "file",
+      "text": "",
+      "govukComponent": "File upload"
+    },
+    {
+      "element": "h2",
+      "text": "Your file must be:",
+      "govukComponent": "Heading (m)"
+    },
+    {
+      "element": "list",
+      "text": "smaller than 10MB / larger than 1KB / file type must be a DOC, JPEG, PDF, PNG or XLS / ZIP files are not allowed for security reasons",
+      "govukComponent": "Bulleted list"
+    },
+    {
+      "element": "button",
+      "text": "Next",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Cancel",
+      "govukComponent": "Link"
+    },
+    {
+      "element": "error-summary",
+      "text": "Please fix the following errors",
+      "govukComponent": "Error summary",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:4 renders common/validationSummary errorSummaryTitle='Please fix the following errors' at the top of the grid column, above the page title. Never captured in either trace (both happy-path). Note: this is the IPAFFS-era title; it is NOT GDS-standard copy (the GOV.UK Design System default is 'There is a problem') — the rebuild would likely revisit it.",
+      "renderedInTrace": false
+    },
+    {
+      "element": "paragraph",
+      "text": "After selecting to upload, do not refresh this page. Depending on file size, the upload may take some time.",
+      "govukComponent": "Body text",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:31-33 — rendered only when {{#if doNotRefreshText}} is truthy. attach.html (the accompanying-documents attach route CHED-D uses) does NOT pass doNotRefreshText, so this paragraph does NOT appear for CHED-D accompanying documents. Recorded for completeness; not part of the CHED-D render.",
+      "renderedInTrace": false,
+      "appliesToChedD": false
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"Documents\" above the H1",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 42"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 \"Accompanying documents\"",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-m",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Sub-heading \"Your file must be:\" above the constraints list",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38"
+    },
+    {
+      "component": "File upload",
+      "govukClass": "govuk-file-upload",
+      "modifiers": [],
+      "count": 1,
+      "usage": "The single file selector (id/name fileUpload) with label \"Select a file\"",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38 (locator resolved to <input type=\"file\" id=\"fileUpload\" name=\"fileUpload\" class=\"govuk-file-upload\">). Legacy confirm: fileUpload.html:13-19 renders govuk/fileUpload id='fileUpload' name='fileUpload' labelText='Select a file' labelClasses='govuk-label--m'."
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--m"],
+      "count": 1,
+      "usage": "Label \"Select a file\" for the file upload control",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:16-17 (labelText='Select a file' labelClasses='govuk-label--m')"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the file upload label + control",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38"
+    },
+    {
+      "component": "Bulleted list",
+      "govukClass": "govuk-list",
+      "modifiers": ["govuk-list--bullet"],
+      "count": 1,
+      "usage": "The file-constraint bullet list (size, type, no ZIP)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:25-30"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Primary \"Next\" button — sets the selected file and returns to accompanying-documents",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:36-43 (id/name='next-button', type=submit, value+text={{submitButtonText}}). For CHED-D submitButtonText='Next' — attach.html:26."
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "\"Cancel\" link back to the notification's accompanying-documents page (the /documents/page-1 listing)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38 and trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 42 — Cancel href = /notification/vnet/protected/notifications/{reference}/documents/page-1 (verified: DRAFT.GB.2026.1526057 and DRAFT.GB.2026.1525931 respectively). Legacy confirm: fileUpload.html:46 href={{cancelLink}}; attach_document.js:74-89 getCancelLink -> for requestFrom=NOTIFICATION returns getPart1DocumentsUrl(referenceNumber, sourcePage). Note the /upload/vnet/protected/upload/cookies?returnUrl=... URL is the cookie-banner 'change your cookie settings' link, NOT the Cancel link."
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Standard body paragraph styling within main",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38 (class inventory)"
+    },
+    {
+      "component": "Error summary",
+      "govukClass": "govuk-error-summary",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Validation summary rendered at the top of the grid column on any file-upload error (too large / wrong type / empty / too small / no file). Title 'Please fix the following errors'.",
+      "evidence": "legacy fileUpload.html:4 (common/validationSummary errorSummaryTitle='Please fix the following errors'); page object DocumentUploadPage.ts:26 locatorErrorSummary=getByRole('alert') corroborates presence. Never captured in either trace (both happy-path).",
+      "renderedInTrace": false,
+      "confidence": "legacy"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "(none)",
+      "whatItDoes": "The main content region is 100% govuk-* classes — no custom classes, bespoke widgets or third-party libraries observed. The full class inventory was: govuk-!-margin-bottom-4, govuk-!-margin-right-1, govuk-body, govuk-button, govuk-caption-xl, govuk-file-upload, govuk-form-group, govuk-grid-column-full, govuk-grid-row, govuk-heading-m, govuk-heading-xl, govuk-label, govuk-label--m, govuk-link, govuk-list, govuk-list--bullet.",
+      "concern": "No rebuild concern from markup — the page stays entirely inside the govuk-frontend toolbox and maps cleanly to the File upload component. The only architectural note is that this page lives on a SEPARATE upload service/subdomain (observed host importnotification-static-snd.azure.defra.cloud, URL path /upload/vnet/protected/upload/{reference}/{index}/notification/attach), i.e. IPAFFS delegates file handling to a dedicated upload service (repo ipaffs-frontend-upload) rather than posting the file inline from the accompanying-documents page. The upload form posts multipart/form-data to self; on 'Next' or 'Cancel' the user returns to the notification service's accompanying-documents page (/notification/vnet/protected/notifications/{reference}/documents/page-1). The new CDP app would use cdp-uploader for the equivalent scan/upload step.",
+      "govukAlternative": "GOV.UK File upload component (already in use)",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38 (non-govuk class filter returned empty in both traces); observed baseURI https://importnotification-static-snd.azure.defra.cloud/upload/vnet/protected/upload/DRAFT.GB.2026.1526057/0/notification/attach; file form enctype=multipart/form-data POST with action=self; legacy fileUpload.html:7 (form method=POST enctype=multipart/form-data)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "fileUpload",
+      "label": "Select a file",
+      "hint": "",
+      "control": "file",
+      "required": true,
+      "conditionalOn": "Shown when adding an attachment from the accompanying-documents page (reached via the 'Add attachment' button); select a file then 'Next' returns to accompanying-documents. Page object drives it as a modal sub-step of Accompanying Documents.",
+      "observedValues": [
+        "example.png (test fixture resources/file-upload/example.png)"
+      ],
+      "allowedExtensions": ["doc", "docx", "jpg", "jpeg", "pdf", "png", "xlsx", "xls"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 42 — <input type=\"file\" id=\"fileUpload\" name=\"fileUpload\" class=\"govuk-file-upload\">. No 'accept' attribute (allowed types enforced server-side, listed in body copy). HTML 'required' attribute not set. Corroborated by page object: DocumentUploadPage.ts:24 exposes exactly one input, locator input[type=\"file\"] — this is the page's only field. Workflow ched-d-workflows.ts:249 and a11y spec ched-d-accessibility-tests.spec.ts:77 always setInputFiles('resources/file-upload/example.png') then click Next.",
+      "requiredEvidence": "legacy — file_upload_validation.js:88-90 (validate): if filename is empty -> returns FILE_NOT_SELECTED ('Select a file'), which re-renders the page with an error summary. So on THIS upload sub-page a file MUST be chosen to complete the attach action. NOTE on scope: the accompanying-documents SECTION as a whole is optional at the model level — VeterinaryInformation.java:43-44 has @Valid on List<AccompanyingDocument> accompanyingDocuments with NO @NotNull validation group (no CED-group mandatoriness). So: attaching a document is optional overall, but if the user enters this sub-page and submits, the file field is mandatory. Allowed extensions are the accompanyingDocument set: doc, docx, jpg, jpeg, pdf, png, xlsx, xls (validation_constants.js:21). The prior spec value required:false referred to the HTML attribute (absent) — the server-side rule makes the field required for the action; flagged so the rebuild decides deliberately."
+    }
+  ],
+  "hiddenFields": [
+    {
+      "name": "crumb",
+      "control": "hidden",
+      "purpose": "CSRF crumb token for the multipart POST",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:8 (<input type=hidden name=crumb value={{crumb}}>). Never surfaced in a trace (form furniture)."
+    },
+    {
+      "name": "etag",
+      "control": "hidden",
+      "purpose": "Optimistic-concurrency etag for the notification being patched",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:9 (<input type=hidden name=etag value={{etag}}>)."
+    },
+    {
+      "name": "document-index",
+      "control": "hidden",
+      "purpose": "Which accompanying-documents row this attachment binds to (the {index} path segment; special value 'latest-vet-health' handled in attach.js:94)",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:10 (<input type=hidden name=document-index value={{documentIndex}}>); attach.js:92-98."
+    },
+    {
+      "name": "request-from",
+      "control": "hidden",
+      "purpose": "Origin part (NOTIFICATION vs DECISION) — drives which document list is patched and the redirect target after upload",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:11 (<input type=hidden name=request-from value={{requestFrom}}>); attach.js:62,70-88 switches on it. For CHED-D part-one flow the value is NOTIFICATION."
+    }
+  ],
+  "inferredBehaviours": [
+    {
+      "behaviour": "Primary button label is variant across contexts — 'Next' for CHED-D, 'Continue' for RoW CHEDA / CHED-P",
+      "detail": "The shared DocumentUploadPage page object exposes four button accessors: btnNext ('Next'), btnContinue ('Continue'), btnNextOrContinue (/^(Next|Continue)$/), btnSaveAndContinue ('Save and continue'). Legacy source resolves the branching: attach.html:11-28 selects the label by notification type — {{#or isRowCHEDA isCvedp}} renders docImprovementFileUpload with submitButtonText='Continue', the {{else}} renders fileUpload with submitButtonText='Next'. CHED-D (CED) is neither isRowCHEDA (CHED-A) nor isCvedp (CHED-P), so it takes the else branch = 'Next' (matches both traces). 'Save and continue' is used by other upload sub-flows not on this route.",
+      "confidence": "legacy",
+      "evidence": "attach.html:11-28 (branch + submitButtonText); attach_document.js:19 (title selection by isRowCHEDA/isCvedp); constants.js:68-69 (FILE_UPLOAD_TITLE vs ROW_CHEDA_FILE_UPLOAD_TITLE='Upload a document'). Page object: DocumentUploadPage.ts:6-20. CHED-D usage is btnNext only: ched-d-workflows.ts:250,635; ched-d-accessibility-tests.spec.ts:79. Upgraded from 'inferred' to 'legacy' — the template proves the CHED-D label is 'Next', not merely context-dependent."
+    },
+    {
+      "behaviour": "Page renders an error summary (govuk-error-summary) titled 'Please fix the following errors' on any invalid upload",
+      "detail": "The page object exposes locatorErrorSummary = getByRole('alert'); legacy confirms the mechanism and the exact copy. The summary lists whichever file-upload error fired (no file / wrong type / empty / too small / too large). No CHED-D test asserts on it and no trace captured an error render, but the verbatim messages are now sourced from legacy (see validationMessages).",
+      "confidence": "legacy",
+      "evidence": "fileUpload.html:4 (validationSummary errorSummaryTitle='Please fix the following errors'); DocumentUploadPage.ts:26-28 (locatorErrorSummary: getByRole('alert')). Error strings: validation_constants.js:3-9."
+    },
+    {
+      "behaviour": "Allowed file types beyond PNG are stated but never exercised in tests",
+      "detail": "Body copy states allowed types DOC, JPEG, PDF, PNG or XLS; legacy allow-list is doc, docx, jpg, jpeg, pdf, png, xlsx, xls (validation_constants.js:21 — note docx and xlsx are accepted even though the human-facing message only names DOC/XLS). Every CHED-D test/workflow uploads the same PNG fixture; the DOC/DOCX/JPEG/PDF/XLS/XLSX acceptance paths and the reject paths (oversize, undersize, empty, ZIP/wrong type) are untested in our corpus — a coverage lower bound, not evidence they behave differently.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-d-workflows.ts:249,634 and tests/accessibility/ched-d-accessibility-tests.spec.ts:77 all use resources/file-upload/example.png; legacy allow-list validation_constants.js:20-23."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "smaller than 10MB",
+      "field": "fileUpload",
+      "trigger": "File constraint stated in body copy (not an error-summary message). Files must be < 10MB.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38 (main innerText bullet list); legacy fileUpload.html:26"
+    },
+    {
+      "message": "larger than 1KB",
+      "field": "fileUpload",
+      "trigger": "File constraint stated in body copy. Files must be > 1KB (see discrepancy: single-upload code actually enforces a 200-byte floor, not 1KB).",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:27"
+    },
+    {
+      "message": "file type must be a DOC, JPEG, PDF, PNG or XLS",
+      "field": "fileUpload",
+      "trigger": "File constraint stated in body copy. Allowed file types (rendered from {{allowedExtensions}}, passed as 'DOC, JPEG, PDF, PNG or XLS').",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:28 + attach.html:23"
+    },
+    {
+      "message": "ZIP files are not allowed for security reasons",
+      "field": "fileUpload",
+      "trigger": "File constraint stated in body copy. ZIP explicitly disallowed.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 38; legacy fileUpload.html:29"
+    },
+    {
+      "message": "Select a file",
+      "field": "fileUpload",
+      "trigger": "Submitting 'Next' with no file chosen (empty filename). Also shown on GET when redirected back with ?fileNotSelected=true.",
+      "confidence": "legacy",
+      "evidence": "validation_constants.js:4 (FILE_NOT_SELECTED); file_upload_validation.js:88-90 (validate returns it when filename empty) and :165-167 (validateQueryParams, fileNotSelected=true). This is the error-summary copy the traces never rendered."
+    },
+    {
+      "message": "The selected file must be a DOC, JPEG, PDF, PNG or XLS",
+      "field": "fileUpload",
+      "trigger": "Chosen file's extension is not in the allow-list (doc, docx, jpg, jpeg, pdf, png, xlsx, xls). ZIP hits this path too. The %s is filled from ALLOWED_EXTENSIONS_FOR_MESSAGE.",
+      "confidence": "legacy",
+      "evidence": "validation_constants.js:5 (FILE_TYPE_IS_INCORRECT_TEMPLATE='The selected file must be a %s') + :22 (ALLOWED_EXTENSIONS_FOR_MESSAGE='DOC, JPEG, PDF, PNG or XLS'); file_upload_validation.js:97-98."
+    },
+    {
+      "message": "The selected file is empty",
+      "field": "fileUpload",
+      "trigger": "Chosen file has no content (zero bytes).",
+      "confidence": "legacy",
+      "evidence": "validation_constants.js:8 (FILE_IS_EMPTY); file_upload_validation.js:102-103."
+    },
+    {
+      "message": "The selected file must be larger than 1KB",
+      "field": "fileUpload",
+      "trigger": "Chosen file is non-empty but under the minimum-size floor. NB: the single-upload path enforces a 200-byte floor (TWO_HUNDRED_B), not 1KB — see discrepancies.",
+      "confidence": "legacy",
+      "evidence": "validation_constants.js:7 (FILE_TOO_SMALL='The selected file must be larger than 1KB'); file_upload_validation.js:106-107 (if size < TWO_HUNDRED_B (=200) return FILE_TOO_SMALL). TWO_HUNDRED_B defined validation_constants.js:15."
+    },
+    {
+      "message": "The selected file must be smaller than 10MB",
+      "field": "fileUpload",
+      "trigger": "Chosen file exceeds the 10MB payload limit — enforced by the server maxBytes limit; on rejection the user is redirected back with ?fileTooLarge=true and this message is shown.",
+      "confidence": "legacy",
+      "evidence": "validation_constants.js:6 (FILE_TOO_LARGE); file_upload_validation.js:159-163 (validateQueryParams, fileTooLarge=true -> FILE_TOO_LARGE) called from attach.js:31 on GET. TEN_MB=10485760 (validation_constants.js:16)."
+    }
+  ],
+  "confidence": "confirmed",
+  "discrepancies": [
+    "Body-copy/UI copy says the file must be 'larger than 1KB' and the too-small error reads 'The selected file must be larger than 1KB' — but the single-document upload code (validate) enforces a 200-BYTE floor, not 1KB: file_upload_validation.js:106 checks `_.size(fileContent) < TWO_HUNDRED_B` with TWO_HUNDRED_B=200 (validation_constants.js:15). A file of ~200–1023 bytes therefore passes despite the copy claiming a 1KB minimum. (The MULTI-upload path DOES use a 1000-byte floor via MIN_FILE_LENGTH_BYTES at :99/:152, so the copy is only accurate for the multi-upload page.) The rendered constraint text ('larger than 1KB') stays confirmed; the copy-vs-enforcement gap is a finding for Reconcile / a human — the rebuild should pick one threshold and make the copy match."
+  ],
+  "openQuestions": [
+    "Model-level mandatoriness of the accompanying-documents SECTION for CHED-D is optional (VeterinaryInformation.java:43-44 — @Valid, no @NotNull group), but WITHIN this upload sub-page the file field is required (FILE_NOT_SELECTED on empty submit). The prior spec's required:false meant 'no HTML required attribute'; this pass sets the field required:true for the attach ACTION and documents the section-level optionality separately. Confirm the rebuild wants the same split (optional section, mandatory-once-entered file).",
+    "The single-upload 'too small' floor is 200 bytes in code but the copy says 1KB (see discrepancies) — which value does the rebuild adopt?",
+    "The primary continue button is 'Next' in CHED-D (now legacy-confirmed via attach.html else-branch), 'Continue' for RoW CHEDA and CHED-P, and 'Save and continue' elsewhere — should the new CDP app standardise a single label?",
+    "The error-summary title is 'Please fix the following errors' (legacy, fileUpload.html:4) — this is IPAFFS-era copy, not the GDS-standard 'There is a problem'. Rebuild should adopt the standard.",
+    "The page is titled 'Accompanying documents' (H1) with section caption 'Documents' — the slug 'document-upload' is the file-select sub-step, served by the SEPARATE ipaffs-frontend-upload service (host importnotification-static-snd.azure.defra.cloud, path /upload/vnet/protected/upload/{reference}/{index}/notification/attach). Both 'Next' and 'Cancel' return the user to the notification service's accompanying-documents page (/notification/vnet/protected/notifications/{reference}/documents/page-1) — Cancel does NOT point at a cookies/returnUrl endpoint (that URL belongs to the cookie-banner's 'change your cookie settings' link). The CDP rebuild would replace this delegated upload service with cdp-uploader.",
+    "A '.govuk-hint' with no id rendered the text 'DRAFT.GB.2026.1526057 - CHEDD' (draft reference + CHED type). This is page-level reference furniture (referenceNumberHeaderDiv, attach.html:9), not a field hint; recorded for completeness, not attached to fileUpload.",
+    "The DOC-improvement variant (docImprovementFileUpload) and the 'do not refresh' paragraph exist in the upload service but are NOT rendered on the CHED-D accompanying-documents attach route; confirmed out of scope for CHED-D."
+  ]
+}

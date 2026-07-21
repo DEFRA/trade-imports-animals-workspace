@@ -1,0 +1,148 @@
+{
+  "slug": "consignee-confirmation",
+  "name": "Consignee confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/consignee/confirmation/{consigneeId}?fromCreate=true",
+  "pageTitle": "Create consignee confirmation - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1526057 - CHEDD",
+  "heading": "The consignee has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "DRAFT.GB.2026.1526057 - CHEDD",
+      "govukComponent": "Caption (rendered outside main, above the panel)"
+    },
+    {
+      "element": "panel",
+      "text": "The consignee has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "h1",
+      "text": "The consignee has been created",
+      "govukComponent": "Panel title (govuk-panel__title)"
+    },
+    {
+      "element": "h1-variant-edit",
+      "text": "The consignee details have been changed",
+      "govukComponent": "Panel title (govuk-panel__title) — alternate branch",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:30-32 — rendered when NOT fromCreate (the edit/update path); handler economic_operator/confirmation.js:46-47 sets pageTitle 'Update consignee confirmation ...' and omits fromCreate. No trace rendered this branch (all captured traces used ?fromCreate=true). A rebuild that supports editing a consignee needs this alternate confirmation copy.",
+      "notes": "displayType is interpolated: economic_operator/confirmation.js:26 sets displayType = getTypeDisplayValue(traderType, notification.type); for the consignee trader type this resolves to 'consignee', so the legacy template's 'The {{displayType}} details have been changed' renders as 'The consignee details have been changed'."
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "button-variant-branch-address",
+      "text": "Return to notification",
+      "govukComponent": "Button — alternate branch (organisation branch address)",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:48-49 — when notificationOrganisationBranchAddress is true the primary button reads 'Return to notification' (id=button-add) and the 'Return to search' link is NOT rendered. Set by economic_operator/confirmation.js:32 (notificationOrganisationBranchAddress = traderType === ORGANISATION_BRANCH_ADDRESS). Not the consignee happy path; captured for branch completeness — a consignee confirmation would use the 'Add to notification' + 'Return to search' variant.",
+      "notes": "Legacy branch that does not apply to a standard consignee create/attach; included because the same shared template drives both and a rebuild reusing one template must know both button labels exist."
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Confirmation panel announcing the newly created consignee; contains the H1 (govuk-panel__title 'The consignee has been created').",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66; trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 70",
+      "corroboration": "Legacy template confirms the panel markup verbatim: ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:17-35 (div.govuk-panel.govuk-panel--confirmation.govuk-!-margin-bottom-8 wrapping h1.govuk-panel__title), title interpolated from {{displayType}} = 'consignee'.",
+      "confidence": "confirmed"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary action 'Add to notification' (type=submit, id=button-add, value='Add to notification', data-prevent-double-click). Submits the form which POSTs and navigates to the notification traders page.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66",
+      "corroboration": "QA page object ConsigneeConfirmationPage exposes ONLY this control — get btnAddToNotification = getByRole('button', { name: 'Add to notification' }) (ipaffs-qa-automation/page-objects/notification/ConsigneeConfirmationPage.ts:6-8); driven in journey context at workflows/notification/ched-d-workflows.ts:277 (the only interaction on this page). The accessible name 'Add to notification' is confirmed by both the trace and the page-object locator. Legacy template corroborates the exact markup and classes: ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:51 (button.govuk-button.govuk-!-display-block.govuk-!-margin-bottom-2, id=button-add, value='Add to notification', data-prevent-double-click=true).",
+      "confidence": "confirmed"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) linking to /traders/consignee/search.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66",
+      "corroboration": "NOT modelled in the QA page object (ConsigneeConfirmationPage.ts exposes only btnAddToNotification) and never clicked in any ched-d test — every test/workflow proceeds via 'Add to notification'. Requirement rests on rendered trace evidence alone; the abandon/return-to-search branch is not exercised by the automation. Legacy template corroborates: ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:52-54 (a.govuk-link.govuk-!-font-size-19, id=manage-notifications, href={{returnToSearchUrl}}). The href is built by economic_operator/confirmation.js:69-90 getReturnToSearchUrl → IMPORTER_CONSIGNMENT_TRADER_SEARCH(referenceNumber, 'consignee'), so 'Return to search' returns to the consignee trader search, optionally appending ?fromImporterReview=true / ?fromPartTwoOverview=true.",
+      "confidence": "confirmed"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66 (hidden input name=crumb inside the POST form); legacy template corroborates ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:43 (input name=crumb type=hidden)."
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency etag)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66 (hidden input name=etag value=\"0000000000BD2E6F\" inside the POST form); legacy template corroborates ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:44 (input name=etag type=hidden)."
+    },
+    {
+      "name": "fromImporterReview",
+      "label": "(hidden review-context flag)",
+      "control": "text",
+      "required": false,
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47 — hidden input name=fromImporterReview rendered ONLY when actionsModel.fromImporterReview is truthy (i.e. the user reached the consignee flow from the importer review/check-answers page). No trace rendered it because the captured journeys were fresh creates, not review edits. On POST the handler re-reads it (economic_operator/confirmation.js:57-58: if query.fromImporterReview → request.payload.fromImporterReview = true) to route the user back to the review page after attaching the consignee.",
+      "notes": "Not user-editable; a plumbing flag that preserves the 'came from review' context across the confirmation POST. A rebuild only needs an equivalent if it keeps IPAFFS's review/check-answers round-trip pattern for adding a consignee."
+    }
+  ],
+  "validationMessages": [],
+  "requirements": [
+    {
+      "requirement": "This page must pass an automated axe accessibility check.",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-d-accessibility-tests.spec.ts:135 — checkPageAccessibility(pages.page, 'Consignee Confirmation Page') is run against this exact page in journey order."
+    },
+    {
+      "requirement": "The page presents no user-editable fields — it is a confirmation-only interstitial. The QA page object exposes a single control (the 'Add to notification' button), so the trace-derived field set (only hidden crumb + etag, plus the conditional hidden fromImporterReview) is complete; no variant-only user input control was missed. Because there is no user input on this page, no ValidationMessages.properties keys and no PartOne/EconomicOperator @NotNull mandatoriness apply here — the consignee's field-level validation and required-field rules live on the consignee entry/edit page, not on this attach-to-notification confirmation step.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:41-56 (the non-address-book form contains only hidden crumb/etag/fromImporterReview inputs plus submit button and link — no user-facing fields); handler economic_operator/confirmation.js:21-50 builds a display-only viewContext and POSTs to attach an already-created economicOperatorId via selectTheTrader (line 65-66) with no field validation. Corroborated by page-objects/notification/ConsigneeConfirmationPage.ts:1-9 (sole member is btnAddToNotification)."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "The page brief described this as 'summary of created consignee' but BOTH pieces of evidence (trace eddc6f6ec852d692c454d319ade1607727a84a4f action 66 and trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 70) render only a confirmation Panel ('The consignee has been created') with an 'Add to notification' button and a 'Return to search' link. There is NO govuk-summary-list of the consignee's details on this page in either trace. The legacy template confirms this — importer/traders/confirmation.html has no summary list, only the panel + form (confirmation.html:13-60). This is the post-create confirmation page reached with ?fromCreate=true. If a review-with-summary variant is wanted it does not exist in IPAFFS — mark as a deliberate design decision for the rebuild: confirm whether the new app needs a consignee summary before adding, or whether this confirmation-only pattern is the intended requirement.",
+    "The section caption 'DRAFT.GB.2026.1526057 - CHEDD' is rendered OUTSIDE the <main> region (as page chrome above the back link) rather than as an in-main govuk-caption-xl. Legacy template corroborates: the reference-number header is a partial rendered above <main> (confirmation.html:9-11 referenceNumberHeaderDiv, then <main> opens at line 13). Captured as caption for completeness; confirm placement expectation for the rebuild.",
+    "The 'Back' link (href='#') is part of the page chrome header, not an in-main govuk-back-link, and does not navigate to a real URL. Legacy template corroborates it is the shared common/backLink partial in the navigation-links block above <main> (confirmation.html:2-7). Treated as furniture.",
+    "The QA automation exercises only the happy path — 'Add to notification' is clicked (ched-d-workflows.ts:277) and no test ever follows the 'Return to search' link, nor does the confirmation page object model it. Legacy confirms 'Return to search' returns to the consignee trader search (economic_operator/confirmation.js:69-90 getReturnToSearchUrl → IMPORTER_CONSIGNMENT_TRADER_SEARCH). The abandon/return-to-search branch and any downstream behaviour are unverified by the tests; confirm whether the rebuild needs to preserve a 'Return to search' escape from the confirmation step.",
+    "LEGACY-ONLY EDIT PATH (not exercised by any trace): when the consignee is edited rather than created (no ?fromCreate), the shared template renders the heading 'The consignee details have been changed' and the handler sets pageTitle 'Update consignee confirmation ...' (confirmation.html:30-32, economic_operator/confirmation.js:46-47). The captured traces only cover the create path. Confirm whether the rebuild supports editing an attached consignee and, if so, whether it needs this distinct 'details have been changed' confirmation copy.",
+    "LEGACY-ONLY hidden flag: fromImporterReview (confirmation.html:45-47) is a review-round-trip plumbing flag with no rendered evidence. It only matters if the rebuild keeps IPAFFS's 'add consignee from the review/check-answers page and return to review' pattern. Confirm whether that round-trip is a requirement."
+  ]
+}

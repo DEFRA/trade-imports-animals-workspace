@@ -1,0 +1,100 @@
+{
+  "slug": "branch-address-confirmation",
+  "name": "Branch address confirmation (return to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/create-branch-address/confirmation (POST target: /organisation-branch-address?selectedBranchAddressId={id})",
+  "pageTitle": "Create branch address confirmation - Import and export applications - GOV.UK",
+  "heading": "The address has been added to your address book",
+  "bodyCopy": [],
+  "continueLabel": "Return to notification",
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "legacyTemplate": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html (shared confirmation template; this page is the {{#else if notificationOrganisationBranchAddress}} branch — heading 'The address has been added to your address book', POST form, 'Return to notification' button id=button-add). The template is shared across create/change, address-book, notification-branch-address and generic party-create confirmations; the branch is selected by the notificationOrganisationBranchAddress flag.",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The address has been added to your address book",
+      "govukComponent": "Panel"
+    },
+    {
+      "element": "button",
+      "text": "Return to notification",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": ["govuk-panel--confirmation", "govuk-!-margin-bottom-8", "govuk-panel__title"],
+      "count": 1,
+      "usage": "Confirmation panel announcing the branch address was saved to the address book; the H1 is the panel title (no body sub-text).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 98; corroborated trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 102; legacy confirmation.html:17-35 (govuk-panel govuk-panel--confirmation govuk-!-margin-bottom-8 > h1.govuk-panel__title)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-display-block", "govuk-!-margin-bottom-2"],
+      "count": 1,
+      "usage": "Submit button (type=submit, value='Return to notification', id=button-add, data-prevent-double-click=true) that POSTs the form and navigates back to the notification's organisation-branch-address page with the newly-saved selectedBranchAddressId. Accessible name/role corroborated by the page object: getByRole('button', { name: 'Return to notification' }).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 98; corroborated (accessible name) page-objects/notification/BranchAddressConfirmationPage.ts:6-8; legacy confirmation.html:48-49 (button.govuk-button.govuk-!-display-block.govuk-!-margin-bottom-2 id=button-add value='Return to notification')"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 98 (main outerHTML: <input name=\"crumb\" type=\"hidden\">); corroborated legacy confirmation.html:43 (<input name=\"crumb\" type=\"hidden\" value=\"{{crumb}}\"/>)"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency etag)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 98 (main outerHTML: <input name=\"etag\" type=\"hidden\" value=\"&quot;0000000000BD2E91&quot;\"> — the value is an HTTP ETag and carries its own embedded double-quotes; the exact token varies per notification); corroborated legacy confirmation.html:44 (<input name=\"etag\" type=\"hidden\" value=\"{{etag}}\">)"
+    },
+    {
+      "name": "fromImporterReview",
+      "label": "(hidden navigation-context flag — importer-review return path)",
+      "control": "text",
+      "required": false,
+      "confidence": "legacy",
+      "evidence": "confirmation.html:45-47 — rendered only when {{#if actionsModel.fromImporterReview}} is truthy: <input name=\"fromImporterReview\" type=\"hidden\" value=\"{{actionsModel.fromImporterReview}}\"/>. No trace rendered it (the mined journey did not enter this page from importer review). It carries the 'came from importer review' context so the POST returns the user to the right place; propagated as a query param elsewhere (documents.js:653, review.js:639 FROM_IMPORTER_REVIEW_TRUE). Technical navigation token, not a model field."
+    }
+  ],
+  "validationMessages": [],
+  "behaviours": [
+    {
+      "description": "This interstitial has a single control ('Return to notification'). The tests never drive a field on this page — the page object BranchAddressConfirmationPage exposes only btnReturnToNotification — confirming it is a terminal confirmation step, not a data-entry page.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/BranchAddressConfirmationPage.ts:3-9"
+    },
+    {
+      "description": "In journey context, after clicking 'Return to notification' the user lands back on the Branch Address Creation / organisation-branch-address page with the just-added address pre-selected, and only needs to click 'Save and continue' to proceed — i.e. no re-entry of the address is required. The confirmation is a save-acknowledgement, not a fork.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-d-workflows.ts:342-353 (linkAddNewBranchAddress -> fillAddress -> Save and continue -> Return to notification -> Branch Address Creation Page (returned to) -> Save and continue)"
+    },
+    {
+      "description": "The confirmation copy is branch-selected in the shared template: the {{#else if notificationOrganisationBranchAddress}} branch renders 'The address has been added to your address book' plus the single 'Return to notification' button (no 'Add to notification' / 'Return to search' controls — those belong to the generic party-create branch). The addressBook branch (a different entry point) would instead show 'Return to address book'. This page is unambiguously the notification-branch-address confirmation branch.",
+      "confidence": "legacy",
+      "evidence": "confirmation.html:25-26,48-49 (notificationOrganisationBranchAddress branch); contrast confirmation.html:37-40 (addressBook branch) and 50-55 (generic 'Add to notification' branch)"
+    },
+    {
+      "description": "The page must have no accessibility (axe) violations — the CHED-D accessibility suite runs checkPageAccessibility on this page under the label 'Branch Address Confirmation Page'.",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-d-accessibility-tests.spec.ts:188-190"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This page is a terminal confirmation interstitial for the address-book add-branch-address sub-flow, not a data-entry page. It has no caption, no back link, no body copy beyond the panel title, and no visible fields — only two hidden inputs (crumb CSRF token, etag concurrency token), one conditional hidden input (fromImporterReview, legacy-sourced), and a single submit button. In the new CDP app this interstitial may be unnecessary: the branch address could be saved and the user returned to the notification directly, or replaced by an inline success/notification banner.",
+    "The button posts to the notification's organisation-branch-address page carrying selectedBranchAddressId as a query param, which pre-selects the just-added branch address — worth preserving that 'return with the new address selected' behaviour in the rebuild. The CHED-D workflow corroborates this: on return the user only clicks 'Save and continue', with no re-entry (ched-d-workflows.ts:350-353).",
+    "The URL pattern in the evidence pointer (/branch-address/confirm) differs from the observed page title ('Create branch address confirmation') and POST target (/organisation-branch-address); the observed confirmation page is the render preceding the click, so the exact GET route was not directly observed — noted as a minor gap.",
+    "No validation messages exist for this page and none can exist — there are no user-editable inputs. This is a genuine absence, not an unmined gap. Confirmed against ValidationMessages.properties: no branch-address / return-to-notification / confirmation keys apply here (legacy).",
+    "The confirmation copy is identical across CHED types (the same page object and workflow step is shared by CHED-D and CHED-P: ched-p-workflows.ts:526-533, 798-801, 1003-1006) — and, per the legacy template, the SAME confirmation.html is reused across create/change, address-book and generic party-create confirmations. If the rebuild is CHED-D-only, confirm whether this shared address-book sub-flow is in scope for the new app at all, or whether it is inherited from the existing address-book service.",
+    "MANDATORINESS: this page carries no PartOne / Commodities model fields — the three hidden inputs (crumb, etag, fromImporterReview) are technical framework/navigation tokens, not domain data, so no CHED-D (CED) @NotNull validation group applies. There is nothing on this page for the rebuild to make mandatory."
+  ]
+}

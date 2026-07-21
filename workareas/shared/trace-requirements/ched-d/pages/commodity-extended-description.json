@@ -1,0 +1,421 @@
+{
+  "slug": "commodity-extended-description",
+  "name": "Commodity details (weight, packages, gross weight)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/commodity/details",
+  "pageTitle": "Commodity details - Import and export applications - GOV.UK",
+  "caption": "Description of the goods",
+  "heading": "Commodity",
+  "bodyCopy": [
+    "Commodities table"
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Add commodity",
+    "Update total",
+    "Cancel and return to hub",
+    "Remove (per-commodity, legacy — rendered only when >1 commodity)",
+    "Add species (per-commodity, legacy — rendered only when the commodity has >1 species row)",
+    "Remove (per-species, legacy — rendered only when a commodity has >1 species row)"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full (with an inner govuk-grid-column-one-quarter for the gross-weight input)",
+  "legacyTemplate": "ipaffs-frontend-notification/service/src/views/importer/commodity_details/commodityDetailsResponsive.html (page shell) -> partials/commodity_details/responsiveGridLayout/commodityDetailsFormDesktop.html (CHED-D detail table + fields, guarded by @root.isCed) + partials/commodity_details/responsiveGridLayout/consignmentTotal.html (Total for this consignment summary list, Update total, gross-weight input under `if (or isNewJourneyChedD isChedp)`). Package-type options: partials/commodity_details/packageTypeOptions.html. Legacy notification type for CHED-D = CED; the single-commodity new journey validates against the NotificationSingleCedValidation group.",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Commodity",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "h2",
+      "text": "Commodities",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Commodities table (visually hidden caption for the overview table)",
+      "govukComponent": "govuk-visually-hidden"
+    },
+    {
+      "element": "table",
+      "text": "Commodity overview: columns 'Commodity code' / 'Description'; row: 10064000 / Broken rice (plus an empty remove-action cell)",
+      "govukComponent": "Table (govuk-table, custom class commodity-overview)"
+    },
+    {
+      "element": "button",
+      "text": "Add commodity",
+      "govukComponent": "Non-standard link-button (submit input styled as a link)"
+    },
+    {
+      "element": "button",
+      "text": "Remove (per-commodity row action; legacy) — submit button name 'remove_{commodityID}', aria-label 'Remove {commodityID}', class link-button. Rendered ONLY when there is more than one commodity (or numberOfUniqueCommodities > 1). Never fired in any trace (single-commodity happy path).",
+      "govukComponent": "Non-standard link-button (submit input styled as a link)",
+      "confidence": "legacy",
+      "evidence": "commodityDetailsFormDesktop.html:27-34"
+    },
+    {
+      "element": "h2",
+      "text": "Broken rice (per-commodity detail table caption/heading)",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "table",
+      "text": "Per-commodity detail: columns 'Net weight (kg/units)' / 'Number of packages' / 'Type of package'; one editable row per package line; Subtotal row. Column headers gated by @root.isCed (Net weight column shared with CHED-P; Type of package column shared with CHED-P).",
+      "govukComponent": "Table (govuk-table, custom class species-table-cheda)",
+      "confidence": "legacy",
+      "evidence": "commodityDetailsFormDesktop.html:61-69 (isCed column headers), :162-189 (package-type column gated by isChedp||isCed)"
+    },
+    {
+      "element": "field",
+      "text": "Net weight (kg/units) input",
+      "govukComponent": "Input (govuk-input)"
+    },
+    {
+      "element": "field",
+      "text": "Number of packages input",
+      "govukComponent": "Input (govuk-input)"
+    },
+    {
+      "element": "field",
+      "text": "Type of package select",
+      "govukComponent": "Select (govuk-select)"
+    },
+    {
+      "element": "button",
+      "text": "Add species (per-commodity; legacy) — submit button name 'add-species_{commodityID}', class link-button. Rendered ONLY when commodity.numSpecies > 1. Not exercised in any CHED-D trace.",
+      "govukComponent": "Non-standard link-button (submit input styled as a link)",
+      "confidence": "legacy",
+      "evidence": "commodityDetailsFormDesktop.html:299-303"
+    },
+    {
+      "element": "h2",
+      "text": "Total for this consignment",
+      "govukComponent": "Heading (govuk-heading-m)"
+    },
+    {
+      "element": "summary-list",
+      "text": "Net weight (kg/units) : 0 / Number of packages : 0 (calculated read-only totals). Net-weight row key/value gated by isChedp||isCed (else 'Number of animals'); values are consignment.totalNetWeight and consignment.totalNumberOfPackages.",
+      "govukComponent": "Summary list (govuk-summary-list govuk-!-width-one-half)",
+      "confidence": "legacy",
+      "evidence": "consignmentTotal.html:1-14"
+    },
+    {
+      "element": "button",
+      "text": "Update total",
+      "govukComponent": "Button (govuk-button govuk-button--secondary), submit name 'update-total', data-prevent-double-click",
+      "confidence": "legacy",
+      "evidence": "consignmentTotal.html:16-24"
+    },
+    {
+      "element": "field",
+      "text": "Total gross weight (kg/units) input",
+      "govukComponent": "Input (govuk-input govuk-!-width-one-half, maxlength 16), label govuk-label--m; rendered under `if (or isNewJourneyChedD isChedp)`",
+      "confidence": "legacy",
+      "evidence": "consignmentTotal.html:25-38"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button)"
+    },
+    {
+      "element": "paragraph",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Link (govuk-link inside govuk-body paragraph)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Description of the goods' above the H1",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "H1 'Commodity'",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-m",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Section headings: 'Commodities', per-commodity name ('Broken rice'), 'Total for this consignment'",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": ["govuk-table__head", "govuk-table__body", "govuk-table__row", "govuk-table__header", "govuk-table__cell", "govuk-table__caption"],
+      "count": 2,
+      "usage": "Commodity overview table (code/description) and per-commodity detail table (net weight / number of packages / type of package with subtotal). Both carry additional custom classes (commodity-overview, species-table-cheda).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Input",
+      "govukClass": "govuk-input",
+      "modifiers": ["govuk-!-width-one-half"],
+      "count": 3,
+      "usage": "Net weight, Number of packages (per commodity row) and Total gross weight text inputs",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["govuk-!-width-full"],
+      "count": 1,
+      "usage": "Type of package dropdown per commodity row",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--m", "govuk-label--s"],
+      "count": 6,
+      "usage": "Field labels for the inputs/select and column labels",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Summary list",
+      "govukClass": "govuk-summary-list",
+      "modifiers": ["govuk-!-width-one-half", "govuk-summary-list__row", "govuk-summary-list__key", "govuk-summary-list__value", "govuk-summary-list__value-right"],
+      "count": 1,
+      "usage": "'Total for this consignment' calculated totals (net weight, number of packages) shown read-only",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-button--secondary", "govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 3,
+      "usage": "'Update total' (secondary), 'Save and return to hub', 'Save and continue'. The 'Add commodity' control is a role=button per the QA page object (getByRole('button', {name:'Add commodity'}), CommodityExtendedDescriptionPage.ts:34-36) but is rendered as a link-styled submit input (see nonStandardPatterns).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the total gross weight input and label",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Section break",
+      "govukClass": "govuk-section-break",
+      "modifiers": ["govuk-section-break--visible"],
+      "count": 1,
+      "usage": "Visible horizontal rule separating sections",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs"],
+      "count": 1,
+      "usage": "Back navigation above the caption; rendered as <a href='#' id='back-link' class='govuk-back-link back-link--next-to-breadcrumbs'>Back</a>",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (DOM: a.govuk-back-link#back-link, text 'Back', href '#')"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "commodities-table-desktop / commodities-table-mobile / commodity-detail-form-desktop / commodity-detail-form-mobile / species-table-desktop / species-table-mobile / table-responsive",
+      "whatItDoes": "The page renders TWO full copies of the commodity tables and their form controls — a desktop version and a mobile version — both present in the DOM simultaneously, one hidden via CSS/js-hidden depending on viewport. Every editable control therefore appears twice, with duplicate id suffixes '-desktop' and '-mobile' but the SAME name attribute (e.g. id 10064000-.net-weight-desktop and 10064000-.net-weight-mobile both share name 10064000-.net-weight).",
+      "concern": "Duplicated form controls with shared names is a bespoke responsive-table hack. It doubles the DOM, risks duplicate-submission ambiguity, and is not a GOV.UK Design System pattern. The rebuild should use a single responsive table (govuk-table with responsive CSS) or a single set of form controls, not a mobile/desktop DOM fork.",
+      "govukAlternative": "govuk-table with the Design System's responsive table CSS, or a single set of inputs laid out with the grid; no duplicate DOM.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (control inventory: -desktop and -mobile duplicates). Corroborated by the QA page object, which has to target the desktop copy explicitly for CHED-D: .commodity-detail-form-desktop input.net-weight / input.number-of-packages / select.type-of-package / #gross-weight-desktop / button[id*=save-and-continue] (CommodityExtendedDescriptionPage.ts:88-106). LEGACY confirms the fork: commodityDetailsResponsive.html:27-28 renders BOTH commodityDetailsFormMobile and commodityDetailsFormDesktop; the id is suffixed '-desktop'/'-mobile' while name is unsuffixed (commodityDetailsFormDesktop.html:86-87, 259-261)."
+    },
+    {
+      "pattern": "species-table-cheda",
+      "whatItDoes": "Custom class applied to the per-commodity net-weight/packages/type-of-package detail table on this CHED-D page.",
+      "concern": "The class name is 'cheda' (CHED-A / species) yet is reused on the CHED-D commodity page — evidence that IPAFFS shares one bespoke table widget across CHED types with a misleading, type-coupled class name. The rebuild should not carry this cross-type coupling.",
+      "govukAlternative": "govuk-table styled per the Design System; drop the CHED-type-coupled class.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (class inventory). LEGACY confirms one shared widget: commodityDetailsFormDesktop.html:49 hardcodes class 'species-table-cheda' for ALL CHED types on the same partial, with per-type branches keyed on @root.isChedA/isChedp/isCed/isChedD (:56-69). The QA page object is itself a single shared CommodityExtendedDescriptionPage across CHED-A/-P/-D/-PP with type-specific getters (CommodityExtendedDescriptionPage.ts:14-16 'Number of animals' CHED-A, :46-77 CHED-PP, :88-106 CHED-D)."
+    },
+    {
+      "pattern": "link-button",
+      "whatItDoes": "The 'Add commodity' control is a submit <button> styled to look like a text link rather than a button; the per-commodity 'Remove' and per-commodity 'Add species' controls use the same link-button class.",
+      "concern": "A form submit disguised as a link is non-standard. GOV.UK either uses a real button or a genuine secondary button, not a link-styled submit.",
+      "govukAlternative": "govuk-button govuk-button--secondary, or a proper Add-another pattern.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (class inventory: link-button; control inventory: INPUT|submit|add-commodity). LEGACY: 'Add commodity' is <button class=link-button name=add-commodity type=submit> (commodityDetailsFormDesktop.html:39-42); per-commodity 'Remove' is <button class=link-button name=remove_{id}> (:29-32); 'Add species' <button class=link-button name=add-species_{id}> (:300-302)."
+    },
+    {
+      "pattern": "net-weight / number-of-packages / type-of-package / subtotal / subheader / commodity-overview / remove / border-bottom-none",
+      "whatItDoes": "Bespoke IPAFFS styling/behaviour hook classes on the inputs, select, subtotal row, table cells and remove-action cell.",
+      "concern": "Custom cosmetic/behavioural classes outside the govuk-* namespace. Mostly styling hooks that would be replaced by Design System utility classes in the rebuild; 'remove' hints at a per-row delete action.",
+      "govukAlternative": "govuk-input / govuk-select / govuk-table classes plus govuk-* spacing utilities; a standard remove action (e.g. Add-another remove link).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (non-govuk class inventory). LEGACY resolves the 'remove' class: the CHED-D detail table has a per-commodity Remove button in the 'remove' cell (commodityDetailsFormDesktop.html:27-34) and a per-species Remove button (:216-228) — a per-ROW delete, NOT a Select-all/Apply bulk bar. The QA page object's unused 'Select all' checkbox (:30-32) and 'Apply' button (:38-40) are NOT present in the CHED-D desktop template — they belong to a different (likely CHED-PP bulk) flow."
+    },
+    {
+      "pattern": "js-hidden / Keyboard submit button",
+      "whatItDoes": "A visually/js-hidden button labelled 'Keyboard submit' plus js-hidden toggling used to swap the mobile/desktop table copies.",
+      "concern": "JS-dependent show/hide of whole table copies and a hidden keyboard-submit shim. Progressive-enhancement smell; the rebuild should not need a hidden keyboard-submit button if forms are structured conventionally.",
+      "govukAlternative": "Standard single form with a normal submit button; no hidden keyboard shim needed.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (structure outline: BUTTON.js-hidden 'Keyboard submit'). LEGACY: <button name={{model.keyboardSubmitButton}} class=js-hidden type=submit value='Keyboard submit'> at the top of the desktop form (commodityDetailsFormDesktop.html:2-6)."
+    }
+  ],
+  "fields": [
+    {
+      "name": "{commodityCode}-.net-weight (e.g. 10064000-.net-weight)",
+      "label": "Net weight (kg/units)",
+      "hint": "",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — per-row net weight is validated for the new-journey CHED-D (NotificationSingleCedValidation group) via @MinValueKeyDataPair on the NET_WEIGHT key data pair (ComplementParameterSet.java:73-80). Must be present and meet the minimum value. LEGACY mandatoriness is 'as the old system had it'; the rebuild may revisit but a net weight per commodity is core to the CHED-D data model.",
+      "validationRule": "Present + minimum value (MinValueKeyDataPair). Rendered as type=text; numeric/min enforced server-side only.",
+      "conditionalOn": "One row per commodity added to the notification; repeats per commodity code.",
+      "observedValues": ["1"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (a11y textbox 'Net weight 1'; control INPUT|text|10064000-.net-weight). QA page object CommodityExtendedDescriptionPage.ts:6-8 (getByRole textbox 'Net weight'); copy-as-new targets .commodity-detail-form-desktop input.net-weight (:88-90). The CHED-D journey always fills this before Save and continue (ched-d-workflows.ts:228; ched-d-accessibility-tests.spec.ts:56) and copy-as-new fills it (ched-d-workflows.ts:615). LEGACY template renders it via govuk/textInput class 'net-weight', column header 'Net weight (kg/units)' gated by isChedp||isCed (commodityDetailsFormDesktop.html:61-62, 82-136). Requiredness now legacy-confirmed (was inferred)."
+    },
+    {
+      "name": "{commodityCode}-.num-packages (e.g. 10064000-.num-packages)",
+      "label": "Number of packages",
+      "hint": "",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — per-row number of packages is validated for the new-journey CHED-D (NotificationSingleCedValidation group) via @IsNonNegativeIntegerKeyDataPair on the NUMBER_PACKAGE key data pair (ComplementParameterSet.java:110-115). Must be a non-negative integer and present. LEGACY mandatoriness; rebuild may revisit.",
+      "validationRule": "Present + non-negative integer (IsNonNegativeIntegerKeyDataPair). Rendered as type=text; enforced server-side only.",
+      "conditionalOn": "One row per commodity; repeats per commodity code.",
+      "observedValues": ["1"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (a11y textbox 'Number of packages 1'; control INPUT|text|10064000-.num-packages — rendered as type=text, not HTML number). QA page object CommodityExtendedDescriptionPage.ts:10-12 (getByRole textbox 'Number of packages'); copy-as-new class .commodity-detail-form-desktop input.number-of-packages (:92-94). Always filled in the journey (ched-d-workflows.ts:229; ched-d-accessibility-tests.spec.ts:57). LEGACY template: column header 'Number of packages' for CHED-D (commodityDetailsFormDesktop.html:66), input class 'number-of-packages' (:137-160). Test-driven values: '1' (DEFAULT_CONFIG, ched-d-workflows.ts:29; confirmed in trace) and '2' (DEFAULT_COPY_CONFIG copy-as-new, ched-d-workflows.ts:566; inferred). Requiredness now legacy-confirmed (was inferred)."
+    },
+    {
+      "name": "{commodityCode}-.package-type (e.g. 10064000-.package-type)",
+      "label": "Type of package",
+      "hint": "",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "legacy — per-row package type is validated for the new-journey CHED-D (NotificationSingleCedValidation group) via @NotNullKeyDataPair on the TYPE_PACKAGE key data pair (ComplementParameterSet.java:126-131). Must be selected (non-null). LEGACY mandatoriness; rebuild may revisit.",
+      "validationRule": "Present / non-null selection (NotNullKeyDataPair).",
+      "options": [
+        "Select type of package",
+        "Bag",
+        "Bale",
+        "Block",
+        "Box",
+        "Can",
+        "Carton",
+        "Case",
+        "Cask",
+        "Coffer",
+        "Container, not otherwise specified as transport equipment",
+        "Crate",
+        "Drum",
+        "In Bulk",
+        "Jar",
+        "Other",
+        "Package",
+        "Pail",
+        "Pallet",
+        "Polystyrene Box",
+        "Tank",
+        "Tote",
+        "Tray",
+        "Tube",
+        "Vial"
+      ],
+      "optionsTruncated": false,
+      "optionCount": 25,
+      "optionsEvidence": "legacy — packageTypeOptions.html deterministically renders exactly these 25 options for CHED-D: the placeholder 'Select type of package' plus 24 types, with 'Balloon Protected' (line 6-8) and 'Pallet Box' (line 27-29) excluded via `{{#unless isCed}}`. This CONFIRMS the 25-option set as canonical for CHED-D and resolves the QA-domain-34-superset open question: the 34-entry packageType dictionary (package-type.ts) is the shared MDM list; CHED-D renders the isCed subset of 25. Option text = option value.",
+      "observedValues": ["Bag"],
+      "conditionalOn": "One row per commodity; repeats per commodity code.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (select 10064000-.package-type, 25 options incl. placeholder; option values equal option text). Desktop column header 'Type of package' (commodityDetailsFormDesktop.html:68); mobile label reads 'Type of packages'. QA page object addresses the row by name '1 Select type of package' and the control by accessible label 'Package type input' (CommodityExtendedDescriptionPage.ts:22-24); copy-as-new targets select.type-of-package (:96-98). LEGACY: <select class='govuk-select type-of-package govuk-!-width-full'> rendered for isChedp||isCed with packageTypeOptions passing isCed (commodityDetailsFormDesktop.html:162-189, 259-273). Test-driven values: 'Bag' (DEFAULT_CONFIG, ched-d-workflows.ts:31; confirmed) and 'Box' (copy-as-new, ched-d-workflows.ts:567; inferred). Requiredness now legacy-confirmed (was inferred)."
+    },
+    {
+      "name": "gross-weight",
+      "label": "Total gross weight (kg/units)",
+      "hint": "",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — totalGrossWeight is @NotNull for the new-journey CHED-D (NotificationSingleCedValidation group), sharing the CHED-PP message key (Commodities.java:72-79). LEGACY mandatoriness; rebuild may revisit but a consignment gross weight is core to CHED-D.",
+      "validationRule": "Present (NotNull). Also a cross-field lower-bound (@MinCommoditiesGrossWeight, gross must be >= net) exists BUT its groups do NOT include NotificationSingleCedValidation (Commodities.java:45-54) — so on the NEW single-CED journey the 'gross < net' check may not fire; confirm whether the rebuild should enforce it. Rendered as type=text, maxlength 16; enforced server-side.",
+      "conditionalOn": "Single per-consignment field (not per commodity). Rendered only under `if (or isNewJourneyChedD isChedp)` (consignmentTotal.html:25).",
+      "observedValues": [],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 26 (a11y textbox 'Total gross weight (kg/units)'; control INPUT|text|gross-weight, label govuk-label--m). QA page object CommodityExtendedDescriptionPage.ts:26-28 (getByRole textbox /Total gross weight/); copy-as-new targets the desktop copy #gross-weight-desktop (:100-102). Always filled in the journey (ched-d-workflows.ts:231; ched-d-accessibility-tests.spec.ts:59). LEGACY: label 'Total gross weight (kg/units)', input id gross-weight-{device} name 'gross-weight' type=text maxlength=16 (consignmentTotal.html:26-37). Test defaults (inferred): '11' (DEFAULT_CONFIG, ched-d-workflows.ts:32) and '3' (copy-as-new, ched-d-workflows.ts:568). Requiredness now legacy-confirmed (was inferred)."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Add the net weight",
+      "field": "{commodityCode}-.net-weight",
+      "trigger": "Submitting a CHED-D commodity row with the net weight empty or below the minimum value",
+      "confidence": "legacy",
+      "evidence": "ComplementParameterSet.java:73-80 (@MinValueKeyDataPair, groups=NotificationSingleCedValidation, field=NET_WEIGHT) -> message key ...complementparameterset.keydatapair.chedpp.net_weight.message; ValidationMessages.properties:132 = 'Add the net weight'. NOTE: the new-journey single-CED group reuses the chedpp net-weight message key; there is no separate 'singleced.net_weight' key."
+    },
+    {
+      "message": "Add number of packages",
+      "field": "{commodityCode}-.num-packages",
+      "trigger": "Submitting a CHED-D commodity row with the number of packages empty or not a non-negative integer",
+      "confidence": "legacy",
+      "evidence": "ComplementParameterSet.java:110-115 (@IsNonNegativeIntegerKeyDataPair, groups=NotificationSingleCedValidation, field=NUMBER_PACKAGE) -> message key ...complementparameterset.keydatapair.singleced.number_package.message; ValidationMessages.properties:126 = 'Add number of packages'."
+    },
+    {
+      "message": "Add package type",
+      "field": "{commodityCode}-.package-type",
+      "trigger": "Submitting a CHED-D commodity row with no package type selected",
+      "confidence": "legacy",
+      "evidence": "ComplementParameterSet.java:126-131 (@NotNullKeyDataPair, groups=NotificationSingleCedValidation, field=TYPE_PACKAGE) -> message key ...complementparameterset.keydatapair.singleced.type_package.message; ValidationMessages.properties:125 = 'Add package type'."
+    },
+    {
+      "message": "Add the total gross weight",
+      "field": "gross-weight",
+      "trigger": "Submitting with the total gross weight empty",
+      "confidence": "legacy",
+      "evidence": "Commodities.java:72-79 (@NotNull, groups={NotificationChedppFieldValidation, NotificationSingleCedValidation}) -> message key ...commodities.chedpp.totalgrossweight.not.null; ValidationMessages.properties:84 = 'Add the total gross weight'. New-journey CHED-D reuses the CHED-PP gross-weight message key."
+    },
+    {
+      "message": "Add the total net weight",
+      "field": "totalNetWeight (calculated consignment net-weight total, shown read-only in the 'Total for this consignment' summary list)",
+      "trigger": "Submitting when the per-commodity net weights produce no consignment total net weight",
+      "confidence": "legacy",
+      "evidence": "Commodities.java:91-98 (@NotNull, groups={NotificationChedppFieldValidation, NotificationSingleCedValidation}) -> message key ...commodities.chedpp.totalnetweight.not.null; ValidationMessages.properties:85 = 'Add the total net weight'. This total is derived/read-only on the page (consignmentTotal.html:6-7); the user resolves it by entering per-row net weights and using 'Update total'."
+    },
+    {
+      "message": "Total gross weight is less than the total net weight",
+      "field": "gross-weight",
+      "trigger": "Total gross weight entered is less than the total net weight of the consignment",
+      "confidence": "legacy",
+      "evidence": "Commodities.java:45-54 (@MinCommoditiesGrossWeight) -> message key ...commodities.totalgrossweight.min.message; ValidationMessages.properties:83 = 'Total gross weight is less than the total net weight'. CAVEAT: the annotation's groups are {NotificationCedOrCvedpFieldValidation, NotificationChedppFieldValidation, NotificationHighRiskEuCedFieldValidation, NotificationCvedpEuFieldValidation} and do NOT include NotificationSingleCedValidation — so on the NEW single-CED journey this cross-field check likely does NOT fire. It applies to the legacy CED grouping. Flagged for the rebuild to decide whether to enforce gross>=net on CHED-D."
+    },
+    {
+      "message": "",
+      "field": "net-weight / num-packages / package-type / gross-weight",
+      "trigger": "Submitting with a commodity row missing net weight, number of packages, type of package, or total gross weight",
+      "confidence": "gap",
+      "evidence": "No error state was captured in the evidence trace (error-free, happy-path submission) and no CHED-D test asserts validation copy for this page. The exact RENDERED wording (error-summary title, in-line placement, any leading text) is still unconfirmed — the legacy entries above give the authoritative message BODY from ValidationMessages.properties, but an errored CHED-D trace is still needed to confirm how each is presented (summary link text vs inline)."
+    }
+  ],
+  "confidence": "confirmed",
+  "notes": "Enriched from authorised legacy IPAFFS source (CHED-D = CED; new single-commodity journey validates against the NotificationSingleCedValidation group). Requiredness for all four page fields upgraded confirmed-existence + inferred-required -> legacy-required with @NotNull / key-data-pair citations. All four are mandatory 'as the old system had it'; the rebuild may revisit policy, but net weight, number of packages, package type (per commodity) and total gross weight (per consignment) are core CHED-D data. Six legacy validation messages added; the rendered wording/presentation remains a gap (no errored CHED-D trace). The 25-option package-type set is legacy-confirmed canonical for CHED-D (isCed excludes 'Balloon Protected' and 'Pallet Box' from the shared 27-in-template / 34-in-QA-domain list). Missed controls added: per-commodity Remove, per-species Remove, and Add-species (all link-button submits, rendered only in multi-commodity / multi-species cases never exercised by a trace). Open nuance for Reconcile: the gross>=net cross-field check (@MinCommoditiesGrossWeight) omits the SingleCed group, so it may not fire on the new CHED-D journey.",
+  "openQuestions": [
+    "RESOLVED (legacy): exact validation message BODIES for missing net weight ('Add the net weight'), number of packages ('Add number of packages'), package type ('Add package type') and total gross weight ('Add the total gross weight') are now sourced from ValidationMessages.properties. STILL OPEN: the RENDERED presentation (error-summary title text, inline vs summary placement) — needs an errored CHED-D trace.",
+    "Net weight and Number of packages render as type=text (not HTML number/required); numeric/min and non-negative-integer rules are server-side (MinValueKeyDataPair / IsNonNegativeIntegerKeyDataPair) — confirm exact bounds/format messages if any differ from the not-present message.",
+    "gross>=net cross-field validation: @MinCommoditiesGrossWeight ('Total gross weight is less than the total net weight') does NOT list NotificationSingleCedValidation in its groups — confirm whether the rebuild should enforce gross>=net on the new CHED-D journey (legacy apparently does not on this journey).",
+    "RESOLVED (legacy) partial: the custom 'remove' class is a per-ROW Remove button (per-commodity remove_{id}, per-species remove_{id}_{speciesId}), not a Select-all/Apply bulk bar. The QA page object's unused 'Select all' checkbox (CommodityExtendedDescriptionPage.ts:30-32) and 'Apply' button (:38-40) are NOT in the CHED-D desktop template and belong to a different flow (likely CHED-PP bulk) — confirm.",
+    "'Add commodity' (link-button submit), 'Add species' (link-button submit, only when a commodity has >1 species) and 'Update total' (recalculates read-only consignment totals, name=update-total) are in-page actions, not journey navigation. The happy-path workflow never adds a second commodity, adds a species, or clicks 'Update total' — confirm the add-commodity/add-species sub-flows and whether totals must be updated before Save and continue.",
+    "Fields are keyed by commodity code and repeat per added commodity; the trace and every CHED-D workflow use a single commodity (10064000 Broken rice; copy-as-new uses 09081100 Nutmeg). Multi-commodity layout (multiple detail tables + subtotals, per-commodity Remove) is legacy-confirmed in the template but never observed with >1 commodity.",
+    "The page renders duplicate mobile and desktop DOM copies of every control sharing the same name (legacy: commodityDetailsResponsive.html:27-28 includes both partials; id suffixed -desktop/-mobile, name unsuffixed) — confirm which copy the server reads on submit.",
+    "RESOLVED (legacy): the CHED-D package-type dropdown renders exactly 25 options (packageTypeOptions.html with isCed excluding 'Balloon Protected' and 'Pallet Box'); the 34-entry QA domain dictionary is the shared MDM superset. Canonical CHED-D set = the 25 observed.",
+    "The shared page object also has a 'Number of animals' textbox (CommodityExtendedDescriptionPage.ts:14-16), a CHED-A field. LEGACY confirms it is gated OFF for CHED-D: the num-animals inputs render only under the else-branch of isChedp (commodityDetailsFormDesktop.html:111-135) and CHED-D takes the isChedp||isCed net-weight branch — so 'Number of animals' does not render for CHED-D."
+  ]
+}

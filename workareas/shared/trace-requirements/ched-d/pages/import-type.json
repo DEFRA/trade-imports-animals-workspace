@@ -1,0 +1,162 @@
+{
+  "slug": "import-type",
+  "name": "Import notification type",
+  "url": "/notification/vnet/protected/notifications/consignment/page-1?source=dashboard",
+  "pageTitle": "What are you importing?",
+  "caption": "About the consignment",
+  "heading": "What are you importing?",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "What are you importing?",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "radios",
+      "text": "Live animals / Products of animal origin, germinal products or animal by-products / High risk food and feed of non-animal origin / Plants, plant products and other objects",
+      "govukComponent": "Radios"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'About the consignment' rendered above the H1",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'What are you importing?'",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": ["govuk-fieldset__legend"],
+      "count": 1,
+      "usage": "Groups the four import-type radios; legend is present but visually empty (the H1 acts as the visible question)",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": ["govuk-radios__item", "govuk-radios__input", "govuk-radios__label"],
+      "count": 1,
+      "usage": "Single-select of the four CHED import types; 'High risk food and feed of non-animal origin' (value CED) selects CHED-D",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the radios fieldset",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-radios__label"],
+      "count": 4,
+      "usage": "One label per radio option",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Primary submit 'Save and continue'",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "cert-type",
+      "label": "What are you importing?",
+      "hint": "",
+      "control": "radio",
+      "required": true,
+      "options": [
+        "Live animals",
+        "Products of animal origin, germinal products or animal by-products",
+        "High risk food and feed of non-animal origin",
+        "Plants, plant products and other objects"
+      ],
+      "optionCount": 4,
+      "observedValues": ["CED"],
+      "optionValues": [
+        { "value": "CVEDA", "text": "Live animals", "chedType": "CHED-A" },
+        { "value": "CVEDP", "text": "Products of animal origin, germinal products or animal by-products", "chedType": "CHED-P" },
+        { "value": "CED", "text": "High risk food and feed of non-animal origin", "chedType": "CHED-D" },
+        { "value": "CHEDPP", "text": "Plants, plant products and other objects", "chedType": "CHED-PP" }
+      ],
+      "confidence": "confirmed",
+      "requiredEvidence": "legacy: the cert-type field is validated Joi.string().valid(CVEDA, CVEDP, CED, CHEDPP).required() — validation/routes/handlers/importer/consignment_importing.js:14. Mandatory selection is a server-side rule (the rendered radio's native 'required' attr is false); the rebuild should treat import type as mandatory. This is legacy mandatoriness 'as the old system had it' — but for CHED-D specifically the rebuild may not keep a shared four-way import-type entry point at all (it could ship a CHED-D-only start with no choice), in which case this page and its requiredness disappear. See openQuestions.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 10; corroborated by trace eddc6f6ec852d692c454d319ade1607727a84a4f action 12. Radio values (legacy-confirmed): Live animals=CVEDA, Products of animal origin...=CVEDP, High risk food and feed of non-animal origin=CED (CHED-D), Plants...=CHEDPP — utils/common_util.js:58-73 (createCertificateTypes builds exactly these four items with this verbatim label copy) and utils/constants.js:21-23,31,689 (CED maps to display name 'CHED-D'). Rendered required=false attr but selection is functionally mandatory (submit gated on choice; enforced by the Joi .required() validator). Page object corroborates all four radios as sibling controls of one group: ImportTypePage exposes radioLiveAnimals ('Live animals'), radioProductsOfAnimalOrigin ('Products of animal origin,'), radioHighRiskFoodAndFeedOf ('High risk food and feed of'), radioPlantsPlantProducts ('Plants, plant products and') — page-objects/notification/ImportTypePage.ts:6-19 (inferred: option labels are partial getByRole accessible-name matches, so full label text remains trace-sourced). The CHED-D journey drives only radioHighRiskFoodAndFeedOf.check() — workflows/notification/ched-d-workflows.ts:196 — hence CED is the only observedValue; the other three values are corroborated by trace b3742f19 rendered DOM and by the legacy source, not by CHED-D test execution."
+    }
+  ],
+  "conditionalControls": [
+    {
+      "control": "Plants, plant products and other objects (CHEDPP) radio option",
+      "condition": "When the logged-in user is an overdue debtor and not acting in a delegation-of-authority (isOverdueDebtor && !isUserInDoA)",
+      "behaviour": "The CHEDPP option is rendered disabled with hint text 'This option is not available'; POSTing cert-type=CHEDPP as an overdue debtor throws the CHEDPP_OVERDUEDEBTOR_ERROR_MESSAGE",
+      "confidence": "legacy",
+      "evidence": "utils/common_util.js:58-72 (createCertificateTypes sets CHEDPPCert.disabled + hint 'This option is not available' when isOverdueDebtor); routes/handlers/importer/consignment_importing.js:20-29 (POST guards CHEDPP for overdue debtors). Affects the CHED-PP option only — the CED (CHED-D) option is never gated. Recorded for completeness; not a CHED-D requirement, and a legacy overdue-debtor policy the rebuild may not carry over."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select the type of import",
+      "field": "cert-type",
+      "trigger": "Submitting 'Save and continue' with no import type selected (Joi ANY_REQUIRED / any.required)",
+      "confidence": "legacy",
+      "evidence": "validation/messages/en.js:94 (IMPORT_TYPE: 'Select the type of import'), wired to the ANY_REQUIRED error type on the cert-type Joi schema at validation/routes/handlers/importer/consignment_importing.js:14-18. This is the verbatim legacy copy for the no-selection case that no trace rendered — it upgrades the prior 'gap' placeholder. Rendered reality never disagreed (both evidence traces were happy-path with 0 errors), so no discrepancy arises."
+    },
+    {
+      "message": "Enter a valid certificate type",
+      "field": "cert-type",
+      "trigger": "Submitting a cert-type value outside the allowed set {CVEDA, CVEDP, CED, CHEDPP} (Joi ANY_VALID / any.only) — not reachable via the rendered radios, defends against tampered/forged POST bodies",
+      "confidence": "legacy",
+      "evidence": "invalidEntryMessage(CERTIFICATE_TYPE) => 'Enter a valid ' + field.toLowerCase() at validation/messages/en.js:23-25 with CERTIFICATE_TYPE='Certificate type' at validation/labels/en.js:21; wired to ANY_VALID at validation/routes/handlers/importer/consignment_importing.js:14-18."
+    },
+    {
+      "message": "Certificate type must be a string",
+      "field": "cert-type",
+      "trigger": "cert-type submitted as a non-string type (Joi STRING_TYPE / string.base) — not reachable via the rendered radios, defends against malformed POST bodies",
+      "confidence": "legacy",
+      "evidence": "typeMessage(CERTIFICATE_TYPE, STRING) => `${label} must be a ${type}` at validation/messages/en.js:27-29, with CERTIFICATE_TYPE='Certificate type' (validation/labels/en.js:21) and STRING='string' (validation/labels/en.js:96); wired to STRING_TYPE at validation/routes/handlers/importer/consignment_importing.js:14-18."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "The prompt's url pattern '/notification/.../import-notification-type' does not match the rendered URL. IPAFFS serves this page at '/notification/vnet/protected/notifications/consignment/page-1?source=dashboard' (confirmed via cookie returnUrl + returnUrl hidden input in trace b3742f19; legacy corroborates the POST target as /protected/notifications/consignment/page-1 at views/importer/consignmentImporting.html:15). 'page-1' is IPAFFS's generic first consignment page for all CHED types; the import-type choice branches the journey. The evidence action pointers themselves were correct.",
+    "Validation copy for the no-selection case is now legacy-confirmed as 'Select the type of import' (validation/messages/en.js:94) — previously a gap. No error trace rendered it, so it remains legacy rather than confirmed; a human should confirm the rebuild keeps this exact copy.",
+    "The radios' HTML 'required' attribute renders as false; mandatory-ness is enforced server-side via the Joi .required() validator (validation/routes/handlers/importer/consignment_importing.js:14), not via the native required attribute. The rebuild should treat import type as mandatory regardless.",
+    "The fieldset legend is present but empty; the visible question is the H1. If the rebuild uses the standard govuk Radios-with-page-heading pattern, the H1 should sit inside the legend (govuk-fieldset__legend--xl) rather than as a separate heading.",
+    "No CHED-D test asserts anything about this page's validation or behaviour — the page object (ImportTypePage.ts) and workflow only ever check the 'High risk food and feed of' radio and click continue, and the a11y spec only runs an axe scan labelled 'Import Type Page'. The mandatory-selection rule is corroborated by the legacy Joi validator but not by Source 2 tests or traces.",
+    "This single import-type page is shared across all four CHED types (the radio choice branches the journey; legacy createCertificateTypes builds all four items in one list — utils/common_util.js:58-73). The QA repo confirms the branch mechanism — the same ImportTypePage page object is driven with radioLiveAnimals / radioProductsOfAnimalOrigin / radioPlantsPlantProducts / radioHighRiskFoodAndFeedOf by ched-a/ched-p/ched-pp/ched-d workflows respectively. For the CHED-D rebuild, confirm whether the new app keeps a shared 'what are you importing' entry point or ships a CHED-D-only start with no import-type choice at all — if the latter, this page and its cert-type mandatoriness do not carry over.",
+    "Legacy adds an overdue-debtor conditional: the CHEDPP option is disabled with hint 'This option is not available' and CHEDPP POSTs are blocked for overdue debtors not in a delegation-of-authority (common_util.js:58-72, consignment_importing.js:20-29). This gates the CHED-PP option only, never CED (CHED-D). Confirm whether the overdue-debtor policy is in scope for the rebuild at all."
+  ]
+}

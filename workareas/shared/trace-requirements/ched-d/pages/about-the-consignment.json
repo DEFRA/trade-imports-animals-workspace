@@ -1,0 +1,327 @@
+{
+  "slug": "about-the-consignment",
+  "name": "About the consignment (purpose)",
+  "url": "/notification/vnet/protected/notifications/DRAFT.GB.YYYY.NNNNNNN/consignment/page-5",
+  "pageTitle": "What is the main reason for importing the consignment? - Import and export applications - GOV.UK",
+  "caption": "About the consignment",
+  "heading": "What is the main reason for importing the consignment?",
+  "journeyPosition": 6,
+  "journeyPositionEvidence": "QA accessibility spec tests/accessibility/ched-d-accessibility-tests.spec.ts:46-49 places 'About the Consignment Page' 6th, after Import Type (1), Country of Origin (2), Origin of Import (3), Search Commodity (4), Commodity Basic Description (5).",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": ["Save and return to hub"],
+  "layout": "govuk-grid-row > govuk-grid-column-three-quarters",
+  "legacyTemplate": {
+    "renderedVariant": "importer/chedd/consignmentPurposeTransit.html — the 'Non-internal market' / point-of-exit variant, which is what BOTH evidence traces rendered.",
+    "twoVariantsGatedByFeatureFlag": "This single URL (page-5) renders one of TWO Handlebars templates chosen at request time by request.shouldRenderNonInternalMarket, which is set from the feature flag 'enableCheddLandbridge' (routes.js:352,366). Flag ON -> importer/chedd/consignmentPurposeTransit.html (Internal market / Non-internal market radios + revealed Point of exit / leave date / leave time). Flag OFF -> importer/chedd/consignmentPurposeTranship.html (DIFFERENT radios: 'For internal market' / 'For transfer to' with an 'Exit Border Control Post' select#bcp-transfer-to, and NO point-of-exit/date/time). The evidence traces captured the flag-ON (transit) variant only.",
+    "confidence": "legacy",
+    "evidence": "route handler ipaffs-frontend-notification/service/src/routes/handlers/importer/chedd/consignment_purpose.js:31-54,60 (buildTransitTranshipContext switches viewPath on shouldRenderNonInternalMarket); flag wiring routes.js:352,366 (shouldRenderNonInternalMarket = featureFlagHelper.isFeatureEnabled(getFeatureFlag('enableCheddLandbridge'))); transit template consignmentPurposeTransit.html:30-93; tranship template consignmentPurposeTranship.html:30-56."
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl, inside the fieldset legend)"
+    },
+    {
+      "element": "h1",
+      "text": "What is the main reason for importing the consignment?",
+      "govukComponent": "Fieldset heading (H1 is govuk-fieldset__heading inside govuk-fieldset__legend--xl)"
+    },
+    {
+      "element": "radios",
+      "text": "Internal market / Non-internal market (with conditional reveal on Non-internal market)",
+      "govukComponent": "Radios (govuk-radios--conditional)"
+    },
+    {
+      "element": "radio",
+      "text": "Internal market — hint: The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).",
+      "govukComponent": "Radios item"
+    },
+    {
+      "element": "radio",
+      "text": "Non-internal market — hint: The consignment is not intended for sale or use in Great Britain and will be exported to another country.",
+      "govukComponent": "Radios item"
+    },
+    {
+      "element": "text-input",
+      "text": "Point of exit — hint: Place of departure from Great Britain (conditional, revealed by Non-internal market)",
+      "govukComponent": "Text input (govuk-input govuk-!-width-full)"
+    },
+    {
+      "element": "date",
+      "text": "When the consignment will leave Great Britain — hint: For example, 27 3 2023 (Day / Month / Year + Choose date picker button)",
+      "govukComponent": "Date input (govuk-date-input) + custom defra datepicker"
+    },
+    {
+      "element": "time",
+      "text": "Time entry: (visually-hidden legend) — hint: 24 hour format, for example, 14 50 (Hour / Minutes)",
+      "govukComponent": "Date input pattern reused for time (govuk-date-input__item)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub — variant secondary action exercised when AMENDING an existing notification (land back on this page from Country of Origin, then return to the hub). NOT rendered in the create-flow trace.",
+      "govukComponent": "Button (secondary). INFERRED — QA page object AboutTheConsignmentPage.ts:50-52 btnSaveAndReturnToHub = getByRole('button',{name:'Save and return to hub'}); driven in the amend flow at tests/notification/ched-d/ched-d-manipulation.spec.ts:46"
+    },
+    {
+      "element": "radio (FLAG-OFF variant only)",
+      "text": "For internal market / For transfer to — LEGACY: these radios render INSTEAD of Internal market / Non-internal market when the 'enableCheddLandbridge' feature flag is OFF (consignmentPurposeTranship.html:31-43). 'For transfer to' reveals an 'Exit Border Control Post' select (select#bcp-transfer-to). Not rendered in either evidence trace (flag was ON).",
+      "govukComponent": "Radios item + conditional Select. confidence: legacy — ipaffs-frontend-notification/service/src/views/importer/chedd/consignmentPurposeTranship.html:31-53"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": ["govuk-radios--conditional"],
+      "count": 1,
+      "usage": "Choose the main reason for import: Internal market vs Non-internal market. Non-internal market conditionally reveals the point-of-exit / departure fields.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (classes.txt: govuk-radios, govuk-radios--conditional, govuk-radios__conditional, govuk-radios__hint)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": ["govuk-fieldset__legend--xl", "govuk-fieldset__legend--s", "govuk-fieldset__heading"],
+      "count": 3,
+      "usage": "Outer radios fieldset (H1 legend --xl); date fieldset ('When the consignment will leave Great Britain', legend --s); time fieldset (visually-hidden legend 'Time entry:').",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20"
+    },
+    {
+      "component": "Date input",
+      "govukClass": "govuk-date-input",
+      "modifiers": ["govuk-date-input__item", "govuk-date-input__input", "govuk-date-input__label", "govuk-input--width-2", "govuk-input--width-4"],
+      "count": 2,
+      "usage": "Day/Month/Year for the leave date, and Hour/Minutes for the leave time (time reuses the date-input item markup).",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": ["govuk-!-width-full"],
+      "count": 1,
+      "usage": "Point of exit free-text field (minlength 1, maxlength 255).",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (locator log: minlength=1 maxlength=255); confirmed in template consignmentPurposeTransit.html:57-69 (govuk/textInput id='point-of-exit' minLength='1' maxLength='255'); QA page object AboutTheConsignmentPage.ts:54-56 inputPointOfExit = getByRole('textbox',{name:'Point of exit'}) corroborates a plain free-text box"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": ["govuk-label--s", "govuk-radios__label", "govuk-date-input__label"],
+      "count": 8,
+      "usage": "Field and radio labels.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": ["govuk-radios__hint"],
+      "count": 5,
+      "usage": "Radio hints, point-of-exit hint, date hint, time hint.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (hints.txt)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Save and continue primary submit. NOTE: a second 'Save and return to hub' button also exists on this page in the AMEND context (QA page object btnSaveAndReturnToHub, AboutTheConsignmentPage.ts:50-52) but was not rendered in the create-flow trace, so its count is not confirmed here. Both buttons come from the shared common/saveButtons partial ({{> common/saveButtons}} at consignmentPurposeTransit.html:96).",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "app service-info back link (rendered in the Service information region, /url #)",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Back navigation to the previous page.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 a11y snapshot (link \"Back\" ref e48)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "defra-datepicker / date-picker__container / date-picker__dialog / date-picker__date-table / date-picker__button__previous-month / date-picker__button__next-month / date-picker__button__close / date-picker__reveal__icon / date-picker__heading / date-input--picker",
+      "whatItDoes": "A bespoke DEFRA JavaScript calendar/date-picker overlaid on the GOV.UK Date input. A 'Choose date' icon button opens a pop-up dialog (with Previous month / Next month / Cancel controls and a month heading e.g. 'July 2026') that fills the Day/Month/Year inputs. Includes an aria-live-message / sr-only region for screen-reader announcements.",
+      "concern": "Not part of the GOV.UK Design System. It is a custom widget with its own dialog, table grid and JS. The GOV.UK Design System deliberately ships Date input as three plain text boxes with NO calendar picker (research shows plain text boxes work better). Carrying this widget forward adds bespoke JS, an ARIA dialog and accessibility surface the new app would own and maintain.",
+      "govukAlternative": "Plain GOV.UK Date input (govuk-date-input, three text inputs Day/Month/Year) with no calendar overlay — the standard pattern for asking for a date the user knows.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (nonstandard.txt: defra-datepicker + date-picker__* classes; structure.txt: BUTTON.date-picker__reveal__icon 'Choose date', H2.date-picker__heading 'July 2026', Previous month / Next month / Cancel). QA test AboutTheConsignmentPage.fillDate() (AboutTheConsignmentPage.ts:98-111) bypasses the picker and types day/month/year directly, confirming the underlying inputs are plain text boxes."
+    },
+    {
+      "pattern": "date-input-day / date-input-month / date-input-year / date-input-hour / date-input-minute",
+      "whatItDoes": "Custom per-segment classes on the date and time text inputs, used by the datepicker JS to target each segment.",
+      "concern": "Non-govuk hooks that exist only to wire up the custom datepicker. Redundant once the standard govuk-date-input is used without the picker.",
+      "govukAlternative": "Rely on govuk-date-input__input alone; drop the custom segment classes.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (nonstandard.txt)"
+    },
+    {
+      "pattern": "Time entry re-uses the Date input component (group 'Time entry:' with Hour + Minutes as govuk-date-input__item), with a visually-hidden legend and no standalone GOV.UK 'time' component",
+      "whatItDoes": "Collects Hour and Minutes (24-hour) as two govuk-input text boxes styled with the date-input item markup. Hint '24 hour format, for example, 14 50'. Rendered via a custom Handlebars partial dynamic_fields/customTime (consignmentPurposeTransit.html:81-89), NOT a GOV.UK component.",
+      "concern": "There is no official GOV.UK time component; IPAFFS repurposes Date input markup for time via the bespoke customTime partial. Acceptable pattern but worth flagging as a Design-System gap the new app must decide how to render (two text inputs is the established convention).",
+      "govukAlternative": "Two govuk-input text inputs (Hour, Minutes) inside a fieldset with a hint — no calendar/picker. This is the accepted community pattern.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (structure.txt LEGEND.hidden govuk-visually-hidden 'Time entry:', hints.txt '24 hour format, for example, 14 50'); template consignmentPurposeTransit.html:81-89 ({{> dynamic_fields/customTime ...}}); QA page object AboutTheConsignmentPage.ts:70-76 inputHour/inputMinutes = getByRole('textbox',{name:'Hour'|'Minutes'})"
+    },
+    {
+      "pattern": "purpose / sr-only / hidden / aria-live-message",
+      "whatItDoes": "'purpose' is a wrapper class on the radios group; sr-only/aria-live-message are screen-reader-only live regions (used by the datepicker); 'hidden' toggles the conditional reveal / visually-hidden legend.",
+      "concern": "Minor bespoke utility classes. 'sr-only' duplicates govuk-visually-hidden. Low risk but not needed if standard components are used.",
+      "govukAlternative": "govuk-visually-hidden for the sr-only cases; govuk-radios__conditional handles reveal natively.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (nonstandard.txt); 'purpose' wrapper class confirmed in template consignmentPurposeTransit.html:31,43 (class=\"govuk-radios__item purpose\")"
+    }
+  ],
+  "fields": [
+    {
+      "name": "purpose",
+      "label": "What is the main reason for importing the consignment?",
+      "hint": "",
+      "control": "radio",
+      "required": true,
+      "requiredEvidence": "legacy — mandatory. Frontend Joi: purpose Joi.string().valid(...).empty('').required() (ipaffs-frontend-notification/service/src/routes/handlers/importer/chedd/consignment_purpose.js:95-100,118-119). Model: Purpose.purposeGroup carries @NotNull under the CHED-D (CED) validation group NotificationHighRiskEuCedFieldValidation (ipaffs-imports-notification-schema/.../representation/Purpose.java:66-78). This is a policy the rebuild is unlikely to revisit — a notification must have a purpose.",
+      "options": ["Internal market", "Non-internal market"],
+      "optionCount": 2,
+      "observedValues": ["internalmarket", "noninternalmarket"],
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (values internalmarket/noninternalmarket); trace eddc6f6ec852d692c454d319ade1607727a84a4f action 21 (Internal market checked, value internalmarket). LEGACY: template consignmentPurposeTransit.html:32-33,44-45 (radio-internalmarket value='internalmarket'; radio-noninternalmarket value='noninternalmarket'). Joi valid options for the transit variant = [internalmarket, noninternalmarket] (consignment_purpose.js:132). QA workflow ched-d-workflows.ts:215-221 drives exactly these two options (radioInternalMarket / radioNonInternalMarket); DEFAULT_CONFIG.isInternalMarket=true (ched-d-workflows.ts:130) makes Internal market the happy path."
+    },
+    {
+      "name": "purpose (Internal market option)",
+      "label": "Internal market",
+      "hint": "The consignment is intended for sale or use in Great Britain (England, Scotland or Wales).",
+      "control": "radio",
+      "required": true,
+      "observedValues": ["internalmarket"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 21 (id radio-internalmarket, value internalmarket); hint id internalmarket-hint (hints.txt). LEGACY: template consignmentPurposeTransit.html:32-41 (id='radio-internalmarket' value='internalmarket' hint id='internalmarket-hint' with verbatim copy). QA page object AboutTheConsignmentPage.ts:10-12 radioInternalMarket = getByRole('radio',{name:'Internal market'}).first()"
+    },
+    {
+      "name": "purpose (Non-internal market option)",
+      "label": "Non-internal market",
+      "hint": "The consignment is not intended for sale or use in Great Britain and will be exported to another country.",
+      "control": "radio",
+      "required": true,
+      "observedValues": ["noninternalmarket"],
+      "conditionalOn": "Selecting this reveals Point of exit, leave date and leave time on the same page (govuk-radios__conditional id='conditional-transit'). Only present when the 'enableCheddLandbridge' feature flag is ON.",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (id radio-noninternalmarket, checked; hint id transit-hint). LEGACY: template consignmentPurposeTransit.html:44-53 (id='radio-noninternalmarket' value='noninternalmarket' aria-controls='conditional-transit'; hint id='transit-hint' with verbatim copy). On POST the handler maps noninternalmarket -> purposeGroup 'For Import Non-Internal Market' (consignment_purpose.js:175). QA page object AboutTheConsignmentPage.ts:22-24 radioNonInternalMarket; exercised by ched-d-notification.spec.ts:18,40 (isInternalMarket:false) which then fills point-of-exit + date via the workflow branch ched-d-workflows.ts:217-221."
+    },
+    {
+      "name": "point-of-exit",
+      "label": "Point of exit",
+      "hint": "Place of departure from Great Britain",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — conditionally mandatory when purpose = noninternalmarket. Frontend Joi.when(purpose, is: noninternalmarket, then: string().empty('').max(255).min(1).required()) (consignment_purpose.js:102-110). Model: Purpose.pointOfExit @NotNull under landbridge group NotNullPointOfExitValidation (Purpose.java:96-100). When purpose = internalmarket the field is optional (Joi otherwise: string().allow('').optional(), consignment_purpose.js:109).",
+      "observedValues": ["Manchester"],
+      "conditionalOn": "purpose = Non-internal market (noninternalmarket)",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (fill 'Manchester'; input minlength=1 maxlength=255, hint id point-of-exit-hint). LEGACY: template consignmentPurposeTransit.html:57-69 (govuk/textInput id='point-of-exit' labelText='Point of exit' hintText='Place of departure from Great Britain' minLength='1' maxLength='255') — a FREE-TEXT box, not a BCP dropdown. QA page object AboutTheConsignmentPage.ts:54-56 inputPointOfExit = getByRole('textbox',{name:'Point of exit'}); workflow ched-d-workflows.ts:219 fillPointOfExit('Manchester') on the Non-internal market branch."
+    },
+    {
+      "name": "estimated-arrival-at-port-of-exit-date (day/month/year)",
+      "label": "When the consignment will leave Great Britain",
+      "hint": "For example, 27 3 2023",
+      "control": "date",
+      "required": true,
+      "requiredEvidence": "legacy — conditionally mandatory when purpose = noninternalmarket. Frontend: handler runs dateValidator.dateValidation({required:true, dateMissingError:'Enter the date the consignment will leave Great Britain'}) only when purpose === noninternalmarket (consignment_purpose.js:134-144). Model: Purpose.estimatedArrivalDateAtPortOfExit @NotNull under landbridge group NotNullEstimatedArrivalDateValidation (Purpose.java:80-86). NOTE the template date hint carries NO 7-day constraint for CHED-D ('For example, 27 3 2023'); the CHED-P transit variant adds 'This must be within 7 days of arrival in Great Britain.' (consignmentPurpose.html:188) but the CHED-D transit template does not (consignmentPurposeTransit.html:78).",
+      "observedValues": ["today + 3 days (Day/Month/Year, zero-padded), e.g. 21/07/2026"],
+      "conditionalOn": "purpose = Non-internal market (noninternalmarket)",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (controls.txt: estimated-arrival-at-port-of-exit-date-day/-month/-year; hint id estimated-arrival-at-port-of-exit-date-hint). LEGACY: template consignmentPurposeTransit.html:71-79 (govuk/date id='estimated-arrival-at-port-of-exit-date' legendText='When the consignment will leave Great Britain' legendClasses='govuk-fieldset__legend--s' hintText='For example, 27 3 2023'). Required-on-Non-internal-market corroborated by QA page object AboutTheConsignmentPage.fillDate() (AboutTheConsignmentPage.ts:98-108, fills Day/Month/Year = today+3), called unconditionally in the Non-internal market branch (ched-d-workflows.ts:220)."
+    },
+    {
+      "name": "estimated-arrival-at-port-of-exit-time (hour/minutes)",
+      "label": "Time entry:",
+      "hint": "24 hour format, for example, 14 50",
+      "control": "text",
+      "required": true,
+      "requiredEvidence": "legacy — conditionally mandatory when purpose = noninternalmarket. Frontend: handler runs timeValidator.timeValidation({required:true, timeMissingError:'Enter the time the consignment will leave Great Britain'}) only when purpose === noninternalmarket (consignment_purpose.js:146-153). Model: Purpose.estimatedArrivalTimeAtPortOfExit @NotNull under landbridge group NotNullEstimatedArrivalTimeValidation (Purpose.java:88-94).",
+      "observedValues": ["hour '12', minutes '00'"],
+      "conditionalOn": "purpose = Non-internal market (noninternalmarket)",
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20 (controls.txt: estimated-arrival-at-port-of-exit-time-hour/-minutes; legend 'Time entry:' visually hidden; hint 24 hour format). LEGACY: template consignmentPurposeTransit.html:81-89 ({{> dynamic_fields/customTime elementName='estimated-arrival-at-port-of-exit-time' hintText='24 hour format, for example, 14 50'}}). Required-on-Non-internal-market corroborated by QA page object AboutTheConsignmentPage.fillDate() (AboutTheConsignmentPage.ts:109-110, inputHour='12' inputMinutes='00'), called unconditionally in the Non-internal market branch (ched-d-workflows.ts:220)."
+    },
+    {
+      "name": "bcp-transfer-to (FLAG-OFF variant only — 'For transfer to')",
+      "label": "Exit Border Control Post",
+      "hint": "",
+      "control": "select",
+      "required": true,
+      "requiredEvidence": "legacy — conditionally mandatory when purpose = tranship (the 'For transfer to' radio) on the flag-OFF (tranship) variant. Frontend Joi.when(purpose, is: tranship, then: string().empty('').required().messages({ANY_REQUIRED: EXIT_BORDER_CONTROL_POST_REQUIRED})) (consignment_purpose.js:86-93). Otherwise optional.",
+      "options": ["Select Border Control Post", "<available UK BCPs from bcpService>"],
+      "conditionalOn": "Feature flag 'enableCheddLandbridge' OFF AND purpose = 'For transfer to' (tranship). NOT rendered in either evidence trace (flag was ON).",
+      "confidence": "legacy",
+      "evidence": "NOT observed in any trace. LEGACY: template consignmentPurposeTranship.html:38-53 (radio-for-transfer-to value='tranship' reveals common/html_elements/select elementName='bcp-transfer-to' formLabel='Exit Border Control Post' topOptionText='Select Border Control Post'); handler wiring consignment_purpose.js:86-93,177. Options come from bcpService.getBorderControlPosts (consignment_purpose.js:217). This whole variant belongs to the flag-OFF (non-landbridge) presentation of page-5; carry it forward only if the rebuild keeps the landbridge feature toggle."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select the main reason for importing the consignment",
+      "field": "purpose",
+      "trigger": "No radio selected on submit (purpose empty)",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/validation/messages/en.js:57 (CONSIGNMENT_PURPOSE_REQUIRED_EU_CHEDD = 'Select the main reason for importing the consignment'), wired to the CHED-D purpose Joi rule at routes/handlers/importer/chedd/consignment_purpose.js:96-97 ([ANY_REQUIRED]: errorMessages.CONSIGNMENT_PURPOSE_REQUIRED_EU_CHEDD). Applies to both the transit and tranship variants (shared PURPOSE_VALIDATION_RULES). No error-state trace rendered it, but the exact copy is now legacy-confirmed. (Previously recorded as a gap with this exact guessed string — now upgraded to legacy.)"
+    },
+    {
+      "message": "What is the purpose of the consignment? is not valid",
+      "field": "purpose",
+      "trigger": "purpose submitted with a value outside the allowed set (tamper / stale form)",
+      "confidence": "legacy",
+      "evidence": "Composed by errorMessages.invalidMessage(labels.CONSIGNMENT_PURPOSE): invalidMessage(field) => field + ' is not valid' (messages/en.js:19-21) with labels.CONSIGNMENT_PURPOSE = 'What is the purpose of the consignment?' (validation/labels/en.js:28). Wired at consignment_purpose.js:98 ([ANY_VALID]: errorMessages.invalidMessage(labels.CONSIGNMENT_PURPOSE)). Edge-case validity guard; unlikely to render in normal use."
+    },
+    {
+      "message": "Enter the point of exit",
+      "field": "point-of-exit",
+      "trigger": "Non-internal market selected but Point of exit left blank",
+      "confidence": "legacy",
+      "evidence": "Frontend copy composed by errorMessages.requiredMessage(labels.POINT_OF_EXIT, labels.THE): requiredMessage(label, article) => `Enter ${article} ${label.toLowerCase()}` (messages/en.js:31-33) with POINT_OF_EXIT='Point of exit' (labels/en.js:112) and THE='the' (labels/en.js:99) => 'Enter the point of exit'. Wired at consignment_purpose.js:105-106. DISCREPANCY: the BACKEND message for the same field is different — 'Select the point of exit' (ipaffs-notification-microservice ValidationMessages.properties:205, key ...purpose.pointOfExit.not.null). The frontend Joi message is the one a user sees first; recorded both."
+    },
+    {
+      "message": "Point of exit must be 255 characters or fewer",
+      "field": "point-of-exit",
+      "trigger": "Point of exit longer than 255 characters",
+      "confidence": "legacy",
+      "evidence": "maxlength=255 confirmed on the input (trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 20; template consignmentPurposeTransit.html:67 maxLength='255'). Copy composed by errorMessages.maxLengthMessage(labels.POINT_OF_EXIT, 255): maxLengthMessage(label, maxLength) => `${label} must be ${maxLength} characters or fewer` (messages/en.js:3-5) => 'Point of exit must be 255 characters or fewer'. Wired at consignment_purpose.js:107 ([STRING_MAX]: errorMessages.maxLengthMessage(labels.POINT_OF_EXIT, 255))."
+    },
+    {
+      "message": "Enter the date the consignment will leave Great Britain",
+      "field": "estimated-arrival-at-port-of-exit-date",
+      "trigger": "Non-internal market selected but leave date missing",
+      "confidence": "legacy",
+      "evidence": "Frontend: literal dateMissingError string passed to dateValidator.dateValidation at consignment_purpose.js:143 ('Enter the date the consignment will leave Great Britain'), invoked only when purpose === noninternalmarket. Backend confirms the same copy: ValidationMessages.properties:206 (...purpose.estimatedArrivalDateAtPortOfExit.not.null = 'Enter the date the consignment will leave Great Britain'). Frontend and backend agree."
+    },
+    {
+      "message": "Enter the time the consignment will leave Great Britain",
+      "field": "estimated-arrival-at-port-of-exit-time",
+      "trigger": "Non-internal market selected but leave time missing",
+      "confidence": "legacy",
+      "evidence": "Frontend: literal timeMissingError string passed to timeValidator.timeValidation at consignment_purpose.js:152 ('Enter the time the consignment will leave Great Britain'), invoked only when purpose === noninternalmarket. Backend confirms the same copy: ValidationMessages.properties:207 (...purpose.estimatedArrivalTimeAtPortOfExit.not.null = 'Enter the time the consignment will leave Great Britain'). Frontend and backend agree."
+    },
+    {
+      "message": "Select the exit Border Control Post",
+      "field": "bcp-transfer-to",
+      "trigger": "FLAG-OFF (tranship) variant: 'For transfer to' selected but Exit Border Control Post not chosen",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/validation/messages/en.js:81 (EXIT_BORDER_CONTROL_POST_REQUIRED = 'Select the exit Border Control Post'), wired at consignment_purpose.js:89-90 ([ANY_REQUIRED]: errorMessages.EXIT_BORDER_CONTROL_POST_REQUIRED) under the Joi.when(purpose is tranship) rule (FOR_TRANSFER_TO_VALIDATION_RULES). Belongs to the flag-OFF variant only; not rendered in any trace."
+    }
+  ],
+  "confidence": "confirmed",
+  "discrepancies": [
+    "Point of exit REQUIRED message copy differs between layers: frontend Joi renders 'Enter the point of exit' (messages/en.js:31-33 + labels/en.js:99,112, wired consignment_purpose.js:106) but the backend model message is 'Select the point of exit' (ValidationMessages.properties:205). The frontend message is what a user sees first (client-side Joi rejects before the payload reaches the backend). Both are legacy — Reconcile should pick the frontend 'Enter the point of exit' as the rendered-reality copy and flag the backend divergence.",
+    "Two templates serve the SAME url (page-5) behind the 'enableCheddLandbridge' feature flag. Flag ON = consignmentPurposeTransit.html (Internal market / Non-internal market + point-of-exit/date/time) — this is what both evidence traces rendered. Flag OFF = consignmentPurposeTranship.html (For internal market / For transfer to + Exit Border Control Post select, no point-of-exit/date/time). The spec is written for the flag-ON (transit) variant; the flag-OFF variant is captured as legacy additions (bcp-transfer-to field, EXIT_BORDER_CONTROL_POST_REQUIRED message). Human decision needed on whether the rebuild keeps both presentations or standardises on one.",
+    "No confirmed-vs-legacy COPY conflict on the rendered (transit) variant: every rendered label/hint in the trace matches the consignmentPurposeTransit.html template verbatim (Internal market hint, Non-internal market hint, Point of exit label+hint, date legend+hint 'For example, 27 3 2023', time hint '24 hour format, for example, 14 50'). The five validationMessages that were previously 'gap' guesses all match their legacy source strings exactly and are now upgraded to 'legacy'."
+  ],
+  "openQuestions": [
+    "Field-level required flags are false in the DOM (controls.txt) because validation is server-side. The 'required' values recorded here are now legacy-confirmed: purpose is unconditionally required (Joi .required() consignment_purpose.js:96 + CED-group @NotNull on Purpose.purposeGroup, Purpose.java:66-78); point-of-exit, leave date and leave time are conditionally required when purpose=noninternalmarket (Joi.when + landbridge @NotNull groups on Purpose.pointOfExit/estimatedArrivalDateAtPortOfExit/estimatedArrivalTimeAtPortOfExit, Purpose.java:80-100). No HTML 'required' attribute exists. These mandatoriness rules are 'as the old system had it' — the conditional point-of-exit/date/time requirements are tied to the landbridge feature and the rebuild may revisit them.",
+    "FEATURE-FLAG VARIANT (legacy) — page-5 renders one of two templates by the 'enableCheddLandbridge' flag (routes.js:352,366; handler consignment_purpose.js:31-54). Flag ON -> Internal market / Non-internal market (transit template, what the traces show). Flag OFF -> For internal market / For transfer to + Exit Border Control Post (tranship template). Confirm whether the CHED-D rebuild carries both presentations, is always-landbridge-on, or drops the toggle. If the flag is being removed / always-on in the rebuild, the tranship variant (bcp-transfer-to field + 'Select the exit Border Control Post' message) is out of scope.",
+    "All five original validationMessages have been upgraded from 'gap' to 'legacy' with resolved file:line citations; two more were added (purpose-invalid 'What is the purpose of the consignment? is not valid', and the flag-OFF 'Select the exit Border Control Post'). Copy is now legacy-trustworthy for VALUES; still worth a single error-state trace to confirm the rendered error-summary markup/ordering, which no trace captured.",
+    "The custom defra datepicker dialog is JS-driven; the new app should decide whether to keep any calendar overlay or use the plain GOV.UK Date input (three text boxes) per Design System guidance. QA note: the tests bypass the picker entirely and type the segments directly (fillDate), so no test depends on the picker.",
+    "CHED-D date hint carries NO 7-day-of-arrival constraint ('For example, 27 3 2023', consignmentPurposeTransit.html:78), unlike the CHED-P transit variant which appends 'This must be within 7 days of arrival in Great Britain.' (consignmentPurpose.html:188). Confirm the rebuild does not need the 7-day rule for CHED-D leave dates.",
+    "SHARED PAGE OBJECT — the AboutTheConsignmentPage page object (AboutTheConsignmentPage.ts) is reused by ALL FOUR CHED types (imported by ched-a/-p/-pp/-d workflows). It therefore exposes controls that DO NOT render on the CHED-D purpose page: radios Re-entry (:6-8), Human consumption (:14-16), Animal feedingstuff (:18-20), Transfer of ownership – Rescue (:26-28), Transit (:30-32), Temporary admission horses (:34-36). The CHED-D transit trace rendered only Internal market / Non-internal market. These extra purpose options belong to other CHED flows (see consignmentPurpose.html which handles isChedp/isChedpp/isChedA/isCveda) — do not carry them into the CHED-D rebuild without human confirmation.",
+    "EXIT-BCP DIVERGENCE — for CHED-D, Non-internal market reveals a FREE-TEXT 'Point of exit' box (confirmed by trace + template textInput consignmentPurposeTransit.html:57-69 + inputPointOfExit textbox role + fillPointOfExit('Manchester')), NOT a BCP dropdown. The flag-OFF tranship variant DOES use a BCP select (bcp-transfer-to), and other CHED types use BCP selects for transit/temporary-admission. Confirm the new CHED-D app keeps free-text point of exit on the Non-internal market path.",
+    "AUTOCOMPLETE VARIANT? — the page object has a pointOfExitSuggestion(name) helper returning getByRole('option', {name}) (AboutTheConsignmentPage.ts:82-84), hinting the Point of exit box MAY offer typeahead in some context. The CHED-D transit template renders a plain govuk/textInput (no autocomplete), and no CHED-D trace/spec exercises a suggestion. Confirm CHED-D point of exit is plain free text.",
+    "SECONDARY ACTION — a 'Save and return to hub' button (btnSaveAndReturnToHub, AboutTheConsignmentPage.ts:50-52) exists on this page in the AMEND context and is driven by ched-d-manipulation.spec.ts:46. Both buttons render from the shared common/saveButtons partial (consignmentPurposeTransit.html:96). It was not rendered in the create-flow trace, so its exact placement/label relative to 'Save and continue' is inferred; confirm against an amend-flow trace.",
+    "CHED-D B2C importer path (transit/landbridge variant) exposes exactly two purpose options (Internal market, Non-internal market), confirmed by both trace and QA workflow and the consignmentPurposeTransit.html template. On POST these map to purposeGroup 'For Import' / 'For Import Non-Internal Market' (consignment_purpose.js:175)."
+  ]
+}

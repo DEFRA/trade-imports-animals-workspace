@@ -1,0 +1,281 @@
+{
+  "slug": "commodity-basic-description",
+  "name": "Commodity basic description",
+  "url": "/notification/vnet/protected/notifications/{reference}/consignment/page-4",
+  "pageTitle": "Select species of commodity",
+  "caption": "Description of the goods",
+  "heading": "Commodity",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "legacySource": {
+    "template": "ipaffs-frontend-notification/service/src/views/importer/consignmentCommodityAttributes.html",
+    "routeHandler": "ipaffs-frontend-notification/service/src/routes/handlers/importer/consignment_commodity_attributes.js",
+    "validator": "ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/consignment_commodity_attributes.js",
+    "messages": "ipaffs-frontend-notification/service/src/validation/messages/en.js",
+    "note": "This is the SHARED 'basic description' page (consignmentCommodityAttributes.html), rendered for CHED-P (CVEDP) and CHED-D (CED) via the isChedD/isChedp branches, and the CHED-PP variant lives in a separate template (consignmentCommodityAttributesChedpp.html). For CHED-D the handler sets isChedD=true, which selects the addCommodity radios with the 'same country of origin' hint. Type/class/family selects and the species checkbox group are NOT gated by CHED type — they render whenever the selected commodity code yields more than one type/class/family option or any species (handler getViewModel + template conditionals). So for some CHED-D commodity codes these controls DO appear; the two evidence traces used a commodity code (10064000 Broken rice) that produced none of them, which is why no trace rendered them.",
+    "confidence": "legacy"
+  },
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Description of the goods",
+      "govukComponent": "Caption"
+    },
+    {
+      "element": "h1",
+      "text": "Commodity",
+      "govukComponent": "Heading (xl)"
+    },
+    {
+      "element": "table",
+      "text": "Commodity | Commodity code / Description | 10064000 / Broken rice",
+      "govukComponent": "Table"
+    },
+    {
+      "element": "radios",
+      "text": "Do you want to add another commodity? / (hint) You can only add another commodity if it has the same country of origin. If not, create a separate notification. / Yes / No",
+      "govukComponent": "Radios"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "select",
+      "text": "Type of commodity (conditional — only when the commodity code yields >1 type option; hidden input otherwise)",
+      "govukComponent": "Select",
+      "confidence": "legacy",
+      "evidence": "consignmentCommodityAttributes.html:50-67 (label 'Type of commodity', id type-select, name type); handler getViewModel typeOptions consignment_commodity_attributes.js:300-301. Not rendered in either evidence trace (Broken rice had a single/empty type option)."
+    },
+    {
+      "element": "select",
+      "text": "Class of commodity (conditional — only when >1 class option)",
+      "govukComponent": "Select",
+      "confidence": "legacy",
+      "evidence": "consignmentCommodityAttributes.html:75-92 (label 'Class of commodity', id class-select, name class); handler getViewModel classOptions consignment_commodity_attributes.js:302-303."
+    },
+    {
+      "element": "select",
+      "text": "Family of commodity (conditional — only when >1 family option)",
+      "govukComponent": "Select",
+      "confidence": "legacy",
+      "evidence": "consignmentCommodityAttributes.html:100-117 (label 'Family of commodity', id family-select, name family); handler getViewModel familyOptions consignment_commodity_attributes.js:304-305."
+    },
+    {
+      "element": "checkboxes",
+      "text": "{notification.type} Select species of commodity / (hint) Select all that apply. / one checkbox per species (conditional — only when the commodity code yields species)",
+      "govukComponent": "Checkboxes",
+      "confidence": "legacy",
+      "evidence": "consignmentCommodityAttributes.html:123-183 (fieldset id species-list, legend '{type} Select species of commodity', hint 'Select all that apply.', name species). Handler getSpeciesFrom consignment_commodity_attributes.js:306, 341-352. Not rendered in either evidence trace."
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Description of the goods' above the H1",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 17"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Commodity'",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": ["govuk-table__head", "govuk-table__header", "govuk-table__cell"],
+      "count": 1,
+      "usage": "Read-only summary of the commodity/commodities already added: columns 'Commodity code' and 'Description' (e.g. 10064000 / Broken rice). Has a govuk-visually-hidden caption 'Commodity'.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated legacy consignmentCommodityAttributes.html:24-40 (id commodity-table, caption 'Commodity', columns 'Commodity code'/'Description')"
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": ["govuk-radios__item", "govuk-radios__input", "govuk-radios__label"],
+      "count": 1,
+      "usage": "'Do you want to add another commodity?' Yes/No decision governing whether a further commodity is added to this notification",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated legacy consignmentCommodityAttributes.html:187-208 (isChedD branch, govuk/radios name addCommodity) + handler addAnotherCommodityValues [{value:'true',text:'Yes'},{value:'false',text:'No'}] consignment_commodity_attributes.js:272"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": ["govuk-fieldset__legend", "govuk-label--m"],
+      "count": 1,
+      "usage": "Wraps the addCommodity radio group; legend is the medium-weight question. A second fieldset (id species-list) wraps the conditional species checkbox group when species options exist.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; legacy consignmentCommodityAttributes.html:128-129 (species fieldset legend govuk-fieldset__legend--m)"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Hint under the addCommodity legend explaining the same-country-of-origin constraint",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated legacy chedDHint constant SINGLE_JOURNEY_CHEDD_COMMODITY_HINT constants.js:971 (exact string match) passed only in the isChedD branch"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Primary 'Save and continue' submit",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated page object CommodityBasicDescriptionPage.ts:34-36 (btnSaveAndContinue, getByRole button 'Save and continue') and workflow ched-d-workflows.ts:212; legacy consignmentCommodityAttributes.html:209"
+    },
+    {
+      "component": "Select",
+      "govukClass": "govuk-select",
+      "modifiers": ["commodity-type", "govuk-!-width-one-half"],
+      "count": 0,
+      "usage": "Conditional Type/Class/Family of commodity dropdowns. Rendered only when the selected commodity code yields more than one option at that hierarchy level; otherwise a hidden input carries the single value. Never rendered in the CHED-D evidence traces (Broken rice had none).",
+      "evidence": "legacy consignmentCommodityAttributes.html:50-119; handler consignment_commodity_attributes.js:300-305"
+    },
+    {
+      "component": "Checkboxes",
+      "govukClass": "govuk-checkboxes",
+      "modifiers": ["govuk-checkboxes__item", "govuk-checkboxes__input", "govuk-checkboxes__label"],
+      "count": 0,
+      "usage": "Conditional species selection ('Select all that apply.'). Rendered only when the selected commodity code yields species. Never rendered in the CHED-D evidence traces.",
+      "evidence": "legacy consignmentCommodityAttributes.html:123-183; handler consignment_commodity_attributes.js:306, 341-352"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Back' link to the previous page (consignment/page-3). Rendered in the service-information region above main.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19 (a11y tree: link 'Back' -> /notification/vnet/protected/notifications/DRAFT.GB.2026.1526057/consignment/page-3); corroborated legacy consignmentCommodityAttributes.html:5 (backLink to .../consignment/page-3)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "table-responsive",
+      "whatItDoes": "Custom (non-govuk) class applied to a wrapper around the commodity govuk-table, presumably to add horizontal scroll / responsive behaviour on narrow viewports.",
+      "concern": "Not part of the GOV.UK Design System. The DS Table component has no built-in responsive-scroll variant, so IPAFFS added a bespoke class. Minor, but the new app should decide deliberately how to make the commodity table responsive rather than copy this class.",
+      "govukAlternative": "GOV.UK Table wrapped in a container with the standard overflow-x auto pattern (no DS component provides this natively).",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19 (class inventory: 'table-responsive' is the only non-govuk- class in main); corroborated legacy consignmentCommodityAttributes.html:24 (<div class=\"table-responsive\">)"
+    },
+    {
+      "pattern": "link-button",
+      "whatItDoes": "Custom (non-govuk) class styling a submit <button> to look like a link. Used for the 'Add another commodity' / 'Remove' actions in the non-CHED-D branches; not present for CHED-D (the isChedD branch suppresses the family 'Add another commodity' button in favour of the addCommodity radios).",
+      "concern": "Bespoke link-styled button outside the DS. Not a CHED-D concern (suppressed for CHED-D) but noted for completeness of the shared template.",
+      "govukAlternative": "Use the govuk radios decision (as CHED-D already does) rather than a link-styled submit button.",
+      "evidence": "legacy consignmentCommodityAttributes.html:210-212 ({{#unless (or isChedpp isChedp isChedD)}} ... link-button 'Add another commodity')"
+    }
+  ],
+  "fields": [
+    {
+      "name": "addCommodity",
+      "label": "Do you want to add another commodity?",
+      "hint": "You can only add another commodity if it has the same country of origin. If not, create a separate notification.",
+      "control": "radio",
+      "required": true,
+      "options": ["Yes", "No"],
+      "optionValues": [{"text": "Yes", "value": "true"}, {"text": "No", "value": "false"}],
+      "observedValues": ["No"],
+      "confidence": "confirmed",
+      "requiredEvidence": "legacy — REQUIRED for CHED-D. Validator adds a required Joi rule for addCommodity when viewModel.addCommodity is undefined and the type is CVEDP, CHEDP or isChedD: consignment_commodity_attributes.js (validator) lines 40-47. The HTML 'required' attribute is not set on the inputs (validation is server-side), consistent with the rendered trace. requiredness here is the legacy policy for CHED-D; the rebuild may revisit whether a Yes/No add-another decision must be a hard-required field.",
+      "validationMessage": "Select yes if you want to add another commodity",
+      "hintEvidence": "legacy — hint copy is the constant SINGLE_JOURNEY_CHEDD_COMMODITY_HINT (constants.js:971), passed as chedDHint only in the isChedD branch; exact string match to the rendered trace.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 19; corroborated b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 17. Radio values: Yes=true (id addCommodity), No=false (id addCommodity-2). Legacy: template consignmentCommodityAttributes.html:187-208 (govuk/radios name addCommodity, isChedD branch with chedDHint), handler addAnotherCommodityValues consignment_commodity_attributes.js:272. Selecting 'true' routes to the Search Commodity page to add another (CONSIGNMENT_SELECT), getNextPage consignment_commodity_attributes.js:193-195. Page object corroboration: CommodityBasicDescriptionPage.ts:18-20 exposes ONLY radioNo; workflow drives radioNo.check() at ched-d-workflows.ts:211; a11y test ched-d-accessibility-tests.spec.ts:42. The single commodity in the read-only table (10064000 / Broken rice) is the DEFAULT_CONFIG commodityCode (commodityCode.brokenRice, commodity-code.ts:6), selected on the preceding Search Commodity page (ched-d-workflows.ts:207-208)."
+    },
+    {
+      "name": "typeOfCommodity",
+      "label": "Type of commodity",
+      "control": "select",
+      "required": true,
+      "conditional": "Rendered only when the selected commodity code yields more than one type option; when a single option exists it is submitted via a hidden input (name=type) with no visible control.",
+      "options": ["(dynamic — from the reference-data commodity category 'types' list for the selected commodity code)"],
+      "confidence": "legacy",
+      "requiredEvidence": "legacy — the model requires a species/type hierarchy for CED; when multiple type options exist the user must pick one (the select is not optional). Mandatoriness is implicit in the hierarchy walk (getViewModel resets class/family when type changes) rather than a distinct Joi rule for CHED-D. Rebuild should confirm whether it wants this hierarchy at all.",
+      "evidence": "legacy consignmentCommodityAttributes.html:50-67 (label 'Type of commodity', id type-select, name type); handler getViewModel typeOptions/typeOptionSelected consignment_commodity_attributes.js:300-301. Corroborated page object dropdownTypeOfCommodity (getByLabel 'Type of commodity') CommodityBasicDescriptionPage.ts:6-8 — the CHED-D workflow simply never exercises it because Broken rice has no multi-option hierarchy. NOT rendered in either evidence trace."
+    },
+    {
+      "name": "classOfCommodity",
+      "label": "Class of commodity",
+      "control": "select",
+      "required": true,
+      "conditional": "Rendered only when >1 class option for the selected type; single option submitted via hidden input (name=class).",
+      "options": ["(dynamic — commodity category 'classes' filtered by selected type)"],
+      "confidence": "legacy",
+      "requiredEvidence": "legacy — part of the commodity type/class/family hierarchy; a class must be chosen when multiple exist. Same implicit-mandatoriness caveat as typeOfCommodity.",
+      "evidence": "legacy consignmentCommodityAttributes.html:75-92 (label 'Class of commodity', id class-select, name class); handler classOptions consignment_commodity_attributes.js:302-303, getClassesFrom line 333-335. NOT rendered in either evidence trace."
+    },
+    {
+      "name": "familyOfCommodity",
+      "label": "Family of commodity",
+      "control": "select",
+      "required": true,
+      "conditional": "Rendered only when >1 family option for the selected class; single option submitted via hidden input (name=family).",
+      "options": ["(dynamic — commodity category 'families' filtered by selected class, excluding blank text)"],
+      "confidence": "legacy",
+      "requiredEvidence": "legacy — part of the type/class/family hierarchy; a family must be chosen when multiple exist. Same implicit-mandatoriness caveat.",
+      "evidence": "legacy consignmentCommodityAttributes.html:100-117 (label 'Family of commodity', id family-select, name family); handler familyOptions consignment_commodity_attributes.js:304-305, getFamiliesFromWithFilter line 337-339. NOT rendered in either evidence trace."
+    },
+    {
+      "name": "species",
+      "label": "{notification.type} Select species of commodity",
+      "hint": "Select all that apply.",
+      "control": "checkbox",
+      "required": true,
+      "conditional": "Rendered only when the selected commodity code (and chosen class/family) yields species; when a single empty species exists it is submitted via a hidden input (name=species). Multiple checkboxes named 'species'.",
+      "options": ["(dynamic — species list for the selected commodity, one checkbox per species; when species carry EPPO codes they are shown in a table with Genus (and Species) / EPPO code columns)"],
+      "confidence": "legacy",
+      "requiredEvidence": "legacy — REQUIRED when species options exist. Validator adds a required Joi rule for species when viewModel.species.length > 0: consignment_commodity_attributes.js (validator) lines 32-38. Error message SPECIES for non-CHEDPP. This is conditional-required (only when the commodity has species); the rebuild should confirm which CHED-D commodities carry a species list.",
+      "validationMessage": "Select at least one species",
+      "evidence": "legacy consignmentCommodityAttributes.html:123-183 (fieldset id species-list, legend prefixed with notification.type + 'Select species of commodity', hint id species-hint 'Select all that apply.', checkbox name species); handler getSpeciesFrom consignment_commodity_attributes.js:306, 341-352; markSelectedSpecies lines 354-362. On a validation error the field key is remapped species -> species-list (handler handleValidationError lines 173-175). Corroborated page object checkboxSpecies/checkboxChedPPSpecies CommodityBasicDescriptionPage.ts:10-16 — unexercised by the CHED-D workflow because Broken rice yields no species. NOT rendered in either evidence trace."
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "addCommodity",
+      "message": "Select yes if you want to add another commodity",
+      "trigger": "Notifier submits without choosing Yes or No for 'Do you want to add another commodity?' (CHED-D always requires the decision).",
+      "confidence": "legacy",
+      "evidence": "en.js:42 (ADD_COMMODITY); wired in validator consignment_commodity_attributes.js lines 40-47 (required for isChedD / CVEDP / CHEDP). This resolves openQuestion #2 — the previously-uncaptured required-error copy is now sourced from legacy."
+    },
+    {
+      "field": "species",
+      "message": "Select at least one species",
+      "trigger": "Commodity has species options and the notifier submits without ticking any species checkbox (non-CHED-PP). For CHED-PP the message is 'Select at least one Genus (and Species)'.",
+      "confidence": "legacy",
+      "evidence": "en.js:141 (SPECIES); wired in validator consignment_commodity_attributes.js lines 32-38 (required when viewModel.species.length > 0)."
+    },
+    {
+      "field": "exceedsMaxCommodityLines",
+      "message": "Commodity lines must be fewer than {maxCommodityLines + 1}",
+      "trigger": "Adding this commodity/species would push the notification over the configured maximum number of commodity lines (non-CHED-PP wording; CHED-PP uses 'Select a maximum of {N} genus and species').",
+      "confidence": "legacy",
+      "evidence": "en.js:106 (MAX_COMMODITY_LINES, interpolates config.maxCommodityLines constants.js:12) and en.js:107 (MAX_COMMODITY_LINES_REACHED for CHED-PP); wired in validator consignment_commodity_attributes.js exceedsMaxCommodityLines rule."
+    },
+    {
+      "field": "commodityComplement",
+      "message": "A commodity must be selected",
+      "trigger": "Model-level (notification-microservice) validation on submit if no commodity complement is present for the consignment. Backs the frontend selection on the preceding Search Commodity page; included here because this is where the commodity/species selection is finalised.",
+      "confidence": "legacy",
+      "evidence": "ValidationMessages.properties:91 (uk.gov.defra.tracesx.notificationschema.representation.partone.euimp.commodities.commodityComplement.min.message). Commodities.java @NotNull commodityComplement for CED group NotificationCedOrCvedpFieldValidation.class (Commodities.java:189-201 group set) — CED = CHED-D."
+    }
+  ],
+  "confidence": "confirmed",
+  "discrepancies": [
+    "openQuestion #3 corrected by legacy: the Type of commodity dropdown, Class/Family selects and species checkboxes exposed by the shared page object are NOT exclusive to CHED-A/CHED-P/CHED-PP. The template's isChedD branch renders the SAME type/class/family/species controls (consignmentCommodityAttributes.html:46-183); the handler builds typeOptions/classOptions/familyOptions/species for every type (consignment_commodity_attributes.js:300-306). They are gated by whether the selected commodity code produces >1 option (or any species), not by CHED type. The two evidence traces used Broken rice (10064000), which produced a single-option hierarchy and no species, so none rendered — but for other CHED-D commodity codes these ARE CHED-D fields. They have been promoted from 'excluded other-CHED controls' to conditional legacy fields.",
+    "openQuestion #4 partly resolved by legacy: the page <title> 'Select species of commodity' is NOT a stale carryover unique to a species page — it is the CONSIGNMENT_TITLE constant hard-set for the whole shared template for every CHED type including CHED-D (consignment_commodity_attributes.js:3 and :258, pageTitle: CONSIGNMENT_TITLE). It genuinely mismatches the H1 'Commodity' in the real system too. Rendered value kept (confirmed); the mismatch is a real IPAFFS quirk the rebuild should fix, not a trace artefact.",
+    "The species fieldset legend in legacy is prefixed with the notification type token: '{notification.type} Select species of commodity' (consignmentCommodityAttributes.html:129-132). No trace rendered the species branch, so the exact runtime prefix for CHED-D (e.g. 'CED' vs 'CHEDD') is a residual gap for a human to confirm."
+  ],
+  "openQuestions": [
+    "The 'Yes' branch (addCommodity=true, add another commodity of the same country of origin) is never exercised in the two evidence traces (both select 'No', a single commodity) and is never driven by any CHED-D test. Legacy confirms the flow: submitting addCommodity=true routes to the Search Commodity page (CONSIGNMENT_SELECT) to add a further commodity (getNextPage consignment_commodity_attributes.js:193-195), which loops back to this page. The page object exposes no radioYes getter, so the multi-commodity loop is untested but its wiring is now legacy-sourced.",
+    "RESOLVED by legacy (was: no validation copy). The required-error copy for addCommodity is 'Select yes if you want to add another commodity' (en.js:42), and the conditional species error is 'Select at least one species' (en.js:141). Both are now in validationMessages. What is still a gap: whether the rebuild wants the same hard-required addCommodity policy for CHED-D, and which CHED-D commodity codes actually carry a species list (the traces used one that does not).",
+    "RESOLVED/PROMOTED by legacy (was: shared page object exposes other-CHED controls). dropdownTypeOfCommodity, checkboxSpecies, class/family selects are rendered by the CHED-D branch of the shared template when the commodity hierarchy has multiple options / species — see discrepancies[0]. They are now conditional legacy fields, not excluded controls. inputEppoCode (CommodityBasicDescriptionPage.ts:22-24), btnSearch and btnAddSpecies belong to the CHED-PP-specific template (consignmentCommodityAttributesChedpp.html) and remain out of CHED-D scope.",
+    "The page <title> 'Select species of commodity' mismatches the H1 'Commodity' and the slug — confirmed to be a hard-set constant for the whole shared template (see discrepancies[1]). The new app should set an accurate page title.",
+    "The observed URL is .../consignment/page-4 with a query string commodity-selected-code=10064000 (IPAFFS uses numbered pages, not the semantic slug). Legacy confirms formAction 'page-4' and the hidden commodity-selected-code input (consignment_commodity_attributes.js:268; consignmentCommodityAttributes.html:43). The slug 'commodity-basic-description' is the exercise's own naming.",
+    "The commodity summary table shows the commodity(ies) already selected on the preceding Search Commodity page (both traces: 10064000 / Broken rice). This page itself does not capture the commodity code — it only shows the running list, asks whether to add another, and (for some codes) captures type/class/family/species. The commodity code selection lives on the preceding Search Commodity page (ched-d-workflows.ts:207-208)."
+  ]
+}

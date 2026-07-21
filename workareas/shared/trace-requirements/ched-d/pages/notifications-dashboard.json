@@ -1,0 +1,475 @@
+{
+  "slug": "notifications-dashboard",
+  "name": "Notifications dashboard",
+  "url": "/notification/vnet/protected/notifications",
+  "pageTitle": "Your import notifications - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "Your import notifications",
+  "doaObservations": [
+    {
+      "finding": "OWNERSHIP + SAME-ORG VISIBILITY (applies to CHED-D by the shared dashboard/org-scoping model). A notification is owned by the ORGANISATION it was created for, not the authoring user: a co-member of that org finds it on their OWN dashboard and gets the full per-row action cluster (Copy as new / View details / Amend / Show notification) with no read-only downgrade. The CHED-D dashboard renders that identical four-action cluster (see structure / openQuestions), so the org-scoping applies to CHED-D. NOT directly exercised by any CHED-D trace (the CHED-D corpus has no second-org-member assertion) — so for CHED-D this is inferred from the system-wide model, confirmed only in the CHED-PP DoA corpus.",
+      "traces": [
+        "065de8c56896cc607da83498efba9c11575a7438 actions 86-90 (CHED-PP DoA: co-member David D sees Franklyn D's submission with all four row actions) — confirmed (CHED-PP DoA)",
+        "eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (CHED-D: identical per-row Copy as new / View details / Amend / Show notification cluster) — confirmed (CHED-D)"
+      ],
+      "confidence": "inferred",
+      "chedDApplicability": "yes — org-level ownership + same-org co-member visibility; testable: a CHED-D created by member A appears on co-member B's dashboard with the full action cluster. See authorization-rules.md OWN-1, VIS-1."
+    },
+    {
+      "finding": "ACCOUNT-BAR CHROME confirmed for CHED-D. The signed-in-user strip renders 'Michael Scott | Address book | Manage account | Manage trade partners | Sign out' for the plain CHED-D B2C importer. 'Manage trade partners' (-> /notification/vnet/protected/notifications/trade-partners/filter) and 'Address book' (-> /notification/vnet/protected/notifications/address-book) are SERVICE CHROME, not an agent-gated affordance — their presence on a CHED-D page does NOT imply CHED-D delegated creation exists (that surface is CHED-PP-only; see below).",
+      "traces": [
+        "work/p3/snap14.txt:34-44 (CHED-D: Address book + Manage account + Manage trade partners + Sign out in the account bar) — confirmed (CHED-D)",
+        "work/p26/snap100.txt:40 and work/p29/snap101.txt:40 (CHED-D: 'Manage trade partners' link) — confirmed (CHED-D)"
+      ],
+      "confidence": "confirmed",
+      "chedDApplicability": "yes. See authorization-rules.md AGT-2."
+    },
+    {
+      "finding": "TRADE PARTNER BADGE is NOT rendered on CHED-D rows. The teal 'Trade Partner' govuk-tag marks an agent-created on-behalf-of notification, but its legacy render condition is {{#and (eq type \"CHEDPP\") agencyOrganisationId}} (notificationList.html:28) — CHEDPP literal AND an agency id. A CHED-D row satisfies neither, so no CHED-D notification ever carries the badge. The govuk-tag uses on a CHED-D row are the CHED status and Inspection tags ONLY (see govukComponents/Tag). Recorded so the rebuild does not add a Trade Partner badge to CHED-D from the CHED-PP model.",
+      "traces": [
+        "ipaffs-frontend-notification/service/src/views/partials/common/notificationList.html:28 (render gate) — legacy",
+        "e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94 / 2c16ad659671044cd9b138be5a71b21c658af3b8 action 93 (CHED-PP DoA: badge present on CHEDPP agent rows only) — confirmed (CHED-PP DoA)"
+      ],
+      "confidence": "legacy",
+      "chedDApplicability": "no — CHEDPP-only. See authorization-rules.md BDG-1."
+    },
+    {
+      "finding": "'CURRENT ORGANISATION' CONTEXT SWITCHER (dashboard chrome, applies to CHED-D). A user operating under more than one organisation selects which org's notifications the list shows, via a 'Change' button. Notification-type-agnostic. Not exercised in the single-context CHED-D corpus (the CHED-D notifier is one 'Michael Scott' account with no switch), so its CHED-D rendering is a gap, but the scoping model applies.",
+      "traces": [
+        "b701cc405623fb2d2e2b2dedcf2bec3d10dfb954 snap 66 / e9b5e36b926ee3b7ac855c45cf8169dd38321ad4 snap 94 (CHED-PP DoA: switcher 'IPAFFS Plant Organisation 1' [selected] + 'Shad Price') — confirmed (CHED-PP DoA)"
+      ],
+      "confidence": "inferred",
+      "chedDApplicability": "yes (chrome). See authorization-rules.md VIS-2."
+    }
+  ],
+  "bodyCopy": [
+    "For all import types (repeated banner-message caption in the Alert/Information notification banners)",
+    "For imports of live animals (repeated banner-message caption)",
+    "30557 consignments must go to your chosen BCP for inspection (Chosen for inspection banner)",
+    "Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed. (no-match error-summary body)",
+    "155494 results (results count line, dynamic)"
+  ],
+  "backLink": "",
+  "continueLabel": "Create a new notification",
+  "secondaryActions": [
+    "Clone a certificate",
+    "View all (My alerts)",
+    "250 notifications awaiting amendment",
+    "52 notifications changed to In Progress in the last 24 hours",
+    "97 notifications changed to Valid in the last 24 hours",
+    "11 notifications changed to Rejected in the last 24 hours",
+    "1 notification changed to Cancelled in the last 24 hours",
+    "8 notifications changed to Replaced in the last 24 hours",
+    "Search",
+    "Clear",
+    "Recover notifications from archive",
+    "Review these notifications (no-match error-summary link)",
+    "Update sort",
+    "Today",
+    "Tomorrow",
+    "Yesterday (page-object only — btnSearchByYesterday; NOT observed in any CHED-D trace, inferred variant quick-range)",
+    "Next seven days",
+    "Clear date range",
+    "Copy as new (per result row)",
+    "View details (per result row)",
+    "Amend (per result row)",
+    "Show notification (per result row)",
+    "Delete notification (reached via View details, then a confirm page)",
+    "View consignments to be inspected"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full (search-panel uses nested govuk-grid-column-one-third / govuk-grid-column-two-thirds)",
+  "structure": [
+    { "element": "notification-banner", "text": "Alert", "govukComponent": "Notification banner (custom notification-banner--alert variant listing dismissible alert messages)" },
+    { "element": "notification-banner", "text": "Information", "govukComponent": "Notification banner" },
+    { "element": "notification-banner", "text": "Chosen for inspection — 30557 consignments must go to your chosen BCP for inspection / View consignments to be inspected", "govukComponent": "Notification banner" },
+    { "element": "h1", "text": "Your import notifications", "govukComponent": "Heading (govuk-heading-xl)" },
+    { "element": "button-group", "text": "Create a new notification (id #create-notification) / Clone a certificate", "govukComponent": "Button (rendered as links, govuk-button)" },
+    { "element": "info-summary", "text": "My alerts — View all / 250 notifications awaiting amendment / 52 notifications changed to In Progress in the last 24 hours / 97 notifications changed to Valid ... / 11 ... Rejected / 1 ... Cancelled / 8 ... Replaced", "govukComponent": "Non-standard info-summary widget wrapping a govuk-list" },
+    { "element": "h3", "text": "Search notifications by", "govukComponent": "Heading (govuk-heading-m); collapsible search panel" },
+    { "element": "text", "text": "Keywords or notification number", "govukComponent": "Text input" },
+    { "element": "text", "text": "Commodity", "govukComponent": "Text input" },
+    { "element": "select", "text": "BCP or POE", "govukComponent": "Select" },
+    { "element": "select", "text": "Status", "govukComponent": "Select" },
+    { "element": "select", "text": "Country of origin", "govukComponent": "Select" },
+    { "element": "text", "text": "Consignee / Importer", "govukComponent": "Text input" },
+    { "element": "select", "text": "Notification type", "govukComponent": "Select" },
+    { "element": "text", "text": "Microchip number (CHED-A only)", "govukComponent": "Text input" },
+    { "element": "fieldset", "text": "Arrival / Import date range — Today / Tomorrow / Next seven days / Clear date range (page object also exposes a 'Yesterday' quick-range button, unobserved in traces, inferred)", "govukComponent": "Fieldset with custom quick-range link-buttons" },
+    { "element": "date", "text": "Start date range (Day / Month / Year + Choose date picker) — inputs #start-date-day/#start-date-month/#start-date-year", "govukComponent": "Date input + non-standard defra-datepicker" },
+    { "element": "date", "text": "End date range (Day / Month / Year + Choose date picker) — inputs #end-date-day/#end-date-month/#end-date-year", "govukComponent": "Date input + non-standard defra-datepicker" },
+    { "element": "button", "text": "Search", "govukComponent": "Button" },
+    { "element": "link", "text": "Clear", "govukComponent": "Link" },
+    { "element": "link", "text": "Recover notifications from archive", "govukComponent": "Link" },
+    { "element": "error-summary", "text": "There is a problem — Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed. / Review these notifications", "govukComponent": "Error summary (used as a no-match warning, not a form-validation summary)" },
+    { "element": "paragraph", "text": "155494 results (element #notification-count)", "govukComponent": "Body text (dynamic count)" },
+    { "element": "select", "text": "Sort by: — Arrival (newest to oldest) / Arrival (oldest to newest)", "govukComponent": "Select + Update sort button" },
+    { "element": "table", "text": "Results list — each row a bespoke notification-list__row of term/definition pairs: Reference number (#reference-number-N), Commodity, Arrival at BCP or POE (#arrival-date-N), CHED status (#status-N), Consignee, Consignor, Origin, Inspection (#inspection-status-N), plus a per-row Decision date (#decision-date-N) exposed by the page object but not captured in the trace row inventory", "govukComponent": "Non-standard notification-list grid (definition-list rows, not govuk-table/govuk-summary-list). NB the QA page object addresses rows via '#notifications-page tbody tr' and cells via 'td', so the bespoke grid may be wrapped in a semantic <table> — see openQuestions." },
+    { "element": "buttons", "text": "Copy as new (id copy-as-new-<ref>) / View details (id view-details-<ref>) / Amend (id amend-details-<ref>) / Show notification (per row)", "govukComponent": "Buttons styled as govuk-link" },
+    { "element": "pagination", "text": "pagination-list / pagination-item-next", "govukComponent": "Non-standard bespoke pagination widget" }
+  ],
+  "govukComponents": [
+    { "component": "Heading", "govukClass": "govuk-heading-xl", "modifiers": ["govuk-heading-m", "govuk-heading-s"], "count": 3, "usage": "Page H1 'Your import notifications'; section headings 'Search notifications by' etc.", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Button", "govukClass": "govuk-button", "modifiers": ["govuk-button--secondary", "govuk-button-group"], "count": 6, "usage": "Create a new notification / Clone a certificate (as links); Search; Update sort; date quick-range", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Select", "govukClass": "govuk-select", "modifiers": [], "count": 5, "usage": "BCP or POE, Status, Country of origin, Notification type, Sort by", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Text input", "govukClass": "govuk-input", "modifiers": ["govuk-input--width-2", "govuk-input--width-4"], "count": 10, "usage": "Keywords, Commodity, Consignee/Importer, Microchip, and the six date part inputs", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Date input", "govukClass": "govuk-date-input", "modifiers": ["govuk-date-input__item", "govuk-date-input__input", "govuk-date-input__label"], "count": 2, "usage": "Start date range and End date range (Day/Month/Year triplets)", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Fieldset", "govukClass": "govuk-fieldset", "modifiers": ["govuk-fieldset__legend", "govuk-fieldset__legend--s"], "count": 3, "usage": "Arrival/Import date range, Start date range, End date range groupings", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Label", "govukClass": "govuk-label", "modifiers": ["govuk-label--s"], "count": 11, "usage": "Field labels across the search panel", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Hint", "govukClass": "govuk-hint", "modifiers": [], "count": 2, "usage": "Keyword and Commodity field hints", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Error summary", "govukClass": "govuk-error-summary", "modifiers": ["govuk-error-summary__title", "govuk-error-summary__body", "govuk-error-summary__list"], "count": 1, "usage": "'There is a problem' no-match warning (customs-declaration mismatch), not a form-validation summary", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Notification banner", "govukClass": "govuk-notification-banner", "modifiers": ["govuk-notification-banner__title", "govuk-notification-banner__header", "govuk-notification-banner__content", "notification-banner--alert", "notification-banner__content--full-width"], "count": 3, "usage": "Alert, Information and Chosen-for-inspection message banners (dismissible)", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Tag", "govukClass": "govuk-tag", "modifiers": ["govuk-tag--blue", "govuk-tag--green", "govuk-tag--grey", "govuk-tag--orange", "govuk-tag--red", "govuk-tag--yellow", "tag--fixed-width"], "count": 40, "usage": "STRONG.govuk-tag.tag--fixed-width used for BOTH the CHED status AND the Inspection value on each result row (plus the header 'Beta' phase-banner tag). 40 instances rendered on the observed page. Observed colour mapping: CHED status New -> govuk-tag--blue, Draft CHEDP -> govuk-tag--grey; Inspection 'Check GVMS' -> govuk-tag--orange, 'Not required' -> govuk-tag--green.", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (40 STRONG.govuk-tag elements: 'New'/blue, 'Check GVMS'/orange, 'Not required'/green, 'Draft CHEDP'/grey)" },
+    { "component": "List", "govukClass": "govuk-list", "modifiers": [], "count": 1, "usage": "My alerts links list", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Link", "govukClass": "govuk-link", "modifiers": ["govuk-link--no-visited-state"], "count": 4, "usage": "Clear, Recover notifications from archive; also the per-row action buttons are styled as govuk-link", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" },
+    { "component": "Body text", "govukClass": "govuk-body", "modifiers": ["govuk-!-margin-bottom-*", "govuk-!-width-full", "govuk-!-width-three-quarters", "govuk-!-font-size-19"], "count": 1, "usage": "Results count and general copy; heavy use of govuk override utility classes", "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11" }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "notification-list, notification-list__row, notification-list__row-container, notification-list__heading, notification-list__value, notification-list__links, notification-list__grid-column-20/25/30",
+      "whatItDoes": "Bespoke results-grid: each notification is a card of term/definition (dt/dd) pairs — Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin, Inspection — plus a per-row action cluster (Copy as new / View details / Amend / Show notification).",
+      "concern": "Custom IPAFFS grid, not a GOV.UK component. It is the core of the dashboard and drives the whole result-row lifecycle. A rebuild should not port this markup wholesale.",
+      "govukAlternative": "GOV.UK Summary list (govuk-summary-list) per card, or a responsive Table (govuk-table) for the result set; per-row actions as an Actions column / Button group.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11; trace 566993a8e644d92e502bbb170ae3a5122bf5053f action 125 (row innerText); trace 54f17cd31397fff10a0ce2b4458c726fdde193e0 action 113 (copy-as-new button); QA page object addresses this grid as '#notifications-page tbody tr' / 'td' and per-row cells #reference-number-N/#status-N/#inspection-status-N/#arrival-date-N/#decision-date-N — page-objects/notification/NotificationDashboardPage.ts:224-262 (inferred)"
+    },
+    {
+      "pattern": "defra-datepicker, date-picker__container, date-picker__dialog, date-picker__date-table, date-picker__reveal__icon, date-picker__button__next-month/previous-month/close, date-input--picker",
+      "whatItDoes": "A custom pop-up calendar date-picker layered on top of the standard govuk-date-input Day/Month/Year fields, with a 'Choose date' reveal button opening a month-grid dialog.",
+      "concern": "Third-party/bespoke DEFRA date-picker JS widget — not part of govuk-frontend. Adds a JS dependency and a11y surface the Design System does not cover.",
+      "govukAlternative": "GOV.UK Date input (govuk-date-input) alone (Day/Month/Year text fields) — the Design System deliberately has no calendar widget.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (class inventory + structure outline)"
+    },
+    {
+      "pattern": "info-summary, info-summary__title, info-summary__body, info-summary__list",
+      "whatItDoes": "'My alerts' summary block listing counts of notifications by status change in the last 24 hours, styled like a summary/panel.",
+      "concern": "Custom class family, not govuk-*. Presentational only; easy to replace.",
+      "govukAlternative": "Summary list (govuk-summary-list) or a simple list within an Inset text / panel.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11"
+    },
+    {
+      "pattern": "pagination, pagination-list, pagination-item, pagination-item-next, pagination-link, pagination-link-icon, pagination-link-label, pagination-link-title",
+      "whatItDoes": "Bespoke pagination control for the 155k-result set (next/prev, page items).",
+      "concern": "Custom pagination markup predating the GOV.UK Pagination component.",
+      "govukAlternative": "GOV.UK Pagination (govuk-pagination) component.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (class inventory)"
+    },
+    {
+      "pattern": "search-panel, search-filter-form, search-hidden, hidden-search button, aria-live-message, sr-only",
+      "whatItDoes": "Collapsible search-filter panel wrapper with a hidden toggle button and an aria-live region; sr-only is a non-govuk visually-hidden variant (govuk-visually-hidden also present).",
+      "concern": "Bespoke collapse/expand behaviour and a duplicate visually-hidden utility (sr-only vs govuk-visually-hidden). Minor, but should be normalised.",
+      "govukAlternative": "GOV.UK Details (govuk-details) for the collapse, and standardise on govuk-visually-hidden.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (class inventory)"
+    },
+    {
+      "pattern": "link-button, clear-link, notification-button",
+      "whatItDoes": "Buttons styled as links (date quick-ranges Today/Tomorrow/Next seven days/Clear date range) and a link styled as a button (Create a new notification).",
+      "concern": "Mixed button/link semantics via custom classes — buttons that look like links and links that look like buttons.",
+      "govukAlternative": "GOV.UK Button (govuk-button) for actions, plain links for navigation; the govuk-button-group already present handles layout.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (structure outline: BUTTON.link-button Today/Tomorrow/...); QA page object drives the quick-ranges via getByRole('button', { name: 'Today' | 'Tomorrow' | 'Yesterday' | 'Next seven days' | 'Clear date range' }) — page-objects/notification/NotificationDashboardPage.ts:48-66 (inferred)"
+    },
+    {
+      "pattern": "Error summary used for a non-form 'no match' warning",
+      "whatItDoes": "The govuk-error-summary ('There is a problem') is repurposed to flag notifications whose details do not match customs declarations, with a 'Review these notifications' link — it is not summarising validation errors on this page's form.",
+      "concern": "Semantic misuse of the Error summary component (it is meant for form-validation errors and should sit at the top of the page and move focus).",
+      "govukAlternative": "GOV.UK Warning text (govuk-warning-text) or a Notification banner for a non-blocking data-quality warning.",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (error-summary body e311-e318)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "certificate-number",
+      "label": "Keywords or notification number",
+      "hint": "For example: reference, destination, consignor, transporter, documents",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "observedValues": ["CHEDD.GB.2026.1525925"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11; value from trace 566993a8e644d92e502bbb170ae3a5122bf5053f action 121. Corroborated: QA drives this as getByRole('textbox', { name: 'Keywords or notification' }) and searches by CHED reference — page-objects/notification/NotificationDashboardPage.ts:72-74,108-111 (inferred). CHED-D reference format is CHEDD.GB.\\d{4}.\\d{7,8} — types/ched-type.ts:9-16 (inferred).",
+      "legacyEvidence": "Label + hint verbatim: ipaffs-frontend-notification/service/src/views/partials/common/searchAndFilter.html:21-27 (legacy). Optional + max 255 chars, Joi label 'Search': ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/search.js:52-54 (legacy). Search form is genuinely optional — searching with no criteria returns all results; PartOne @NotNull creation-mandatoriness does not apply to this search page."
+    },
+    {
+      "name": "commodity-code-or-desc",
+      "label": "Commodity",
+      "hint": "Code or description",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11. Corroborated: QA drives via getByRole('textbox', { name: 'Commodity' }).fill(commodityCode) then Search — page-objects/notification/NotificationDashboardPage.ts:274-277 (inferred).",
+      "legacyEvidence": "Label 'Commodity' + hint 'Code or description' verbatim: searchAndFilter.html:34-35 (legacy). Optional + max 255 chars: search.js:62-64 (legacy). Field carries an error-class hook (displayErrorClass errors 'commodity-code-or-desc' — searchAndFilter.html:32), so it participates in the search-form validation summary."
+    },
+    {
+      "name": "bcp",
+      "label": "BCP or POE",
+      "control": "select",
+      "required": false,
+      "options": [
+        "All",
+        "ABC Legal - UK6N3IVF",
+        "ABC Legal - ED6W6Q3U",
+        "ABC Legal - EDW0HWHB",
+        "ABC Legal - UKVTZOI8",
+        "ABC Legal - UK9M301K",
+        "ABC Legal - ED9TC77E",
+        "ABC Legal - UK0ICKBR",
+        "ABC Legal - ED0Q6TJA",
+        "ABC Legal - UKU6G5N1",
+        "ABC Legal - EDUDNXVO",
+        "APHA - GBAPHA1A",
+        "Aberdeen Harbour Board - GBAHB4PP",
+        "Belfast Port - GBBEL4",
+        "Dover Port - GBDOV1P",
+        "East Midlands Airport - GBEMA4",
+        "Felixstowe - GBFXT1",
+        "Gatwick Airport - GBLGW1",
+        "Heathrow Airport - GBLHR4PP",
+        "Sevington BCP - GBSEV25",
+        "Southampton - GBSOU1"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 190,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (combobox e229; ~190 options, mostly 'ABC Legal - <code>' test data; reference data — new app sources from a reference-data/BCP service, do not hardcode)"
+    },
+    {
+      "name": "certificate-status",
+      "label": "Status",
+      "control": "select",
+      "required": false,
+      "options": [
+        "All",
+        "Draft",
+        "New",
+        "Submitted",
+        "Amend",
+        "In Progress",
+        "Valid",
+        "Rejected",
+        "Cancelled",
+        "Replaced",
+        "Partially Rejected",
+        "Split Consignment"
+      ],
+      "optionCount": 12,
+      "optionValueMap": {
+        "": "All",
+        "DRAFT": "Draft",
+        "NEW": "New",
+        "SUBMITTED": "Submitted",
+        "AMEND": "Amend",
+        "IN_PROGRESS": "In Progress",
+        "VALIDATED": "Valid",
+        "REJECTED": "Rejected",
+        "CANCELLED": "Cancelled",
+        "REPLACED": "Replaced",
+        "PARTIALLY_REJECTED": "Partially Rejected",
+        "SPLIT_CONSIGNMENT": "Split Consignment"
+      },
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (combobox e233). Corroborated: QA selects by option VALUE, which is an uppercase status code distinct from the visible label — getByLabel('Status').selectOption('NEW') (label 'New' -> value 'NEW') — page-objects/notification/NotificationDashboardPage.ts:264-267 (inferred).",
+      "legacyEvidence": "Full option VALUE(code) -> LABEL map RESOLVED (was a gap): searchAndFilter.html:59-69 renders option value=certificateStatusKey, text=certificateStatus over statusDropDownValues = { DRAFT:'Draft', NEW:'New', SUBMITTED:'Submitted', AMEND:'Amend', IN_PROGRESS:'In Progress', VALIDATED:'Valid', REJECTED:'Rejected', CANCELLED:'Cancelled', REPLACED:'Replaced', PARTIALLY_REJECTED:'Partially Rejected', SPLIT_CONSIGNMENT:'Split Consignment' } — ipaffs-frontend-notification/service/src/utils/constants.js:658-670 (legacy). Note VALIDATED->'Valid' and IN_PROGRESS->'In Progress' (code != slugified label). The empty value '' is the 'All' default (searchAndFilter.html:62). Optional filter, no @NotNull (search.js CERTIFICATE_STATUS_KEY = Joi.any())."
+    },
+    {
+      "name": "country-of-origin",
+      "label": "Country of origin",
+      "control": "select",
+      "required": false,
+      "options": [
+        "All",
+        "European Union/EEA and Northern Ireland",
+        "Great Britain and Channel Islands",
+        "Rest of World",
+        "Afghanistan",
+        "Aland Islands",
+        "Albania",
+        "Algeria",
+        "American Samoa",
+        "Andorra",
+        "Angola",
+        "Anguilla",
+        "Antarctica",
+        "Antigua and Barbuda",
+        "Argentina",
+        "Armenia",
+        "Aruba",
+        "Australia",
+        "Austria",
+        "Azerbaijan"
+      ],
+      "optionsTruncated": true,
+      "optionCount": 250,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (combobox e237; 3 groupings + full ISO country list + England/Scotland/Wales/Northern Ireland; reference data — new app sources from a countries reference service, do not hardcode). Corroborated: QA drives via getByLabel('Country of origin').selectOption(<country name>) — page-objects/notification/NotificationDashboardPage.ts:269-272 (inferred).",
+      "legacyEvidence": "The three summary groupings (value 'EEA' -> 'European Union/EEA and Northern Ireland', 'GB-CI' -> 'Great Britain and Channel Islands', 'ROW' -> 'Rest of World') render inside a <optgroup label=\"Countries\"> ONLY when the isHighRiskEuImportEnabled feature flag is on — searchAndFilter.html:80-101 (legacy); when off, only '' -> 'All' plus the per-country list render (searchAndFilter.html:102-111). A separate <optgroup label=\"United Kingdom of Great Britain and Northern Ireland\"> (ukRegions) renders when present (searchAndFilter.html:112-120). Country option value = ISO code (option value={{code}}, text={{name}}). Region codes: GB-CI, GB-ENG, GB-WLS, GB-SCT, GB-NIR, EEA, ROW — constants.js:671-680 (legacy). Optional filter, no @NotNull (search.js COUNTRY_OF_ORIGIN_KEY = Joi.any())."
+    },
+    {
+      "name": "consignee",
+      "label": "Consignee / Importer",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11",
+      "legacyEvidence": "Label 'Consignee / Importer' verbatim: searchAndFilter.html:129 (legacy). Optional + max 255 chars, Joi label 'Consignee': search.js:59-61 (legacy). Error-class hook displayErrorClass errors 'consignee' — searchAndFilter.html:127."
+    },
+    {
+      "name": "certificate-type",
+      "label": "Notification type",
+      "control": "select",
+      "required": false,
+      "options": [
+        "All",
+        "CHED-A",
+        "CHED-P",
+        "CHED-D",
+        "CHED-PP",
+        "Import from the EU",
+        "IMP-Animals",
+        "IMP-POAO",
+        "IMP-HRFNAO"
+      ],
+      "optionCount": 9,
+      "observedValues": ["CHED-D"],
+      "optionValueMap": {
+        "": "All",
+        "CVEDA": "CHED-A",
+        "CVEDP": "CHED-P",
+        "CED": "CHED-D",
+        "CHEDPP": "CHED-PP",
+        "IMP": "Import from the EU",
+        "IMPA": "IMP-Animals",
+        "IMPP": "IMP-POAO",
+        "IMPD": "IMP-HRFNAO"
+      },
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (combobox e246; CHED-D is the relevant filter value for this rebuild). Domain vocabulary corroborated: chedType = { CHED-A, CHED-D, CHED-P, CHED-PP } — types/ched-type.ts:1-6 (inferred).",
+      "legacyEvidence": "The visible label 'CHED-D' has underlying option VALUE 'CED' — searchAndFilter.html:143-147 renders option value=certificateTypeKey, text=certificateType over notificationTypes = { CVEDA:'CHED-A', CVEDP:'CHED-P', CED:'CHED-D', CHEDPP:'CHED-PP', IMP:'Import from the EU', IMPA:'IMP-Animals', IMPP:'IMP-POAO', IMPD:'IMP-HRFNAO' } — constants.js:686-695 (legacy). Confirms CED is CHED-D's legacy notification-type enum (CVEDA/CVEDP are CHED-A/CHED-P legacy CVED codes). Optional filter, no @NotNull (search.js CERTIFICATE_TYPE_KEY = Joi.any())."
+    },
+    {
+      "name": "microchip-number",
+      "label": "Microchip number (CHED-A only)",
+      "hint": "",
+      "control": "text",
+      "required": false,
+      "maxLength": 255,
+      "conditionalOn": "Only meaningful for CHED-A; label states 'CHED-A only'. Not relevant to CHED-D but present on the shared dashboard search form.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (textbox e250)",
+      "legacyEvidence": "Label 'Microchip number (CHED-A only)' verbatim: searchAndFilter.html:154-155 (legacy). Optional + max 255 chars, Joi label 'Microchip number': search.js:65-67 (legacy). Error-class hook displayErrorClass errors 'microchip-number' — searchAndFilter.html:152."
+    },
+    {
+      "name": "start-date-day / start-date-month / start-date-year",
+      "label": "Start date range",
+      "hint": "Day / Month / Year",
+      "control": "date",
+      "required": false,
+      "conditionalOn": "Part of 'Arrival / Import date range' filter, with Today / Tomorrow / Next seven days / Clear date range quick-set buttons (page object also exposes a 'Yesterday' quick-range, unobserved in traces) and a defra-datepicker calendar reveal.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (group e262, inputs e268/e272/e276). Corroborated: inputs addressed as #start-date-day / #start-date-month / #start-date-year — page-objects/notification/NotificationDashboardPage.ts:76-84 (inferred).",
+      "legacyEvidence": "Quick-range buttons RESOLVED (was 'Yesterday' open question): the legacy template renders EXACTLY four submit buttons named date-range — value=today (id button-today), value=tomorrow (id button-tomorrow), value=next-seven-days (id button-next-seven-days), value=clear-range (id button-clear-date-range) — searchAndFilter.html:172-189 (legacy). There is NO 'Yesterday' button in the live template; the allowed date-range values are ['today','tomorrow','next-seven-days','clear-range'] — search.js:47 (legacy). The QA page object's btnSearchByYesterday is therefore stale/unbacked, not a real live affordance. Date parts (day/month/year) are optional and only validated for date-validity when supplied (Joi.any() + custom datetime.validateDate) — search.js:70-93 (legacy)."
+    },
+    {
+      "name": "end-date-day / end-date-month / end-date-year",
+      "label": "End date range",
+      "hint": "Day / Month / Year",
+      "control": "date",
+      "required": false,
+      "conditionalOn": "Part of 'Arrival / Import date range' filter with defra-datepicker calendar reveal.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (group e284, inputs e290/e294/e298). Corroborated: inputs addressed as #end-date-day / #end-date-month / #end-date-year — page-objects/notification/NotificationDashboardPage.ts:86-94 (inferred)."
+    },
+    {
+      "name": "orderBy",
+      "label": "Sort by:",
+      "control": "select",
+      "required": false,
+      "options": [
+        "Arrival (newest to oldest)",
+        "Arrival (oldest to newest)"
+      ],
+      "optionCount": 2,
+      "observedValues": ["arrivalDateTimeDesc"],
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (combobox e322); orderBy=arrivalDateTimeDesc in URL of trace 566993a8e644d92e502bbb170ae3a5122bf5053f action 122"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "There is a problem",
+      "field": "",
+      "trigger": "Shown (as an error-summary title) when some notifications' details are missing or do not match the customs declarations — a data-quality warning, not per-field form validation.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (e312)"
+    },
+    {
+      "message": "Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed.",
+      "field": "",
+      "trigger": "Body of the 'There is a problem' banner, with a 'Review these notifications' link to /no-match-results.",
+      "confidence": "confirmed",
+      "evidence": "trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11 (e315)"
+    },
+    {
+      "message": "\"Search\" must be 255 characters or less",
+      "field": "certificate-number",
+      "trigger": "Keywords or notification number search term exceeds 255 characters. Rendered in the search-form validation summary (searchAndFilter.html:3 {{> common/validationSummary}}). No trace exercised it — no over-length term was ever submitted.",
+      "confidence": "legacy",
+      "evidence": "search.js:52-54 STRING_MAX -> MAX_LENGTH_VALIDATION_MESSAGE_FULL('Search', 255); template `\"${label}\" must be ${max} characters or less` — validation_messages.js:10-11; Joi label 'Search' (CERTIFICATE_NUMBER_LABEL) — validation_constants.js:115 (legacy)"
+    },
+    {
+      "message": "\"Commodity\" must be 255 characters or less",
+      "field": "commodity-code-or-desc",
+      "trigger": "Commodity search term exceeds 255 characters.",
+      "confidence": "legacy",
+      "evidence": "search.js:62-64 STRING_MAX -> MAX_LENGTH_VALIDATION_MESSAGE_FULL('Commodity', 255); COMMODITY_CODE_OR_DESC_LABEL = 'Commodity' — validation_constants.js:123 (legacy)"
+    },
+    {
+      "message": "\"Consignee\" must be 255 characters or less",
+      "field": "consignee",
+      "trigger": "Consignee / Importer search term exceeds 255 characters.",
+      "confidence": "legacy",
+      "evidence": "search.js:59-61 STRING_MAX -> MAX_LENGTH_VALIDATION_MESSAGE_FULL('Consignee', 255); CONSIGNEE_LABEL = 'Consignee' — validation_constants.js:119 (legacy)"
+    },
+    {
+      "message": "\"Microchip number\" must be 255 characters or less",
+      "field": "microchip-number",
+      "trigger": "Microchip number search term exceeds 255 characters (CHED-A-only field, present on the shared dashboard).",
+      "confidence": "legacy",
+      "evidence": "search.js:65-67 STRING_MAX -> MAX_LENGTH_VALIDATION_MESSAGE_FULL('Microchip number', 255); MICROCHIP_NUMBER_LABEL = 'Microchip number' — validation_constants.js:125 (legacy)"
+    },
+    {
+      "message": "\"Start Date\" invalid date",
+      "field": "start-date-day / start-date-month / start-date-year",
+      "trigger": "Start date range parts do not form a valid calendar date (datetime.validateDate fails).",
+      "confidence": "legacy",
+      "evidence": "search.js:88-90 addDateValidationMessage(START_DATE_KEY, START_DATE_LABEL); message `\"${label}\" invalid date` — date_validation_result.js:22-24; START_DATE_LABEL = 'Start Date' — validation_constants.js:138 (legacy)"
+    },
+    {
+      "message": "\"End Date\" invalid date",
+      "field": "end-date-day / end-date-month / end-date-year",
+      "trigger": "End date range parts do not form a valid calendar date.",
+      "confidence": "legacy",
+      "evidence": "search.js:95-97 addDateValidationMessage(END_DATE_KEY, END_DATE_LABEL); message `\"${label}\" invalid date` — date_validation_result.js:22-24; END_DATE_LABEL = 'End Date' — validation_constants.js:146 (legacy)"
+    },
+    {
+      "message": "Start date should be less than or equal to End date",
+      "field": "start-date / end-date",
+      "trigger": "Both dates valid but start date range is after end date range (datetime.validateStartEndDate).",
+      "confidence": "legacy",
+      "evidence": "search.js:99-106 addStartEndDateValidationMessage; message literal — date_validation_result.js:58-60 (legacy)"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Result-row lifecycle actions (Copy as new, View details, Amend, Show notification) live ON this dashboard. Copy as new is a POST button (name=submit-param, value=<certRef>) that mints a new DRAFT and navigates to /notifications/<DRAFT.ref>/overview (confirmed trace 54f17cd31397fff10a0ce2b4458c726fdde193e0 action 113); QA addresses it as button#copy-as-new-<ref> and the create button as #create-notification (inferred NotificationDashboardPage.ts:12-14,100-102). The new simple CHED-D app needs an equivalent copy/amend/delete lifecycle — scope beyond a read-only list.",
+    "Delete IS a confirmed lifecycle with an interstitial confirm step (was previously a gap): from the dashboard the row's 'View details' opens the notification, which carries a 'Delete notification' link; that leads to a dedicated Delete-notification confirm page whose sole control is a 'Delete notification' button, and after confirming, the notification no longer appears in dashboard search results. Inferred: tests/notification/ched-d/ched-d-manipulation.spec.ts:19-27; page-objects/notification/ViewDetailsPage.ts:6-8; page-objects/notification/DeleteNotificationPage.ts:6-8. So there is no per-row Delete button on the dashboard itself — delete is reached via View details.",
+    "Amend lifecycle: the row 'Amend' control (button#amend-details-<ref>) opens an Amend-notification page with per-section change links, then routes back through Review and Declaration to re-submit. Inferred: page-objects/notification/NotificationDashboardPage.ts:128-130,177-182; tests/notification/ched-d/ched-d-manipulation.spec.ts:30-67. (Amend from the operator/decision side additionally requires a decision-side amendment-reason step — decision dashboard, out of scope for this page.)",
+    "A CHED-D result row shows exactly: Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin, Inspection (confirmed trace 566993a8e644d92e502bbb170ae3a5122bf5053f action 125). The QA page object additionally exposes a per-row Decision date element (#decision-date-<ref>) not captured in the trace row inventory — inferred NotificationDashboardPage.ts:240-242 — so a Decision date value may render on rows in states the trace corpus never exercised. 'Inspection' value observed as 'Not required', 'Check GVMS' and 'Required' for CHED-A rows (each rendered as a govuk-tag STRONG element); the full domain of Inspection values is a gap.",
+    "Row-container semantics discrepancy (finding, not a correction — rendered reality wins): the trace rendered a bespoke notification-list definition-list grid (dt/dd pairs), but the QA page object addresses result rows via '#notifications-page tbody tr' and cells via 'td' (NotificationDashboardPage.ts:245-250), implying the grid is wrapped in a semantic <table>. Whether the markup is a true table or a CSS-grid faux-table is a question for a human; kept as 'confirmed' bespoke grid per the trace.",
+    "RESOLVED (legacy): 'Yesterday' is NOT a live quick-range. The legacy template renders exactly four date-range submit buttons — today / tomorrow / next-seven-days / clear-range (searchAndFilter.html:172-189) and the validator only allows those four values (search.js:47). The QA page object's btnSearchByYesterday (NotificationDashboardPage.ts:56-58) is stale/unbacked; do not build a Yesterday quick-range.",
+    "RESOLVED (legacy): full Status filter option VALUE(code) -> LABEL map is now in the field's optionValueMap — DRAFT/Draft, NEW/New, SUBMITTED/Submitted, AMEND/Amend, IN_PROGRESS/In Progress, VALIDATED/Valid, REJECTED/Rejected, CANCELLED/Cancelled, REPLACED/Replaced, PARTIALLY_REJECTED/Partially Rejected, SPLIT_CONSIGNMENT/Split Consignment (constants.js:658-670). Note VALIDATED->'Valid' and IN_PROGRESS->'In Progress' where the code is not a straight slug of the label. Notification-type map likewise resolved: CHED-D's option value is 'CED' (constants.js:686-695).",
+    "PARTLY RESOLVED (legacy): every filter IS optional (no @NotNull / all Joi.any() or .allow('')), so searching with no criteria returns all results — but the search form DOES have client-side validation the traces never rendered: max-255-chars on Keywords/Commodity/Consignee/Microchip, calendar-date validity on Start/End date, and a start<=end range check (search.js; see validationMessages, all confidence:legacy). These fire into the search-form validation summary (searchAndFilter.html:3). No trace exercised them because no over-length / invalid-date input was ever submitted. The arrival-date '5 days past / 120 days future' validation asserted in ched-d-arrival-date.spec.ts fires on the Transport Details page during creation, NOT on this dashboard — out of scope for this page.",
+    "The BCP-or-POE list (~190 opts) and Country-of-origin list (~250 opts) are reference data heavily polluted with test entries ('ABC Legal - <code>'); both must come from a reference-data service in the rebuild, not a hardcoded list. Exact production BCP domain is a gap.",
+    "The Notification banners (Alert / Information / Chosen for inspection) and 'My alerts' counts are operator-messaging/inbox features shared across all import types; unclear whether the new CHED-D-only app inherits them — likely out of scope, flag for a human.",
+    "CHED status AND Inspection tag colours (govuk-tag--blue/green/grey/orange/red/yellow) map to values; a partial mapping was observed in-trace: CHED status New -> blue, Draft CHEDP -> grey; Inspection 'Check GVMS' -> orange, 'Not required' -> green (confirmed trace eddc6f6ec852d692c454d319ade1607727a84a4f action 11). Colours for the remaining statuses (Valid, Rejected, Cancelled, Replaced, In Progress, Amend, Submitted, Partially Rejected, Split Consignment) and any red/yellow usage are a gap."
+  ]
+}

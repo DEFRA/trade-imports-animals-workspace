@@ -1,0 +1,286 @@
+{
+  "slug": "contact-details",
+  "name": "Contact details",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/responsible-person/contact-details",
+  "pageTitle": "Contact details - Import and export applications - GOV.UK",
+  "caption": "Contacts",
+  "heading": "Contact details",
+  "doaObservations": [
+    {
+      "finding": "PRE-POPULATION SOURCE differs by actor route. This CHED-D page is pre-populated ('These are the details we have for you') from the SIGNED-IN ACCOUNT — observed values 'Michael Scott' / 'test14@hghumankainos.33mail.com' / '01234566234' are the importer's own account details (see fields, and openQuestions). In the CHED-PP delegated route the same responsible-person block is instead auto-populated from a MEMBER of the owning delegated organisation, NOT the acting agent (CHED-PP DoA: 'Isabel Irwin' / 'ipaffs-plant-org-1-isabel@mailinator.com' / '0123456789' for IPAFFS Plant Organisation 1). That org-member sourcing is CHEDPP-delegated only and does not arise in the observed CHED-D flow. Recorded so the rebuild treats 'these are the details we have for you' as account-sourced for a plain CHED-D importer, and does not import the delegated-org contact-resolution rule into CHED-D without a decision. Which org member becomes the 'responsible person' is a gap even for CHED-PP.",
+      "traces": [
+        "b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (CHED-D: pre-populated from the signed-in account 'Michael Scott') — confirmed (CHED-D)",
+        "545412266caaec96b0aae12262fecfee3e099888 action 95 (CHED-PP DoA: responsible person = delegated org's member 'Isabel Irwin', not the acting agent) — confirmed (CHED-PP DoA)"
+      ],
+      "confidence": "inferred",
+      "chedDApplicability": "yes for the account-sourced pre-pop (CHED-D confirmed); the delegated-org member sourcing is CHEDPP-only. See authorization-rules.md POP-1 and gap G-5."
+    }
+  ],
+  "bodyCopy": [
+    "These are the details we have for you. Make sure they are up to date.",
+    "We will use these details if your consignment is chosen for inspection."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Cancel and return to hub"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Contacts",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Contact details",
+      "govukComponent": "Fieldset legend as page heading (H1 is govuk-fieldset__heading inside a govuk-fieldset__legend--xl)"
+    },
+    {
+      "element": "hint",
+      "text": "These are the details we have for you. Make sure they are up to date. / We will use these details if your consignment is chosen for inspection.",
+      "govukComponent": "Hint (govuk-hint) — page-level hint holding two paragraphs"
+    },
+    {
+      "element": "text",
+      "text": "Name",
+      "govukComponent": "Text input (govuk-input, label govuk-label--s)"
+    },
+    {
+      "element": "text",
+      "text": "Email address",
+      "govukComponent": "Text input (govuk-input, label govuk-label--s)"
+    },
+    {
+      "element": "text",
+      "text": "Mobile number",
+      "govukComponent": "Text input (govuk-input, label govuk-label--s)"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button (govuk-button)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button)"
+    },
+    {
+      "element": "link",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Link (govuk-link inside govuk-body paragraph)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption \"Contacts\" rendered above the page heading. LEGACY confirms this caption is CHED-D-conditional: the template wraps it in {{#if isChedD}} so it renders only for CHED-D (isChedD true), not for CHED-PP or the EU CHED variants.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot); legacy ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/views/importer/responsiblePersonContactDetails.html:21-23 ({{#if isChedD}} guard)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend",
+        "govuk-fieldset__legend--xl",
+        "govuk-fieldset__heading"
+      ],
+      "count": 1,
+      "usage": "Single fieldset wrapping all three contact inputs; its legend is the page H1 (govuk-fieldset__heading), the standard GOV.UK 'legend as page heading' pattern",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot); legacy responsiblePersonContactDetails.html:25-30"
+    },
+    {
+      "component": "Hint",
+      "govukClass": "govuk-hint",
+      "modifiers": [
+        "govuk-!-margin-bottom-6"
+      ],
+      "count": 1,
+      "usage": "Page-level hint (id responsible-person-contact-details-page-hint) containing the two guidance paragraphs. Second paragraph is the dynamic {{primaryHintText}}: 'We will use these details if your consignment is chosen for inspection' with an ' at a BCP' suffix appended only for a high-risk EU CVEDA (getHintText). For a plain CHED-D the suffix is absent, matching the rendered trace.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot); hint eval; legacy responsiblePersonContactDetails.html:32-35 + responsible_person_contact_details.js:95-98 (getHintText)"
+    },
+    {
+      "component": "Text input",
+      "govukClass": "govuk-input",
+      "modifiers": [
+        "govuk-!-width-two-thirds",
+        "govuk-label--s"
+      ],
+      "count": 3,
+      "usage": "Name, Email address and Mobile number inputs, each with a small (govuk-label--s) label and two-thirds width. LEGACY: name input carries autocomplete='name'; email is type='email' spellcheck=false autocomplete='email'; telephone is type='tel' autocomplete='tel'. A 4th input, 'Agent' (name=agent, govuk-label--s), is emitted by the SAME template but gated to {{#eq notification.type 'CHEDPP'}} — it is CHED-PP-only and does NOT render on CHED-D.",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot); control inventory eval; legacy responsiblePersonContactDetails.html:37-78"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "Primary actions: 'Save and return to hub' and 'Save and continue' (submit, id button-save-and-continue, data-prevent-double-click)",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (locator + before snapshot); legacy responsiblePersonContactDetails.html:81 ({{> common/saveButtons}})"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Cancel and return to hub' link (inside a govuk-body paragraph) pointing to the notification overview",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "INFERRED, variant-only (not observed in trace corpus): a 'Save and review' primary button. The QA page object exposes this alongside 'Save and continue' — it is the IPAFFS review/amend-mode variant of the primary action, shown when the page is re-entered to change a value after the notification has reached review rather than during first-pass journey progression. LEGACY corroborates a variable action set: the template defers all buttons to {{> common/saveButtons actions=actions}}, and the handler computes actions via formActions.getAvailableFormActions — so which primary button renders is state-driven, consistent with a 'Save and review' variant.",
+      "evidence": "page-objects/notification/ContactDetailsPage.ts:14 (btnSaveAndReview getByRole button 'Save and review'); never rendered in any CHED-D trace in the corpus; legacy responsiblePersonContactDetails.html:81 + responsible_person_contact_details.js:74-75 (getAvailableFormActions)"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "INFERRED, variant-only (not observed in trace corpus): a 'Change' link on an organisation-address review row (#review-table-organisation-address). The QA page object exposes this, implying a rendering variant of the contact-details page that also displays the responsible person's organisation address as a review-table row with a Change link — not present in the single happy-path trace we captured. LEGACY note: the CHED-D template responsiblePersonContactDetails.html renders NO organisation-address row; the getNextPage logic routes the EU-CHEDD (non-CHED-D) branch onward to a separate ORGANISATION_BRANCH_ADDRESS page (responsible_person_contact_details.js:26-28), so the page object's org-address getter most likely belongs to that adjacent page, not the CHED-D contact-details page.",
+      "evidence": "page-objects/notification/ContactDetailsPage.ts:6-8 (linkChangeContactAddress: #review-table-organisation-address getByRole link 'Change'); never rendered in any CHED-D trace in the corpus; legacy responsiblePersonContactDetails.html (no org-address row) + responsible_person_contact_details.js:26-28"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "name",
+      "label": "Name",
+      "control": "text",
+      "required": true,
+      "maxLength": 32,
+      "autocomplete": "name",
+      "observedValues": [
+        "Michael Scott"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot; input name=name id=name autocomplete=name, pre-populated). Corroborated as pre-populated: the QA page object ContactDetailsPage.ts exposes no input getter for this field, DEFAULT_CONFIG carries no responsible-person contact field, and both the CHED-D workflow (ched-d-workflows.ts:337) and accessibility test (ched-d-accessibility-tests.spec.ts:162-163) reach this page and immediately click Save and continue without filling it.",
+      "requiredEvidence": "legacy — the frontend Joi validator makes name mandatory for THIS page regardless of CHED type: Joi.string() rejects an empty submit with the string.empty message 'Enter your name' (~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/responsible_person_contact_details.js:26-29). Max length 32 chars (line 26). NOTE the backend model is LOOSER: ContactDetails.name is @NotNull only for the EU-CHED and CHED-PP validation groups, NOT the CHED-D (CED) group NotificationSingleCedValidation (ContactDetails.java:25-37), and getCedValidationGroups does not add the EU contact-details group (PartOneFieldValidator.java:156-174). So for CHED-D, name is enforced at the frontend only, not by the persisted-model validation — a mandatoriness the rebuild should confirm it wants to keep.",
+      "notes": "required flipped false->true on legacy evidence (frontend Joi). Never exercised by a trace/QA empty-submit; the requiredness is frontend-page-scoped and is a policy the rebuild may revisit (backend model does not require name for CED)."
+    },
+    {
+      "name": "email",
+      "label": "Email address",
+      "control": "text",
+      "required": false,
+      "conditionallyRequired": "one-of(email, telephone)",
+      "maxLength": 255,
+      "autocomplete": "email",
+      "observedValues": [
+        "test14@hghumankainos.33mail.com"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot; input type=email name=email id=email spellcheck=false autocomplete=email, pre-populated). Corroborated as pre-populated: no input getter in ContactDetailsPage.ts, no responsible-person field in DEFAULT_CONFIG, and the workflow/accessibility test click Save and continue without filling it (ched-d-workflows.ts:337). The handler lower-cases the email on submit (responsible_person_contact_details.js:88-92).",
+      "requiredEvidence": "legacy — email is not standalone-required but participates in an at-least-one rule: the frontend Joi schema has .or(EMAIL, TELEPHONE), so an empty email AND empty telephone fails with 'Enter an email address or mobile number' (responsible_person_contact_details.js:44-45). When provided, email must be a valid address, max 255 chars (lines 30-32). The backend CHED-D (CED) group does NOT enforce the email-or-telephone rule (the @ContactDetailsEmailOrTelephoneRequired class annotation is scoped to the EU group only, ContactDetails.java:21) — again frontend-only for CHED-D.",
+      "notes": "required stays false (no standalone requirement); the real constraint is the one-of(email, telephone) pair validated client-side. Format + max-length validation added from legacy."
+    },
+    {
+      "name": "telephone",
+      "label": "Mobile number",
+      "control": "text",
+      "required": false,
+      "conditionallyRequired": "one-of(email, telephone)",
+      "maxLength": 30,
+      "autocomplete": "tel",
+      "observedValues": [
+        "01234566234"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace b3742f19b6eea5d9285f5c8739571523a0a13ec1 action 89 (before snapshot; input type=tel name=telephone id=telephone autocomplete=tel, pre-populated). Corroborated as pre-populated: no input getter in ContactDetailsPage.ts, no responsible-person field in DEFAULT_CONFIG, and the workflow/accessibility test click Save and continue without filling it (ched-d-workflows.ts:337). Labelled 'Mobile number' on the page though the underlying model field is telephone.",
+      "requiredEvidence": "legacy — telephone is not standalone-required but participates in the same at-least-one rule .or(EMAIL, TELEPHONE) ('Enter an email address or mobile number', responsible_person_contact_details.js:44-45). When provided it must match TELEPHONE_REGEX and be <=30 chars, else 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982' (lines 34-37). Not enforced by the backend CED validation group.",
+      "notes": "required stays false (no standalone requirement); one-of(email, telephone) is the real constraint. Format + max-length validation added from legacy."
+    }
+  ],
+  "conditionalFields": [
+    {
+      "name": "agent",
+      "label": "Agent",
+      "control": "text",
+      "renderedWhen": "notification.type == 'CHEDPP'",
+      "onChedD": false,
+      "required": false,
+      "maxLength": 32,
+      "confidence": "legacy",
+      "evidence": "legacy responsiblePersonContactDetails.html:70-78 ({{#eq notification.type 'CHEDPP'}} guard) and responsible_person_contact_details.js:39-41 (Joi optional().allow('').max(32)). Recorded for completeness: this fourth input is emitted by the shared template but is CHED-PP-only and does NOT render on the CHED-D page. No CHED-D trace shows it. Do not add it to the CHED-D rebuild without a decision."
+    }
+  ],
+  "validationMessages": [
+    {
+      "field": "name",
+      "message": "Enter your name",
+      "trigger": "name submitted empty",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.empty message via requiredMessage(labels.NAME, 'your'); ~/git/defra/ipaffs/ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/responsible_person_contact_details.js:28 + messages/en.js:31-33 (requiredMessage) + labels/en.js:67 (NAME='Name'). Applies to CHED-D (validator is not type-branched)."
+    },
+    {
+      "field": "name",
+      "message": "Name must be 32 characters or fewer",
+      "trigger": "name longer than 32 characters",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.max via maxLengthMessage(labels.NAME, 32); responsible_person_contact_details.js:26-27 + messages/en.js:3-5 (maxLengthMessage) + labels/en.js:67."
+    },
+    {
+      "field": "email",
+      "message": "Enter an email address in the correct format, like name@example.com",
+      "trigger": "email provided but not a valid address",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.email; responsible_person_contact_details.js:30-32 + messages/en.js:72 (EMAIL_CORRECT_FORMAT)."
+    },
+    {
+      "field": "email",
+      "message": "Email address must be 255 characters or fewer",
+      "trigger": "email longer than 255 characters",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.max via maxLengthMessage(labels.EMAIL_ADDRESS, 255); responsible_person_contact_details.js:30-31 + messages/en.js:3-5 + labels/en.js:46 (EMAIL_ADDRESS='Email address')."
+    },
+    {
+      "field": "telephone",
+      "message": "Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982",
+      "trigger": "telephone provided but not matching TELEPHONE_REGEX",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.pattern / number.base via TELEPHONE_NUMBER_CORRECT_FORMAT; responsible_person_contact_details.js:34-37 + messages/en.js:110 (TELEPHONE_NUMBER_CORRECT_FORMAT). Field is labelled 'Mobile number' on the page."
+    },
+    {
+      "field": "telephone",
+      "message": "Telephone number must be 30 characters or fewer",
+      "trigger": "telephone longer than 30 characters",
+      "confidence": "legacy",
+      "evidence": "frontend Joi string.max via maxLengthMessage(labels.TELEPHONE_NUMBER, 30); responsible_person_contact_details.js:34-35 + messages/en.js:3-5 + labels/en.js:98 (TELEPHONE_NUMBER='Telephone number'). Note the label copy 'Telephone number' differs from the page label 'Mobile number'."
+    },
+    {
+      "field": "email|telephone",
+      "message": "Enter an email address or mobile number",
+      "trigger": "both email and telephone submitted empty",
+      "confidence": "legacy",
+      "evidence": "frontend Joi object.missing via .or(EMAIL, TELEPHONE); responsible_person_contact_details.js:44-45 + messages/en.js:73 (EMAIL_OR_TELEPHONE). The backend microservice equivalent key .partone.contactdetails.email.or.telephone.not.null='Enter an email address or mobile number' (ValidationMessages.properties:196) is scoped to the EU contact-details group, NOT the CHED-D (CED) group — so on CHED-D this rule is enforced only by the frontend."
+    },
+    {
+      "field": "contactDetails",
+      "message": "Enter your contact details",
+      "trigger": "responsible-person contactDetails block absent when a CHED-D notification is validated for submission",
+      "confidence": "legacy",
+      "evidence": "backend model @NotNull on PartOne.contactDetails for the CHED-D (CED) group NotificationSingleCedValidation (PartOne.java:625-639, message key .partone.contactdetails.not.null); ValidationMessages.properties:198 ('Enter your contact details'); group selected for CED at PartOneFieldValidator.java:156-174. This is a whole-block presence check at submit time (a hub/review-level gate), distinct from the per-field frontend messages above."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "The observed happy-path trace only exercised Save-and-continue with pre-populated values; no empty/invalid submit was traced. Legacy now supplies the real frontend validation copy (name required; email/telephone one-of; format + max-length rules; whole-block 'Enter your contact details' at submit) — but none of it was rendered, so it stays 'legacy' pending a rebuild decision.",
+    "MANDATORINESS DIVERGENCE for CHED-D (a rebuild policy question): the frontend page requires name and requires at-least-one of email/telephone (Joi validator, not type-branched), but the backend persisted-model CHED-D (CED) validation group enforces ONLY that the contactDetails block is present ('Enter your contact details') — it does NOT @NotNull name and does NOT apply the email-or-telephone rule for CED (those annotations are scoped to the EU / CHED-PP groups). Decide whether the rebuild keeps the stricter frontend-only rules or the looser model rules for CHED-D.",
+    "The page is only ever reached pre-populated ('These are the details we have for you') — the source of the pre-population (the signed-in user's account / responsible person) is inferred from the URL segment 'responsible-person' and was not traced here. Corroborated by the QA repo: DEFAULT_CONFIG has no responsible-person contact field and the tests never fill this page.",
+    "Only Save-and-continue was observed; the behaviour of 'Save and return to hub' and 'Cancel and return to hub' (to the overview page) was not exercised in this trace, and the QA workflow only ever clicks Save and continue (ched-d-workflows.ts:337).",
+    "LEGACY-resolved (was INFERRED): the 'Save and review' primary button seen in the QA page object is consistent with the template deferring all buttons to common/saveButtons with a handler-computed action set (getAvailableFormActions). Still a GAP: the exact condition under which 'Save and review' replaces 'Save and continue' on CHED-D.",
+    "LEGACY-resolved (was INFERRED): the CHED-D contact-details template renders NO organisation-address review row, and the non-CHED-D EU-CHEDD branch routes onward to a separate ORGANISATION_BRANCH_ADDRESS page (responsible_person_contact_details.js:26-28). The QA page object's #review-table-organisation-address 'Change' getter most likely belongs to that adjacent page, not this one — treat the org-address row as NOT part of the CHED-D contact-details page unless a trace proves otherwise.",
+    "The template emits a fourth 'Agent' input but gates it to notification.type == 'CHEDPP' — recorded under conditionalFields as CHED-PP-only and absent from CHED-D. Confirm the rebuild does not surface it on CHED-D."
+  ]
+}
