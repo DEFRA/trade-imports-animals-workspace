@@ -170,18 +170,39 @@ E2E at once).
    completeness/pyramid nit with no material risk identified. This is
    a suggested triage, not a verdict — the requester makes the final
    call on what's blocking.
+8. A concern can be fully tested (no gap, no duplication) and still be
+   worth flagging if the behaviour it asserts appears to not satisfy
+   the flow/AC text as literally worded — e.g. every level agrees on
+   what happens, but what happens doesn't match what the AC says
+   should happen. This isn't a coverage gap (tests exist) and isn't a
+   correctness review (out of scope per the skill's own boundary) —
+   it's a coverage-informed observation that the AC itself may not be
+   satisfied. File it in Notes, but give it the same Blocking/Advisory
+   risk read as bullet 7 (Blocking if the mismatch has a plausible
+   user-facing/production consequence, Advisory if it's a wording
+   nuance with no real consequence) — this is what earns it a line in
+   the At-a-glance summary in Step 3, same as a Gap.
 
 ## Step 3: Write the report
 
 Write `workareas/test-stack-analysis/<run-id>/report.md` directly
 (prose-canonical — no JSON state, no render helper). Sections, in
-this order: Gaps, Duplication, Automation-scope flags (optional),
-Notes (optional), Known limitation (standing, always present):
+this order: At a glance, Gaps, Duplication, Automation-scope flags
+(optional), Notes (optional), Known limitation (standing, always
+present):
 
 ```markdown
 # Test-stack analysis — <run-id>
 
 <one-line description of the flow/feature analysed>
+
+## At a glance
+
+**Blocking**
+- <concern name> — <one-line finding, plain prose, no file:line>
+
+**Advisory**
+- <concern name> — <one-line finding, plain prose, no file:line>
 
 ## Gaps
 
@@ -233,7 +254,15 @@ where it's actually covered, and why it doesn't count as a gap or
 duplication — don't force it into either bucket just to avoid this
 section. Omit the section entirely if nothing qualifies; unlike Gaps/
 Duplication, this one doesn't need an explicit "none" statement since
-its absence is unremarkable.>
+its absence is unremarkable.
+
+For the specific sub-case from Step 2 bullet 8 — tested behaviour that
+appears to not satisfy the flow/AC text as literally worded — add a
+**Risk if unaddressed:** <Blocking | Advisory> line in the same style
+as a Gap, so the finding carries a severity into the At-a-glance
+summary above. Other Notes entries (e.g. the isolable-coverage case
+above) don't need this field — only add it where Step 2 bullet 8
+applies.>
 
 ## Known limitation
 
@@ -252,13 +281,29 @@ an empty section is itself a result, not a missing step.
 Automation-scope flags and Notes are the exception — omit either
 entirely when nothing qualifies (see above).
 
+At a glance is always present, even when there's nothing to escalate
+— state that explicitly too ("Nothing blocking or advisory to
+report.") rather than omitting the section. Omit the **Blocking** or
+**Advisory** sub-heading individually when that severity has no
+entries; don't print an empty sub-heading. Populate it from every
+Gap's `Risk if unaddressed` line plus every severity-tagged Notes
+entry (Step 2 bullet 8) — nothing else feeds it, and it must not
+introduce a finding that isn't also detailed in the section below.
+Order Blocking before Advisory; within a severity, keep the source
+order the findings appear in below. Write each line as
+comment-ready prose — plain sentence, no file:line references, no
+markdown nesting — since this section exists to be scannable or
+copy-pasted as-is, not to carry evidence (the detail sections below
+still carry that).
+
 ## Completion output
 
 ```
 test-stack-analysis complete for <run-id>.
 
 Summary:
-- <N> gap(s) found (<B> blocking, <A> advisory)
+- <X> blocking, <Y> advisory (across gaps and flagged notes — see At a glance)
+- <N> gap(s) found
 - <M> duplication finding(s)
 - <P> automation-scope flag(s)
 
