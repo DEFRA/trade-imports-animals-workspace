@@ -14,6 +14,23 @@ COMPOSE_FILES=(
 
 ALL_PROFILES=(database infrastructure servicebus stubs backend frontend)
 
+# frontend.compose.yml pins `platform: linux/amd64` for the published
+# frontend/admin images. In --dev that pin is inherited by the local build, so
+# the webpack production stage runs under emulation — on arm64 it effectively
+# never finishes. Build for the daemon's own architecture instead. Export
+# DEV_BUILD_PLATFORM beforehand to force a specific platform.
 compose_files_add_dev() {
   COMPOSE_FILES+=(-f "$STACK_DIR/dev.compose.yml")
+
+  if [ -z "${DEV_BUILD_PLATFORM:-}" ]; then
+    local arch
+    arch="$(docker version --format '{{.Server.Arch}}' 2>/dev/null || true)"
+    [ -n "$arch" ] || arch="$(uname -m)"
+    case "$arch" in
+      x86_64 | amd64) arch=amd64 ;;
+      aarch64 | arm64) arch=arm64 ;;
+    esac
+    DEV_BUILD_PLATFORM="linux/$arch"
+  fi
+  export DEV_BUILD_PLATFORM
 }
