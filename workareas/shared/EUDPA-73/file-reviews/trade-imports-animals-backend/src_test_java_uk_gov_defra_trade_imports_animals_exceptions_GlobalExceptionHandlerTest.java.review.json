@@ -1,0 +1,31 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/animals/exceptions/GlobalExceptionHandlerTest.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:57:04Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "New test exercises a violation scenario that the controller cannot actually produce, and skips the null-traceId branch its siblings cover",
+  "todos": [
+    {
+      "id": 1,
+      "line": 89,
+      "severity": "Major",
+      "category": "test-fidelity",
+      "issue": "The test fixture mocks a violation on 'findAll.referenceNumber' with a REFERENCE_NUMBER_PATTERN message, but findAll's referenceNumber param carries no @Pattern — the scenario under test cannot occur in production and gives false confidence that search input is validated",
+      "fix": "Either add @Pattern to the controller param (making the fixture real) or rewrite the fixture around a violation that actually fires, e.g. @Min(1) on page",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 2,
+      "line": 110,
+      "severity": "Minor",
+      "category": "coverage",
+      "issue": "The new test asserts only status, title and the errors map — unlike the sibling MethodArgumentNotValid tests it never checks the null-traceId branch or the problem type URI/content type",
+      "fix": "Add a handleConstraintViolationException_shouldHandleNullTraceId case mirroring the existing handleValidationException_shouldHandleNullTraceId",
+      "best_practice": "java/testing/unit.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}

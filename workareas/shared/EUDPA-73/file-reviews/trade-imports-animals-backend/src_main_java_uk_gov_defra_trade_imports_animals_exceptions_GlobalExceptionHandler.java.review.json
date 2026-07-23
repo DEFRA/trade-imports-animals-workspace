@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/animals/exceptions/GlobalExceptionHandler.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:56:43Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The new ConstraintViolationException handler correctly turns @Validated param failures into 400s but is a near-verbatim copy of the existing MethodArgumentNotValid handler",
+  "todos": [
+    {
+      "id": 1,
+      "line": 67,
+      "severity": "Major",
+      "category": "duplication",
+      "issue": "handleConstraintViolationException duplicates ~30 lines of handleValidationException verbatim (same type URI, title, detail, traceId property and errors map assembly), differing only in how the field name is derived",
+      "fix": "Extract a private buildValidationProblemDetail(Map<String, List<String>> errors) helper and have both handlers call it",
+      "best_practice": "java/modern-java.md"
+    },
+    {
+      "id": 2,
+      "line": 84,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "Field name is derived by taking the substring after the last '.' in the property path, which collapses nested paths (e.g. 'save.dto.origin.countryCode' becomes 'countryCode') and can silently merge two distinct violations under one key",
+      "fix": "Strip only the leading method-name segment (substring after the first '.') so nested paths stay distinguishable",
+      "best_practice": "rest-api/rest-api.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}

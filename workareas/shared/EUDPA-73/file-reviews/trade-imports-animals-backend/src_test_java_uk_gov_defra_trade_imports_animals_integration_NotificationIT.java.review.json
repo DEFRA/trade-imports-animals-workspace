@@ -1,0 +1,31 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/animals/integration/NotificationIT.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:57:17Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Good AC1/AC2 plus soft-delete and free-text coverage, but nothing exercises reference search with paging, which is where the pagination defect lives",
+  "todos": [
+    {
+      "id": 1,
+      "line": 159,
+      "severity": "Major",
+      "category": "coverage",
+      "issue": "No integration test covers reference search combined with page>1 or with a sort, which is exactly where the PageImpl total self-correction defect surfaces (totalElements becomes 26)",
+      "fix": "Add findAll_shouldReturnSinglePage_whenReferenceNumberProvidedWithPageTwo asserting content is empty and totalElements is 1",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 2,
+      "line": 1492,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "findAllNotificationsPage appends referenceNumber to the query string without URL-encoding, so any test value containing '&' or a space would silently build a different request",
+      "fix": "Build the URI with UriComponentsBuilder or URLEncoder.encode so the helper is safe for arbitrary search terms",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}

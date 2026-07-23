@@ -1,0 +1,49 @@
+{
+  "file": "tests/e2e/features/notification-dashboard-search.spec.ts",
+  "repo": "trade-imports-animals-tests",
+  "commit": "631e185fdf0a8da5c0acd3e3981de9b8210c81e3",
+  "pr": 90,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T10:01:04Z",
+  "verdict": "SAFE",
+  "verdict_reason": "AC1 and AC2 are both covered with API-seeded deterministic data plus sort-preservation and free-text cases; gaps are pagination-with-search and some regex/assertion hygiene",
+  "todos": [
+    {
+      "id": 1,
+      "line": 27,
+      "severity": "Minor",
+      "category": "readability",
+      "issue": "Three tests build URL assertions with new RegExp and referenceNumber.replace(/-/g, '\\\\-'); escaping a hyphen outside a character class is a no-op, so the escape is cargo-cult and the regexes are hard to read",
+      "fix": "Assert with a predicate — await expect(pages.page).toHaveURL((url) => url.searchParams.get('referenceNumber') === created.referenceNumber) — which is exact and needs no escaping",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    },
+    {
+      "id": 2,
+      "line": 30,
+      "severity": "Minor",
+      "category": "assertion",
+      "issue": "The AC1 test asserts resultsLabel is exactly 'Showing 1 Results', locking in ungrammatical copy as expected behaviour and coupling the search feature's test to the pre-existing label wording",
+      "fix": "Assert the card count and reference (already done) and relax the label assertion to /1/ or raise a separate ticket for the 'Showing 1 Results' wording",
+      "best_practice": "gds/language.md"
+    },
+    {
+      "id": 3,
+      "line": 18,
+      "severity": "Minor",
+      "category": "redundancy",
+      "issue": "The beforeEach already navigates to the dashboard, then two tests call journey.toNotificationDashboard() again after seeding — the extra navigation doubles the page load for no assertion benefit",
+      "fix": "Move the seeding into the tests that need it and drop the redundant second navigation, or drop the shared beforeEach for the seeding tests",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    },
+    {
+      "id": 4,
+      "line": 60,
+      "severity": "Minor",
+      "category": "coverage",
+      "issue": "'preserves referenceNumber in the URL when a page param is present' only exercises the no-match case, so it never checks that the frontend's pagination links actually carry referenceNumber — which is the behaviour the buildPaginationLinks change added and where the backend's page>1 defect surfaces",
+      "fix": "Add a case that searches, lands on a result set with more than one page (or asserts pagination is absent for a single match) and follows the next-page link, asserting referenceNumber survives",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

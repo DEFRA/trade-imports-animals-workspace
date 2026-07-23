@@ -1,0 +1,40 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:56:11Z",
+  "verdict": "RISKY",
+  "verdict_reason": "Reference search returns a wrong totalElements/totalPages and repeats the match on every page when page>1, and leaves a now-unused two-arg overload behind",
+  "todos": [
+    {
+      "id": 1,
+      "line": 130,
+      "severity": "Critical",
+      "category": "correctness",
+      "issue": "PageImpl is built with the caller's pageable (offset = (page-1)*25), so a reference search on page>1 self-corrects total to offset+1 — GET /notifications?referenceNumber=X&page=2 reports totalElements=26, totalPages=2 and repeats the same single match on every page",
+      "fix": "Build the single-hit page against page 0 (e.g. PageRequest.of(0, listPageSize, sort)), or return Page.empty(pageable) when page > 1",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 2,
+      "line": 115,
+      "severity": "Major",
+      "category": "dead-code",
+      "issue": "The two-arg findAll(page, sort) overload now has no production caller — NotificationController calls the three-arg form; only NotificationServiceTest still exercises it",
+      "fix": "Delete the two-arg overload and update NotificationServiceTest to call findAll(page, sort, null)",
+      "best_practice": "java/modern-java.md"
+    },
+    {
+      "id": 3,
+      "line": 126,
+      "severity": "Minor",
+      "category": "logging",
+      "issue": "Unsanitised user-supplied referenceNumber is written straight into two debug log statements, so arbitrary free text (including newlines) reaches the log stream",
+      "fix": "Log the trimmed reference only after it passes a format check, or cap/sanitise it before logging",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}

@@ -1,0 +1,31 @@
+{
+  "file": "src/server/common/helpers/notification-helper.js",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "5c778bd064c6f889aebc9d8b3ebf2c5c5b703ea2",
+  "pr": 157,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:58:33Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "referenceNumber threading through query-string and pagination builders is correct, but inserting it as a middle positional parameter makes buildPaginationLinks easy to mis-call",
+  "todos": [
+    {
+      "id": 1,
+      "line": 142,
+      "severity": "Major",
+      "category": "api-design",
+      "issue": "buildPaginationLinks gained referenceNumber as the SECOND positional parameter, silently demoting baseUrl from position 2 to 4 — any existing call passing a base URL now sets referenceNumber instead, with no type error and no runtime failure",
+      "fix": "Take a single options object (pagination, { referenceNumber, sort, baseUrl }) so callers cannot mis-order, or append referenceNumber last",
+      "best_practice": "node/code-style.md"
+    },
+    {
+      "id": 2,
+      "line": 183,
+      "severity": "Minor",
+      "category": "noise",
+      "issue": "buildPageResultsRangeLabel's destructuring order was changed (size moved ahead of page) with no behavioural effect, adding unrelated churn to a search PR",
+      "fix": "Revert the reorder to keep the diff scoped to the search feature",
+      "best_practice": "node/code-style.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

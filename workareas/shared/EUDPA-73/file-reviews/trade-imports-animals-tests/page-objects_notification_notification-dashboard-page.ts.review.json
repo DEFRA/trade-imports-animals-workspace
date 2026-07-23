@@ -1,0 +1,40 @@
+{
+  "file": "page-objects/notification/notification-dashboard-page.ts",
+  "repo": "trade-imports-animals-tests",
+  "commit": "631e185fdf0a8da5c0acd3e3981de9b8210c81e3",
+  "pr": 90,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T10:00:39Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "searchForReference uses the correct waitForURL+click pattern, but the new readiness helper leans on a hardcoded 10s timeout and CSS-class scoping the guide tells us to avoid",
+  "todos": [
+    {
+      "id": 1,
+      "line": 145,
+      "severity": "Major",
+      "category": "flakiness",
+      "issue": "waitForNotificationList hardcodes timeout: 10000, overriding the project's expect/action timeouts — the guide's 'never use fixed timeouts' rule applies, and a hardcoded value here silently masks a slow dashboard rather than failing against the configured budget",
+      "fix": "Drop the explicit timeout and let the Playwright config's expect timeout apply, or move the value into the config if the dashboard genuinely needs a longer budget",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    },
+    {
+      "id": 2,
+      "line": 140,
+      "severity": "Minor",
+      "category": "locators",
+      "issue": "notificationCards is now scoped by two CSS class selectors ('.notification-list__main .govuk-summary-card'), coupling the suite to the frontend's new BEM wrapper — the guide explicitly lists CSS class selectors under 'Avoid'",
+      "fix": "Add a data-testid to the results container in index.njk (a notification-list testid already exists for the label) and scope with getByTestId(...).locator('.govuk-summary-card')",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    },
+    {
+      "id": 3,
+      "line": 211,
+      "severity": "Minor",
+      "category": "duplication",
+      "issue": "The auth-retry block now repeats 'heading.waitFor({ timeout: 5000 }) then waitForNotificationList()' in both the try and the catch, with the same magic 5000 duplicated",
+      "fix": "Extract a private awaitDashboardReady() helper and call it from both arms",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

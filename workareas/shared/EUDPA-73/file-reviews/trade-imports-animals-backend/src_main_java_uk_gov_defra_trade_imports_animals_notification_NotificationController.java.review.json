@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:56:23Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "New referenceNumber query param has no validation constraint, unlike every other reference-number parameter on this controller",
+  "todos": [
+    {
+      "id": 1,
+      "line": 141,
+      "severity": "Major",
+      "category": "validation",
+      "issue": "referenceNumber is accepted with no @Pattern/@Size constraint even though every other reference-number parameter on this controller carries @Pattern(ReferenceNumberGenerator.REFERENCE_NUMBER_PATTERN), so arbitrary free text of unbounded length reaches the Mongo query",
+      "fix": "Decide the contract: either add @Pattern (and let the new ConstraintViolationException handler return 400) or document that free text deliberately yields an empty page and add @Size to cap length",
+      "best_practice": "rest-api/rest-api.md"
+    },
+    {
+      "id": 2,
+      "line": 142,
+      "severity": "Minor",
+      "category": "logging",
+      "issue": "The debug log line interpolates the raw referenceNumber query param, echoing unvalidated user input into logs",
+      "fix": "Drop referenceNumber from the log line or log it only once validated/trimmed by the service",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}

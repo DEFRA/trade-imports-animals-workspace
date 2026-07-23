@@ -1,0 +1,40 @@
+{
+  "file": "src/server/home/controller.test.js",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "5c778bd064c6f889aebc9d8b3ebf2c5c5b703ea2",
+  "pr": 157,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:59:39Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "AC1/AC2 paths are covered but the 400-fallback test encodes a backend behaviour that does not exist, and the pagination-with-search path is untested",
+  "todos": [
+    {
+      "id": 1,
+      "line": 552,
+      "severity": "Major",
+      "category": "test-fidelity",
+      "issue": "'Should show No notifications found when backend rejects search with bad request' hand-builds an error with status 400, but the current backend never returns 400 for a search — the test proves the branch works without proving the branch is ever reached",
+      "fix": "Once the backend contract is settled, replace with a test asserting the real behaviour (200 + empty page) or keep it and add a comment naming the backend constraint it depends on",
+      "best_practice": "node/testing/frontend.md"
+    },
+    {
+      "id": 2,
+      "line": 472,
+      "severity": "Minor",
+      "category": "assertion",
+      "issue": "'Should render search form and pass referenceNumber to findAll' asserts on raw HTML substrings ('data-testid=...', 'Filter notifications', 'Keyword or reference'), which couples the controller test to markup wording and will break on any copy change",
+      "fix": "Keep the findAll call assertion here and move the markup assertions to the Playwright dashboard-search spec, which already covers them",
+      "best_practice": "node/testing/frontend.md"
+    },
+    {
+      "id": 3,
+      "line": 500,
+      "severity": "Minor",
+      "category": "coverage",
+      "issue": "No test covers pagination links carrying referenceNumber end-to-end through the controller (buildPaginationLinks arg reorder), nor the empty-string referenceNumber case where parseReferenceNumber must return undefined",
+      "fix": "Add a multi-page search fixture asserting the next-page href contains referenceNumber, and a '/?referenceNumber=%20%20' case asserting findAll is called without the param",
+      "best_practice": "node/testing/frontend.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

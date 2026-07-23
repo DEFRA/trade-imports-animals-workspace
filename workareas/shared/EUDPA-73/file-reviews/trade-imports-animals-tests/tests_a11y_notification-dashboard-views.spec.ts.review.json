@@ -1,0 +1,31 @@
+{
+  "file": "tests/a11y/notification-dashboard-views.spec.ts",
+  "repo": "trade-imports-animals-tests",
+  "commit": "631e185fdf0a8da5c0acd3e3981de9b8210c81e3",
+  "pr": 90,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T10:01:18Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Both new search views are axe-scanned, which is the right coverage for the new filter panel; only step isolation and redundant waits to tidy",
+  "todos": [
+    {
+      "id": 1,
+      "line": 21,
+      "severity": "Minor",
+      "category": "isolation",
+      "issue": "The two test.steps share state — the second step searches for a no-match reference on the page left behind by the first step, so a failure in step one cascades and the no-match scan is not independently runnable",
+      "fix": "Split into two tests, or start the no-match step from journey.toNotificationDashboard() so it does not depend on the previous step's page state",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    },
+    {
+      "id": 2,
+      "line": 25,
+      "severity": "Minor",
+      "category": "redundancy",
+      "issue": "The shared beforeEach already lands on the dashboard, then the test calls journey.toNotificationDashboard() again after createSubmittedNotification, and follows searchForReference (which already waits for the URL) with a redundant heading.waitFor()",
+      "fix": "Drop the duplicate navigation and the redundant heading wait; searchForReference plus the resultsLabel wait is sufficient",
+      "best_practice": "playwright/BEST_PRACTICES.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

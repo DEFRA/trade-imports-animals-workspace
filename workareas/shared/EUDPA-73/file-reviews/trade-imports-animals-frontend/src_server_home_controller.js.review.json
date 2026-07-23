@@ -1,0 +1,49 @@
+{
+  "file": "src/server/home/controller.js",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "5c778bd064c6f889aebc9d8b3ebf2c5c5b703ea2",
+  "pr": 157,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:58:17Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Search wiring and AC2 messaging are correct, but the 400-swallowing fallback both hides genuine backend errors and is unreachable against the current backend contract",
+  "todos": [
+    {
+      "id": 1,
+      "line": 99,
+      "severity": "Major",
+      "category": "error-handling",
+      "issue": "Any backend 400 is converted into a 200 'No notifications found' page whenever referenceNumber is set, so a genuine bad request (malformed sort, out-of-range page, contract drift) is silently presented to the trader as an empty search result",
+      "fix": "Narrow the branch — check the ProblemDetail type/field before swallowing, and log at warn level so the swallowed 400 is still observable",
+      "best_practice": "node/pino-logging.md"
+    },
+    {
+      "id": 2,
+      "line": 99,
+      "severity": "Major",
+      "category": "dead-code",
+      "issue": "The 400 fallback is unreachable against the current backend — NotificationController accepts referenceNumber with no @Pattern and NotificationIT asserts free text returns 200 with an empty page, so no 400 is ever produced for a search",
+      "fix": "Either add the @Pattern constraint backend-side so the branch is real, or drop the branch and rely on the empty-page response",
+      "best_practice": "rest-api/rest-api.md"
+    },
+    {
+      "id": 3,
+      "line": 30,
+      "severity": "Minor",
+      "category": "duplication",
+      "issue": "renderEmptySearchResult repeats the full happy-path view model (pageTitle, heading, sortOptions, listQuerySuffix) rather than sharing it, so the two render paths can drift — it already omits notifications-count fields the catch-all path sets",
+      "fix": "Extract a buildHomeViewModel({ notifications, resultsLabel, pagination, ... }) helper used by all three h.view calls",
+      "best_practice": "node/code-style.md"
+    },
+    {
+      "id": 4,
+      "line": 62,
+      "severity": "Minor",
+      "category": "readability",
+      "issue": "The conditional spread ...(referenceNumber ? { referenceNumber } : {}) is redundant — notificationClient.findAll already guards with if (referenceNumber) before setting the search param, and parseReferenceNumber already returns undefined for blank input",
+      "fix": "Pass { page, sort, referenceNumber } directly",
+      "best_practice": "node/code-style.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

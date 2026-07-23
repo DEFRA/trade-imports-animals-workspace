@@ -1,0 +1,49 @@
+{
+  "file": "src/server/home/index.njk",
+  "repo": "trade-imports-animals-frontend",
+  "commit": "5c778bd064c6f889aebc9d8b3ebf2c5c5b703ea2",
+  "pr": 157,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:59:20Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Search form uses the correct govuk-frontend macros and preserves sort/reference state, but offers no hint about the exact-reference-only behaviour the label invites users to violate",
+  "todos": [
+    {
+      "id": 1,
+      "line": 34,
+      "severity": "Major",
+      "category": "accessibility",
+      "issue": "The search input has no hint text or accessible description explaining that only a complete GBN-AG reference matches, so a trader entering a keyword (as the 'Keyword or reference' label invites) gets 'No notifications found' with no explanation of why",
+      "fix": "Add a govukInput hint, e.g. 'Enter a complete notification reference, for example GBN-AG-26-ABC123', and consider echoing the searched term in the no-results message",
+      "best_practice": "gds/components.md"
+    },
+    {
+      "id": 2,
+      "line": 31,
+      "severity": "Minor",
+      "category": "semantics",
+      "issue": "The filter panel is marked up as <aside>, which announces a complementary landmark for content tangential to the page — the primary search control for the dashboard is not complementary content",
+      "fix": "Use <div> with the existing heading, or <search>/<form role=\"search\"> which is the correct landmark for a search region",
+      "best_practice": "gds/accessibility.md"
+    },
+    {
+      "id": 3,
+      "line": 35,
+      "severity": "Minor",
+      "category": "consistency",
+      "issue": "The search form always emits a hidden sort input because sort is defaulted by parseNotificationSort, so every search URL carries sort=arrivalDate%2Cdesc even at the default — contradicting buildHomeListQueryString, which deliberately omits the default sort",
+      "fix": "Guard with {% if sort and sort != defaultSort %} or expose a pre-built query suffix from the controller",
+      "best_practice": "node/nunjucks.md"
+    },
+    {
+      "id": 4,
+      "line": 55,
+      "severity": "Minor",
+      "category": "review-hygiene",
+      "issue": "The whole notification-card block was re-indented by two levels to sit inside the new layout wrappers, so ~100 lines show as changed when nothing about the cards changed — this hides any real edit inside the block from reviewers",
+      "fix": "Split the wrapper introduction and any content change into separate commits, or confirm in the PR description that the card block is pure re-indentation",
+      "best_practice": "node/nunjucks.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:43Z"
+}

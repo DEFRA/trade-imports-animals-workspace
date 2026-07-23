@@ -1,0 +1,31 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/animals/notification/NotificationServiceTest.java",
+  "repo": "trade-imports-animals-backend",
+  "commit": "6a828aec3265de0ce246e3653c0af6b34f0be24b",
+  "pr": 65,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-23T09:57:49Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "New tests cover match, no-match and trimming but all on page 1, missing the paging path where the pagination defect lives",
+  "todos": [
+    {
+      "id": 1,
+      "line": 407,
+      "severity": "Major",
+      "category": "coverage",
+      "issue": "The three new findAll tests all use page 1, so none catches the PageImpl total self-correction that makes reference search return totalElements=26 on page 2",
+      "fix": "Add findAll_shouldNotRepeatMatch_whenReferenceNumberProvidedWithPageTwo asserting totalElements is 1 (or content empty) for page 2",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 2,
+      "line": 448,
+      "severity": "Minor",
+      "category": "assertion",
+      "issue": "findAll_shouldTrimReferenceNumber_beforeLookup stubs an empty Optional and only verifies the repository call, so it would still pass if the returned page were built incorrectly",
+      "fix": "Stub a match and additionally assert the returned content resolves to the trimmed reference",
+      "best_practice": "java/testing/unit.md"
+    }
+  ],
+  "reconciled_at": "2026-07-23T10:07:42Z"
+}
