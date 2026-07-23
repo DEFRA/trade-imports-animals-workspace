@@ -21,7 +21,7 @@ coverage.
 | 2 | Business logic (parsing, defaulting, validation, pass-through) | Unit | "parses," "defaults to," "validates," "passes through" |
 | 3 | Data / persistence semantics (ordering, NULL handling, constraints) | Integration (needs a real DB) | "orders by," "NULL," "persists," "constraint" |
 | 4 | HTTP / API contract (query param encoding, request/response shape) | Per-repo convention — see "HTTP-contract convention" below | "encodes," "forwards," "passes as query param" |
-| 5 | Message / event contract (broker message shape, routing/session keys, protocol field-mapping) | Integration for wire-level assertions (needs a real broker — ASB emulator, SQS/LocalStack); unit for message-*construction* logic in isolation (e.g. a Mockito captor asserting what `ServiceBusMessage` gets built) | "publishes," "forwards," "routes," "session ID," "message ID," "delivers to queue/topic" |
+| 5 | Message / event contract (broker message shape, routing/session keys, protocol field-mapping) | Integration for wire-level assertions (needs a real broker — ASB emulator, SQS/Floci); unit for message-*construction* logic in isolation (e.g. a Mockito captor asserting what `ServiceBusMessage` gets built) | "publishes," "forwards," "routes," "session ID," "message ID," "delivers to queue/topic" |
 | 6 | Auth / session-flow simulation (stateful protocol orchestration — CSRF/state tokens, session-driven redirects, JWT claim mapping across steps) | Unit for token/state/session construction logic in isolation; integration via `server.inject()`-driven route tests for the redirect/session orchestration itself — no real DB or broker needed for either | "issues," "refreshes," "redirects to," "session," "CSRF," "state token," "claims" |
 | 7 | Error-handling path | Same home as the success-path logic it's the failure branch of — **not automatically E2E** | mirrors the classification of the corresponding happy path |
 
@@ -210,7 +210,7 @@ directory as the primary signal (different convention from
 frontend/admin above; this repo is not colocated). **Known
 exceptions**, grep-confirm before trusting the directory alone:
 
-- `test/integration/data/s3.test.js` — no Hapi server (S3/localstack
+- `test/integration/data/s3.test.js` — no Hapi server (S3/Floci
   only) despite living under `integration/`.
 - `test/unit/common/helpers/errors.test.js`,
   `test/unit/common/helpers/serve-static-files.test.js` — both

@@ -99,7 +99,7 @@ curl -X POST http://localhost:8474/proxies/servicebus -H 'Content-Type: applicat
 
 With the proxy disabled, `QueueMessageSender` sees connection failures classed as
 transient, so the SQS message is redelivered up to the queue's `maxReceiveCount`
-(3, set in `repos/trade-imports-dynamics-gateway/servicebus/start-localstack.sh`)
+(3, set in `repos/trade-imports-dynamics-gateway/servicebus/setup-notification-pipeline.sh`)
 before SQS itself moves it to the DLQ (`GET /dlq/notifications` on the gateway to
 check depth). Restoring the proxy does not auto-redeliver already-DLQ'd
 messages — call `POST /dlq/notifications/replay-all` (guarded by the

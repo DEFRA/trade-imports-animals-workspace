@@ -102,7 +102,7 @@ edited source via Spring Boot DevTools; `bounce-backend.sh` is a fallback that
 recreates the backend container (e.g. after a `pom.xml`/dependency change).
 
 Init scripts are staged from their owning repos on every stack start
-(backend: localstack init; tests repo: mongo seed fixtures; dynamics-gateway:
+(backend: Floci init; tests repo: mongo seed fixtures; dynamics-gateway:
 ASB emulator config) — locally from `repos/`, in CI via sparse fetch.
 `docker/stack/.staged/` is generated; never edit it.
 
