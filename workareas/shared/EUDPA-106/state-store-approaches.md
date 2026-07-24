@@ -134,38 +134,73 @@ Working assumptions this section holds fixed (per the go-live plan):
 - The authz check **lives in middleware/filter** using the notificationRef in the URL path (per-controller checks are the exception, not the rule).
 - **Shareable URLs contain the notificationId** (`/notifications/<ref>/…`) — adopted as a codebase practice.
 
-### Both 2 and 3 hit the same plumbing hurdle
+### Options 2 and 3 have *distinct* hurdles — corrected from an earlier framing
 
-`server.app.cache`-keyed-by-uploadId (Option 2) and URL-carried-refs (Option 3) both need the `/upload-successful` handler to identify **which specific upload** just landed, so it can poll cdp-uploader's `/status/<uploadId>` and act on the result. Both approaches assume `uploadId` is available on the request. But cdp-uploader takes the `/initiate` redirect URL as a **static string** and its own generated `uploadId` isn't known when we're configuring that redirect — so we can't just include it. Ways to close that gap (any of these apply equally to options 2 and 3):
+An earlier draft of this doc claimed options 2 and 3 shared "the same plumbing hurdle" of needing uploadId in the URL. That was wrong. They have **different** hurdles that need to be addressed differently.
 
-- Frontend mints its own identifier and puts it in the redirect (Option 7 shape).
-- Nginx sidecar rewrites the 302 `Location` header to append the request-path `uploadId` (Option 5 shape).
-- Frontend calls cdp-uploader `/initiate` sequentially and stashes the returned uploadId server-side, so the browser round-trip doesn't need to carry it — but this either lands us back on yar (per-session state) or a shared cache (which is Option 2 itself, still needing uploadId in URL for the lookup).
-- Backend tracks upload sessions (Option 8, below).
+**Option 2's hurdle: getting `uploadId` into the redirect URL.**
 
-So **choosing between 2 and 3 doesn't dodge the plumbing decision** — it just moves it around.
+Option 2 stores upload state in `server.app.cache` keyed by uploadId. For the `/upload-successful` handler to look up the entry, `uploadId` has to appear on the incoming request. But cdp-uploader takes the `/initiate` redirect URL as a **static string** and its own uploadId isn't known when we're configuring that redirect — so we can't just include it. Ways to close that gap:
 
-### Comparison assuming the plumbing is solved
+- Frontend mints its own identifier and puts it in the redirect (Option 7 shape) — but then the identifier isn't the cdp-uploader uploadId, so the cache would need to be keyed by our token instead, at which point Option 2 has quietly become Option 7.
+- Nginx sidecar rewrites the 302 `Location` header to append the request-path `uploadId` (Option 5 shape) — "spooky action at a distance", rejected earlier in the discussion.
+- Backend tracks upload sessions and hands back a session identifier at register-time — that's Option 8.
 
-| Aspect | Option 2 (`server.app.cache` by uploadId) | Option 3 (URL-only, no store) |
-|---|---|---|
-| Storage | Frontend: new `server.cache({ segment: 'document-uploads' })` at server-init; helper module for read/write. | None. |
-| URL shape | `/notifications/<ref>/upload-successful?uploadId=<uuid>` | `/notifications/<ref>/upload-successful?uploadId=<uuid>` |
-| Auth middleware hook | `<ref>` in path — trivial. | `<ref>` in path — trivial. |
-| statusUrl access | Cache holds `statusUrl`; also reconstructible from `${cdpUploader.baseUrl}/status/${uploadId}`. | Reconstructed from `${cdpUploader.baseUrl}/status/${uploadId}` — no other source. |
-| Persist call | Cache-carried notificationRef vs URL-carried — moot, backend authz checks either way. | URL-carried, backend authz check. |
-| Cognitive load for future readers | Adds a new catbox segment + a helper module + TTL considerations. | Handler reads a URL param and calls two services — the story is on-screen. |
-| Callback-writable | ✅ (arbitrary-key cache, no cookie needed) | ✅ (backend handles the persist call directly) |
-| Failure mode if plumbing hits a snag | Cache entry orphaned until TTL, sweeper cleans S3. | Same — the 302 just doesn't fire; user retries. |
+**Option 3's hurdle: identifying the specific upload without a state store.**
 
-Once backend authz is in place, **Option 2's cache adds a layer without earning it**. The cache used to earn its keep for:
+Option 3 as originally defined has notificationRef in the URL and **nothing stashed anywhere**. When the browser lands on `/notifications/<ref>/upload-successful`, the handler knows the notification but has no way to look up which specific upload just landed or fetch its scan status. Ways to close that gap:
 
-1. carrying `notificationRef` between /initiate and /upload-successful (so the URL didn't have to be trusted), and
-2. providing cross-user protection at the frontend (the "rogue user with leaked uploadId" attack).
+- **(a) cdp-uploader callback fires to the backend.** Backend already has the callback endpoint (`DocumentController.java:160-176`, unauthenticated per `EUDPA-35` — HMAC when cdp-uploader supports it). Callback creates the document record. `/upload-successful` just redirects to the docs list; the record is already there. Works cleanly; requires committing to callbacks.
+- **(b) cdp-uploader has a query-by-metadata API.** Handler asks cdp-uploader for uploads matching this notification's metadata. Unknown whether the API exists — not observed among the endpoints probed (`/initiate`, `/upload-and-scan/<id>`, `/status/<id>`). Would need confirmation.
 
-Under the constraint set: (1) is unnecessary because notificationRef is in the URL path and backend authz validates it; (2) is unnecessary because backend authz catches the same attack at the persist call.
+**If neither (a) nor (b) is available, pure Option 3 collapses into one of the other options:**
 
-**Between 2 and 3, Option 3 wins on simplicity** — same functionality, no state store, less to maintain, aligns with the middleware pattern out of the box.
+- Add backend pre-registration → **Option 8**.
+- Add a state store keyed by notificationRef (yar) → **Options 4/6** — which has a real functional cost. See "The last-write-wins hazard" below.
+
+### The last-write-wins hazard for yar-keyed-by-notificationRef (Options 4/6)
+
+If pure Option 3 collapses to storing upload state under `yar['upload:<notificationRef>']`, multi-tab uploads on the **same notification** don't just look ugly — they silently swap files. Concretely:
+
+- Tab 1: `/initiate` → uploadId=A. Writes `yar['upload:REF'] = { uploadId: A, statusUrl: URL_A }`.
+- Tab 2: `/initiate` → uploadId=B. Writes `yar['upload:REF'] = { uploadId: B, statusUrl: URL_B }` — **overwrites Tab 1's entry** in the same session's yar.
+- Tab 1 uploads its file to `/upload-and-scan/A` (cdp-uploader now holds Tab 1's file under A).
+- Tab 1 lands on `/upload-successful?notificationRef=REF` → reads `yar['upload:REF']` → gets `{ uploadId: B, statusUrl: URL_B }` — **Tab 2's session**.
+- Handler polls URL_B, eventually returns ready with Tab 2's filename/metadata (once Tab 2 uploads).
+- If Tab 1 confirms based on that, **Tab 2's file lands committed as if it were Tab 1's** — wrong file, wrong documentType/reference/date.
+
+Not a security concern (both tabs are the same user, same notification) but a real data-integrity bug that would be very hard to reproduce in support.
+
+Adding a second tab uploading to the same notification isn't contrived — "let me open a second tab so I can upload the next big file while this one's still scanning" is a real workflow.
+
+### Comparison of the actually-viable shapes under the constraint set
+
+| Shape | State | Multi-tab same-notif safe? | What it requires |
+|---|---|---|---|
+| **Option 2** — `server.app.cache` by uploadId | Frontend cache, keyed by uploadId | ✅ | Solve the uploadId-in-URL hurdle (nginx or Option-7-style token, at which point Option 2 becomes Option 5 or Option 7 respectively) |
+| **Option 3 with callbacks** | None frontend; backend records via callback | ✅ | Wire cdp-uploader callbacks to the existing backend endpoint. Authenticate the callback (HMAC per EUDPA-35). |
+| **Option 3 collapsed to yar-by-notificationRef** (Options 4/6) | yar entry per notification | ❌ silent file-swap on same-notif multi-tab | Nothing beyond what we have — but the bug is real |
+| **Option 8** — backend as source of truth | Backend record per upload | ✅ | New/refit backend endpoints for register + confirm |
+
+### What this changes about the recommendation
+
+The earlier framing suggested Option 3 was strictly simpler than Option 2 once backend authz landed. That holds **only** if we commit to route (a) — cdp-uploader callbacks. If we do, Option 3 is very clean:
+
+- Frontend: `/initiate` with `callback` URL pointing at backend, no other server-side work.
+- Cdp-uploader posts scan result to backend → backend creates document record.
+- `/upload-successful` handler: nothing except `h.redirect('/notifications/<ref>/documents')`. The docs list reads from backend and shows the new record.
+- Fully multi-tab safe (each upload has its own callback fire).
+
+That's genuinely simpler than Option 8. **But it makes callbacks a hard dependency for this design to work.** Callbacks are currently unauthenticated (`EUDPA-35`) and the ticket for HMAC authentication is separate.
+
+Option 8 avoids that dependency: works today with polling; if callbacks eventually land, they slot into the same backend endpoint that already exists, no frontend changes needed.
+
+So the honest position:
+
+- **If callbacks are landing alongside this work** — Option 3 with callbacks is the simplest and cleanest.
+- **If callbacks aren't guaranteed** — Option 8 is the safest bet. It works without callbacks, and adopts them transparently later.
+- **Options 4/6 (yar-keyed-by-notificationRef) should be avoided** because of the silent file-swap bug on same-notif multi-tab.
+- **Option 2 without solving its plumbing hurdle collapses into either Option 5, 7, or 8**, and Option 8 is strictly cleaner than either.
 
 ### Recommended alternative — Option 8: backend as source of truth for upload sessions
 
@@ -188,17 +223,20 @@ Given the constraint set, there's an option that side-steps the plumbing decisio
 
 **What this buys us:**
 
-| Property | Option 2 | Option 3 | **Option 8** |
+Table below columns Option 3 as the "with callbacks" variant, since pure Option 3 without callbacks collapses into either Option 8 or the buggy Options 4/6 per the correction above.
+
+| Property | Option 2 | Option 3 (with callbacks) | **Option 8** |
 |---|---|---|---|
 | notificationId in URL | ✅ | ✅ | ✅ |
 | Auth middleware hook | ✅ | ✅ | ✅ |
 | No frontend state store | ❌ (cache) | ✅ | ✅ |
-| No uploadId-in-redirect plumbing | ❌ | ❌ | ✅ (redirect doesn't need uploadId) |
-| Multi-tab safe | ✅ | ✅ | ✅ (backend tracks all pending) |
+| No uploadId-in-redirect plumbing | ❌ | ✅ | ✅ (redirect doesn't need uploadId) |
+| Multi-tab safe | ✅ | ✅ (each upload gets its own callback) | ✅ (backend tracks all pending) |
+| Requires cdp-uploader callbacks wired + auth'd | no | **yes (hard dependency)** | no (callbacks slot in optionally later) |
+| Backend callback endpoint auth status today | n/a | unauthenticated (`EUDPA-35`) — HMAC pending | n/a (works with polling; callbacks optional) |
 | Multi-tab UX quality | separate pages per upload | separate pages per upload | **notification-scoped dashboard** — all in-flight docs shown together with status |
-| Aligns with AC4 wording | partial | partial | ✅ ("backend persists references … keeps status") |
-| Sets up for callback (if adopted) | fine (cache is callback-writable) | fine (backend handles persist) | **best** — callback lands on backend, no frontend involvement |
-| Round-trips per upload | 2 (poll + persist) | 2 (poll + persist) | 2–3 (register + poll + confirm) |
+| Aligns with AC4 wording | partial | ✅ (backend receives callback, persists) | ✅ ("backend persists references … keeps status") |
+| Round-trips per upload | 2 (poll + persist) | 1 (redirect + backend has record from callback) | 2–3 (register + poll + confirm) |
 
 **Cost:**
 
@@ -215,12 +253,18 @@ Given the constraint set, there's an option that side-steps the plumbing decisio
 
 ### Verdict
 
-**Under the go-live constraint set, Option 8 > Option 3 > Option 2.**
+**Depends on whether we commit to cdp-uploader callbacks alongside this work.**
 
-- **Between 2 and 3: Option 3.** Same functionality, less code, aligns with the middleware pattern natively.
-- **Better than both: Option 8.** Shifts state ownership to the backend where AC4 already wants it. Costs one round-trip on registration and one on confirmation, buys a cleaner architecture end-to-end. Uses URL-carried notificationRef throughout, no uploadId round-trip needed at all — the plumbing question doesn't arise.
+- **If callbacks land in the same release (with HMAC auth on the receiver, per `EUDPA-35`) — Option 3 with callbacks.** Simplest shape end-to-end: frontend has no upload state at all; backend record is created by the callback; `/upload-successful` is `h.redirect(...)`. Every property in the table above is a ✅.
+- **If callbacks aren't guaranteed — Option 8.** Works without callbacks (frontend polls; backend as source of truth). If callbacks do eventually land, they slot into the same backend record with no frontend changes needed. Independence from the callback decision is the key advantage.
+- **Options 2, 4, 5, 6 are all inferior under the constraint set** — either they carry a state store that no longer earns its keep (Option 2), or they collapse into the file-swap bug on same-notif multi-tab (Options 4, 6), or they rely on infrastructure trickery that's hard to trace from application code (Option 5).
 
-If backend authz is available in the same release as this refactor, Option 8 is the shape I'd recommend implementing. The existing backend `DocumentService`/`DocumentController` code already has most of the schema — the follow-up ticket adds the pending/confirmed transition and the frontend calls to match.
+The two remaining candidates (Option 3-with-callbacks and Option 8) differ mainly on **when** the backend gets the record: at scan-completion via callback, or at initiate-time via frontend register call.
+
+- Option 3-with-callbacks needs the callback path robust before go-live.
+- Option 8 needs backend endpoints and can defer callbacks.
+
+If backend authz is available in the same release as this refactor, either is a defensible choice. The existing backend `DocumentService`/`DocumentController` code already has most of the schema for Option 8, and already has the callback endpoint (unauthenticated) that Option 3 needs to harden — so a **combined direction** is entirely feasible: implement Option 8 now, add HMAC auth to the callback endpoint alongside, and once callbacks are trusted, allow them to update the backend record directly (reducing polling to a UI-refresh nicety rather than a functional requirement).
 
 ---
 
