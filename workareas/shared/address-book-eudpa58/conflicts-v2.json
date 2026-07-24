@@ -1,0 +1,332 @@
+[
+  {
+    "id": "_meta",
+    "generatedAt": "2026-07-21",
+    "supersedes": "spec/conflicts.json (v1, 21 rulings c-001..c-021)",
+    "openForGate": [],
+    "gateRuled": { "ruledAt": "2026-07-21", "ruledBy": "Sam ('go with your recommendations')", "items": ["cv-040 authorise-against-path-orgId", "cv-041 close-185-dup", "cv-042 rename-wiring-to-address-book", "cv-044 mixed-validation", "cv-047 regex-$or-search", "cv-048 country-name->code-search"] },
+    "ruledReplan": ["cv-001", "cv-002", "cv-003", "cv-004"],
+    "supersededV1": {
+      "cv-010": "c-001",
+      "cv-011": "c-004",
+      "cv-012": ["c-003", "c-017"],
+      "cv-013": ["c-007", "c-019"],
+      "cv-014": "c-014",
+      "cv-015": "c-016",
+      "cv-016": "c-018",
+      "cv-017": "c-005 (partial — typed-model half), v1 operator.operatorTypes, v1 b-009, v1 b-003 type-filter"
+    },
+    "carriedForwardV1": {
+      "cv-020": "c-005",
+      "cv-021": "c-006",
+      "cv-022": "c-008",
+      "cv-023": "c-009",
+      "cv-024": "c-010",
+      "cv-025": "c-011",
+      "cv-026": "c-012",
+      "cv-027": "c-013",
+      "cv-028": "c-015",
+      "cv-029": "c-002",
+      "cv-030": "c-020",
+      "cv-031": "c-021"
+    },
+    "v1RulingsWithNoV2Node": "c-016 fully inverted (cv-015). All 21 v1 rulings are accounted for: c-001->cv-010; c-002->cv-029; c-003->cv-012; c-004->cv-011; c-005->cv-020(+cv-017 typed half); c-006->cv-021; c-007->cv-013; c-008->cv-022; c-009->cv-023; c-010->cv-024; c-011->cv-025; c-012->cv-026; c-013->cv-027; c-014->cv-014; c-015->cv-028; c-016->cv-015; c-017->cv-012; c-018->cv-016; c-019->cv-013; c-020->cv-030; c-021->cv-031."
+  },
+
+  {
+    "id": "cv-001",
+    "status": "ruled",
+    "title": "JSON casing for the new Address Book API: camelCase vs snake_case",
+    "ruling": "camelCase. The new trade-imports-address-book API serves camelCase JSON (no naming-strategy override), matching its reference model trade-imports-reference-data (Jackson default LOWER_CAMEL_CASE — Country.java:15-16 code/name; CountriesControllerIT.java:57-58 asserts \"code\"/\"name\"; grep for property-naming/SNAKE_CASE across ref-data src+resources+pom is clean). This OVERTURNS the snake_case wire the renamed-from operators service serves today (JacksonConfig SNAKE_CASE + address_line_1 @JsonProperty) and the FE operators-client FIELD_MAP/fromApiOperator snake_case mapping (operators-client.js:10-71). Justification it is decisive: (a) the reference model is camelCase; (b) the ticket field vocabulary is already camelCase (countryCode, townOrCity, addressId, orgId); (c) it matches backend Origin.countryCode; (d) ins-frontend is net-new and destructive-over-green is authorised (cv-004), so the client mapping is rewritten to camelCase rather than preserved — there is no shipped consumer to protect. TOPOLOGY flagged cv-001 as a tension for the parent to rule; ruled here on the decisive evidence. LOAD-BEARING INCREMENT: rewriting the FE client to camelCase is not incidental — track it explicitly as its own build step (operators-client.js FIELD_MAP/fromApiOperator, and the list controller.js reads of page_size/total_items/total_pages must all move to camelCase page/pageSize/totalItems/totalPages); the camelCase decision is not delivered until that rewrite lands.",
+    "ruledBy": "Reconciler (evidence-decisive per TOPOLOGY.jsonCasingVerdict + Sam's cv-004 destructive-over-green)",
+    "ruledAt": "2026-07-21",
+    "acRefs": ["EUDPA-287.AC5", "EUDPA-287.AC13", "EUDPA-286.AC7"]
+  },
+  {
+    "id": "cv-002",
+    "status": "ruled",
+    "title": "Branch strategy for the re-plan build",
+    "ruling": "Continue on feat/EUDPA-58-address-book; no new branches.",
+    "ruledBy": "Sam",
+    "ruledAt": "2026-07-21",
+    "acRefs": []
+  },
+  {
+    "id": "cv-003",
+    "status": "ruled",
+    "title": "trade-imports-operators -> trade-imports-address-book: rename-in-place vs new repo",
+    "ruling": "Rename trade-imports-operators to trade-imports-address-book IN PLACE — evolve the service, keep git history. trade-imports-ins-frontend is net-new (bootstrapped from the CDP Node.js frontend template). Backend salvage per spec notes.referenceModel; ins-frontend salvages the address-book UI + clients out of animals-frontend.",
+    "ruledBy": "Sam",
+    "ruledAt": "2026-07-21",
+    "acRefs": ["EUDPA-287.AC1"]
+  },
+  {
+    "id": "cv-004",
+    "status": "ruled",
+    "title": "Reconcile the green build vs destructive rework",
+    "ruling": "Go destructive over the green build (recoverable via git). The delivered M1/M1.5/M2/M3 build is materially misaligned (typed model, crn scoping, display-name country, copy+staleness, operator terminology, transporter-in-book) — rework destructively rather than patch-preserve. This authorises overturning shipped rulings (cv-010..cv-017) and the snake_case wire (cv-001).",
+    "ruledBy": "Sam",
+    "ruledAt": "2026-07-21",
+    "acRefs": []
+  },
+
+  {
+    "id": "cv-010",
+    "status": "superseded",
+    "supersedes": "c-001",
+    "title": "Scoping: org-owned (path /organisation/{orgId}) supersedes store-both-filter-by-crn",
+    "newDecision": "Addresses are ORG-OWNED (D23). orgId (from currentRelationshipId->organisationId, read from session never query string) is the PRIMARY scope key and a PATH segment: /organisation/{orgId}/addresses. Every read/write is org-scoped, enforced in the DB query not post-filter (186.AC5). crn is demoted off the primary scope. On the renamed service: re-key findByIdAndCrn->findByIdAndOrganisationId, org_status index (Operator.java:34) becomes primary, IdentityHeaderFilter's crn-required-everywhere / org-id-on-POST-only (IdentityHeaderFilter.java:80-90) inverts — but note the new API takes orgId in the PATH, not a header, so the filter's role changes materially. v1 c-001 (store both, filter by crn today, org-sharing later) is fully inverted: org sharing is the requirement NOW.",
+    "acRefs": ["EUDPA-287.AC5", "EUDPA-287.AC11", "EUDPA-286.AC7", "EUDPA-186.AC5"]
+  },
+  {
+    "id": "cv-011",
+    "status": "superseded",
+    "supersedes": "c-004",
+    "title": "Country: ISO alpha-2 countryCode (not list-validated) supersedes display-name string",
+    "newDecision": "Country is stored as ISO 3166-1 alpha-2 countryCode, NOT validated against a country list on the API ('store what you are given'; matches Origin.countryCode). The FE picker is MDM-sourced (reference-data /countries, already alpha-2). This head-on reverses v1 c-004 AND the operators-service D1 ruling (Operator.java:60 display-name + country display-name Javadoc :16-19 'do not fix it') — a deliberate reversal of a Sam-ruled decision, now re-ruled by the rewrite. Consequence: search matches over countryCode not a display-name substring; the operators service's country-display-name search + no code<->name conversion are dropped. Picker(MDM)/store(no-validation) asymmetry parked at cv-044.",
+    "acRefs": ["EUDPA-287.AC13", "EUDPA-287.AC8", "EUDPA-286.AC4"]
+  },
+  {
+    "id": "cv-012",
+    "status": "superseded",
+    "supersedes": ["c-003", "c-017"],
+    "title": "Reference + resolve-on-read supersedes copy+reference-with-staleness-accepted",
+    "newDecision": "A notification holds an addressId REFERENCE (not a copied block) and resolves current details on read (294.AC3). Draft/Amend reflect a later edit automatically via resolve-on-read, no trader action, NO push/fan-out into drafts (294.AC4). On submit, EUDPA-295 freezes a snapshot AND retains the addressId (additive). This inverts v1 c-003/c-017 (embedded COPY + reference, NO re-sync, staleness ACCEPTED) and the v1 acceptedNotMet stance: EUDPA-293.AC1 (edited reaches draft) is now MET BY DESIGN. The v1 staleness E2E pin (asserts OLD values still render) now asserts the WRONG behaviour and must be replaced. A NEW hydrating client method is needed — OperatorsApiClient.classify() is values-free by design (c-017 legacy).",
+    "acRefs": ["EUDPA-293.AC1", "EUDPA-294.AC3", "EUDPA-294.AC4", "EUDPA-294.AC5", "EUDPA-295.AC1", "EUDPA-295.AC2"]
+  },
+  {
+    "id": "cv-013",
+    "status": "superseded",
+    "supersedes": ["c-007", "c-019"],
+    "title": "Transporter DEFERRED out of the address book supersedes transporter-in-book + conditional fields",
+    "newDecision": "Transporter is deferred out of the address book (287 note). It does not fit the Standard Address Block (carries an approval number the block has no field for; found via the approved-transporter list EUDPA-119, not typed). Nothing in this scope handles transporters. This inverts v1 c-007 (TRANSPORTER operators in the book with approval_number+transporter_category), c-019 (conditional add/edit fields) and j-003 (transporter select). DELETE from the renamed service: TransporterCategory enum, ValidTransporterFields/TransporterFieldsValidator, approvalNumber, transporterCategory. The journey keeps its inline Transporter class (Transport.java:22) unchanged, not address-book-backed.",
+    "acRefs": ["EUDPA-287.AC8", "EUDPA-287.AC13"]
+  },
+  {
+    "id": "cv-014",
+    "status": "superseded",
+    "supersedes": "c-014",
+    "title": "Referenceable roles narrowed; placeOfOrigin + consignment go inline",
+    "newDecision": "Select-page (referenceable) roles are consignor / consignee / importer / destination (the NotificationBase.destination field) ONLY. placeOfOrigin is INLINE (D24) and consignment is INLINE (D26) — never references, already frozen. This inverts v1 c-014 (all surfaces: five party pages + consignment-contact mapped to BRANCH_ADDRESS + transporter). BRANCH_ADDRESS as a type disappears with the untyping (cv-017); the consignment-contact->BRANCH_ADDRESS mapping (v1 j-004) and the place-of-origin operator select (v1 j-002) are dropped. Transporter select also drops (cv-013).",
+    "acRefs": ["EUDPA-294.AC1", "EUDPA-294.AC5"]
+  },
+  {
+    "id": "cv-015",
+    "status": "superseded",
+    "supersedes": "c-016",
+    "title": "Terminology: 'operator' retired -> 'address' / 'consignment party' (D13)",
+    "newDecision": "The 'Operator' name is RETIRED (D13). The address book stores ADDRESSES; a notification's addressId-reference + role is a CONSIGNMENT PARTY. UI copy, routes, model, API and tests use 'address'/'consignment party'. This completely inverts v1 c-016 (UI copy uses 'operator', overriding the UX's 'address'). A wide rename across the delivered build's pervasive 'operator' vocabulary.",
+    "acRefs": ["EUDPA-287.AC4", "EUDPA-287.AC8", "EUDPA-294.AC3"]
+  },
+  {
+    "id": "cv-016",
+    "status": "superseded",
+    "supersedes": "c-018",
+    "title": "Deleted-detection via resolve-returns-soft-deleted supersedes existence-check-only",
+    "newDecision": "Deleted addresses are detected by RESOLVING the reference and finding the resolved address soft-deleted (294.AC2/AC4 resolve-on-read; 293 detection). This supersedes v1 c-018 (existence/tombstone check ONLY, NO value hydration) — value resolution is now the mechanism, so the 'never read values' constraint is gone. The list endpoint excludes soft-deleted; the by-id endpoint RETURNS soft-deleted (flagged) so existing references resolve (286.AC7; the list/by-id asymmetry, 294.AC2). The 200+DELETED-vs-404 distinction from v1 becomes: list-excludes vs by-id-returns-flagged.",
+    "acRefs": ["EUDPA-293.AC1", "EUDPA-293.AC2", "EUDPA-294.AC2", "EUDPA-286.AC7"]
+  },
+  {
+    "id": "cv-017",
+    "status": "superseded",
+    "supersedes": ["c-005 (typed-model half)", "v1 operator.operatorTypes", "v1 b-009 type-scoping", "v1 b-003 type filter"],
+    "title": "Untyped addresses supersede the typed operator model (D3/D21)",
+    "newDecision": "Addresses have NO type (D3/D21). DELETE OperatorType enum + the 7 UI-ordered values (OperatorType.java:8-16), the operator_type query param (OperatorController.java:86), the operatorType component of the crn_status_type_created index (Operator.java:31-33), the type-scoped select semantics (v1 b-009), the type filter (v1 b-003 / EUDPA-186.AC2 filter-by-type), and the type-selection add page (animals-frontend add/type/controller.js). Role is applied at selection into a notification, not stored. NOTE: c-005's STABLE-ID half survives as cv-020 (select by addressId); only its typed-model context is superseded here.",
+    "acRefs": ["EUDPA-287.AC8", "EUDPA-287.AC13", "EUDPA-186.AC2"]
+  },
+
+  {
+    "id": "cv-020",
+    "status": "carried-forward",
+    "relatesTo": "c-005",
+    "title": "Select pages use stable ids (now addressId), not array indexes",
+    "newDecision": "Select pages submit a stable id (addressId) not an array index — already true in the delivered animals-frontend (selection by operator id, consignors/select/controller.js:64-66; mock-consignors.json ABSENT, selects read the live API). Carries c-005's stable-id ruling; the typed-model context is superseded by cv-017.",
+    "acRefs": ["EUDPA-294.AC1", "EUDPA-294.AC3"]
+  },
+  {
+    "id": "cv-021",
+    "status": "carried-forward",
+    "relatesTo": "c-006",
+    "title": "Success banner: persistent one-shot, no timed dismiss (AC '3 seconds' to amend)",
+    "newDecision": "287.AC10 + 286.AC3 still say the confirmation stays visible 'for exactly 3 seconds' — an unusual GDS pattern. Carry c-006: persistent one-shot govukNotificationBanner cleared on next navigation, NO timed dismiss; AC wording to be amended. Salvage the one-shot flash (list/controller.js:108).",
+    "acRefs": ["EUDPA-287.AC10", "EUDPA-286.AC3"]
+  },
+  {
+    "id": "cv-022",
+    "status": "carried-forward",
+    "relatesTo": "c-008",
+    "title": "Add-details manual-entry only; address-lookup out of scope",
+    "newDecision": "The add flow goes straight to 'Add address details' (the type-selection page is removed, cv-017) with manual entry. Address-lookup autocomplete remains out of scope (EUDPA-290). Carries c-008.",
+    "acRefs": ["EUDPA-287.AC8"]
+  },
+  {
+    "id": "cv-023",
+    "status": "carried-forward",
+    "relatesTo": "c-009",
+    "title": "Jira/V4 authoritative for field validation; County '(optional)' marker; full MDM picker list",
+    "newDecision": "The field/validation table (name 255, line1 255, line2 opt 255, townOrCity 100, county opt 100, postcode 12, phone 20, email 254, country mandatory) is unchanged from V4/v1. County carries the GDS '(optional)' marker. The FE country picker uses the MDM list (reference-data /countries) — but the API stores countryCode without list-validation (cv-011), a deliberate picker/store asymmetry. Carries c-009 (only country representation + field names changed).",
+    "acRefs": ["EUDPA-287.AC8", "EUDPA-287.AC9", "EUDPA-286.AC4"]
+  },
+  {
+    "id": "cv-024",
+    "status": "carried-forward",
+    "relatesTo": "c-010",
+    "title": "GDS confirmation page before delete — now AC-backed",
+    "newDecision": "Two-step delete with a confirmation interstitial. 286.AC5 now explicitly requires it ('selecting Delete prompts for confirmation'; Cancel -> details page; Confirm -> soft-delete -> list). Carries c-010, now backed by an AC rather than a lone ruling.",
+    "acRefs": ["EUDPA-286.AC5"]
+  },
+  {
+    "id": "cv-025",
+    "status": "carried-forward",
+    "relatesTo": "c-011",
+    "title": "25 per page, server config, numbered govukPagination",
+    "newDecision": "25/page as a server-side CONFIG property (not a query param) — matches the rewrite explicitly. Numbered govukPagination presentation. FE renders the page it is handed (do not hard-code 25). Carries c-011 + the v1 D2 pagination deviation.",
+    "acRefs": ["EUDPA-287.AC5", "EUDPA-287.AC6", "EUDPA-186.AC7"]
+  },
+  {
+    "id": "cv-026",
+    "status": "carried-forward",
+    "relatesTo": "c-012",
+    "title": "Server-side search only",
+    "newDecision": "Text search is server-side, extending the list endpoint with ?q= (no separate endpoint, no client-side live filtering) — matches EUDPA-186 explicitly. Carries c-012. EUDPA-271 'impacts' EUDPA-186 — impact still to resolve with the ticket owner.",
+    "acRefs": ["EUDPA-186.AC1", "EUDPA-186.AC5"]
+  },
+  {
+    "id": "cv-027",
+    "status": "carried-forward",
+    "relatesTo": "c-013",
+    "title": "Draft treated identically to Amend for deleted-address validation — now AC-backed",
+    "newDecision": "The deleted-address review validation + submit block apply to Draft AND Amend. EUDPA-293 now states 'Draft OR Amend' explicitly across AC1/AC2/AC3. Carries c-013, now AC-backed rather than an extend-the-wording ruling.",
+    "acRefs": ["EUDPA-293.AC1", "EUDPA-293.AC2"]
+  },
+  {
+    "id": "cv-028",
+    "status": "carried-forward",
+    "relatesTo": "c-015",
+    "title": "'Dashboard' (not 'Home') nav + 'Address book' link — now on the INS shell",
+    "newDecision": "The service nav shows 'Dashboard' + 'Address book' (287.AC3). Carries c-015's Dashboard-not-Home + no-stub-items ruling, now hosted on the net-new INS shell (mirroring build-navigation.js:1-21, which already reads Dashboard/Address book/About in animals-frontend). The Dashboard target/content is out of scope here.",
+    "acRefs": ["EUDPA-287.AC3", "EUDPA-185.AC1", "EUDPA-185.AC2"]
+  },
+  {
+    "id": "cv-029",
+    "status": "carried-forward",
+    "relatesTo": "c-002",
+    "title": "Notification model already carries the full Standard Address Block; drop addressLine3 outstanding",
+    "newDecision": "EUDPA-198 (absorbed into 294 as a DUPLICATE) is largely REALISED on feat/EUDPA-58-address-book: Address.java carries county:18 + postcode:19 (verified) and Operator/Transporter carry telephone+email. c-002's model-extension is done. The ONLY outstanding 198 delta is DROP addressLine3 (Address.java:16 still present, verified) — a breaking removal rippling into builders/DTO/mappers/NotificationSubmittedData/fixtures; verify no consumer reads it first. Carries c-002.",
+    "acRefs": ["EUDPA-294.AC5", "EUDPA-286.AC4"]
+  },
+  {
+    "id": "cv-030",
+    "status": "carried-forward",
+    "relatesTo": "c-020",
+    "title": "Review page already renders county/telephone/email (v1 'silently dropped' claim was stale)",
+    "newDecision": "formatAddress already renders name/addressLine1/addressLine2/addressLine3/city/county/postcode/country/telephone/email filtered for truthiness (notification-view-helper.js:32-52) — it does NOT drop county/telephone/email. v1 c-020's 'stored then silently dropped' finding is STALE/realised. Carries c-020 as satisfied; keep a Playwright pin on those fields.",
+    "acRefs": ["EUDPA-287.AC8", "EUDPA-286.AC4"]
+  },
+  {
+    "id": "cv-031",
+    "status": "carried-forward",
+    "relatesTo": "c-021",
+    "title": "Outbox schemaVersion already '2'; consider '3' if the emitted shape changes",
+    "newDecision": "OutboxService.SCHEMA_VERSION is ALREADY '2' (OutboxService.java:25) and NotificationSubmittedData already ships full party PII (name/phone/email/full Address incl postcode/county) to Dynamics/ASB. v1 c-021's 1->2 bump is realised. If the reference/resolve reshape or the addressLine3 drop (cv-029) changes the emitted operator/address shape, bump to '3' + pin an integration test. The PII comms/DPIA obligation to the downstream consumer stands. Carries c-021.",
+    "acRefs": ["EUDPA-295.AC1", "EUDPA-287.AC8"]
+  },
+
+  {
+    "id": "cv-040",
+    "status": "ruled",
+    "ruling": "Option 1 — the Address Book API AUTHORISES the caller against the path orgId; it does not trust the path. INS forwards the authenticated caller's org (Defra ID session, currentRelationshipId->organisationId) as a trusted identity, and the API rejects a mismatch with 404 (not 403, to avoid leaking that another org's data exists). A path-trusted org scope would let a direct API call with an arbitrary orgId read/write another org's PII — unacceptable for a system of record. The forwarding mechanism (forwarded header vs propagated token) is pinned at design, alongside cv-042's header naming.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Trust boundary: does the Address Book API authorise the caller's session-org against the path orgId, or trust the path?",
+    "description": "orgId appears both as a URL path segment and as the ownership scope. AC2/Tech Notes say org must come from the SESSION and never a query string, and the FE derives orgId from the session into the path. But the tickets do not state whether the API authorises the authenticated caller against the path orgId (rejecting a caller requesting another org's addresses) or simply trusts the path. Without authorisation, a direct API call with an arbitrary orgId path could read/write another org's addresses.",
+    "options": [
+      "API authorises: derive/verify the caller's org from a trusted forwarded identity (header or token) and 403/404 if it mismatches the path orgId",
+      "API trusts the path orgId (relies on the FE always sourcing it from the session) — simpler, weaker",
+      "Drop orgId from the path and take it only from a trusted identity header (deviates from the ticket's stated /organisation/{orgId}/addresses shape)"
+    ],
+    "recommendation": "Option 1 — authorise the caller's forwarded identity against the path orgId; a path-trusted org scope is an authorization gap for a system of record holding PII. Confirm the identity-forwarding mechanism (header vs token) with the team.",
+    "acRefs": ["EUDPA-287.AC5", "EUDPA-287.AC13", "EUDPA-286.AC7"]
+  },
+  {
+    "id": "cv-041",
+    "status": "ruled",
+    "ruling": "Option 1 — close EUDPA-185 as a duplicate of EUDPA-287 (its nav/list/pagination scope is fully absorbed into 287.AC3/AC4/AC6; its own text was never rewritten and is overturned), and leave EUDPA-187 parked (empty). 185's ACs stay mapped to their 287 equivalents in acCoverage so nothing is lost. Actioning the Jira close is an admin follow-up, not a build task.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Disposition of EUDPA-185 and EUDPA-187",
+    "description": "EUDPA-185's scope (nav + list + pagination) is absorbed into EUDPA-287 (AC3/AC4/AC6) but its own text was NOT rewritten (still 'operators', 'type' column, per-user, Priority Lowest). EUDPA-187 is empty/parked. Neither is in the v2 inScope set.",
+    "options": [
+      "Close EUDPA-185 as a duplicate of EUDPA-287; leave EUDPA-187 parked",
+      "Keep EUDPA-185 open with independent residual scope (none identified)",
+      "Rewrite EUDPA-185 to the new model"
+    ],
+    "recommendation": "Option 1 — close 185 as a duplicate of 287; confirm with the team. Its ACs are mapped to 287 equivalents in acCoverage.",
+    "acRefs": ["EUDPA-185.AC1", "EUDPA-185.AC2", "EUDPA-185.AC3", "EUDPA-185.AC4"]
+  },
+  {
+    "id": "cv-042",
+    "status": "ruled",
+    "ruling": "Option 1 — rename all wiring to the service: env var TRADE_IMPORTS_ADDRESS_BOOK_URL, mongo db trade-imports-address-book, seed file renamed off 30-operators-seed.js; KEEP port 8089 and KEEP the Trade-Imports-Organisation-Id header name. trade-imports-ins-frontend gets its own DEFRA_ID_* block (mirroring animals-frontend) and its own address-book-URL config. The two uncommitted TRADE_IMPORTS_OPERATORS_URL compose edits become TRADE_IMPORTS_ADDRESS_BOOK_URL. The AC1 workspace PR declares both services under these names; exact strings are confirmable at PR time but pinned here.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Service naming + workspace wiring reconciliation for the rename-in-place",
+    "description": "cv-003 renames trade-imports-operators -> trade-imports-address-book in place, but all existing (partly uncommitted) wiring uses the operators name: env var TRADE_IMPORTS_OPERATORS_URL (backend.compose.yml:20, frontend.compose.yml:49), port 8089, mongo db trade-imports-operators, seed 30-operators-seed.js, header Trade-Imports-Organisation-Id, FE operators-client.js. The AC1 workspace PR must add BOTH services and rename this wiring. Canonical names/ports/db for the two services (address-book backend + ins-frontend) need confirming before the PR declares them.",
+    "options": [
+      "Rename all wiring to address-book (TRADE_IMPORTS_ADDRESS_BOOK_URL, mongo db trade-imports-address-book, seed rename), keep port 8089, keep the Trade-Imports-Organisation-Id header name",
+      "Keep the operators env/db names to minimise churn (contradicts the rename)",
+      "Assign a fresh port + db and retire the operators wiring"
+    ],
+    "recommendation": "Option 1 — rename the wiring to match the service; confirm the env-var name, mongo db name and whether ins-frontend gets its own DEFRA_ID_* + operators-URL block. Build-time decision, but pin it before the workspace PR.",
+    "acRefs": ["EUDPA-287.AC1"]
+  },
+  {
+    "id": "cv-044",
+    "status": "ruled",
+    "ruling": "Option 3 (mixed) — validate mandatory + max-length per the block, PLUS reject a stray type/role field with a per-field 400 (287.AC13 says the endpoint must not accept one; silent-ignore hides client bugs) and add email format validation. Do NOT add phone or countryCode format/list validation: phone stays free-string (max 20), countryCode stays stored-as-given and not list-validated (cv-011). Revisit phone/country format only if UX/BA asks.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Format validation scope: email/phone format, stray type/role field, countryCode not list-validated",
+    "description": "AC9/AC4 enumerate only two error classes (missing-mandatory, over-max) yet fields are typed email/telephone and country is an MDM pick stored as ISO code. AC13 says the API 'must not accept a type or role field' without saying reject-with-error vs silently-ignore. countryCode is stored without list-validation (cv-011) while the picker is MDM-constrained. Whether malformed-email / non-numeric-phone / non-listed-country / stray-type-field are rejected is ambiguous.",
+    "options": [
+      "Validate only mandatory + max-length per the AC text (accept any string for email/phone/countryCode; ignore a stray type/role field)",
+      "Add format validation (email pattern, phone pattern, countryCode length/pattern) and reject a stray type/role field with a per-field 400",
+      "Mixed: reject a stray type/role field (400), add email format only, leave phone/countryCode format unvalidated"
+    ],
+    "recommendation": "Confirm with UX/BA. Minimum-viable = Option 1 (matches AC text literally). Lean Option 3 for the type/role field (silent-ignore hides client bugs) + email format (cheap, high value). Do not add heavy phone/country format validation without a ruling.",
+    "acRefs": ["EUDPA-287.AC9", "EUDPA-287.AC13", "EUDPA-286.AC4"]
+  },
+  {
+    "id": "cv-047",
+    "status": "ruled",
+    "ruling": "Option 1 — use the salvaged case-insensitive regex $or (Pattern.quote, server-side, ReDoS-safe), re-keyed to organisationId + name/townOrCity/postcode/countryCode; it already meets 186.AC3's partial-word + case-insensitive requirement. DROP the tech note's MongoDB $text guidance ($text is whole-word/stemmed and fails partial-word). Searched-field set is the four fields, with country handled per cv-048.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Partial-word search vs a MongoDB $text index (EUDPA-186.AC3)",
+    "description": "186.AC3 requires case-insensitive AND partial-word matching (e.g. 'gree' matches 'green'). The 186 tech note prescribes a MongoDB TEXT index across name/townOrCity/postcode/countryCode, but $text is whole-word/stemmed and does NOT do arbitrary substring matching. The salvage path (OperatorService.java:90-97) already uses a case-insensitive regex $or (Pattern.quote'd, server-side, no ReDoS) which DOES do substrings — so the regex approach already in the codebase satisfies AC3, and the tech note's $text guidance does not.",
+    "options": [
+      "Use the existing case-insensitive regex $or (Pattern.quote) re-keyed to organisationId + name/townOrCity/postcode/countryCode — satisfies partial-word + case-insensitive",
+      "Use a Mongo $text index per the tech note (fails AC3's partial-word requirement)",
+      "Hybrid: $text for word matches + regex fallback for substrings (complex, two rules)"
+    ],
+    "recommendation": "Option 1 — the salvaged regex $or already meets AC3 and avoids the $text partial-word gap; drop the tech note's $text guidance. Confirm the searched-field list with UX (186.AC2 is flagged an inference; the country-term semantics are split out to cv-048).",
+    "acRefs": ["EUDPA-186.AC2", "EUDPA-186.AC3"]
+  },
+  {
+    "id": "cv-048",
+    "status": "ruled",
+    "ruling": "Option (a) — resolve a typed country term against the MDM country list (reference-data /countries) to its alpha-2 code before matching, so 'France' matches stored 'FR'. Preserves v1's display-name search behaviour on top of code storage and makes 186.AC2 genuinely met. b-server-search + list-addresses.q already reflect this.",
+    "ruledBy": "Sam (2026-07-21, 'go with your recommendations')",
+    "ruledAt": "2026-07-21",
+    "title": "Country search semantics: typed country NAME vs stored alpha-2 code (EUDPA-186.AC2)",
+    "description": "186.AC2 lists 'country' as a searchable field, but country is stored as ISO 3166-1 alpha-2 countryCode (cv-011) and the search runs over countryCode. A trader typing 'France' or 'United Kingdom' matches nothing — only the literal codes 'FR'/'GB' match. This is a user-facing regression from v1's display-name search; cv-011 recorded the code-only storage as a settled mechanical consequence but never asked whether code-only country SEARCH is acceptable. The spec ADOPTS option (a) as its working design so 186.AC2 is satisfied, but the choice needs human confirmation.",
+    "options": [
+      "(a) ADOPTED: resolve the typed country term against the MDM country list (reference-data /countries) to its alpha-2 code before matching, so 'France' matches stored 'FR'",
+      "(b) drop country from the searched-field set (search name/townOrCity/postcode only)",
+      "(c) accept code-only country search (trader must type 'FR') with explicit UX sign-off"
+    ],
+    "recommendation": "Option (a) — resolve the name to a code before matching; it preserves the v1 display-name search behaviour on top of code storage and makes 186.AC2 genuinely met. Confirm with UX; if (b)/(c) is chosen, update b-server-search + list-addresses.q accordingly.",
+    "needsHuman": true,
+    "acRefs": ["EUDPA-186.AC2"]
+  }
+]
