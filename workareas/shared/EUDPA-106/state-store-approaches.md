@@ -223,7 +223,11 @@ Given the constraint set, there's an option that side-steps the plumbing decisio
 
 **What this buys us:**
 
-Table below columns Option 3 as the "with callbacks" variant, since pure Option 3 without callbacks collapses into either Option 8 or the buggy Options 4/6 per the correction above.
+Table columns Option 3 as the "with callbacks" variant, since pure Option 3 without callbacks collapses into either Option 8 or the buggy Options 4/6 per the correction above.
+
+**Important context on the callback path:** the backend already implements it. `DocumentController.java:150-176` is the receiver (`POST /document-uploads/{upload-id}/scan-results`); `DocumentService.handleScanResult` processes the payload. The endpoint uses the literal string `pending` as the URL-path uploadId and resolves the actual document via `metadata.correlationId` in the payload — exactly the "uploadId isn't known at /initiate time" workaround Option 3 needs. Current production flow (backend-proxies-bytes) already depends on this callback. So "with callbacks" isn't a new capability we'd add — it's the existing integration pattern, exercised in every environment today.
+
+`EUDPA-35` covers hardening the callback endpoint with HMAC. That's a separate ticket, applies equally to any option that uses callbacks (including today's production flow), and isn't a spike blocker.
 
 | Property | Option 2 | Option 3 (with callbacks) | **Option 8** |
 |---|---|---|---|
@@ -232,11 +236,11 @@ Table below columns Option 3 as the "with callbacks" variant, since pure Option 
 | No frontend state store | ❌ (cache) | ✅ | ✅ |
 | No uploadId-in-redirect plumbing | ❌ | ✅ | ✅ (redirect doesn't need uploadId) |
 | Multi-tab safe | ✅ | ✅ (each upload gets its own callback) | ✅ (backend tracks all pending) |
-| Requires cdp-uploader callbacks wired + auth'd | no | **yes (hard dependency)** | no (callbacks slot in optionally later) |
-| Backend callback endpoint auth status today | n/a | unauthenticated (`EUDPA-35`) — HMAC pending | n/a (works with polling; callbacks optional) |
+| New callback wiring required | n/a | no — existing endpoint at `DocumentController.java:150-176` | no — same existing endpoint |
+| Requires `EUDPA-35` HMAC hardening | n/a | not a blocker (same as today's production) | not a blocker (same as today's production) |
 | Multi-tab UX quality | separate pages per upload | separate pages per upload | **notification-scoped dashboard** — all in-flight docs shown together with status |
 | Aligns with AC4 wording | partial | ✅ (backend receives callback, persists) | ✅ ("backend persists references … keeps status") |
-| Round-trips per upload | 2 (poll + persist) | 1 (redirect + backend has record from callback) | 2–3 (register + poll + confirm) |
+| Round-trips per upload | 2 (poll + persist) | 1 (redirect + backend already has record from callback) | 2 (register + confirm; or 1 if callback creates the record first) |
 
 **Cost:**
 
@@ -253,18 +257,65 @@ Table below columns Option 3 as the "with callbacks" variant, since pure Option 
 
 ### Verdict
 
-**Depends on whether we commit to cdp-uploader callbacks alongside this work.**
+**Option 3-with-callbacks and Option 8 are the two viable candidates. They're closer in shape than the earlier framing implied.**
 
-- **If callbacks land in the same release (with HMAC auth on the receiver, per `EUDPA-35`) — Option 3 with callbacks.** Simplest shape end-to-end: frontend has no upload state at all; backend record is created by the callback; `/upload-successful` is `h.redirect(...)`. Every property in the table above is a ✅.
-- **If callbacks aren't guaranteed — Option 8.** Works without callbacks (frontend polls; backend as source of truth). If callbacks do eventually land, they slot into the same backend record with no frontend changes needed. Independence from the callback decision is the key advantage.
-- **Options 2, 4, 5, 6 are all inferior under the constraint set** — either they carry a state store that no longer earns its keep (Option 2), or they collapse into the file-swap bug on same-notif multi-tab (Options 4, 6), or they rely on infrastructure trickery that's hard to trace from application code (Option 5).
+The backend already implements the callback receiver pattern (`DocumentController.java:150-176`) and already uses `metadata.correlationId` to link callbacks to DB records. Both options rely on this same primitive. The differences reduce to:
 
-The two remaining candidates (Option 3-with-callbacks and Option 8) differ mainly on **when** the backend gets the record: at scan-completion via callback, or at initiate-time via frontend register call.
+- **Option 3-with-callbacks:** frontend calls `/initiate` on cdp-uploader (with backend as callback receiver, as today); the backend record is created **by the callback** when scan completes; `/upload-successful` is essentially `h.redirect('/notifications/<ref>/documents')` and the docs page reads the existing backend list.
+- **Option 8:** frontend calls `/initiate` **and** makes an explicit `POST /notifications/<ref>/document-uploads` register call to the backend before rendering the form; backend already has a `PENDING` record when the callback (or a poll) later confirms; `/upload-successful` queries the backend list and confirms any ready entries.
 
-- Option 3-with-callbacks needs the callback path robust before go-live.
-- Option 8 needs backend endpoints and can defer callbacks.
+The whole difference is the register call. Both use the callback. Neither is blocked by `EUDPA-35`, because both inherit whatever auth state the callback endpoint has (currently none; will be HMAC when cdp-uploader supports it — same trajectory as today's production).
 
-If backend authz is available in the same release as this refactor, either is a defensible choice. The existing backend `DocumentService`/`DocumentController` code already has most of the schema for Option 8, and already has the callback endpoint (unauthenticated) that Option 3 needs to harden — so a **combined direction** is entirely feasible: implement Option 8 now, add HMAC auth to the callback endpoint alongside, and once callbacks are trusted, allow them to update the backend record directly (reducing polling to a UI-refresh nicety rather than a functional requirement).
+**Options 2, 4, 5, 6 are all inferior under the constraint set** — either they carry a state store that no longer earns its keep (Option 2), or they collapse into the file-swap bug on same-notif multi-tab (Options 4, 6), or they rely on infrastructure trickery that's hard to trace from application code (Option 5).
+
+**Whether to add the register call** (i.e. Option 8 vs Option 3-with-callbacks) is a real design choice with concrete trade-offs — see the next section.
+
+### Pros and cons of adding the register call (Option 8) vs relying on callback-only (Option 3-with-callbacks)
+
+Both options rely on the backend receiving cdp-uploader's scan-result callback. The register call is a separate, up-front `POST /notifications/<ref>/document-uploads` from the frontend to the backend at page-render time (immediately after `/initiate` returns), which writes a `PENDING` record before any upload happens.
+
+#### Pros of adding the register call (Option 8)
+
+- **Robustness against callback loss or delay.** If cdp-uploader's callback is delayed, retried, or lost, the `PENDING` record is already in the backend. The `/upload-successful` handler can render a "checking" state to the user with a meaningful `filename`/`documentType`/etc. Without register, a delayed callback means the user lands on `/upload-successful`, sees no record for this upload attempt, and can't tell whether their upload succeeded, failed, or is still processing.
+- **Early metadata capture.** `documentType`, `documentReference`, `dateOfIssue` are known at page-render time (they're in the wizard state or the form). Register lets the backend record them **before** scan completion. Callback-only means the backend has to read `status.form.*` on the callback (findings.md notes cdp-uploader preserves these fields, so it works — but only when the callback arrives).
+- **Explicit ownership check moment.** The register endpoint is auth-middleware-protected: the caller must own the notification. That's a clean point to reject unauthorised attempts *before* any file lands in S3. Callback-only defers ownership checking to the frontend's `notification-view` derivation, which is more indirect.
+- **Ability to show in-flight uploads on the accompanying-documents page.** With `PENDING` records, the docs list on the main page can show "Checking" tags for uploads in progress. Callback-only means the docs list only shows uploads after the callback has landed — there's a window where the user sees nothing after clicking submit, which is unfriendly.
+- **Idempotency belt for confirm.** The register call establishes the record, so `POST .../confirm` is idempotent against a known ID. Callback-only means the callback is the record-creation trigger; if a confirm attempt races the callback (frontend polls and beats the callback), the confirm has nothing to update.
+- **Independence from callback timeliness.** For UX responsiveness, the frontend can poll cdp-uploader status directly if the backend record shows `PENDING` and the callback hasn't fired yet. With register, that's straightforward. Callback-only means either wait for the callback or invent a parallel query path.
+- **Clean orphan-cleanup semantics.** `PENDING` records that never get a callback (user abandoned, network failed) can be swept by a background job on age. Callback-only orphans (file in S3, no record, no callback) are harder to identify from backend state alone.
+- **Aligns with the ticket's AC3 language.** *"persist timing: per-doc once AV-clear vs batched at Save and continue — per-doc-on-clean shrinks the orphan window (each clean doc is already saved)."* Register + confirm is the per-doc-on-clean shape. Callback-only can achieve this too but relies on the callback to create the record, not just transition it.
+
+#### Cons of adding the register call
+
+- **Extra HTTP round-trip on every page render.** Frontend `GET /accompanying-documents` → `/initiate` (cdp-uploader) → `POST .../document-uploads` (backend). Two backend hops instead of one. On CDP's private network this is single-digit milliseconds, but it's still non-zero and adds a failure point.
+- **Duplicate-record possibility.** If the register call succeeds and the callback also arrives (with `metadata.correlationId` matching), the backend has to handle both without creating two records. Idempotency contract on `POST .../document-uploads` needs to be explicit: same `(notificationRef, uploadId)` → return existing record. Not hard, but a rule to enforce.
+- **Callback creates-or-updates ambiguity.** With register, the callback is always an **update** (to an existing `PENDING`). Without register, the callback is always a **create**. The register variant means the callback handler has to handle both "record exists" and "shouldn't happen but might exist" cases robustly. The current `handleScanResult` in the backend was written assuming callback = update (record was created at initiate time — the current backend flow), so the pattern is already in place.
+- **More surface area to maintain.** One more endpoint, one more service method, one more line in the frontend integration. Cost is small but non-zero.
+- **What happens if register fails but the browser proceeds anyway.** If `POST .../document-uploads` returns a 5xx after `/initiate` succeeded, we've created a cdp-uploader session but no backend record. The user might still be shown the form. Either:
+  - The frontend refuses to render the form on register failure — good defensive UX, needs deliberate handling.
+  - The callback later creates the record — degrades gracefully to Option 3-with-callbacks behaviour for that upload only.
+
+#### Pros of the callback-only path (Option 3-with-callbacks)
+
+- **Simpler frontend.** One less HTTP call per page render. Frontend GET handler is just `/initiate` + render form. `/upload-successful` is just `h.redirect(...)`.
+- **Fewer backend endpoints to maintain.** No register endpoint, no confirm endpoint. Just the existing callback receiver and the existing list/get/delete.
+- **Backend record is created only when there's actually something to record.** Register creates `PENDING` records for every page view, even if the user never uploads. Those PENDINGs need TTL sweeping to avoid noise. Callback-only means backend rows only exist for uploads that at minimum reached cdp-uploader.
+- **Fewer failure modes on the happy path.** No "register succeeded but callback lost" or "register failed but browser continued" corner cases — just "callback arrived or didn't".
+
+#### Cons of the callback-only path
+
+- **User-visible latency window.** Between "user submits form" and "callback arrives at backend" there's a period where `/upload-successful` and `/accompanying-documents` don't know about the upload. The user has no idea whether their upload landed. Depending on scan speed, this window could be seconds or minutes.
+- **No metadata surfaced until scan completes.** `documentType`, `documentReference`, `dateOfIssue` aren't in the backend until the callback fires. The docs list can't render "Checking: invoice.pdf (ITAHC)" during scan — only "Checking: invoice.pdf" (from cdp-uploader's `status.form.file.filename`) at best, and nothing at all before the callback lands.
+- **Ownership rejection happens late.** If a user tampers with the redirect URL to reference a foreign notificationRef (`/notifications/<VICTIM>/upload-successful`), the auth middleware rejects the browser hit — good. But the callback itself is unauthenticated and would create a record on any callback backend receives. Attacker uploads a file → cdp-uploader callback fires → backend creates a record against a notification the attacker controls (fine, but they never see it because they weren't in the callback path). Actually this isn't a problem — the callback is triggered by the *cdp-uploader session*, and the session's notificationRef was set at frontend `/initiate` time using **the frontend's yar state** (still subject to `/notification-view` URL-poisoning, but that's the pre-existing vector). So callback-only inherits the same auth-gap sensitivity as any other option; it doesn't make it worse.
+- **Harder to render "your in-flight uploads" UX.** Without a `PENDING` state in the backend, showing a "checking" list on the accompanying-documents page requires either polling cdp-uploader from the frontend (needs statusUrl per upload, needs state to remember it) or accepting a "no record yet" gap.
+
+#### Recommendation on the register call
+
+**Add it.** The extra round-trip is trivial cost; the UX win (visible pending state, early metadata, clean orphan sweep, independence from callback timeliness) is real. The register call turns "did my upload work?" into an answered question at every meta-refresh tick, not something the user waits on a callback for.
+
+If we later find the register call unhelpful (e.g. callbacks are so reliable that the register step is dead weight), it's trivial to remove — Option 8 degrades to Option 3-with-callbacks with one endpoint deletion. The reverse is harder: we'd need to add register semantics after the fact, at which point we'd wish we'd built the endpoint from the start.
+
+**Net recommendation: Option 8.** Adding the register call is a small structural investment with concrete UX and robustness returns.
 
 ---
 
