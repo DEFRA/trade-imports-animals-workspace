@@ -221,3 +221,239 @@ Given the constraint set, there's an option that side-steps the plumbing decisio
 - **Better than both: Option 8.** Shifts state ownership to the backend where AC4 already wants it. Costs one round-trip on registration and one on confirmation, buys a cleaner architecture end-to-end. Uses URL-carried notificationRef throughout, no uploadId round-trip needed at all — the plumbing question doesn't arise.
 
 If backend authz is available in the same release as this refactor, Option 8 is the shape I'd recommend implementing. The existing backend `DocumentService`/`DocumentController` code already has most of the schema — the follow-up ticket adds the pending/confirmed transition and the frontend calls to match.
+
+---
+
+## Option 8 — full detail
+
+### Backend API contract
+
+Three endpoints (or refits of existing shapes). All sit under `/notifications/<ref>/…`, so the auth middleware runs uniformly on ownership of `<ref>`.
+
+**`POST /notifications/<ref>/document-uploads`** — register a pending upload.
+
+- Body: `{ uploadId, statusUrl, metadata?: { documentType, documentReference, dateOfIssue } }`
+- Backend writes: `{ upload_id, notification_ref, status: PENDING, status_url, metadata, owner_user_id, created_at }`
+- Response: `201 Created` with the persisted record.
+- **Idempotent** — if the record already exists for `(notification_ref, upload_id)`, return `200` with the existing record. Frontend retries don't create duplicates.
+
+**`GET /notifications/<ref>/document-uploads`** — list uploads for a notification.
+
+- Returns `[ { uploadId, status, filename?, documentType?, documentReference?, dateOfIssue?, statusUrl }, ... ]`.
+- Backend variants:
+  - **Lazy-poll**: on serving each `PENDING` entry, backend calls `cdpUploaderClient.getStatus(statusUrl)`, refreshes `status`/`filename`/etc from the response, and persists the updated state before returning. Adds latency but keeps the read fresh.
+  - **Passive**: return whatever's in the database. Requires a background worker (or callbacks — see below) to keep pending entries fresh.
+- For a spike-adjacent scope, lazy-poll is simpler. For scale, a background worker is friendlier to the request path.
+
+**`POST /notifications/<ref>/document-uploads/<uploadId>/confirm`** — transition `PENDING`/`READY` → `PERSISTED`.
+
+- Backend re-checks cdp-uploader status server-side (belt-and-braces), refuses if not actually ready.
+- Reads `status.form.file.filename` and `status.form.*` metadata from cdp-uploader (findings.md notes cdp-uploader exposes the multipart fields there), backfills the record if not already set.
+- Response: `200` with the persisted record.
+- **Idempotent** — repeated calls no-op after the transition.
+
+**`DELETE /notifications/<ref>/document-uploads/<uploadId>`** — user-initiated removal (existing endpoint, already there).
+
+### Backend state machine
+
+```
+   INITIATED (client-side transient — cdp-uploader has returned uploadId; no DB record yet)
+        |
+        v [frontend POST /notifications/<ref>/document-uploads]
+        |
+   PENDING ─────────────────────────────────────────┐
+        |                                            |
+        v (browser POSTs file to /upload-and-scan)   |
+        |                                            |
+        v (backend polls cdp-uploader status)        |
+        |                                            |
+        +──> READY (uploadStatus=ready, clean)       |
+        |         |                                  |
+        |         v [frontend POST .../confirm]      |
+        |     PERSISTED (final, appears in list      |
+        |                 as "Safe")                 |
+        |                                            |
+        +──> REJECTED (uploadStatus=ready, infected) |
+        |         (renders "Virus found — remove"    |
+        |          with a delete button)             |
+        |                                            |
+        +──> ABANDONED ◄──────────────────────────────┘
+                 (TTL sweep on stale PENDING that never got a file,
+                  or on READY entries where user never confirmed within N hours)
+```
+
+The two failure modes (`REJECTED`, `ABANDONED`) both leave clean states in the DB and let the S3 orphan-cleanup path (AC4) reclaim the file.
+
+### Backend data model (or refit of the existing `AccompanyingDocument`)
+
+The backend already has `AccompanyingDocument` (referenced in `DocumentService.java:103` via `saveOrThrowOnDuplicate`). The refit adds a small state enum and a `status_url`:
+
+| Column | Notes |
+|---|---|
+| `id` | PK — existing |
+| `upload_id` (uuid) | cdp-uploader's id — likely already there, unique |
+| `notification_ref` | FK — existing |
+| `status` | enum: `PENDING`, `READY`, `REJECTED`, `PERSISTED`, `ABANDONED` — **new or refit of existing state** |
+| `status_url` | text — **new**, cached for lazy-polling |
+| `filename` | text — existing |
+| `document_type`, `document_reference`, `date_of_issue` | existing |
+| `owner_user_id` | text — **new or repurposed** for ownership check by middleware |
+| `created_at`, `updated_at` | timestamps — existing |
+
+Most of the schema is there; the changes are additive.
+
+### Frontend flow
+
+**On GET `/notifications/<ref>/documents`** (or wherever the accompanying-documents page lands):
+
+```js
+// pseudo-controller
+export const getHandler = async (request, h) => {
+  const { ref } = request.params  // notificationRef from URL
+  // Auth middleware has already verified ownership of `ref`.
+
+  // 1. Fetch existing uploads (pending + persisted) for the notification.
+  const uploads = await backendClient.listDocumentUploads(ref, request.traceId)
+
+  // 2. Initiate a fresh cdp-uploader session for the next upload.
+  const cdpSession = await cdpUploaderClient.initiate({
+    redirect: `/notifications/${ref}/upload-successful`,  // <-- note: no uploadId in URL
+    s3Bucket: config.get('cdpUploader.documentsBucket'),
+    maxFileSize: config.get('cdpUploader.maxFileSize'),
+    mimeTypes: config.get('cdpUploader.mimeTypes').split(','),
+    metadata: { notificationRef: ref }
+  })
+
+  // 3. Register the pending upload with the backend.
+  await backendClient.registerDocumentUpload(ref, {
+    uploadId: cdpSession.uploadId,
+    statusUrl: cdpSession.statusUrl
+  }, request.traceId)
+
+  // 4. Render form with action=/upload-and-scan/<uploadId>.
+  return h.view('accompanying-documents/index', {
+    ref,
+    uploads,  // status-decorated list from backend
+    uploadUrl: `/upload-and-scan/${cdpSession.uploadId}`
+  })
+}
+```
+
+Nothing in frontend state. Cdp-uploader session lives on the backend record.
+
+**On GET `/notifications/<ref>/upload-successful`** (cdp-uploader's redirect target):
+
+```js
+export const uploadSuccessfulHandler = async (request, h) => {
+  const { ref } = request.params
+  // Auth middleware has already verified ownership.
+
+  // 1. Query backend for all uploads under this notification.
+  //    Backend lazy-polls cdp-uploader on any PENDING entries and refreshes.
+  const uploads = await backendClient.listDocumentUploads(ref, request.traceId)
+
+  // 2. Confirm any READY entries that haven't been confirmed yet.
+  const readyToConfirm = uploads.filter(u => u.status === 'READY')
+  await Promise.all(readyToConfirm.map(u =>
+    backendClient.confirmDocumentUpload(ref, u.uploadId, request.traceId)
+  ))
+
+  const anyPending = uploads.some(u => u.status === 'PENDING')
+  if (anyPending) {
+    // Show polling dashboard with meta-refresh.
+    return h.view('accompanying-documents/upload-in-progress', {
+      ref, uploads, nextAttempt: getAttempt(request) + 1
+    })
+  }
+
+  // All done — bounce back to the documents page which will render Safe/Rejected as expected.
+  return h.redirect(`/notifications/${ref}/documents`)
+}
+```
+
+No `uploadId` from the URL — the handler doesn't need one because it operates on **all** in-flight uploads for the notification.
+
+### The "which upload just landed" question
+
+Under Option 8, there isn't one. The handler doesn't try to identify a specific upload; it renders the notification-level dashboard and lets meta-refresh loop until all are resolved. Multi-tab, same-notification, whatever — all in-flight uploads are visible together with their statuses. The user sees:
+
+```
+Uploading your files
+────────────────────
+target-50mb.pdf     [Checking]
+invoice.pdf         [Safe]
+covid-cert.pdf      [Virus found — Remove]
+
+This page will refresh automatically.
+```
+
+Once all `PENDING` entries clear, the handler redirects back to `/notifications/<ref>/documents` and the standard docs list renders the outcome.
+
+### Multi-tab race resolution
+
+Tab 1 uploads doc X; Tab 2 concurrently uploads doc Y. Both hit `/upload-successful` at some point.
+
+- Both handlers call `listDocumentUploads(ref)` → each sees `[X, Y]`.
+- Both poll cdp-uploader status for whichever entries are `PENDING`.
+- Both may hit `confirmDocumentUpload` for the same ready entry — **idempotent, second call is a no-op**.
+- Backend polling is cheap (small JSON per request); duplicate polls are safe.
+- Neither tab "owns" the notification state — the backend does.
+
+No collision, no last-writer-wins hazard.
+
+### What backend already has vs. what's new
+
+Reusing what's there:
+
+- `AccompanyingDocument` entity + `AccompanyingDocumentRepository` (survey confirmed these exist).
+- `DocumentService.java:79-106` `initiate()` — currently calls cdp-uploader itself + saves the doc. **Refit:** stop calling `/initiate` (frontend does that now); keep the `save` half. Rename to `registerPending()` or similar to reflect the new semantics.
+- `DocumentController.java` list + get + delete — largely unchanged.
+- `DocumentController.java:160-176` scan-results callback — **stays**. If we eventually adopt cdp-uploader callbacks (rather than lazy-poll), this endpoint receives them and updates the DB. Removes frontend polling.
+
+New work:
+
+- Add `status` enum values + `status_url` column to `AccompanyingDocument` (migration).
+- New `confirm()` service method + `POST .../confirm` controller endpoint.
+- Backend calls `cdpUploaderClient.getStatus()` server-side — backend already talks to cdp-uploader for `initiate` today, so credentials + baseUrl are in place.
+
+Removed:
+
+- The frontend byte-proxy path (`DocumentController.java:185-203` `POST /document-uploads/{upload-id}/file`) — same as AC4 already prescribes.
+
+### If we adopt cdp-uploader callbacks later
+
+Backend already has the callback endpoint (`DocumentController.java:160-176`), currently unauthenticated per `EUDPA-35` (HMAC-when-cdp-uploader-supports-it). Under Option 8, adopting callbacks becomes a drop-in change:
+
+- Cdp-uploader posts scan result to backend callback URL.
+- Backend updates the record's `status` (PENDING → READY / REJECTED).
+- Frontend polling is no longer strictly needed; frontend can still poll `GET .../document-uploads` for a UI refresh (cheap), or use a shorter meta-refresh cadence.
+
+Because upload state lives on the backend, callbacks land where the state is — no frontend involvement at all. Options 5 and 7 would need to route callbacks through the frontend or split state across both tiers, which is exactly the "callback carries no cookie" problem the original plan was worried about.
+
+### Cost summary
+
+**Backend work:**
+- Add `status` enum + `status_url` column + migration.
+- Refit `initiate()` service (drop cdp-uploader call, keep DB save).
+- Add `confirm()` service + controller endpoint.
+- (Optional but recommended) background worker for stale PENDING sweep.
+- Auth middleware wiring (this is happening regardless for go-live).
+
+**Frontend work:**
+- Call backend `registerDocumentUpload` after cdp-uploader `/initiate` — one extra HTTP call.
+- Rewrite `upload-successful.js` to operate on the notification-level list rather than a single upload.
+- Add `documentUpload` client methods (`register`, `list`, `confirm`) — thin wrappers on top of the existing backend base URL.
+- Rewrite the `upload-in-progress` view to show a multi-item status list.
+- Remove the yar `currentUpload` slot introduced in step 4.
+
+**Removed work (vs Options 5/7):**
+- No nginx `proxy_redirect` rule to write, review, or debug.
+- No frontend token generation + storage layer.
+- No yar entries to reason about for upload state.
+- No "we're going to change this again when auth lands" caveat.
+
+### The one caveat
+
+Option 8 assumes backend authz **and** frontend↔backend calls for register/confirm are cheap enough that adding two round-trips per upload is acceptable. On CDP with the backend and frontend co-located in the same private network, these are single-digit-millisecond calls — negligible against the multi-second AV scan. In practice this is invisible to the user.
+
+If backend/frontend latency ever becomes a concern (e.g. calls routed through the internet-facing gateway), the register call can be async fire-and-forget with client-side retry, or replaced with cdp-uploader metadata pre-registration.
