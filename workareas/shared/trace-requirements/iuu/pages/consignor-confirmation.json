@@ -1,0 +1,97 @@
+{
+  "slug": "consignor-confirmation",
+  "name": "Consignor confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/consignor/confirmation/{traderUuid}?fromCreate=true (CONFIRMED — observed verbatim on the consignor confirm DOM snapshot in-trace: /notification/vnet/protected/notifications/DRAFT.GB.2026.1525740/consignor/confirmation/9bd9a670-552b-479f-8b14-df7e8f2abf86?fromCreate=true). No &reimport=true segment on this page — that flag on the consignee example was journey-specific, not intrinsic.",
+  "pageTitle": "Create consignor or exporter confirmation  - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525740 - CHEDP",
+  "heading": "The consignor or exporter has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The consignor or exporter has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link (govuk-link, font-size-19)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Green confirmation banner announcing the newly-created trader. Contains the H1 as govuk-panel__title (\"The consignor or exporter has been created\").",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html (the consignor-or-exporter confirm DOM snapshot): <div class=\"govuk-panel govuk-panel--confirmation govuk-!-margin-bottom-8\"> with <h1 class=\"govuk-panel__title\">The consignor or exporter has been created</h1>"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit button 'Add to notification' (id=button-add, type=submit, value='Add to notification', data-prevent-double-click). Submits the confirm form (POST) which attaches the just-created consignor to the notification and navigates back to the traders/addresses page.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 97 (Click 'Add to notification' — locator resolved to <button type=\"submit\" id=\"button-add\" data-govuk-button-init=\"\" data-module=\"govuk-button\" value=\"Add to notification\" data-prevent-double-click=\"true\" class=\"govuk-button govuk-!-display-block govuk-!-margin-bottom-2\"> then navigated to /notifications/DRAFT.GB.2026.1525979/traders); markup also confirmed on resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html: <button class=\"govuk-button govuk-!-display-block govuk-!-margin-bottom-2\" type=\"submit\" value=\"Add to notification\" id=\"button-add\" ...>"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) inside the same form, styled as a large govuk link. Href points at this notification's consignor search page.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html: <a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1525740/traders/consignor/search\" class=\"govuk-link govuk-!-font-size-19\" id=\"manage-notifications\">Return to search</a>"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "(none)",
+      "whatItDoes": "The main content region is 100% govuk-* classes — a govuk Panel (confirmation) plus a form containing a govuk Button and a govuk Link. Full main class inventory: govuk-!-display-block, govuk-!-font-size-19, govuk-!-margin-bottom-2, govuk-!-margin-bottom-8, govuk-button, govuk-grid-column-two-thirds, govuk-grid-row, govuk-link, govuk-panel, govuk-panel--confirmation, govuk-panel__title.",
+      "concern": "No concern — this page is fully inside the GOV.UK Design System toolbox and can be rebuilt verbatim with govukPanel + govukButton + a govuk link. Only quirk worth flagging: the primary action is a form-POST submit button (not a link), and the secondary 'Return to search' link is inside the same <form>; the confirm page is a distinct interstitial whose only purpose is the 'Add to notification' commit step.",
+      "govukAlternative": "govukPanel (confirmation), govukButton, govuk-link",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html — the consignor confirm DOM is entirely govuk-* classes; no non-govuk class present."
+    }
+  ],
+  "fields": [
+    {
+      "name": "button-add (submit) / crumb + etag (hidden)",
+      "label": "Add to notification",
+      "control": "button",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 97 + resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html. This page has NO data-entry fields — it is a confirmation interstitial. The <form method=\"post\"> carries hidden platform inputs only (crumb CSRF token; etag optimistic-concurrency tag). The single meaningful control is the 'Add to notification' submit button; the trader's data was already captured on the preceding Add/Create consignor page (actions 87-95, form title 'Add consignee' — an IPAFFS shared-template quirk). CORROBORATED by the page object: page-objects/notification/ConsignorConfirmationPage.ts:6-8 exposes exactly ONE locator — btnAddToNotification = getByRole('button', { name: 'Add to notification' }) — and nothing else, confirming this page carries no data-entry controls."
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "CORRECTED (was: 'consignor copy inferred by symmetry with consignee, not directly observed'). The consignor confirm page IS directly observed in this trace: resource 017ca62de205c25ba4607d5bffe02d2e452bf2f8.html is the consignor-or-exporter confirmation DOM snapshot (URL .../DRAFT.GB.2026.1525740/consignor/confirmation/9bd9a670-...?fromCreate=true). Its verbatim strings are: page title 'Create consignor or exporter confirmation  - Import and export applications - GOV.UK' (note double space before the dash), H1 panel 'The consignor or exporter has been created'. The earlier grep for 'The consignor has been created' returned zero hits ONLY because the real trader-type label is 'consignor or exporter', not 'consignor' — consistent with the link text throughout the flow ('Add a consignor or exporter', 'Create a new consignor or exporter', search-page title 'Search for an existing consignor or exporter'). The consignee ('The consignee has been created', 6x) and transporter ('The transporter has been created', 3x) variants are also directly present; the three confirm pages share one layout template but the trader-type copy differs per variant (NOT byte-identical).",
+    "CORRECTED (was: 'Return to search href is HARD-CODED to /traders/consignor/search on ALL three confirm variants — likely an IPAFFS partial-reuse bug'). This claim is FALSE. The 'Return to search' href is correctly parameterised by trader type on each variant: consignor confirm -> .../traders/consignor/search (resource 017ca62d), consignee confirm -> .../traders/consignee/search (resource 9a40e7e1), transporter confirm -> .../traders/transporter/search (resource 26eb4c0b). There is no hard-coded-to-consignor bug; each confirm page routes 'Return to search' to its own trader-type search page.",
+    "The {traderUuid} path segment is the newly-created trader's id (observed value 9bd9a670-552b-479f-8b14-df7e8f2abf86 on the consignor instance). The {chedReference} is the notification reference (this trace spans multiple notifications — the consignor confirm resource is on DRAFT.GB.2026.1525740, while action 97's live click flow was on DRAFT.GB.2026.1525979).",
+    "No section caption sits inside <main>; the 'DRAFT.GB.<ref> - CHEDP' text recorded as 'caption' is the notification-context banner rendered ABOVE main, between the account bar and the main wrapper. Treat it as page context, not a govuk-caption-xl. There is no govuk caption element on this page.",
+    "This is a CHED-P (fish) trace, which is how IPAFFS files the IUU journey. The consignor-confirmation interstitial is generic trader-management chrome shared across all CHED types — the rebuilt standalone IUU app need not reproduce this two-step 'create then confirm/add' interstitial; a single create-and-attach step would gather the same information.",
+    "INFERRED accessibility requirement: this page must pass automated axe accessibility checks. The accessibility suite runs checkPageAccessibility on it as a named step ('Consignor Confirmation Page') between the create page and the traders-addresses page — tests/accessibility/ched-p-accessibility-tests.spec.ts:147. The ched-d suite exercises the same page-object step (ched-d-accessibility-tests.spec.ts:110). No axe violations are asserted as expected, so the standing requirement is zero violations. Not a data requirement, but a quality bar the rebuild must also meet.",
+    "The tests only ever CLICK 'Add to notification' on this page (workflows/notification/ched-p-workflows.ts:398, :750, :956; ched-d-workflows.ts:264; ched-pp-workflows.ts:474). No test asserts the H1, the panel copy, or the 'Return to search' link on this interstitial — those are trace-only observations (now directly confirmed from resource 017ca62d). The page object exposes no 'Return to search' locator (ConsignorConfirmationPage.ts), so the tests never interact with it.",
+    "GAP — validation messages: no page object, workflow, or test in the QA repo defines or asserts any error/validation copy for this confirmation interstitial, and none rendered in-trace. This is consistent with a page that has no user input to validate. validationMessages stays empty; if the rebuild adds any confirm-step failure states, their copy must come from a human, not from these sources."
+  ]
+}

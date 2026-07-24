@@ -1,0 +1,193 @@
+{
+  "slug": "transporter",
+  "name": "Transporter (landing / add)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/transport/transporter",
+  "pageTitle": "Transport from BCP",
+  "caption": "Transport",
+  "heading": "Transporter",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [
+    "Save and return to hub",
+    "Add a transporter",
+    "Cancel and return to hub"
+  ],
+  "layout": "govuk-grid-row (id=transport-from-bip-page) > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "Transport",
+      "govukComponent": "Caption (xl)"
+    },
+    {
+      "element": "h1",
+      "text": "Transporter",
+      "govukComponent": "Heading (xl)"
+    },
+    {
+      "element": "table",
+      "text": "Transporter table — column headers: 'Name, address and country' | 'Approval number' | 'Type' | (empty actions column). One empty body row rendered (no transporters added yet).",
+      "govukComponent": "Table"
+    },
+    {
+      "element": "link",
+      "text": "Add a transporter",
+      "govukComponent": "Link"
+    },
+    {
+      "element": "button",
+      "text": "Save and return to hub",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Cancel and return to hub",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'Transport' above the H1",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138 (input snapshot)"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Transporter'",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138 (input snapshot)"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": [
+        "govuk-table__head",
+        "govuk-table__header",
+        "govuk-table__cell",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Desktop transporter list table (id=transport-from-bip-table) — lists added transporters with columns Name/address/country, Approval number, Type and a trailing actions column; rendered empty here",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138 (input snapshot); main.html"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-margin-right-1",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "Primary submit buttons 'Save and return to hub' (name=save-and-return-button) and 'Save and continue' (name=button-save-and-continue). data-prevent-double-click=true. Both rendered as default (primary) buttons — no secondary modifier.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138 (input snapshot); main.html"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 2,
+      "usage": "'Add a transporter' (id=add-transporter-from-bip) -> .../transport/transporter/search; 'Cancel and return to hub' -> .../overview",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; the click on 'Add a transporter' is action 138 itself"
+    },
+    {
+      "component": "Section break",
+      "govukClass": "govuk-section-break",
+      "modifiers": [
+        "govuk-section-break--visible",
+        "govuk-!-margin-bottom-4"
+      ],
+      "count": 2,
+      "usage": "Horizontal dividers bracketing the mobile stacked transporter card",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; main.html (mobile form only)"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label--s",
+      "modifiers": [],
+      "count": 3,
+      "usage": "Used as pseudo-column headers ('Name, address and country', 'Approval number', 'Type') inside the bespoke mobile stacked card, not as form-control labels",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; main.html (mobile form)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "transporter-detail-form-mobile and transporter-detail-form-desktop (two parallel <form> elements)",
+      "whatItDoes": "The entire page content is duplicated into two sibling forms — one shown on mobile, one on desktop — toggled by CSS. Both POST to action='transport'.",
+      "concern": "Duplicated DOM (two copies of the table, add link, both save buttons and hidden crumb/etag) is not the GOV.UK pattern and doubles the maintenance surface; screen readers may encounter both. The rebuild should render a single responsive region.",
+      "govukAlternative": "A single GOV.UK Table using the responsive-table stacking pattern, or a Summary list per transporter — one DOM tree, CSS-only responsiveness.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; main.html"
+    },
+    {
+      "pattern": "transporter-table-mobile / name-address-and-country (bespoke stacked card built from govuk-grid-row + govuk-label--s + hr dividers)",
+      "whatItDoes": "Hand-rolled mobile 'card' that stacks each transporter's Name/address/country, Approval number and Type as label + value grid rows separated by section breaks, instead of a real table.",
+      "concern": "Reimplements responsive table behaviour with grid utilities and visually-hidden semantics; not a Design System component.",
+      "govukAlternative": "GOV.UK Table responsive variant, or Summary list per transporter card.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; main.html"
+    },
+    {
+      "pattern": "table-responsive (wrapper), no-wrap, vertical-align-middle (custom utility classes)",
+      "whatItDoes": "Custom CSS: table-responsive wraps the desktop table for horizontal scroll; no-wrap prevents the 'Approval number' header wrapping; vertical-align-middle aligns cells.",
+      "concern": "Bespoke utility classes outside the govuk-* toolbox.",
+      "govukAlternative": "govuk-!-* spacing utilities and the standard Table component; overflow handled by the responsive-table pattern rather than a custom wrapper.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d, action 138; main.html"
+    }
+  ],
+  "fields": [],
+  "validationMessages": [
+    {
+      "message": "gap - no validation message observed or asserted for this landing page",
+      "confidence": "gap",
+      "note": "No trace in the corpus rendered a validation error on the transporter landing page, and no ched-p test asserts an error string here. Whether a transporter is MANDATORY (i.e. whether 'Save and continue' with an empty table produces an error) is unknown — every workflow adds exactly one transporter before continuing (ched-p-workflows.ts:504-517). This is a question for a human, not something to fill from legacy source.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 138 (no govuk-error-summary or govuk-error-message rendered). No CHED-P test asserts validation copy on this landing page; whether a transporter is mandatory remains a gap."
+    }
+  ],
+  "inferredBehaviours": [
+    {
+      "behaviour": "Actions column contains a per-row 'Select' button",
+      "confidence": "inferred",
+      "detail": "The empty-state trace never populated a transporter row, so the fourth (actions) column was seen empty. The page object exposes btnSelect = getByRole('button', { name: 'Select' }) on the transporter LANDING page, and the CHED-A journey clicks it (transporter.btnSelect.first().click()) immediately after 'Add a transporter' to attach an existing/just-searched transporter. So a populated row exposes at least a 'Select' action. Change/Remove actions and the 'Type' value vocabulary remain a gap (never rendered).",
+      "evidence": "page-objects/notification/TransporterPage.ts:11; workflows/notification/ched-a-workflows.ts:434-435, 647"
+    },
+    {
+      "behaviour": "'Add a transporter' opens a sub-flow with two modes: create-new and select-existing",
+      "confidence": "inferred",
+      "detail": "Clicking 'Add a transporter' navigates to a Search Existing Transporter page. CREATE-NEW path (the one IUU/CHED-P exercises): 'Create a new transporter' link -> Transporter Creation form -> 'Save and continue' -> Transporter Confirmation page -> 'Add to notification' button -> back to this landing page with the row added. SELECT-EXISTING path (seen in CHED-A): pick a search result via the 'Select' button and return to the landing page. After the sub-flow returns, the user clicks 'Save and continue' on this landing page to proceed.",
+      "evidence": "TRACE-CORROBORATED in this very trace: action 138 'Add a transporter' -> navigates to .../transport/transporter/search; action 139 'Create a new transporter' (id=add-economic-operator) -> navigates to .../traders/private-transporter/new (the create-new form). Source: workflows/notification/ched-p-workflows.ts:504-517; page-objects/notification/SearchExistingTransporterPage.ts:6 (linkCreateNewTransporter); page-objects/notification/TransporterConfirmationPage.ts:6 (btnAddToNotification); workflows/notification/ched-a-workflows.ts:433-436"
+    },
+    {
+      "behaviour": "Downstream 'Create a new transporter' form captures a full address (9 controls)",
+      "confidence": "inferred",
+      "detail": "The transporter data is entered on a SEPARATE page (its own page spec), not this landing page. For completeness of the sub-flow: Transporter name (textbox), Address line 1 (textbox), Address line 2 (optional, textbox), Address line 3 (optional, textbox), City or town (textbox), Postcode or ZIP code (textbox), Telephone number (textbox), Country (select/dropdown, getByLabel('Country')), Email address (textbox). Address lines 2 and 3 carry '(optional)' in their accessible names; the other seven have no optional marker. Required-ness beyond that is a gap (no failing-validation trace in corpus).",
+      "evidence": "TRACE-CORROBORATED in this very trace: actions 140-148 fill all nine controls on the downstream create-new form with these exact accessible names — 'Transporter name' (140), 'Address line 1' (141), 'Address line 2 (optional)' (142), 'Address line 3 (optional)' (143), 'City or town' (144), 'Postcode or ZIP code' (145), 'Telephone number' (146), 'Country' select (147), 'Email address' (148). Source: page-objects/notification/TransporterCreationPage.ts:8-45; types/address.ts:1-11; tests/accessibility/ched-p-accessibility-tests.spec.ts:218-229"
+    },
+    {
+      "behaviour": "Landing page must pass an accessibility check in both empty and populated states",
+      "confidence": "inferred",
+      "detail": "The CHED-P accessibility spec runs checkPageAccessibility on the 'Transporter Page' (empty state, before add) and again on 'Transporter Page (after selection)' (populated state, after the sub-flow). A human has asserted both states must be accessible — a requirement for the rebuild.",
+      "evidence": "tests/accessibility/ched-p-accessibility-tests.spec.ts:209-210, 236-238"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This is a LIST/LANDING page, not a data-entry page: it holds zero user-input controls (only hidden crumb/etag/returnUrl/fromFooterHeader inputs). The actual transporter data is captured on the downstream 'Create a new transporter' page (reached via 'Add a transporter' -> /transport/transporter/search -> 'Create a new transporter'), which is a separate page in this journey (see actions 139-149, and inferredBehaviours[2] for the field list corroborated against TransporterCreationPage.ts).",
+    "The transporter table has FOUR columns in the DOM: 'Name, address and country', 'Approval number', 'Type', plus an unlabelled fourth (actions) column. Only the empty state was observed in this trace. The page object + CHED-A workflow confirm the actions column holds a per-row 'Select' button (see inferredBehaviours[0]); whether it ALSO holds Change/Remove links, and the vocabulary of the 'Type' column value, remain gaps — never rendered in our corpus.",
+    "Is a transporter MANDATORY? Every workflow adds exactly one before continuing, so we have no evidence of what 'Save and continue' does with an empty table (no validation trace, no test assertion). Human question — see validationMessages[0].",
+    "TransporterPage.ts:8 defines an unused getter radioNo = getByRole('group', { name: 'No' }).getByLabel('No', { exact: true }) that no workflow or test references. It hints at a 'No' radio group on or near this page (e.g. 'Do you want to add another transporter?'), but nothing in the corpus or tests exercises it — unverified, a gap for a human to confirm or discard.",
+    "Two primary submit buttons are rendered ('Save and return to hub' and 'Save and continue') both as default govuk-button (neither is styled secondary), which is a non-standard GOV.UK choice — the Design System expects one primary action.",
+    "URL is inferred from the form action='transport' (relative) and the parent page context; the landing page itself was not reached via an observed Navigate action in this trace (it was already loaded when 'Add a transporter' was clicked at action 138). chedReference in this trace = DRAFT.GB.2026.1525979.",
+    "No govuk-back-link exists in the main content region; in-content navigation back is via 'Cancel and return to hub' (-> /overview). A platform 'Back' link (id=back-link, href='#') IS confirmed present in page furniture outside main (out of scope per instructions)."
+  ]
+}

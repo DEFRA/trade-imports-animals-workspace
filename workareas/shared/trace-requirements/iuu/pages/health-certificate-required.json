@@ -1,0 +1,85 @@
+{
+  "slug": "health-certificate-required",
+  "name": "Health certificate required (interstitial to task list)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/health-certificate-required",
+  "pageTitle": "Health certificate required - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525979 - CHEDP",
+  "heading": "Health certificate required",
+  "bodyCopy": [
+    "You'll need a health certificate for this consignment as it includes high or medium risk commodities.",
+    "You must upload the health certificate to your notification before the consignment arrives in Great Britain."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "h1",
+      "text": "Health certificate required",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You'll need a health certificate for this consignment as it includes high or medium risk commodities.",
+      "govukComponent": "Body text (govuk-body)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You must upload the health certificate to your notification before the consignment arrives in Great Britain.",
+      "govukComponent": "Body text (govuk-body)"
+    },
+    {
+      "element": "button",
+      "text": "Continue",
+      "govukComponent": "Button (rendered as <a class=\"govuk-button\"> link, href -> {chedReference}/overview)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Health certificate required' (id=page-primary-title)",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 29 (main.html)"
+    },
+    {
+      "component": "Body text",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Two explanatory paragraphs about needing and uploading a health certificate",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 29 (main.html)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Primary 'Continue' call-to-action; rendered as an <a> link (id=continue-button) navigating to the notification overview / task-list hub, not a form submit button",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 29 (main.html); href=/notification/vnet/protected/notifications/DRAFT.GB.2026.1525979/overview. Corroborated (inferred): the page object exposes exactly ONE control — linkContinue = page.getByRole('link', { name: 'Continue' }) — confirming Continue is an anchor with the link accessibility role, not a <button>. ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/HealthCertificateRequiredPage.ts:6-8"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "Continue rendered as <a class=\"govuk-button\"> (link, not <button>)",
+      "whatItDoes": "The primary Continue action is an anchor styled as a GOV.UK button that performs a GET navigation to the notification overview / task-list hub, rather than a form-submitting button.",
+      "concern": "Minor. This is a purely informational interstitial with no form to submit, so a link styled as a button is an acceptable GOV.UK pattern (the Design System permits button-styled links for navigation). No custom CSS involved.",
+      "govukAlternative": "GOV.UK Button component used as a link (govuk-button on an <a>) — already the standard pattern; the new app can keep it as a button-link.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 29 (main.html). Corroborated (inferred) by the page object, which drives it via getByRole('link', { name: 'Continue' }): ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/HealthCertificateRequiredPage.ts:6-8"
+    }
+  ],
+  "fields": [],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "CORROBORATED — no input fields on this page. The page object exposes a single control (linkContinue) and no form inputs, matching the trace: this is a purely informational interstitial with nothing to fill in and therefore no client- or server-side validation. Empty fields[] and validationMessages[] are correct, not gaps. Evidence (inferred): ~/git/defra/ipaffs/ipaffs-qa-automation/page-objects/notification/HealthCertificateRequiredPage.ts:3-9",
+    "CORROBORATED — this interstitial is CONDITIONAL: shown only when the consignment's risk category is NOT low risk (i.e. 'High risk' or 'Medium risk'), and skipped entirely on the low-risk path, which routes straight from Select Risk Category to the Notification Hub. Firmed up from the body copy's 'high or medium risk commodities' to an explicit routing rule in test code (inferred, not trace-observed — no low-risk branch was exercised in our corpus): the workflow gates the click on riskCategory !== lowRisk — ~/git/defra/ipaffs/ipaffs-qa-automation/workflows/notification/ched-p-workflows.ts:318-321 (comment: 'skipped on low-risk path, which routes straight to the Notification Hub') and again at :701-704. Risk-category label enum { 'High risk', 'Medium risk', 'Low risk' } — ~/git/defra/ipaffs/ipaffs-qa-automation/types/risk-category.ts:1-5. Note the same gate also controls whether the later 'Latest Health Certificate' upload page appears (ched-p-workflows.ts:339-340 / :720-721) — this interstitial and that upload page are two halves of the same health-certificate sub-journey. The rebuild's IUU journey must decide how (or whether) risk level gates a health-certificate interstitial + upload.",
+    "CORROBORATED (journey position) — the page sits immediately after 'Select Risk Category Page' and before the 'Notification Hub Page'. The accessibility spec exercises the medium-risk path and names it verbatim as 'Health Certificate Required Page' in journey order — ~/git/defra/ipaffs/ipaffs-qa-automation/tests/accessibility/ched-p-accessibility-tests.spec.ts:59-70 (linkContinue.click at :66). No page-specific behavioural assertions (no expect on any message or status) were found for this interstitial across the ched-p test suite; the only interaction asserted anywhere is clicking Continue to proceed. Second-pass verification (2026-07-21): re-grepped the whole ched-p test dir + accessibility spec for health-certificate references — the only hits are the accessibility a11y check + the Continue click; no assertion on the body copy or heading exists, so the 'confirmed' body copy rests solely on the rendered trace (rendered reality), which is the correct basis. The page object still exposes exactly one control (linkContinue) and no form inputs, so there are no trace-missed fields or hidden variant-only controls to add — the lower bound and the page object agree.",
+    "The section caption 'DRAFT.GB.2026.1525979 - CHEDP' is rendered as a banner element ABOVE the <main> region, not as a govuk-caption-xl inside main. It shows the draft CHED reference and type. For the IUU rebuild this is the notification-reference caption; confirm whether it should be a standard govuk-caption-xl inside the page heading block.",
+    "This is a CHED-P (fish) trace — IPAFFS files IUU/fishery products as CHED-P, so this interstitial is the closest observed evidence for the IUU journey. The copy references 'high or medium risk commodities' and a health certificate; confirm whether the standalone IUU journey (catch certificate + IUU declaration) needs an equivalent interstitial and, if so, whether the copy differs.",
+    "The 'Back' link (href='#') sits in the page chrome above main and is non-functional (anchor to '#'); confirm expected back-navigation target for the rebuild.",
+    "Discrepancy to note (not blocking): the trace's Continue link navigates to .../overview, while the workflow's next step after Continue drives the Notification Hub (pages.notificationHub — ched-p-workflows.ts:325-326). These are consistent — 'overview' IS the notification hub / task-list URL — but confirm the rebuild's canonical name/URL for that destination."
+  ]
+}

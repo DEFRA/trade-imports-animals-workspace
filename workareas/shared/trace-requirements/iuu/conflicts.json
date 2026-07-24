@@ -1,0 +1,162 @@
+[
+  {
+    "id": "c-001",
+    "topic": "Notification listing layout",
+    "pageSlug": "notifications-dashboard",
+    "sources": [
+      "rendered-trace",
+      "page-object"
+    ],
+    "detail": "The rendered trace (db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 9) shows notification-list__row cards in a bespoke card grid. NotificationDashboardPage.ts:244-250 addresses #notifications-page tbody tr and td using table semantics; those locators are not used by a CHED-P test.",
+    "ruling": "Adopt the rendered card-grid structure in the evidence model because rendered-trace wins on structure. Treat the table locators as stale or variant-only scaffolding; the rebuild may deliberately replace the legacy cards with a standard GOV.UK pattern.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-002",
+    "topic": "Accompanying-document type option set",
+    "pageSlug": "accompanying-documents",
+    "sources": [
+      "rendered-trace",
+      "workflow-config"
+    ],
+    "detail": "The trace rendered 14 document-type options on the CHED-P fish page. types/document-type.ts contains 27 values, including values absent from the rendered list.",
+    "ruling": "Keep the 14 rendered options as the observed page set. Treat the 27-value catalogue as a wider vocabulary filtered by CHED type/context, not as 13 additional IUU options.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-003",
+    "topic": "Package-type option set",
+    "pageSlug": "commodity-extended-description",
+    "sources": [
+      "rendered-trace",
+      "workflow-config"
+    ],
+    "detail": "The trace rendered 26 package types for commodity 03019230. types/package-type.ts contains 33 package types, seven of which did not render for this commodity.",
+    "ruling": "Keep the 26 rendered values for the observed commodity and model the list as reference data filtered by commodity/CHED context. Do not promote the wider 33-value catalogue to this field.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-004",
+    "topic": "Region-code maximum length",
+    "pageSlug": "origin-of-import",
+    "sources": [
+      "rendered-trace"
+    ],
+    "detail": "The rendered hint says “Enter up to 5 characters.” while the same rendered input has maxlength=\"3\".",
+    "ruling": "Preserve both facts: hint copy remains verbatim and maxlength remains 3 in the mined legacy model. The rebuild must choose one consistent maximum and matching copy.",
+    "needsHuman": true
+  },
+  {
+    "id": "c-005",
+    "topic": "Country-of-origin page boundary",
+    "pageSlug": "origin-of-import",
+    "sources": [
+      "rendered-trace",
+      "test-assertion",
+      "page-object",
+      "workflow-config"
+    ],
+    "detail": "Trace action 15 renders origin-country together with the Origin of import fields on one page. CountryOfOriginPage.ts, OriginOfImportPage.ts, the workflow’s two Save-and-continue clicks, and two named accessibility checks model Country of origin and Origin of import as separate pages.",
+    "ruling": "Retain both inventory pages to preserve canonical journey order, but count country-of-origin.origin-country once. Mark origin-of-import.origin-country as a linked restatement/alias. Rendered-trace wins on observed structure; the conflict remains visible because the QA journey spine is split.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-006",
+    "topic": "Consignor creation role copy",
+    "pageSlug": "consignor-creation",
+    "sources": [
+      "rendered-trace",
+      "page-object",
+      "workflow-config"
+    ],
+    "detail": "The consignor/exporter workflow navigates through ConsignorCreationPage, but the rendered page says “Add consignee”, labels company-name “Consignee name”, uses title=\"consignee\", and posts through /traders/consignee/new?reimport=true.",
+    "ruling": "Preserve the rendered labels and heading in the legacy evidence model because rendered-trace wins on copy. Record the trader-role mismatch prominently; the new IUU design should correct the role language rather than inherit this apparent shared-template defect.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-007",
+    "topic": "Contact-details action matrix",
+    "pageSlug": "contact-details",
+    "sources": [
+      "rendered-trace",
+      "page-object",
+      "workflow-config"
+    ],
+    "detail": "The trace renders “Save and return to hub”, “Save and continue”, and “Cancel and return to hub”. The page object/workflow uses “Save and continue” or the amend/review variant “Save and review”, and does not expose “Save and return to hub”.",
+    "ruling": "Keep the trace-rendered create/hub actions and retain “Save and review” only as an inferred entry-context variant. Do not collapse these labels into one unconditional button set.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-008",
+    "topic": "General document-upload extensions",
+    "pageSlug": "document-upload",
+    "sources": [
+      "rendered-trace",
+      "test-assertion"
+    ],
+    "detail": "Rendered copy and the wrong-type error name DOC, JPEG, PDF, PNG and XLS. Valid-upload tests accept jpg, png, doc, docx, xls and pdf, proving JPG and DOCX aliases/extensions work although the copy does not list them.",
+    "ruling": "Preserve the rendered copy verbatim and record the test-proven accepted extensions as behavioural intent. The rebuild must make its displayed extension list exactly match the implemented allow-list.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-009",
+    "topic": "GVMS “No” radio identifier",
+    "pageSlug": "goods-movement-services",
+    "sources": [
+      "rendered-trace",
+      "page-object"
+    ],
+    "detail": "The rendered No radio id is gvms-question-2. GoodsMovementServicesPage.ts:35-37 contains a //todo locator for #gvms-question-no.",
+    "ruling": "Adopt gvms-question-2 as the observed legacy identifier and treat #gvms-question-no as stale scaffolding. Accessible labels, not the legacy id, should drive the rebuild.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-010",
+    "topic": "Approved-establishment terminal action",
+    "pageSlug": "search-for-approved-establishment",
+    "sources": [
+      "rendered-trace",
+      "page-object",
+      "workflow-config"
+    ],
+    "detail": "The captured trace action is a per-row “Select” that adds an establishment. SearchForApprovedEstablishmentPage.ts:18-20 and every CHED-P workflow use a separate “Save and continue” to finalise the selected list; that terminal control was not rendered in the captured snapshot.",
+    "ruling": "Model “Select” as the confirmed per-row add action and “Save and continue” as the inferred terminal action. Set the canonical continue label to “Save and continue”; tests establish intent where the trace is silent.",
+    "needsHuman": false
+  },
+  {
+    "id": "c-011",
+    "topic": "Consignment reference on review",
+    "pageSlug": "review-notification",
+    "sources": [
+      "rendered-trace",
+      "test-assertion"
+    ],
+    "detail": "The review trace rendered Consignment reference number empty. ched-p-notification.spec.ts:47 asserts #reference-number contains the configured reference number.",
+    "ruling": "Treat the review row as a restatement of origin-of-import.local-reference-number that supports both blank and populated states. Requiredness cannot be decided from these sources and remains unknown.",
+    "needsHuman": true
+  },
+  {
+    "id": "c-012",
+    "topic": "Risk-category initial state",
+    "pageSlug": "select-risk-category",
+    "sources": [
+      "rendered-trace",
+      "workflow-config"
+    ],
+    "detail": "The trace shows hidden highest-risk-category=High and a user selection of Medium. Different CHED-P workflow defaults carry mediumRisk and highRisk; these are test data, not proof of a UI default.",
+    "ruling": "Model highest-risk-category as a separate computed value and risk-category as an explicit user answer. Do not infer a canonical preselection from workflow defaults.",
+    "needsHuman": true
+  },
+  {
+    "id": "c-013",
+    "topic": "Document-upload 10 MB boundary",
+    "pageSlug": "document-upload",
+    "sources": [
+      "rendered-trace",
+      "test-assertion"
+    ],
+    "detail": "User-facing copy describes files “up to 10MB”; asserted error copy says “The selected file must be smaller than 10MB”. The available tests exercise oversize files but do not establish whether exactly 10MB is accepted.",
+    "ruling": "Preserve both verbatim strings and leave the inclusive/exclusive 10 MB boundary unresolved until a boundary test or product ruling supplies it.",
+    "needsHuman": true
+  }
+]

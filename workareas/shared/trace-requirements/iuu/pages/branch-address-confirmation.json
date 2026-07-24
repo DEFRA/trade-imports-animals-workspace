@@ -1,0 +1,113 @@
+{
+  "slug": "branch-address-confirmation",
+  "name": "Branch address confirmation (return to notification)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/organisation branch address/confirmation/{branchAddressId}?fromCreate=true",
+  "pageTitle": "Create branch address confirmation - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525979 - CHEDP",
+  "heading": "The address has been added to your address book",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Return to notification",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "DRAFT.GB.2026.1525979 - CHEDP",
+      "govukComponent": "Section caption (rendered above main, in the service-information region, not inside <main>)"
+    },
+    {
+      "element": "back-link",
+      "text": "Back",
+      "govukComponent": "Back link (href=\"#\"; rendered above main)"
+    },
+    {
+      "element": "panel",
+      "text": "The address has been added to your address book",
+      "govukComponent": "Panel (confirmation) — h1.govuk-panel__title inside div.govuk-panel.govuk-panel--confirmation.govuk-!-margin-bottom-8"
+    },
+    {
+      "element": "form",
+      "text": "method=\"post\" with hidden crumb (CSRF) + etag (concurrency) inputs, wrapping the button",
+      "govukComponent": "-"
+    },
+    {
+      "element": "button",
+      "text": "Return to notification",
+      "govukComponent": "Button (govuk-button govuk-!-display-block govuk-!-margin-bottom-2; id=button-add; type=submit; value=\"Return to notification\")"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8",
+        "govuk-panel__title"
+      ],
+      "count": 1,
+      "usage": "Confirmation banner announcing that the newly-created branch address has been saved to the address book. The H1 is the panel title.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 (input snapshot)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary action: submits the POST form and returns the user to the notification (navigates to /organisation-branch-address?selectedBranchAddressId=...). id=button-add, data-prevent-double-click=true. This is the ONLY control the page object exposes for this page (BranchAddressConfirmationPage.btnReturnToNotification), and every workflow that creates a branch address drives it, confirming it is the sole interaction on the page.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 (confirmed); corroborated by page-objects/notification/BranchAddressConfirmationPage.ts:6-8 (getByRole('button', {name: 'Return to notification'})) and driven at workflows/notification/ched-p-workflows.ts:533,801,1006 + ched-d-workflows.ts:350 (inferred)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Back link labelled \"Back\" with href=\"#\"; rendered in the page header region above <main>, not inside main.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 (a11y tree ref e48)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "<main> content is 100% govuk-* classes (govuk-main-wrapper, govuk-grid-row, govuk-grid-column-two-thirds, govuk-panel, govuk-panel--confirmation, govuk-panel__title, govuk-button plus spacing utilities)",
+      "whatItDoes": "Renders the confirmation panel and the return button entirely from the GOV.UK Design System toolbox.",
+      "concern": "None — this page is fully inside the govuk-frontend toolbox and rebuilds trivially as a Panel + Button. Recorded explicitly as a good finding.",
+      "govukAlternative": "Direct 1:1 — Panel (confirmation) + Button.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 — non-govuk class filter returned ALL-GOVUK"
+    }
+  ],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "conditionalOn": "always present — hidden input, platform CSRF crumb; not a user field",
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 — <input name=\"crumb\" type=\"hidden\"> in the POST form"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden concurrency token)",
+      "control": "hidden",
+      "required": false,
+      "conditionalOn": "always present — hidden input, optimistic-concurrency etag for the notification; not a user field",
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 165 — <input name=\"etag\" type=\"hidden\"> in the POST form"
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This is a confirmation interstitial shown after a branch address is created from within a notification (fromCreate=true). It carries no user-input fields — only the hidden crumb + etag tokens and the single 'Return to notification' button. fieldCount is therefore effectively 0 real data-entry fields. CORROBORATED: the page object (page-objects/notification/BranchAddressConfirmationPage.ts) exposes ONLY btnReturnToNotification and no field getters at all, independently confirming there is nothing to enter on this page.",
+    "Trace corpus is CHED-P (fish) — the journey IPAFFS files as CHED-P and which the new service splits into the standalone IUU journey; the caption reads 'DRAFT.GB.2026.1525979 - CHEDP'. The branch-address address-book flow is journey-type-agnostic, so this page is expected to be identical in the IUU rebuild. CORROBORATED: the identical page object + button is driven by BOTH ched-p-workflows.ts (lines 533,801,1006) AND ched-d-workflows.ts (line 350) with no per-type branching, confirming the confirmation page is shared and journey-agnostic across CHED types.",
+    "The submit returns to /organisation-branch-address?selectedBranchAddressId={id} (not a generic /branch-address/confirm path). The url pattern given in the task brief was inferred and did not match; the real confirmation URL observed is /{chedReference}/organisation branch address/confirmation/{branchAddressId}?fromCreate=true.",
+    "No error state was observed for this page in this trace (0 errors), and NO test asserts any validation/error message for this page — the accessibility specs only run an a11y check and click the button, and the workflows only click the button. Any validation copy is therefore a genuine gap (none is expected: the page has no inputs to validate).",
+    "The 'Back' link href is '#' (no-op / JS or history back) — behaviour not exercised in the trace and not exercised by any test (no page object getter for it).",
+    "INFERRED accessibility requirement: tests/accessibility/ched-p-accessibility-tests.spec.ts:268 (and ched-d-accessibility-tests.spec.ts) run checkPageAccessibility() on the 'Branch Address Confirmation Page' before clicking through. A human test therefore asserts this page must pass the WCAG/axe accessibility scan — a requirement the IUU rebuild must also meet.",
+    "INFERRED post-submit navigation nuance: in the notification (fromCreate=true) flow, the workflows show 'Return to notification' lands back on the Branch Address Creation Page ('returned to'), where Save and continue is then clicked again (ched-p-workflows.ts:533-536; accessibility spec 269-273) — i.e. the just-saved address is pre-selected and the user confirms selection, rather than returning straight to the review page. This selection-confirm step should be preserved in the rebuild's address-book return flow."
+  ]
+}

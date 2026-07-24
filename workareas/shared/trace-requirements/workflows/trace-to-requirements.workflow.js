@@ -67,6 +67,23 @@ const CHED_CONFIG = {
     filterGuidance: "Match case-insensitively on 'ched-d' or 'chedd'. No substring-overlap trap. Traces live under notification/ched-d/, smoke/smoke-ched-d-*, accessibility/ched-d-*, and shared specs with a '> CHED-D >' title segment.",
     variants: 'CSV, cloning, copy-as-new, split consignment, DoA',
   },
+  // IUU is NOT a stock CHED type. Fish/fishery products are filed on IPAFFS UNDER CHED-P
+  // (legacy enum CVEDP); the new service splits them into a standalone IUU journey. There is
+  // no dedicated trace, slug or config — the ENTIRE fish trace surface is ONE trace
+  // (ched-p-notification.spec.ts:206, hash db2d277c…). So this is the fish DELTA on top of
+  // CHED-P: a tiny trace fan-out, and most substance comes from the legacy/DoA pass reading
+  // the catch-certificate + IUU-declaration templates. qaSlug is 'ched-p' (its traces live in
+  // the CHED-P corpus). Legacy specifics below confirmed against ipaffs-frontend-notification.
+  'iuu': {
+    name: 'IUU',
+    what: 'illegal, unreported and unregulated fishing — fishery products IPAFFS files as CHED-P (fish) but the new service splits into a standalone IUU journey (catch certificate + IUU declaration)',
+    qaSlug: 'ched-p',                 // no slug of its own; IUU traces live in the CHED-P corpus
+    notificationEnum: 'CVEDP',        // CONFIRMED: IPAFFS files fish as CHED-P — cvedp_certificate.html, review_page_view_cvedp_*, CommodityDetailsChedp
+    ipaffsViews: 'IUU is the FISH slice of CHED-P. CHED-P templates live under views/importer/chedp/; the catch-certificate + species surface is a set of TOP-LEVEL templates under views/importer/: catchCertificates.html, addCatchCertificateDetails.html, manageCatchCertificates.html, removeCatchCertificateDetails.html, catchCertificateExemption.html, confirmExemptSpecies.html, plus the cvedp certificate partials under views/partials/certificate/cvedp/ and cvedp_certificate.html. All in ipaffs-frontend-notification/service/src/views/.',
+    dynamicsHint: 'same CHED-P (POAO) Dynamics/SOAP client as ched-p; the fish/catch-certificate certificate surface is cvedp_certificate.html + views/partials/certificate/cvedp/. Confirm the entity + any catch-certificate fields from the client source during the legacy pass.',
+    filterGuidance: "IUU has NO title slug. At INDEX time select the CHED-P fish surface: the one title-marked fish trace (ched-p-notification.spec.ts:206, hash db2d277c…) — match 'Fish' inside a CHED-P title (title contains 'ched-p'/'chedp' AND NOT 'ched-pp'/'chedpp'). This selects EXACTLY ~1 trace; that is EXPECTED and CORRECT — do NOT widen to all of CHED-P and do NOT return zero. During Extract/Comb, if a fish CN code (HS chapter 03) or a catch-certificate page appears in another ched-p trace, fold that trace in as IUU and note it.",
+    variants: 'catch certificate, IUU declaration, fish species / CN chapter 03',
+  },
 }
 
 // args may arrive as a real object OR (Workflow-tool footgun) as a JSON string —

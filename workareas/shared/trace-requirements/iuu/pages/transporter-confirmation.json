@@ -1,0 +1,118 @@
+{
+  "slug": "transporter-confirmation",
+  "name": "Transporter confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/private-transporter/confirmation/{transporterId}?fromCreate=true",
+  "pageTitle": "Create transporter confirmation - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525979 - CHEDP",
+  "heading": "The transporter has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "DRAFT.GB.2026.1525979 - CHEDP",
+      "govukComponent": "Service information caption (in banner, above main)"
+    },
+    {
+      "element": "panel",
+      "text": "The transporter has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Green confirmation panel whose title (H1, govuk-panel__title) reads 'The transporter has been created' — signals the newly-created transporter record was saved.",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150 (before snapshot); main.html"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit button 'Add to notification' (id=button-add, type=submit, value='Add to notification', data-prevent-double-click) — POSTs the form and navigates to /transport (the transport details page). Corroborated by the QA page object: `TransporterConfirmationPage` exposes exactly ONE control, `btnAddToNotification` (getByRole('button', { name: 'Add to notification' })), and every CHED-P workflow reaches this page then clicks it to continue back to the Transporter page.",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; navigated to .../DRAFT.GB.2026.1525979/transport; page-objects/notification/TransporterConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:514,788,997"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "'Return to search' link (id=manage-notifications) back to the transporter search page (.../traders/transporter/search) — the escape hatch that discards the just-created record from this notification's flow. NOTE: the QA page object does not expose this link and no test exercises it — every workflow takes the 'Add to notification' path — so its target is trace-confirmed only, never asserted by a test.",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; main.html; absence: page-objects/notification/TransporterConfirmationPage.ts (only btnAddToNotification exposed)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "main [class] inventory = 100% govuk-*",
+      "whatItDoes": "Whole page is a confirmation Panel + a Button + a Link inside a two-thirds grid column; no custom classes, no third-party widgets.",
+      "concern": "None — this page is entirely within the GOV.UK Design System toolbox and rebuilds 1:1 with govuk-frontend macros (Panel, Button, plain link).",
+      "govukAlternative": "n/a — already standard",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; non-govuk class filter returned 'ALL GOVUK'"
+    },
+    {
+      "pattern": "govuk-panel--confirmation used for an interstitial (not a journey-end) confirmation",
+      "whatItDoes": "IPAFFS uses the green confirmation Panel to acknowledge a sub-entity (transporter) was created mid-journey, then offers 'Add to notification' to continue — rather than reserving the Panel for a terminal 'application complete' page.",
+      "concern": "Not a markup defect, but a UX pattern choice: the Design System Panel is conventionally a journey-end success banner. The new IUU app may prefer a lighter acknowledgement (e.g. a notification banner or simply routing straight to transport details) rather than a full green Panel for an intermediate step.",
+      "govukAlternative": "Notification banner (success), or skip the interstitial entirely",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; main.html (govuk-panel govuk-panel--confirmation with 'Add to notification' continue button)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token — no visible label)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; main.html <input name=\"crumb\" type=\"hidden\">"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency etag — no visible label)",
+      "control": "text",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 150; main.html <input name=\"etag\" type=\"hidden\" value=\"\\\"0000000000BD293F\\\"\">"
+    }
+  ],
+  "fieldsNote": "This page has ZERO user-input fields — corroborated on both sources. The QA page object `TransporterConfirmationPage` exposes only the single 'Add to notification' button (no textboxes/dropdowns/radios), and the trace snapshot shows only the two hidden framework inputs (crumb, etag). The user-input address fields live on the PRECEDING page (Transporter Creation), whose page object `TransporterCreationPage` drives: Transporter name, Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Country (dropdown), Email address. Cited for the neighbouring-page picture only: page-objects/notification/TransporterCreationPage.ts:7-45.",
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This is an interstitial confirmation with NO user-input fields — it only acknowledges that the transporter record was created and offers two routes: 'Add to notification' (POST → attaches the transporter and navigates to /transport, the transport details page, action 150) or 'Return to search' (discard and go back to transporter search). It gathers no new information.",
+    "The task's assumed url pattern ('.../transporter/confirm') differs from the OBSERVED path: the page lives at '.../{chedReference}/private-transporter/confirmation/{transporterId}?fromCreate=true' (derived from the cookie-settings and manage-account returnUrl query params in the snapshot). The 'transporter' entity here is a 'private-transporter' and the URL segment is 'confirmation', not 'confirm'.",
+    "The evidence pointer (action 150) was CORRECT — it is on this page. The 'Back' link in the service-info region points to href='#' (a JS/history back), so no static back target was captured.",
+    "Whether the new IUU journey even needs a standalone create-then-add-to-notification transporter flow is a scope question: IPAFFS models transporter as a reusable address-book-style entity created separately then attached. A simpler IUU app may collect transporter details inline on the transport page, removing this confirmation entirely.",
+    "The hidden 'etag' input indicates IPAFFS uses optimistic-concurrency control on the notification when attaching the transporter — a backend concern the new app must decide whether to replicate.",
+    "QA corroboration is complete and agrees with the trace: the page object exposes only 'Add to notification', the CHED-P workflows always take that path (ched-p-workflows.ts:514,788,997), and the accessibility suite lists this page in journey order as 'Transporter Confirmation Page' (ched-p-accessibility-tests.spec.ts:233) but asserts only axe-clean accessibility — no test asserts the panel copy 'The transporter has been created', so that heading remains trace-confirmed only.",
+    "The 'Return to search' escape-hatch link is never exercised by any test and is absent from the page object, so its href/target and behaviour (does it truly discard the just-created transporter record?) is a gap — trace shows the link and its href, but no behavioural evidence of what happens on click. A question for a human if the IUU app keeps a create-then-attach flow.",
+    "No validation messages exist for this page in either source — it has no inputs to validate. Confirmed empty, not a gap: page object exposes no fields and no test asserts any error string here."
+  ]
+}

@@ -21,6 +21,10 @@ const CHED_CONFIG = {
   'ched-a': { name: 'CHED-A', what: 'live animals', qaSlug: 'ched-a', notificationEnum: 'CVEDA', ipaffsViews: 'views/importer/cheda/ + shared templates', doaTerm: 'the animal/live-animal org named in the test' },
   'ched-p': { name: 'CHED-P', what: 'products of animal origin (POAO)', qaSlug: 'ched-p', notificationEnum: 'CVEDP', ipaffsViews: 'views/importer/chedp/ + shared templates', doaTerm: 'the POAO org named in the test' },
   'ched-d': { name: 'CHED-D', what: 'high-risk food and feed of non-animal origin', qaSlug: 'ched-d', notificationEnum: 'CED', ipaffsViews: 'views/importer/chedd/ + shared templates', doaTerm: 'the food/feed org named in the test' },
+  // IUU = the fish DELTA on CHED-P. No dedicated slug/enum; fish files as CHED-P (CVEDP). This
+  // legacy pass is where IUU gets most of its substance: the catch-certificate + IUU-declaration
+  // templates. Confirmed against ipaffs-frontend-notification/service/src/views/.
+  'iuu': { name: 'IUU', what: 'illegal, unreported and unregulated fishing (fishery products IPAFFS files as CHED-P fish)', qaSlug: 'ched-p', notificationEnum: 'CVEDP', ipaffsViews: 'views/importer/chedp/ + top-level catch-certificate templates (catchCertificates.html, addCatchCertificateDetails.html, manageCatchCertificates.html, removeCatchCertificateDetails.html, catchCertificateExemption.html, confirmExemptSpecies.html) + partials/certificate/cvedp/ + cvedp_certificate.html', doaTerm: 'the fishery/seafood org named in the test' },
 }
 
 // args may arrive as a real object OR (Workflow-tool footgun) as a JSON string —

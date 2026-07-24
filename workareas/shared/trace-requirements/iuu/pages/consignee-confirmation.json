@@ -1,0 +1,118 @@
+{
+  "slug": "consignee-confirmation",
+  "name": "Consignee confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{chedReference}/consignee/confirmation/{consigneeId}?fromCreate=true",
+  "pageTitle": "Create consignee confirmation - Import and export applications - GOV.UK",
+  "caption": "DRAFT.GB.2026.1525979 - CHEDP",
+  "heading": "The consignee has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "DRAFT.GB.2026.1525979 - CHEDP",
+      "govukComponent": "NOT a GDS caption. Legacy IPAFFS markup: div.govuk-!-padding-top-6 > span.heading-tertiary containing span#reference-number (DRAFT.GB.2026.1525979) + span ( - CHEDP). Sits in the width-container above the grid row, outside <main>."
+    },
+    {
+      "element": "panel",
+      "text": "The consignee has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Confirmation panel containing the H1 'The consignee has been created' (govuk-panel__title). No body text inside the panel.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (main.html: <div class=\"govuk-panel govuk-panel--confirmation govuk-!-margin-bottom-8\"><h1 class=\"govuk-panel__title\">The consignee has been created</h1></div>)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit button 'Add to notification' (id=button-add, type=submit, value='Add to notification', data-prevent-double-click=true); POSTs the form and navigates to the traders page (.../notifications/{chedReference}/traders). This is the ONLY control the QA tests drive on this page — the page object exposes a single member, btnAddToNotification (getByRole('button', {name:'Add to notification'})).",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (button HTML + navigation to .../DRAFT.GB.2026.1525979/traders); corroborated by page-objects/notification/ConsigneeConfirmationPage.ts:6-8 and workflows/notification/ched-p-workflows.ts:962"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) with href /notification/vnet/protected/notifications/{chedReference}/traders/consignee/search. Trace-confirmed as rendered, but NEVER exercised by the QA tests — the ConsigneeConfirmationPage page object omits it entirely, so its behaviour is unasserted.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (main.html: <a href=\"/notification/vnet/protected/notifications/DRAFT.GB.2026.1525979/traders/consignee/search\" class=\"govuk-link govuk-!-font-size-19\" id=\"manage-notifications\">Return to search</a>); absence from page-objects/notification/ConsigneeConfirmationPage.ts confirms it is not test-driven"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "Legacy reference-number caption (span.heading-tertiary)",
+      "description": "The CHED reference + type ('DRAFT.GB.2026.1525979 - CHEDP') is rendered NOT via the GDS govuk-caption-* component but via legacy IPAFFS markup: div.govuk-!-padding-top-6 > span.heading-tertiary > span#reference-number + span. It sits in div.govuk-width-container above the grid row, outside <main>. Rebuilt IUU app should render this as a standard GDS section caption (govuk-caption-l/xl) inside the page, not a bespoke heading-tertiary span.",
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (ancestor chain: SPAN.heading-tertiary < DIV.govuk-!-padding-top-6 < DIV.govuk-width-container app-width-container--wide < BODY)"
+    }
+  ],
+  "fields": [],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "sourceCorroboration": [
+    {
+      "claim": "This page has zero data-entry / input fields — it is a pure confirmation interstitial. The only non-visible inputs are hidden crumb (CSRF) and etag (optimistic-concurrency) fields inside the POST form.",
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (main.html form contains only input[name=crumb][hidden], input[name=etag][hidden], the submit button and the Return-to-search link); corroborated by page-objects/notification/ConsigneeConfirmationPage.ts:6-8 which exposes exactly one member (btnAddToNotification) and no input/textbox/dropdown locators."
+    },
+    {
+      "claim": "The page is a distinct, named step in the notification journey, reached after Consignee Creation (Save and continue) and before Traders Addresses.",
+      "confidence": "inferred",
+      "evidence": "workflows/notification/ched-p-workflows.ts:406-415 (creation -> btnSaveAndContinue -> consigneeConfirmation.btnAddToNotification -> tradersAddresses); same sequence at ched-p-workflows.ts:962. Trace-confirmed: clicking 'Add to notification' at action 110 navigates to .../DRAFT.GB.2026.1525979/traders."
+    },
+    {
+      "claim": "The confirmation page is required to pass automated accessibility (axe/WCAG) checks.",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-p-accessibility-tests.spec.ts:175 clicks pages.consigneeConfirmation.btnAddToNotification within an accessibility flow; same assertion in tests/accessibility/ched-d-accessibility-tests.spec.ts:136."
+    },
+    {
+      "claim": "The 'Add to notification' button is a data-prevent-double-click primary submit — no test asserts the panel copy, so 'The consignee has been created' is trace-observed only.",
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 110 (button carries data-prevent-double-click=true; H1 string read directly from main.html). No page object or test asserts the heading string 'The consignee has been created', 'Add to notification' or 'Return to search' — ConsigneeConfirmationPage.ts locates the button by role/name only."
+    },
+    {
+      "claim": "This confirmation interstitial only appears on the CREATE-NEW-CONSIGNEE branch (search existing -> 'Create a new consignee' -> Consignee Creation -> Save and continue -> THIS page, fromCreate=true). Selecting a pre-existing consignee from search would bypass creation, and hence this confirmation, entirely.",
+      "confidence": "inferred",
+      "evidence": "URL carries ?fromCreate=true (trace back-link href .../consignee/confirmation/{consigneeId}?fromCreate=true). Every workflow reaches this page via searchExistingConsignee.linkCreateNewConsignee -> consigneeCreation.btnSaveAndContinue -> consigneeConfirmation.btnAddToNotification (ched-p-workflows.ts around lines 404-411, 962). The select-an-existing-consignee path is never modelled or driven by the QA suite, so the branch that skips this page is unasserted."
+    }
+  ],
+  "openQuestions": [
+    "This is an interstitial confirmation/success page shown after creating a new consignee (fromCreate=true), not a data-entry page — it has no user-input fields, only two actions (Add to notification / Return to search) plus a JS 'Back' link. Corroborated: the QA page object (ConsigneeConfirmationPage.ts) exposes only btnAddToNotification. In the rebuilt IUU app this success-then-add step may be unnecessary if consignee selection is inlined into the trader/consignee flow.",
+    "The 'Return to search' secondary link is trace-confirmed as rendered (href /notification/vnet/protected/notifications/{chedReference}/traders/consignee/search) but is never exercised by any QA test (the page object omits it). Its behaviour is therefore unasserted by the automation — flagged for a human to confirm whether the rebuilt app needs a 'return without adding' escape hatch here.",
+    "RESOLVED (was: caption wrapper unverified). The caption 'DRAFT.GB.2026.1525979 - CHEDP' is rendered by legacy IPAFFS markup, not a GDS caption: div.govuk-!-padding-top-6 > span.heading-tertiary > span#reference-number + span, sitting in div.govuk-width-container above the grid row, outside <main>. See nonStandardPatterns. Rebuilt IUU app should use a standard govuk-caption-* inside the page.",
+    "The form carries hidden crumb (CSRF) and etag (optimistic-concurrency) inputs — infrastructure, not user requirements.",
+    "The confirmation copy is CHED-P specific in provenance ('The consignee has been created'); wording is generic to consignee creation and not IUU-specific. No test asserts this string, so it is trace-observed only and could change without breaking the suite.",
+    "This page corroborates from the CHED-P workflow because IPAFFS files IUU (fishery products) as CHED-P; the identical consignee-confirmation step also appears in the CHED-D accessibility flow (ched-d-accessibility-tests.spec.ts:136), confirming it is a shared economic-operator sub-journey rather than a CHED-P-specific page.",
+    "This confirmation page is reached only when a NEW consignee is created; the QA suite never exercises the 'select an existing consignee from search results' branch, so we have no trace or test evidence for what a returning user selecting an existing consignee sees. For the rebuilt IUU app, a human should confirm whether the create-vs-reuse split (and this success interstitial) is worth preserving or should collapse into an inline consignee selection."
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "slug": "import-type",
+  "name": "Import type / notification type (CHED type selection)",
+  "url": "/notification/vnet/protected/notifications/consignment/page-1 (form action observed; page reached via source=dashboard). The prompt's inferred '/import-type' path was NOT observed — the real route id is 'consignment/page-1' with div id 'import-type-page'.",
+  "pageTitle": "What are you importing?",
+  "caption": "About the consignment",
+  "heading": "What are you importing?",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "caption",
+      "text": "About the consignment",
+      "govukComponent": "Caption (govuk-caption-xl)"
+    },
+    {
+      "element": "h1",
+      "text": "What are you importing?",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "radios",
+      "text": "Live animals / Products of animal origin, germinal products or animal by-products / High risk food and feed of non-animal origin / Plants, plant products and other objects",
+      "govukComponent": "Radios (inside a govuk-fieldset with an EMPTY legend — the visible question is carried by the H1, not the legend)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button (govuk-button, data-prevent-double-click=true)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Caption",
+      "govukClass": "govuk-caption-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Section caption 'About the consignment' above the H1 (id=page-secondary-title)",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'What are you importing?' (id=page-primary-title)",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [
+        "govuk-fieldset__legend"
+      ],
+      "count": 1,
+      "usage": "Groups the four CHED-type radios. Legend is EMPTY — the question lives in the H1 above the fieldset, not in the legend.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10 (main.html)"
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": [
+        "govuk-radios__input",
+        "govuk-radios__item",
+        "govuk-radios__label"
+      ],
+      "count": 1,
+      "usage": "Four mutually-exclusive CHED-type options; name=cert-type",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the fieldset",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Label",
+      "govukClass": "govuk-label",
+      "modifiers": [
+        "govuk-radios__label"
+      ],
+      "count": 4,
+      "usage": "Radio option labels",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Primary submit 'Save and continue' (id=button-save-and-continue, data-prevent-double-click=true)",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "Back link rendered above the main region. It IS the govuk-back-link component (class='govuk-back-link back-link--next-to-breadcrumbs') but its href is '#' (JS-driven history back), not a real previous-step URL.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10 (a11y tree ref e48; DOM class='govuk-back-link back-link--next-to-breadcrumbs', href='#')"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "govuk-fieldset__legend with empty content; question carried by a separate H1 above the fieldset",
+      "whatItDoes": "The radios sit in a fieldset whose legend is blank; the visible question 'What are you importing?' is a standalone govuk-heading-xl H1 rather than being the legend text.",
+      "concern": "Minor GDS-pattern deviation. The GOV.UK 'one question per page' pattern puts the H1 INSIDE the legend (legend > h1). Here the H1 is outside the fieldset and the legend is empty, so the accessible name of the radio group is not the question. Screen-reader users hear the radios without the grouping question announced from the legend.",
+      "govukAlternative": "Standard GOV.UK radios pattern: page-heading legend — <legend class=\"govuk-fieldset__legend--xl\"><h1 class=\"govuk-fieldset__heading\">What are you importing?</h1></legend>. The rebuild should adopt this.",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10 (main.html — legend empty, h1 sibling)"
+    },
+    {
+      "pattern": "govuk-back-link component with href='#'",
+      "whatItDoes": "'Back' navigation uses the govuk-back-link component (class='govuk-back-link back-link--next-to-breadcrumbs') but points its href at '#' (JS/history-driven) rather than a real server-side href to the previous step.",
+      "concern": "The govuk-back-link component IS used, but its href is '#' so it goes nowhere without JS — not progressive-enhancement friendly. It also carries a non-standard custom modifier class 'back-link--next-to-breadcrumbs'.",
+      "govukAlternative": "Keep the govuk-back-link component but give it a real href to the previous step (only the href needs changing; the component is already in use).",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10 (a11y tree ref e48, /url: '#'; DOM class='govuk-back-link back-link--next-to-breadcrumbs')"
+    }
+  ],
+  "fields": [
+    {
+      "name": "cert-type",
+      "label": "What are you importing?",
+      "hint": "",
+      "control": "radio",
+      "options": [
+        "Live animals",
+        "Products of animal origin, germinal products or animal by-products",
+        "High risk food and feed of non-animal origin",
+        "Plants, plant products and other objects"
+      ],
+      "optionCount": 4,
+      "observedValues": [
+        "CVEDP"
+      ],
+      "confidence": "confirmed",
+      "evidence": "trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d action 10. Radio values: Live animals=CVEDA (id=cert-type), Products of animal origin...=CVEDP (id=cert-type-2), High risk food and feed of non-animal origin=CED (id=cert-type-3), Plants, plant products and other objects=CHEDPP (id=cert-type-4). Trace selected CVEDP (Products of animal origin) — this is the IUU/fishery-products entry point; IPAFFS files fishery products as CHED-P (CVEDP). No dedicated 'IUU' radio exists; IUU is reached via the CHED-P (Products of animal origin) branch.",
+      "corroboration": "SOURCE 2 (QA automation) confirms the four-radio control and the IUU entry point. Page object ImportTypePage.ts:3-24 exposes EXACTLY five controls — radioLiveAnimals ('Live animals'), radioProductsOfAnimalOrigin ('Products of animal origin,'), radioHighRiskFoodAndFeedOf ('High risk food and feed of'), radioPlantsPlantProducts ('Plants, plant products and'), and btnSaveAndContinue — with no hidden/variant-only control, so the trace is a COMPLETE picture of this page (nothing missed). The IUU/fishery-products journey drives radioProductsOfAnimalOrigin.check() (ched-p-workflows.ts:854, the fish/catch-certificate flow createChedPFishNotificationUpToReview), corroborating that IUU is reached via the Products-of-animal-origin (CHED-P) radio and there is no dedicated IUU radio. Each of the four CHED types maps 1:1 to this radio: CHED-A→radioLiveAnimals (ched-a-workflows.ts:257), CHED-P→radioProductsOfAnimalOrigin (ched-p-workflows.ts:270), CHED-D→radioHighRiskFoodAndFeedOf (ched-d-workflows.ts:196), CHED-PP→radioPlantsPlantProducts (ched-pp-workflows.ts:256). 'required'=true stays inferred (single-select one-question-per-page); no test drives the page without selecting a radio, so the mandatory rule is never exercised negatively. IUU-SPECIFIC (verified this pass): the dedicated fish/catch-certificate flow createChedPFishNotificationUpToReview (ched-p-workflows.ts:838-855, config type ChedPFishNotificationConfig / DEFAULT_FISH_CONFIG) drives the IDENTICAL control — radioProductsOfAnimalOrigin.check() then btnSaveAndContinue.click() (ched-p-workflows.ts:854-855) — with no fish/IUU-specific radio, hint or branch on this page. The IUU entry is byte-for-byte the standard CHED-P import-type selection; the catch-certificate/IUU divergence happens only downstream. Aside: a SEPARATE CloningTypePage exposes its own radioProductsOfAnimalOrigin (ched-p-workflows.ts:1305) for the notification-cloning journey — that is a different page, out of IUU scope, and does not affect this one."
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "",
+      "field": "cert-type",
+      "trigger": "Submitting 'Save and continue' with no CHED type selected",
+      "confidence": "gap",
+      "evidence": "No error state was captured — this is a happy-path trace (0 errors) that checks a radio before submitting. The 'required'=true is inferred from single-choice one-question-per-page semantics; the actual govuk error summary / inline error copy was never rendered in this trace. Needs an error-state trace or the page template to confirm the message wording. SOURCE 2 corroboration: NO QA test asserts a validation message for this page either. Every usage across all four CHED workflows and all four accessibility specs follows the same shape — radio.check() then btnSaveAndContinue.click() — with no negative (empty-submit) path and no expect() on any error text (grep across tests/ and workflows/ returns only .check()/.click() calls, never an assertion on this page). So the required-field error copy is a genuine GAP in both sources, not merely untraced — it is a question for a human, not something to be filled from legacy source."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Evidence-pointer route mismatch: the prompt's inferred URL '.../{chedReference}/import-type' was NOT observed. The real form action is '/notification/vnet/protected/notifications/consignment/page-1' and the page container id is 'import-type-page'. There is no {chedReference} in the path at this stage (the notification does not yet have a CHED reference — this page CREATES the notification). The rebuilt IUU app URL should be decided fresh.",
+    "Required-field validation copy is unknown (gap) — no error-state trace was in this evidence pair. What message renders when no option is selected?",
+    "There is no standalone 'IUU' or 'fishery products' radio. IUU is entered by selecting 'Products of animal origin, germinal products or animal by-products' (CVEDP / CHED-P), then the fish/IUU sub-journey diverges downstream. For the NEW standalone IUU app this whole CHED-type selector page likely disappears (the app is IUU-only) — flag to spec author: page 1 in IPAFFS is a type-router that the rebuild does not need.",
+    "The legend is empty and the question is a sibling H1 (non-standard GDS radios markup) — rebuild should use the page-heading-legend pattern.",
+    "SOURCE 2 corroborates the page structure fully but adds no new fields or behaviours: ImportTypePage.ts:3-24 exposes exactly the 4 radios + Save-and-continue already captured by the trace, so this page has no variant-only branch and the traced picture is complete.",
+    "A11y note (inferred, ched-p-accessibility-tests.spec.ts:23,27 + ched-a/-d/-pp equivalents): the QA accessibility suite drives checkPageAccessibility() on this page both before and after selecting a radio and expects it to PASS axe checks — i.e. the empty-legend / sibling-H1 deviation did not trip automated a11y in the tests. That is not a clean bill of health (axe cannot detect a missing group label reliably); the manual GDS finding above still stands. Flag: the rebuild's page-heading-legend version should also pass axe, so adopting it costs nothing.",
+    "For the NEW standalone IUU app, this whole CHED-type router page is very likely OUT OF SCOPE — the app is IUU-only, so there is no 'what are you importing?' choice to make. Source 2 confirms this page exists purely to fork the four CHED journeys (one radio per type). Confirm with the spec author that page 1 is dropped in the rebuild."
+  ]
+}

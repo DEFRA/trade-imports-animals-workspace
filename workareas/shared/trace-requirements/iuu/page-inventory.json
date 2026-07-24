@@ -1,0 +1,491 @@
+{
+  "journey": "IUU",
+  "note": "Canonical page inventory for the IPAFFS IUU journey (filed as a CHED-P Fish / catch-certificate notification). Deduplicated from 1 core-journey trace (hash db2d277c…, 'B2C Importer (Not Agent): Submits Valid CHEDP Fish Notification', 0 errors, 175 actions) and reconciled against the QA-automation ground truth workflow createChedPFishNotificationUpToReview() in workflows/notification/ched-p-workflows.ts plus the page-objects/notification/*.ts page set. Where the trace collapsed multiple pages into one pageGuess, the workflow + page objects let us split them (e.g. commodity search vs species; latest-health-certificate vs accompanying-documents; contact-details + nominated-contacts hidden inside the trace's 'Intermediate save-and-continue steps'). Only the dashboard, review, declaration and contact-details URLs are captured/known concretely; inner-page urlPatterns are inferred from the IPAFFS notification create path /notification/vnet/protected/notifications/{chedReference}/<segment> and marked inferred.",
+  "source": {
+    "trace": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d",
+    "workflow": "ipaffs-qa-automation/workflows/notification/ched-p-workflows.ts::createChedPFishNotificationUpToReview",
+    "pageObjects": "ipaffs-qa-automation/page-objects/notification/*.ts"
+  },
+  "pages": [
+    {
+      "slug": "notifications-dashboard",
+      "name": "Notifications dashboard",
+      "order": 0,
+      "urlPattern": "/notification/vnet/protected/notifications",
+      "conditional": "always — entry point; lists existing notifications and exposes the 'Create a new notification' link that starts the journey",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 8, "note": "navigate to dashboard URL (only concrete URL in the trace)" },
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 9, "note": "click 'Create a new notification' link" }
+      ]
+    },
+    {
+      "slug": "import-type",
+      "name": "Import type / notification type (CHED type selection)",
+      "order": 1,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/import-type (inferred)",
+      "conditional": "always — selects 'Products of animal origin' (fishery products route filed as CHED-P)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 10, "note": "check radio 'Products of animal origin,'" }
+      ]
+    },
+    {
+      "slug": "country-of-origin",
+      "name": "Country of origin",
+      "order": 2,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/country-of-origin (inferred)",
+      "conditional": "always",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 12, "note": "select 'Country of origin' dropdown" }
+      ]
+    },
+    {
+      "slug": "origin-of-import",
+      "name": "Origin of import (conformance + change of destination after BCP)",
+      "order": 3,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/origin-of-import (inferred)",
+      "conditional": "always — two radios: 'Does this consignment conform' and 'Will the consignment change after BCP'; answering change-of-destination 'Yes' drives the after-BCP transport leg later",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 15, "note": "check 'Will the consignment change' → Yes (mid of range)" }
+      ]
+    },
+    {
+      "slug": "search-commodity",
+      "name": "Search commodity (enter commodity code)",
+      "order": 4,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/commodities (inferred)",
+      "conditional": "always — trace collapsed this with the species page; split per SearchCommodityPage vs CommodityBasicDescriptionPage. Fish CN code 03019230 (Anguilla spp.)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 17, "note": "fill 'Enter commodity code' = 03019230" }
+      ]
+    },
+    {
+      "slug": "commodity-basic-description",
+      "name": "Commodity basic description (type of commodity + species selection)",
+      "order": 5,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/commodities (inferred)",
+      "conditional": "always — type of commodity dropdown (farmed stock), species checkbox (Anguilla spp.), and a yes/no radio",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 22, "note": "check species checkbox 'Anguilla spp.' (mid of range)" }
+      ]
+    },
+    {
+      "slug": "about-the-consignment",
+      "name": "About the consignment (purpose of import)",
+      "order": 6,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/about-the-consignment (inferred)",
+      "conditional": "always — purpose radio (Re-entry selected here)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 25, "note": "check radio 'Re-entry'" }
+      ]
+    },
+    {
+      "slug": "select-risk-category",
+      "name": "Select risk category (risk level)",
+      "order": 7,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/risk-category (inferred)",
+      "conditional": "always — risk radio; 'Medium risk' selected. Risk level gates the later Latest Health Certificate requirement",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 27, "note": "check radio 'Medium risk'" }
+      ]
+    },
+    {
+      "slug": "health-certificate-required",
+      "name": "Health certificate required (interstitial to task list)",
+      "order": 8,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/health-certificate-required (inferred)",
+      "conditional": "always — informational interstitial with a Continue link leading to the task-list hub",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 29, "note": "click 'Continue' link" }
+      ]
+    },
+    {
+      "slug": "notification-hub",
+      "name": "Notification hub (task list)",
+      "order": 9,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference} (inferred)",
+      "conditional": "task-list spine — the hub returned to between task groups; trace shows the 'Commodity' task link click that opens the commodity-details page",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 30, "note": "click task link 'Commodity'" }
+      ]
+    },
+    {
+      "slug": "commodity-extended-description",
+      "name": "Commodity extended description (weights, packages)",
+      "order": 10,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/commodities/extended (inferred)",
+      "conditional": "always — net weight, number of packages, package type, total gross weight",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 33, "note": "select 'Package type' (mid of range)" }
+      ]
+    },
+    {
+      "slug": "commodity-additional-details",
+      "name": "Commodity additional details (storage temperature)",
+      "order": 11,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/commodities/additional (inferred)",
+      "conditional": "always — storage-temperature radio ('Ambient')",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 36, "note": "check radio 'Ambient'" }
+      ]
+    },
+    {
+      "slug": "catch-certificate-needed",
+      "name": "Catch certificate needed?",
+      "order": 12,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/catch-certificate-needed (inferred)",
+      "conditional": "fishery products (CHED-P fish / IUU) only — the catch-certificate spine that the new standalone IUU service is built around",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 38, "note": "check #catch-certificate-needed" }
+      ]
+    },
+    {
+      "slug": "attach-catch-certificate",
+      "name": "Attach catch certificate (file upload)",
+      "order": 13,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/catch-certificate/attach (inferred)",
+      "conditional": "fishery products (IUU) only — repeated once per catch certificate (trace uploads 2)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 40, "note": "set input files #fileUpload (1st certificate)" },
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 53, "note": "set input files #fileUpload (2nd certificate)" }
+      ]
+    },
+    {
+      "slug": "manage-catch-certificates",
+      "name": "Manage catch certificates (list + upload more?)",
+      "order": 14,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/catch-certificate/manage (inferred)",
+      "conditional": "fishery products (IUU) only — lists uploaded certificates, exposes 'Add details' links and the 'Do you need to upload more catch certificates?' Yes/No radio (loops back to attach on Yes)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 51, "note": "check 'upload more catch certificates?' → Yes" },
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 64, "note": "check 'upload more catch certificates?' → No" }
+      ]
+    },
+    {
+      "slug": "add-catch-certificate-details",
+      "name": "Add catch certificate details (reference, issue date, flag state, species)",
+      "order": 15,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/catch-certificate/details (inferred)",
+      "conditional": "fishery products (IUU) only — per-certificate detail form: catch-certificate reference, date of issue, flag state of catching vessel(s), select-all species. Repeated per certificate",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 47, "note": "fill 'Flag state of catching vessel(s)' (1st cert, mid of range)" },
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 60, "note": "fill flag state (2nd cert)" }
+      ]
+    },
+    {
+      "slug": "latest-health-certificate",
+      "name": "Latest health certificate (document reference, date, attachment)",
+      "order": 16,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/latest-health-certificate (inferred)",
+      "conditional": "required after catch certificates on medium/high risk — trace mislabelled this 'Supporting documents (1st)'; workflow confirms it is the Latest Health Certificate page (document reference + date + Add attachment)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 68, "note": "fill 'Month' of health-certificate date (mid of the page's fields; 70-72 are the attachment sub-page)" }
+      ]
+    },
+    {
+      "slug": "document-upload",
+      "name": "Document upload (attachment sub-page)",
+      "order": 17,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/document-upload (inferred)",
+      "conditional": "shown when adding a document attachment (reached via 'Add attachment' on the latest-health-certificate / accompanying-documents pages); shared upload page",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 71, "note": "set input files input[type=file] (the attachment)" }
+      ]
+    },
+    {
+      "slug": "accompanying-documents",
+      "name": "Accompanying documents (document type, reference, date)",
+      "order": 18,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/accompanying-documents (inferred)",
+      "conditional": "always — trace labelled 'Supporting documents (2nd)'; workflow confirms it is the Accompanying Documents page (document type dropdown = veterinary health certificate, reference, date)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 76, "note": "fill 'Day' of document date (mid of range)" }
+      ]
+    },
+    {
+      "slug": "approved-establishment-of-origin",
+      "name": "Approved establishment of origin (landing)",
+      "order": 19,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/approved-establishment (inferred)",
+      "conditional": "always — landing page with a 'Search for an approved establishment' button",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 80, "note": "click 'Search for an approved' establishment button" }
+      ]
+    },
+    {
+      "slug": "search-for-approved-establishment",
+      "name": "Search for approved establishment (results + select)",
+      "order": 20,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/approved-establishment/search (inferred)",
+      "conditional": "always — results table with a per-row 'Select' button",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 83, "note": "click 'Select' on first establishment row (84 is Save & continue, navigates away)" }
+      ]
+    },
+    {
+      "slug": "traders-addresses",
+      "name": "Traders addresses (economic operators hub)",
+      "order": 21,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/traders-addresses (inferred)",
+      "conditional": "hub for economic operators — exposes 'Add a consignor or exporter', 'Add a consignee', importer populate/'Same as consignee'; returned to across consignor/consignee/importer sub-flows",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 98, "note": "click 'Add a consignee' link (mid of the hub's visits)" },
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 111, "note": "click #populate-importer (importer = same as consignee)" }
+      ]
+    },
+    {
+      "slug": "search-existing-consignor",
+      "name": "Search existing consignor / exporter",
+      "order": 22,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignor/search (inferred)",
+      "conditional": "shown when adding a consignor — 'Create a new consignor or exporter' vs selecting existing",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 86, "note": "click 'Create a new consignor or' link" }
+      ]
+    },
+    {
+      "slug": "consignor-creation",
+      "name": "Consignor / exporter creation (address form)",
+      "order": 23,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignor/create (inferred)",
+      "conditional": "shown when creating a new consignor — full name/address/telephone/country/email form",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 91, "note": "fill 'City or town' (mid of address form)" }
+      ]
+    },
+    {
+      "slug": "consignor-confirmation",
+      "name": "Consignor confirmation (add to notification)",
+      "order": 24,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignor/confirm (inferred)",
+      "conditional": "shown after creating a consignor — 'Add to notification' confirmation",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 97, "note": "click 'Add to notification'" }
+      ]
+    },
+    {
+      "slug": "search-existing-consignee",
+      "name": "Search existing consignee",
+      "order": 25,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignee/search (inferred)",
+      "conditional": "shown when adding a consignee — 'Create a new consignee' vs selecting existing",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 99, "note": "click 'Create a new consignee' link" }
+      ]
+    },
+    {
+      "slug": "consignee-creation",
+      "name": "Consignee creation (address form)",
+      "order": 26,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignee/create (inferred)",
+      "conditional": "shown when creating a new consignee — full name/address/telephone/country/email form",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 104, "note": "fill 'City or town' (mid of address form)" }
+      ]
+    },
+    {
+      "slug": "consignee-confirmation",
+      "name": "Consignee confirmation (add to notification)",
+      "order": 27,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/consignee/confirm (inferred)",
+      "conditional": "shown after creating a consignee — 'Add to notification' confirmation",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 110, "note": "click 'Add to notification'" }
+      ]
+    },
+    {
+      "slug": "transport-details",
+      "name": "Transport details to BCP (port of entry + arrival leg)",
+      "order": 28,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/transport-details (inferred)",
+      "conditional": "always — port of entry (Tilbury GBTIL), means of transport, transport identification, transport document reference, arrival date/time",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 119, "note": "fill 'Transport document reference' (mid of range)" }
+      ]
+    },
+    {
+      "slug": "means-of-transport-after-bcp",
+      "name": "Means of transport after BCP (onward leg)",
+      "order": 29,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/means-of-transport-after-bcp (inferred)",
+      "conditional": "shown when the consignment changes destination after BCP (answered Yes on origin-of-import) — onward transport means/identification/doc-ref/date-time",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 130, "note": "fill 'Month' of departure date (mid of range)" }
+      ]
+    },
+    {
+      "slug": "goods-movement-services",
+      "name": "Goods movement services (Common Transit / GVMS)",
+      "order": 30,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/goods-movement (inferred)",
+      "conditional": "always — 'Are you using the Common Transit Convention' (No) and 'Will the transport use the GVMS' (No) radios",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 136, "note": "check 'Will the transport use the' GVMS → No" }
+      ]
+    },
+    {
+      "slug": "transporter",
+      "name": "Transporter (landing / add)",
+      "order": 31,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/transporter (inferred)",
+      "conditional": "always — landing page with 'Add a transporter' link and final Save & continue",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 138, "note": "click 'Add a transporter' link" }
+      ]
+    },
+    {
+      "slug": "search-existing-transporter",
+      "name": "Search existing transporter",
+      "order": 32,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/transporter/search (inferred)",
+      "conditional": "shown when adding a transporter — 'Create a new transporter' vs selecting existing",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 139, "note": "click 'Create a new transporter' link" }
+      ]
+    },
+    {
+      "slug": "transporter-creation",
+      "name": "Transporter creation (address form)",
+      "order": 33,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/transporter/create (inferred)",
+      "conditional": "shown when creating a new transporter — full name/address/telephone/country/email form",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 144, "note": "fill 'City or town' (mid of address form)" }
+      ]
+    },
+    {
+      "slug": "transporter-confirmation",
+      "name": "Transporter confirmation (add to notification)",
+      "order": 34,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/transporter/confirm (inferred)",
+      "conditional": "shown after creating a transporter — 'Add to notification' confirmation",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 150, "note": "click 'Add to notification'" }
+      ]
+    },
+    {
+      "slug": "contact-details",
+      "name": "Contact details",
+      "order": 35,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/contact-details",
+      "conditional": "always — trace collapsed into 'Intermediate save-and-continue steps'; workflow confirms contactDetails page (save & continue)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 152, "note": "click 'Save and continue' (contact details)" }
+      ]
+    },
+    {
+      "slug": "nominated-contacts",
+      "name": "Nominated contacts",
+      "order": 36,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/nominated-contacts (inferred)",
+      "conditional": "always — trace collapsed into 'Intermediate save-and-continue steps'; workflow confirms nominatedContacts page (save & continue)",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 153, "note": "click 'Save and continue' (nominated contacts)" }
+      ]
+    },
+    {
+      "slug": "contact-address",
+      "name": "Contact address (place of destination / branch address landing)",
+      "order": 37,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/contact-address (inferred)",
+      "conditional": "always — landing page exposing the 'add a new branch address' link",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 154, "note": "click 'add a new branch address' link" }
+      ]
+    },
+    {
+      "slug": "branch-address-creation",
+      "name": "Branch address creation (address form)",
+      "order": 38,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/branch-address/create (inferred)",
+      "conditional": "shown when adding a new branch address — full name/address/telephone/country/email form",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 159, "note": "fill 'City or town' (mid of address form)" }
+      ]
+    },
+    {
+      "slug": "branch-address-confirmation",
+      "name": "Branch address confirmation (return to notification)",
+      "order": 39,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/branch-address/confirm (inferred)",
+      "conditional": "shown after creating a branch address — 'Return to notification' confirmation",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 165, "note": "click 'Return to notification'" }
+      ]
+    },
+    {
+      "slug": "review-notification",
+      "name": "Review notification (check your answers)",
+      "order": 40,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/review",
+      "conditional": "always — check-your-answers summary; trace asserts the catch-certificate reference table renders both certificates",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 170, "note": "assert catch-certificate table contains 2nd reference (mid of the review asserts; 173 is Save & continue away)" }
+      ]
+    },
+    {
+      "slug": "declaration",
+      "name": "Declaration (submit notification)",
+      "order": 41,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/declaration",
+      "conditional": "always — declaration checkboxes and the 'Submit notification' button",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 174, "note": "click 'Submit notification'" }
+      ]
+    },
+    {
+      "slug": "confirmation",
+      "name": "Confirmation (reference number)",
+      "order": -1,
+      "urlPattern": "/notification/vnet/protected/notifications/{chedReference}/confirmation (inferred)",
+      "conditional": "post-submission — success page displaying the notification reference number (#reference-number); off the linear create path",
+      "evidence": [
+        { "hash": "db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d", "actionId": 175, "note": "assert #reference-number renders after submit" }
+      ]
+    }
+  ],
+  "journeyOrder": [
+    "notifications-dashboard",
+    "import-type",
+    "country-of-origin",
+    "origin-of-import",
+    "search-commodity",
+    "commodity-basic-description",
+    "about-the-consignment",
+    "select-risk-category",
+    "health-certificate-required",
+    "notification-hub",
+    "commodity-extended-description",
+    "commodity-additional-details",
+    "catch-certificate-needed",
+    "attach-catch-certificate",
+    "manage-catch-certificates",
+    "add-catch-certificate-details",
+    "latest-health-certificate",
+    "document-upload",
+    "accompanying-documents",
+    "approved-establishment-of-origin",
+    "search-for-approved-establishment",
+    "traders-addresses",
+    "search-existing-consignor",
+    "consignor-creation",
+    "consignor-confirmation",
+    "search-existing-consignee",
+    "consignee-creation",
+    "consignee-confirmation",
+    "transport-details",
+    "means-of-transport-after-bcp",
+    "goods-movement-services",
+    "transporter",
+    "search-existing-transporter",
+    "transporter-creation",
+    "transporter-confirmation",
+    "contact-details",
+    "nominated-contacts",
+    "contact-address",
+    "branch-address-creation",
+    "branch-address-confirmation",
+    "review-notification",
+    "declaration",
+    "confirmation"
+  ]
+}
