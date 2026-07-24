@@ -54,6 +54,32 @@ The immediate fix is to add `playwright-report/` to `.gitignore` (done on this b
 Broader observation for the follow-up ticket or a separate chore:
 - The `format:check` glob shouldn't include untracked-output directories at all. Either use lint-staged style tracked-only filtering, or explicitly restrict globs to source dirs (`src/**` + `tests/**` + top-level config files). Not a spike deliverable, but worth surfacing.
 
+## cdp-uploader /status URL needs server-side host rewrite
+
+The `statusUrl` returned by `POST /initiate` is absolute against cdp-uploader's own host binding (e.g. `http://localhost:7337/status/<uploadId>`) — a URL shaped for the **browser** to follow. Server-side polling (from the frontend container) hits its own loopback and the fetch fails.
+
+Spike workaround (in `cdp-uploader-client.js:getStatus`): parse the returned `statusUrl`, keep the pathname + search, and prepend the configured `cdpUploaderBaseUrl` before fetching. Follow-up ticket should either (a) surface this in a shared helper, or (b) request cdp-uploader emit a relative statusUrl (or two — one for the browser, one for server-side).
+
+## cdp-uploader's /status DOES expose the multipart form fields
+
+Discovered while diagnosing test D. The `/status/<uploadId>` response includes a `form` object populated with every non-file field the browser sent to `/upload-and-scan`:
+
+```json
+{
+  "uploadStatus": "ready",
+  "form": {
+    "documentType": "ITAHC",
+    "documentReference": "TARGET50MB01",
+    "issueDate-day": "24", "issueDate-month": "01", "issueDate-year": "2026",
+    "file": { "filename": "target-50mb.pdf", "contentType": "application/pdf", ... }
+  }
+}
+```
+
+**Implication:** the "metadata is lost when the browser POSTs directly to cdp-uploader" concern is unfounded — cdp-uploader preserves it. The follow-up ticket can and should read documentType/documentReference/dateOfIssue from `status.form.*` on the /upload-successful landing rather than doing a two-step form or per-doc /initiate-with-metadata.
+
+The spike currently uses hardcoded metadata (`documentType: 'ITAHC'`, `documentReference: 'SPIKE-UPLOAD'`, `dateOfIssue: today`) in `upload-successful.js:commitToDocumentsList` because test D doesn't assert on metadata — real capture is a small follow-up edit, not an architectural change.
+
 ## Deferred cleanup — for the follow-up ticket
 
 When the follow-up ticket removes the old POST route + backend byte-proxy, it should also clean up the frontend size-guard machinery left behind by the spike:
