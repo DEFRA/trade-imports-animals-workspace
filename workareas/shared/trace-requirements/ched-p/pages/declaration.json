@@ -1,0 +1,180 @@
+{
+  "slug": "declaration",
+  "legacyEnrichedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "corroboratedBy": "codex",
+  "name": "Declaration (submit notification)",
+  "url": "/notification/vnet/protected/notifications/{chedRef}/declaration",
+  "pageTitle": "Declaration - Import and export applications - GOV.UK",
+  "heading": "Declaration",
+  "bodyCopy": [
+    "I, the undersigned operator responsible for the consignment detailed above, certify that to the best of my knowledge and belief the statements made in Part I of this document are true and complete, and I agree to comply with the requirements of assimilated Regulation 2017/625 on official controls, including payment for official controls, as well as for re-dispatching consignments, quarantine or isolation of consignments, or costs of destruction and disposal where necessary.",
+    "As my consignment is in scope of the common user charge, I confirm I have read and agree to comply with the common user charge payment terms and conditions.",
+    "Date of declaration: 16 July 2026"
+  ],
+  "backLink": "Back",
+  "continueLabel": "Submit notification",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "h1",
+      "text": "Declaration",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "I, the undersigned operator responsible for the consignment detailed above, certify that to the best of my knowledge and belief the statements made in Part I of this document are true and complete, and I agree to comply with the requirements of assimilated Regulation 2017/625 on official controls, including payment for official controls, as well as for re-dispatching consignments, quarantine or isolation of consignments, or costs of destruction and disposal where necessary.",
+      "govukComponent": "Body (govuk-body)"
+    },
+    {
+      "element": "paragraph",
+      "text": "As my consignment is in scope of the common user charge, I confirm I have read and agree to comply with the common user charge payment terms and conditions.",
+      "govukComponent": "Body (govuk-body) with two external links",
+      "conditionalOn": "Shown only when isBillable is true.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/declaration.html:26-37; isBillable is supplied by ipaffs-frontend-notification/service/src/routes/handlers/importer/declaration.js:79"
+    },
+    {
+      "element": "paragraph",
+      "text": "Date of declaration: 16 July 2026",
+      "govukComponent": "Body (govuk-body govuk-!-margin-bottom-8)"
+    },
+    {
+      "element": "button",
+      "text": "Submit notification",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Declaration'",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html)"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": ["govuk-!-margin-bottom-8"],
+      "count": 2,
+      "usage": "Declaration certification paragraph and 'Date of declaration' line",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Primary submit button 'Submit notification' (id=accept-and-submit, data-prevent-double-click)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Back navigation link (platform chrome, above main)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (govuk-back-link innerText = 'Back')"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "form.review-form (class=\"review-form\" id=\"declaration-form\")",
+      "whatItDoes": "Wraps the declaration POST form; carries the hidden crumb, etag and submissionDate inputs and the submit button.",
+      "concern": "'review-form' is an IPAFFS-specific class, not a GOV.UK Design System component. It appears to be a purely structural/styling hook for the review-and-submit style forms and carries no semantic requirement.",
+      "govukAlternative": "No component needed — a plain <form> with a govuk-button is the standard pattern. Drop the custom class in the rebuild.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html)"
+    },
+    {
+      "pattern": "hidden inputs: crumb, etag, submissionDate",
+      "whatItDoes": "Carries two opaque values named crumb and etag plus submissionDate, whose value '16 July 2026' mirrors the visible declaration date.",
+      "concern": "The snapshot confirms the names, hidden types and values, but does not establish the server-side semantics or derivation of crumb, etag or submissionDate.",
+      "govukAlternative": "n/a — transport concern. The rebuilt service should use its framework's own CSRF/concurrency mechanisms and derive the declaration date server-side rather than trust a client hidden field.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "submissionDate",
+      "label": "Date of declaration",
+      "hint": "",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Not a user-mandatory CHED-P field. The legacy handler derives the displayed value from notification.partOne.submissionDate or the current date (ipaffs-frontend-notification/service/src/routes/handlers/importer/declaration.js:61-70). Although the shared validator requires a submitted submissionDate, that validator is invoked only for CHEDPP and CHED-A, not CVEDP (service/src/routes/handlers/importer/declaration.js:36-46; validation/routes/handlers/importer/declaration.js:9-18).",
+      "conditionalOn": "Not user-editable — rendered as static text 'Date of declaration: 16 July 2026' and mirrored in a hidden input. The trace does not establish how the value is derived.",
+      "observedValues": ["16 July 2026"],
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html; span#date-of-declaration and hidden input name=submissionDate both = '16 July 2026')"
+    },
+    {
+      "name": "crumb",
+      "label": "(hidden crumb field)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Framework transport field rather than a user choice. The CHED-P template emits crumb as a hidden input (ipaffs-frontend-notification/service/src/views/importer/declaration.html:44-48), and the CVEDP POST path does not apply the declaration-field validator (service/src/routes/handlers/importer/declaration.js:36-46).",
+      "conditionalOn": "Present as a hidden input in the observed snapshot; its semantics are not established by the trace.",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html; hidden input name=crumb)"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden etag field)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Framework concurrency field rather than a user choice. The CHED-P template emits etag as a hidden input (ipaffs-frontend-notification/service/src/views/importer/declaration.html:44-48), and the CVEDP POST path does not apply the declaration-field validator (service/src/routes/handlers/importer/declaration.js:36-46).",
+      "conditionalOn": "Present as a hidden input in the observed snapshot; its semantics are not established by the trace.",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (main.html; hidden input name=etag)"
+    },
+    {
+      "name": "accept-and-submit",
+      "label": "Submit notification",
+      "control": "button",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Submit action, not persisted notification data. For CVEDP the legacy POST handler does not require an acknowledgement field; it checks whole-consignment errors and submits directly (ipaffs-frontend-notification/service/src/routes/handlers/importer/declaration.js:36-58).",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 142 (button id=accept-and-submit); page-objects/notification/DeclarationPage.ts:14-16; workflows/notification/ched-p-workflows.ts:552; tests/notification/ched-p/ched-p-notification.spec.ts:221; tests/accessibility/ched-p-accessibility-tests.spec.ts:279-281"
+    },
+    {
+      "name": "common-user-charge-rates-and-eligibility-link",
+      "label": "in scope of the common user charge",
+      "control": "link",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Conditional informational link, not a user-mandatory field. It is rendered only inside the isBillable declaration paragraph (ipaffs-frontend-notification/service/src/views/importer/declaration.html:26-37).",
+      "conditionalOn": "Shown when the CHED-P notification is billable.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/declaration.html:26-31"
+    },
+    {
+      "name": "common-user-charge-payment-terms-link",
+      "label": "common user charge payment terms and conditions",
+      "control": "link",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Conditional informational link, not a user-mandatory field. It is rendered only inside the isBillable declaration paragraph (ipaffs-frontend-notification/service/src/views/importer/declaration.html:26-37).",
+      "conditionalOn": "Shown when the CHED-P notification is billable.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/declaration.html:26-37"
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Legacy source resolves the acknowledgement-checkbox question for CHED-P: the shared declaration validator requires declaration-agree only for CHEDPP and CHED-A, while CVEDP bypasses it and submits directly (ipaffs-frontend-notification/service/src/routes/handlers/importer/declaration.js:36-58; validation/routes/handlers/importer/declaration.js:9-18). The rebuild should confirm this legacy policy remains intended.",
+    "The rendered trace did not show the billable-consignment paragraph or its two external links, but the authorised CHED-P template includes them when isBillable is true (ipaffs-frontend-notification/service/src/views/importer/declaration.html:17-38; routes/handlers/importer/declaration.js:73-79). This is a conditional-state coverage addition, not a legacy/rendered-copy conflict.",
+    "This is the final journey step: clicking 'Submit notification' POSTs the form and navigates to /notifications/{chedRef}/confirmation (observed redirect to CHEDP.GB.2026.1525975/confirmation). The declaration copy references 'the consignment detailed above' but no summary/Part I detail is rendered on this page itself — the review/summary lives on the preceding page(s), so the declaration page is copy + submit only.",
+    "The declaration text cites 'assimilated Regulation 2017/625'. Verify this is the current/correct legal reference for the rebuilt CHED-P (it is verbatim from IPAFFS as of the 2026-07-16 trace).",
+    "No error state was captured for this page in this trace (0 errors). Any submit-time validation (e.g. record already submitted, etag conflict, double-click) is unobserved — marked as a gap for error copy. The button has data-prevent-double-click='true', implying double-submit is handled client-side.",
+    "submissionDate is sent from a client hidden field in IPAFFS; the new app should derive the declaration date server-side rather than trust the client value.",
+    "The shared DeclarationPage exposes an 'I/We have read and understood' checkbox (page-objects/notification/DeclarationPage.ts:6-8), but no admissible CHED-P workflow or test checks it: CHED-P clicks Submit notification directly (workflows/notification/ched-p-workflows.ts:552; tests/notification/ched-p/ched-p-notification.spec.ts:221). The checkbox is therefore not added as a CHED-P field; confirm that direct submission without an acknowledgement control is intentional."
+  ]
+}

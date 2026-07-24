@@ -1,0 +1,2415 @@
+{
+  "generated": "2026-07-24",
+  "regenerationOf": "CHED-P main BACKLOG pass; SUPPLEMENTARY re-run",
+  "source": [
+    "journey-spec.json (read first; 78 canonical records from 79 enriched page specs; legacy mandatoriness/copy and delegated-authority evidence)",
+    "conflicts.json (c-001..c-047; 7 needsHuman)",
+    "SPEC-GATE.md (14 model gaps; 656/664 grounded validation rows)",
+    "target-model.md (Notification + accompanying_documents Mongo shape; ownership and legacy submission policy)",
+    "integrations.md (SSR boundaries, whole-document Mongo, first-pass fixtures/stubs and deferred live integrations)",
+    "authorization-rules.md (AUTH-01..AUTH-12; cross-type delegated-authority mechanism)",
+    "iuu-boundary-findings.md (fish/IUU exclusion)",
+    "../ched-pp/backlog.json and ../ched-pp/backlog.md (shape exemplar)"
+  ],
+  "brief": "A CDP-based CHED-P notifier built like trade-imports-animals: server-rendered journey pages build one CVEDP Notification JSON document and persist it wholly to Mongo. The first pass is the manual own-organisation journey through submission confirmation; validations are legacy-grounded and later delegated-authority/variant work is explicitly separated.",
+  "milestones": [
+    {
+      "id": "m0",
+      "name": "Scaffold & persistence spine",
+      "goal": "A CDP-style CHED-P service, one resumable Notification JSON document, whole-document Mongo persistence, a page-owned journey spine and the task-list hub engine."
+    },
+    {
+      "id": "m1",
+      "name": "Reference data",
+      "goal": "Independent server-side fixtures/clients for countries, non-fish commodity codes, non-fish species/types, BCPs, package types, approved establishments and document types."
+    },
+    {
+      "id": "m2",
+      "name": "Model-extension gates",
+      "goal": "Human-approved executable policies for restatements, routing, commodity collections, risk, validation lifecycle, concurrency and shared-page variants before the first consuming page."
+    },
+    {
+      "id": "m3",
+      "name": "Journey entry & consignment basics",
+      "goal": "Dashboard through the task-list hub in canonical order, including origin, commodity selection/add-another, purpose, risk and health-certificate routing."
+    },
+    {
+      "id": "m4",
+      "name": "Commodity details & documents",
+      "goal": "Per-commodity POAO weights/packages, consignment temperature, health-certificate metadata, upload stub, accompanying documents and approved establishments."
+    },
+    {
+      "id": "m5",
+      "name": "Traders",
+      "goal": "Consignor, consignee, importer and destination selection/creation using verified address fields and hub loops."
+    },
+    {
+      "id": "m6",
+      "name": "Transport, contacts, review & submit",
+      "goal": "Transport, goods movement, transporter, responsible/nominated contacts, contact address, review, declaration and Mongo-backed submission confirmation."
+    },
+    {
+      "id": "m7",
+      "name": "Delegated authority & ownership (later)",
+      "goal": "A separate later DoA milestone for assigned organisation, on-behalf-of ownership, auto-population, Trade Partner marking and organisation-scoped visibility under AUTH-01..AUTH-12."
+    },
+    {
+      "id": "m8",
+      "name": "Other later variants",
+      "goal": "CUC billing, CSV bulk upload, Article 72 low-risk and split-consignment candidates after the manual own-organisation first pass."
+    }
+  ],
+  "sequencingNotes": [
+    "m0 lands first in this order: skeleton, Notification JSON + Mongo persistence, page-owned journey spine, task-list hub engine. m1 reference-data clients can then proceed independently.",
+    "m2 model-extension gates precede every first page that consumes the corresponding unresolved modelGap. A later increment may depend on a blocked predecessor without receiving a second gate unless its own acceptance criteria consume unresolved evidence.",
+    "Canonical create pages remain in journey order 0..39. A page-specific add-validation increment follows each page with grounded validation evidence; pure interstitial gap placeholders do not become invented validation work.",
+    "The commodity collection is deliberately split across reference data, collection model, add/edit/remove loop, search, type/species selection, per-line weights/packages and consignment temperature.",
+    "The first pass ends when declaration changes the Mongo-backed notification to SUBMITTED and confirmation renders. m7 delegated authority and m8 CUC/CSV/Article-72/split work are later.",
+    "Every blocked increment has gate \"sam\" and states an open question; no human ruling is authored."
+  ],
+  "scopeExclusions": [
+    "POST-SUBMISSION is OUT of scope: notification-search-view, attachments-tab, BIP/inspector documentary/identity/physical/laboratory/decision pages, risk override/replacement, OV/control, border-notification pages, amend-notification-hub and delete-notification-confirmation are not increments.",
+    "FISH/IUU is OUT of scope: catch-certificate-needed, attach-catch-certificate and add-catch-certificate-details are excluded; HS chapter 03, fish sub-codes in mixed chapters and fish species including Anguilla are rejected by CHED-P reference data, per iuu-boundary-findings.md.",
+    "CLONING is an out-of-scope candidate under needsHuman c-006. clone-certificate-type, clone-search and the HTTP 406 fallback are evidence only; no working clone increment is promised.",
+    "Live file bytes/antivirus, reusable address-book integrations, live risk, Trade Charge, PDF, SOAP, events, Notify, live GVMS/NCTS, Defra ID and Dynamics are deferred. First pass uses metadata, fixtures or deterministic stubs as stated."
+  ],
+  "deviations": [
+    "Use govuk-frontend/CDP patterns and clean routes; do not reproduce bespoke IPAFFS CSS widgets, duplicated responsive DOM, JavaScript-history Back links or the legacy datepicker overlay.",
+    "Persist one complete Notification document per save. Do not reproduce IPAFFS JSON Patch or browser ETag fields; concurrency/recovery is explicitly gated before consuming pages.",
+    "Use stable Mongo/business identity. Submission changes status rather than replacing the document or breaking accompanying-document joins.",
+    "Store reference codes/opaque ids and minimal snapshots, never display labels as identity.",
+    "Legacy validation copy is implemented at its recorded trigger only after the validation-lifecycle ruling; gap copy is never invented.",
+    "Exactly 10 MiB is accepted (settled c-015) and region code is capped at 3 characters (settled c-011); the known contradictory legacy hints are repaired."
+  ],
+  "bornBlocked": [
+    "inc-012 Derived/restated-value model extension: MODEL GAP \"summary-restatement-linkage\" and c-028: confirm canonical source paths and the blank-display policy for review/confirmation restatements. Do not author the ruling.",
+    "inc-013 Cross-page conditional routing model extension: MODEL GAP \"cross-page-conditionality\": define executable purpose/Transit, risk/health-certificate, origin/POE, onward-transport, CTC/GVMS and CUC rules plus answer-change cleanup. Do not author the ruling.",
+    "inc-014 Commodity collection and repeated-row model extension: MODEL GAPS \"repeating-group-in-repeating-group\" and \"commodity-dependent-reference-data-and-scope\": confirm the CommodityLine grain, stable row identity, reference-data joins, cardinality and aggregation. Do not author the ruling.",
+    "inc-015 Commodity add-another, edit and remove loop: MODEL GAP \"unexercised-multi-commodity-loop\": the corpus submits one commodity and answers No. Confirm the non-fish add-another upper bound, remove/re-entry behaviour and cross-commodity risk aggregation. Do not author the ruling.",
+    "inc-016 Computed and selected risk-category model extension: c-027, page-confidence gap and MODEL GAP \"risk-category-computed-versus-selected\": decide whether a user may select below the computed highest category and what validation/routing follows. Do not author the ruling.",
+    "inc-017 Contactability and partial-row constraint extension: MODEL GAP \"at-least-one-of-sibling-fields\": confirm email/telephone rules for responsible person, nominated contacts and later CUC billing, including partial-row handling. Do not author the ruling.",
+    "inc-018 Submission outcome/status adapter extension: MODEL GAP \"external-outcome-and-status-variants\": decide which deterministic first-pass confirmation outcomes are supported. Inspector/decision state remains outside this service. Do not author the ruling.",
+    "inc-019 Draft-save and final-submit validation lifecycle: MODEL GAP \"two-layer-validation\" and c-038: choose the rebuild lifecycle and one user-facing string where legacy page-save Joi and final CHED-P model validation differ. c-039 confirms the triggers differ; it does not choose the rebuild copy. Do not author the ruling.",
+    "inc-020 Whole-document concurrency and stale-save recovery: MODEL GAP \"optimistic-concurrency-etag\" and target-model.md Open Q20: confirm version/CAS policy and the user-visible recovery route/copy for a stale long-journey or multi-tab save. Do not reproduce legacy ETag wire fields or invent the ruling.",
+    "inc-021 Shared-page variant and inferred-control boundary: MODEL GAPS \"shared-page-variant-alias\" and \"shared-page-object-cross-type-leakage\": confirm which inferred shared controls can render for CHED-P and keep transit-exit-bcp as a same-page facet rather than a second URL. Do not author the ruling.",
+    "inc-027 Add country-of-origin validation: needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-028 origin-of-import page: MODEL GAP(S): shared-page-object-cross-type-leakage; c-011 is settled at 3 characters; only the listed model decisions remain open. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-029 Add origin-of-import validation: needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-030 search-commodity page: MODEL GAP(S): commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-031 Add search-commodity validation: validation depends on model gap(s) commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-032 commodity-basic-description page: MODEL GAP(S): commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-033 Add commodity-basic-description validation: validation depends on model gap(s) commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-034 about-the-consignment page: MODEL GAP(S): cross-page-conditionality, shared-page-variant-alias. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-035 Add about-the-consignment validation: needsHuman conflict(s) c-040; validation depends on model gap(s) cross-page-conditionality. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-036 select-risk-category page: page confidence is gap for select-risk-category; MODEL GAP(S): cross-page-conditionality, risk-category-computed-versus-selected, unexercised-multi-commodity-loop; needsHuman conflict(s): c-027. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-037 Add select-risk-category validation: validation depends on model gap(s) cross-page-conditionality, risk-category-computed-versus-selected, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-038 health-certificate-required page: MODEL GAP(S): cross-page-conditionality, risk-category-computed-versus-selected. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-039 notification-hub page: MODEL GAP(S): risk-category-computed-versus-selected, external-outcome-and-status-variants. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-040 commodity-extended-description page: MODEL GAP(S): repeating-group-in-repeating-group, commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop, shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-041 Add commodity-extended-description validation: validation depends on model gap(s) repeating-group-in-repeating-group, commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-042 commodity-additional-details page: MODEL GAP(S): shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-044 latest-health-certificate page: MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-045 Add latest-health-certificate validation: validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-046 document-upload page and attachment metadata stub: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-047 Add document-upload validation: needsHuman conflict(s) c-041. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-048 accompanying-documents page: MODEL GAP(S): repeating-group-in-repeating-group. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-049 Add accompanying-documents validation: validation depends on model gap(s) repeating-group-in-repeating-group. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-050 approved-establishment-of-origin page: MODEL GAP(S): commodity-dependent-reference-data-and-scope. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-051 Add approved-establishment-of-origin validation: the page has a gap-confidence validation state; validation depends on model gap(s) commodity-dependent-reference-data-and-scope. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-052 search-approved-establishment page: MODEL GAP(S): commodity-dependent-reference-data-and-scope, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-053 Add search-approved-establishment validation: validation depends on model gap(s) commodity-dependent-reference-data-and-scope. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-054 traders-addresses page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-063 consignee-creation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-065 consignee-confirmation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-066 importer and destination page state: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-068 transport-details page: MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-069 Add transport-details validation: needsHuman conflict(s) c-038; validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-072 goods-movement-services page: MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-073 Add goods-movement-services validation: validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-074 transporter page: MODEL GAP(S): shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-077 transporter-creation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-079 transporter-confirmation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-080 contact-details page: MODEL GAP(S): at-least-one-of-sibling-fields. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-081 Add contact-details validation: validation depends on model gap(s) at-least-one-of-sibling-fields. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-082 nominated-contacts page: MODEL GAP(S): at-least-one-of-sibling-fields, repeating-group-in-repeating-group. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-083 Add nominated-contacts validation: validation depends on model gap(s) at-least-one-of-sibling-fields, repeating-group-in-repeating-group. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-085 Add contact-address validation: needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+    "inc-086 branch-address-creation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-088 branch-address-confirmation page: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-089 review-notification page: MODEL GAP(S): summary-restatement-linkage; needsHuman conflict(s): c-028. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-090 declaration page and submission transition: MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-091 confirmation page: MODEL GAP(S): summary-restatement-linkage, external-outcome-and-status-variants. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+    "inc-092 Delegated-authority tenancy and ownership model extension: MODEL GAP \"delegated-authority-model\": obtain/approve a CHED-P POAO journey and decide route placement/copy, designated responsible contact, Trade Partner lifecycle, draft privacy and the B2B/co-member permission matrix. Evidence is cross-type; do not author the POAO ruling.",
+    "inc-093 POAO importer-or-agency eligibility page (later DoA): Cross-type page are-you-a-plants-importer-or-agency has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+    "inc-094 choose-your-organisation page (later DoA): Cross-type page choose-your-organisation has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+    "inc-095 manage-your-authorisations page (later DoA): Cross-type page manage-your-authorisations has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+    "inc-096 who-are-you-creating-this-notification-for page (later DoA): Cross-type page who-are-you-creating-this-notification-for has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+    "inc-097 which-company-is-this-notification-for page (later DoA): Cross-type page which-company-is-this-notification-for has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+    "inc-098 Assigned-organisation importer and responsible-person defaults: target-model.md Open Q5 and AUTH-11/AUTH-12: which designated POAO member/contact supplies responsiblePerson, and when do assigned-org defaults replace or coexist with manual values? Do not author the ruling.",
+    "inc-099 Organisation-scoped draft and submitted visibility: target-model.md Open Q7/Open Q8 and AUTH-03/AUTH-07..AUTH-10: confirm CHED-P draft privacy, co-member actions and exact B2B role permissions. Do not author the ruling.",
+    "inc-100 Trade Partner marking and ownership audit: target-model.md Open Q4/Open Q6 and AUTH-06: confirm submittedByAgent timing and Trade Partner/onBehalfOf behaviour on amend/copy. Do not author the ruling.",
+    "inc-101 common-user-charge confirmation page (later variant): c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed.  Do not author the ruling.",
+    "inc-102 billing-select-address page (later variant): c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed.  Do not author the ruling.",
+    "inc-103 Add billing-select-address validation (later CUC): This validation depends on unresolved CUC eligibility c-008. Do not author the ruling.",
+    "inc-104 billing-contact-details page (later variant): c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed. Also confirm billing contact requiredness. Do not author the ruling.",
+    "inc-105 Add billing-contact-details validation (later CUC): This validation depends on unresolved CUC eligibility c-008 and the at-least-one-of-sibling-fields model gap. Do not author the ruling.",
+    "inc-106 CSV commodity bulk-upload variant: CSV bulk upload is not present in the enriched CHED-P page/model evidence. Confirm file schema, limits, error report, mapping into CommodityLine and reconciliation with manual add/edit/remove before build. Do not author the ruling.",
+    "inc-107 Article 72 low-risk variant: No verified CHED-P UI/business rule defines Article 72 eligibility or its journey effect. Confirm country×commodity classification, persisted/derived state and skipped/required pages. Do not author the ruling.",
+    "inc-108 Split-consignment variant: Split consignment is post/submission-adjacent and has no verified first-pass create journey or target-model contract. Confirm actor, lifecycle point, parent/child identity, commodity allocation and ownership before build. Do not author the ruling."
+  ],
+  "increments": [
+    {
+      "id": "inc-001",
+      "title": "Scaffold the CDP CHED-P app",
+      "kind": "scaffold",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A Node.js service is scaffolded in the trade-imports-animals house style with hapi, Nunjucks, govuk-frontend, unit/integration test commands and a GET /health route.",
+        "A shared GOV.UK page template renders the service name, Beta phase banner, CDP cookie banner, main landmark, real-href govuk-back-link slot and govuk-button/link components without IPAFFS bespoke CSS widgets.",
+        "GET /notifications renders an authenticated-development entry route and GET /notifications/create starts the CHED-P journey; the development identity is fixed locally and no live Defra ID dependency is required.",
+        "Automated smoke tests prove the service starts, /health returns success and an unknown route renders a GOV.UK-styled 404."
+      ]
+    },
+    {
+      "id": "inc-002",
+      "title": "Notification JSON document and Mongo persistence",
+      "kind": "persistence",
+      "milestone": "m0",
+      "sizeGuess": "L",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A Mongo collection named notification stores one target-model.md Notification document with stable id/referenceNumber, status DRAFT|SUBMITTED|AMEND|DELETED, chedType CVEDP, ownership, origin, commodity, purpose/risk, parties, transport, contacts, billing, declaration and audit timestamps; drafts may omit page-owned properties.",
+        "CommodityLine, ApprovedEstablishment, Operator, Address, Transporter, Contact, Container and BillingAddress use the target-model.md shapes; draft properties may be absent until their page is saved.",
+        "A separate accompanying_documents collection stores AccompanyingDocument metadata keyed by notificationReferenceNumber; scanner-managed file state is never accepted in a notification page payload.",
+        "The first durable save creates a stable business reference and own-organisation ownership context; every later page save replaces the complete document rather than issuing JSON Patch operations.",
+        "Repository tests prove create/read/whole-document-update, draft rehydration, unique sparse referenceNumber indexing and accompanying-document lookup; stale-save behaviour is added only after the inc-020 concurrency ruling."
+      ],
+      "notes": "First pass persists the complete JSON document to Mongo. Legacy JSON Patch and ETag wire contracts are not reproduced."
+    },
+    {
+      "id": "inc-003",
+      "title": "Session, page-owned routing and draft-resume spine",
+      "kind": "scaffold",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-002"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Each successful page POST normalises its page-owned answers into session state, rebuilds the complete Notification JSON and wholly saves it to Mongo; reopening a draft rehydrates the journey from Mongo.",
+        "A route registry records canonical page order 0–39, conditional branches, real-href Back destinations, Save and continue, Save and return to hub and Cancel and return to hub destinations.",
+        "Every validation failure uses govuk-error-summary and govuk-error-message with links to fields. Only copy confirmed or inferred in journey-spec.json is asserted verbatim; gap-confidence validation copy is not invented.",
+        "Radios and checkboxes use govuk-fieldset with a meaningful legend; page captions use govuk-caption-xl and primary headings use govuk-heading-xl unless the verified page component says otherwise."
+      ]
+    },
+    {
+      "id": "inc-004",
+      "title": "Task-list hub engine and section contract",
+      "kind": "scaffold",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-003"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A single section registry supplies task-list labels, routes, applicability and status derivation for the canonical create journey; business task status is derived from the Mongo document and is not persisted.",
+        "The engine can render the verified legacy status vocabulary exactly as \"Started\", \"To do\" and \"Expired\", using the GOV.UK task-list pattern and aria-describedby links.",
+        "The hub shell supports real-href section navigation plus \"Save and return to hub\" without creating a second routing graph.",
+        "Unit tests prove section ordering, status derivation and draft-resume behaviour with a minimal own-organisation notification; conditional availability remains behind the model gates in m2."
+      ]
+    },
+    {
+      "id": "inc-005",
+      "title": "Countries and territories reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A server-side countries client serves the verified CVEDP country/territory fixture: 253 choices plus the page placeholder, stored by code rather than label.",
+        "The fixture includes GB-ENG, GB-SCT, GB-WLS and GB-NIR and supports country-of-origin, country-of-consignment, purpose destination, transit countries, addresses and establishment filters.",
+        "Country selects render their page-specific prompts exactly: \"Select a country\", \"Select country from where consigned\", \"Select destination country\", \"Select transited country\" and \"Please select your country\".",
+        "Tests prove an entered code round-trips through Mongo and an unknown code is rejected server-side."
+      ]
+    },
+    {
+      "id": "inc-006",
+      "title": "Non-fish CHED-P commodity-code reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A server-side CVEDP commodity client serves a small hierarchical fixture supporting typed-code search and chapter-tree browsing, including 0204100010 \"Of domestic lamb\".",
+        "The captured 36 top-level chapter labels are the evidence baseline, but every HS chapter 03 code is excluded from CHED-P and mixed chapters such as 16 exclude fish sub-codes while retaining meat sub-codes, as required by iuu-boundary-findings.md and c-003.",
+        "The client returns stable commodity codes and descriptions; user-facing labels are never used as stored identifiers.",
+        "Tests prove 0204100010 resolves, 03019230 and any chapter-03 code are rejected from CHED-P, and a seeded meat sub-code in chapter 16 remains eligible."
+      ]
+    },
+    {
+      "id": "inc-007",
+      "title": "Non-fish commodity type and species reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-006"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A selected commodity code resolves its allowed type and biological-species choices; the seed maps 0204100010 to \"Domestic\" (code 16) and \"Ovis aries\" (code 1736900).",
+        "Species and type are stored by stable code. Codes with no type or species can return an empty list without inventing a selection.",
+        "Fish values including Anguilla anguilla and Anguilla spp. are excluded from the CHED-P client and handed to IUU, per iuu-boundary-findings.md and c-004.",
+        "Tests prove type/species choices are commodity-dependent and a species code cannot be saved against the wrong commodity."
+      ]
+    },
+    {
+      "id": "inc-008",
+      "title": "BCP, port-of-entry and control-point reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001",
+        "inc-005"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A server-side BCP client serves CVEDP port and exit/control-point fixtures by stable code, including GBBRS, GBSEV, GBFXT, GBLHRA, GBTIL and test-asserted GBHLY.",
+        "The port-of-entry query supports the verified origin-dependent branches for EU, Northern Ireland and rest-of-world consignments instead of hardcoding one universal 34-option page list.",
+        "The exit-BCP query can represent the verified 34/40-option source drift; c-001 is honoured by sourcing current eligibility rather than freezing the trace list.",
+        "Tests prove an ineligible BCP is rejected for the selected origin and that display labels are resolved from codes."
+      ]
+    },
+    {
+      "id": "inc-009",
+      "title": "CHED-P package-type reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "The package-type client returns exactly the verified placeholder plus 26 active labels: Bag, Bale, Balloon Protected, Block, Box, Can, Carton, Case, Cask, Coffer, Container, not otherwise specified as transport equipment, Crate, Drum, In Bulk, Jar, Other, Package, Pail, Pallet, Pallet Box, Polystyrene Box, Tank, Tote, Tray, Tube and Vial.",
+        "Each option has a stable stored code and a display label; the page never persists the label as identity.",
+        "Tests prove all 26 active options render once and an unknown package-type code is rejected."
+      ]
+    },
+    {
+      "id": "inc-010",
+      "title": "Approved-establishment reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001",
+        "inc-005",
+        "inc-006"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "A server-side establishment client provides paged search results and the verified filter vocabularies: Country, Name, Approval number, Section, Type, Status and Sort by.",
+        "The fixture returns at least one non-fish establishment with opaque establishmentId, name, countryCode, typeCode and approvalNumber, plus the only confirmed status option \"Approved\".",
+        "Selecting an opaque id resolves and snapshots the five target-model.md fields in approvedEstablishments[]; ids are not parsed.",
+        "Tests prove country filtering, paging, selection and duplicate-id rejection."
+      ]
+    },
+    {
+      "id": "inc-011",
+      "title": "CHED-P document-type reference data",
+      "kind": "reference-data",
+      "milestone": "m1",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-001"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "The document-type client returns exactly the verified placeholder plus 13 active choices: Veterinary health certificate, Air waybill, Bill of lading, Commercial invoice, Customs declaration, Import permit, Laboratory Sampling results for Aflatoxin (Reg 2019/1793), Letter of authority (Directive 2008/61/EC), Processing statement, Proof of storage, Rail waybill, Sea waybill and Other.",
+        "Catch certificate is not present: it belongs to the separate IUU journey.",
+        "Each document type has a stable stored code; tests prove all 13 active choices render and round-trip."
+      ]
+    },
+    {
+      "id": "inc-012",
+      "title": "Derived/restated-value model extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-005"
+      ],
+      "openQuestion": "MODEL GAP \"summary-restatement-linkage\" and c-028: confirm canonical source paths and the blank-display policy for review/confirmation restatements. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, define one canonical source path for values restated across origin, review and confirmation; a restatement cannot create a second conflicting business value.",
+        "Country of origin is stored once at origin.countryCode and re-rendered on origin-of-import and review; review rows read country, risk and port values from canonical paths.",
+        "Server-derived CHED/customs references are read-only and rejected if posted by a browser.",
+        "Persistence tests prove saving a restatement page cannot fork the canonical value and blank display follows the approved policy."
+      ]
+    },
+    {
+      "id": "inc-013",
+      "title": "Cross-page conditional routing model extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-003",
+        "inc-005",
+        "inc-008"
+      ],
+      "openQuestion": "MODEL GAP \"cross-page-conditionality\": define executable purpose/Transit, risk/health-certificate, origin/POE, onward-transport, CTC/GVMS and CUC rules plus answer-change cleanup. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, encode a table-driven routing/clearing matrix for purpose branches, health-certificate applicability, origin-dependent POEs, onward transport, CTC/GVMS and CUC eligibility.",
+        "Changing a controlling answer removes now-inapplicable child values from the Notification before whole-document save.",
+        "The route registry answers both next-page navigation and task-list availability from the same rule set.",
+        "Tests cover every accepted branch, Back/resume behaviour and answer-change cleanup."
+      ]
+    },
+    {
+      "id": "inc-014",
+      "title": "Commodity collection and repeated-row model extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-006",
+        "inc-007",
+        "inc-009"
+      ],
+      "openQuestion": "MODEL GAPS \"repeating-group-in-repeating-group\" and \"commodity-dependent-reference-data-and-scope\": confirm the CommodityLine grain, stable row identity, reference-data joins, cardinality and aggregation. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, commodity.commodityComplement[] uses stable uniqueComplementId identities and the accepted grain: commodityCode, type/class/family codes, species[], netWeight, numberOfPackages and packageTypeCode.",
+        "Selecting several species expands according to the approved row/species grain; a code with no species can still create the approved line shape.",
+        "Gross weight and temperature remain consignment-level; net weight and package totals are derived from commodity rows.",
+        "The repeated-row infrastructure supports documents and nominated contacts without parsing array indexes from field names.",
+        "Round-trip tests cover two codes, multiple species, edit-one-row isolation, totals, removal and non-fish reference-data enforcement."
+      ]
+    },
+    {
+      "id": "inc-015",
+      "title": "Commodity add-another, edit and remove loop",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-014"
+      ],
+      "openQuestion": "MODEL GAP \"unexercised-multi-commodity-loop\": the corpus submits one commodity and answers No. Confirm the non-fish add-another upper bound, remove/re-entry behaviour and cross-commodity risk aggregation. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, selecting Yes on commodity-basic-description returns to search without losing saved CommodityLine rows; selecting No advances to purpose.",
+        "Editing or removing one row uses uniqueComplementId and cannot overwrite a sibling commodity/species row.",
+        "At least two commodity codes and two species can round-trip through whole-document Mongo persistence, with deterministic ordering and derived totals.",
+        "Changing/removing a commodity recomputes dependent risk/establishment state according to the accepted cleanup rule and never introduces IUU values."
+      ]
+    },
+    {
+      "id": "inc-016",
+      "title": "Computed and selected risk-category model extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-015"
+      ],
+      "openQuestion": "c-027, page-confidence gap and MODEL GAP \"risk-category-computed-versus-selected\": decide whether a user may select below the computed highest category and what validation/routing follows. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, persist the user answer at risk.selectedCategory and keep risk.computedHighestCategory server-derived/read-only.",
+        "The browser cannot alter the computed highest category through a hidden field.",
+        "Routing to health-certificate pages and task availability uses the approved relationship between selected and computed category.",
+        "Tests cover High, Medium and Low plus the approved behaviour when selection differs from the computed maximum."
+      ]
+    },
+    {
+      "id": "inc-017",
+      "title": "Contactability and partial-row constraint extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002"
+      ],
+      "openQuestion": "MODEL GAP \"at-least-one-of-sibling-fields\": confirm email/telephone rules for responsible person, nominated contacts and later CUC billing, including partial-row handling. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, one reusable server-side rule validates the approved relationship between email and telephone without accidentally making both mandatory.",
+        "The rule applies independently to responsiblePerson, each nominatedContacts row and later billing contact details.",
+        "Tests cover neither, email-only, telephone-only, both and a partially entered repeating row using the approved outcomes and exact copy."
+      ]
+    },
+    {
+      "id": "inc-018",
+      "title": "Submission outcome/status adapter extension",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-013"
+      ],
+      "openQuestion": "MODEL GAP \"external-outcome-and-status-variants\": decide which deterministic first-pass confirmation outcomes are supported. Inspector/decision state remains outside this service. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, declaration submission calls a deterministic local risk adapter and stores only the approved server-derived confirmation result; no inspector/decision state enters the create document.",
+        "The confirmation presenter maps the stored result to approved status/guidance variants and rejects outcome fields posted by a browser.",
+        "Tests cover every approved first-pass confirmation outcome and reject unsupported external status transitions."
+      ]
+    },
+    {
+      "id": "inc-019",
+      "title": "Draft-save and final-submit validation lifecycle",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-003"
+      ],
+      "openQuestion": "MODEL GAP \"two-layer-validation\" and c-038: choose the rebuild lifecycle and one user-facing string where legacy page-save Joi and final CHED-P model validation differ. c-039 confirms the triggers differ; it does not choose the rebuild copy. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, one validation catalogue marks every rule as page-save, final-submit or both and maps it to one approved user-facing message.",
+        "Partial drafts remain persistable only to the extent allowed by the accepted lifecycle; final submission rejects every missing legacy submission obligation listed in target-model.md.",
+        "For c-038 pages, tests demonstrate the chosen copy at the chosen trigger and preserve the alternate legacy string as evidence only, not a second simultaneous error.",
+        "The same rule catalogue drives inline govuk-error-message content, linked govuk-error-summary entries and final submission checks."
+      ]
+    },
+    {
+      "id": "inc-020",
+      "title": "Whole-document concurrency and stale-save recovery",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002",
+        "inc-003"
+      ],
+      "openQuestion": "MODEL GAP \"optimistic-concurrency-etag\" and target-model.md Open Q20: confirm version/CAS policy and the user-visible recovery route/copy for a stale long-journey or multi-tab save. Do not reproduce legacy ETag wire fields or invent the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, the Mongo repository and page-save contract implement the accepted whole-document concurrency policy without JSON Patch or browser-trusted ETags.",
+        "If compare-and-swap is retained, a stale replace cannot overwrite newer data and returns a deterministic, accessible recovery page or message using approved copy.",
+        "Tests cover two concurrent sessions, successful retry/reload and preservation of accompanying-document joins and stable notification identity."
+      ]
+    },
+    {
+      "id": "inc-021",
+      "title": "Shared-page variant and inferred-control boundary",
+      "kind": "model-extension",
+      "milestone": "m2",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-003"
+      ],
+      "openQuestion": "MODEL GAPS \"shared-page-variant-alias\" and \"shared-page-object-cross-type-leakage\": confirm which inferred shared controls can render for CHED-P and keep transit-exit-bcp as a same-page facet rather than a second URL. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, the route registry treats transit-exit-bcp as conditional fields on about-the-consignment and counts/persists each obligation once.",
+        "Unrendered shared controls such as number of animals, feedingstuff and Transporter No/Select remain absent unless explicitly accepted for CHED-P.",
+        "Variant projection tests prove CHED-A/CHED-D/CHED-PP-only fields cannot be posted into a CHED-P Notification."
+      ]
+    },
+    {
+      "id": "inc-022",
+      "title": "notifications-dashboard page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-004"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Your import notifications\" using govuk-heading-xl and the primary entry action reads exactly \"Create a new notification\".",
+        "The first-pass dashboard lists the current own organisation’s CHED-P drafts/submissions with Reference number, Commodity, Arrival at BCP or POE, CHED status, Consignee, Consignor, Origin and Inspection; use a stock govuk-table or govuk-summary-card pattern rather than the legacy notification-list CSS.",
+        "Search controls are labelled exactly \"Keywords or notification number\", \"Commodity\", \"BCP or POE\", \"Status\", \"Country of origin\" and \"Consignee / Importer\"; date shortcuts are exactly [\"Today\", \"Tomorrow\", \"Next seven days\", \"Clear date range\"], followed by \"Search\" and \"Clear\".",
+        "CHED-A-only \"Microchip number\", \"Clone a certificate\", split-consignment actions and post-submission inspector alerts are absent from the CHED-P first pass.",
+        "Selecting \"Create a new notification\" routes to import-type."
+      ],
+      "pageSlug": "notifications-dashboard"
+    },
+    {
+      "id": "inc-023",
+      "title": "Add notifications-dashboard validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-022"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 8 grounded validation rows for notifications-dashboard in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Some of your notification details are missing or do not match the customs declarations. These consignments may be delayed.\", \"\\\"Search\\\" must be 255 characters or less\", \"\\\"Commodity\\\" must be 255 characters or less\", \"\\\"Consignee\\\" must be 255 characters or less\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved.",
+        "The CHED-A-only Microchip number rule is not implemented; a regression test proves that filter is neither rendered nor accepted by the CHED-P search endpoint."
+      ],
+      "pageSlug": "notifications-dashboard"
+    },
+    {
+      "id": "inc-024",
+      "title": "import-type page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-022"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"About the consignment\" using govuk-caption-xl and H1 reads exactly \"What are you importing?\".",
+        "A govuk-radios group in a govuk-fieldset offers exactly [\"Live animals\", \"Products of animal origin, germinal products or animal by-products\", \"High risk food and feed of non-animal origin\", \"Plants, plant products and other objects\"].",
+        "Selecting \"Products of animal origin, germinal products or animal by-products\" persists chedType=\"CVEDP\"; the button reads exactly \"Save and continue\".",
+        "The real Back link returns to \"Your import notifications\"."
+      ],
+      "pageSlug": "import-type"
+    },
+    {
+      "id": "inc-025",
+      "title": "Add import-type validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-024"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for import-type in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select the type of import\", \"Certificate type must be a string\", \"Enter a valid certificate type\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "import-type"
+    },
+    {
+      "id": "inc-026",
+      "title": "country-of-origin page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-024",
+        "inc-005"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"About the consignment\" and H1 reads exactly \"Origin of the animal or product\".",
+        "A govuk-select labelled exactly \"Country of origin\" begins with \"Select a country\" and is populated by inc-004.",
+        "Save and continue persists the selected code to origin.countryCode, re-renders it on resume and rejects unknown codes server-side.",
+        "Back returns to import-type."
+      ],
+      "pageSlug": "country-of-origin"
+    },
+    {
+      "id": "inc-027",
+      "title": "Add country-of-origin validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-026",
+        "inc-019"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for country-of-origin in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select the country of origin of the animal or product\", \"Country of origin must be a string\", \"Country of origin\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "country-of-origin"
+    },
+    {
+      "id": "inc-028",
+      "title": "origin-of-import page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-026",
+        "inc-005",
+        "inc-021"
+      ],
+      "openQuestion": "MODEL GAP(S): shared-page-object-cross-type-leakage; c-011 is settled at 3 characters; only the listed model decisions remain open. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"About the consignment\" and H1 reads exactly \"Origin of the import\".",
+        "The page renders \"Country of origin\"; govuk-radios \"Does the consignment require a region of origin code?\" with exactly [\"Yes\",\"No\"]; conditional govuk-input \"Enter the region code\"; govuk-select \"Country from where consigned\"; and radios \"Does this consignment conform to regulatory requirements?\" and \"Will the consignment change vehicles or means of transport after the Border Control Post (BCP)?\" with exactly [\"Yes\",\"No\"].",
+        "The optional govuk-input label reads exactly \"Add a reference number for this consignment (optional)\"; values persist to origin.* and transport.onwardTransportRequired.",
+        "The inferred health-certificate radio absent from both CHED-P traces is not rendered.",
+        "The region-code input enforces the settled 3-character maximum (c-011), uses matching hint/copy, and accepts only alphanumeric values."
+      ],
+      "pageSlug": "origin-of-import"
+    },
+    {
+      "id": "inc-029",
+      "title": "Add origin-of-import validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-028",
+        "inc-019"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 12 grounded validation rows for origin-of-import in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select the country of origin of the animal or product\", \"Country of origin must be 6 characters or fewer\", \"Country of origin\", \"Consigned country\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "origin-of-import"
+    },
+    {
+      "id": "inc-030",
+      "title": "search-commodity page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-028",
+        "inc-006",
+        "inc-014",
+        "inc-015"
+      ],
+      "openQuestion": "MODEL GAP(S): commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Description of the goods\" and H1 reads exactly \"Commodity\".",
+        "The default tab is \"Commodity code search\"; a govuk-input labelled exactly \"Enter commodity code\" and a govuk-button \"Search\" resolve seeded codes, while \"Find the commodity in the commodity tree\" supports hierarchical browsing.",
+        "The tree never offers HS chapter 03; mixed-chapter fish sub-codes are unavailable; direct entry of an IUU code is rejected.",
+        "Choosing 0204100010 persists a stable pending commodity selection and routes to commodity-basic-description; invalid/not-found input renders a linked GOV.UK error using approved copy."
+      ],
+      "pageSlug": "search-commodity"
+    },
+    {
+      "id": "inc-031",
+      "title": "Add search-commodity validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-030",
+        "inc-014",
+        "inc-015"
+      ],
+      "openQuestion": "validation depends on model gap(s) commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 6 grounded validation rows for search-commodity in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a commodity code\", \"Commodity code must be a number\", \"Invalid commodityID\", \"You cannot add the same commodity code twice\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "search-commodity"
+    },
+    {
+      "id": "inc-032",
+      "title": "commodity-basic-description page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-030",
+        "inc-007",
+        "inc-014",
+        "inc-015"
+      ],
+      "openQuestion": "MODEL GAP(S): commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Description of the goods\" and H1 reads exactly \"Commodity\".",
+        "A govuk-table shows the selected Commodity code and Description; govuk-select \"Type of commodity\" and govuk-checkboxes \"Select species of commodity\" are populated only from the selected code.",
+        "For 0204100010 the choices include exactly \"Domestic\" (16) and \"Ovis aries\" (1736900); no Anguilla/fish value is available.",
+        "A govuk-radios fieldset asks exactly \"Do you want to add another commodity?\" with exactly [\"Yes\",\"No\"]. Yes loops to search and appends; No continues without overwriting existing rows.",
+        "Save/resume proves the stable CommodityLine identities defined by inc-013."
+      ],
+      "pageSlug": "commodity-basic-description"
+    },
+    {
+      "id": "inc-033",
+      "title": "Add commodity-basic-description validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-032",
+        "inc-014",
+        "inc-015"
+      ],
+      "openQuestion": "validation depends on model gap(s) commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 4 grounded validation rows for commodity-basic-description in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select at least one species\", \"Select yes if you want to add another commodity\", \"Commodity lines must be fewer than 501\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "commodity-basic-description"
+    },
+    {
+      "id": "inc-034",
+      "title": "about-the-consignment page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-032",
+        "inc-005",
+        "inc-008",
+        "inc-013",
+        "inc-021"
+      ],
+      "openQuestion": "MODEL GAP(S): cross-page-conditionality, shared-page-variant-alias. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"About the consignment\" and the H1/legend reads exactly \"What is the main reason for importing the consignment?\".",
+        "govuk-radios options are exactly [\"Internal market\", \"Transhipment or onward travel\", \"Transit\", \"Re-entry\"]. Internal market reveals exactly [\"Animal feedingstuff\",\"Human consumption\",\"Other\"].",
+        "Transhipment reveals govuk-select \"Destination country\". Transit reveals \"Exit border control post\", govuk-date-input \"When the consignment will leave Great Britain\", Hour/Minutes, repeatable \"Transited country\", \"Add another country\" and \"Destination country\".",
+        "Only the selected branch persists to reasonForImport, purpose.* and transit.*; changing branch clears inapplicable values.",
+        "Save and continue and Back follow the accepted route matrix."
+      ],
+      "pageSlug": "about-the-consignment"
+    },
+    {
+      "id": "inc-035",
+      "title": "Add about-the-consignment validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-034",
+        "inc-013"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-040; validation depends on model gap(s) cross-page-conditionality. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 29 grounded validation rows for about-the-consignment in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select the purpose of the consignment\", \"What is the purpose of the consignment? is not valid\", \"Purpose\", \"Purpose group\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "about-the-consignment"
+    },
+    {
+      "id": "inc-036",
+      "title": "select-risk-category page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-034",
+        "inc-013",
+        "inc-016",
+        "inc-015"
+      ],
+      "openQuestion": "page confidence is gap for select-risk-category; MODEL GAP(S): cross-page-conditionality, risk-category-computed-versus-selected, unexercised-multi-commodity-loop; needsHuman conflict(s): c-027. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Select the highest risk category for the commodities in this consignment\".",
+        "Body copy reads exactly \"We need to know this so we can collect the correct details for your notification. You can check the risk categories on GOV.UK (opens in new tab).\"",
+        "A govuk-radios fieldset offers exactly [\"High risk\",\"Medium risk\",\"Low risk\"] and Save and continue persists only the accepted user-answer value.",
+        "No browser-controlled hidden highest-risk value is trusted; validation and routing follow Sam’s ruling."
+      ],
+      "pageSlug": "select-risk-category"
+    },
+    {
+      "id": "inc-037",
+      "title": "Add select-risk-category validation",
+      "kind": "validation",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-036",
+        "inc-016",
+        "inc-013",
+        "inc-015"
+      ],
+      "openQuestion": "validation depends on model gap(s) cross-page-conditionality, risk-category-computed-versus-selected, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for select-risk-category in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select if the highest risk category is high risk, medium risk or low risk\", \"Select if the highest risk category is medium risk or low risk\", \"Select if the highest risk category is high risk or medium risk\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "select-risk-category"
+    },
+    {
+      "id": "inc-038",
+      "title": "health-certificate-required page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-036",
+        "inc-013",
+        "inc-016"
+      ],
+      "openQuestion": "MODEL GAP(S): cross-page-conditionality, risk-category-computed-versus-selected. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Health certificate required\".",
+        "Body paragraphs read exactly \"You'll need a health certificate for this consignment as it includes high or medium risk commodities.\" and \"You must upload the health certificate to your notification before the consignment arrives in Great Britain.\"",
+        "The only primary action reads exactly \"Continue\" and routes to the notification hub; Back returns to risk category.",
+        "The page appears only for the risk routes accepted in inc-012/inc-014."
+      ],
+      "pageSlug": "health-certificate-required"
+    },
+    {
+      "id": "inc-039",
+      "title": "notification-hub page",
+      "kind": "page",
+      "milestone": "m3",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-038",
+        "inc-016",
+        "inc-018"
+      ],
+      "openQuestion": "MODEL GAP(S): risk-category-computed-versus-selected, external-outcome-and-status-variants. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Notification Hub\"; the caption displays the current draft reference followed by \" - CHEDP\"; body copy reads exactly \"These sections can be completed in any order. You can save your progress and return at any time.\"",
+        "A govuk-task-list groups the exact headings \"About the consignment\", \"Description of the goods\", \"Document\", \"Traders\", \"Transport\", \"Contact\" and \"Complete notification\".",
+        "Task links are exactly Origin of the import; Main reason for importing the consignment; Commodity; Additional details; Latest health certificate; Accompanying documents; Approved establishment of origin (where required); Addresses; Transport to the port of entry; Transport after the Border Control Post (BCP); Goods movement services; Transporter; Contact details; Nominated contacts (optional); Contact address for consignment; Review and submit.",
+        "Statuses are derived from the saved document and render with govuk-task-list status text; clicking each link uses the route registry.",
+        "No CSV bulk-upload task, IUU/catch-certificate task, CUC task or post-submission task appears in the first-pass hub."
+      ],
+      "pageSlug": "notification-hub"
+    },
+    {
+      "id": "inc-040",
+      "title": "commodity-extended-description page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-039",
+        "inc-009",
+        "inc-014",
+        "inc-015",
+        "inc-021",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): repeating-group-in-repeating-group, commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop, shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Description of the goods\" and H1 reads exactly \"Commodity\".",
+        "A govuk-table lists commodity code/description and one editable row per accepted species/type with columns exactly \"Species and type\", \"Net weight (kg/units)\", \"Number of packages\" and \"Type of package\".",
+        "Each row persists netWeight, numberOfPackages and packageTypeCode by stable uniqueComplementId; the package select contains the inc-008 options.",
+        "The page computes read-only total net weight and total packages, provides \"Update total\", and persists one govuk-input labelled exactly \"Total gross weight (kg/units)\" to additionalDetails.totalGrossWeight.",
+        "\"Add commodity\" re-enters the loop without losing rows; Save and continue round-trips at least two commodities independently."
+      ],
+      "pageSlug": "commodity-extended-description"
+    },
+    {
+      "id": "inc-041",
+      "title": "Add commodity-extended-description validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-040",
+        "inc-014",
+        "inc-015"
+      ],
+      "openQuestion": "validation depends on model gap(s) repeating-group-in-repeating-group, commodity-dependent-reference-data-and-scope, unexercised-multi-commodity-loop. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 10 grounded validation rows for commodity-extended-description in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter the net weight (kg/units)\", \"Net weight must be 0.001 or more\", \"Net weight cannot have more than 16 digits, including decimals\", \"Net weight cannot have more than 3 decimals\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "commodity-extended-description"
+    },
+    {
+      "id": "inc-042",
+      "title": "commodity-additional-details page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-040",
+        "inc-021",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Description of the goods\" and H1 reads exactly \"Additional details\".",
+        "A govuk-radios fieldset legend reads exactly \"Temperature\" with exactly [\"Ambient\",\"Chilled\",\"Frozen\"].",
+        "Save and continue persists commodity.temperature as AMBIENT|CHILLED|FROZEN and resume selects the saved value.",
+        "Inferred shared-page \"Feedingstuff\" and duplicate \"Total gross weight\" controls are not rendered."
+      ],
+      "pageSlug": "commodity-additional-details"
+    },
+    {
+      "id": "inc-043",
+      "title": "Add commodity-additional-details validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-042"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 1 grounded validation rows for commodity-additional-details in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Temperature of the consignment\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "commodity-additional-details"
+    },
+    {
+      "id": "inc-044",
+      "title": "latest-health-certificate page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-042",
+        "inc-011",
+        "inc-013"
+      ],
+      "openQuestion": "MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Documents\" and H1 reads exactly \"Latest Health Certificate\".",
+        "The verified warning/inset copy renders, including \"Make sure the health certificate covers all commodities in this notification, or the consignment may be rejected.\" and \"If the attachments field is blank, your document is missing. You must upload it manually.\"",
+        "A GOV.UK table/summary-card row fixes Document type to \"Veterinary health certificate\" and provides \"Document reference\", a Day/Month/Year govuk-date-input and \"Add attachment\".",
+        "Reference/date persist in a LATEST_VETERINARY_HEALTH_CERTIFICATE accompanying document; after upload the filename, \"Remove attachment\" and \"Remove row\" states round-trip.",
+        "Page availability and submission requiredness follow the accepted cross-page rule."
+      ],
+      "pageSlug": "latest-health-certificate"
+    },
+    {
+      "id": "inc-045",
+      "title": "Add latest-health-certificate validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-044",
+        "inc-019",
+        "inc-013"
+      ],
+      "openQuestion": "validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 21 grounded validation rows for latest-health-certificate in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a reference\", \"Document reference must be 100 characters or fewer\", \"Enter a date of issue\", \"Date of issue must include a month and year\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "latest-health-certificate"
+    },
+    {
+      "id": "inc-046",
+      "title": "document-upload page and attachment metadata stub",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-044",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Documents\", H1 reads exactly \"Upload a document\", the file label reads exactly \"Select a document\", and the primary button reads exactly \"Continue\".",
+        "The first-pass upload boundary stores selected-file metadata only. When live upload is enabled later, exactly 10 MiB is accepted and larger files are rejected, following settled c-015; the unresolved minimum-size rule remains in the separate validation increment.",
+        "Pass one stores stub metadata {uploadId, filename, contentType, contentLength, scanStatus:\"COMPLETE\"} in accompanying_documents and does not store file bytes or call antivirus."
+      ],
+      "pageSlug": "document-upload"
+    },
+    {
+      "id": "inc-047",
+      "title": "Add document-upload validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-046",
+        "inc-020"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-041. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 6 grounded validation rows for document-upload in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"The selected file must be smaller than 10MB\", \"Please fix the following errors\", \"The selected file must be a DOC, JPEG, PDF, PNG or XLS\", \"The selected file is empty\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved.",
+        "The settled maximum accepts exactly 10 MiB and rejects values above it (c-015); c-041 must choose the minimum-size threshold and matching copy before that minimum rule is implemented."
+      ],
+      "pageSlug": "document-upload"
+    },
+    {
+      "id": "inc-048",
+      "title": "accompanying-documents page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-046",
+        "inc-011",
+        "inc-014"
+      ],
+      "openQuestion": "MODEL GAP(S): repeating-group-in-repeating-group. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption and H1 both read exactly \"Documents\" / \"Accompanying documents\"; the page renders the verified explanatory bullets and GOV.UK details disclosure.",
+        "A row contains govuk-select \"Document type\", govuk-input \"Document reference\", Day/Month/Year issue date and \"Add attachment\", with the inc-010 option set.",
+        "Actions read exactly \"Add a document\", \"Add multiple documents\", \"Save and return to hub\", \"Save and continue\" and \"Cancel and return to hub\".",
+        "Adding multiple rows creates stable separate ACCOMPANYING_DOCUMENT records; editing/removing one does not alter another; the H2 count changes from \"Showing 0 additional documents\".",
+        "No Catch certificate option or IUU-specific control is present."
+      ],
+      "pageSlug": "accompanying-documents"
+    },
+    {
+      "id": "inc-049",
+      "title": "Add accompanying-documents validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-048",
+        "inc-014"
+      ],
+      "openQuestion": "validation depends on model gap(s) repeating-group-in-repeating-group. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 13 grounded validation rows for accompanying-documents in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select a document type\", \"Document reference must be 100 characters or fewer\", \"Date of issue must include a month and year\", \"Date of issue must include a day and year\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "accompanying-documents"
+    },
+    {
+      "id": "inc-050",
+      "title": "approved-establishment-of-origin page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-048",
+        "inc-010",
+        "inc-014"
+      ],
+      "openQuestion": "MODEL GAP(S): commodity-dependent-reference-data-and-scope. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Documents\" and H1 reads exactly \"Approved establishment of origin (where required)\".",
+        "The empty govuk-table state reads exactly \"There are no establishments currently selected\" and its columns are Name, Country, Type, Approval Number and Remove.",
+        "The action reads exactly \"Search for an approved establishment\"; selected establishments render from approvedEstablishments[] and can be removed by stable id.",
+        "Save and continue and Save and return to hub persist the collection; duplicates are prevented."
+      ],
+      "pageSlug": "approved-establishment-of-origin"
+    },
+    {
+      "id": "inc-051",
+      "title": "Add approved-establishment-of-origin validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-050",
+        "inc-014"
+      ],
+      "openQuestion": "the page has a gap-confidence validation state; validation depends on model gap(s) commodity-dependent-reference-data-and-scope. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for approved-establishment-of-origin in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Approved establishment\", \"Veterinary Information\", \"Chosen establishment no longer in the establishment list\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "approved-establishment-of-origin"
+    },
+    {
+      "id": "inc-052",
+      "title": "search-approved-establishment page",
+      "kind": "page",
+      "milestone": "m4",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-050",
+        "inc-010",
+        "inc-014",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): commodity-dependent-reference-data-and-scope, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Documents\" and H1 reads exactly \"Search for an approved establishment\" (including the verified non-breaking space).",
+        "A govuk-fieldset legend \"Filter\" contains Country (required), Name, Approval number, Section, Type and Status; Search and Sort controls use the inc-009 client.",
+        "A govuk-table has columns exactly Name, Section, Type, Approval Number, Status, Country and Select; each logical result renders one accessible Select action and pagination uses current result metadata.",
+        "Selecting an establishment resolves its opaque id, appends its snapshot and returns to approved-establishment-of-origin.",
+        "The implementation avoids duplicated desktop/mobile action DOM."
+      ],
+      "pageSlug": "search-approved-establishment"
+    },
+    {
+      "id": "inc-053",
+      "title": "Add search-approved-establishment validation",
+      "kind": "validation",
+      "milestone": "m4",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-052",
+        "inc-014"
+      ],
+      "openQuestion": "validation depends on model gap(s) commodity-dependent-reference-data-and-scope. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for search-approved-establishment in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"No establishments have been found. Re-try by amending your search criteria.\", \"Approved establishment\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "search-approved-establishment"
+    },
+    {
+      "id": "inc-054",
+      "title": "traders-addresses page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-052",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Traders\" and H1 reads exactly \"Addresses\".",
+        "Sections are exactly \"Consignor or exporter\", \"Consignee\", \"Importer\" and \"Place of destination\", with their verified hint/warning copy.",
+        "Empty states link to \"Add a consignor or exporter\", \"Add a consignee\", \"Add an importer\" and \"Add a place of destination\"; populated states use govuk-table columns Name, Address, Country and Change.",
+        "Both importer and destination support a button labelled exactly \"Same as consignee\"; copying creates independent inline Operator snapshots in importer/destination.",
+        "Save and continue persists all four party homes and returns through the canonical route."
+      ],
+      "pageSlug": "traders-addresses"
+    },
+    {
+      "id": "inc-055",
+      "title": "Add traders-addresses validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-054"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 4 grounded validation rows for traders-addresses in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Who is the consignor or exporter\", \"Who is the consignee\", \"Who is the importer\", \"What is the place of destination\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "traders-addresses"
+    },
+    {
+      "id": "inc-056",
+      "title": "search-existing-consignor page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-054",
+        "inc-005"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Traders\" and H1 reads exactly \"Search for an existing consignor or exporter\".",
+        "A govuk-fieldset legend \"Search\" contains optional govuk-inputs \"Name\" and \"Address\" and a govuk-button \"Search\".",
+        "Results use a govuk-table with Name, Address, Country, View and Select; the fixed local economic-operator fixture supports at least one result.",
+        "The link reads exactly \"Create a new consignor or exporter\"; Select stores an inline consignor snapshot and returns to Addresses."
+      ],
+      "pageSlug": "search-existing-consignor"
+    },
+    {
+      "id": "inc-057",
+      "title": "Add search-existing-consignor validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-056"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for search-existing-consignor in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Name must be 255 characters or fewer\", \"Address must be 255 characters or fewer\", \"Country is not valid\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "search-existing-consignor"
+    },
+    {
+      "id": "inc-058",
+      "title": "consignor-creation page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-056",
+        "inc-005"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "For the verified re-entry variant, H1 reads exactly \"Add consignee\", the leading label reads exactly \"Consignee name\" and the link reads exactly \"Return to search\" (c-018).",
+        "The form contains Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Country and Email address using GOV.UK inputs/select.",
+        "Despite the rendered re-entry copy, the route maps the saved Operator to consignor and never overwrites consignee.",
+        "Save and continue persists the inline address/contact values and routes to consignor-confirmation."
+      ],
+      "pageSlug": "consignor-creation"
+    },
+    {
+      "id": "inc-059",
+      "title": "Add consignor-creation validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-058"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 16 grounded validation rows for consignor-creation in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a consignee name\", \"Consignee name must be 255 characters or fewer\", \"Enter an address line 1\", \"Address line 1 must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "consignor-creation"
+    },
+    {
+      "id": "inc-060",
+      "title": "consignor-confirmation page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-058"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "The govuk-panel heading reads exactly \"The consignee has been created\" for the verified re-entry variant.",
+        "The primary button reads exactly \"Add to notification\" and the secondary link reads exactly \"Return to search\".",
+        "Add to notification attaches the pending Operator as consignor and returns to the Addresses hub; refresh/double-submit does not create duplicates."
+      ],
+      "pageSlug": "consignor-confirmation"
+    },
+    {
+      "id": "inc-061",
+      "title": "search-existing-consignee page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-060",
+        "inc-005"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Traders\" and H1 reads exactly \"Search for an existing consignee\".",
+        "A govuk-fieldset legend \"Search\" contains optional govuk-inputs \"Name\" and \"Address\" and a govuk-button \"Search\".",
+        "Results use a govuk-table with Name, Address, Country, View and Select plus pagination.",
+        "The creation link reads exactly \"Create a new consignee\"; Select stores an inline consignee snapshot and returns to Addresses."
+      ],
+      "pageSlug": "search-existing-consignee"
+    },
+    {
+      "id": "inc-062",
+      "title": "Add search-existing-consignee validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-061"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for search-existing-consignee in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Name must be 255 characters or fewer\", \"Address must be 255 characters or fewer\", \"Country is not valid\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "search-existing-consignee"
+    },
+    {
+      "id": "inc-063",
+      "title": "consignee-creation page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-061",
+        "inc-005",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Add consignee\"; the first label reads exactly \"Consignee name\"; the fieldset legend reads exactly \"Consignee\".",
+        "The form contains Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Country and Email address.",
+        "Country uses the inc-004 list with prompt \"Please select your country\".",
+        "Save and continue persists consignee.* and routes to consignee-confirmation; resume re-renders every value."
+      ],
+      "pageSlug": "consignee-creation"
+    },
+    {
+      "id": "inc-064",
+      "title": "Add consignee-creation validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-063"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 16 grounded validation rows for consignee-creation in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a consignee name\", \"Consignee name must be 255 characters or fewer\", \"Enter an address line 1\", \"Address line 1 must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "consignee-creation"
+    },
+    {
+      "id": "inc-065",
+      "title": "consignee-confirmation page",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-063",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The govuk-panel heading reads exactly \"The consignee has been created\".",
+        "The primary button reads exactly \"Add to notification\" and the link reads exactly \"Return to search\".",
+        "Add to notification attaches the pending Operator as consignee and returns to Addresses without duplicates."
+      ],
+      "pageSlug": "consignee-confirmation"
+    },
+    {
+      "id": "inc-066",
+      "title": "importer and destination page state",
+      "kind": "page",
+      "milestone": "m5",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-065",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Traders\" and H1 reads exactly \"Addresses\"; the existing consignor/consignee tables remain visible.",
+        "The Importer hint reads exactly \"This is usually the same as the consignee. You can select a different person if needed.\" and offers \"Same as consignee\" and \"Add an importer\".",
+        "Place of destination renders Warning text \"Providing a false address is an act of fraud.\", the verified final-unloading copy, \"Same as consignee\" and \"Add a place of destination\".",
+        "Populating importer/destination copies the consignee into separate target-model homes; Change links and Save and continue round-trip them."
+      ],
+      "pageSlug": "importer"
+    },
+    {
+      "id": "inc-067",
+      "title": "Add importer validation",
+      "kind": "validation",
+      "milestone": "m5",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-066"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 2 grounded validation rows for importer in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Who is the importer\", \"What is the place of destination\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "importer"
+    },
+    {
+      "id": "inc-068",
+      "title": "transport-details page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-066",
+        "inc-008",
+        "inc-013"
+      ],
+      "openQuestion": "MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Transport\" and H1 reads exactly \"Transport to the port of entry\".",
+        "Controls are Port of entry; means select with exactly [\"Select means of transport to port of entry\",\"Airplane\",\"Railway\",\"Road vehicle\",\"Vessel\"]; Transport identification; container/trailer Yes/No; Transport document reference; Estimated arrival Day/Month/Year; and Time of estimated arrival Hour/Minutes.",
+        "Yes to \"Are any road trailers or shipping containers being used to transport the consignment?\" reveals Container or trailer number, Seal number, Official seal and Add another container or trailer using stable Container rows.",
+        "Port choices come from the origin-dependent inc-007 query and persist to transport.*; date/time use plain GOV.UK inputs without the legacy datepicker overlay.",
+        "The confirmed out-of-window error reads exactly \"You cannot enter a date more than 30 days in the past or 180 days in the future\"."
+      ],
+      "pageSlug": "transport-details"
+    },
+    {
+      "id": "inc-069",
+      "title": "Add transport-details validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-068",
+        "inc-019",
+        "inc-013"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-038; validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 25 grounded validation rows for transport-details in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Please fix the following errors\", \"You cannot enter a date more than 30 days in the past or 180 days in the future\", \"Add the port of entry\", \"Add the means of transport to port of entry\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "transport-details"
+    },
+    {
+      "id": "inc-070",
+      "title": "means-of-transport-after-bcp page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-068"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Transport\" and H1 reads exactly \"Transport after the Border Control Post (BCP)\".",
+        "Body copy reads exactly \"We need these details in the event that the consignment is chosen for inspection.\"",
+        "The means select options are exactly [\"Select means of transport after the BCP\",\"Airplane\",\"Railway\",\"Road vehicle\",\"Vessel\"], followed by Transport identification, Transport document reference, departure Day/Month/Year and Hour/Minutes.",
+        "Values persist to transport.onwardTransport.*; the confirmed date error reads exactly \"You cannot enter a date more than 30 days in the past or 180 days in the future\".",
+        "Save and continue, Save and return to hub and Cancel and return to hub have real destinations."
+      ],
+      "pageSlug": "means-of-transport-after-bcp"
+    },
+    {
+      "id": "inc-071",
+      "title": "Add means-of-transport-after-bcp validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-070"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 19 grounded validation rows for means-of-transport-after-bcp in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"You cannot enter a date more than 30 days in the past or 180 days in the future\", \"Please fix the following errors\", \"Means of transport after the BCP\", \"Add the means of transport after the BCP\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "means-of-transport-after-bcp"
+    },
+    {
+      "id": "inc-072",
+      "title": "goods-movement-services page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-070",
+        "inc-013"
+      ],
+      "openQuestion": "MODEL GAP(S): cross-page-conditionality. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Transport\" and H1 reads exactly \"Goods movement services\".",
+        "The CTC govuk-radios question reads exactly \"Are you using the Common Transit Convention (CTC) to move goods between countries?\" with the verified three-option variant [\"Yes – add MRN now\",\"Yes – add MRN later\",\"No\"].",
+        "Selecting \"Yes – add MRN now\" reveals govuk-input \"Movement Reference Number (MRN)\"; the GVMS question reads exactly \"Will the transport use the Goods Vehicle Movement Service (GVMS)?\" with [\"Yes\",\"No\"].",
+        "The \"What is the CTC?\" and \"What is the GVMS?\" details components render the verified guidance; values persist without any live GVMS/NCTS call.",
+        "Page/question availability and the binary CTC variant follow the accepted routing matrix."
+      ],
+      "pageSlug": "goods-movement-services"
+    },
+    {
+      "id": "inc-073",
+      "title": "Add goods-movement-services validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-072",
+        "inc-019",
+        "inc-013"
+      ],
+      "openQuestion": "validation depends on model gap(s) cross-page-conditionality, two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for goods-movement-services in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Select if using the Common Transit Convention (CTC)\", \"Enter a valid Movement Reference Number\", \"Select if using the Goods Vehicle Movement Service (GVMS)\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "goods-movement-services"
+    },
+    {
+      "id": "inc-074",
+      "title": "transporter page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-072",
+        "inc-021",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): shared-page-object-cross-type-leakage, optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Transport\" and H1 reads exactly \"Transporter\".",
+        "A govuk-table has columns exactly \"Name, address and country\", \"Approval number\", \"Type\" and an accessible action column.",
+        "The empty state shows \"Add a transporter\"; the populated state shows one transporter snapshot and \"Change\".",
+        "Save and continue persists one transporter in the target model; inferred cross-CHED \"No\" and \"Select\" controls are not rendered."
+      ],
+      "pageSlug": "transporter"
+    },
+    {
+      "id": "inc-075",
+      "title": "search-existing-transporter page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-074"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Transport\" and H1 reads exactly \"Search for an existing transporter\".",
+        "A govuk-fieldset legend \"Search\" contains optional fields exactly \"Name\", \"Approval Number\" and \"Post Code\", followed by \"Search\".",
+        "Results use a govuk-table with Name, Address, Country, Status, Approval Number, Type, View and Select and accessible pagination.",
+        "The link reads exactly \"Create a new transporter\"; Select stores an inline transporter snapshot."
+      ],
+      "pageSlug": "search-existing-transporter"
+    },
+    {
+      "id": "inc-076",
+      "title": "Add search-existing-transporter validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-075"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 3 grounded validation rows for search-existing-transporter in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Name must be 255 characters or fewer\", \"Approval number must be 255 characters or fewer\", \"Post code must be 10 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "search-existing-transporter"
+    },
+    {
+      "id": "inc-077",
+      "title": "transporter-creation page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-075",
+        "inc-005",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Add private transporter\"; the first field label reads exactly \"Transporter name\" and the fieldset legend reads exactly \"Transporter\".",
+        "Fields are Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Country and Email address.",
+        "Country uses inc-004 and Save and continue persists transporter.* then routes to transporter-confirmation.",
+        "Server-side requiredness follows the inferred page obligations without inventing gap-confidence error text."
+      ],
+      "pageSlug": "transporter-creation"
+    },
+    {
+      "id": "inc-078",
+      "title": "Add transporter-creation validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-077"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 16 grounded validation rows for transporter-creation in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a transporter name\", \"Transporter name must be 255 characters or fewer\", \"Enter an address line 1\", \"Address line 1 must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved.",
+        "Legacy \"ETAG is not valid\" and \"reimport is not valid\" rows are transport-plumbing evidence only: the rebuild renders neither field and rejects posted legacy plumbing without promising that obsolete user-facing copy."
+      ],
+      "pageSlug": "transporter-creation"
+    },
+    {
+      "id": "inc-079",
+      "title": "transporter-confirmation page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-077",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The govuk-panel heading reads exactly \"The transporter has been created\".",
+        "The primary button reads exactly \"Add to notification\" and the link reads exactly \"Return to search\".",
+        "Add to notification attaches the pending transporter and returns to the Transporter page without duplicates."
+      ],
+      "pageSlug": "transporter-confirmation"
+    },
+    {
+      "id": "inc-080",
+      "title": "contact-details page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-079",
+        "inc-017"
+      ],
+      "openQuestion": "MODEL GAP(S): at-least-one-of-sibling-fields. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The govuk-fieldset legend/H1 reads exactly \"Contact details\".",
+        "Hints read exactly \"These are the details we have for you. Make sure they are up to date.\" and \"We will use these details if your consignment is chosen for inspection.\"",
+        "Inputs are labelled exactly \"Name\", \"Email address\" and \"Mobile number\"; values persist to responsiblePerson.",
+        "Save and continue, Save and return to hub and Cancel and return to hub work; contactability validation follows Sam’s group-rule ruling."
+      ],
+      "pageSlug": "contact-details"
+    },
+    {
+      "id": "inc-081",
+      "title": "Add contact-details validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-080",
+        "inc-017"
+      ],
+      "openQuestion": "validation depends on model gap(s) at-least-one-of-sibling-fields. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 8 grounded validation rows for contact-details in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter your name\", \"Name must be 32 characters or fewer\", \"Enter an email address in the correct format, like name@example.com\", \"Email address must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "contact-details"
+    },
+    {
+      "id": "inc-082",
+      "title": "nominated-contacts page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-080",
+        "inc-017",
+        "inc-014"
+      ],
+      "openQuestion": "MODEL GAP(S): at-least-one-of-sibling-fields, repeating-group-in-repeating-group. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Contacts\" and the fieldset H1 reads exactly \"Nominated contacts (optional)\".",
+        "Body copy reads exactly \"Nominate up to 5 contacts. They will be notified if your consignment is chosen for inspection.\"",
+        "A GOV.UK table has columns Name, Email address, Mobile number and accessible Remove; \"Add another person\" appends up to five stable Contact rows.",
+        "Save and continue persists nominatedContacts[] and round-trip tests cover add, remove and edit-one-row isolation.",
+        "Per-row contactability follows Sam’s ruling."
+      ],
+      "pageSlug": "nominated-contacts"
+    },
+    {
+      "id": "inc-083",
+      "title": "Add nominated-contacts validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-082",
+        "inc-017",
+        "inc-014"
+      ],
+      "openQuestion": "validation depends on model gap(s) at-least-one-of-sibling-fields, repeating-group-in-repeating-group. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 7 grounded validation rows for nominated-contacts in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a name\", \"Name must be 32 characters or fewer\", \"Enter an email address in the correct format, like name@example.com\", \"Email address must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "nominated-contacts"
+    },
+    {
+      "id": "inc-084",
+      "title": "contact-address page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-082"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Caption reads exactly \"Complete notification\" and H1 reads exactly \"Contact address for consignment\".",
+        "The verified explanatory copy renders and a govuk-radios fieldset legend reads exactly \"Select an address\".",
+        "Address options come from the fixed local organisation/address fixture; the link reads exactly \"add a new branch address\".",
+        "Save and continue stores the selected Operator snapshot in contactAddress and resume selects it."
+      ],
+      "pageSlug": "contact-address"
+    },
+    {
+      "id": "inc-085",
+      "title": "Add contact-address validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-084",
+        "inc-019"
+      ],
+      "openQuestion": "needsHuman conflict(s) c-038; validation depends on model gap(s) two-layer-validation. Apply the verified catalogue only after the ruling; do not invent missing copy or policy.",
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 2 grounded validation rows for contact-address in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"\\\"Organisation Branch Address\\\" is required\", \"Add the contact address for consignment\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "contact-address"
+    },
+    {
+      "id": "inc-086",
+      "title": "branch-address-creation page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-084",
+        "inc-005",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The draft reference caption ends \" - CHEDP\" and H1 reads exactly \"Add branch address\".",
+        "The leading label reads exactly \"Branch address name\"; the fieldset legend reads exactly \"Branch address\".",
+        "Fields are Address line 1, Address line 2 (optional), Address line 3 (optional), City or town, Postcode or ZIP code, Telephone number, Country and Email address.",
+        "The link reads exactly \"Return to notification\"; Save and continue persists the local branch-address fixture and routes to confirmation."
+      ],
+      "pageSlug": "branch-address-creation"
+    },
+    {
+      "id": "inc-087",
+      "title": "Add branch-address-creation validation",
+      "kind": "validation",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "inc-086"
+      ],
+      "openQuestion": null,
+      "acceptanceCriteria": [
+        "Server-side, table-driven tests cover all 16 grounded validation rows for branch-address-creation in journey-spec.json, preserving each recorded trigger and exact message (including recorded no-error outcomes).",
+        "At minimum the asserted verbatim catalogue includes \"Enter a branch name\", \"Branch name must be 255 characters or fewer\", \"Enter an address line 1\", \"Address line 1 must be 255 characters or fewer\".",
+        "Every rejected POST renders a GOV.UK govuk-error-summary and field-level govuk-error-message with summary links targeting the invalid controls; entered values and conditional reveals are preserved.",
+        "Unknown reference-data values and browser-posted derived/hidden business state are rejected server-side; successful input is normalised before the whole Notification document is saved."
+      ],
+      "pageSlug": "branch-address-creation"
+    },
+    {
+      "id": "inc-088",
+      "title": "branch-address-confirmation page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-086",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The govuk-panel/H1 reads exactly \"The address has been added to your address book\".",
+        "The primary action reads exactly \"Return to notification\".",
+        "Returning makes the newly-created address selectable and does not duplicate it on refresh."
+      ],
+      "pageSlug": "branch-address-confirmation"
+    },
+    {
+      "id": "inc-089",
+      "title": "review-notification page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-088",
+        "inc-012"
+      ],
+      "openQuestion": "MODEL GAP(S): summary-restatement-linkage; needsHuman conflict(s): c-028. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The caption displays the draft reference followed by \" - CHEDP\" and H1 reads exactly \"Review your notification\".",
+        "The page renders the reference triplet (CHED reference, Reference for your customs declaration, Customs document code), warning \"You must use the correct reference and code on the customs declaration or your consignment will be delayed.\", and Copy progressive-enhancement buttons.",
+        "Stock govuk-summary-list, govuk-summary-card and govuk-table components restate every in-scope section shown in journey-spec.json: consignment, commodity/totals/temperature, documents, establishments, traders, transport, transporter, goods movement and contacts.",
+        "Every editable section has an accessible \"Change\" link to its canonical page; no fish/catch-certificate row, Split consignment action, amend control or post-submission inspector section appears.",
+        "The consignment-reference row supports blank/populated display exactly as Sam rules; Save and continue routes to declaration."
+      ],
+      "pageSlug": "review-notification"
+    },
+    {
+      "id": "inc-090",
+      "title": "declaration page and submission transition",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-089",
+        "inc-020"
+      ],
+      "openQuestion": "MODEL GAP(S): optimistic-concurrency-etag. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "H1 reads exactly \"Declaration\".",
+        "The declaration paragraph is verbatim from journey-spec.json, beginning \"I, the undersigned operator responsible for the consignment detailed above\" and including \"assimilated Regulation 2017/625 on official controls\".",
+        "The page renders \"Date of declaration: {server date}\" and the primary button reads exactly \"Submit notification\"; there is no acknowledgement checkbox.",
+        "Submission validates the accepted route, sets status=SUBMITTED and declaration.declaredAt server-side, runs the deterministic risk stub once and prevents double submission.",
+        "Successful submission routes to confirmation with the stable reference and persisted whole document."
+      ],
+      "pageSlug": "declaration"
+    },
+    {
+      "id": "inc-091",
+      "title": "confirmation page",
+      "kind": "page",
+      "milestone": "m6",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-090",
+        "inc-012",
+        "inc-018"
+      ],
+      "openQuestion": "MODEL GAP(S): summary-restatement-linkage, external-outcome-and-status-variants. Confirm the executable CHED-P rule before this page consumes it. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "The page title is exactly \"Import notification sent - Import and export applications - GOV.UK\" and the primary H1 reads exactly \"Initial risk assessment\".",
+        "A GOV.UK notification banner/panel renders the accepted \"Inspection status\" outcome; confirmed variants are \"Required at {BCP}\" and \"Not required\", with their exact journey-spec.json guidance.",
+        "A govuk-summary-list shows CHED reference, Reference for your customs declaration and Customs document code with Copy buttons; the warning about using the correct reference/code renders exactly.",
+        "Headings read exactly \"What you need to do\", \"What happens next\" and \"How to view or amend this notification\"; links read exactly \"Return to your dashboard\" and \"Create a new notification\".",
+        "No inspector action, decision data, border/control action or live SOAP/PDF/Notify integration is added."
+      ],
+      "pageSlug": "confirmation"
+    },
+    {
+      "id": "inc-092",
+      "title": "Delegated-authority tenancy and ownership model extension",
+      "kind": "model-extension",
+      "milestone": "m7",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-002"
+      ],
+      "openQuestion": "MODEL GAP \"delegated-authority-model\": obtain/approve a CHED-P POAO journey and decide route placement/copy, designated responsible contact, Trade Partner lifecycle, draft privacy and the B2B/co-member permission matrix. Evidence is cross-type; do not author the POAO ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, Notification.ownership persists createdFor, assignedOrg, onBehalfOf and createdBy; submittedByAgent is server-written according to the approved timing. AUTH-01..AUTH-05 are covered by tests.",
+        "assignedOrg, not the creator’s employer, is the owning tenant and source of importer/responsible-person defaults; pre-submit reassignment recalculates those snapshots. AUTH-04, AUTH-05, AUTH-11 and AUTH-12 are covered.",
+        "Server-side read/write policies enforce creator-only delegated drafts, assigned-org member access after submit, submitting-agent retained access and unrelated-org isolation. AUTH-07..AUTH-10 are covered.",
+        "Trade Partner is derived from onBehalfOf and shown only under the approved lifecycle; it is not accepted as a browser-posted ownership flag. AUTH-06 is covered.",
+        "No Plant fixture labels, organisation names, commodity routes or blanket B2B access are carried into CHED-P."
+      ]
+    },
+    {
+      "id": "inc-093",
+      "title": "POAO importer-or-agency eligibility page (later DoA)",
+      "kind": "page",
+      "milestone": "m7",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-092"
+      ],
+      "openQuestion": "Cross-type page are-you-a-plants-importer-or-agency has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+      "acceptanceCriteria": [
+        "After approval, the page uses the evidenced GOV.UK component family (Radios, Button) and preserves the evidenced interaction shape.",
+        "The evidence heading is \"Are you a plants importer or agency?\" with observed options [\"Yes\",\"No\"]; CHED-P product copy and POAO organisation labels follow the approved replacement, never the Plant fixture.",
+        "All eligible organisations are resolved server-side from the authenticated agency/authorisation relationship; a posted unrelated organisation id is rejected.",
+        "The route, Back/Continue contract, empty state and validation copy are acceptance-tested only after the CHED-P-specific evidence/ruling supplies them."
+      ],
+      "pageSlug": "are-you-a-plants-importer-or-agency"
+    },
+    {
+      "id": "inc-094",
+      "title": "choose-your-organisation page (later DoA)",
+      "kind": "page",
+      "milestone": "m7",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-093"
+      ],
+      "openQuestion": "Cross-type page choose-your-organisation has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+      "acceptanceCriteria": [
+        "After approval, the page uses the evidenced GOV.UK component family (Select / combobox, Button) and preserves the evidenced interaction shape.",
+        "The evidence heading is \"Choose your organisation\" with observed options [\"Select an organisation\",\"ANGEL IMPORTING LTD\"]; CHED-P product copy and POAO organisation labels follow the approved replacement, never the Plant fixture.",
+        "All eligible organisations are resolved server-side from the authenticated agency/authorisation relationship; a posted unrelated organisation id is rejected.",
+        "The route, Back/Continue contract, empty state and validation copy are acceptance-tested only after the CHED-P-specific evidence/ruling supplies them."
+      ],
+      "pageSlug": "choose-your-organisation"
+    },
+    {
+      "id": "inc-095",
+      "title": "manage-your-authorisations page (later DoA)",
+      "kind": "page",
+      "milestone": "m7",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-094"
+      ],
+      "openQuestion": "Cross-type page manage-your-authorisations has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+      "acceptanceCriteria": [
+        "After approval, the page uses the evidenced GOV.UK component family (Heading, Table / list) and preserves the evidenced interaction shape.",
+        "The evidence heading is \"Manage your authorisations\"; CHED-P product copy and POAO organisation labels follow the approved replacement, never the Plant fixture.",
+        "All eligible organisations are resolved server-side from the authenticated agency/authorisation relationship; a posted unrelated organisation id is rejected.",
+        "The route, Back/Continue contract, empty state and validation copy are acceptance-tested only after the CHED-P-specific evidence/ruling supplies them."
+      ],
+      "pageSlug": "manage-your-authorisations"
+    },
+    {
+      "id": "inc-096",
+      "title": "who-are-you-creating-this-notification-for page (later DoA)",
+      "kind": "page",
+      "milestone": "m7",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-095"
+      ],
+      "openQuestion": "Cross-type page who-are-you-creating-this-notification-for has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+      "acceptanceCriteria": [
+        "After approval, the page uses the evidenced GOV.UK component family (Radios) and preserves the evidenced interaction shape.",
+        "The evidence heading is \"Who are you creating this notification for?\" with observed options [\"Agent's own organisation (fixture: IPAFFS Plant Agency C)\",\"A different organisation\"]; CHED-P product copy and POAO organisation labels follow the approved replacement, never the Plant fixture.",
+        "All eligible organisations are resolved server-side from the authenticated agency/authorisation relationship; a posted unrelated organisation id is rejected.",
+        "The route, Back/Continue contract, empty state and validation copy are acceptance-tested only after the CHED-P-specific evidence/ruling supplies them."
+      ],
+      "pageSlug": "who-are-you-creating-this-notification-for"
+    },
+    {
+      "id": "inc-097",
+      "title": "which-company-is-this-notification-for page (later DoA)",
+      "kind": "page",
+      "milestone": "m7",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-096"
+      ],
+      "openQuestion": "Cross-type page which-company-is-this-notification-for has no CHED-P route/copy/validation evidence and consumes MODEL GAP \"delegated-authority-model\". Confirm the POAO-specific contract; do not copy Plant wording or invent it.",
+      "acceptanceCriteria": [
+        "After approval, the page uses the evidenced GOV.UK component family (Radios) and preserves the evidenced interaction shape.",
+        "The evidence heading is \"Which company is this notification for\" with observed options [\"Companies the agency is authorised to represent\"]; CHED-P product copy and POAO organisation labels follow the approved replacement, never the Plant fixture.",
+        "All eligible organisations are resolved server-side from the authenticated agency/authorisation relationship; a posted unrelated organisation id is rejected.",
+        "The route, Back/Continue contract, empty state and validation copy are acceptance-tested only after the CHED-P-specific evidence/ruling supplies them."
+      ],
+      "pageSlug": "which-company-is-this-notification-for"
+    },
+    {
+      "id": "inc-098",
+      "title": "Assigned-organisation importer and responsible-person defaults",
+      "kind": "authorization",
+      "milestone": "m7",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-097",
+        "inc-066",
+        "inc-080"
+      ],
+      "openQuestion": "target-model.md Open Q5 and AUTH-11/AUTH-12: which designated POAO member/contact supplies responsiblePerson, and when do assigned-org defaults replace or coexist with manual values? Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a ruling, selecting assignedOrg populates importer identity/address/telephone/email and responsible-person name/telephone/email/organisation from that POAO organisation.",
+        "Changing assignedOrg before submission removes stale organisation-derived snapshots and recalculates both defaults atomically in the whole Notification document.",
+        "The submitting agent remains a separate audit identity and is never substituted into client importer/contact fields.",
+        "Tests cover own organisation, represented client, reassignment and rejection of browser-posted defaults for an unassigned organisation."
+      ]
+    },
+    {
+      "id": "inc-099",
+      "title": "Organisation-scoped draft and submitted visibility",
+      "kind": "authorization",
+      "milestone": "m7",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-098",
+        "inc-022"
+      ],
+      "openQuestion": "target-model.md Open Q7/Open Q8 and AUTH-03/AUTH-07..AUTH-10: confirm CHED-P draft privacy, co-member actions and exact B2B role permissions. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After approval, an agent-created client draft is readable only by createdBy; merely belonging to assignedOrg does not expose it before submit.",
+        "After submit, assignedOrg members and the specific submitting agent can find/read the notification; unrelated organisations and agency coworkers cannot.",
+        "Every repository/dashboard query applies the same server-side tenant/creator policy; direct-id access cannot bypass it.",
+        "Role-matrix integration tests cover own-org member, client member, submitting agent, agency coworker, unrelated org and B2B roles."
+      ]
+    },
+    {
+      "id": "inc-100",
+      "title": "Trade Partner marking and ownership audit",
+      "kind": "authorization",
+      "milestone": "m7",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-099",
+        "inc-089",
+        "inc-091"
+      ],
+      "openQuestion": "target-model.md Open Q4/Open Q6 and AUTH-06: confirm submittedByAgent timing and Trade Partner/onBehalfOf behaviour on amend/copy. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After approval, an on-behalf-of submitted dashboard card displays the exact \"Trade Partner\" badge and assigned client organisation; own-org work does not.",
+        "Review and confirmation expose the assigned organisation and audit submitter without transferring ownership to the agency.",
+        "Badge state is derived from ownership.onBehalfOf; submittedByAgent records the specific agent and agency at the approved lifecycle point.",
+        "Tests cover submit, approved amend/copy behaviour and an attempted browser mutation of badge/owner/audit fields."
+      ]
+    },
+    {
+      "id": "inc-101",
+      "title": "common-user-charge confirmation page (later variant)",
+      "kind": "page",
+      "milestone": "m8",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-072",
+        "inc-013"
+      ],
+      "openQuestion": "c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed.  Do not author the ruling.",
+      "acceptanceCriteria": [
+        "If enabled by the ruling, caption reads exactly \"Billing\" and H1 reads exactly \"Confirm billing details\".",
+        "The page renders the verified rates/eligibility and terms links, details disclosure, additional-fees paragraph and the warning that changed billing details apply to previous notifications in the invoicing period.",
+        "A govuk-summary-card titled \"Billing details\" shows Name, Address, Email address and Phone number with Change actions.",
+        "Actions read exactly \"Save and return to hub\", \"Save and continue\" and \"Cancel and return to notification\"; values persist to billing.* without a Trade Charge queue producer."
+      ],
+      "pageSlug": "common-user-charge"
+    },
+    {
+      "id": "inc-102",
+      "title": "billing-select-address page (later variant)",
+      "kind": "page",
+      "milestone": "m8",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-101",
+        "inc-013"
+      ],
+      "openQuestion": "c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed.  Do not author the ruling.",
+      "acceptanceCriteria": [
+        "If CUC is enabled, caption reads exactly \"Billing\" and H1/label reads exactly \"Select the address\".",
+        "The page shows \"Postcode: {postcode}\", a Change link, result count, a govuk-select labelled \"Select the address\", \"I cannot find the address in the list\", \"Continue\" and \"Cancel and return to notification\".",
+        "A canned postcode lookup returns deterministic address records; selecting one stores the resolved address fields rather than the result index.",
+        "The missing Find-an-address/manual-address pages are not invented from this page spec and require their own verified specification before implementation."
+      ],
+      "pageSlug": "billing-select-address"
+    },
+    {
+      "id": "inc-103",
+      "title": "Add billing-select-address validation (later CUC)",
+      "kind": "validation",
+      "milestone": "m8",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-102"
+      ],
+      "openQuestion": "This validation depends on unresolved CUC eligibility c-008. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Table-driven tests implement all 6 grounded billing-select-address validation rows in journey-spec.json with their recorded triggers and exact copy.",
+        "The verbatim catalogue includes \"Select address from the list\", \"Enter postcode\", \"Enter valid UK postcode\", \"ETAG is missing\".",
+        "Errors render through linked govuk-error-summary and govuk-error-message components and preserve the entered billing values.",
+        "Successful values normalise into Notification.billing and survive whole-document Mongo save/resume."
+      ],
+      "pageSlug": "billing-select-address"
+    },
+    {
+      "id": "inc-104",
+      "title": "billing-contact-details page (later variant)",
+      "kind": "page",
+      "milestone": "m8",
+      "sizeGuess": "M",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-102",
+        "inc-013",
+        "inc-017"
+      ],
+      "openQuestion": "c-008 and MODEL GAP \"cross-page-conditionality\": decide what makes CHED-P chargeable (Sevington, isCuc or another rule) before this later CUC page is routed. Also confirm billing contact requiredness. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "If CUC is enabled, caption reads exactly \"Billing\" and H1 reads exactly \"Change billing contact details\".",
+        "The only editable controls are govuk-inputs labelled exactly \"Email address\" and \"Phone number\"; no unsupported contact-name field is added.",
+        "The primary action reads exactly \"Continue\" and the secondary link reads exactly \"Cancel and return to notification\"; values persist to billing.email and billing.telephone.",
+        "Requiredness/group validation follows Sam’s contactability ruling."
+      ],
+      "pageSlug": "billing-contact-details"
+    },
+    {
+      "id": "inc-105",
+      "title": "Add billing-contact-details validation (later CUC)",
+      "kind": "validation",
+      "milestone": "m8",
+      "sizeGuess": "S",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-104",
+        "inc-017"
+      ],
+      "openQuestion": "This validation depends on unresolved CUC eligibility c-008 and the at-least-one-of-sibling-fields model gap. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "Table-driven tests implement all 6 grounded billing-contact-details validation rows in journey-spec.json with their recorded triggers and exact copy.",
+        "The verbatim catalogue includes \"Enter an email address\", \"Email address must be 100 characters or fewer\", \"Enter an email address in the correct format, like name@example.com\", \"Enter a telephone number\".",
+        "Errors render through linked govuk-error-summary and govuk-error-message components and preserve the entered billing values.",
+        "Successful values normalise into Notification.billing and survive whole-document Mongo save/resume."
+      ],
+      "pageSlug": "billing-contact-details"
+    },
+    {
+      "id": "inc-106",
+      "title": "CSV commodity bulk-upload variant",
+      "kind": "variant",
+      "milestone": "m8",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-091"
+      ],
+      "openQuestion": "CSV bulk upload is not present in the enriched CHED-P page/model evidence. Confirm file schema, limits, error report, mapping into CommodityLine and reconciliation with manual add/edit/remove before build. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a separately verified specification, CSV rows map into the same non-fish CommodityLine model and reference-data validation used by the manual path.",
+        "The import is atomic or supplies an approved row-error correction contract; invalid/IUU codes never enter Mongo.",
+        "Manual and CSV paths converge before risk/category, weights/packages and review without duplicate model shapes."
+      ]
+    },
+    {
+      "id": "inc-107",
+      "title": "Article 72 low-risk variant",
+      "kind": "variant",
+      "milestone": "m8",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-091"
+      ],
+      "openQuestion": "No verified CHED-P UI/business rule defines Article 72 eligibility or its journey effect. Confirm country×commodity classification, persisted/derived state and skipped/required pages. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After verified rules, a server-side classifier derives Article 72 eligibility from approved inputs and cannot be overridden by a browser field.",
+        "Table-driven tests cover eligible/ineligible boundaries and exact routing/task-list effects.",
+        "The variant reuses the canonical Notification model and does not weaken final submission validation outside the approved exemptions."
+      ]
+    },
+    {
+      "id": "inc-108",
+      "title": "Split-consignment variant",
+      "kind": "variant",
+      "milestone": "m8",
+      "sizeGuess": "L",
+      "status": "blocked",
+      "gate": "sam",
+      "dependsOn": [
+        "inc-091"
+      ],
+      "openQuestion": "Split consignment is post/submission-adjacent and has no verified first-pass create journey or target-model contract. Confirm actor, lifecycle point, parent/child identity, commodity allocation and ownership before build. Do not author the ruling.",
+      "acceptanceCriteria": [
+        "After a verified specification, parent/child references, status transitions and commodity allocation are explicit and preserve audit/ownership.",
+        "Tests prove no commodity quantity is lost or duplicated and the original notification remains traceable.",
+        "The feature is not exposed in the manual first-pass dashboard/review before that specification is approved."
+      ]
+    }
+  ]
+}

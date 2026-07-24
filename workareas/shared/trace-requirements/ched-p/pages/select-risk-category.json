@@ -1,0 +1,183 @@
+{
+  "slug": "select-risk-category",
+  "legacyEnrichedBy": "codex",
+  "corroboratedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "name": "Select risk category (highest risk for commodities)",
+  "url": "/protected/notifications/{notificationRef}/select-risk-category",
+  "pageTitle": "Select the highest risk category for the commodities in this consignment - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "Select the highest risk category for the commodities in this consignment",
+  "bodyCopy": [
+    "We need to know this so we can collect the correct details for your notification. You can check the risk categories on GOV.UK (opens in new tab)."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Save and continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "h1",
+      "text": "Select the highest risk category for the commodities in this consignment",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "We need to know this so we can collect the correct details for your notification. You can check the risk categories on GOV.UK (opens in new tab).",
+      "govukComponent": "Body (govuk-body) with external link"
+    },
+    {
+      "element": "radios",
+      "text": "High risk / Medium risk / Low risk",
+      "govukComponent": "Radios (in fieldset with empty legend)"
+    },
+    {
+      "element": "button",
+      "text": "Save and continue",
+      "govukComponent": "Button"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 title",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Explanatory paragraph with external GOV.UK link to risk categories guidance",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Fieldset",
+      "govukClass": "govuk-fieldset",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the risk-category radios; legend is present but empty (H1 serves as the question instead)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Radios",
+      "govukClass": "govuk-radios",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Single-choice risk category: High risk / Medium risk / Low risk",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Form group",
+      "govukClass": "govuk-form-group",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Wraps the radios fieldset",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-right-1", "govuk-!-margin-bottom-4"],
+      "count": 1,
+      "usage": "Primary submit — Save and continue (data-prevent-double-click=true)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs"],
+      "count": 1,
+      "usage": "Back navigation (href=#, id=back-link — JS-driven)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (back-link outerHTML)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "back-link--next-to-breadcrumbs (on a.govuk-back-link, href=\"#\", id=\"back-link\")",
+      "whatItDoes": "Custom modifier positioning the Back link next to breadcrumbs; the link points at href=\"#\" and is wired up by client-side JS rather than being a real server-rendered previous-page href.",
+      "concern": "Non-govuk modifier class plus a JS-driven back link. The new app should use a standard GOV.UK Back link with a real server-side href to the previous page, not a JS hash link.",
+      "govukAlternative": "Back link component with a genuine href to the previous step.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (back-link outerHTML)"
+    },
+    {
+      "pattern": "<input type=\"hidden\" name=\"highest-risk-category\" value=\"High\">",
+      "whatItDoes": "Hidden field carrying the system-computed highest risk category across the commodities on the consignment. Observed value 'High' in BOTH the High-risk and the Medium-risk trace, so it reflects the commodities' computed maximum, independent of which radio the user picks.",
+      "concern": "Not a govuk component but a load-bearing requirement: IPAFFS pre-computes a highest-risk-category server-side and posts it back. The rebuild must decide whether the risk category is user-selected, system-derived, or a user override of a system default — the page title says 'Select the highest' yet the system already knows the computed highest.",
+      "govukAlternative": "n/a (data-carrying hidden input, not a visual component)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (controls29); trace ba5323fd63dcda25ee5e37c013c511d2949410bc action 27 (hidden still 'High' while user selects Medium)"
+    },
+    {
+      "pattern": "Empty <legend class=\"govuk-fieldset__legend\">",
+      "whatItDoes": "The fieldset legend is rendered empty; the visible question is carried entirely by the H1 above the form.",
+      "concern": "Radios sit in a fieldset with no legend text. GOV.UK pattern for a single question per page is legend-as-page-heading (legend contains the H1). Empty legend is a minor accessibility deviation — the fieldset has no accessible name.",
+      "govukAlternative": "Radios with the question as the fieldset legend styled as the page heading (govuk-fieldset__legend--xl wrapping an h1).",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (main.html)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "risk-category",
+      "label": "Select the highest risk category for the commodities in this consignment",
+      "hint": "",
+      "control": "radio",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "The legacy frontend validator makes risk-category a required string and restricts it to the risk choices offered for the journey (ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/select_risk_category.js:14-31; the cloning variant is likewise required at :34-43). The POST handler always applies that validator and re-renders the page with mapped errors on failure (ipaffs-frontend-notification/service/src/routes/handlers/importer/select_risk_category.js:74-91). This is legacy journey mandatoriness rather than an @NotNull rule on the shared notification model, so the rebuild may revisit the policy while retaining an equivalent decision.",
+      "options": ["High risk", "Medium risk", "Low risk"],
+      "optionCount": 3,
+      "observedValues": ["High", "Medium"],
+      "conditionalOn": "The standard page offers Medium and Low, adding High only when the risk service returns UNKNOWN or ERROR (ipaffs-frontend-notification/service/src/routes/handlers/importer/select_risk_category.js:180-197). In the health-certificate cloning variant it instead offers only High and Medium (:180-186), and omits highest-risk-category (ipaffs-frontend-notification/service/src/views/importer/selectRiskCategory.html:38-40).",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (High selected); trace ba5323fd63dcda25ee5e37c013c511d2949410bc action 27 (Medium selected); page-objects/notification/SelectRiskCategoryPage.ts:6 (generic radio locator by accessible name); page-objects/notification/SelectRiskCategoryPage.ts:10 (Low risk locator); page-objects/notification/SelectRiskCategoryPage.ts:14 (Save and continue); types/risk-category.ts:1 (complete High risk, Medium risk and Low risk vocabulary); workflows/notification/ched-p-workflows.ts:37 (risk category is configurable); workflows/notification/ched-p-workflows.ts:129 (Medium risk default); workflows/notification/ched-p-workflows.ts:315 (workflow checks the configured category); tests/notification/ched-p/ched-p-manipulation.spec.ts:51 (explicit Low risk amendment); tests/notification/ched-p/ched-p-manipulation.spec.ts:68 (review asserts Low risk); tests/notification/ched-p/ched-p-notification.spec.ts:48 (review asserts High risk)"
+    },
+    {
+      "name": "highest-risk-category",
+      "label": "(hidden) system-computed highest risk category for the consignment's commodities",
+      "hint": "",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "The standard legacy validator accepts highest-risk-category as a High/Medium/Low string but does not call .required(), so it is not independently mandatory (ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/select_risk_category.js:21-30). The template omits it entirely for the cloning-health-certificate branch (ipaffs-frontend-notification/service/src/views/importer/selectRiskCategory.html:38-40).",
+      "options": [],
+      "observedValues": ["High"],
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 29 (controls29, value=High); trace ba5323fd63dcda25ee5e37c013c511d2949410bc action 27 (still value=High while Medium radio selected)"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "Select if the highest risk category is high risk, medium risk or low risk",
+      "field": "risk-category",
+      "trigger": "Submitting without a selection, or with a value outside High/Medium/Low, when highest-risk-category is High.",
+      "confidence": "legacy",
+      "evidence": "Verbatim legacy copy is RISK_CATEGORY_HIGH_MEDIUM_LOW_MESSAGE at ipaffs-frontend-notification/service/src/validation/messages/en.js:138. The standard validator selects it when highest-risk-category is High and maps both Joi's required and invalid-value failures to it (service/src/validation/routes/handlers/importer/select_risk_category.js:14-25)."
+    },
+    {
+      "message": "Select if the highest risk category is medium risk or low risk",
+      "field": "risk-category",
+      "trigger": "Submitting without a selection, or with a value outside Medium/Low, when highest-risk-category is Medium.",
+      "confidence": "legacy",
+      "evidence": "Verbatim legacy copy is RISK_CATEGORY_MEDIUM_LOW_MESSAGE at ipaffs-frontend-notification/service/src/validation/messages/en.js:140. The standard validator selects it when highest-risk-category is not High, limits valid values to Medium/Low, and maps both required and invalid-value failures to it (service/src/validation/routes/handlers/importer/select_risk_category.js:14-25)."
+    },
+    {
+      "message": "Select if the highest risk category is high risk or medium risk",
+      "field": "risk-category",
+      "trigger": "Submitting the health-certificate cloning variant without a selection, or with a value outside High/Medium.",
+      "confidence": "legacy",
+      "evidence": "Verbatim legacy copy is RISK_CATEGORY_HIGH_MEDIUM_MESSAGE at ipaffs-frontend-notification/service/src/validation/messages/en.js:139. The cloning validator permits High/Medium, requires the field, and maps both required and invalid-value failures to this message (service/src/validation/routes/handlers/importer/select_risk_category.js:34-43)."
+    }
+  ],
+  "confidence": "gap",
+  "openQuestions": [
+    "The QA workflow treats risk category as user-selected and persists it to review (workflows/notification/ched-p-workflows.ts:315; tests/notification/ched-p/ched-p-manipulation.spec.ts:68), but the hidden 'highest-risk-category' trace field remains 'High' even when the user selects Medium. Clarify whether that hidden computed maximum constrains or validates the user's selection.",
+    "The empty fieldset legend means the radio group has no accessible name — confirm whether the new app should adopt the standard legend-as-heading pattern.",
+    "RESOLVED FROM LEGACY: no error-state trace captured the missing/invalid-selection copy, but the authorised legacy validators supply three branch-specific messages: High/Medium/Low, Medium/Low, and the cloning-only High/Medium copy (ipaffs-frontend-notification/service/src/validation/messages/en.js:138-140; wired at service/src/validation/routes/handlers/importer/select_risk_category.js:14-43).",
+    "Values posted are 'High'/'Medium'/'Low' (not 'High risk' etc.) — confirm the canonical enum the new backend should store.",
+    "Legacy policy point: risk-category is mandatory in the frontend Joi validator (ipaffs-frontend-notification/service/src/validation/routes/handlers/importer/select_risk_category.js:14-31), while the choice set is shaped by risk-service output (:180-209). The rebuild should decide whether users may override the computed category and which options should be offered; this enrichment records the old-system rule without treating it as immutable policy."
+  ]
+}

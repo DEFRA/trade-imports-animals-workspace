@@ -1,0 +1,98 @@
+{
+  "slug": "consignor-confirmation",
+  "legacyEnrichedBy": "codex",
+  "corroboratedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "name": "Consignor / exporter confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/consignee/confirmation/{traderId}?fromCreate=true&reimport=true",
+  "pageTitle": "Create consignee confirmation - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "The consignee has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The consignee has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button",
+      "evidence": "page-objects/notification/ConsignorConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:397-398"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Confirmation banner announcing the trader was created; contains the H1 (govuk-panel__title)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 71 (main.html)"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit 'Add to notification' (id=button-add, value='Add to notification', data-prevent-double-click); POSTs the newly created trader onto the notification and navigates to the traders task page",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 71; page-objects/notification/ConsignorConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:397-400"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) linking back to /traders/consignor/search — the consignor trader search page",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 71 (main.html)"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "H1 / page-title copy 'The consignee has been created' / 'Create consignee confirmation' rendered on the CONSIGNOR confirmation instance",
+      "whatItDoes": "A single shared confirmation template is used for both consignor and consignee traders. When a consignor is created it still displays 'The consignee has been created'; only the form's return link (/traders/consignor/search) reflects the actual trader type.",
+      "concern": "The visible confirmation text is hardcoded to 'consignee' regardless of trader type — a genuine IPAFFS copy defect. Confirmed by comparing action 71 (after creating consignor 'Linus George Ltd') and action 84 (after creating consignee 'Global Corp'): both render byte-identical H1 and <title>. The rebuild should parameterise the confirmation copy by trader role (consignor/exporter vs consignee vs importer) rather than hardcode 'consignee'.",
+      "govukAlternative": "Standard govuk Panel (confirmation) with role-aware title text — no custom component needed, just correct copy binding.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 71 vs action 84"
+    }
+  ],
+  "fields": [],
+  "validationMessages": [
+    {
+      "message": "No validation or failure message for the Add to notification action is asserted by the CHED-P QA tests.",
+      "confidence": "gap",
+      "evidence": "page-objects/notification/ConsignorConfirmationPage.ts:6-8 and workflows/notification/ched-p-workflows.ts:397-398 only locate and click the success-path button"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This page carries no user-editable fields — it is a post-create confirmation interstitial with two actions: 'Add to notification' (attach the just-created trader to the notification) and 'Return to search'. In the rebuilt simple app this interstitial may be unnecessary (the trader could be added directly from the create form), but its two behaviours must be preserved.",
+    "The confirmation H1/title is hardcoded to 'consignee' even for consignors (IPAFFS defect). The correct trader role is only inferable from the return link URL. Rebuild must display role-correct copy (consignor / exporter).",
+    "The original route is exposed by the trace-rendered Cookie Settings and Manage account returnUrl values as /notification/vnet/protected/notifications/{notificationId}/consignee/confirmation/{traderId}?fromCreate=true&reimport=true. The form has no explicit action attribute and posts back to that route; on submit it navigated to /notification/vnet/protected/notifications/DRAFT.GB.2026.1525975/traders. Hidden fields observed: crumb (CSRF) and etag (optimistic-concurrency token).",
+    "A shell-level 'Back' link is present above <main>; no caption or body copy is present inside <main>, which contains only the panel, submit button and return link.",
+    "QA independently corroborates only the 'Add to notification' button and happy-path transition (page-objects/notification/ConsignorConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:397-400). It does not expose or assert the 'Return to search' link, confirmation heading/title, stale-etag handling, or an add failure state.",
+    "Legacy-source clarification to the trace-based copy concern: the template is not literally hardcoded to 'consignee'; it renders 'The {{displayType}} has been created' (ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:17-34), and the handler derives displayType from the route trader type (service/src/routes/handlers/importer/economic_operator/confirmation.js:22-30). The confirmed consignee wording on this consignor journey therefore results from the re-import route using type=consignee. Keep the observed copy as confirmed, but the rebuild should bind display copy to the business role rather than the route workaround.",
+    "No user-entered fields or page validator exist for this confirmation step. The POST handler injects the route economicOperatorId as add-id and immediately delegates to selectTheTrader (ipaffs-frontend-notification/service/src/routes/handlers/importer/economic_operator/confirmation.js:52-67); the template's only submitted values are platform/state inputs crumb, etag and optional fromImporterReview (service/src/views/importer/traders/confirmation.html:42-51). Consequently there is no applicable field mandatoriness or legacy validation-message copy to add for this page."
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "slug": "health-certificate-required",
+  "legacyEnrichedBy": "codex",
+  "corroboratedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "name": "Health certificate required (interstitial)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/health-certificate-required",
+  "pageTitle": "Health certificate required - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "Health certificate required",
+  "bodyCopy": [
+    "You'll need a health certificate for this consignment as it includes high or medium risk commodities.",
+    "You must upload the health certificate to your notification before the consignment arrives in Great Britain."
+  ],
+  "backLink": "Back",
+  "continueLabel": "Continue",
+  "secondaryActions": [],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "h1",
+      "text": "Health certificate required",
+      "govukComponent": "Heading (govuk-heading-xl)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You'll need a health certificate for this consignment as it includes high or medium risk commodities.",
+      "govukComponent": "Body (govuk-body)"
+    },
+    {
+      "element": "paragraph",
+      "text": "You must upload the health certificate to your notification before the consignment arrives in Great Britain.",
+      "govukComponent": "Body (govuk-body)"
+    },
+    {
+      "element": "button",
+      "text": "Continue",
+      "govukComponent": "Button (rendered as <a> link, id=continue-button, href to .../overview task-list hub)"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 'Health certificate required' (id=page-primary-title)",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 31"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": [],
+      "count": 2,
+      "usage": "Two explanatory paragraphs",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 31"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Continue' primary action — rendered as an anchor (<a id=continue-button class=govuk-button href=.../overview>), navigates into the task-list hub / overview page. Corroborated by the page object, which exposes ONLY this control: linkContinue = page.getByRole('link', { name: 'Continue' }).",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 31; page-objects/notification/HealthCertificateRequiredPage.ts:6-8"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": ["back-link--next-to-breadcrumbs"],
+      "count": 1,
+      "usage": "'Back' link in the page furniture above main; href=\"#\" (JS-driven history back), id=back-link",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 31"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "back-link--next-to-breadcrumbs (custom modifier on govuk-back-link) with href=\"#\"",
+      "whatItDoes": "IPAFFS-specific positioning modifier; the Back link points at '#' and relies on client-side JS to go back in history",
+      "concern": "Custom CSS modifier outside the Design System, plus a JS-dependent back link that does nothing without JavaScript. The new app should use a real href (govuk Back link with a server-known previous URL) rather than href='#' + JS.",
+      "govukAlternative": "govuk Back link with a genuine href to the previous page",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 31"
+    }
+  ],
+  "fields": [],
+  "validationMessages": [],
+  "routing": {
+    "description": "Interstitial with no form input. It is shown after a High or Medium risk decision; the select-risk-category handler routes High/Medium here and Low directly to the overview. The single Continue link normally advances to the Notification Hub / overview task-list. When entered with commodityDetailsPage=true it instead returns to commodity details, and with changeRiskCategory=true it returns to review.",
+    "precedingPage": "select-risk-category (Select Risk Category Page)",
+    "nextPage": "notification-hub (Notification Hub / overview)",
+    "shownWhen": "riskCategory in { 'Medium risk', 'High risk' }",
+    "skippedWhen": "riskCategory === 'Low risk'",
+    "riskCategoryValues": ["High risk", "Medium risk", "Low risk"],
+    "confidence": "legacy",
+    "evidence": "The authorised legacy select-risk-category handler routes High/Medium to this page and Low to the overview or commodity-details destination (ipaffs-frontend-notification/service/src/routes/handlers/importer/select_risk_category.js:99-116,123-128); a system-derived High also routes here at :47-55. This page's GET handler defaults Continue to the overview, overrides it to commodity details for commodityDetailsPage, and to review for changeRiskCategory (service/src/routes/handlers/importer/health_certificate_required.js:13-31). The template contains no form or data-entry control, only the Continue anchor (service/src/views/importer/healthCertificateRequired.html:11-20). Corroborating QA evidence: workflows/notification/ched-p-workflows.ts:314-326,697-707,881-887; types/risk-category.ts:1-5."
+  },
+  "testAssertions": [
+    {
+      "assertion": "Accessibility: the 'Health Certificate Required Page' must render with zero accessibility violations (axe check via checkPageAccessibility).",
+      "confidence": "inferred",
+      "evidence": "tests/accessibility/ched-p-accessibility-tests.spec.ts:64 (page identified in journey order); tests/accessibility/ched-p-accessibility-tests.spec.ts:65 (accessibility check)"
+    },
+    {
+      "assertion": "The only interactive control the tests drive on this page is the 'Continue' link, which advances to the Notification Hub. No fields, no validation, no secondary actions are exercised.",
+      "confidence": "inferred",
+      "evidence": "page-objects/notification/HealthCertificateRequiredPage.ts:6-8; workflows/notification/ched-p-workflows.ts:320,703,884; tests/accessibility/ched-p-accessibility-tests.spec.ts:66"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "RESOLVED FROM LEGACY: the interstitial is shown after High or Medium risk and skipped for Low; the normal Continue target is the overview. The legacy handlers also reveal two return-flow variants: commodityDetailsPage=true continues to commodity details, while changeRiskCategory=true continues to review (ipaffs-frontend-notification/service/src/routes/handlers/importer/select_risk_category.js:99-128 and service/src/routes/handlers/importer/health_certificate_required.js:13-31). RESIDUAL POLICY QUESTION: risk can be user-selected or system-derived in the legacy handler (:47-65,99-112); confirm the rebuild's intended ownership of categorisation.",
+    "The Back link (href='#', JS-driven) sits in the page furniture above main; its true target/behaviour is not observable from the frozen snapshot and is not driven by any test (no page-object locator for it).",
+    "No validation messages exist for this page and none could exist — it is a read-only interstitial with a single navigation link and no form input. Confirmed by the legacy template (ipaffs-frontend-notification/service/src/views/importer/healthCertificateRequired.html:11-20) and the page object exposing only linkContinue (page-objects/notification/HealthCertificateRequiredPage.ts:6-8). Recorded here so a human does not treat the empty validationMessages array as an unmined gap.",
+    "Legacy-vs-rendered URL discrepancy: the rendered spec records /notification/vnet/protected/notifications/{notificationId}/health-certificate-required, while the legacy route is /protected/notifications/{referenceNumber}/health-certificate-required (ipaffs-frontend-notification/service/src/routes/routes.js:1234-1238). The rendered, confirmed URL is retained; establish whether /notification/vnet is an external context path rather than part of the application route."
+  ]
+}

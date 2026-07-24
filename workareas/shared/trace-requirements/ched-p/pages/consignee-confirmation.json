@@ -1,0 +1,133 @@
+{
+  "slug": "consignee-confirmation",
+  "legacyEnrichedBy": "codex",
+  "corroboratedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "name": "Consignee confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/consignee/confirmation/{traderId}?fromCreate=true",
+  "pageTitle": "Create consignee confirmation - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "The consignee has been created",
+  "bodyCopy": [],
+  "backLink": "Back",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The consignee has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button",
+      "evidence": "page-objects/notification/ConsigneeConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:410-413"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Confirmation banner announcing the consignee record was created; contains the page H1 (govuk-panel__title). Standard GOV.UK confirmation-page pattern.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit button 'Add to notification' (id=button-add, type=submit, value='Add to notification', data-prevent-double-click='true'); posts the form to attach the newly created consignee to the draft notification and navigates to the traders page.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84; page-objects/notification/ConsigneeConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:410-413"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary action 'Return to search' (id=manage-notifications) linking back to the consignee search page (.../traders/consignee/search), i.e. abandon adding this consignee and return to search.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84"
+    },
+    {
+      "component": "Back link",
+      "govukClass": "govuk-back-link",
+      "modifiers": [
+        "back-link--next-to-breadcrumbs"
+      ],
+      "count": 1,
+      "usage": "GOV.UK back link ('Back') rendered above main content with a bespoke layout modifier and href '#'.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "back-link--next-to-breadcrumbs",
+      "whatItDoes": "Adds bespoke positioning to the shell-level GOV.UK Back link, whose rendered href is '#'.",
+      "concern": "Custom layout modifier and fragment-only destination rely on client-side/history behaviour rather than a concrete route.",
+      "govukAlternative": "Use govuk-back-link with a real previous-step href and standard spacing/layout utilities.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 84 (A#back-link.govuk-back-link.back-link--next-to-breadcrumbs, href=#)"
+    }
+  ],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84 — <input name=\"crumb\" type=\"hidden\">"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency ETag)",
+      "control": "hidden",
+      "required": false,
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 84 — <input name=\"etag\" type=\"hidden\" value=\"\\\"0000000000BD28AA\\\"\">"
+    },
+    {
+      "name": "fromImporterReview",
+      "label": "(hidden return-to-review flag)",
+      "control": "hidden",
+      "required": false,
+      "conditionalOn": "The confirmation was reached from importer review.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "No validation, optimistic-concurrency failure, or other error message for the Add to notification action is asserted by the CHED-P QA tests.",
+      "confidence": "gap",
+      "evidence": "page-objects/notification/ConsigneeConfirmationPage.ts:6-8 and workflows/notification/ched-p-workflows.ts:410-411 cover only the successful button click"
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This page is a GOV.UK confirmation panel ('The consignee has been created'), NOT a review/summary of the consignee's details — the journey-map description ('review created consignee') is not borne out by the trace. There is no summary-list of the consignee address/details on this page; it only confirms creation and offers to attach the record to the notification. Confirm whether a details review is expected elsewhere (e.g. the preceding consignee-search or a separate view) or whether the description is simply imprecise.",
+    "Only one action (the 'Add to notification' click) was ever exercised in the trace corpus for this page. The 'Return to search' link and the back link were never followed in any CHED-P trace, so their destinations are read from the rendered href only, not observed as navigations.",
+    "The form has no visible user-editable fields — only hidden crumb (CSRF) and etag (optimistic concurrency). The new app must preserve the ETag/optimistic-concurrency semantics when attaching a consignee to a notification.",
+    "Legacy confirms there is no validation branch or editable-field mandatoriness on this interstitial: POST adds the economic-operator id and delegates trader selection (ipaffs-frontend-notification/service/src/routes/handlers/importer/economic_operator/confirmation.js:52-67). The form can additionally carry a conditional hidden fromImporterReview flag (ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47).",
+    "The original confirmation route is exposed in the trace-rendered Cookie Settings and Manage account returnUrl values as /notification/vnet/protected/notifications/{notificationId}/consignee/confirmation/{traderId}?fromCreate=true. The form has no explicit action and posts back to that route; the successful response navigates to /notification/vnet/protected/notifications/{notificationId}/traders.",
+    "QA independently corroborates only the 'Add to notification' control and happy-path transition (page-objects/notification/ConsigneeConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:410-413). It does not model the return/back links, panel copy, hidden crumb/etag fields, or any stale-etag/add failure behaviour."
+  ]
+}

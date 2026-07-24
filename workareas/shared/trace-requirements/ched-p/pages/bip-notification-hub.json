@@ -1,0 +1,288 @@
+{
+  "slug": "bip-notification-hub",
+  "legacyEnrichedBy": "codex",
+  "corroboratedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "name": "CHED decision hub / overview (inspector task list)",
+  "url": "/decision/vnet/protected/bip-notifications/{CHED}/hub",
+  "pageTitle": "Notification overview - Import and export applications - GOV.UK",
+  "caption": "CHEDP.GB.2026.1525746 - V1",
+  "heading": "CHEDP.GB.2026.1525746 - V1 Decision Hub",
+  "bodyCopy": [
+    "No inspection required",
+    "You can override the risk decision if you need to.",
+    "Inspection required",
+    "Commodities requiring inspection:",
+    "0204100010: Of domestic lamb",
+    "View full risk assessment",
+    "You can no longer override this risk decision as the consignment is already on its way to the BCP for inspection.",
+    "Commodities on this consignment may be subject to an intensified official control",
+    "02: MEAT AND EDIBLE MEAT OFFAL from Cashmere Fibere Afghan Ltd must undergo lab tests for .AMINOGLYCOSIDE/AMINOSIDE",
+    "Select the commodity to view the intensified official control",
+    "These sections can be completed in any order. You can save your progress and return at any time."
+  ],
+  "backLink": "Back",
+  "continueLabel": "View notification of consignment",
+  "secondaryActions": [
+    "View notification of consignment",
+    "override the risk decision",
+    "View full risk assessment",
+    "Save and set as in progress",
+    "Override Responsible Person",
+    "Attachments",
+    "Request amendment"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-full",
+  "structure": [
+    {
+      "element": "h1",
+      "text": "CHEDP.GB.2026.1525746 - V1 Decision Hub (heading-xl; ref number + ' - V<n>' in a heading-tertiary span, then 'Decision Hub' in #page-primary-title)",
+      "govukComponent": "Heading (xl)"
+    },
+    {
+      "element": "notification-banner",
+      "text": "Risk-assessment banner (#risk-assessment-banner). Two observed states: (a) 'No inspection required' + 'You can override the risk decision if you need to.'; (b) 'Inspection required' + 'Commodities requiring inspection:' bullet list + 'View full risk assessment' link + 'You can no longer override this risk decision as the consignment is already on its way to the BCP for inspection.'",
+      "govukComponent": "Notification banner (with custom modifier)",
+      "evidence": "Trace evidence above; QA identifies the banner heading through #risk-assessment-banner at page-objects/decision/DecisionHubPage.ts:82 and drives the override link/radio/confirmation at page-objects/decision/DecisionHubPage.ts:54, page-objects/decision/DecisionHubPage.ts:58 and page-objects/decision/DecisionHubPage.ts:62. The CHED-P override test requires the resulting banner heading to be visible at tests/notification/ched-p/ched-p-notification.spec.ts:144."
+    },
+    {
+      "element": "banner",
+      "text": "Commodities on this consignment may be subject to an intensified official control",
+      "govukComponent": "Custom information banner (banner banner-info; outside main)",
+      "conditionalOn": "A submitted CHED-P commodity/country combination matches an active intensified official control.",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 172 (before snapshot; exact heading, commodity link/copy and instruction rendered in div.banner.banner-info above main); page-objects/decision/DecisionHubPage.ts:14; CHED-P IOC test creates a matching consignment and requires this hub banner to become visible at tests/intensified-official-control/reenforced-checks.spec.ts:127"
+    },
+    {
+      "element": "paragraph",
+      "text": "These sections can be completed in any order. You can save your progress and return at any time.",
+      "govukComponent": "Body"
+    },
+    {
+      "element": "button",
+      "text": "View notification of consignment (an <a> styled as govuk-button, href .../overview)",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "table",
+      "text": "Record checks task list, rendered as a govuk-table with role=presentation. Rows: Local reference number | Documentary check | Identity and physical checks | Seal numbers | Laboratory tests | Decision | Review and submit. Right cell of each row holds a status tag (observed 'To do').",
+      "govukComponent": "Table (used as a task list)",
+      "evidence": "The CHED-P inspector workflow enters through Documentary check and then proceeds through Identity and physical checks, Seal numbers, Laboratory tests and Decision at workflows/notification/ched-p-workflows.ts:1072, workflows/notification/ched-p-workflows.ts:1083, workflows/notification/ched-p-workflows.ts:1089, workflows/notification/ched-p-workflows.ts:1092 and workflows/notification/ched-p-workflows.ts:1135."
+    },
+    {
+      "element": "h2",
+      "text": "Record checks (table caption cell, govuk-heading-m)",
+      "govukComponent": "Heading (m)"
+    },
+    {
+      "element": "link",
+      "text": "Local reference number -> .../local-reference-number  [status tag: To do]"
+    },
+    {
+      "element": "link",
+      "text": "Documentary check -> .../documentary-check?source=hub  [status tag: To do]",
+      "confidence": "confirmed",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170; QA locator page-objects/decision/DecisionHubPage.ts:28; CHED-P workflows enter the checks chain through this link at workflows/notification/ched-p-workflows.ts:1023, workflows/notification/ched-p-workflows.ts:1073, workflows/notification/ched-p-workflows.ts:1162 and workflows/notification/ched-p-workflows.ts:1188"
+    },
+    {
+      "element": "link",
+      "text": "Identity and physical checks -> .../identity-physical-checks?source=hub  [status tag: To do]"
+    },
+    {
+      "element": "link",
+      "text": "Seal numbers -> .../seals  [status tag: To do]"
+    },
+    {
+      "element": "link",
+      "text": "Laboratory tests -> .../lab-tests-required  [status tag: To do]",
+      "confidence": "confirmed",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170; QA locator page-objects/decision/DecisionHubPage.ts:36; in the CHED-P workflow this page is normally reached sequentially after Seal numbers at workflows/notification/ched-p-workflows.ts:1090"
+    },
+    {
+      "element": "button",
+      "text": "Decision (submit button in a POST form to 'hub', name=decisionNotification value=decision-notification, styled as govuk-link link-button)  [status tag: To do]",
+      "confidence": "confirmed",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170; QA button locator page-objects/decision/DecisionHubPage.ts:50; CHED-P decision workflow uses it after completing laboratory results at workflows/notification/ched-p-workflows.ts:1133"
+    },
+    {
+      "element": "link",
+      "text": "Request amendment",
+      "govukComponent": "Link",
+      "conditionalOn": "A notification state/role where amendment can be requested; the CHED-P tests do not exercise this hub action.",
+      "confidence": "inferred",
+      "evidence": "page-objects/decision/DecisionHubPage.ts:46"
+    },
+    {
+      "element": "button",
+      "text": "Review and submit (submit button in a POST form to 'hub', name=reviewNotification value=review-notification, styled as govuk-link link-button)  [status tag: To do]"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Heading (xl)",
+      "govukClass": "govuk-heading-xl",
+      "modifiers": [],
+      "count": 1,
+      "usage": "Page H1 combining CHED reference + version (heading-tertiary span) with the 'Decision Hub' primary title",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Heading (m)",
+      "govukClass": "govuk-heading-m",
+      "modifiers": [],
+      "count": 1,
+      "usage": "'Record checks' subheading, placed inside the table's header cell",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Notification banner",
+      "govukClass": "govuk-notification-banner",
+      "modifiers": ["notification-banner--warning", "notification-banner--inspection-required", "govuk-notification-banner__content (with custom notification-banner__content--full-width)"],
+      "count": 1,
+      "usage": "Risk-assessment banner communicating the inspection outcome ('No inspection required' / 'Inspection required') and the override/risk-assessment links",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170 (warning); trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 172 (inspection-required)"
+    },
+    {
+      "component": "Table",
+      "govukClass": "govuk-table",
+      "modifiers": ["govuk-table__row", "govuk-table__header", "govuk-table__cell"],
+      "count": 1,
+      "usage": "The inspector task list ('Record checks') is built from a govuk-table with role=presentation, one row per check, status tag in the right cell",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Tag",
+      "govukClass": "govuk-tag",
+      "modifiers": ["govuk-tag--grey"],
+      "count": 7,
+      "usage": "Status of each task row; all observed as grey 'To do' on both traces (fresh/new notifications)",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": ["govuk-!-margin-bottom-0"],
+      "count": 1,
+      "usage": "'View notification of consignment' — an anchor styled as a button linking to the consignment overview",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Body",
+      "govukClass": "govuk-body",
+      "modifiers": ["govuk-!-margin-bottom-2", "govuk-!-margin-bottom-6", "govuk-!-margin-bottom-8"],
+      "count": 3,
+      "usage": "Intro/help paragraphs and banner copy",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [],
+      "count": 7,
+      "usage": "Task-row navigation links (Local reference number, Documentary check, Identity and physical checks, Seal numbers, Laboratory tests), the override-risk-decision link, and the view-risk-overview link",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "component": "List (bullet)",
+      "govukClass": "govuk-list govuk-list--bullet",
+      "modifiers": ["govuk-!-margin-left-5"],
+      "count": 1,
+      "usage": "Bullet list of commodities requiring inspection, only in the 'Inspection required' banner state",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 172"
+    }
+  ],
+  "nonStandardPatterns": [
+    {
+      "pattern": "banner banner-info (intensified official control banner above main)",
+      "whatItDoes": "Shows the intensified-official-control heading, a linked commodity with establishment/test details, and the instruction 'Select the commodity to view the intensified official control'.",
+      "concern": "This conditional information panel uses legacy custom banner classes rather than a GOV.UK notification banner and sits outside the main element.",
+      "govukAlternative": "GOV.UK Notification banner placed within main, preserving the trace-confirmed copy and commodity link.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 172 (before snapshot and DOM outerHTML)"
+    },
+    {
+      "pattern": "govuk-table (id=validate-import-notification-table, role=presentation) used to render the inspector task list",
+      "whatItDoes": "Lays out the seven checks (Local reference number, Documentary check, Identity and physical checks, Seal numbers, Laboratory tests, Decision, Review and submit) as table rows, each with a navigation link in the left cell and a status tag in the right cell",
+      "concern": "This is semantically a task list but is implemented as a presentation table rather than the GOV.UK Task list component. It hand-rolls the row/tag layout and mixes anchors and form-submit buttons as the row 'titles'.",
+      "govukAlternative": "GOV.UK Task list component (govuk-task-list) — each item is a link + status tag, which is exactly this page's intent",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "pattern": "link-button (button.govuk-link.link-button inside a POST form)",
+      "whatItDoes": "The 'Decision' and 'Review and submit' task rows are submit buttons (POST to 'hub' with name/value decisionNotification / reviewNotification, plus hidden crumb + etag) styled to look like the plain govuk-link anchors used by the other rows",
+      "concern": "Two of the seven task rows are form submissions dressed as links, while the other five are real anchors. Inconsistent interaction model within one list; the POST also carries an etag optimistic-concurrency token.",
+      "govukAlternative": "In the new app these can be plain links (GET) within a Task list, or if a POST is genuinely needed, a govuk-button — not a link-styled submit",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "pattern": "notification-banner--warning / notification-banner--inspection-required + notification-banner__content--full-width",
+      "whatItDoes": "Custom colour/emphasis and full-width modifiers layered onto the govuk-notification-banner to signal the risk-assessment outcome",
+      "concern": "Non-standard visual modifiers on the notification banner; the component is being repurposed as a status/decision panel rather than a plain notification.",
+      "govukAlternative": "Standard Notification banner, or an inset text / panel with a govuk-tag for status; keep to the toolbox colours",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170; trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84 action 172"
+    },
+    {
+      "pattern": "heading-tertiary (span inside the H1)",
+      "whatItDoes": "Renders the CHED reference number and ' - V<n>' version at a smaller size within the H1, above the 'Decision Hub' primary title",
+      "concern": "Custom typographic class doing the job of a section caption inside the heading rather than a separate govuk-caption-xl above the H1",
+      "govukAlternative": "govuk-caption-xl above the H1 (standard GOV.UK caption-over-heading pattern)",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    },
+    {
+      "pattern": "badge-right, tag (legacy)",
+      "whatItDoes": "badge-right right-aligns the status tag cell; 'tag' is a legacy tag class carried alongside the standard govuk-tag on every status strong",
+      "concern": "Bespoke alignment helper plus a redundant legacy tag class; both are IPAFFS-specific carryover",
+      "govukAlternative": "Task list component handles tag placement natively; drop the legacy 'tag' class and use govuk-tag alone",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170"
+    }
+  ],
+  "fields": [
+    {
+      "name": "crumb / etag (hidden inputs repeated in three hub POST forms)",
+      "label": "(no visible label — hidden CSRF crumb + optimistic-concurrency etag inside the Save and set as in progress, Decision, and Review and submit POST forms)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "These are implementation/security metadata rather than inspector-entered decision fields. Every applicable hub POST form supplies crumb and etag as hidden values from the server-rendered view (ipaffs-frontend-decision/service/src/views/bip/notificationHub.html:10-14,289-313); the POST handler also replaces a submitted etag with the notification's latest etag before processing (service/src/routes/handlers/bip/notification_hub.js:172-182).",
+      "confidence": "confirmed",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170 (three hub forms: setInProgress, decisionNotification and reviewNotification, each containing hidden crumb and etag); no QA page-object locator exposes either hidden value, so requiredness and concurrency behavior remain trace-only"
+    },
+    {
+      "name": "crumb / returnUrl / fromFooterHeader (shared cookie form)",
+      "label": "(no visible label — hidden shared-chrome cookie-form fields)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Shared-chrome implementation metadata rather than inspector-entered decision fields. The page-specific authorised hub template has no validation or business rule for these cookie-form values; its actual hub POST handling reads reviewNotification, returnToWorkOrder, recordChecks, decisionNotification and setInProgress (ipaffs-frontend-decision/service/src/routes/handlers/bip/notification_hub.js:172-209).",
+      "confidence": "confirmed",
+      "evidence": "trace 041c29c39002db28bc43ff85691f757cec6e31db action 170 (control inventory: hidden crumb, returnUrl and fromFooterHeader after the three hub forms)"
+    },
+    {
+      "name": "iuu-status",
+      "label": "IUU",
+      "control": "link",
+      "required": null,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Conditional task rather than a universally required hub field. The legacy handler enables it only when the non-SPS IUU feature is enabled and the notification contains an IUU commodity (ipaffs-frontend-decision/service/src/routes/handlers/bip/notification_hub.js:275-278). Rebuild policy must decide whether this feature-gated task remains applicable.",
+      "observedValues": [],
+      "conditionalOn": "The non-SPS IUU enhancements feature is enabled and this CHED-P contains an IUU commodity.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-decision/service/src/views/bip/notificationHub.html:186-200; service/src/routes/handlers/bip/notification_hub.js:150-153,275-278"
+    }
+  ],
+  "validationMessages": [],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "This is a decision/inspector-app hub (journey position -1), not part of the CHED-P importer pre-notification submission journey. Confirm it is in scope for the rebuilt importer-facing app, or whether it belongs to a separate decision/BCP-inspector service.",
+    "Only the 'To do' status tag was observed (both traces were fresh notifications). The other task states (e.g. In progress / Completed / Cannot start yet and their tag colours) were not exercised in these two traces and are a gap — mine an in-progress decision trace to capture the full status vocabulary and colours.",
+    "The task list is fixed at seven rows in both traces, and the CHED-P QA workflows consistently traverse Documentary check -> Identity and physical checks -> Seal numbers -> Laboratory tests -> Decision for both permit and reject outcomes (workflows/notification/ched-p-workflows.ts:1161 and workflows/notification/ched-p-workflows.ts:1187). No test explicitly asserts that all seven rows remain visible for every risk outcome, so conditional visibility is still a gap.",
+    "The banner has two observed states (No inspection required / Inspection required). Other risk outcomes or an override-applied state may exist and were not seen — gap.",
+    "The 'Save and set as in progress' button, 'New' status tag, 'Override Responsible Person' and 'Attachments' links render in decision-app chrome ABOVE <main>, not inside it. Recorded as secondaryActions; confirm whether they are page requirements or shared decision-app chrome.",
+    "The shared DecisionHubPage also exposes CHED-D-only 'Checks' / 'Cancel CHED' controls and CHED-PP-only 'Record PHSI checks' / notification-overview variants. They were not added as CHED-P requirements because their QA usages are confined to other CHED types.",
+    "Request amendment is exposed by the shared decision-hub page object but no CHED-P test invokes it, so its exact eligibility condition and placement are a gap.",
+    "Legacy source resolves the ordinary CHED-P task status vocabulary: each task is 'Started' when any field in that section has a value, otherwise 'To do'; Review and submit is deliberately always 'To do' (ipaffs-frontend-decision/service/src/routes/handlers/bip/notification_hub.js:102-119). Started is blue and the default/To do state grey (service/src/utils/handlebars.js:566-571). 'Completed' and 'In progress' apply to the separate CHED-PP hub-status helper, not these CVEDP rows (service/src/utils/handlebars.js:573-581).",
+    "Legacy source adds a feature- and commodity-dependent 'IUU' task row for CHED-P that neither supplied trace rendered (ipaffs-frontend-decision/service/src/views/bip/notificationHub.html:186-200; handler condition at service/src/routes/handlers/bip/notification_hub.js:275-278). Its mandatoriness remains configuration/policy dependent.",
+    "Legacy-vs-QA discrepancy: the authorised hub template contains no 'Request amendment' control; that link is in the separate notification overview template (ipaffs-frontend-decision/service/src/views/bip/overview.html:29). Preserve the inferred item but confirm whether the rebuild should treat it as overview-only.",
+    "No validation messages apply to the hub itself: its visible controls are navigation links or action-selection submits, and the POST handler only dispatches by the presence of those action keys (ipaffs-frontend-decision/service/src/routes/handlers/bip/notification_hub.js:172-209). Field-level checks are enforced on the destination task pages."
+  ]
+}

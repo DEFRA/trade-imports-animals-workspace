@@ -1,0 +1,121 @@
+{
+  "slug": "transporter-confirmation",
+  "legacyEnrichedBy": "codex",
+  "verifiedBy": "codex-adversarial",
+  "verifyVerdict": "corrected",
+  "corroboratedBy": "codex",
+  "name": "Transporter confirmation (add to notification)",
+  "url": "/notification/vnet/protected/notifications/{notificationId}/private-transporter/confirmation/{transporterId}?fromCreate=true",
+  "pageTitle": "Create transporter confirmation - Import and export applications - GOV.UK",
+  "caption": "",
+  "heading": "The transporter has been created",
+  "bodyCopy": [],
+  "backLink": "",
+  "continueLabel": "Add to notification",
+  "secondaryActions": [
+    "Return to search"
+  ],
+  "layout": "govuk-grid-row > govuk-grid-column-two-thirds",
+  "structure": [
+    {
+      "element": "panel",
+      "text": "The transporter has been created",
+      "govukComponent": "Panel (confirmation)"
+    },
+    {
+      "element": "button",
+      "text": "Add to notification",
+      "govukComponent": "Button"
+    },
+    {
+      "element": "link",
+      "text": "Return to search",
+      "govukComponent": "Link"
+    }
+  ],
+  "govukComponents": [
+    {
+      "component": "Panel",
+      "govukClass": "govuk-panel",
+      "modifiers": [
+        "govuk-panel--confirmation",
+        "govuk-panel__title",
+        "govuk-!-margin-bottom-8"
+      ],
+      "count": 1,
+      "usage": "Green confirmation panel announcing that the transporter has been created. H1 is rendered as govuk-panel__title (there is no separate govuk-heading-xl).",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 124. QA locator: page-objects/notification/TransporterConfirmationPage.ts:6-8. The CHED-P workflow clicks this action immediately after creating the transporter and then returns to the Transporter page: workflows/notification/ched-p-workflows.ts:509-517."
+    },
+    {
+      "component": "Button",
+      "govukClass": "govuk-button",
+      "modifiers": [
+        "govuk-!-display-block",
+        "govuk-!-margin-bottom-2"
+      ],
+      "count": 1,
+      "usage": "Primary submit button 'Add to notification' (id=button-add, type=submit, value='Add to notification', data-prevent-double-click='true') — attaches the newly-created transporter to the CHED-P notification and navigates to the transport page.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 124"
+    },
+    {
+      "component": "Link",
+      "govukClass": "govuk-link",
+      "modifiers": [
+        "govuk-!-font-size-19"
+      ],
+      "count": 1,
+      "usage": "Secondary text link 'Return to search' (id=manage-notifications) linking to .../traders/transporter/search — returns to the transporter search without adding this one to the notification.",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 124"
+    }
+  ],
+  "nonStandardPatterns": [],
+  "fields": [
+    {
+      "name": "crumb",
+      "label": "(hidden CSRF token)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "CSRF infrastructure field rendered by the shared confirmation template; the confirmation POST handler performs no page-level Joi validation and does not read crumb as a domain value (ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:42-45; service/src/routes/handlers/importer/economic_operator/confirmation.js:52-66).",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 124 — <input name=\"crumb\" type=\"hidden\">; hapi crumb CSRF protection, infrastructure not a user requirement"
+    },
+    {
+      "name": "etag",
+      "label": "(hidden optimistic-concurrency token)",
+      "control": "hidden",
+      "required": true,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Operationally required for the patch that attaches the selected transporter: the template submits etag (ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:42-45), and the POST delegates to selectTheTrader, which passes the payload to patchUtils.doPatchOperations (service/src/routes/handlers/importer/economic_operator/confirmation.js:52-66; service/src/utils/economic_operator.js:95-111). There is no page-level Joi rule or user-facing validation copy on this interstitial.",
+      "confidence": "confirmed",
+      "evidence": "trace 94d29a163f6ab37556cd585b4eabeec9b9c27d84, action 124 — <input name=\"etag\" type=\"hidden\" value=\"\\\"0000000000BD28CE\\\"\">; version/etag for optimistic concurrency, infrastructure not a user requirement"
+    },
+    {
+      "name": "fromImporterReview",
+      "label": "(hidden return-context flag)",
+      "control": "hidden",
+      "required": false,
+      "requiredConfidence": "legacy",
+      "requiredEvidence": "Optional navigation context. The template renders it only when actionsModel.fromImporterReview is set, and the POST handler can also derive the same flag from the query string (ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47; service/src/routes/handlers/importer/economic_operator/confirmation.js:57-59).",
+      "conditionalOn": "The transporter was created or updated from importer review.",
+      "confidence": "legacy",
+      "evidence": "ipaffs-frontend-notification/service/src/views/importer/traders/confirmation.html:45-47; service/src/routes/handlers/importer/economic_operator/confirmation.js:57-59"
+    }
+  ],
+  "validationMessages": [
+    {
+      "message": "",
+      "field": "Add to notification action",
+      "trigger": "Attaching the newly created transporter fails, for example because the hidden concurrency token is stale",
+      "confidence": "gap",
+      "evidence": "No trace or scoped CHED-P QA test captures a failed attach. The page object exposes only the successful 'Add to notification' action (page-objects/notification/TransporterConfirmationPage.ts:3-8), and the workflow always follows the successful path (workflows/notification/ched-p-workflows.ts:509-517)."
+    }
+  ],
+  "confidence": "confirmed",
+  "openQuestions": [
+    "Authorised legacy source confirms there is no page-level validation schema or validation-message copy for this confirmation interstitial; POST immediately injects the transporter id and performs the notification patch (economic_operator/confirmation.js:52-66; economic_operator.js:95-111). Stale-etag and attach failures therefore remain integration-error behaviour rather than field validation that can be specified from this page.",
+    "This is a confirmation interstitial, not a data-entry page: no user-facing form fields, no caption, no back link. The only two form inputs are hidden infrastructure tokens (crumb = hapi CSRF, etag = optimistic concurrency).",
+    "In the new app this whole interstitial may be unnecessary — a created transporter could be attached to the notification in one step without a separate confirmation panel + 'Add to notification' click. Flag as a candidate for simplification rather than a hard requirement.",
+    "Only one action is covered by QA: 'Add to notification' (page-objects/notification/TransporterConfirmationPage.ts:6-8; workflows/notification/ched-p-workflows.ts:513-517). 'Return to search', panel text, duplicate submission and stale-etag/failure behaviour are not asserted. The page has no editable user inputs, so ordinary field validation is not expected; failed-attach copy remains a gap."
+  ]
+}

@@ -1,0 +1,663 @@
+{
+  "journey": "ched-p",
+  "description": "Conflict register for the canonical CHED-P journey spec after supplementary legacy-source and delegated-authority enrichment. Existing c-NNN identities are preserved; new disagreements continue from c-038.",
+  "precedenceOrder": [
+    "confirmed: rendered-trace",
+    "legacy: authoritative IPAFFS source",
+    "inferred: QA tests/page objects",
+    "gap"
+  ],
+  "counts": {
+    "total": 47,
+    "needsHuman": 7,
+    "settled": 40,
+    "newThisPass": 10,
+    "newlyResolved": 2
+  },
+  "legacyNote": "Legacy source is now authorised as the second evidence tier. Rendered-trace still wins when the same fact disagrees. c-011 and c-015 are newly resolved by implementation/source evidence; c-038 and c-041 remain human decisions because competing legacy facts are at the same tier.",
+  "delegatedAuthorityNote": "No direct contradictory DoA observation was found. Apparent differences between draft/submitted and creator/member views are actor/state conditions, not conflicts. The entire CHED-P application remains cross-type evidence and is therefore a model gap.",
+  "conflicts": [
+    {
+      "id": "c-001",
+      "topic": "Transit exit-BCP option set: rendered list omits HOLYHEAD but QA requires it",
+      "pageSlug": "about-the-consignment",
+      "sources": [
+        "rendered-trace",
+        "test-assertion"
+      ],
+      "detail": "The rendered Transit BCP select contains 34 options including the placeholder and does not contain HOLYHEAD (GBHLY). The focused CHED-P Holyhead test explicitly expects HOLYHEAD to be present for an EU Transit journey.",
+      "ruling": "Rendered-trace wins on the captured option set: retain the 34 rendered options and count for this evidence snapshot. Record HOLYHEAD as test-asserted intent and require the rebuild to source the current eligible BCP set from reference data rather than hardcode the trace list.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-002",
+      "topic": "Fish catch-certificate sub-flow belongs to IUU, not CHED-P",
+      "pageSlug": "catch-certificate-needed / attach-catch-certificate / add-catch-certificate-details",
+      "sources": [
+        "rendered-trace",
+        "programme-scope-decision"
+      ],
+      "detail": "The only fish trace renders the Catch certificates question, upload and per-certificate detail controls inside legacy CHED-P. Programme scope separates fish/IUU controls into a standalone IUU journey.",
+      "ruling": "Out of CHED-P scope → IUU. Keep the three page records and their fields solely as boundary evidence, tag scope=IUU, and do not count them as CHED-P field obligations. This is a settled programme decision.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-003",
+      "topic": "HS chapter 03 and fish sub-codes belong to IUU",
+      "pageSlug": "search-commodity",
+      "sources": [
+        "rendered-trace",
+        "programme-scope-decision"
+      ],
+      "detail": "Legacy CHED-P offers chapter 03 and the fish trace enters code 03019230. The new service boundary moves fish to IUU. Chapter 16 is mixed: fish preparations and meat preparations share the chapter.",
+      "ruling": "Out of CHED-P scope → IUU for all HS chapter 03 codes and fish sub-codes in mixed chapters such as chapter 16. Meat sub-codes in chapter 16 remain CHED-P. Keep the shared commodity-search page, but tag these value subsets as IUU exclusions.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-004",
+      "topic": "Anguilla species values belong to IUU",
+      "pageSlug": "commodity-basic-description",
+      "sources": [
+        "rendered-trace",
+        "programme-scope-decision"
+      ],
+      "detail": "The shared commodity/species page rendered Anguilla anguilla and Anguilla spp. for the fish code, while non-fish CHED-P traces render species such as Ovis aries and Bison spp.",
+      "ruling": "Out of CHED-P scope → IUU for the Anguilla fish species values. Keep the shared page and field as CHED-P, retain the fish values as tagged boundary evidence, and exclude those values from the CHED-P species reference set.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-005",
+      "topic": "Fish trace is evidence for IUU and must be removed from the CHED-P journey set",
+      "pageSlug": "journey-set",
+      "sources": [
+        "rendered-trace",
+        "programme-scope-decision"
+      ],
+      "detail": "Trace db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d is the only title-marked fish trace and the only trace that visits the catch-certificate sub-flow.",
+      "ruling": "Drop db2d277c5c8bfcf2dc0f2278bc92dc7aa8fdf42d from the canonical CHED-P journey set (96 mined → 95 in-scope). Retain citations only on scope=IUU boundary records for handoff.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-006",
+      "topic": "Cloning intended success path conflicts with rendered HTTP 406 failure",
+      "pageSlug": "clone-certificate-type / clone-search",
+      "sources": [
+        "rendered-trace",
+        "test-assertion",
+        "workflow-config"
+      ],
+      "detail": "The QA test and workflow expect Search → Clone → a new CHED-P reference. The trace instead returns HTTP 406, renders “You cannot clone this certificate”, and never renders the Clone button.",
+      "ruling": "Out-of-scope candidate — needs human confirmation. Rendered reality wins for the current-state model, so only the type/search form and 406 fallback are confirmed. Do not promise a working clone path unless a human explicitly puts cloning into rebuild scope.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-007",
+      "topic": "Common User Charge was confused with Common Transit Convention in inventory evidence",
+      "pageSlug": "common-user-charge",
+      "sources": [
+        "page-inventory",
+        "rendered-trace",
+        "test-assertion"
+      ],
+      "detail": "The supplied action 110 points to Goods movement services and the Common Transit Convention question, not the Common User Charge. The actual CUC billing-confirmation page renders at actions 142/147 and is exercised by the CHED-P CUC test.",
+      "ruling": "Common User Charge and all billing pages are IN CHED-P scope. Adopt the rendered billing-details/confirm evidence and corrected actions. Treat CTC and CUC as separate features despite the shared word “Common”.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-008",
+      "topic": "CUC eligibility: Sevington versus explicit isCuc flag",
+      "pageSlug": "common-user-charge",
+      "sources": [
+        "test-assertion",
+        "workflow-config"
+      ],
+      "detail": "The CUC test sets both portOfEntry=Sevington and isCuc=true. A workflow comment says Sevington triggers the branch, while the automation code gates it on isCuc. Neither source isolates the business eligibility rule.",
+      "ruling": "Keep the CUC pages in scope and record their routing as conditional. The actual eligibility rule cannot be settled by precedence because both facts come from the same weaker source tier and were varied together.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-009",
+      "topic": "Inspector decision inventory over-splits a single /review page",
+      "pageSlug": "decision-datetime-submit / decision-redispatch-deadline",
+      "sources": [
+        "rendered-trace",
+        "legacy-source",
+        "page-inventory",
+        "workflow-config"
+      ],
+      "detail": "Both inventory slugs resolve to the single /review page. Legacy source now identifies the real Refusal by date controls as not-acceptable-day/month/year embedded conditionally on decision-conclusion; the six originally mis-targeted fields are the review page’s declaration and checks date/time.",
+      "ruling": "Keep one canonical decision-datetime-submit review page and retain decision-redispatch-deadline only as a source alias. Count the six review controls once. Fold the legacy refusal-by validation copy into decision-conclusion and keep its existing combined confirmed refusal-date field rather than inventing a standalone deadline page.",
+      "needsHuman": false,
+      "resolutionNote": "Refined by legacy source in this pass; the prior settled consolidation remains unchanged."
+    },
+    {
+      "id": "c-010",
+      "topic": "Inspector declaration wording differs from stale page-object locator",
+      "pageSlug": "decision-datetime-submit",
+      "sources": [
+        "rendered-trace",
+        "page-object"
+      ],
+      "detail": "The trace says “I, the undersigned official inspector for the entry point…”. DecisionReviewPage expects text matching “I, the undersigned certifying officer”; the workflow does not use that locator.",
+      "ruling": "Adopt the rendered official-inspector wording. Treat the unused certifying-officer locator as stale or a different decision variant.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-011",
+      "topic": "Region-code hint and DOM maxlength disagree",
+      "pageSlug": "origin-of-import",
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "The confirmed hint says “Enter up to 5 characters”, while the confirmed DOM maxlength is 3. The CHED-P template input and authorised Joi validator independently enforce .max(3) and emit “Region code must be 3 characters or fewer”.",
+      "ruling": "Adopt 3 as the canonical maximum because the confirmed DOM constraint and legacy validator agree. Retain the 5-character rendered hint verbatim as a confirmed copy defect; the rebuild must change the hint to match the 3-character rule.",
+      "needsHuman": false,
+      "newlyResolved": true,
+      "resolvedInPass": "supplementary-legacy-and-doa-rerun",
+      "resolutionNote": "Legacy Joi .max(3) resolves the intended constraint; the contradictory rendered hint remains an explicit copy conflict."
+    },
+    {
+      "id": "c-012",
+      "topic": "Document-type contextual list is narrower than QA vocabulary",
+      "pageSlug": "accompanying-documents / attachments-tab",
+      "sources": [
+        "rendered-trace",
+        "legacy-source",
+        "workflow-config"
+      ],
+      "detail": "The rendered CHED-P page exposes 14 document types. The QA vocabulary exposes 27 cross-context values. Legacy source defines 15 CHED-P constants and includes Catch certificate and Health certificate, both absent from the rendered list.",
+      "ruling": "Rendered evidence wins on this captured page: keep its 14-option set. Keep Catch certificate in the separate IUU flow and do not silently introduce either legacy-only value. Source the rebuilt list from contextual reference data because the legacy constants and rendered deployment demonstrably differ.",
+      "needsHuman": false,
+      "resolutionNote": "Legacy adds a second, lower-precedence disagreement to the existing option-set conflict."
+    },
+    {
+      "id": "c-013",
+      "topic": "Package-type contextual list is narrower than QA vocabulary",
+      "pageSlug": "commodity-extended-description",
+      "sources": [
+        "rendered-trace",
+        "workflow-config"
+      ],
+      "detail": "The rendered CHED-P page contains 26 real package options plus the placeholder. The shared QA vocabulary adds package types not rendered in the traced commodity branch.",
+      "ruling": "Rendered-trace wins for the observed branch. Keep the rendered options/count, record the wider catalogue only as contextual reference data, and do not silently add its extra values to this field.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-014",
+      "topic": "Displayed upload extension list is narrower than test-proven acceptance",
+      "pageSlug": "document-upload / attachments-tab",
+      "sources": [
+        "rendered-trace",
+        "legacy-source",
+        "test-assertion"
+      ],
+      "detail": "Rendered copy/errors name DOC, JPEG, PDF, PNG and XLS. Tests prove DOCX acceptance; legacy constants confirm DOCX and XLSX are accepted even though display/error copy collapses them under DOC and XLS.",
+      "ruling": "Preserve the rendered copy as current-state evidence and the legacy/test allow-list as accepted behaviour. The rebuild must publish the exact allow-list it enforces and name DOCX/XLSX explicitly if they remain accepted.",
+      "needsHuman": false,
+      "resolutionNote": "Legacy corroborates the wider behavioural allow-list."
+    },
+    {
+      "id": "c-015",
+      "topic": "Upload size boundary says “up to 10MB” and “smaller than 10MB”",
+      "pageSlug": "document-upload / attachments-tab / attach-catch-certificate",
+      "sources": [
+        "rendered-trace",
+        "legacy-source",
+        "test-assertion"
+      ],
+      "detail": "Rendered copy says both “up to 10MB” and “smaller than 10MB”. The authorised upload validator compares content length using greater-than TEN_MB (10,485,760 bytes), so exactly TEN_MB is accepted and only a larger file is rejected.",
+      "ruling": "Adopt an inclusive 10 MiB boundary as canonical legacy behaviour. Keep the rendered “smaller than 10MB” string as the confirmed copy defect and replace it with unambiguous inclusive wording in the rebuild.",
+      "needsHuman": false,
+      "newlyResolved": true,
+      "resolvedInPass": "supplementary-legacy-and-doa-rerun",
+      "resolutionNote": "Legacy implementation settles the exact boundary."
+    },
+    {
+      "id": "c-016",
+      "topic": "Notification results render as cards while page object addresses a table",
+      "pageSlug": "notifications-dashboard / notification-search-view",
+      "sources": [
+        "rendered-trace",
+        "page-object"
+      ],
+      "detail": "The trace renders notification-list definition-list cards. NotificationDashboardPage also contains #notifications-page tbody/tr/td locators not used by scoped CHED-P tests.",
+      "ruling": "Rendered-trace wins on current structure: model cards and treat the table locators as stale or variant-only. The rebuild may deliberately choose a GOV.UK table or summary-list pattern.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-017",
+      "topic": "Yesterday quick-range exists in page object but not rendered dashboard",
+      "pageSlug": "notifications-dashboard / notification-search-view",
+      "sources": [
+        "rendered-trace",
+        "page-object"
+      ],
+      "detail": "The rendered dashboard offers Today, Tomorrow, Next seven days and Clear date range. The shared page object exposes Yesterday, but no scoped CHED-P test uses it on this dashboard.",
+      "ruling": "Exclude Yesterday from the confirmed dashboard option set. Retain it only as inferred shared/variant scaffolding until a CHED-P trace or assertion establishes the condition.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-018",
+      "topic": "Re-entry consignor flow renders consignee copy and route",
+      "pageSlug": "consignor-creation",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "The consignor workflow reaches /traders/consignee/new?reimport=true and renders “Add consignee” / “Consignee name”, while its return link and page object identify the role as consignor/exporter.",
+      "ruling": "Rendered-trace wins on the re-entry variant copy and route. Preserve it as legacy evidence, tag the role mismatch, and do not generalise the swapped copy to the standard ROW consignor page.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-019",
+      "topic": "Contact-details action set differs by trace and page-object variants",
+      "pageSlug": "contact-details",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "The trace renders Save and return to hub, Save and continue, and Cancel and return to hub. The page object/workflow also models Save and review, which did not render in the create snapshot.",
+      "ruling": "Keep the trace-rendered actions as confirmed and Save and review as an inferred review-entry variant. Do not model all labels as simultaneously available.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-020",
+      "topic": "Origin page object exposes a health-certificate question absent from CHED-P traces",
+      "pageSlug": "origin-of-import",
+      "sources": [
+        "rendered-trace",
+        "legacy-source",
+        "page-object"
+      ],
+      "detail": "A shared QA page object exposes health-certificate-required, but it is absent from CHED-P traces. The authorised CHED-P template and validator contain no such field on origin-of-import.",
+      "ruling": "Legacy outranks the inferred page-object member and corroborates the rendered absence. Retain the field only as excluded stale/cross-type evidence; do not count it as a CHED-P obligation or render it on this page.",
+      "needsHuman": false,
+      "resolutionNote": "Legacy source strengthens the prior rendered-trace ruling."
+    },
+    {
+      "id": "c-021",
+      "topic": "Commodity-additional controls exist only in shared page object",
+      "pageSlug": "commodity-additional-details",
+      "sources": [
+        "rendered-trace",
+        "page-object"
+      ],
+      "detail": "Feedingstuff, Total gross weight and Save and review exist in the shared page object but do not render or get driven by the scoped CHED-P workflows.",
+      "ruling": "Keep the rendered temperature controls as canonical. Retain the extra controls only as inferred variants with unknown conditions; do not promote them to unconditional requirements.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-022",
+      "topic": "Commodity-extended controls exist only in shared page object",
+      "pageSlug": "commodity-extended-description",
+      "sources": [
+        "rendered-trace",
+        "page-object"
+      ],
+      "detail": "Number of animals, Select all and Apply are present in the shared page object but absent from CHED-P traces and workflows.",
+      "ruling": "Rendered-trace wins on the observed CHED-P commodity branch. Retain the extras only as inferred conditional variants pending evidence of their CHED-P applicability.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-023",
+      "topic": "Transporter No/Select controls are cross-CHED page-object leakage",
+      "pageSlug": "transporter",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "The shared Transporter page object exposes a No radio and Select button. Neither renders in the CHED-P trace nor is used by CHED-P; Select is used by CHED-A.",
+      "ruling": "Exclude both from confirmed CHED-P structure. Preserve only as inferred cross-type variants so the evidence is not lost.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-024",
+      "topic": "Invalid-certificate checkbox is attached to the wrong page object",
+      "pageSlug": "decision-conclusion / decision-reason-for-refusal",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "DecisionScopePage exposes invalidCertificate, but the rejection workflow uses the checkbox only after leaving the conclusion page and the checkbox never renders in conclusion traces.",
+      "ruling": "Do not add it to decision-conclusion. Treat it as a reason-for-refusal control and the page-object member as misplaced/stale.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-025",
+      "topic": "Override-risk radio is workflow-driven but absent from rendered snapshots",
+      "pageSlug": "override-risk-decision",
+      "sources": [
+        "rendered-trace",
+        "workflow-config"
+      ],
+      "detail": "Neither trace renders “Override risk decision as inspection required”, while the CHED-P workflow conditionally checks it before the rendered Yes confirmation action.",
+      "ruling": "Preserve the radio as an inferred variant-only control with an unknown render condition. The rendered confirmation copy/actions remain canonical for the captured state.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-026",
+      "topic": "Approved-establishment row Select versus terminal Save and continue",
+      "pageSlug": "search-approved-establishment",
+      "sources": [
+        "rendered-trace",
+        "test-assertion",
+        "page-object"
+      ],
+      "detail": "The trace confirms the row-level Select action. Page object/workflow intent separately uses Save and continue to finalise the selected establishment list, but that control is silent in the cited snapshot.",
+      "ruling": "Model Select as the confirmed row action and Save and continue as the inferred terminal action. Tests establish intent where the trace is silent; they are sequential rather than competing labels.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-027",
+      "topic": "Selected risk category differs from hidden highest-risk value",
+      "pageSlug": "select-risk-category",
+      "sources": [
+        "rendered-trace",
+        "workflow-config"
+      ],
+      "detail": "The trace keeps hidden highest-risk-category=High while the user selects Medium. Workflow defaults cover both Medium and High but do not establish whether selection may undercut the computed maximum.",
+      "ruling": "Model highest-risk-category as computed and risk-category as the explicit user answer. Whether the computed maximum constrains or validates the selection cannot be settled from the admissible evidence.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-028",
+      "topic": "Review consignment-reference row is blank while QA expects configured value",
+      "pageSlug": "review-notification",
+      "sources": [
+        "rendered-trace",
+        "test-assertion"
+      ],
+      "detail": "The rendered review row for Consignment reference number is empty. A CHED-P test asserts #reference-number contains the configured reference number in another journey.",
+      "ruling": "Treat the row as a restatement of origin-of-import.local-reference-number and support blank and populated states. Requiredness/blank-display policy remains a human product decision.",
+      "needsHuman": true
+    },
+    {
+      "id": "c-029",
+      "topic": "Inventory action pointers corrected by rendered page evidence",
+      "pageSlug": "multiple",
+      "sources": [
+        "page-inventory",
+        "rendered-trace"
+      ],
+      "detail": "Verify found wrong or navigate-away pointers for accompanying-documents, attachments-tab, billing-select-address, border-notification-review, delete-notification-confirmation, document-upload, importer, laboratory-test-results, latest-health-certificate, means-of-transport-after-bcp, nominated-contacts, notification-hub, override-risk-decision, review-notification and transport-details; country-of-origin also named Austria where the trace selects Germany.",
+      "ruling": "Use the corrected rendered actions recorded in each verified page spec. Inventory order remains canonical, but its incorrect action/note is not used as provenance for the affected fact.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-030",
+      "topic": "Inventory URL/label guesses differ from rendered inspector routes and copy",
+      "pageSlug": "decision-conclusion / decision-reason-for-refusal / laboratory-test-required",
+      "sources": [
+        "page-inventory",
+        "rendered-trace"
+      ],
+      "detail": "Rendered routes are /decisions (plural) and /refusal, not /conclusion and /reason-for-refusal. The laboratory page is /lab-tests-required with H1 “Laboratory tests” and legend “Would you like to record laboratory tests?”, not the inventory guess.",
+      "ruling": "Rendered-trace wins on URL and copy. Keep the stable inventory slugs as canonical identifiers, but adopt the rendered routes/headings/labels in page fields.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-031",
+      "topic": "Common User Charge canonical slug aliases legacy billing-details routes",
+      "pageSlug": "common-user-charge",
+      "sources": [
+        "page-inventory",
+        "rendered-trace"
+      ],
+      "detail": "The canonical inventory slug is common-user-charge, while IPAFFS serves the feature at /billing-details/confirm with find/select-address and contact sub-pages.",
+      "ruling": "Keep common-user-charge as the canonical requirement slug and the rendered /billing-details/* URLs as legacy route evidence. This is a naming alias, not a separate page obligation.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-032",
+      "topic": "Fish upload-count comment says one while configuration and trace use two",
+      "pageSlug": "attach-catch-certificate",
+      "sources": [
+        "rendered-trace",
+        "workflow-config"
+      ],
+      "detail": "The fish-workflow comment says catch-certificate count defaults to 1, while DEFAULT_FISH_CONFIG sets it to 2 and the rendered fish journey exercises the upload/details loop twice.",
+      "ruling": "Treat the comment as stale. Adopt two as the observed/configured fixture count, while keeping actual catch-certificate cardinality as dynamic IUU behaviour rather than a CHED-P requirement.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-033",
+      "topic": "Cloning certificate-details primary action: Search versus unused Continue",
+      "pageSlug": "clone-search",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "The trace and active CHED-P workflow render/use Search. The same page object exposes an alternate Continue helper that is not called by a CHED-P test.",
+      "ruling": "Adopt Search as the confirmed current action. Retain Continue only as inferred stale/other-certificate-type scaffolding; it is not part of the accepted clone candidate without further evidence.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-034",
+      "topic": "Border-notification Save and Submit belongs to review, not create page",
+      "pageSlug": "border-notification-create / border-notification-review",
+      "sources": [
+        "rendered-trace",
+        "page-object",
+        "workflow-config"
+      ],
+      "detail": "CreateBorderNotificationPage exposes Save and Submit alongside Save and continue, but the workflow invokes Save and Submit only after Save and continue has navigated to the review page. The create trace does not render it as a create-page action.",
+      "ruling": "Rendered structure and workflow sequence agree on two stages: Save and continue belongs to create; Submit belongs to review. Treat the page-object ownership as broad/stale rather than duplicating Submit onto the create page.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-035",
+      "topic": "Transit exit BCP inventory record is a conditional facet of About the consignment",
+      "pageSlug": "about-the-consignment / transit-exit-bcp",
+      "sources": [
+        "rendered-trace",
+        "page-inventory"
+      ],
+      "detail": "Both records resolve to consignment/page-5 and carry the same purpose/Transit conditional fields. transit-exit-bcp adds a focused trace of the Transit state rather than a new route or new answer set.",
+      "ruling": "Keep both page records to preserve inventory evidence, but link the eight repeated Transit fields to about-the-consignment and count them once. Treat transit-exit-bcp as a variant facet, not a second obligation-bearing page.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-036",
+      "topic": "Notification search/view record restates the dashboard search form",
+      "pageSlug": "notifications-dashboard / notification-search-view",
+      "sources": [
+        "rendered-trace",
+        "page-inventory"
+      ],
+      "detail": "notification-search-view revisits the same /notifications search/dashboard surface and repeats its search controls before opening submitted-notification details.",
+      "ruling": "Keep the downstream-state page record, link its repeated search fields to notifications-dashboard, and count only the additional decision-date/detail surface as new.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-037",
+      "topic": "Country of origin is collected/restated on two consecutive origin pages",
+      "pageSlug": "country-of-origin / origin-of-import",
+      "sources": [
+        "rendered-trace",
+        "page-inventory",
+        "workflow-config"
+      ],
+      "detail": "country-of-origin collects origin-country, and origin-of-import renders the same logical origin-country select again before region/consigned-country fields.",
+      "ruling": "Preserve both rendered page occurrences but count one obligation. country-of-origin.origin-country is canonical; origin-of-import.origin-country carries a restatementOf link.",
+      "needsHuman": false
+    },
+    {
+      "id": "c-038",
+      "topic": "Two legacy validation layers use different copy for the same failure",
+      "pageSlug": "country-of-origin / origin-of-import / contact-address / transport-details / decision-reason-for-refusal",
+      "affectedPages": [
+        "country-of-origin",
+        "origin-of-import",
+        "contact-address",
+        "transport-details",
+        "decision-reason-for-refusal"
+      ],
+      "sources": [
+        "legacy-source:frontend-joi",
+        "legacy-source:backend-model"
+      ],
+      "detail": "Per-page Joi messages and downstream model messages describe the same missing facts differently, for example “Select the country of origin of the animal or product” versus “Country of origin”, “\\\"Organisation Branch Address\\\" is required” versus “Add the contact address for consignment”, and two different reason-for-refusal phrasings.",
+      "ruling": "Retain both messages with their distinct triggers in the evidence model. No rendered error establishes which layer reaches the user first; content and architecture owners must choose one user-facing string per failure in the rebuild.",
+      "needsHuman": true,
+      "newThisPass": true
+    },
+    {
+      "id": "c-039",
+      "topic": "Page-save leniency versus final-submission mandatoriness",
+      "pageSlug": "goods-movement-services / transport-details / latest-health-certificate / commodity-basic-description / consignor-creation",
+      "affectedPages": [
+        "goods-movement-services",
+        "transport-details",
+        "latest-health-certificate",
+        "commodity-basic-description",
+        "consignor-creation",
+        "origin-of-import"
+      ],
+      "sources": [
+        "legacy-source:frontend-joi",
+        "legacy-source:backend-model"
+      ],
+      "detail": "Several page validators allow an incomplete draft or make a control optional while the CHED-P submission model requires the persisted fact before final submission. Transport, CTC/GVMS, latest health certificate and trader/commodity completeness are prominent examples.",
+      "ruling": "Model these as different lifecycle triggers rather than competing booleans: draft page-save may be lenient, but the final CHED-P obligation is required where the model group says so. Preserve required:true with requiredConfidence=legacy and record the save-versus-submit trigger explicitly.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-040",
+      "topic": "Transit exit-date hint promises a seven-day rule that source does not enforce",
+      "pageSlug": "about-the-consignment / transit-exit-bcp",
+      "affectedPages": [
+        "about-the-consignment",
+        "transit-exit-bcp"
+      ],
+      "sources": [
+        "legacy-source:template",
+        "legacy-source:validator"
+      ],
+      "detail": "The authorised template says the Transit exit date must be within seven days of arrival in Great Britain. The page validator checks requiredness and date shape only; no seven-day, future-date or arrival-relative rule or error copy exists.",
+      "ruling": "Keep the seven-day statement as legacy copy and keep the missing enforcement as a validation gap. Both facts are the same evidence tier, so a human must decide whether the rebuild implements the promised rule or removes the promise.",
+      "needsHuman": true,
+      "newThisPass": true
+    },
+    {
+      "id": "c-041",
+      "topic": "Upload minimum-size copy says 1KB while implementation rejects below 200 bytes",
+      "pageSlug": "document-upload / attachments-tab",
+      "affectedPages": [
+        "document-upload",
+        "attachments-tab"
+      ],
+      "sources": [
+        "legacy-source:validation-copy",
+        "legacy-source:validator"
+      ],
+      "detail": "The single-file upload message says “The selected file must be larger than 1KB”, but the validator rejects content smaller than TWO_HUNDRED_B (200 bytes).",
+      "ruling": "Preserve the current 200-byte implementation threshold and the 1KB string as conflicting legacy facts. Same-tier evidence cannot establish intended policy; a human must choose one threshold and matching copy for the rebuild.",
+      "needsHuman": true,
+      "newThisPass": true
+    },
+    {
+      "id": "c-042",
+      "topic": "BIP hub QA exposes Request amendment but authorised hub template does not",
+      "pageSlug": "bip-notification-hub",
+      "affectedPages": [
+        "bip-notification-hub"
+      ],
+      "sources": [
+        "legacy-source",
+        "page-object"
+      ],
+      "detail": "The page object exposes Request amendment on the hub, while the authorised notificationHub template contains no such control; the link exists on the separate decision overview template.",
+      "ruling": "Legacy source outranks the page-object inference. Exclude Request amendment from the canonical hub controls and retain it only as overview/stale scaffolding until rendered evidence proves a hub variant.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-043",
+      "topic": "Rendered deployment URLs include /notification/vnet while legacy app routes do not",
+      "pageSlug": "notification-hub / health-certificate-required",
+      "affectedPages": [
+        "notification-hub",
+        "health-certificate-required"
+      ],
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "Confirmed trace URLs include the /notification/vnet context prefix. The authorised route declarations begin /protected/notifications/... and do not include it.",
+      "ruling": "Keep the confirmed rendered URLs in page evidence. Treat /notification/vnet as deployment/context routing rather than a domain requirement; the rebuild must define its own routes and must not infer duplicate pages.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-044",
+      "topic": "Nominated-contact control types disagree with the authorised template",
+      "pageSlug": "nominated-contacts",
+      "affectedPages": [
+        "nominated-contacts"
+      ],
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "The enriched trace metadata records name as email, email as tel and telephone as text. The authorised template uses text for name, email for email and tel for telephone.",
+      "ruling": "Confirmed trace metadata wins under the requested taxonomy, so retain it in the canonical field rows and preserve the legacy types as provenance. Flag a targeted DOM re-check because the confirmed mapping is internally suspicious; do not silently overwrite it with lower-tier source.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-045",
+      "topic": "Record-control identification/documentation copy differs from CHED-P legacy template",
+      "pageSlug": "record-control",
+      "affectedPages": [
+        "record-control"
+      ],
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "Rendered CHED-P copy says “Identification” and “Documentation” with short hints. The CHED-P-gated template says “Transport identification” and “Transport document reference” with expanded hints.",
+      "ruling": "Rendered-trace wins on current copy. Retain the template wording as lower-precedence provenance and use the confirmed labels in the canonical current-state model.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-046",
+      "topic": "Approved-establishment Country label says required but handler does not require it",
+      "pageSlug": "search-approved-establishment",
+      "affectedPages": [
+        "search-approved-establishment"
+      ],
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "The confirmed label includes “Country (required)”. The authorised handler has no required validator and performs a search without country; the select normally posts its current value because it has no null prompt.",
+      "ruling": "Keep the rendered label as evidence but set semantic requiredness to false from legacy behaviour. The rebuild should remove “(required)” unless product policy deliberately introduces a real requirement.",
+      "needsHuman": false,
+      "newThisPass": true
+    },
+    {
+      "id": "c-047",
+      "topic": "Legacy consignee search includes Country but rendered CHED-P page omits it",
+      "pageSlug": "search-existing-consignee",
+      "affectedPages": [
+        "search-existing-consignee"
+      ],
+      "sources": [
+        "rendered-trace",
+        "legacy-source"
+      ],
+      "detail": "The authorised shared consignee settings/template include a Country search control for non-re-import notifications, but the confirmed CHED-P trace inventory contains Name and Address only.",
+      "ruling": "Rendered-trace wins on the captured CHED-P page. Keep Country as a legacy/shared conditional variant and do not promote it to an unconditional CHED-P search field.",
+      "needsHuman": false,
+      "newThisPass": true
+    }
+  ]
+}
