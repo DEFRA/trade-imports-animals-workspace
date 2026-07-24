@@ -123,3 +123,101 @@ Framing:
 - Neither backend authz nor `/notification-view` hardening is a prerequisite — those remain out-of-scope follow-ups.
 
 The extra concept a future reader has to internalise: `uploadToken` is *ours*; `uploadId` is *cdp-uploader's*; they identify the same thing from different angles. A doc-comment on the field and a clear name mitigates that.
+
+---
+
+## Follow-up: narrowing to options 2 and 3 under the "backend authz + notification-id-in-URL + middleware" constraint set
+
+Working assumptions this section holds fixed (per the go-live plan):
+
+- **Backend authz will be in place** before go-live — user ownership of any notificationRef is determinable for the logged-in user.
+- The authz check **lives in middleware/filter** using the notificationRef in the URL path (per-controller checks are the exception, not the rule).
+- **Shareable URLs contain the notificationId** (`/notifications/<ref>/…`) — adopted as a codebase practice.
+
+### Both 2 and 3 hit the same plumbing hurdle
+
+`server.app.cache`-keyed-by-uploadId (Option 2) and URL-carried-refs (Option 3) both need the `/upload-successful` handler to identify **which specific upload** just landed, so it can poll cdp-uploader's `/status/<uploadId>` and act on the result. Both approaches assume `uploadId` is available on the request. But cdp-uploader takes the `/initiate` redirect URL as a **static string** and its own generated `uploadId` isn't known when we're configuring that redirect — so we can't just include it. Ways to close that gap (any of these apply equally to options 2 and 3):
+
+- Frontend mints its own identifier and puts it in the redirect (Option 7 shape).
+- Nginx sidecar rewrites the 302 `Location` header to append the request-path `uploadId` (Option 5 shape).
+- Frontend calls cdp-uploader `/initiate` sequentially and stashes the returned uploadId server-side, so the browser round-trip doesn't need to carry it — but this either lands us back on yar (per-session state) or a shared cache (which is Option 2 itself, still needing uploadId in URL for the lookup).
+- Backend tracks upload sessions (Option 8, below).
+
+So **choosing between 2 and 3 doesn't dodge the plumbing decision** — it just moves it around.
+
+### Comparison assuming the plumbing is solved
+
+| Aspect | Option 2 (`server.app.cache` by uploadId) | Option 3 (URL-only, no store) |
+|---|---|---|
+| Storage | Frontend: new `server.cache({ segment: 'document-uploads' })` at server-init; helper module for read/write. | None. |
+| URL shape | `/notifications/<ref>/upload-successful?uploadId=<uuid>` | `/notifications/<ref>/upload-successful?uploadId=<uuid>` |
+| Auth middleware hook | `<ref>` in path — trivial. | `<ref>` in path — trivial. |
+| statusUrl access | Cache holds `statusUrl`; also reconstructible from `${cdpUploader.baseUrl}/status/${uploadId}`. | Reconstructed from `${cdpUploader.baseUrl}/status/${uploadId}` — no other source. |
+| Persist call | Cache-carried notificationRef vs URL-carried — moot, backend authz checks either way. | URL-carried, backend authz check. |
+| Cognitive load for future readers | Adds a new catbox segment + a helper module + TTL considerations. | Handler reads a URL param and calls two services — the story is on-screen. |
+| Callback-writable | ✅ (arbitrary-key cache, no cookie needed) | ✅ (backend handles the persist call directly) |
+| Failure mode if plumbing hits a snag | Cache entry orphaned until TTL, sweeper cleans S3. | Same — the 302 just doesn't fire; user retries. |
+
+Once backend authz is in place, **Option 2's cache adds a layer without earning it**. The cache used to earn its keep for:
+
+1. carrying `notificationRef` between /initiate and /upload-successful (so the URL didn't have to be trusted), and
+2. providing cross-user protection at the frontend (the "rogue user with leaked uploadId" attack).
+
+Under the constraint set: (1) is unnecessary because notificationRef is in the URL path and backend authz validates it; (2) is unnecessary because backend authz catches the same attack at the persist call.
+
+**Between 2 and 3, Option 3 wins on simplicity** — same functionality, no state store, less to maintain, aligns with the middleware pattern out of the box.
+
+### Recommended alternative — Option 8: backend as source of truth for upload sessions
+
+Given the constraint set, there's an option that side-steps the plumbing decision entirely by shifting upload-session tracking to the backend. This aligns with the ticket's AC4 language: "the backend persists references (state/timing per AC3) and keeps status/download/delete".
+
+**Shape:**
+
+- **New backend endpoints** (or refit of the existing `/notifications/<ref>/document-uploads` machinery — the schema is already there):
+  - `POST /notifications/<ref>/document-uploads` — frontend calls this right after its `/initiate` call to cdp-uploader, passing `{ uploadId, statusUrl, metadata }`. Backend records as `pending`. Auth middleware protects.
+  - `GET /notifications/<ref>/document-uploads` — returns all pending + confirmed uploads for the notification. Backend polls cdp-uploader status when serving pending entries (or exposes `statusUrl` for the frontend to poll — the reader's choice; backend polling gives cleaner separation).
+  - `POST /notifications/<ref>/document-uploads/<uploadId>/confirm` — invoked when scan is complete; transitions pending → persisted.
+- **Frontend flow:**
+  1. GET `/notifications/<ref>/documents` (or wherever the page lives) — frontend calls cdp-uploader `/initiate`, then registers the pending upload with the backend.
+  2. Renders form with `action="/upload-and-scan/<uploadId>"` and `/initiate` redirect set to `/notifications/<ref>/upload-successful` — **no uploadId in the redirect URL needed.**
+  3. User uploads.
+  4. Cdp-uploader 302s to `/notifications/<ref>/upload-successful`.
+  5. Auth middleware verifies caller owns `<ref>`.
+  6. Handler calls backend `GET /notifications/<ref>/document-uploads` → gets list of pending uploads. Handler polls each (or backend does). Confirms any that are `ready`. Renders a status view showing all in-flight uploads for the notification.
+  7. Meta-refresh until all done, then continue to the next wizard step.
+
+**What this buys us:**
+
+| Property | Option 2 | Option 3 | **Option 8** |
+|---|---|---|---|
+| notificationId in URL | ✅ | ✅ | ✅ |
+| Auth middleware hook | ✅ | ✅ | ✅ |
+| No frontend state store | ❌ (cache) | ✅ | ✅ |
+| No uploadId-in-redirect plumbing | ❌ | ❌ | ✅ (redirect doesn't need uploadId) |
+| Multi-tab safe | ✅ | ✅ | ✅ (backend tracks all pending) |
+| Multi-tab UX quality | separate pages per upload | separate pages per upload | **notification-scoped dashboard** — all in-flight docs shown together with status |
+| Aligns with AC4 wording | partial | partial | ✅ ("backend persists references … keeps status") |
+| Sets up for callback (if adopted) | fine (cache is callback-writable) | fine (backend handles persist) | **best** — callback lands on backend, no frontend involvement |
+| Round-trips per upload | 2 (poll + persist) | 2 (poll + persist) | 2–3 (register + poll + confirm) |
+
+**Cost:**
+
+- New backend endpoints — or repurposing of the existing `/notifications/<ref>/document-uploads` shape that backend has today, which already tracks documents and just needs the "pending vs confirmed" state transition added. Existing schema at `DocumentService.java:79-106` is already halfway there.
+- Slightly more chatty per upload (extra HTTP round-trip to register/confirm).
+- Backend has a foot in the direct-to-uploader flow — but per the ticket that's expected (backend "persists references … keeps status"). This is *why* the ticket kept persist on the backend.
+
+**What it avoids:**
+
+- No nginx `proxy_redirect` magic. No spooky action at a distance.
+- No frontend-owned tokens or session-scoped caches to reason about.
+- No plumbing to smuggle uploadId through cdp-uploader's static redirect — because the redirect URL doesn't need uploadId at all.
+- No "which of the pending uploads just landed" question — the /upload-successful handler shows all pending, statuses update via meta-refresh, users continue when all are safe.
+
+### Verdict
+
+**Under the go-live constraint set, Option 8 > Option 3 > Option 2.**
+
+- **Between 2 and 3: Option 3.** Same functionality, less code, aligns with the middleware pattern natively.
+- **Better than both: Option 8.** Shifts state ownership to the backend where AC4 already wants it. Costs one round-trip on registration and one on confirmation, buys a cleaner architecture end-to-end. Uses URL-carried notificationRef throughout, no uploadId round-trip needed at all — the plumbing question doesn't arise.
+
+If backend authz is available in the same release as this refactor, Option 8 is the shape I'd recommend implementing. The existing backend `DocumentService`/`DocumentController` code already has most of the schema — the follow-up ticket adds the pending/confirmed transition and the frontend calls to match.
