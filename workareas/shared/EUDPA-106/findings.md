@@ -36,6 +36,15 @@ Rather than the full deletion the plan called for, fix 1 removes **only the clie
 
 The rest of the cleanup — deleting the constants, removing hapi `maxBytes`, deleting `handleOversizePayload`, deleting `oversizeFileView`, purging validation.js checks, updating templates, deleting or inverting existing tests that assert 10 MB rejection — is deferred to the follow-up implementation ticket, where it lands naturally alongside removing the old POST route entirely.
 
+## Nginx sidecar caches upstream IP — recreate frontend requires nginx restart
+
+Discovered while verifying step 3. `docker compose up -d --force-recreate` on the frontend service gives the container a fresh IP. The sidecar's nginx worker resolves `trade-imports-animals-frontend:3000` **once at startup** and caches the result, so requests through nginx to a recreated frontend fail with `502 Bad Gateway` / `Host is unreachable` even though the frontend container itself is healthy and reachable from `docker exec`.
+
+Workaround for the spike: `docker restart <sidecar>` after any frontend recreate. Cleaner fix for the follow-up ticket or a workspace chore:
+- Add a `resolver 127.0.0.11 valid=5s;` directive to the nginx config and use a variable in `proxy_pass` (e.g. `set $upstream "http://trade-imports-animals-frontend:3000"; proxy_pass $upstream;`) so nginx re-resolves DNS at request time instead of caching at worker init.
+
+Impacted local dev loops for anyone iterating on the frontend service; not a production concern (CDP's sidecar has its own reload cadence).
+
 ## Pre-commit hook glob is too permissive (frontend repo)
 
 Discovered while committing fix 1. `npm run format:check` (invoked by the frontend repo's husky `pre-commit` hook) runs `prettier --check "src/**/*.js" "**/*.{js,cjs,md,json,config.js,test.js}"`. The second glob sweeps up **untracked** JS/JSON/MD files anywhere in the working tree — including artifacts from Playwright's HTML report (minified trace-viewer bundles under `playwright-report/`) — and fails the commit if they're not Prettier-formatted.

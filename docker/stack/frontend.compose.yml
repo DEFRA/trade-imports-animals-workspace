@@ -46,6 +46,10 @@ services:
       - SESSION_CACHE_ENGINE=redis
       - TRADE_IMPORTS_ANIMALS_BACKEND_URL=http://host.docker.internal:8085
       - TRADE_IMPORTS_REFERENCE_DATA_URL=http://host.docker.internal:8086
+      # EUDPA-106: server-side /initiate calls go direct to cdp-uploader via
+      # the docker network; the browser-side byte upload still goes through
+      # the sidecar's /upload-and-scan bypass.
+      - CDP_UPLOADER_BASE_URL=http://cdp-uploader:7337
       - DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
       - DEFRA_ID_REDIRECT_URL=http://localhost:3000/auth/sign-in-oidc
       - DEFRA_ID_SIGN_OUT_REDIRECT_URL=http://localhost:3000/auth/sign-out-oidc
