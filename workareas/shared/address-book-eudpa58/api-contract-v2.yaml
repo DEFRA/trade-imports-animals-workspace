@@ -1,0 +1,766 @@
+openapi: 3.0.3
+info:
+  title: trade-imports-address-book
+  version: 1.0.0
+  description: |
+    Address Book API for EUDPA-58 — the org-owned, UNTYPED system of record for
+    Standard Address Block records. Produced by renaming trade-imports-operators
+    in place (cv-003) and re-shaping its locked contract to the v2 spec + the
+    2026-07-21 rulings.
+
+    Re-shape from the operators contract (all Sam-ruled):
+      * snake_case wire -> camelCase JSON, no naming-strategy override (cv-001) —
+        this includes the problem `traceId` (operators deliberately served
+        snake_case `trace_id`; the whole address-book wire is now camelCase,
+        matching the reference model trade-imports-reference-data).
+      * `/operators` + `/operators/{operator-id}` -> path-scoped
+        `/organisation/{orgId}/addresses` + `/organisation/{orgId}/addresses/{id}`
+        (cv-010: orgId is the primary owner key; crn demoted and dropped).
+      * addresses are UNTYPED (D3/D21, cv-017): NO `operatorType` field/enum, NO
+        `operator_type` query param, NO filter-by-type; the `OperatorType` and
+        `TransporterCategory` schemas, `approvalNumber` and `transporterCategory`
+        are dropped (transporter deferred, cv-013).
+      * the header-scope 400 branch is dropped. Operators returned 400 when the
+        `Trade-Imports-Crn` scope header was missing/blank; here org scope lives
+        in the PATH and is authorised against a forwarded session-org identity
+        (cv-040). The only modelled 400 on writes is field validation.
+
+    Identity + trust boundary (cv-040 / cv-042): `orgId` is BOTH the URL path
+    segment and the ownership scope, but the path is NEVER trusted alone. INS
+    forwards the authenticated caller's org (Defra ID session,
+    currentRelationshipId -> organisationId) as the trusted
+    `Trade-Imports-Organisation-Id` header (name kept from operators, cv-042).
+    The API authorises that forwarded org against the path `orgId` and returns
+    **404 on a mismatch** — 404 not 403, so a direct call cannot distinguish
+    "belongs to another org" from "does not exist" (no existence disclosure,
+    consistent with the cross-org id 404). A path-trusted scope would let a
+    direct call with an arbitrary `orgId` read/write another org's PII, which is
+    unacceptable for a system of record.
+
+    Validation (cv-044, "mixed"): mandatory + max-length per the Standard Address
+    Block, `email` format-validated, `phone` and `countryCode` NOT format/list
+    validated (countryCode stored as given, cv-011). A stray `type`/`role` (ONLY)
+    is rejected with a per-field 400 — modelled as `@Null`-constrained `type`/
+    `role` properties on the body, NOT `additionalProperties: false`. Any OTHER
+    unknown / server-assigned property is silently IGNORED (Zalando
+    ignore-server-fields; Jackson `failOnUnknownProperties(false)`), so a benign
+    edit PUT that echoes readOnly fields (id/createdAt/…) from a prior GET is not
+    rejected. This narrow mechanism yields the per-field bean-validation `errors`
+    map (keyed `type`/`role`) that 287.AC13 requires.
+
+    Conventions: verb-free noun paths (docs/best-practices/rest-api), camelCase
+    JSON properties (cv-001), top-level object list responses (never a bare
+    array), RFC 9457 `application/problem+json` errors with `traceId` and (on
+    field-validation failures) an `errors` map of camelCase field name ->
+    [messages]. Pagination page size is a SERVER CONFIG (default 25), never a
+    query param (b-config-page-size); `page` is the only pagination param.
+
+    Soft delete: DELETE sets `deleted: true` (never removes the row). Deleted
+    rows are excluded from list/search but STILL resolvable by id (flagged
+    `deleted: true`) so a notification can resolve an old reference — GET-by-id
+    is the only endpoint that surfaces a deleted row (286.AC7).
+
+servers:
+  - url: http://localhost:8089
+    description: Local dev (native run or `-e address-book`)
+  - url: http://host.docker.internal:8089
+    description: Workspace stack (containers reach the service on one hostname)
+
+tags:
+  - name: addresses
+    description: CRUD + search over an organisation's address book
+
+paths:
+  /organisation/{orgId}/addresses:
+    parameters:
+      - $ref: '#/components/parameters/OrgIdPath'
+    get:
+      tags: [addresses]
+      operationId: list-addresses
+      summary: List an organisation's addresses (paginated, searchable)
+      description: |
+        Returns one page of the organisation's addresses, newest first,
+        EXCLUDING soft-deleted rows. Org isolation is enforced in the DB query,
+        not a post-filter (186.AC5). Page size is a server config (default 25),
+        NOT a query param (b-config-page-size); `page` selects the page.
+
+        `q` is an optional case-insensitive, partial-word server-side search over
+        `name`, `townOrCity` and `postcode` (186.AC2). It is a case-insensitive
+        regex `$or` (server applies `Pattern.quote`, ReDoS-safe), NOT a MongoDB
+        `$text` index (cv-047 — `$text` is whole-word/stemmed and fails
+        partial-word). Server-side search is the ONLY search mechanism.
+
+        Country name -> code resolution (cv-048, FE-resolve placement): the
+        FRONTEND resolves a typed country name to its ISO alpha-2 code against the
+        MDM country list it already loads for the picker, and passes it as the
+        OPTIONAL `countryCode` query term. The server ORs the raw `q` (over
+        name/townOrCity/postcode) with the resolved `countryCode` (over the stored
+        `countryCode` field), so a trader typing "France" matches stored "FR". The
+        backend holds NO reference-data client (it keeps the Mongo-only
+        reference-data shape); resolution lives in the FE where the list already
+        is. PLACEMENT NEEDS-HUMAN (cv-048) — confirm FE-resolve vs backend-resolve
+        with UX at build.
+      parameters:
+        - $ref: '#/components/parameters/OrganisationIdHeader'
+        - $ref: '#/components/parameters/TracingHeader'
+        - name: q
+          in: query
+          required: false
+          description: Free-text search over name, townOrCity, postcode (186.AC1/AC2)
+          schema:
+            type: string
+            maxLength: 255
+        - name: countryCode
+          in: query
+          required: false
+          description: |
+            Optional FE-resolved ISO alpha-2 country code (cv-048). The FE maps a
+            typed country NAME in the search box to its code and sends it here; the
+            server ORs it (over the stored `countryCode` field) with the raw `q`
+            terms. Absent when the trader did not type a recognised country name.
+          schema:
+            type: string
+            example: FR
+        - name: page
+          in: query
+          required: false
+          description: 1-based page number (186.AC7). Page size is server config, not a param.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: One page of the org's addresses — top-level object, never a bare array; deleted rows excluded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddressPage'
+              examples:
+                firstPage:
+                  $ref: '#/components/examples/AddressPageExample'
+        '400':
+          description: Out-of-range or non-numeric `page`
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                badPage:
+                  $ref: '#/components/examples/BadRequestProblemExample'
+        '404':
+          $ref: '#/components/responses/OrgMismatch'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      tags: [addresses]
+      operationId: create-address
+      summary: Create an address in the organisation's book
+      description: |
+        Creates an address scoped to the path `orgId`, returns 201 with its
+        server-assigned `id`. `id`, `orgId`, `deleted`, `createdAt`,
+        `modifiedAt` are server-assigned (path/clock), never taken from the body.
+        New addresses are `deleted: false`.
+
+        The body carries NO type or role (untyped, cv-017). A stray `type` or
+        `role` is REJECTED with a per-field 400 (cv-044 — silent-ignore hides
+        client bugs, e.g. a client carrying over the retired `operatorType`);
+        `type`/`role` are modelled as `@Null`-constrained properties (any supplied
+        value lands in the `errors` map keyed by that field). Any OTHER unknown /
+        server-assigned property is silently IGNORED (Zalando; not
+        `additionalProperties: false`). `email` format is validated; `phone` and
+        `countryCode` are NOT format/list-validated — countryCode is stored as
+        given (cv-011/cv-044).
+      parameters:
+        - $ref: '#/components/parameters/OrganisationIdHeader'
+        - $ref: '#/components/parameters/TracingHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+            examples:
+              create:
+                $ref: '#/components/examples/AddressRequestExample'
+      responses:
+        '201':
+          description: Created (287.AC13)
+          headers:
+            Location:
+              description: '`/organisation/{orgId}/addresses/{id}` of the created address'
+              schema:
+                type: string
+                example: /organisation/5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88/addresses/665f1c2ab3e4d51a2c9d0e77
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                created:
+                  $ref: '#/components/examples/AddressExample'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/OrgMismatch'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /organisation/{orgId}/addresses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/OrgIdPath'
+      - name: id
+        in: path
+        required: true
+        description: Opaque address id (Mongo ObjectId hex; treat as opaque)
+        schema:
+          type: string
+          example: 665f1c2ab3e4d51a2c9d0e77
+    get:
+      tags: [addresses]
+      operationId: get-address
+      summary: Fetch one address, INCLUDING a soft-deleted one
+      description: |
+        Returns the address including a soft-deleted one, flagged `deleted: true`
+        — the ONLY endpoint that surfaces a deleted row, so a notification can
+        resolve an old reference and detect deletion (286.AC7; 294.AC2 asymmetry:
+        list hides deleted, by-id returns it). Values are the resolve-on-read
+        source for drafts (294.AC4). 404 when the id is unknown, or when the path
+        `orgId` does not match the authorised caller's org (cv-040 — existence is
+        not leaked across orgs).
+      parameters:
+        - $ref: '#/components/parameters/OrganisationIdHeader'
+        - $ref: '#/components/parameters/TracingHeader'
+      responses:
+        '200':
+          description: The address (may be flagged `deleted: true`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                active:
+                  $ref: '#/components/examples/AddressExample'
+                deleted:
+                  $ref: '#/components/examples/DeletedAddressExample'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      tags: [addresses]
+      operationId: update-address
+      summary: Replace an address (FULL REPLACE)
+      description: |
+        FULL REPLACE of every field from the body — an omitted OPTIONAL
+        (`addressLine2`, `county`) is CLEARED, not left unchanged (286.AC7,
+        PUT not PATCH). Org-wide edit: affects every user in the org. Same
+        single-source validation and stray-type/role rejection as create
+        (a stray `type`/`role` is 400; other unknown/server-assigned fields —
+        including echoed readOnly `id`/`createdAt`/`modifiedAt`/`deleted` — are
+        ignored, so a round-tripped GET body PUTs cleanly).
+        404 for an unknown id, a cross-org id, or a soft-deleted tombstone
+        (tombstones are not in the live set; 286.AC7).
+      parameters:
+        - $ref: '#/components/parameters/OrganisationIdHeader'
+        - $ref: '#/components/parameters/TracingHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+            examples:
+              replace:
+                $ref: '#/components/examples/AddressRequestExample'
+      responses:
+        '200':
+          description: Updated address with bumped `modifiedAt`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+              examples:
+                updated:
+                  $ref: '#/components/examples/AddressExample'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      tags: [addresses]
+      operationId: delete-address
+      summary: Soft-delete an address
+      description: |
+        Sets `deleted: true` and returns 204 WITHOUT removing the record
+        (286.AC5/AC6). Org-wide: the address disappears for the whole org from
+        list/search and notification-creation selection, but stays resolvable via
+        GET-by-id. Idempotent: DELETE on an already-deleted row -> 204, no state
+        change. The UI reaches this only via the delete-confirmation page
+        (cv-024). 404 for an unknown or cross-org id.
+      parameters:
+        - $ref: '#/components/parameters/OrganisationIdHeader'
+        - $ref: '#/components/parameters/TracingHeader'
+      responses:
+        '204':
+          description: Soft-deleted (or already deleted — idempotent)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  parameters:
+    OrgIdPath:
+      name: orgId
+      in: path
+      required: true
+      description: |
+        Owning organisation id (Defra ID currentRelationshipId -> organisationId).
+        The ownership scope for every read/write. Authorised against the forwarded
+        `Trade-Imports-Organisation-Id` header — a mismatch is 404 (cv-040), the
+        path is never trusted alone.
+      schema:
+        type: string
+        example: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+    OrganisationIdHeader:
+      name: Trade-Imports-Organisation-Id
+      in: header
+      required: true
+      description: |
+        The authenticated caller's org, forwarded by INS from the Defra ID
+        session (cv-040 trust mechanism; header name kept from operators, cv-042).
+        Required on EVERY operation. The API AUTHORISES this against the path
+        `orgId`; a mismatch returns 404 (not 403 — no existence disclosure). A
+        missing/blank header is a platform auth rejection, not a modelled business
+        400 (the operators header-scope 400 branch is intentionally dropped).
+      schema:
+        type: string
+        example: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+    TracingHeader:
+      name: x-cdp-request-id
+      in: header
+      required: false
+      description: CDP tracing header; echoed into ECS logs and problem `traceId`
+      schema:
+        type: string
+
+  responses:
+    NotFound:
+      description: |
+        Unknown id, or an id whose path `orgId` does not match the authorised
+        caller's org (cv-040 — indistinguishable, no existence disclosure), or
+        (PUT only) a soft-deleted tombstone.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            notFound:
+              $ref: '#/components/examples/NotFoundProblemExample'
+    OrgMismatch:
+      description: |
+        The path `orgId` does not match the authorised caller's forwarded org
+        (cv-040). Returned as 404, not 403, so another org's existence is never
+        disclosed.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            notFound:
+              $ref: '#/components/examples/NotFoundProblemExample'
+    ValidationError:
+      description: |
+        Field validation failed — RFC 9457 problem+json with a per-field `errors`
+        map naming EACH field at fault (287.AC9/AC13, 286.AC4). Causes: a missing
+        mandatory field, a max-length breach, a malformed `email`, or a stray
+        `type`/`role` (ONLY — modelled as `@Null`-constrained properties, cv-044;
+        any other unknown / server-assigned property is silently IGNORED, Zalando,
+        NOT rejected). Single-source validation shared with the form
+        (b-single-source-validation).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblem'
+          examples:
+            missingAndOverLength:
+              $ref: '#/components/examples/ValidationProblemExample'
+            strayTypeField:
+              $ref: '#/components/examples/StrayFieldProblemExample'
+    InternalError:
+      description: Unexpected server error (operational, not a contract behaviour)
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+
+  schemas:
+    AddressRequest:
+      type: object
+      description: |
+        Create/replace body — the Standard Address Block, UNTYPED. `id`, `orgId`,
+        `deleted`, `createdAt`, `modifiedAt` are server-assigned and are NOT
+        accepted here (if echoed back from a prior GET they are silently ignored,
+        Zalando). A stray `type`/`role` (the retired typed model) is REJECTED with
+        a per-field 400 via the `@Null`-constrained `type`/`role` properties below
+        (cv-044 / 287.AC13); this is NOT `additionalProperties: false`, so other
+        unknown properties are ignored rather than rejected.
+      required:
+        - name
+        - addressLine1
+        - townOrCity
+        - postcode
+        - countryCode
+        - phone
+        - email
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: V4 label 'Name or Organisation name'
+        addressLine1:
+          type: string
+          minLength: 1
+          maxLength: 255
+        addressLine2:
+          type: string
+          maxLength: 255
+          description: Optional; a full-replace PUT that omits it CLEARS it (286.AC7)
+        townOrCity:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: V4 'Town or city'
+        county:
+          type: string
+          maxLength: 100
+          description: Optional (carries the GDS '(optional)' marker, cv-023); a PUT that omits it CLEARS it (286.AC7)
+        postcode:
+          type: string
+          minLength: 1
+          maxLength: 12
+          description: V4 'Postal or Zip code'
+        countryCode:
+          type: string
+          minLength: 1
+          description: |
+            ISO 3166-1 alpha-2, e.g. "GB", "FR". Mandatory and non-blank
+            (`minLength: 1`, matching the other mandatory strings and the Java
+            `@NotBlank` — this is a PRESENCE constraint only, NOT a format/list/
+            length check). Stored AS GIVEN — NOT validated against a country list,
+            an ISO pattern, or a length on the API (cv-011/cv-044); the FE picker
+            is MDM-sourced (reference-data /countries) so invalid codes shouldn't
+            arrive.
+          example: GB
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: V4 'Telephone number' (ticket field `phone`). Free string — NOT format-validated (cv-044).
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+          description: Format-validated (cv-044).
+        type:
+          nullable: true
+          enum: [null]
+          description: |
+            REJECTED (cv-017/cv-044). Addresses are untyped — this property exists
+            in the schema ONLY to reject a stray value carried over from the
+            retired typed model. Any supplied `type` yields a per-field 400 keyed
+            `type` (the `@Null`-constrained component). Never stored. Modelled as
+            `enum: [null]` so only an absent/null value validates.
+        role:
+          nullable: true
+          enum: [null]
+          description: |
+            REJECTED (cv-014/cv-044). A role is chosen when an address is SELECTED
+            into a notification party, never saved on the address. Any supplied
+            `role` yields a per-field 400 keyed `role` (the `@Null`-constrained
+            component). Never stored. Modelled as `enum: [null]`.
+
+    Address:
+      type: object
+      description: |
+        The stored address as returned by the API — the Standard Address Block
+        plus server-assigned `id`, `orgId`, `deleted`, `createdAt`, `modifiedAt`.
+        Untyped (no type/role anywhere).
+      required:
+        - id
+        - orgId
+        - name
+        - addressLine1
+        - townOrCity
+        - postcode
+        - countryCode
+        - phone
+        - email
+        - deleted
+        - createdAt
+        - modifiedAt
+      properties:
+        id:
+          type: string
+          readOnly: true
+          description: Opaque stable identifier — select pages submit this; a notification references it (294.AC3)
+          example: 665f1c2ab3e4d51a2c9d0e77
+        orgId:
+          type: string
+          readOnly: true
+          description: Owning organisation (path scope). Indexed; scopes every read/write (cv-010).
+          example: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+        name:
+          type: string
+          maxLength: 255
+        addressLine1:
+          type: string
+          maxLength: 255
+        addressLine2:
+          type: string
+          maxLength: 255
+          description: Optional — absent when not set / cleared by a full-replace PUT
+        townOrCity:
+          type: string
+          maxLength: 100
+        county:
+          type: string
+          maxLength: 100
+          description: Optional — absent when not set / cleared by a full-replace PUT
+        postcode:
+          type: string
+          maxLength: 12
+        countryCode:
+          type: string
+          description: ISO 3166-1 alpha-2, stored as given (cv-011)
+          example: GB
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        deleted:
+          type: boolean
+          readOnly: true
+          description: |
+            Soft-delete flag (286.AC7). `false` for live rows. List/search exclude
+            `true`; GET-by-id is the only endpoint that returns a `true` row.
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: RFC 3339; drives newest-first list ordering
+        modifiedAt:
+          type: string
+          format: date-time
+          readOnly: true
+          description: RFC 3339; bumped on PUT and soft delete. Audit only — no consumer re-syncs off it.
+
+    AddressPage:
+      type: object
+      description: Top-level object list response (never a bare array); camelCase (cv-001)
+      required:
+        - items
+        - page
+        - pageSize
+        - totalItems
+        - totalPages
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          description: Server config page size (default 25); echoed, never a request param (b-config-page-size)
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+
+    Problem:
+      type: object
+      description: |
+        RFC 9457 problem details. `traceId` is camelCase (cv-001 — the whole
+        address-book wire is camelCase; operators' deliberate snake_case
+        `trace_id` divergence is reversed here) and carries the x-cdp-request-id
+        MDC value for log correlation.
+      required:
+        - type
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            One of the CDP problem family:
+            https://api.cdp.defra.cloud/problems/validation-error (400 field validation),
+            .../bad-request (400 malformed param),
+            .../not-found (404),
+            .../internal-error (500)
+          example: https://api.cdp.defra.cloud/problems/not-found
+        title:
+          type: string
+          example: Resource Not Found
+        status:
+          type: integer
+          example: 404
+        detail:
+          type: string
+          example: Address not found
+        traceId:
+          type: string
+          example: 8f4a2c1e9b7d3f60
+
+    ValidationProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          required:
+            - errors
+          properties:
+            errors:
+              type: object
+              description: |
+                Map of camelCase field name -> list of messages (287.AC9/AC13).
+                Keys are ALWAYS the wire field names (`addressLine1`, never
+                `address_line_1` — the wire is camelCase, cv-001); a rejected
+                `type`/`role` is keyed by that name. The frontend error mapping
+                depends on these keys.
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              example:
+                addressLine1: ["Enter address line 1"]
+                email: ["Enter an email address in the correct format"]
+
+  examples:
+    AddressRequestExample:
+      summary: Create/replace an address (no type, no role)
+      value:
+        name: Highland Livestock Ltd
+        addressLine1: 14 Drover's Way
+        addressLine2: Unit 3
+        townOrCity: Inverness
+        county: Highland
+        postcode: IV2 3JH
+        countryCode: GB
+        phone: '+44 1463 234567'
+        email: exports@highlandlivestock.example.com
+
+    AddressExample:
+      summary: A live address as returned by the API
+      value:
+        id: 665f1c2ab3e4d51a2c9d0e77
+        orgId: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+        name: Highland Livestock Ltd
+        addressLine1: 14 Drover's Way
+        addressLine2: Unit 3
+        townOrCity: Inverness
+        county: Highland
+        postcode: IV2 3JH
+        countryCode: GB
+        phone: '+44 1463 234567'
+        email: exports@highlandlivestock.example.com
+        deleted: false
+        createdAt: '2026-07-14T09:15:27Z'
+        modifiedAt: '2026-07-14T09:15:27Z'
+
+    DeletedAddressExample:
+      summary: A soft-deleted address (only GET-by-id surfaces this; 286.AC7)
+      value:
+        id: 665f1c2ab3e4d51a2c9d0e77
+        orgId: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+        name: Highland Livestock Ltd
+        addressLine1: 14 Drover's Way
+        addressLine2: Unit 3
+        townOrCity: Inverness
+        county: Highland
+        postcode: IV2 3JH
+        countryCode: GB
+        phone: '+44 1463 234567'
+        email: exports@highlandlivestock.example.com
+        deleted: true
+        createdAt: '2026-07-14T09:15:27Z'
+        modifiedAt: '2026-07-15T16:02:11Z'
+
+    AddressPageExample:
+      summary: First page of 25 (config page size)
+      value:
+        items:
+          - id: 665f1c2ab3e4d51a2c9d0e77
+            orgId: 5a8d2b19-6f4e-4d21-9c1b-7e3f0a2d5c88
+            name: Highland Livestock Ltd
+            addressLine1: 14 Drover's Way
+            addressLine2: Unit 3
+            townOrCity: Inverness
+            county: Highland
+            postcode: IV2 3JH
+            countryCode: GB
+            phone: '+44 1463 234567'
+            email: exports@highlandlivestock.example.com
+            deleted: false
+            createdAt: '2026-07-14T09:15:27Z'
+            modifiedAt: '2026-07-14T09:15:27Z'
+        page: 1
+        pageSize: 25
+        totalItems: 30
+        totalPages: 2
+
+    ValidationProblemExample:
+      summary: 400 with per-field camelCase errors map (missing mandatory + over-max)
+      value:
+        type: https://api.cdp.defra.cloud/problems/validation-error
+        title: Validation Error
+        status: 400
+        detail: Validation failed for one or more fields
+        traceId: 8f4a2c1e9b7d3f60
+        errors:
+          addressLine1: ["Enter address line 1"]
+          email: ["Enter an email address in the correct format"]
+          postcode: ["Postal or Zip code must be 12 characters or fewer"]
+
+    StrayFieldProblemExample:
+      summary: 400 rejecting a stray type/role field (untyped model, cv-044)
+      value:
+        type: https://api.cdp.defra.cloud/problems/validation-error
+        title: Validation Error
+        status: 400
+        detail: Validation failed for one or more fields
+        traceId: 8f4a2c1e9b7d3f60
+        errors:
+          type: ["Unexpected field — addresses are untyped"]
+          role: ["Unexpected field — a role is chosen when an address is selected, not saved"]
+
+    NotFoundProblemExample:
+      summary: Unknown or cross-org id (no existence disclosure, cv-040)
+      value:
+        type: https://api.cdp.defra.cloud/problems/not-found
+        title: Resource Not Found
+        status: 404
+        detail: Address not found
+        traceId: 8f4a2c1e9b7d3f60
+
+    BadRequestProblemExample:
+      summary: Malformed pagination param (no errors map)
+      value:
+        type: https://api.cdp.defra.cloud/problems/bad-request
+        title: Bad Request
+        status: 400
+        detail: Query parameter 'page' must be a positive integer
+        traceId: 8f4a2c1e9b7d3f60
