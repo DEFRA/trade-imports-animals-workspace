@@ -36,6 +36,15 @@ Rather than the full deletion the plan called for, fix 1 removes **only the clie
 
 The rest of the cleanup — deleting the constants, removing hapi `maxBytes`, deleting `handleOversizePayload`, deleting `oversizeFileView`, purging validation.js checks, updating templates, deleting or inverting existing tests that assert 10 MB rejection — is deferred to the follow-up implementation ticket, where it lands naturally alongside removing the old POST route entirely.
 
+## Pre-commit hook glob is too permissive (frontend repo)
+
+Discovered while committing fix 1. `npm run format:check` (invoked by the frontend repo's husky `pre-commit` hook) runs `prettier --check "src/**/*.js" "**/*.{js,cjs,md,json,config.js,test.js}"`. The second glob sweeps up **untracked** JS/JSON/MD files anywhere in the working tree — including artifacts from Playwright's HTML report (minified trace-viewer bundles under `playwright-report/`) — and fails the commit if they're not Prettier-formatted.
+
+The immediate fix is to add `playwright-report/` to `.gitignore` (done on this branch alongside fix 1). `test-results/` was already ignored — this is its natural companion.
+
+Broader observation for the follow-up ticket or a separate chore:
+- The `format:check` glob shouldn't include untracked-output directories at all. Either use lint-staged style tracked-only filtering, or explicitly restrict globs to source dirs (`src/**` + `tests/**` + top-level config files). Not a spike deliverable, but worth surfacing.
+
 ## Deferred cleanup — for the follow-up ticket
 
 When the follow-up ticket removes the old POST route + backend byte-proxy, it should also clean up the frontend size-guard machinery left behind by the spike:
