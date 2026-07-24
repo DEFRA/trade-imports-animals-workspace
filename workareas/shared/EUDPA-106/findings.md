@@ -80,6 +80,65 @@ Discovered while diagnosing test D. The `/status/<uploadId>` response includes a
 
 The spike currently uses hardcoded metadata (`documentType: 'ITAHC'`, `documentReference: 'SPIKE-UPLOAD'`, `dateOfIssue: today`) in `upload-successful.js:commitToDocumentsList` because test D doesn't assert on metadata — real capture is a small follow-up edit, not an architectural change.
 
+## State-store design — session-scoped, uploadId-keyed yar
+
+Chosen shape for step 5, after ruling out three alternatives.
+
+**Design:** in-flight upload state lives in yar under keys of the form `upload:<uploadId>`. The value is `{ notificationRef, statusUrl, createdAt, scanStatus }`. On `/upload-successful?uploadId=A`, the handler reads `request.yar.get('upload:A')`, polls cdp-uploader for status, and on `ready` persists the doc via the backend using the yar-carried `notificationRef` before dropping the entry.
+
+**Alternatives considered and rejected:**
+
+| Design | Why not |
+|---|---|
+| yar single slot (`currentUpload`) — spike's step-4 code | Multi-tab collision: Tab 2's `/initiate` overwrites Tab 1's slot; Tab 1's upload lands on `/upload-successful` but reads Tab 2's state. Real bug, invisible in single-tab test D. |
+| `server.app.cache` segment keyed by uploadId | No cookie scoping: a rogue authenticated user with a leaked uploadId can hit `/upload-successful?uploadId=<victim>` from their own session and cause the victim's file to commit against the victim's notification. yar's cookie-scoping closes this at the frontend without waiting for backend authz. |
+| URL-carried `notificationRef` | Fully user-tamperable given today's backend has no ownership check — attacker's file trivially lands on any notification whose ref they know. See "Pre-existing auth gaps" below. |
+| yar keyed by `notificationId` (user's initial suggestion) | Better than the single-slot but still collides on multi-tab-same-notification, which is a real workflow (open a second tab to upload extra docs faster). uploadId-keyed handles this. |
+
+**Load-bearing properties of the chosen shape:**
+
+- **Session-cookie ambient auth.** Every read/write happens through `request.yar`, which yar transparently scopes to the caller's session cookie. An attacker without the victim's cookie cannot read or write the victim's upload state — even if they know the uploadId.
+- **Per-upload isolation.** Each `/initiate` mints a distinct uploadId; entries under `upload:A` and `upload:B` never collide. Multi-tab safe both for different notifications *and* same-notification.
+- **No cache write actually strictly needed for `statusUrl`** — it's reconstructible as `${cdpUploader.baseUrl}/status/${uploadId}`. The load-bearing datum in the value is `notificationRef`, which has to come from server-side state to prevent URL tampering (see auth-gap discussion). Storing `statusUrl` and `createdAt` alongside is convenience, not correctness.
+
+**Trade-offs / limits to name:**
+
+- **Still needs backend authz for full safety** — see "Pre-existing auth gaps" below. yar-scoping closes the "attacker with uploadId, no cookie" attack but not the "attacker with own cookie, poisoned wizard state" attack chain.
+- **Callback-driven design is closed off** while state lives in yar — a cdp-uploader callback carries no cookie and can't reach yar. Sticking to polling remains fine for the spike; if the follow-up ticket adopts callbacks it would need to migrate `notificationRef` to `server.app.cache` under uploadId. Cheap migration when the time comes.
+
+## Pre-existing auth gaps surfaced by the state-store discussion
+
+Two vulnerabilities exist in `main` today, unrelated to EUDPA-106's code changes but relevant to the state-store discussion because they constrain what "safe" client-side plumbing means. **Not introduced by the spike** — surfaced by asking "can we simplify the state store?" and discovering that the ambient assumption (backend enforces ownership) doesn't hold.
+
+### Vector 1 — URL-poisoning via `/notification-view/{ref}`
+
+`src/server/notification-view/controller.js:14-19` reads `referenceNumber` from `request.params` and passes it to `notificationClient.get(request, referenceNumber, traceId)`. That client method (`notification-client.js:404-431`) fetches the notification from the backend and calls `setNotificationSessionValues(request, notification)`, which loops through `NOTIFICATION_SESSION_KEYS` (line 249-259 — includes `referenceNumber`, `commodity`, `consignor`, `consignee`, `importer`, `destination`, `cphNumber`, etc.) and calls `setSessionValue(request, key, notification[key])` for each.
+
+Consequence: visiting `/notification-view/VICTIM_REF` as any authenticated user overwrites *their own* yar with victim's notification-in-progress state. Then any downstream wizard page, including `/accompanying-documents` and both the current-main and my spike upload flows, treats the caller's session as if it's editing the victim's notification.
+
+### Vector 2 — Backend accepts any authenticated caller
+
+`DocumentController.java` (initiate, list, get, delete) and its peers take path parameters and proceed. No Spring Security annotations anywhere in the backend; `User-Id` is captured as a header for audit only, never checked for ownership. `EUDPA-35` comment at `DocumentController.java:157-159` explicitly acknowledges the callback endpoint is unauthenticated; the broader gap on the CRUD endpoints is implied by omission.
+
+### End-to-end attack (works today, on main, no changes)
+
+1. Attacker signs in with any legitimate Defra ID account.
+2. Attacker visits `/notification-view/GBN-AG-26-VICTIM` — their yar is poisoned with victim's referenceNumber.
+3. Attacker navigates to `/accompanying-documents`, fills the form, uploads a file.
+4. Frontend reads `yar['referenceNumber']` = VICTIM, calls backend to persist.
+5. Backend accepts (no ownership check).
+6. Attacker's file is now attached to victim's notification.
+
+### Testable
+
+The workspace has a Defra ID stub and multi-user auth fixtures. An E2E can prove the vector in a few lines. **Recommended: don't write it in this ticket** — the test only earns its keep once the fix is in (protects against regression), and starting-red-on-main-and-turning-green-in-a-follow-up-ticket is the wrong shape for a landing merge. Test lives with the fix, in the follow-up implementation ticket.
+
+### Recommendation for the follow-up ticket
+
+- Backend: add real ownership checks — either Spring Security wiring for `POST /notifications/<ref>/documents` (and peers) or an inline `assertUserOwnsNotification(ref, userId)` helper. Natural work to bundle with the byte-proxy removal that AC4 already prescribes.
+- Frontend: defence-in-depth — `notification-view` should only populate yar if the backend response confirms the caller owns the notification. Requires the backend to include an owner identity in the response and the frontend to compare; adds a check, doesn't add complexity.
+- E2E: add the multi-user "attach to someone else's notification is rejected" test in the same commit as the backend fix.
+
 ## Deferred cleanup — for the follow-up ticket
 
 When the follow-up ticket removes the old POST route + backend byte-proxy, it should also clean up the frontend size-guard machinery left behind by the spike:
