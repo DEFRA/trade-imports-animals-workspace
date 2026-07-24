@@ -59,5 +59,18 @@ services:
         - wget -qO- http://127.0.0.1:3000/health
     image: defradigital/trade-imports-animals-frontend:${TRADE_IMPORTS_ANIMALS_FRONTEND:-latest}
     platform: linux/amd64
+  # EUDPA-106: reproduces the CDP platform nginx-upstreams sidecar in front of
+  # the frontend pod so >10 MB uploads via the old path fail with a real nginx
+  # 413 locally, and the /upload-and-scan bypass is available for the new path.
+  cdp-nginx-frontend:
+    profiles: [frontend]
+    image: nginx:alpine
+    depends_on:
+      trade-imports-animals-frontend:
+        condition: service_healthy
+      cdp-uploader:
+        condition: service_started
     ports:
       - '3000:3000'
+    volumes:
+      - ./config/nginx/frontend.conf:/etc/nginx/conf.d/default.conf:ro
