@@ -68,6 +68,47 @@ Neither is fixable in this ticket without significant scope creep. Both belong i
 - **Worst:** 3 (URL-carried `notificationRef`, no store) — trivially exploitable given today's backend authz gap; not worth considering unless backend authz lands first.
 - **Currently shipped:** 1 (single slot) — will collide silently under any multi-tab workflow.
 
+## What changes if backend ownership authz were in place?
+
+Suppose we had a working auth integration on the backend such that `POST /notifications/<ref>/documents` (and its peers) reject any request where the authenticated caller doesn't own the referenced notification. What would that change?
+
+### Which options gain security safety they didn't have before
+
+| # | Was vulnerable to | With backend authz |
+|---|---|---|
+| 2 | Rogue user with leaked uploadId hits `/upload-successful?uploadId=<victim>` — server reads victim's cached `notificationRef` and calls backend to persist attacker's file against victim. | ✅ **closed** — backend now rejects the persist call because the caller isn't the notification owner. Attacker's authenticated identity ≠ victim's identity, and there's no way to forge that (cookie-derived, not URL-derived). |
+| 3 | Trivially — attacker types `?notificationRef=<victim>`, backend accepts. | ✅ **closed** — backend rejects for the same reason. Option 3 goes from "trivially exploitable" to "safe". |
+| 1, 4, 5, 6, 7 | Already safe on this vector (yar cookie-scoping). | No change on this vector. |
+
+### The pre-existing `/notification-view/{ref}` URL-poisoning vector also gets closed
+
+The attack chain (attacker visits `/notification-view/VICTIM_REF` → their own yar gets poisoned with victim's fields → they upload → frontend forwards `referenceNumber=VICTIM` to backend on persist) **ends at the same backend authz check**. Attacker's identity ≠ victim's, backend rejects. Their yar can be poisoned all day; it doesn't matter because the backend won't act on the poisoned ref.
+
+That's a big win: **backend authz alone closes both auth-gap vectors identified in findings.md** without any frontend changes required.
+
+### Does the recommendation change?
+
+**Not fundamentally, but the case for options 2 and 3 strengthens and the case for option 7's "extra security" weakens.**
+
+- **Option 3 becomes viable** — no state store at all. The `notificationRef` in the URL is untrustworthy, but backend authz makes untrustworthy inputs safe by treating them as untrusted (which is what all backend inputs should be). The frontend becomes very simple: construct the redirect URL with `notificationRef`, on landing forward it straight to the backend. **Caveat:** as originally described, option 3 skips polling — but polling needs statusUrl, and statusUrl needs uploadId. So option 3 in practice becomes "put both `notificationRef` and `uploadId` in the URL, poll cdp-uploader server-side, persist via backend". That's essentially a stateless variant of option 5/7.
+- **Option 2 becomes viable** — a clean `server.cache` segment for upload state, keyed by uploadId, still needs the nginx rewrite (or an equivalent path plumbing) to get uploadId onto the redirect URL. It's now safe, but doesn't gain a discoverability advantage over option 7.
+- **Options 1, 4, 6 are still broken** on multi-tab functionality (nothing about backend authz fixes the frontend state collision).
+- **Options 5 and 7 remain fully safe** — but the yar-cookie-scoping defence-in-depth is no longer load-bearing. It becomes belt-and-braces rather than sole line of defence.
+
+### The key argument that survives regardless
+
+**Option 7 is safe *whether or not* backend authz ever lands.**
+
+Options 2 and 3 require backend authz to be safe. If we ship 2 or 3 in this ticket and the backend authz work slips or gets deprioritised, we've shipped a vulnerable frontend that trusts URL params. Option 7 has no such dependency — the yar-cookie-scoping does the heavy lifting frontend-side, and backend authz (when it lands) becomes additional protection rather than the load-bearing element.
+
+For a **spike** in a codebase where the backend authz work isn't yet scheduled, that independence is valuable. If we were confident backend authz would land in the same release, options 2, 3, and 7 would be roughly equivalent on security and the choice would come down to code shape.
+
+### Practical implication for the follow-up implementation ticket
+
+If backend authz is expected to land alongside the direct-to-uploader work in the follow-up ticket, then either option 3 (simplest) or option 2 (cleanest architecturally) becomes attractive. Option 7 remains the safe default if there's any uncertainty about the auth-integration timing.
+
+The auth-integration work should be treated as a **prerequisite** for options 2 and 3, and as **defence-in-depth** for options 5 and 7.
+
 ## Recommendation for the discussion
 
 **Option 7 — server-generated per-form token.**
