@@ -1,0 +1,55 @@
+# EUDPA-106 spike — findings
+
+Running log of things learned during implementation that don't fit the initial plan cleanly. Feeds into the final `recommendation.md` and the follow-up implementation ticket. Update as new discoveries land.
+
+## Enforcement chain for the old upload path
+
+The current `POST /accompanying-documents` route enforces the 10 MB cap at four layers, only the first of which fires for a browser-driven request today. Discovered while scoping fix 1 (step 2 in the plan).
+
+For a 50 MB upload attempt via the old form action, once the sidecar from step 1 is in place, the layers fire in this order:
+
+| Order | Layer | File | What it does |
+|-------|-------|------|--------------|
+| 1 | Client-side preflight (JS) | `page-model.js:84-86` feeds `maxFileSize` / `oversizeFileMessage` into the view model consumed by client JS | Alerts, no form submit. **Currently the only layer the test hits.** |
+| 2 | Nginx sidecar (added by step 1) | `docker/stack/config/nginx/frontend.conf` (`client_max_body_size 10M` on `/`) | Returns nginx 413 HTML page. Would fire if layer 1 removed. |
+| 3 | Hapi route `maxBytes` + `handleOversizePayload` | `index.js:78` + `index.js:12-41` | Boom 413 caught by onPreResponse, renders the oversize form. Unreachable for >10 MB requests once layer 2 catches them. |
+| 4 | Server-side validation | `controller/post/validation.js:54-55` | Only fires in the tight window between MAX_FILE_SIZE_BYTES and MAX_PAYLOAD_BYTES (~10 MB..10 MB + 1 KB). Never fires for 50 MB. |
+
+## Constants blast radius
+
+`document-upload-config.js` exports six size-related identifiers that are consumed across four files. The plan assumed they were self-contained; they aren't.
+
+| Constant | Consumers |
+|---|---|
+| `MAX_FILE_SIZE_MB` (unexported) | Feeds `MAX_FILE_SIZE_BYTES`, `MAX_FILE_SIZE_LABEL` |
+| `MAX_FILE_SIZE_BYTES` | `page-model.js:84`, `validation.js:54`, `upload.js:22` |
+| `MAX_FILE_SIZE_LABEL` | `page-model.js:85` |
+| `OVERSIZE_FILE_MESSAGE` | `page-model.js:86`, `validation.js:55`, `views.js:76-77` |
+| `MULTIPART_OVERHEAD_BYTES` (unexported) | Feeds `MAX_PAYLOAD_BYTES` |
+| `MAX_PAYLOAD_BYTES` | `index.js:78` |
+
+Removing all six requires editing at least six files. For a spike PR, that's a lot of blast radius that mostly duplicates what the follow-up implementation ticket will do anyway when it removes the old path entirely.
+
+## Fix 1 — chosen approach: minimal (Option A)
+
+Rather than the full deletion the plan called for, fix 1 removes **only the client-side preflight feed** — enough to flip test D's failure mode from "client alert" to "nginx 413", which is the diagnostic value the plan wanted. Everything else stays for now.
+
+The rest of the cleanup — deleting the constants, removing hapi `maxBytes`, deleting `handleOversizePayload`, deleting `oversizeFileView`, purging validation.js checks, updating templates, deleting or inverting existing tests that assert 10 MB rejection — is deferred to the follow-up implementation ticket, where it lands naturally alongside removing the old POST route entirely.
+
+## Deferred cleanup — for the follow-up ticket
+
+When the follow-up ticket removes the old POST route + backend byte-proxy, it should also clean up the frontend size-guard machinery left behind by the spike:
+
+- [ ] Delete `MAX_FILE_SIZE_MB`, `MAX_FILE_SIZE_BYTES`, `MAX_FILE_SIZE_LABEL`, `OVERSIZE_FILE_MESSAGE`, `MULTIPART_OVERHEAD_BYTES`, `MAX_PAYLOAD_BYTES` from `document-upload-config.js`.
+- [ ] Remove `maxBytes: MAX_PAYLOAD_BYTES` from the old route in `index.js` (or delete the whole POST route as part of the byte-path removal).
+- [ ] Delete `handleOversizePayload` from `index.js` — no longer needed once the byte upload doesn't go through hapi.
+- [ ] Delete `oversizeFileView` from `controller/post/views.js`.
+- [ ] Remove the size check in `controller/post/validation.js:50-55`.
+- [ ] Remove `maxFileSize`/`maxFileSizeLabel`/`oversizeFileMessage` from `controller/post/upload.js:22` and `controller/page-model.js:84-86` if not already dropped by fix 1.
+- [ ] Update the "Max file size 10 MB" hint in the template — either to reflect the new cdp-uploader `CDP_UPLOADER_MAX_FILE_SIZE` (50 MB) or remove entirely if the new flow makes it redundant.
+- [ ] Existing E2E tests to invert or delete:
+  - `accompanying-documents-file-size-limit.spec.ts:37` — client-side preflight test (assertion inverts to success after fix).
+  - `accompanying-documents-file-size-limit.spec.ts:52` — 11 MiB "not raw nginx 413" test; assertion becomes moot since `/upload-and-scan` bypasses the sidecar cap.
+  - `accompanying-documents-no-js.spec.ts:60,78` — server-side 10 MB rejection tests; inverts to success.
+- [ ] The existing 11 MiB test's `skipIfComposeEnvironment('Compose stack has no nginx ingress in front of the frontend pod.')` skip reason is now false as of workspace step 1 — Compose has the sidecar. Either remove the skip or update the reason.
+- [ ] Frontend unit tests for the deleted files — `validation.test.js`, `views.test.js`, `page-model.test.js`, `controller.test.js` all likely have assertions that will fail once the machinery is removed. Update or delete accordingly.
