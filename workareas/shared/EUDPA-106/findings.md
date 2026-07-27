@@ -175,18 +175,55 @@ The workspace has a Defra ID stub and multi-user auth fixtures. An E2E can prove
 
 ## Deferred cleanup — for the follow-up ticket
 
-When the follow-up ticket removes the old POST route + backend byte-proxy, it should also clean up the frontend size-guard machinery left behind by the spike:
+Enumerates the old-flow code paths left in place by the spike so the follow-up implementation ticket (per AC4/AC5) has the removal list ready. Nothing in this list is broken in the spike — all these paths are either unreachable (nothing routes to them under Option 3) or operate on empty state (nothing writes to `yar['documents']` now). Signposting comments have been added at each entry point in the spike code so a reader landing on them cold sees the dead-code status immediately.
+
+### Frontend — old backend-proxied POST flow (dead under Option 3)
+
+- [ ] Delete the `POST /accompanying-documents` route registration in `src/server/accompanying-documents/index.js` — the form now POSTs directly to `/upload-and-scan/<uploadId>`, so nothing hits this handler.
+- [ ] Delete `handleOversizePayload` `onPreResponse` extension in `src/server/accompanying-documents/index.js` — attached to the POST route; dies with it.
+- [ ] Delete `src/server/accompanying-documents/controller/post/index.js` (the handler) and everything it imports:
+  - `controller/post/payload.js` — `persistDocument`, `buildSessionDocument`, `extractFormFields`, `formatDateOfIssue`, `isRemoveAction`, `parseRemoveUploadId`, `buildUploadDetails`.
+  - `controller/post/upload.js` — the backend-proxied byte upload orchestration.
+  - `controller/post/validation.js` — the size-check block and its `OVERSIZE_FILE_MESSAGE` reference.
+  - `controller/post/views.js` — `oversizeFileView` + any other post-only view helpers.
+- [ ] Remove `sessionKeys.documents` from `src/server/common/constants/session-keys.js` and any lingering reads (none should remain after this cleanup — verify with `grep`).
+- [ ] Delete `documentClient.initiate` and `documentClient.uploadFile` methods in `src/server/common/clients/document-client.js` if nothing else calls them post-teardown.
+- [ ] Update `controller.test.js` — delete or rewrite the POST-flow tests (there are ~30 of them). Same for tests hitting the removed helper modules.
+
+### Frontend — client-side status polling (dead under Option 3)
+
+- [ ] Delete the `GET /accompanying-documents/status` route registration in `src/server/accompanying-documents/index.js`.
+- [ ] Delete `src/server/accompanying-documents/controller/status.js` (the handler).
+- [ ] Delete `pollStatus`, `initUploadForm` and related helpers in `src/client/javascripts/accompanying-documents.js` — no `data-max-file-size` attribute is emitted any more (removed at fix 1), so the initialiser bails on its early return today. Fully remove.
+- [ ] Delete `src/client/javascripts/accompanying-documents.test.js` (or its polling-related test cases).
+- [ ] Remove the `js-refresh-fallback`, `js-timeout-message`, `js-scan-status-announcer` elements from `uploaded-documents.njk` — they're only meaningful under the client-side polling model.
+
+### Frontend — size-guard machinery left by fix 1's minimal option
 
 - [ ] Delete `MAX_FILE_SIZE_MB`, `MAX_FILE_SIZE_BYTES`, `MAX_FILE_SIZE_LABEL`, `OVERSIZE_FILE_MESSAGE`, `MULTIPART_OVERHEAD_BYTES`, `MAX_PAYLOAD_BYTES` from `document-upload-config.js`.
-- [ ] Remove `maxBytes: MAX_PAYLOAD_BYTES` from the old route in `index.js` (or delete the whole POST route as part of the byte-path removal).
-- [ ] Delete `handleOversizePayload` from `index.js` — no longer needed once the byte upload doesn't go through hapi.
-- [ ] Delete `oversizeFileView` from `controller/post/views.js`.
-- [ ] Remove the size check in `controller/post/validation.js:50-55`.
-- [ ] Remove `maxFileSize`/`maxFileSizeLabel`/`oversizeFileMessage` from `controller/post/upload.js:22` and `controller/page-model.js:84-86` if not already dropped by fix 1.
-- [ ] Update the "Max file size 10 MB" hint in the template — either to reflect the new cdp-uploader `CDP_UPLOADER_MAX_FILE_SIZE` (50 MB) or remove entirely if the new flow makes it redundant.
-- [ ] Existing E2E tests to invert or delete:
-  - `accompanying-documents-file-size-limit.spec.ts:37` — client-side preflight test (assertion inverts to success after fix).
-  - `accompanying-documents-file-size-limit.spec.ts:52` — 11 MiB "not raw nginx 413" test; assertion becomes moot since `/upload-and-scan` bypasses the sidecar cap.
-  - `accompanying-documents-no-js.spec.ts:60,78` — server-side 10 MB rejection tests; inverts to success.
-- [ ] The existing 11 MiB test's `skipIfComposeEnvironment('Compose stack has no nginx ingress in front of the frontend pod.')` skip reason is now false as of workspace step 1 — Compose has the sidecar. Either remove the skip or update the reason.
-- [ ] Frontend unit tests for the deleted files — `validation.test.js`, `views.test.js`, `page-model.test.js`, `controller.test.js` all likely have assertions that will fail once the machinery is removed. Update or delete accordingly.
+- [ ] Remove `maxBytes: MAX_PAYLOAD_BYTES` from `index.js:78` (subsumed by the POST-route deletion above).
+- [ ] Remove `maxFileSize`/`maxFileSizeLabel`/`oversizeFileMessage` fields from `controller/page-model.js` if not already removed (fix 1 dropped `maxFileSize` + `oversizeFileMessage`; `maxFileSizeLabel` still leaks the "10 MB" hint into the template).
+- [ ] Update the "Max file size 10 MB" hint in `add-document-form.njk:68` — reflect the new cdp-uploader `CDP_UPLOADER_MAX_FILE_SIZE` (50 MB) or remove entirely.
+- [ ] Remove `data-max-file-size` / `data-oversize-error` attributes from `add-document-form.njk:11` — no longer feeding a client preflight.
+
+### Backend — byte-proxy teardown
+
+- [ ] Delete `DocumentController.java` `POST /document-uploads/{upload-id}/file` byte-proxy endpoint (lines 185-203).
+- [ ] Delete `DocumentService.proxyFileToUploader` (lines 132-135).
+- [ ] Delete `DocumentService.initiate` (lines 79-106) — no longer called; frontend does `/initiate` on cdp-uploader itself. Retain the `DocumentUploadRequest` type only if still used by other endpoints; otherwise delete.
+- [ ] Delete `POST /notifications/<ref>/document-uploads` controller endpoint if the frontend never calls it under Option 3.
+- [ ] Delete `CdpUploaderClient` methods that are now unused (`initiate`, `uploadFile`) — keep any status/probe methods if the backend uses them elsewhere.
+- [ ] `CdpConfig.uploader().maxFileSize()` / `.mimeTypes()` — move to frontend config or delete if only the deleted initiate consumed them.
+- [ ] Delete tests exercising the removed endpoints: `DocumentControllerTest`'s `Initiate` and `UploadFile` nested classes; `DocumentServiceTest`'s `Initiate` nested class; `DocumentInitiateProductionModeIT`.
+
+### Backend — callback authentication (EUDPA-35, orthogonal but bundled here for the follow-up)
+
+- [ ] Wire HMAC verification on the `POST /document-uploads/{upload-id}/scan-results` endpoint per the `EUDPA-35` comment at `DocumentController.java:157-159`. Not a byte-proxy concern but the same code region gets touched.
+
+### E2E tests — assertion inversions and skip-reason updates
+
+- [ ] `accompanying-documents-file-size-limit.spec.ts:37` — client-side preflight test (assertion inverts to success after the preflight is removed).
+- [ ] `accompanying-documents-file-size-limit.spec.ts:52` — 11 MiB "not raw nginx 413" test; assertion becomes moot since `/upload-and-scan` bypasses the sidecar cap.
+- [ ] `accompanying-documents-no-js.spec.ts:60,78` — server-side 10 MB rejection tests; inverts to success.
+- [ ] `accompanying-documents-file-size-limit.spec.ts:52` — `skipIfComposeEnvironment('Compose stack has no nginx ingress...')` skip reason is now false as of step 1 — Compose has the sidecar. Either remove the skip or update the reason.
+- [ ] Frontend unit tests for the deleted files — `validation.test.js`, `views.test.js`, `page-model.test.js`, `controller.test.js` will need updates or partial deletion once the machinery is removed.
