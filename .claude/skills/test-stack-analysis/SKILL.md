@@ -141,36 +141,22 @@ E2E at once).
    - No match at the home level → **gap**.
    - A match exists at the home level, AND an equivalent-strength
      match (including the failure path) also exists at a higher
-     level → **duplication** candidate. When that higher level is E2E,
-     don't treat it as automatically exempt — apply the taxonomy's
-     sharper per-sub-concern test (a fact only trustworthy because a
-     real caller supplied it, vs. an already-proven single-service
-     fact) before deciding.
-5. Do not evaluate "promote to E2E for cross-service confidence" —
-   this skill explicitly does not attempt that judgment call (see the
-   taxonomy's "Known limitation" section). Only report gaps and
-   duplication as defined above.
-6. When scoping tests for new, unimplemented work (as opposed to
-   auditing an existing suite), do not silently recommend building
-   every automated test a gap analysis turns up. Flag an
-   **automation-scope** finding instead whenever: the same underlying
-   concern surfaces as a gap at more than one tier (e.g. an
-   integration-tier test AND a full-stack test both proposed for the
-   same AC — note whether the higher tier proves anything the lower
-   one structurally can't); the technique/cost looks disproportionate
-   to what it proves; or the concern looks better suited to a manual/
-   periodic check than to any automated tier at all (see the
-   taxonomy's "Known limitation #2" for all three). Leave the
-   build-or-skip-or-manual decision to the requester — this is the
-   same category of judgment call as bullet 5, just about proposed
-   rather than existing tests.
-7. For each gap, add a one-line risk read per the taxonomy's "Gap
+     level → **duplication** candidate. When that higher level crosses
+     an independently-deployed service boundary the lower level's test
+     cannot (most commonly E2E, but also a backend integration test
+     calling another service), don't treat it as automatically exempt
+     — apply the taxonomy's sharper per-sub-concern test (a fact only
+     trustworthy because a real caller supplied it, vs. an
+     already-proven single-service fact) before deciding. Also check
+     for **same-tier duplication** — two tests at the *same* level
+     proving the same fact, not just cross-level pairs.
+5. For each gap, add a one-line risk read per the taxonomy's "Gap
    severity is not uniform" section: **Blocking** if it has a
    plausible production consequence, **Advisory** if it's a
    completeness/pyramid nit with no material risk identified. This is
    a suggested triage, not a verdict — the requester makes the final
    call on what's blocking.
-8. A concern can be fully tested (no gap, no duplication) and still be
+6. A concern can be fully tested (no gap, no duplication) and still be
    worth flagging if the behaviour it asserts appears to not satisfy
    the flow/AC text as literally worded — e.g. every level agrees on
    what happens, but what happens doesn't match what the AC says
@@ -178,7 +164,7 @@ E2E at once).
    correctness review (out of scope per the skill's own boundary) —
    it's a coverage-informed observation that the AC itself may not be
    satisfied. File it in Notes, but give it the same Blocking/Advisory
-   risk read as bullet 7 (Blocking if the mismatch has a plausible
+   risk read as bullet 5 (Blocking if the mismatch has a plausible
    user-facing/production consequence, Advisory if it's a wording
    nuance with no real consequence) — this is what earns it a line in
    the At-a-glance summary in Step 3, same as a Gap.
@@ -187,9 +173,7 @@ E2E at once).
 
 Write `workareas/test-stack-analysis/<run-id>/report.md` directly
 (prose-canonical — no JSON state, no render helper). Sections, in
-this order: At a glance, Gaps, Duplication, Automation-scope flags
-(optional), Notes (optional), Known limitation (standing, always
-present):
+this order: At a glance, Gaps, Duplication, Notes (optional):
 
 ```markdown
 # Test-stack analysis — <run-id>
@@ -206,6 +190,9 @@ present):
 
 ## Gaps
 
+<A gap is a concern not proven *anywhere*, not merely absent at its
+natural-home level — see the taxonomy's Gap definition.>
+
 ### <flow/concern name>
 
 - **Concern type:** <taxonomy category>
@@ -219,6 +206,10 @@ present):
 
 ## Duplication
 
+<A finding here is two tests proving the same fact with equivalent
+strength — cross-level or same-tier — not merely two tests touching
+the same code. See the source doc's "Ask this first" risk question.>
+
 ### <flow/concern name>
 
 - **Concern type:** <taxonomy category>
@@ -227,20 +218,6 @@ present):
   redundant assertion>
 - **Recommended action:** delete or demote the higher-level
   assertion — <one-line reason>
-
-## Automation-scope flags
-
-<optional — for any of the three judgment calls in the taxonomy's
-"Known limitation #2" that a proposed (not-yet-built) test raises:
-(1) the same concern proposed as a gap at more than one tier — name
-it, list the tiers proposed, state whether the higher tier(s) prove
-anything the lower one structurally can't; (2) a proposed technique
-whose cost looks disproportionate to what it proves, or that isn't
-how this class of test is conventionally scoped; (3) a concern that
-looks better suited to manual/periodic verification than to any
-automated tier. Do not recommend build-or-skip-or-manual yourself;
-flag it for the requester to decide. Omit the section entirely if
-nothing qualifies — same as Notes, its absence is unremarkable.>
 
 ## Notes
 
@@ -256,30 +233,19 @@ section. Omit the section entirely if nothing qualifies; unlike Gaps/
 Duplication, this one doesn't need an explicit "none" statement since
 its absence is unremarkable.
 
-For the specific sub-case from Step 2 bullet 8 — tested behaviour that
+For the specific sub-case from Step 2 bullet 6 — tested behaviour that
 appears to not satisfy the flow/AC text as literally worded — add a
 **Risk if unaddressed:** <Blocking | Advisory> line in the same style
 as a Gap, so the finding carries a severity into the At-a-glance
 summary above. Other Notes entries (e.g. the isolable-coverage case
-above) don't need this field — only add it where Step 2 bullet 8
+above) don't need this field — only add it where Step 2 bullet 6
 applies.>
-
-## Known limitation
-
-This report does not evaluate whether adequately-covered flows should
-additionally get E2E coverage for cross-service confidence (mocked
-lower-level tests can drift from the real upstream contract), nor
-does it decide build-or-skip-or-manual on the automation-scope flags
-above. The Blocking/Advisory risk read attached to each gap is a
-suggested triage, not a verdict. All are risk-tolerance/convention
-judgment calls outside this skill's scope.
 ```
 
 If Gaps or Duplication has no findings, keep the heading and state
 that explicitly ("No gaps found.") rather than omitting the section —
-an empty section is itself a result, not a missing step.
-Automation-scope flags and Notes are the exception — omit either
-entirely when nothing qualifies (see above).
+an empty section is itself a result, not a missing step. Notes is the
+exception — omit it entirely when nothing qualifies (see above).
 
 At a glance is always present, even when there's nothing to escalate
 — state that explicitly too ("Nothing blocking or advisory to
@@ -287,7 +253,7 @@ report.") rather than omitting the section. Omit the **Blocking** or
 **Advisory** sub-heading individually when that severity has no
 entries; don't print an empty sub-heading. Populate it from every
 Gap's `Risk if unaddressed` line plus every severity-tagged Notes
-entry (Step 2 bullet 8) — nothing else feeds it, and it must not
+entry (Step 2 bullet 6) — nothing else feeds it, and it must not
 introduce a finding that isn't also detailed in the section below.
 Order Blocking before Advisory; within a severity, keep the source
 order the findings appear in below. Write each line as
@@ -305,7 +271,6 @@ Summary:
 - <X> blocking, <Y> advisory (across gaps and flagged notes — see At a glance)
 - <N> gap(s) found
 - <M> duplication finding(s)
-- <P> automation-scope flag(s)
 
 Report: ~/git/defra/trade-imports-animals-workspace/workareas/test-stack-analysis/<run-id>/report.md
 

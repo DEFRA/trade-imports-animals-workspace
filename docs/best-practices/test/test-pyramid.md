@@ -36,6 +36,36 @@ for language-specific conventions.
 
 ---
 
+## Ask this first: what risk does this test protect against?
+
+Before placing or auditing a test, ask what it proves that a cheaper
+test doesn't: **what production risk or unique confidence does this
+test protect against that a test at a lower level wouldn't catch?**
+This is the question that actually decides gaps and duplication —
+everything below is a heuristic for answering it quickly, not a
+replacement for asking it.
+
+**Good overlap (layered, not duplicated):**
+
+| Level | Catches |
+|---|---|
+| Unit | Business-logic bugs — wrong calculation, bad branch |
+| Integration | Data/HTTP-contract bugs — ordering, NULLs, serialisation |
+| E2E | Browser/journey bugs — rendering, navigation, cross-service wiring |
+
+**Bad overlap (duplication, wherever it happens):** three Playwright
+journeys each re-verifying the same login validation message; a
+second unit test asserting the same input/output pair as the first
+under a different name; an E2E test re-asserting sort *order* that an
+integration test already proves against a real database. Two tests
+touching the same code is fine — two tests proving the *same fact*
+with *equivalent strength* is duplication, regardless of which levels
+(or which two tests at the same level) are involved.
+
+A gap is not "nothing exists at this pyramid level" — it's "no test
+anywhere proves this specific risk." Check what's already proven
+before deciding a concern is missing.
+
 ## Each concern belongs at the lowest level that can cover it confidently
 
 Logic belongs in unit tests. Data and HTTP behaviour belongs in
@@ -43,6 +73,10 @@ integration tests. Only what genuinely requires the full stack — UI
 rendering, navigation, user journeys — belongs in Playwright. Keeping
 E2E lean avoids duplication and makes the suite faster and less
 fragile.
+
+The level below is a starting heuristic — the level *usually* right
+for that kind of concern — not the rule. When in doubt, the risk
+question above is what decides it.
 
 ---
 
