@@ -1,8 +1,8 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway trade-imports-address-book trade-imports-ins-frontend
 REPOS_DIR     := repos
-NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub
-JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
+NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub trade-imports-ins-frontend
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway trade-imports-address-book
 CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 

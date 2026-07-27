@@ -1,6 +1,6 @@
 # trade-imports-animals workspace
 
-This is a local workspace aggregating 8 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
+This is a local workspace aggregating 10 independent GitHub repos for the DEFRA trade imports animals service. It is **not** a monorepo — each repo has its own git history, remotes, and CI. This folder provides shared tooling and cross-repo context.
 
 The load-bearing rules that agents must always honour are kept **inline** below. The volatile reference catalogues (make targets, common workflows, the `tools/` index, worker references, the workareas map) live as topic files under [`docs/reference/`](docs/reference/) — see the [Reference catalogues](#reference-catalogues) pointer near the foot of this file.
 
@@ -55,6 +55,8 @@ Per-skill fan-out worker personas are catalogued in [`docs/reference/worker-refe
 | `repos/trade-imports-reference-data` | DEFRA/trade-imports-reference-data | Reference data service | Java / Spring Boot |
 | `repos/trade-imports-defra-id-stub` | DEFRA/trade-imports-defra-id-stub | Stub of the Defra ID (OIDC) sign-in service | Node.js |
 | `repos/trade-imports-dynamics-gateway` | DEFRA/trade-imports-dynamics-gateway | Centralised gateway forwarding events to Azure Service Bus (ADR-EUDP-001 Option B) | Java / Spring Boot |
+| `repos/trade-imports-address-book` | DEFRA/trade-imports-address-book | Org-scoped address book API (system of record for Standard Address Block records) | Java / Spring Boot |
+| `repos/trade-imports-ins-frontend` | DEFRA/trade-imports-ins-frontend | Import Notification Service front-door (address-book UI, sign-in, dashboard shell) | Node.js |
 
 Work on a specific repo by entering its directory:
 

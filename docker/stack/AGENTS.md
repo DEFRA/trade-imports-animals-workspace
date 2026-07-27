@@ -34,8 +34,8 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 | `infrastructure.compose.yml` | `floci`, `floci-init`, `redis`, `cdp-uploader` | `infrastructure` |
 | `infrastructure.compose.yml` | `mssql`, `servicebus-emulator` (Azure Service Bus emulator the dynamics-gateway talks to), `toxiproxy` (sits in front of servicebus-emulator; lets you sever/restore the gateway's ASB connection for DLQ testing) | `servicebus` |
 | `stubs.compose.yml` | `trade-imports-defra-id-stub`, `trade-imports-stub` | `stubs` |
-| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data` | `backend` |
-| `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin` | `frontend` |
+| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data`, `trade-imports-address-book` | `backend` |
+| `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin`, `trade-imports-ins-frontend` | `frontend` |
 | `dev.compose.yml` (--dev only) | build/target/volumes overlay for the 6 repo-backed services | — |
 
 ## Choosing between `-d`, `-e`, and `--profile`

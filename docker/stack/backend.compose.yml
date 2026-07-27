@@ -17,6 +17,7 @@ services:
       - APP_AWS_ENDPOINT_OVERRIDE=http://host.docker.internal:4566
       - CDP_UPLOADER_BASE_URL=http://host.docker.internal:7337
       - TRADE_IMPORTS_ANIMALS_BACKEND_BASE_URL=http://host.docker.internal:8085
+      - TRADE_IMPORTS_ADDRESS_BOOK_URL=http://host.docker.internal:8089
       - CDP_DOCUMENTS_BUCKET=trade-imports-animals-documents
       - OUTBOX_SNS_TOPIC_ARN=${OUTBOX_SNS_TOPIC_ARN:-arn:aws:sns:eu-west-2:000000000000:trade_imports_animals_eu_notifications.fifo}
     healthcheck:
@@ -103,3 +104,31 @@ services:
     platform: linux/amd64
     ports:
       - '8086:8086'
+  trade-imports-address-book:
+    profiles: [backend]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    env_file:
+      - ./shared.env
+    environment:
+      - PORT=8089
+      - SPRING_PROFILES_ACTIVE=local
+      - MONGO_DATABASE=trade-imports-address-book
+      - AWS_EMF_AGENT_ENDPOINT=http://host.docker.internal:4566
+      - LOG_LEVEL=INFO
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 30s
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:8089/health
+    image: defradigital/trade-imports-address-book:${TRADE_IMPORTS_ADDRESS_BOOK:-latest}
+    platform: linux/amd64
+    ports:
+      - '8089:8089'
