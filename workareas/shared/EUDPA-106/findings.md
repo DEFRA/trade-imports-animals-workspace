@@ -80,9 +80,13 @@ Discovered while diagnosing test D. The `/status/<uploadId>` response includes a
 
 The spike currently uses hardcoded metadata (`documentType: 'ITAHC'`, `documentReference: 'SPIKE-UPLOAD'`, `dateOfIssue: today`) in `upload-successful.js:commitToDocumentsList` because test D doesn't assert on metadata — real capture is a small follow-up edit, not an architectural change.
 
-## State-store design — session-scoped, uploadId-keyed yar
+## State-store design — decision superseded
 
-Chosen shape for step 5, after ruling out three alternatives.
+**Superseded by "AC3 state-store decision" below.** The uploadId-keyed yar design was shortlisted before the discussion around backend authz, notification-id-in-URL, and middleware-based ownership checks landed. Under those constraints, Option 8 (backend as source of truth) is the accepted shape; this section is preserved for context on how the reasoning evolved.
+
+### Original design (preserved for history)
+
+Chosen shape for step 5 at the time, after ruling out three alternatives.
 
 **Design:** in-flight upload state lives in yar under keys of the form `upload:<uploadId>`. The value is `{ notificationRef, statusUrl, createdAt, scanStatus }`. On `/upload-successful?uploadId=A`, the handler reads `request.yar.get('upload:A')`, polls cdp-uploader for status, and on `ready` persists the doc via the backend using the yar-carried `notificationRef` before dropping the entry.
 
@@ -105,6 +109,16 @@ Chosen shape for step 5, after ruling out three alternatives.
 
 - **Still needs backend authz for full safety** — see "Pre-existing auth gaps" below. yar-scoping closes the "attacker with uploadId, no cookie" attack but not the "attacker with own cookie, poisoned wizard state" attack chain.
 - **Callback-driven design is closed off** while state lives in yar — a cdp-uploader callback carries no cookie and can't reach yar. Sticking to polling remains fine for the spike; if the follow-up ticket adopts callbacks it would need to migrate `notificationRef` to `server.app.cache` under uploadId. Cheap migration when the time comes.
+
+## AC3 state-store decision — Option 8, with Option 3 as fallback
+
+Accepted 2026-07-27 after discussion with Sam.
+
+- **Primary direction: Option 8** — backend as source of truth for upload sessions. Frontend calls cdp-uploader `/initiate` and then `POST /notifications/<ref>/document-uploads` to register a `PENDING` record with the backend. `/upload-successful` queries backend for the notification's uploads, renders the notification-level status view (all pending shown with "Checking"/"Safe"/"Rejected" tags), meta-refreshes until callbacks land and records transition. Confirm endpoint transitions ready records to persisted state. Full detail in [state-store-approaches.md](state-store-approaches.md#option-8--full-detail).
+- **Rationale:** Option 8 gives more options (register call anchors the "checking your file" UX during scan delays; pending records visible on the docs list; idempotency belt for concurrent writers; backend-inventory for orphan cleanup). Trade-off is one extra HTTP round-trip per page render, negligible on CDP's private network.
+- **Fallback: Option 3-with-callbacks.** If we hit issues with Option 8 during implementation, we can retreat to the simpler callback-only shape (skip register, rely on cdp-uploader callback to create the backend record). Both use the same existing backend callback receiver at `DocumentController.java:150-176`, so the switch is mostly removal of the register-endpoint changes.
+
+**Hard go-live prerequisite (out of scope for this ticket):** backend auth integration verifying that the logged-in user owns the notification referenced in any request. This applies to both Option 8 and Option 3, and to the pre-existing URL-poisoning vector documented in the next section. Confirmed as a must-have before go-live; captured here so the follow-up implementation ticket picks it up.
 
 ## Pre-existing auth gaps surfaced by the state-store discussion
 
