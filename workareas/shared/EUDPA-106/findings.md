@@ -110,15 +110,35 @@ Chosen shape for step 5 at the time, after ruling out three alternatives.
 - **Still needs backend authz for full safety** — see "Pre-existing auth gaps" below. yar-scoping closes the "attacker with uploadId, no cookie" attack but not the "attacker with own cookie, poisoned wizard state" attack chain.
 - **Callback-driven design is closed off** while state lives in yar — a cdp-uploader callback carries no cookie and can't reach yar. Sticking to polling remains fine for the spike; if the follow-up ticket adopts callbacks it would need to migrate `notificationRef` to `server.app.cache` under uploadId. Cheap migration when the time comes.
 
-## AC3 state-store decision — Option 8, with Option 3 as fallback
+## AC3 state-store decision — Option 3-with-callbacks (Option 8 as follow-up)
 
-Accepted 2026-07-27 after discussion with Sam.
+Accepted 2026-07-27 after Sam discussion, re-scoped 2026-07-27 after cdp-uploader README review.
 
-- **Primary direction: Option 8** — backend as source of truth for upload sessions. Frontend calls cdp-uploader `/initiate` and then `POST /notifications/<ref>/document-uploads` to register a `PENDING` record with the backend. `/upload-successful` queries backend for the notification's uploads, renders the notification-level status view (all pending shown with "Checking"/"Safe"/"Rejected" tags), meta-refreshes until callbacks land and records transition. Confirm endpoint transitions ready records to persisted state. Full detail in [state-store-approaches.md](state-store-approaches.md#option-8--full-detail).
-- **Rationale:** Option 8 gives more options (register call anchors the "checking your file" UX during scan delays; pending records visible on the docs list; idempotency belt for concurrent writers; backend-inventory for orphan cleanup). Trade-off is one extra HTTP round-trip per page render, negligible on CDP's private network.
-- **Fallback: Option 3-with-callbacks.** If we hit issues with Option 8 during implementation, we can retreat to the simpler callback-only shape (skip register, rely on cdp-uploader callback to create the backend record). Both use the same existing backend callback receiver at `DocumentController.java:150-176`, so the switch is mostly removal of the register-endpoint changes.
+**Primary direction: Option 3-with-callbacks.** Frontend passes callback URL and `metadata: { correlationId, notificationRef }` at cdp-uploader `/initiate`. Backend's existing callback receiver at `DocumentController.java:150-176` handles the payload; `handleScanResult` becomes create-or-update (currently `findByCorrelationId().orElseThrow()`); populates `documentType`, `documentReference`, `dateOfIssue` from `payload.form()` (text form fields the browser submitted). `/upload-successful` in the frontend just redirects to `/accompanying-documents`; the docs page reads from backend as it does today. Full design in [state-store-approaches.md](state-store-approaches.md).
 
-**Hard go-live prerequisite (out of scope for this ticket):** backend auth integration verifying that the logged-in user owns the notification referenced in any request. This applies to both Option 8 and Option 3, and to the pre-existing URL-poisoning vector documented in the next section. Confirmed as a must-have before go-live; captured here so the follow-up implementation ticket picks it up.
+**Key finding that enabled the simplification.** cdp-uploader's README (`DEFRA/cdp-uploader/main/README.md`) confirms:
+
+- `metadata` at `/initiate` is optional and echoed back verbatim on the callback.
+- Text form fields submitted alongside the file are preserved under `payload.form.*` in the callback body (the same section that documents file fields notes "Text form fields are preserved as-is").
+
+So `documentType`, `documentReference`, `dateOfIssue` don't need to be known at `/initiate` time — the callback body carries them from the user's browser submission. No schema loosening on `DocumentUploadRequest`, no placeholder metadata, no timing wrinkle. Both Option 3 and Option 8 become materially cleaner because of this.
+
+**Why Option 3 wins on scope for the spike:**
+
+| | Option 3 | Option 8 |
+|---|---|---|
+| Backend files touched | 2 (`DocumentService.handleScanResult`, `CdpScanResultForm`) | 4-5 (also `DocumentUploadRequest`, `AccompanyingDocument`, entity migration) |
+| Schema migration | none | new `statusUrl` column |
+| Existing test breakage risk | Low | Medium (request-shape change ripples through controller + IT tests) |
+| Trade-off | No "checking" tag on docs list during scan delay — user refreshes to see the doc | Register call gives visible "checking" state immediately |
+
+Option 3 lands the load-bearing change (`handleScanResult` becomes create-or-update). Option 8 is additive on top of that.
+
+**Follow-up stretch — Option 8 (register call).** Additive extension of Option 3 once the callback path is proven. Adds a register endpoint + frontend register call at page-render time; gains the in-flight UX (pending records visible on the docs list); costs one extra HTTP round-trip per page render + migration of existing initiate-endpoint tests.
+
+**Fallback if the callback path itself hits issues:** the current step-4 implementation (yar single-slot + statusUrl polling + spike-hack in page-model.js) works well enough for test D. Documented as a known-limitation baseline; follow-up ticket covers the proper fix in either case.
+
+**Hard go-live prerequisite (out of scope for this ticket):** backend auth integration verifying that the logged-in user owns the notification referenced in any request. This applies to Option 3, Option 8, and the pre-existing URL-poisoning vector documented in the next section. Confirmed as a must-have before go-live; captured here so the follow-up implementation ticket picks it up.
 
 ## Pre-existing auth gaps surfaced by the state-store discussion
 

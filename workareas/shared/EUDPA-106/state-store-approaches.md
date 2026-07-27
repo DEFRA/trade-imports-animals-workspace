@@ -2,6 +2,66 @@
 
 Reference sheet for the design discussion on step 5 of the EUDPA-106 spike (frontend refactor to allow >10 MB uploads).
 
+## Final decision (2026-07-27)
+
+**Spike lands with Option 3-with-callbacks. Option 8 (register call) captured as follow-up-ticket stretch work.**
+
+Everything below traces how we got here; this section is what actually gets built.
+
+### The design in one paragraph
+
+Frontend passes `callback` URL + `metadata: { correlationId, notificationRef }` at cdp-uploader `/initiate`. Backend's existing callback endpoint (`DocumentController.java:150-176`) handles create-or-update: on receipt of a scan-result callback with no matching document, it creates a new `AccompanyingDocument` populated from the callback body — `notificationRef` from `payload.metadata()`, `documentType`/`documentReference`/`dateOfIssue` from `payload.form()` (text form fields the browser submitted), `scanStatus` from the callback state. Frontend `/upload-successful` becomes a simple redirect to `/accompanying-documents`; docs page reads from backend as it always has.
+
+### Key finding that enabled the simplification
+
+cdp-uploader's README (`DEFRA/cdp-uploader/main/README.md`) explicitly documents:
+
+- `metadata` at `/initiate` is optional. Description reads *"Map of additional information related to upload"* with no schema, no required keys. Example uses arbitrary caller-defined keys like `customerId`.
+- Metadata is echoed back on the callback verbatim. Callback payload doc for `metadata`: *"The metadata object supplied in the /initiate request, returned exactly as provided."*
+- Text form fields submitted alongside the file are preserved in the callback body under `payload.form.*`. Section "File fields in callback": *"Text form fields are preserved as-is. File fields are objects with [file properties]"*.
+
+So `documentType`, `documentReference`, `dateOfIssue` don't need to be known at `/initiate` time — they arrive with the callback from the user's browser submission. No schema loosening, no placeholder metadata, no timing wrinkle.
+
+### Concrete changes (Option 3-with-callbacks)
+
+**Backend** (`trade-imports-animals-backend`, 2 files):
+
+- `DocumentService.handleScanResult`: change `findByCorrelationId().orElseThrow()` to `.orElseGet(createNew)`. On the create branch, populate the entity from the callback payload — `notificationRef` from metadata, three text fields from `payload.form()`, scanStatus from the callback state, correlationId from metadata.
+- `CdpScanResultForm`: refit to expose text form fields alongside files. Currently `Map<String, CdpScanResultFile>` with `@JsonAnySetter` typed as file — text values fail or drop. Refit to a shape that keeps files separate from text fields (either two typed maps + custom deserializer, or a single `Map<String, Object>` with type checks at read time).
+
+**Frontend** (`trade-imports-animals-frontend`):
+
+- `controller/get.js`: pass `callback` URL (backend's `/document-uploads/pending/scan-results`) + `metadata: { correlationId, notificationRef }` in `/initiate`. Generate correlationId with `crypto.randomUUID()`. Drop yar `currentUpload` set. Drop the graceful-swallow around `initiateCdpUploaderSession` — real errors should surface.
+- `controller/upload-successful.js`: simplify to `return h.redirect('/accompanying-documents')`. No polling, no doc committing.
+- `controller/page-model.js`: undo step-4's shortcut on session-provided `scanStatus`. Query backend via `documentClient.getStatus()` for all docs.
+- `common/constants/session-keys.js`: remove `currentUpload`.
+
+**Config**:
+
+- Frontend `src/config/config.js`: new `cdpUploader.callbackUrl`.
+- `docker/stack/frontend.compose.yml`: new `CDP_UPLOADER_CALLBACK_URL` env var.
+
+### Trade-off (documented limitation)
+
+During scan delay window between form submission and callback arrival, user lands on `/accompanying-documents`, sees no in-flight entry for their upload. Manual refresh eventually shows the doc once the callback lands. Option 8 (below) fixes this — captured as follow-up-ticket work.
+
+### Follow-up stretch — Option 8 (register call)
+
+Additive on top of Option 3. Adds:
+
+- Backend: `DocumentUploadRequest` refit to accept `{ uploadId, correlationId, statusUrl }`. `DocumentService.initiate()` → `registerPending()`, skip cdp-uploader call. Optionally add `statusUrl` column to `AccompanyingDocument`.
+- Frontend: after `/initiate`, `POST /notifications/<ref>/document-uploads` to register with `{ uploadId, correlationId }`. Rewrite `/upload-successful` for a notification-level status dashboard.
+- UX gain: "Checking your file" tag visible during scan delay.
+- Cost: extra HTTP round-trip per page render; existing initiate-endpoint test migration.
+
+### Hard go-live prerequisite (out of scope for this ticket)
+
+Backend authz middleware verifying the logged-in user owns the notification in the URL path. Applies to both Option 3 and Option 8, and to the pre-existing URL-poisoning vector documented in `findings.md`. Must-have before go-live; captured for the follow-up implementation ticket.
+
+---
+
+*Everything below is the trace of how we arrived at this decision. Kept for context.*
+
 ## Context
 
 The spike proves the `browser → /upload-and-scan → cdp-uploader` direct flow. When cdp-uploader receives the file it returns a 302 to a static redirect URL configured at `/initiate` time. Our `/upload-successful` handler needs to identify **which upload** just landed so it can poll status, persist against the correct notification, and update the docs list.
