@@ -1,0 +1,237 @@
+# EUDPA-106 spike — findings
+
+Running log of things learned during implementation that don't fit the initial plan cleanly. Feeds into the final `recommendation.md` and the follow-up implementation ticket. Update as new discoveries land.
+
+## Enforcement chain for the old upload path
+
+The current `POST /accompanying-documents` route enforces the 10 MB cap at four layers, only the first of which fires for a browser-driven request today. Discovered while scoping fix 1 (step 2 in the plan).
+
+For a 50 MB upload attempt via the old form action, once the sidecar from step 1 is in place, the layers fire in this order:
+
+| Order | Layer | File | What it does |
+|-------|-------|------|--------------|
+| 1 | Client-side preflight (JS) | `page-model.js:84-86` feeds `maxFileSize` / `oversizeFileMessage` into the view model consumed by client JS | Alerts, no form submit. **Currently the only layer the test hits.** |
+| 2 | Nginx sidecar (added by step 1) | `docker/stack/config/nginx/frontend.conf` (`client_max_body_size 10M` on `/`) | Returns nginx 413 HTML page. Would fire if layer 1 removed. |
+| 3 | Hapi route `maxBytes` + `handleOversizePayload` | `index.js:78` + `index.js:12-41` | Boom 413 caught by onPreResponse, renders the oversize form. Unreachable for >10 MB requests once layer 2 catches them. |
+| 4 | Server-side validation | `controller/post/validation.js:54-55` | Only fires in the tight window between MAX_FILE_SIZE_BYTES and MAX_PAYLOAD_BYTES (~10 MB..10 MB + 1 KB). Never fires for 50 MB. |
+
+## Constants blast radius
+
+`document-upload-config.js` exports six size-related identifiers that are consumed across four files. The plan assumed they were self-contained; they aren't.
+
+| Constant | Consumers |
+|---|---|
+| `MAX_FILE_SIZE_MB` (unexported) | Feeds `MAX_FILE_SIZE_BYTES`, `MAX_FILE_SIZE_LABEL` |
+| `MAX_FILE_SIZE_BYTES` | `page-model.js:84`, `validation.js:54`, `upload.js:22` |
+| `MAX_FILE_SIZE_LABEL` | `page-model.js:85` |
+| `OVERSIZE_FILE_MESSAGE` | `page-model.js:86`, `validation.js:55`, `views.js:76-77` |
+| `MULTIPART_OVERHEAD_BYTES` (unexported) | Feeds `MAX_PAYLOAD_BYTES` |
+| `MAX_PAYLOAD_BYTES` | `index.js:78` |
+
+Removing all six requires editing at least six files. For a spike PR, that's a lot of blast radius that mostly duplicates what the follow-up implementation ticket will do anyway when it removes the old path entirely.
+
+## Fix 1 — chosen approach: minimal (Option A)
+
+Rather than the full deletion the plan called for, fix 1 removes **only the client-side preflight feed** — enough to flip test D's failure mode from "client alert" to "nginx 413", which is the diagnostic value the plan wanted. Everything else stays for now.
+
+The rest of the cleanup — deleting the constants, removing hapi `maxBytes`, deleting `handleOversizePayload`, deleting `oversizeFileView`, purging validation.js checks, updating templates, deleting or inverting existing tests that assert 10 MB rejection — is deferred to the follow-up implementation ticket, where it lands naturally alongside removing the old POST route entirely.
+
+## Nginx sidecar caches upstream IP — recreate frontend requires nginx restart
+
+Discovered while verifying step 3. `docker compose up -d --force-recreate` on the frontend service gives the container a fresh IP. The sidecar's nginx worker resolves `trade-imports-animals-frontend:3000` **once at startup** and caches the result, so requests through nginx to a recreated frontend fail with `502 Bad Gateway` / `Host is unreachable` even though the frontend container itself is healthy and reachable from `docker exec`.
+
+Workaround for the spike: `docker restart <sidecar>` after any frontend recreate. Cleaner fix for the follow-up ticket or a workspace chore:
+- Add a `resolver 127.0.0.11 valid=5s;` directive to the nginx config and use a variable in `proxy_pass` (e.g. `set $upstream "http://trade-imports-animals-frontend:3000"; proxy_pass $upstream;`) so nginx re-resolves DNS at request time instead of caching at worker init.
+
+Impacted local dev loops for anyone iterating on the frontend service; not a production concern (CDP's sidecar has its own reload cadence).
+
+## Pre-commit hook glob is too permissive (frontend repo)
+
+Discovered while committing fix 1. `npm run format:check` (invoked by the frontend repo's husky `pre-commit` hook) runs `prettier --check "src/**/*.js" "**/*.{js,cjs,md,json,config.js,test.js}"`. The second glob sweeps up **untracked** JS/JSON/MD files anywhere in the working tree — including artifacts from Playwright's HTML report (minified trace-viewer bundles under `playwright-report/`) — and fails the commit if they're not Prettier-formatted.
+
+The immediate fix is to add `playwright-report/` to `.gitignore` (done on this branch alongside fix 1). `test-results/` was already ignored — this is its natural companion.
+
+Broader observation for the follow-up ticket or a separate chore:
+- The `format:check` glob shouldn't include untracked-output directories at all. Either use lint-staged style tracked-only filtering, or explicitly restrict globs to source dirs (`src/**` + `tests/**` + top-level config files). Not a spike deliverable, but worth surfacing.
+
+## cdp-uploader /status URL needs server-side host rewrite
+
+The `statusUrl` returned by `POST /initiate` is absolute against cdp-uploader's own host binding (e.g. `http://localhost:7337/status/<uploadId>`) — a URL shaped for the **browser** to follow. Server-side polling (from the frontend container) hits its own loopback and the fetch fails.
+
+Spike workaround (in `cdp-uploader-client.js:getStatus`): parse the returned `statusUrl`, keep the pathname + search, and prepend the configured `cdpUploaderBaseUrl` before fetching. Follow-up ticket should either (a) surface this in a shared helper, or (b) request cdp-uploader emit a relative statusUrl (or two — one for the browser, one for server-side).
+
+## cdp-uploader's /status DOES expose the multipart form fields
+
+Discovered while diagnosing test D. The `/status/<uploadId>` response includes a `form` object populated with every non-file field the browser sent to `/upload-and-scan`:
+
+```json
+{
+  "uploadStatus": "ready",
+  "form": {
+    "documentType": "ITAHC",
+    "documentReference": "TARGET50MB01",
+    "issueDate-day": "24", "issueDate-month": "01", "issueDate-year": "2026",
+    "file": { "filename": "target-50mb.pdf", "contentType": "application/pdf", ... }
+  }
+}
+```
+
+**Implication:** the "metadata is lost when the browser POSTs directly to cdp-uploader" concern is unfounded — cdp-uploader preserves it. The follow-up ticket can and should read documentType/documentReference/dateOfIssue from `status.form.*` on the /upload-successful landing rather than doing a two-step form or per-doc /initiate-with-metadata.
+
+The spike currently uses hardcoded metadata (`documentType: 'ITAHC'`, `documentReference: 'SPIKE-UPLOAD'`, `dateOfIssue: today`) in `upload-successful.js:commitToDocumentsList` because test D doesn't assert on metadata — real capture is a small follow-up edit, not an architectural change.
+
+## State-store design — decision superseded
+
+**Superseded by "AC3 state-store decision" below.** The uploadId-keyed yar design was shortlisted before the discussion around backend authz, notification-id-in-URL, and middleware-based ownership checks landed. Under those constraints, Option 8 (backend as source of truth) is the accepted shape; this section is preserved for context on how the reasoning evolved.
+
+### Original design (preserved for history)
+
+Chosen shape for step 5 at the time, after ruling out three alternatives.
+
+**Design:** in-flight upload state lives in yar under keys of the form `upload:<uploadId>`. The value is `{ notificationRef, statusUrl, createdAt, scanStatus }`. On `/upload-successful?uploadId=A`, the handler reads `request.yar.get('upload:A')`, polls cdp-uploader for status, and on `ready` persists the doc via the backend using the yar-carried `notificationRef` before dropping the entry.
+
+**Alternatives considered and rejected:**
+
+| Design | Why not |
+|---|---|
+| yar single slot (`currentUpload`) — spike's step-4 code | Multi-tab collision: Tab 2's `/initiate` overwrites Tab 1's slot; Tab 1's upload lands on `/upload-successful` but reads Tab 2's state. Real bug, invisible in single-tab test D. |
+| `server.app.cache` segment keyed by uploadId | No cookie scoping: a rogue authenticated user with a leaked uploadId can hit `/upload-successful?uploadId=<victim>` from their own session and cause the victim's file to commit against the victim's notification. yar's cookie-scoping closes this at the frontend without waiting for backend authz. |
+| URL-carried `notificationRef` | Fully user-tamperable given today's backend has no ownership check — attacker's file trivially lands on any notification whose ref they know. See "Pre-existing auth gaps" below. |
+| yar keyed by `notificationId` (user's initial suggestion) | Better than the single-slot but still collides on multi-tab-same-notification, which is a real workflow (open a second tab to upload extra docs faster). uploadId-keyed handles this. |
+
+**Load-bearing properties of the chosen shape:**
+
+- **Session-cookie ambient auth.** Every read/write happens through `request.yar`, which yar transparently scopes to the caller's session cookie. An attacker without the victim's cookie cannot read or write the victim's upload state — even if they know the uploadId.
+- **Per-upload isolation.** Each `/initiate` mints a distinct uploadId; entries under `upload:A` and `upload:B` never collide. Multi-tab safe both for different notifications *and* same-notification.
+- **No cache write actually strictly needed for `statusUrl`** — it's reconstructible as `${cdpUploader.baseUrl}/status/${uploadId}`. The load-bearing datum in the value is `notificationRef`, which has to come from server-side state to prevent URL tampering (see auth-gap discussion). Storing `statusUrl` and `createdAt` alongside is convenience, not correctness.
+
+**Trade-offs / limits to name:**
+
+- **Still needs backend authz for full safety** — see "Pre-existing auth gaps" below. yar-scoping closes the "attacker with uploadId, no cookie" attack but not the "attacker with own cookie, poisoned wizard state" attack chain.
+- **Callback-driven design is closed off** while state lives in yar — a cdp-uploader callback carries no cookie and can't reach yar. Sticking to polling remains fine for the spike; if the follow-up ticket adopts callbacks it would need to migrate `notificationRef` to `server.app.cache` under uploadId. Cheap migration when the time comes.
+
+## AC3 state-store decision — pivot from Option 3 to minimal Option 8 Path Y
+
+**Pivot log (2026-07-27, mid-review).** Original decision (below) was Option 3-with-callbacks with Option 8 held as follow-up stretch. During code-review triage on review item #15 (meta-refresh accessibility on `/upload-successful`) the discussion identified that Path Y of Option 8 — cdp-uploader's redirect target being `/accompanying-documents` directly rather than a rewritten wait page — eliminates meta-refresh from the flow entirely, matches the existing manual-refresh pattern on the docs page (`components/uploaded-documents.njk:59-67`), and is cheaper (deletions, not additions) than the dashboard rewrite Path X. The register-call plumbing is the shared prerequisite for both Path X and Path Y, so bringing it forward into the spike does not commit to the full state-machine expansion — that stays as an incremental follow-up.
+
+**Pivot decision: minimal Option 8 Path Y is landed in this spike.** Auth-middleware dependency is real but unchanged — every endpoint added under either Option 3 or Option 8 shares the same authz gap, which is the hard go-live prerequisite tracked separately. Elevating it to a spike-scope blocker was not justified given the service is not currently live and cannot go live until auth work lands. Full Path X vs Path Y analysis, mitigations, and progression to full Option 8: [state-store-approaches.md § Path X vs Path Y](state-store-approaches.md#path-x-vs-path-y--where-the-cdp-uploader-redirect-lands) and § Building from minimal Path Y to full Option 8.
+
+---
+
+### Original decision (superseded by pivot above — preserved for history)
+
+Accepted 2026-07-27 after Sam discussion, re-scoped 2026-07-27 after cdp-uploader README review.
+
+**Primary direction: Option 3-with-callbacks.** Frontend passes callback URL and `metadata: { correlationId, notificationRef }` at cdp-uploader `/initiate`. Backend's existing callback receiver at `DocumentController.java:150-176` handles the payload; `handleScanResult` becomes create-or-update (currently `findByCorrelationId().orElseThrow()`); populates `documentType`, `documentReference`, `dateOfIssue` from `payload.form()` (text form fields the browser submitted). `/upload-successful` in the frontend just redirects to `/accompanying-documents`; the docs page reads from backend as it does today. Full design in [state-store-approaches.md](state-store-approaches.md).
+
+**Key finding that enabled the simplification.** cdp-uploader's README (`DEFRA/cdp-uploader/main/README.md`) confirms:
+
+- `metadata` at `/initiate` is optional and echoed back verbatim on the callback.
+- Text form fields submitted alongside the file are preserved under `payload.form.*` in the callback body (the same section that documents file fields notes "Text form fields are preserved as-is").
+
+So `documentType`, `documentReference`, `dateOfIssue` don't need to be known at `/initiate` time — the callback body carries them from the user's browser submission. No schema loosening on `DocumentUploadRequest`, no placeholder metadata, no timing wrinkle. Both Option 3 and Option 8 become materially cleaner because of this.
+
+**Why Option 3 wins on scope for the spike:**
+
+| | Option 3 | Option 8 |
+|---|---|---|
+| Backend files touched | 2 (`DocumentService.handleScanResult`, `CdpScanResultForm`) | 4-5 (also `DocumentUploadRequest`, `AccompanyingDocument`, entity migration) |
+| Schema migration | none | new `statusUrl` column |
+| Existing test breakage risk | Low | Medium (request-shape change ripples through controller + IT tests) |
+| Trade-off | No "checking" tag on docs list during scan delay — user refreshes to see the doc | Register call gives visible "checking" state immediately |
+
+Option 3 lands the load-bearing change (`handleScanResult` becomes create-or-update). Option 8 is additive on top of that.
+
+**Follow-up stretch — Option 8 (register call).** Additive extension of Option 3 once the callback path is proven. Adds a register endpoint + frontend register call at page-render time; gains the in-flight UX (pending records visible on the docs list); costs one extra HTTP round-trip per page render + migration of existing initiate-endpoint tests.
+
+**Fallback if the callback path itself hits issues:** the current step-4 implementation (yar single-slot + statusUrl polling + spike-hack in page-model.js) works well enough for test D. Documented as a known-limitation baseline; follow-up ticket covers the proper fix in either case.
+
+**Hard go-live prerequisite (out of scope for this ticket):** backend auth integration verifying that the logged-in user owns the notification referenced in any request. This applies to Option 3, Option 8, and the pre-existing URL-poisoning vector documented in the next section. Confirmed as a must-have before go-live; captured here so the follow-up implementation ticket picks it up.
+
+## Pre-existing auth gaps surfaced by the state-store discussion
+
+Two vulnerabilities exist in `main` today, unrelated to EUDPA-106's code changes but relevant to the state-store discussion because they constrain what "safe" client-side plumbing means. **Not introduced by the spike** — surfaced by asking "can we simplify the state store?" and discovering that the ambient assumption (backend enforces ownership) doesn't hold.
+
+### Vector 1 — URL-poisoning via `/notification-view/{ref}`
+
+`src/server/notification-view/controller.js:14-19` reads `referenceNumber` from `request.params` and passes it to `notificationClient.get(request, referenceNumber, traceId)`. That client method (`notification-client.js:404-431`) fetches the notification from the backend and calls `setNotificationSessionValues(request, notification)`, which loops through `NOTIFICATION_SESSION_KEYS` (line 249-259 — includes `referenceNumber`, `commodity`, `consignor`, `consignee`, `importer`, `destination`, `cphNumber`, etc.) and calls `setSessionValue(request, key, notification[key])` for each.
+
+Consequence: visiting `/notification-view/VICTIM_REF` as any authenticated user overwrites *their own* yar with victim's notification-in-progress state. Then any downstream wizard page, including `/accompanying-documents` and both the current-main and my spike upload flows, treats the caller's session as if it's editing the victim's notification.
+
+### Vector 2 — Backend accepts any authenticated caller
+
+`DocumentController.java` (initiate, list, get, delete) and its peers take path parameters and proceed. No Spring Security annotations anywhere in the backend; `User-Id` is captured as a header for audit only, never checked for ownership. `EUDPA-35` comment at `DocumentController.java:157-159` explicitly acknowledges the callback endpoint is unauthenticated; the broader gap on the CRUD endpoints is implied by omission.
+
+### End-to-end attack (works today, on main, no changes)
+
+1. Attacker signs in with any legitimate Defra ID account.
+2. Attacker visits `/notification-view/GBN-AG-26-VICTIM` — their yar is poisoned with victim's referenceNumber.
+3. Attacker navigates to `/accompanying-documents`, fills the form, uploads a file.
+4. Frontend reads `yar['referenceNumber']` = VICTIM, calls backend to persist.
+5. Backend accepts (no ownership check).
+6. Attacker's file is now attached to victim's notification.
+
+### Testable
+
+The workspace has a Defra ID stub and multi-user auth fixtures. An E2E can prove the vector in a few lines. **Recommended: don't write it in this ticket** — the test only earns its keep once the fix is in (protects against regression), and starting-red-on-main-and-turning-green-in-a-follow-up-ticket is the wrong shape for a landing merge. Test lives with the fix, in the follow-up implementation ticket.
+
+### Recommendation for the follow-up ticket
+
+- Backend: add real ownership checks — either Spring Security wiring for `POST /notifications/<ref>/documents` (and peers) or an inline `assertUserOwnsNotification(ref, userId)` helper. Natural work to bundle with the byte-proxy removal that AC4 already prescribes.
+- Frontend: defence-in-depth — `notification-view` should only populate yar if the backend response confirms the caller owns the notification. Requires the backend to include an owner identity in the response and the frontend to compare; adds a check, doesn't add complexity.
+- E2E: add the multi-user "attach to someone else's notification is rejected" test in the same commit as the backend fix.
+
+## Deferred cleanup — for the follow-up ticket
+
+Enumerates the old-flow code paths left in place by the spike so the follow-up implementation ticket (per AC4/AC5) has the removal list ready. Nothing in this list is broken in the spike — all these paths are either unreachable (nothing routes to them under Option 3) or operate on empty state (nothing writes to `yar['documents']` now). Signposting comments have been added at each entry point in the spike code so a reader landing on them cold sees the dead-code status immediately.
+
+### Frontend — old backend-proxied POST flow (dead under Option 3)
+
+- [ ] Delete the `POST /accompanying-documents` route registration in `src/server/accompanying-documents/index.js` — the form now POSTs directly to `/upload-and-scan/<uploadId>`, so nothing hits this handler.
+- [ ] Delete `handleOversizePayload` `onPreResponse` extension in `src/server/accompanying-documents/index.js` — attached to the POST route; dies with it.
+- [ ] Delete `src/server/accompanying-documents/controller/post/index.js` (the handler) and everything it imports:
+  - `controller/post/payload.js` — `persistDocument`, `buildSessionDocument`, `extractFormFields`, `formatDateOfIssue`, `isRemoveAction`, `parseRemoveUploadId`, `buildUploadDetails`.
+  - `controller/post/upload.js` — the backend-proxied byte upload orchestration.
+  - `controller/post/validation.js` — the size-check block and its `OVERSIZE_FILE_MESSAGE` reference.
+  - `controller/post/views.js` — `oversizeFileView` + any other post-only view helpers.
+- [ ] Remove `sessionKeys.documents` from `src/server/common/constants/session-keys.js` and any lingering reads (none should remain after this cleanup — verify with `grep`).
+- [ ] Delete `documentClient.initiate` and `documentClient.uploadFile` methods in `src/server/common/clients/document-client.js` if nothing else calls them post-teardown.
+- [ ] Update `controller.test.js` — delete or rewrite the POST-flow tests (there are ~30 of them). Same for tests hitting the removed helper modules.
+
+### Frontend — client-side status polling (dead under Option 3)
+
+- [ ] Delete the `GET /accompanying-documents/status` route registration in `src/server/accompanying-documents/index.js`.
+- [ ] Delete `src/server/accompanying-documents/controller/status.js` (the handler).
+- [ ] Delete `pollStatus`, `initUploadForm` and related helpers in `src/client/javascripts/accompanying-documents.js` — no `data-max-file-size` attribute is emitted any more (removed at fix 1), so the initialiser bails on its early return today. Fully remove.
+- [ ] Delete `src/client/javascripts/accompanying-documents.test.js` (or its polling-related test cases).
+- [ ] Remove the `js-refresh-fallback`, `js-timeout-message`, `js-scan-status-announcer` elements from `uploaded-documents.njk` — they're only meaningful under the client-side polling model.
+
+### Frontend — size-guard machinery left by fix 1's minimal option
+
+- [ ] Delete `MAX_FILE_SIZE_MB`, `MAX_FILE_SIZE_BYTES`, `MAX_FILE_SIZE_LABEL`, `OVERSIZE_FILE_MESSAGE`, `MULTIPART_OVERHEAD_BYTES`, `MAX_PAYLOAD_BYTES` from `document-upload-config.js`.
+- [ ] Remove `maxBytes: MAX_PAYLOAD_BYTES` from `index.js:78` (subsumed by the POST-route deletion above).
+- [ ] Remove `maxFileSize`/`maxFileSizeLabel`/`oversizeFileMessage` fields from `controller/page-model.js` if not already removed (fix 1 dropped `maxFileSize` + `oversizeFileMessage`; `maxFileSizeLabel` still leaks the "10 MB" hint into the template).
+- [ ] Update the "Max file size 10 MB" hint in `add-document-form.njk:68` — reflect the new cdp-uploader `CDP_UPLOADER_MAX_FILE_SIZE` (50 MB) or remove entirely.
+- [ ] Remove `data-max-file-size` / `data-oversize-error` attributes from `add-document-form.njk:11` — no longer feeding a client preflight.
+
+### Backend — byte-proxy teardown
+
+- [ ] Delete `DocumentController.java` `POST /document-uploads/{upload-id}/file` byte-proxy endpoint (lines 185-203).
+- [ ] Delete `DocumentService.proxyFileToUploader` (lines 132-135).
+- [ ] Delete `DocumentService.initiate` (lines 79-106) — no longer called; frontend does `/initiate` on cdp-uploader itself. Retain the `DocumentUploadRequest` type only if still used by other endpoints; otherwise delete.
+- [ ] Delete `POST /notifications/<ref>/document-uploads` controller endpoint if the frontend never calls it under Option 3.
+- [ ] Delete `CdpUploaderClient` methods that are now unused (`initiate`, `uploadFile`) — keep any status/probe methods if the backend uses them elsewhere.
+- [ ] `CdpConfig.uploader().maxFileSize()` / `.mimeTypes()` — move to frontend config or delete if only the deleted initiate consumed them.
+- [ ] Delete tests exercising the removed endpoints: `DocumentControllerTest`'s `Initiate` and `UploadFile` nested classes; `DocumentServiceTest`'s `Initiate` nested class; `DocumentInitiateProductionModeIT`.
+
+### Backend — callback authentication (EUDPA-35, orthogonal but bundled here for the follow-up)
+
+- [ ] Wire HMAC verification on the `POST /document-uploads/{upload-id}/scan-results` endpoint per the `EUDPA-35` comment at `DocumentController.java:157-159`. Not a byte-proxy concern but the same code region gets touched.
+
+### E2E tests — assertion inversions and skip-reason updates
+
+- [ ] `accompanying-documents-file-size-limit.spec.ts:37` — client-side preflight test (assertion inverts to success after the preflight is removed).
+- [ ] `accompanying-documents-file-size-limit.spec.ts:52` — 11 MiB "not raw nginx 413" test; assertion becomes moot since `/upload-and-scan` bypasses the sidecar cap.
+- [ ] `accompanying-documents-no-js.spec.ts:60,78` — server-side 10 MB rejection tests; inverts to success.
+- [ ] `accompanying-documents-file-size-limit.spec.ts:52` — `skipIfComposeEnvironment('Compose stack has no nginx ingress...')` skip reason is now false as of step 1 — Compose has the sidecar. Either remove the skip or update the reason.
+- [ ] Frontend unit tests for the deleted files — `validation.test.js`, `views.test.js`, `page-model.test.js`, `controller.test.js` will need updates or partial deletion once the machinery is removed.
