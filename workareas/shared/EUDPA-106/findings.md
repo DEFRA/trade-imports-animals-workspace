@@ -110,7 +110,15 @@ Chosen shape for step 5 at the time, after ruling out three alternatives.
 - **Still needs backend authz for full safety** — see "Pre-existing auth gaps" below. yar-scoping closes the "attacker with uploadId, no cookie" attack but not the "attacker with own cookie, poisoned wizard state" attack chain.
 - **Callback-driven design is closed off** while state lives in yar — a cdp-uploader callback carries no cookie and can't reach yar. Sticking to polling remains fine for the spike; if the follow-up ticket adopts callbacks it would need to migrate `notificationRef` to `server.app.cache` under uploadId. Cheap migration when the time comes.
 
-## AC3 state-store decision — Option 3-with-callbacks (Option 8 as follow-up)
+## AC3 state-store decision — pivot from Option 3 to minimal Option 8 Path Y
+
+**Pivot log (2026-07-27, mid-review).** Original decision (below) was Option 3-with-callbacks with Option 8 held as follow-up stretch. During code-review triage on review item #15 (meta-refresh accessibility on `/upload-successful`) the discussion identified that Path Y of Option 8 — cdp-uploader's redirect target being `/accompanying-documents` directly rather than a rewritten wait page — eliminates meta-refresh from the flow entirely, matches the existing manual-refresh pattern on the docs page (`components/uploaded-documents.njk:59-67`), and is cheaper (deletions, not additions) than the dashboard rewrite Path X. The register-call plumbing is the shared prerequisite for both Path X and Path Y, so bringing it forward into the spike does not commit to the full state-machine expansion — that stays as an incremental follow-up.
+
+**Pivot decision: minimal Option 8 Path Y is landed in this spike.** Auth-middleware dependency is real but unchanged — every endpoint added under either Option 3 or Option 8 shares the same authz gap, which is the hard go-live prerequisite tracked separately. Elevating it to a spike-scope blocker was not justified given the service is not currently live and cannot go live until auth work lands. Full Path X vs Path Y analysis, mitigations, and progression to full Option 8: [state-store-approaches.md § Path X vs Path Y](state-store-approaches.md#path-x-vs-path-y--where-the-cdp-uploader-redirect-lands) and § Building from minimal Path Y to full Option 8.
+
+---
+
+### Original decision (superseded by pivot above — preserved for history)
 
 Accepted 2026-07-27 after Sam discussion, re-scoped 2026-07-27 after cdp-uploader README review.
 

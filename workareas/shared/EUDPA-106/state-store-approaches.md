@@ -630,3 +630,50 @@ Because upload state lives on the backend, callbacks land where the state is —
 Option 8 assumes backend authz **and** frontend↔backend calls for register/confirm are cheap enough that adding two round-trips per upload is acceptable. On CDP with the backend and frontend co-located in the same private network, these are single-digit-millisecond calls — negligible against the multi-second AV scan. In practice this is invisible to the user.
 
 If backend/frontend latency ever becomes a concern (e.g. calls routed through the internet-facing gateway), the register call can be async fire-and-forget with client-side retry, or replaced with cdp-uploader metadata pre-registration.
+
+### Path X vs Path Y — where the cdp-uploader redirect lands
+
+Once the register call is in place the backend has a `PENDING` record from the moment the user submits the form — before cdp-uploader even receives the file. That opens a design choice about the redirect target cdp-uploader lands on after the upload completes.
+
+**Path X — cdp-uploader redirects to `/upload-successful`, rewritten as a dashboard.** The historic shape of Option 8, called out in the § "Frontend flow" pseudo-code above. `/upload-successful` becomes a notification-level status board rendering per-doc `Checking / Safe / Rejected` tags, meta-refreshing until all `PENDING` entries resolve. This is the shape `recommendation.md:50` currently reflects.
+
+**Path Y — cdp-uploader redirects straight to `/accompanying-documents`; `/upload-successful` is deleted.** Because the register call already put a `PENDING` record in the docs list, the user's normal docs page already renders the pending upload with a `Checking` tag on landing. The existing manual "Refresh virus scan status" link on `/accompanying-documents` (see `components/uploaded-documents.njk:59-67`) covers the polling need. No wait page, no meta-refresh anywhere in the flow.
+
+**Comparison:**
+
+| Dimension | Path X | Path Y |
+|---|---|---|
+| Meta-refresh present | Yes (on the dashboard) | No, entire flow uses manual refresh |
+| WCAG 3.2.5 (AAA) | Fails | Passes |
+| Screen-reader disorientation | Reduced vs Option 3 (meaningful content per tick) but present | Eliminated |
+| Code added | Register + dashboard route/controller/template | Register only |
+| Code deleted | Correlated-tab wait-page filter | Wait page + route + controller + template + tests |
+| Consistency with existing patterns | Introduces a second polling pattern | Matches the manual-refresh pattern already on `/accompanying-documents` |
+| Post-upload feedback latency | Guaranteed sub-300ms (wait page has no backend deps on first render) | Depends on `/accompanying-documents` first-paint including a backend list call |
+| Failure mode when backend list read fails post-upload | Wait page still renders — user sees "Uploading your file" | Docs page renders empty unless a fallback panel is added |
+| Failure mode when cdp-uploader `/initiate` fails on the docs-page render | N/A (not on the wait page's critical path) | Whole page 500s unless `initiate` is decoupled from the docs-list render |
+
+Path Y's failure modes are addressable in the controller with two small guards:
+
+1. **Post-upload state fallback** — when `documentClient.list` errors, render an explicit notification-banner panel ("Your upload was received and is being processed. Refresh to check status.") rather than the current silent empty-list degradation. Same code path, one extra branch.
+
+2. **Decouple `cdpUploaderClient.initiate` from the docs-list render** — the initiate call is required only to prime the "Add another document" form, not to render the existing docs list. Split the current `Promise.all([list, initiate])` into independent try/catches; if initiate fails, disable the Add form with an inline error while the docs list still renders.
+
+With both guards in place, Path Y's failure surface matches Path X's.
+
+**Load-bearing consequence for `/upload-successful` accessibility.** The a11y concern documented against `/upload-successful` — meta-refresh disorienting screen readers, WCAG 3.2.5 (AAA) failing — is a property of the wait page's polling mechanism. Under Path Y that page ceases to exist and no equivalent page is introduced, so the a11y concern is resolved by elimination rather than remediation. Under Path X the concern is reduced (meaningful per-tick content) but not resolved (meta-refresh is still meta-refresh).
+
+**Path Y chosen.** Cheaper (deletions, not additions), architecturally consistent with the existing manual-refresh pattern on `/accompanying-documents`, and cleanly resolves the wait-page accessibility concern.
+
+### Building from minimal Path Y to full Option 8
+
+Path Y minimal — described here — is the smallest useful slice of Option 8. It's additive:
+
+1. **Minimal Path Y (this spike).** Register endpoint accepts `{ uploadId, correlationId }`, writes a `PENDING` record, idempotent. Frontend calls it after cdp-uploader `/initiate`. cdp-uploader redirects to `/accompanying-documents`. Callback still transitions `PENDING → COMPLETE / REJECTED` as today (the two-state model current backend already handles). No confirm endpoint, no lazy-poll, no state machine expansion beyond current, no TTL sweeper.
+2. **State machine expansion.** Split `COMPLETE` into `READY` (scan clean, not yet acknowledged) vs `PERSISTED` (confirmed by frontend). Callback now transitions `PENDING → READY / REJECTED`. Existing docs-list and status endpoints unaffected until confirm lands.
+3. **Confirm endpoint.** `POST .../confirm` transitions `READY → PERSISTED`, re-verifies status server-side, backfills form metadata. Frontend calls it opportunistically on docs-page load for `READY` entries. Enables the "user acknowledged" audit lever discussed above.
+4. **Lazy-poll on `GET .../document-uploads`.** Backend calls `cdpUploaderClient.getStatus(statusUrl)` on any entry still `PENDING` at list time, refreshes the row. Useful if callbacks turn out to be unreliable or slow; safely additive because the callback path continues to work in parallel.
+5. **TTL sweeper.** Background job marks stale `PENDING` (no file ever uploaded, past N minutes) and stale `READY` (never confirmed, past N hours) as `ABANDONED`. Enables the "orphan cleanup" audit lever.
+6. **`status_url` column and register-body extension.** Add `status_url` to the register endpoint's contract (currently minimal Path Y doesn't need it because the callback carries `uploadId` in its URL path). Enables lazy-poll to reach cdp-uploader without extra lookups.
+
+Each step is opt-in and doesn't require re-shape of earlier steps. Steps 2 + 3 typically land together (state and its terminal transition). Steps 4 + 5 are optional operational hardening. Step 6 gates step 4. There is no reordering required from the minimal-Path-Y foundation — the register endpoint's contract is stable, the frontend redirect target is stable, no user-visible URL changes across the progression.
