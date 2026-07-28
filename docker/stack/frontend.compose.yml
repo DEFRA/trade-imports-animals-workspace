@@ -50,6 +50,10 @@ services:
       # the docker network; the browser-side byte upload still goes through
       # the sidecar's /upload-and-scan bypass.
       - CDP_UPLOADER_BASE_URL=http://cdp-uploader:7337
+      # EUDPA-106 Option 3-with-callbacks: cdp-uploader POSTs scan-result
+      # callbacks to the backend. host.docker.internal so cdp-uploader (running
+      # inside its own container) can reach the backend's exposed port.
+      - CDP_UPLOADER_CALLBACK_URL=http://host.docker.internal:8085/document-uploads/pending/scan-results
       - DEFRA_ID_OIDC_CONFIGURATION_URL=http://host.docker.internal:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
       - DEFRA_ID_REDIRECT_URL=http://localhost:3000/auth/sign-in-oidc
       - DEFRA_ID_SIGN_OUT_REDIRECT_URL=http://localhost:3000/auth/sign-out-oidc
