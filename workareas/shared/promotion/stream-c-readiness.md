@@ -70,11 +70,16 @@ real-mode `test-target` on :3100. This amendment overrides the fresh-approach do
   (needs `playwright install firefox webkit`).
 - **inc-8 (deployed a11y smoke) — SKIPPED.** Optional per the plan + requires a DEPLOYED environment URL
   (smoke against a deployed instance), which this local stack is not. Re-home when a deploy target exists.
-- **inc-9 restore ~35 frontend-canned duplicates — 1 DONE, pattern proven; ~34 remain (scoped follow-on).**
-  notification-delete restored (`d8aff9c`, @duplicated-in-frontend @integration, clean/non-flaky). This is
-  belt-and-braces DUPLICATION of the authoritative frontend canned suite (e2e/live-animals.spec.js, 38
-  tests) — Sam's amendment overriding the fresh-approach doc's "do NOT restore". NOT a paste-and-tag: each
-  needs per-spec re-engineering (verified through the delete spec):
+- **inc-9 restore ~35 frontend-canned duplicates — 6 DONE (verified), patterns proven; ~24 remain (scoped follow-on).**
+  Restored + verified green on :3100 (all @duplicated-in-frontend @integration): notification-delete
+  (`d8aff9c`), origin + cph-number + transited-countries (`d57f9d5`), port-of-entry + declaration
+  (`39d6590`). This is belt-and-braces DUPLICATION of the authoritative frontend canned suite
+  (e2e/live-animals.spec.js, 38 tests) — Sam's amendment overriding the fresh-approach doc's "do NOT restore".
+  THROUGHPUT REALITY (3 batches): ~50-60% yield per batch — each spec needs per-spec grounding, NOT
+  paste-and-tag. Dropped (need per-page validation grounding — an empty submit does NOT raise the error
+  summary on these, so the thin empty->error pattern is wrong for them): import-reason, additional-details,
+  commodities, transporters. NOT a paste-and-tag: each needs per-spec re-engineering (verified through the
+  restored specs):
     - Fulfilment has `.id` only (no `.referenceNumber`); journeyContext.journeyId = the GBN ref.
     - A direct /fulfilments API create/submit writes NO notification/proposed/outbox doc — session-scoped +
       notification-dependent flows must submit via the UI (journey.startNotification / submitNotification).
