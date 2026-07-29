@@ -38,10 +38,23 @@ real-mode `test-target` on :3100. This amendment overrides the fresh-approach do
   :3100 real mode; **11 @integration specs pass green** against it incl. real Defra ID sign-in on :3100
   (`npm run test:integration`). Note: the dev-built target also sidesteps the stale-webpack `:latest` crash.
   How to run: base stack up, then `run-stack.sh -d --profile test-target`, then tests-repo `npm run test:integration`.
-- **inc-1..9 — NOT STARTED (next phase).** 1 persistence round-trip, 2 doc-persistence, 3 submit->outbox,
-  4 DLQ replay, 5 auth harden, 6 admin operator UI, 7 cross-browser (Lane A stub smoke), 8 deployed a11y,
-  9 restore+tag the ~35 frontend-canned specs (Sam's belt-and-braces amendment) + frontend-canned parity audit.
-  These are the integration-seam authoring + the restore; a large body of test-writing on the now-working harness.
+- **inc-1 (persistence round-trip — notification) — DONE + VERIFIED (2026-07-29).** tests `fccf2e1`,
+  `tests/e2e/journeys/persistence/persistence-notification.spec.ts` (@integration @mongodb). Authored FRESH
+  (not a verbatim restore): the deleted spec doesn't re-port — the current `flows/journey.ts` is hardcoded
+  (no options param) and the promoted model changed the persisted shape (cphNumber normalises to digits;
+  transport has no meansOfTransport/transitedCountries). Grounded against the live Mongo doc (inspected via
+  `docker exec … mongosh`). 2 tests green on :3100: draft persists as DRAFT; submitted persists a
+  representative field per section (round-trip proof; exact payload stays the frontend Mapper A units) +
+  reloads read-only. Pattern proven: recover ref → ground real shape → author vs current flow → verify :3100.
+- **inc-2..9 — NOT STARTED (next phase).** 2 doc-persistence, 3 submit->outbox, 4 DLQ replay, 5 auth harden,
+  6 admin operator UI, 7 cross-browser (Lane A stub smoke), 8 deployed a11y, 9 restore+tag the ~35
+  frontend-canned specs (Sam's belt-and-braces amendment) + frontend-canned parity audit.
+  **inc-2 grounding note:** the `accompanying_documents` collection is empty (promoted-documents
+  uploads-then-removes), so the persisted doc shape must be observed from a fresh upload run; the deleted
+  reference asserts a `documentType` SELECT the promoted model dropped (type now derived from filename), so
+  it too is a fresh authoring. Current upload pattern: `journey.toAccompanyingDocuments()` +
+  `pages.accompanyingDocuments.fillDocument(ref, date, filePath)` + `saveAndAddAnother` (see
+  promoted-documents.spec.ts). Deleted refs recovered to scratchpad for reference.
 
 ## Also outstanding (stack hygiene, not Stream C)
 - Cold `run-stack.sh` down+up re-verify of the e11a100 depends_on fix — never run (structurally certain; low priority).
