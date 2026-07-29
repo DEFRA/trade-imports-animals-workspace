@@ -28,6 +28,21 @@ page-objects/`flows/*` + `/notifications/{journeyId}/…` routes) and tag each `
 (belt-and-braces — the seam to remove them later); rebuild the ~6 genuine integration seams; harness =
 real-mode `test-target` on :3100. This amendment overrides the fresh-approach doc's "do NOT restore".
 
+## Progress
+- **inc-0 (harness) — DONE + VERIFIED (2026-07-29).** Real-mode `test-target` on :3100 as a workspace
+  `docker/stack` profile (opt-in via `run-stack.sh -d --profile test-target`), dev-built from local source
+  for branch work + `:latest` reference default (`${FRONTEND_TEST_TAG:-latest}`) per Sam. Tests-repo
+  integration lane: `playwright.integration.config.ts` (frontend-chromium -> :3100) + `test:integration` /
+  restored `test:local`. Commits: workspace `eba7097` (service+dev-override+profile-wiring) + `b2c3b95`
+  (drop depends_on so it attaches to a running stack); tests `3cd5aad`. VERIFIED: target boots healthy on
+  :3100 real mode; **11 @integration specs pass green** against it incl. real Defra ID sign-in on :3100
+  (`npm run test:integration`). Note: the dev-built target also sidesteps the stale-webpack `:latest` crash.
+  How to run: base stack up, then `run-stack.sh -d --profile test-target`, then tests-repo `npm run test:integration`.
+- **inc-1..9 — NOT STARTED (next phase).** 1 persistence round-trip, 2 doc-persistence, 3 submit->outbox,
+  4 DLQ replay, 5 auth harden, 6 admin operator UI, 7 cross-browser (Lane A stub smoke), 8 deployed a11y,
+  9 restore+tag the ~35 frontend-canned specs (Sam's belt-and-braces amendment) + frontend-canned parity audit.
+  These are the integration-seam authoring + the restore; a large body of test-writing on the now-working harness.
+
 ## Also outstanding (stack hygiene, not Stream C)
 - Cold `run-stack.sh` down+up re-verify of the e11a100 depends_on fix — never run (structurally certain; low priority).
 - The frontend CONTAINER is currently Exited(1) on a STALE BAKED webpack.config (its image predates decomp-14's `client.js -> client/` move; webpack.config.js lives at repo root, outside the mounted `src/`). Not a code bug — the worktree/repos code is correct (decomp-14 E2E passed). A `run-stack.sh -d` rebuild fixes it and would double as the cold-stack re-verify.
