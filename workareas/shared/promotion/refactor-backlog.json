@@ -440,6 +440,26 @@
       "status": "done",
       "landed": "frontend 25a68e9 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. DID DIRECTLY (single-file extraction). Verified myself: extracted body byte-identical to the loop body; map preserves order; shared Set accumulates identically; unit 1422/8 (codec round-trip + unknown-value oracles); lint clean (462 modules); E2E 37 + 3 a11y green.",
       "decision": "Not resolved by decomp-1 (which split the codec into validate/records/shape/obligations leaves but left decodePersistedFulfilment as the loop). decodeEntry kept module-private in decode.js as the per-entry sibling of decodePersistedFulfilment."
+    },
+    {
+      "id": "js-r9-functional-partition-batch",
+      "title": "Stream D R9 — functional-partition batch (splitPatch, saveProjections, buildLineForms; firstDivergingIndex skipped, state-queries parked)",
+      "area": "engine/write/pipeline/split.js + real/lifecycle/mutate.js + commodities/animal-identification/form/forms.js (done); lib/path.js (skipped); model/obligations/state-queries.js (parked)",
+      "rationale": "js-best-practices-audit.md R9 — a batch of 5 imperative->functional micro-refactors. Handled per-item by risk, not as one blob.",
+      "acceptance": "each item behaviour-preserving + independently verified; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "R9a frontend 18439e5 (splitPatch declarative Object.fromEntries + saveProjections pure extraction with the sequential loop preserved); R9b frontend 3dff83b (buildLineForms partitioned: capIfAtMax predicate + built array, no let/continue). Both pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded, verified myself (byte-identical reasoning in commit bodies; unit 1422/8; lint clean 462 modules; E2E 37 + 3 a11y).",
+      "decision": "HEADLESS per-item calls (flag for Sam): (1) splitPatch, saveProjections, buildLineForms DONE — genuine wins, verified byte-identical. (2) SKIPPED lib/path.js firstDivergingIndex — its indexed early-return loop is already idiomatic; a findIndex-over-slice form is a pure style-swap with zero readability gain (no gold-plating). (3) PARKED model/obligations/state-queries.js checkAnyOfIds + checkRecordCountEquals — these are model-SPINE evaluator-invariant correctness code (group anyOf / recordCountEquals errors). The for/continue/push form is clear; a full filter+map rewrite (even with named predicates) trades marginal readability for real risk on correctness-critical code whose only failure mode is a silently-wrong error set, for a Medium-value style change. Genuine trade-off with real downside -> parked per 'park genuine trade-offs'. The named-predicate extraction (leafInScopeForInstance) is available as a low-risk future nicety if Sam wants it. Reversible."
+    },
+    {
+      "id": "js-r10-low-nit-sweep",
+      "title": "Stream D R10 — low-nit sweep (closes the JS best-practices guide)",
+      "area": "flow/dispatch.js, engine/journey.js (x2), bridge/collection-complete.js, bridge/obligation-source.js, services/commodities/index.js, lib/path.js, check-answers/view-model/rows/value-text.js",
+      "rationale": "js-best-practices-audit.md R10 — a sweep of ~8 tiny behaviour-preserving nits.",
+      "acceptance": "each nit applied, behaviour-preserving; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend 7d83a3d (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself (full diff read): dispatch let->const + .clear() (preserves references); journey.js single `next` clone (double structuredClone removed; non-known path already shared saved); journey.js editableFromStatus guard helper (caller awaits the returned amend promise); collection-complete names.at(-1); 2 orphaned JSDoc blocks moved onto their public functions (unrecognisedAnswerKeys, search); pathKey appendSegment guard helper; valueText nested ternary -> guard returns. 7 files, no test edited. unit 1422/8; lint clean (462 modules, 1 known ignored); E2E 37 + 3 a11y green.",
+      "decision": "Did all 8 audit-listed nits EXCEPT the records-stub copy/softDelete status-disjunction predicates (skipped — most marginal, and copy/softDelete moved across decomp-3's lifecycle files; naming a 2-term status disjunction is not worth the churn). Codex-swept, orchestrator-verified. STREAM D (R1-R10) COMPLETE: R1 f4ceb534.. through R10 7d83a3d; 12 commits; every increment behaviour-preserving + verified (diff + unit 1422/8 + lint clean + full E2E 37+3); R7b + state-queries pair parked with rationale; firstDivergingIndex + stub-predicates skipped as no-gain."
     }
   ]
 }
