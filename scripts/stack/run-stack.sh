@@ -26,7 +26,8 @@ source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
 
-valid_profiles=("${ALL_PROFILES[@]}")
+# test-target is opt-in only: valid for --profile, but excluded from the default (all-profiles) run.
+valid_profiles=("${ALL_PROFILES[@]}" test-target)
 
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
@@ -36,7 +37,7 @@ parse_run_stack_flags "$@"
 source "$LIB_DIR/init-scripts.sh"
 stage_init_scripts "$branch"
 
-[ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
+[ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${ALL_PROFILES[@]}")
 [ "$dev" -eq 1 ] && compose_files_add_dev
 
 # Sanitisation must match the per-repo publish-branch.yml workflows.
