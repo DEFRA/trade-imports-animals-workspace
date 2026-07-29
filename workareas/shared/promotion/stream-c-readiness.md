@@ -46,15 +46,53 @@ real-mode `test-target` on :3100. This amendment overrides the fresh-approach do
   `docker exec … mongosh`). 2 tests green on :3100: draft persists as DRAFT; submitted persists a
   representative field per section (round-trip proof; exact payload stays the frontend Mapper A units) +
   reloads read-only. Pattern proven: recover ref → ground real shape → author vs current flow → verify :3100.
-- **inc-2..9 — NOT STARTED (next phase).** 2 doc-persistence, 3 submit->outbox, 4 DLQ replay, 5 auth harden,
-  6 admin operator UI, 7 cross-browser (Lane A stub smoke), 8 deployed a11y, 9 restore+tag the ~35
-  frontend-canned specs (Sam's belt-and-braces amendment) + frontend-canned parity audit.
-  **inc-2 grounding note:** the `accompanying_documents` collection is empty (promoted-documents
-  uploads-then-removes), so the persisted doc shape must be observed from a fresh upload run; the deleted
-  reference asserts a `documentType` SELECT the promoted model dropped (type now derived from filename), so
-  it too is a fresh authoring. Current upload pattern: `journey.toAccompanyingDocuments()` +
-  `pages.accompanyingDocuments.fillDocument(ref, date, filePath)` + `saveAndAddAnother` (see
-  promoted-documents.spec.ts). Deleted refs recovered to scratchpad for reference.
+- **inc-2 (document persistence) — DONE + VERIFIED.** tests `d9cf021`. Real cdp-uploader upload -> assert
+  persisted `accompanying_documents` (documentType OTHER = filename-derived fallback; safeFile1kbPdf, not the
+  tiny PNG which trips the uploader) + reload. @integration @mongodb.
+- **inc-3 (submit -> outbox) — DONE + VERIFIED.** tests `d543023`. The outbox GBN-AG event derives from the
+  proposed notification the frontend Mapper B writes on a UI submit — a direct /fulfilments API write does
+  NOT produce it, so the seam submits via the UI. aggregateVersion is a Mongo Long (Number()); the outbox
+  write lags (timeouts.long). @integration @mongodb.
+- **inc-4 (DLQ replay) — DONE (reconciled).** The surviving dlq-events.spec.ts already covers DLQ
+  replay-all + delete-all + listing (@integration), passing green. The deleted outbox-event-replay tested a
+  DIFFERENT page (adminOutboxEvents) -> covered by inc-6.
+- **inc-5 (auth harden) — DONE + VERIFIED.** tests `a33da23`. auth.spec.ts already held all harden targets
+  (sign-in, org-switch, session continuity, sign-out-clears-session); re-tagged @integration so it runs
+  against :3100 (10/10 green). Also closed a lane-model gap: plain `npm test` now grep-inverts @integration
+  (+ @cross-browser) so the stack seams don't run stackless.
+- **inc-6 (admin operator UI) — DONE + VERIFIED.** tests `b45f25a`. admin-outbox-events (operator finds the
+  NotificationSubmitted event for a submitted ref + empty state) + admin-notifications (find + delete by
+  ref). Both via UI submit + admin nav. Q4 (headless): tests-repo integration lane, not a separate
+  admin-repo canned suite. @integration @mongodb.
+- **inc-7 (cross-browser, Lane A) — DONE + VERIFIED.** tests `3a545dc`. playwright.cross-browser.config.ts +
+  a thin @cross-browser journey smoke across Chromium/Firefox/WebKit against :3100 (3/3 green). Q6
+  (headless): local 3 browsers; BrowserStack out (wdio stubs unimplemented). `npm run test:cross-browser`
+  (needs `playwright install firefox webkit`).
+- **inc-8 (deployed a11y smoke) — SKIPPED.** Optional per the plan + requires a DEPLOYED environment URL
+  (smoke against a deployed instance), which this local stack is not. Re-home when a deploy target exists.
+- **inc-9 restore ~35 frontend-canned duplicates — 1 DONE, pattern proven; ~34 remain (scoped follow-on).**
+  notification-delete restored (`d8aff9c`, @duplicated-in-frontend @integration, clean/non-flaky). This is
+  belt-and-braces DUPLICATION of the authoritative frontend canned suite (e2e/live-animals.spec.js, 38
+  tests) — Sam's amendment overriding the fresh-approach doc's "do NOT restore". NOT a paste-and-tag: each
+  needs per-spec re-engineering (verified through the delete spec):
+    - Fulfilment has `.id` only (no `.referenceNumber`); journeyContext.journeyId = the GBN ref.
+    - A direct /fulfilments API create/submit writes NO notification/proposed/outbox doc — session-scoped +
+      notification-dependent flows must submit via the UI (journey.startNotification / submitNotification).
+    - The dashboard is owner-scoped + paginated + accumulates across parallel workers, so hunting a
+      notification on it hangs (90s). ROBUST PATTERN: navigate to the notification's own URL
+      (`/notifications/{id}/{slug|delete}`) for GET pages; POST actions (amend/copy from the dashboard/view)
+      need the button + newest-first sort or their own robust handling.
+    - The current page-objects diverge from the deleted specs' API (e.g. notification-view has no
+      btnCopyAsNew) — reconcile per spec / extend the page object minimally.
+  Remaining batches (recover from `c996502~1`, re-port via the pattern above, tag @duplicated-in-frontend +
+  @integration, verify against :3100): lifecycle-UI (amend, cancel-amend, copy); per-page validation
+  (origin, additional-details, import-reason, import-purpose, cph-number, declaration, addresses + the
+  6 party selects, commodities +details/identification/select, port-of-entry, transited-countries,
+  transporters +select, notification-view draft/submitted); documents behaviours (file-size-limit,
+  file-types, no-js, removal, view); all-operators; journey a11y (error/filled/initial/view states, @a11y).
+  DROP: origin-of-import.visual (pixel regression owned nowhere post-promotion). Best done as a focused,
+  ATTENDED effort — a flaky/broken duplicate net is a liability; and since these duplicate the frontend
+  canned suite, weigh the effort against re-confirming that suite's parity (the doc's original inc-9).
 
 ## Also outstanding (stack hygiene, not Stream C)
 - Cold `run-stack.sh` down+up re-verify of the e11a100 depends_on fix — never run (structurally certain; low priority).
