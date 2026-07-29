@@ -380,6 +380,66 @@
       "status": "done",
       "landed": "frontend c9d8441 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself: kit contract byte-correct; all 5 value sites (import-type-filter/notification-actions/delete-notification/cancel-amend/cph-number) drop `let`, thunk value-returning, `const { failure, value: <var> }`, recovery callbacks + post-save logic unchanged; 19 destructure-only sites are pure `const failure=` -> `const { failure } =`; zero `const failure = await kit.recoverableSave` remain; no *.test.js touched. unit 1422/8; lint clean (js+scss+arch, 458 modules, 1 known ignored, no-circular); E2E 37 journeys + 3 a11y green.",
       "decision": "DID THE FULL CONTRACT REDESIGN, not park. The audit's literal one-line fix ('have recoverableSave resolve to the action's return value') was a misread — it ALREADY resolved to the thunk value, but that value doubled as the failure sentinel (the reason for the `let`s). Chose redesign over parking-as-idiom because the discriminated result eliminates a genuine FOOTGUN for all 24 sites (today a value-ignoring site whose thunk accidentally returned truthy would silently return that value as the HTTP response), and it is fully test-covered (24 sites all pinned by controller tests). RESIDUAL: contact + transporters-select keep their own `let committed` — their thunks branch/route (ternary / commitOrSkip), so they are NOT among the 5 trivially value-returning sites; the audit scoped only those 5, so left as-is (behaviour-preserving with the new contract). ALSO folded in the R2 gap: 2 line-wrapped `.code(500)` literals (contact, transporters-select) -> HTTP_STATUS_INTERNAL_SERVER_ERROR; zero bare status literals now remain in live-animals (re-grep clean incl. wrapped form)."
+    },
+    {
+      "id": "js-r4a-render-options-param-transport-cph",
+      "title": "Stream D R4a — options-param for transport + cph-number render (boolean-trap fold)",
+      "area": "src/server/live-animals/features/transport/{transporters-select,transit-countries,port-of-entry,transporters,private-transporter-details}.controller.js + cph-number/controller.js",
+      "rationale": "js-best-practices-audit.md R4 (transport + cph-number half). Each controller's module-private `render` ended in trailing positionals `errors = {}, recoverableError = false`; the save-recovery call sites read `render(..., {}, true)` — an opaque boolean trap. Fold the trailing pair into one destructured options param `{ errors, recoverableError }` so call sites self-label. Behaviour-preserving.",
+      "acceptance": "6 render signatures fold trailing pair -> `{ errors = {}, recoverableError = false } = {}`; `render(...,errors)` -> `{ errors }`; `render(...,{},true)` -> `{ recoverableError: true }`; render is module-private (no cross-file callers); no test edited; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend 25a30b3 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself: all 6 signatures + call-site rewrites exactly as specified (private-transporter-details `allErrors` -> `{ errors: allErrors }`), `.code(...)` preserved, no body/test change, no `, {}, true` trailing positional remains. unit 1422/8; lint clean (js+scss+arch, 458 modules, 1 known ignored); E2E 37 journeys (transport pages exercised) + 3 a11y green.",
+      "decision": "SPLIT R4 into R4a (this: 5 transport + cph-number, uniform trailing errors/recoverableError fold, low-risk) and R4b (documents renderView, a ...args forwarder into view-model/render.js's 7-positional signature — different shape, more call sites). Did R4a first as the clean uniform bulk of the value."
+    },
+    {
+      "id": "js-r4b-render-options-param-documents",
+      "title": "Stream D R4b — options-param for documents renderView (7-positional fold)",
+      "area": "features/documents/controller.js + features/documents/view-model/render.js",
+      "rationale": "js-best-practices-audit.md R4 (documents half). documents' door render is a ...args forwarder into view-model/render.js's exported render (renderView), which carried a 7-positional signature whose trailing errors/summaryErrors/extra were passed at the door as opaque positional `{}, [], {...}` triples.",
+      "acceptance": "renderView trailing errors/summaryErrors/extra folded into `{ errors, summaryErrors, extra } = {}`; the ...args forwarder untouched; 8 multi-arg door call sites -> named options; no test edited; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend ca40730 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself: 2 files; renderView signature fold + 8 call-site rewrites (1 EMPTY_FORM call unchanged), inner objects and `.code(...)` byte-preserved, forwarder untouched, no bare positional errors/summaryErrors slot remains, no test edited. unit 1422/8; lint clean (js+scss+arch, 458 modules, 1 known ignored); E2E 37 (documents upload/scan/remove/oversize legs) + 3 a11y green.",
+      "decision": "Completes R4. documents needed the renderView signature change (view-model) + the door call sites; the ...args forwarder passes the new options object positionally so it needed no change. No renderView test imports it directly (door handlers pin behaviour)."
+    },
+    {
+      "id": "js-r5-extract-save-added-document",
+      "title": "Stream D R5 — extract saveAddedDocument from documents postAdd",
+      "area": "features/documents/controller.js",
+      "rationale": "js-best-practices-audit.md R5. postAdd was ~68 lines with a dense 24-line recoverableSave success closure (alreadyCanonicallySaved commit-vs-append). Extract it into saveAddedDocument (mirroring the already-extracted retryProjectionSave) + an isAlreadySaved predicate.",
+      "acceptance": "saveAddedDocument(request, h, pageState, savedEntry, bare) does the recoverableSave + failure-return + success redirect; isAlreadySaved(pageState, uploadId) predicate; postAdd ends `return saveAddedDocument(...)`; behaviour-identical; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend 192727d (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. DID THIS DIRECTLY (small single-file extraction, more token-efficient than a Codex round-trip). Verified myself: pure extraction (byte-identical save/recovery logic + same redirect), postAdd 68->~36 loc, saveAddedDocument mirrors retryProjectionSave (returns failure-or-redirect); unit 1422/8; lint clean (458 modules); E2E 37 (documents-add leg) + 3 a11y green.",
+      "decision": "Placed saveAddedDocument + isAlreadySaved right after postAdd, peers to retryProjectionSave (module consts assigned at load, so defining after the caller is safe). Not resolved by decomp-17 (which extracted the cards/concerns but left postAdd's inline recoverableSave)."
+    },
+    {
+      "id": "js-r6-check-answers-section-builders",
+      "title": "Stream D R6 — split check-answers buildSections into four section builders",
+      "area": "features/check-answers/view-model/index.js + view-model/sections/{about-consignment,movement,addresses,documents}.js (new)",
+      "rationale": "js-best-practices-audit.md R6. buildSections was a 62-line inline assembler for all four view sections — breaking the file's own 'one named builder per thing' pattern (the cards were already extracted under cards/ by decomp-15). Extract one section builder per section.",
+      "acceptance": "4 section builders under view-model/sections/ (mirroring cards/); buildSections keeps signature+location, becomes a flat 4-item list; assembled array byte-identical (order/headings/card-order/conditionals); no caller/test repoint; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend 901db42 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself: 5 files (index.js + 4 section builders); section bodies byte-faithful; documentsSection returns null iff its card is falsy so the conditional fires identically; check-answers characterisation + CYA snapshot pass unchanged. unit 1422/8; lint clean (462 modules = +4, 1 known ignored, no-circular); E2E 37 (CYA legs) + 3 a11y green.",
+      "decision": "decomp-15 extracted the cards but left buildSections assembling the 4 sections inline. Extracted to a sections/ folder parallel to cards/ (over-nesting preference + established folder-per-cluster convention). buildSections signature unchanged = zero repoint."
+    },
+    {
+      "id": "js-r7a-collapse-notification-from-fulfilment",
+      "title": "Stream D R7a — collapse notificationFromFulfilment to compact() (R7b parked)",
+      "area": "services/persistence/records/notification-mapper/mapper-a/sections/notification.js",
+      "rationale": "js-best-practices-audit.md R7. notificationFromFulfilment built a base then ran `if (x) notification.y = x` four times. Collapse to one compact({...}) expression.",
+      "acceptance": "notificationFromFulfilment = compact({ ...directFields, origin, additionalDetails, transport, commodity }); byte-identical output; unit mapper oracles green; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend f739481 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. Verified myself: byte-identical — compact() strips only undefined, and all 4 sub-builders return object-or-undefined (origin/additionalDetails/transport via orUndefined(compact()), commodityFromLinesA returns undefined-or-truthy-object), never falsy-non-undefined, so compact-strip == old `if (x)` omit; directFields already compacted so the spread adds no undefined. unit 1422/8 (mapper-a 100% coverage; real-submit contract + characterisation oracles are the guard for this real-mode-only projection); lint clean (462 modules); E2E 37 + 3 a11y green (regression guard).",
+      "decision": "SPLIT R7: did R7a (notificationFromFulfilment collapse — safe, exactly the audit's fix). PARKED R7b (answersToTargetNotification, Mapper B): decomp-2 already extracted its 4 mutations into named apply*Overlay(notification, reader) helpers with a clear linear top-level sequence, resolving the audit's 'repetitive imperative mutation' concern; converting those overlays from mutators to return-and-merge would churn 4 files on a real-mode-only mapper (NO E2E coverage, only the unit characterisation oracle) for marginal gain — genuine trade-off with real downside, not justified. Reversible if Sam wants full functional-style."
+    },
+    {
+      "id": "js-r8-extract-decode-entry",
+      "title": "Stream D R8 — extract decodeEntry from decodePersistedFulfilment",
+      "area": "services/persistence/records/fulfilment-codec/decode.js",
+      "rationale": "js-best-practices-audit.md R8. decodePersistedFulfilment's for...of body mixed cross-entry state (seenObligationIds) with all per-entry validation. Extract decodeEntry(entry, seenObligationIds) -> [obligationId, stored]; loop -> Object.fromEntries(entryArr.map(...)).",
+      "acceptance": "decodeEntry extracted; top-level is Object.fromEntries(entryArr.map(decodeEntry)); byte-identical (order preserved, shared seenObligationIds Set accumulates in order so dup-check fires identically); codec round-trip oracles green; unit 1422/8; lint clean; E2E 37 + a11y 3.",
+      "status": "done",
+      "landed": "frontend 25a68e9 (2026-07-29), pushed to spike/EUDPA-288-model-retrofit, repos/ fast-forwarded. DID DIRECTLY (single-file extraction). Verified myself: extracted body byte-identical to the loop body; map preserves order; shared Set accumulates identically; unit 1422/8 (codec round-trip + unknown-value oracles); lint clean (462 modules); E2E 37 + 3 a11y green.",
+      "decision": "Not resolved by decomp-1 (which split the codec into validate/records/shape/obligations leaves but left decodePersistedFulfilment as the loop). decodeEntry kept module-private in decode.js as the per-entry sibling of decodePersistedFulfilment."
     }
   ]
 }
