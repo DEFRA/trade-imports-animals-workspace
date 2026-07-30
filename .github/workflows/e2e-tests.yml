@@ -102,6 +102,103 @@ jobs:
         if: always()
         run: docker compose -p trade-imports-animals down
 
+  # Dual-frontend parity gate (EUDPA-288): the branch frontend (:3100,
+  # test-target profile) runs the reworked suite while a :latest sibling
+  # (:3200) runs the frozen main suite — both green = feature parity. Runs
+  # the same npm scripts `npm test` chains locally, but reseeds from the
+  # runner between suites because database-reseed.sh needs docker + the
+  # workspace checkout, neither of which exists inside the tests image.
+  # Lean gate: raw test-results artifacts only, no blob/allure merging.
+  parity:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'workflow_call' ||
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/trade-imports-animals-workspace
+          # Workspace PRs must exercise their own stack changes; callers via
+          # workflow_call surface the caller's event name, so they get main
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+
+      - name: Resolve branch tag
+        id: branch-tag
+        run: |
+          raw="${{ inputs.branch || github.head_ref || github.ref_name }}"
+          tag="${raw//\//-}"
+          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
+          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
+          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
+          tag="${tag:0:128}"
+          echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
+
+          if docker manifest inspect "defradigital/trade-imports-animals-tests:${tag}" >/dev/null 2>&1; then
+            echo "tests-tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "Tests image: branch ($tag)"
+          else
+            echo "tests-tag=latest" >> "$GITHUB_OUTPUT"
+            echo "Tests image: latest (no branch tag)"
+          fi
+
+      - name: Start stack with both frontends
+        run: >
+          ./scripts/stack/run-stack.sh
+          --branch "${{ inputs.branch || github.head_ref || github.ref_name }}"
+          --profile database --profile infrastructure --profile servicebus
+          --profile stubs --profile backend --profile frontend
+          --profile test-target
+
+      - name: Run reworked suite vs the branch frontend (:3100)
+        run: |
+          docker run --rm \
+            --network host \
+            --user root \
+            -v ${{ github.workspace }}/artifacts/test-results-reworked:/app/test-results \
+            --entrypoint npm \
+            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
+            run _test_parity_reworked
+
+      - name: Reseed database between suites
+        run: ./scripts/stack/bounce-mongo.sh
+
+      - name: Run main suite vs the :latest frontend (:3200)
+        run: |
+          docker run --rm \
+            --network host \
+            --user root \
+            -v ${{ github.workspace }}/artifacts/test-results-main:/app/test-results \
+            --entrypoint npm \
+            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
+            run _test_parity_main
+
+      - name: Upload parity artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-results
+          path: artifacts/
+          retention-days: 14
+
+      - name: Capture stack logs
+        if: failure()
+        run: docker compose -p trade-imports-animals logs --no-color --timestamps > parity-stack-logs.txt 2>&1 || true
+
+      - name: Upload stack logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-stack-logs
+          path: parity-stack-logs.txt
+          retention-days: 14
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -p trade-imports-animals down
+
   merge-reports:
     if: always() && needs.e2e.result != 'skipped'
     needs: e2e
