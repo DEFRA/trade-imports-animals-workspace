@@ -731,11 +731,26 @@
       "id": "p-219",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Port EUDPA-281 actor identity to the reworked journey submit/amend",
       "detail": "Main's old client sends an actor body {id, name} on POST submit/amend so the backend stamps outbox events. The reworked journey's real persistence (live-animals/services/persistence/records/real/lifecycle/transition.js) does not send it. First check whether the branch backend needs main's ActorRequest handling merged into its submit/amend endpoints; then thread the actor from session credentials (actor-helpers.js kept on the branch as the contract reference) and pin the envelope in the outbox E2E.",
       "evidence": "frontend merge commit 2682856 (follow-up flagged); src/server/common/helpers/actor-helpers.js; PARITY-MAPPING.md outbox row",
-      "decision": ""
+      "decision": "Ported main semantics verbatim: optional nullable ActorRequest on notification + fulfilment submit/amend; top-level actor + cumulative statusChanges[] on OutboxEvent (main has no metadata.actor — scout assumption corrected). Withdrawal split to p-232. Actor is a call argument only — no stored identity (p-229 ruling upheld).",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-backend",
+          "hash": "bce655a"
+        },
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "3d3276c"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "8f44b35"
+        }
+      ],
+      "verification": "Parent-verified: mvn verify BUILD SUCCESS (358 unit + 174 IT); FE suite 1419/0; outbox E2E 5 passed serially vs live stack incl. new amendment actor spec; full parity gate 249 passed exit 0 (4 flaky-recovered, known pattern)"
     },
     {
       "id": "p-220",
@@ -835,6 +850,16 @@
       "title": "Workflow: ticket-level drift audit — every main-merged ticket since the spike began, mapped against the rewrite",
       "detail": "This spike is a branch-off-a-branch-off-a-branch with only partial pulls from main, so main has moved on in ways the rewrite may have silently dropped. Workflow, three phases. PHASE 1 archaeology: verify the originating ticket (EUDPA-288 is probably right but confirm), find the FIRST branch across the repos that carried that ticket number in its name, and establish its start date (git log on earliest branch commits / GitHub branch+PR history; check Jira ticket created/in-progress dates as corroboration). PHASE 2 inventory: identify EVERY ticket merged to main since that date — mine main's merge/PR history per repo (frontend is the critical one, but list all repos' EUDPA-tagged merges) and cross-check via Jira JQL date-range (board has no sprints — use status changed TO Done DURING, upper bound exclusive). PHASE 3 analysis: fan out per ticket — read what it actually implemented on main (diff/PR), then map against the rewrite: [exists] present in the rewrite, with file:line evidence; [rightfully-absent] not present for a good recorded reason (page removed by design, design changed — name what replaced it, e.g. renamed page); or [DROPPED] implemented on main but lost by the rewrite — the key output. Sam's suspected drops to check explicitly: transitive countries; dashboard sorting; dashboard searching. Leverage the existing PARITY-MAPPING.md gap ledger (spec-driven) but this audit is TICKET-driven — do not assume the ledger is complete. Output: report in workareas/shared/promotion/ (per-ticket verdict table + evidence); report-only. On completion the orchestrator turns each confirmed [DROPPED] into its own follow-up backlog item.",
       "evidence": "Sam instruction 2026-07-30; PARITY-MAPPING.md (old-to-new mapping + gap ledger); memory: EUDPA board has no sprints, JQL date-range pattern",
+      "decision": ""
+    },
+    {
+      "id": "p-232",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Withdrawn outbox event on soft-delete (EUDPA-281 completion)",
+      "detail": "Follow-on from the p-219 scout: the branch backend emits NO event on soft-delete — no withdrawn OutboxEventType, NotificationService.softDelete bypasses writeWithOutbox entirely, and FulfilmentIT pins the eventless behaviour. Full EUDPA-281 parity requires a withdrawn event carrying actor metadata + an actor-bearing statusChanges entry. Scope: add the withdrawn event type; route soft-delete (both notification + fulfilment surfaces) through the locked transactional outbox writer; actor body on the soft-delete endpoints; frontend threads actor into softDeleteJourney; withdrawal-envelope E2E in tests repo tests/e2e/features/outbox-event/. Build on the actor plumbing p-219 lands — do not start before p-219 is done. Check main backend first for any existing withdrawn-event handling to port. Acceptance: mvn verify green incl. updated FulfilmentIT/NotificationIT; FE units green; withdrawal outbox E2E green; full parity gate green.",
+      "evidence": "scratchpad p219/p219-scout.md sections 3+recommended-plan step 5; OutboxEventType.java:12-21; NotificationService.java:270-283; FulfilmentIT.java:289-302",
       "decision": ""
     }
   ]
