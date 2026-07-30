@@ -703,11 +703,12 @@
       "id": "p-228",
       "theme": "promotion",
       "type": "question",
-      "status": "todo",
+      "status": "done",
       "title": "Workflow: audit users/ownership/auth concepts in the FE rework vs the main skeleton",
       "detail": "Sam suspects the reworked frontend skeleton (src/server/live-animals on this branch) contains HALLUCINATED user/auth requirements: user IDs and role IDs passed around, invented levels of user/ownership/auth control that the main skeleton never had. Reality: no real auth is implemented — sign-in is the trade-imports-defra-id-stub OIDC stub only — and there is separate work in flight to do auth properly. Run a Workflow (Sam explicitly requested one) that compares origin/main frontend vs this branch: fan out readers over (a) main's skeleton journey (fresh clone of main, never the working checkout), (b) the branch rework's user/ownership/role/actor surfaces (grep userId/roleId/owner/actor/auth across src/server/live-animals + session/auth plumbing), (c) real requirement sources (EUDPA-281 and any auth/ownership tickets, Confluence) — then classify EVERY user/ownership/role concept in the rework as: [main-parity] present in main skeleton, [grounded] not in main but backed by a real cited requirement, or [invented] no grounding. Must explicitly rule on the concepts p-219 (EUDPA-281 actor identity port) depends on, so p-219 proceeds or is reshaped accordingly. Also note the known open security finding that notification listing is unscoped per-user — do not let that memory bias classification; cite current code. Output: findings report (workareas/shared/promotion/) with file:line evidence per concept + a concrete rip-out list feeding p-229. Report-only; no code changes in this item.",
       "evidence": "Sam instruction 2026-07-30; auth = defra-id-stub only; memory: real FE lists notifications unscoped per-user (open ticket); p-219 EUDPA-281 actor identity is queued next",
-      "decision": ""
+      "decision": "Verdict: 7 main-parity / 0 grounded / 3 invented (composite journey owner, scalar userId + resume-by-user index, responsiblePersonForLoad). Rip-out list feeds p-229. p-219 gap confirmed: buildActor helper present but dead; main posts actor as entire submit/amend body; EUDPA-281 also needs withdraw + statusChanges.",
+      "verification": "Codex A/B mining + Claude Jira grounding + Codex synthesis; parent spot-checked 3 load-bearing claims in code (bodyless submit/amend POST, composite owner at session/real.js:31-41, ripout JSON 3 invented); report at workareas/shared/promotion/USERS-OWNERSHIP-AUDIT.md"
     },
     {
       "id": "p-229",
