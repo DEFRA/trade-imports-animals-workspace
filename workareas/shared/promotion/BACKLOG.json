@@ -887,11 +887,18 @@
       "id": "p-227",
       "theme": "promotion",
       "type": "refactor",
-      "status": "todo",
+      "status": "done",
       "title": "Scan feature folders; group related subcomponent files into nested folders",
       "detail": "Sam: some complicated feature folders already have nested folders (good), but elsewhere files sit flat where they could live in a nice neat related group — e.g. he believes additional-details has a subcomponent whose controller, logic and .njk files could be grouped (a components/ folder or similar). Interpretation, two phases in one item: (1) SCAN — an agent sweeps all repos/trade-imports-animals-frontend/src/server/live-animals/features/* folders and maps file clusters that form a coherent subcomponent (controller + logic + .njk + their tests referencing each other), producing a proposed grouping per feature; (2) APPLY — implement the clearly-related groupings via git mv + import/render-path updates, following the existing nested-folder precedent already present in the complicated features (match that idiom, do not invent a new structure). Sam's standing preference: err toward more nesting; only leave flat what is genuinely standalone. Borderline/ambiguous clusters: apply if obviously related, otherwise list them in the completion summary rather than blocking. Acceptance: scan map reported; agreed clusters physically grouped; all imports and njk render paths updated; frontend unit suite green; targeted E2E smoke green (layout-only change). Sequencing: runs after p-224 (copy/ move), so grouping operates on the post-copy-move layout.",
       "evidence": "Sam instruction 2026-07-30; existing nested-folder precedent in the more complicated features/* (scan to enumerate); memory: prefer over-nesting",
-      "decision": ""
+      "decision": "32 files into 10 named page clusters (addresses: create-address/, party-picker/ consolidated; commodities: search/, consignment-details/, animal-identification/; transport: five page folders). Single-page features left flat (root IS the component); cross-cutting helpers left unowned deliberately (dashboard notification-helper, documents pure helpers, shared parties.js) — listed as borderline, not moved.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "cc25a3a"
+        }
+      ],
+      "verification": "Parent-verified: unit suite 1443 passed (145 files, count RESTORED after parent caught a 4-test regression — copy-convention discovery was root-only and silently dropped commodities/transport from the templated set when their .njk nested; discovery now recursive); features 91 passed; journey smoke 2 passed; pre-commit hook green"
     },
     {
       "id": "p-230",
