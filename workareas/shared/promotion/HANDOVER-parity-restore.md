@@ -1,5 +1,27 @@
 # Handover — finish the Stream C tests-repo restore to FULL PARITY (EUDPA-288)
 
+> **UPDATE 2026-07-30 (tests tip `8b5a58b`): the 14 journey-page specs are DONE + VERIFIED, and
+> the "parity recipe" below was WRONG on its central point.** The continue-tests did NOT fail from
+> partial input — the inputs already matched `journey.ts`. They failed because an API-seeded
+> notification (`apiJourney.createUpToPage()` + `resumeInUi`) **cannot be saved through the UI**
+> (first save → service error; frontend journey state is only hydrated for UI-created journeys;
+> visiting overview first does not help — verified). FIX: reach each page through the real journey
+> flow. Added per-page `to*` reach helpers to `flows/journey.ts` (mirroring the existing to* pattern)
+> and rewrote all 13 interactive page specs to render+default+validation+accepts-valid via UI flow.
+> Also fixed `notification-dashboard.spec.ts` (eventually-consistent, reference-sorted, paginated
+> read-model → sort newest-first + poll). Full integration lane green (74 pass; dashboard recovers
+> on retry as at baseline). The apiJourney/resumeInUi read-only pattern is fine ONLY for
+> render/default/validation, never for a page that submits. See memory
+> `project_parity_restore_apiseed_cannot_save`.
+>
+> **Remaining below: items 2–7 (documents behaviours, lifecycle amend/copy/cancel-amend, party-picker,
+> notification-view, a11y, all-operators). Item 1 (journey pages) is DONE.**
+> **OPEN QUESTION for Sam:** the authoritative `frontend/e2e/live-animals.spec.js` is BEHAVIOURAL
+> (~40 tests: validation + happy-path + conditional-visibility + wipe-on-change combined per concept),
+> not per-page render/validate. Decide whether the tests-repo duplicates should mirror those richer
+> behaviours or whether the current per-page parity is sufficient belt-and-braces.
+
+
 You are the orchestrator for the tail of the live-animals promotion. **Streams D and C's genuine work are
 DONE and verified.** What remains is Sam's belt-and-braces requirement: **full-parity restore of the
 frontend-canned journey coverage into the tests repo**, tagged `@duplicated-in-frontend`. This is a
