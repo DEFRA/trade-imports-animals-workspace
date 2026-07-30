@@ -926,11 +926,26 @@
       "id": "p-232",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Withdrawn outbox event on soft-delete (EUDPA-281 completion)",
       "detail": "Follow-on from the p-219 scout: the branch backend emits NO event on soft-delete — no withdrawn OutboxEventType, NotificationService.softDelete bypasses writeWithOutbox entirely, and FulfilmentIT pins the eventless behaviour. Full EUDPA-281 parity requires a withdrawn event carrying actor metadata + an actor-bearing statusChanges entry. Scope: add the withdrawn event type; route soft-delete (both notification + fulfilment surfaces) through the locked transactional outbox writer; actor body on the soft-delete endpoints; frontend threads actor into softDeleteJourney; withdrawal-envelope E2E in tests repo tests/e2e/features/outbox-event/. Build on the actor plumbing p-219 lands — do not start before p-219 is done. Check main backend first for any existing withdrawn-event handling to port. Acceptance: mvn verify green incl. updated FulfilmentIT/NotificationIT; FE units green; withdrawal outbox E2E green; full parity gate green.",
       "evidence": "scratchpad p219/p219-scout.md sections 3+recommended-plan step 5; OutboxEventType.java:12-21; NotificationService.java:270-283; FulfilmentIT.java:289-302",
-      "decision": ""
+      "decision": "Event NOTIFICATION_WITHDRAWN / wire uk.gov.defra.imports.notification.NotificationWithdrawn (no upstream GBN-AG withdrawal constant — enum naming pattern followed). Orchestrator ruling: withdrawn events only for SUBMITTED/AMEND deletions; DRAFT deletes stay eventless (nothing announced downstream to withdraw). Cancel-amend + no-projection behaviours unchanged.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-backend",
+          "hash": "373137f"
+        },
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "bd03a1a"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "54c6e04"
+        }
+      ],
+      "verification": "Parent-verified: mvn verify BUILD SUCCESS (363 unit + 176 IT) after catching and correcting a draft-delete event bug the implementor introduced; FE suite 1443/0; outbox E2E 7 passed serially incl. new withdrawal specs; full parity gate 245 passed exit 0"
     },
     {
       "id": "p-233",
