@@ -686,10 +686,37 @@
       "id": "p-218",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Generate + commit the linux visual baseline for the main-suite visual spec",
       "detail": "Run main-suite/tests/e2e/visual/origin-of-import.visual.spec.ts inside the branch defradigital/trade-imports-animals-tests image against :3200 with --update-snapshots, mount the snapshots dir out, commit origin-of-import-main-linux.png. Unblocks the visual spec in the CI parity job (ubuntu). The gitignore negation for main-suite/tests/e2e/visual/** already exists.",
       "evidence": "workareas/shared/promotion/DUAL-FRONTEND-PARITY-PLAN.md (T7 caveats); tests repo .gitignore negations added in 94f69ca",
+      "decision": "",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "860198b"
+        }
+      ],
+      "verification": "Containerised comparison run (no --update-snapshots) vs :3200: 1 passed (6.1s) against the new origin-of-import-main-linux.png; git check-ignore confirms negation applies"
+    },
+    {
+      "id": "p-228",
+      "theme": "promotion",
+      "type": "question",
+      "status": "todo",
+      "title": "Workflow: audit users/ownership/auth concepts in the FE rework vs the main skeleton",
+      "detail": "Sam suspects the reworked frontend skeleton (src/server/live-animals on this branch) contains HALLUCINATED user/auth requirements: user IDs and role IDs passed around, invented levels of user/ownership/auth control that the main skeleton never had. Reality: no real auth is implemented — sign-in is the trade-imports-defra-id-stub OIDC stub only — and there is separate work in flight to do auth properly. Run a Workflow (Sam explicitly requested one) that compares origin/main frontend vs this branch: fan out readers over (a) main's skeleton journey (fresh clone of main, never the working checkout), (b) the branch rework's user/ownership/role/actor surfaces (grep userId/roleId/owner/actor/auth across src/server/live-animals + session/auth plumbing), (c) real requirement sources (EUDPA-281 and any auth/ownership tickets, Confluence) — then classify EVERY user/ownership/role concept in the rework as: [main-parity] present in main skeleton, [grounded] not in main but backed by a real cited requirement, or [invented] no grounding. Must explicitly rule on the concepts p-219 (EUDPA-281 actor identity port) depends on, so p-219 proceeds or is reshaped accordingly. Also note the known open security finding that notification listing is unscoped per-user — do not let that memory bias classification; cite current code. Output: findings report (workareas/shared/promotion/) with file:line evidence per concept + a concrete rip-out list feeding p-229. Report-only; no code changes in this item.",
+      "evidence": "Sam instruction 2026-07-30; auth = defra-id-stub only; memory: real FE lists notifications unscoped per-user (open ticket); p-219 EUDPA-281 actor identity is queued next",
+      "decision": ""
+    },
+    {
+      "id": "p-229",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Rip out invented user/role/ownership plumbing identified by p-228",
+      "detail": "Sam pre-ruled the outcome: anything p-228 classifies as [invented] (hallucinated user/role/ownership/auth control not in the main skeleton and not backed by a cited real requirement) gets ripped out — no preserving clever-but-ungrounded plumbing, because the real auth/ownership work is in flight elsewhere and will be done properly. Scope = exactly the p-228 rip-out list; [main-parity] and [grounded] concepts stay. Remove dead pass-through params, session fields, template context and tests that only exist to exercise the removed plumbing. Acceptance: rip-out list fully actioned or each survivor justified with the grounding citation; frontend unit suite green; full parity gate (npm test in tests repo) green since submit/amend/session behaviour may be touched.",
+      "evidence": "driven by p-228 findings report",
       "decision": ""
     },
     {
@@ -740,6 +767,66 @@
       "title": "Reworked-journey visual regression spec (origin page)",
       "detail": "Deliberately not authored during the harness build (the reworked origin page invalidates the old pixel baseline). Author under the reworked parity project with a fresh baseline if wanted.",
       "evidence": "PARITY-MAPPING.md visual row (dropped-documented)",
+      "decision": ""
+    },
+    {
+      "id": "p-224",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Move each feature folder's copy files into a nested copy/ folder",
+      "detail": "Sam: every feature folder has at least three copy files (copy.en.js, copy.cy.js, copy.test.js); move them into a nested copy folder. Interpretation: in repos/trade-imports-animals-frontend/src/server/live-animals/features/<name>/, git mv the copy.* files into features/<name>/copy/ keeping filenames unchanged (move, not rename), and update all imports/requires that reference them. Scope is the features/* folders per Sam's words; shared/ copy files (shared/copy.js, copy.en.js, copy.cy.js, copy-leaves.js, copy.test.js) left in place unless Sam says otherwise — flagged as interpretation. Root-level copy-convention.test.js and copy-parity.test.js assert on copy-file layout and must be updated to the new nested path. Acceptance: all 20 feature folders use features/<name>/copy/; frontend unit suite green; convention/parity copy tests green; targeted E2E smoke green (layout-only refactor, no journey behaviour change).",
+      "evidence": "find over src/server/live-animals: 20 features/* folders each with copy.en.js+copy.cy.js+copy.test.js; root copy-convention.test.js + copy-parity.test.js",
+      "decision": ""
+    },
+    {
+      "id": "p-225",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Canary: co-located per-feature Playwright spec pattern (one feature)",
+      "detail": "DIRECTIONAL TIER from Sam: Playwright spec tests live IN the feature folders (repos/trade-imports-animals-frontend/src/server/live-animals/features/<name>/), each hammering just that feature's page functionality, using the existing stub-data plumbing already in place for e2e/. These will potentially replace the root-level e2e/ folder (Sam does not love it; tests should co-exist with the code they test). If a feature's specs get too big, nest an e2e/ folder inside that individual feature's folder (not one shared folder for all features). Light journey/task-list behaviour testing preferably also at feature level; the OVERALL journey stays covered by the tests repo E2E. Accessibility (axe) checks belong in these per-feature specs too. THIS ITEM = canary only: establish the pattern on ONE feature folder — pick a mid-complexity feature (e.g. origin or import-purpose); add its co-located Playwright spec (page functionality + a11y), wire Playwright config testMatch to pick up src/server/live-animals/features/**/ specs WITHOUT vitest collecting them (naming/config separation is a design call — vitest currently runs all of src/server/live-animals), reuse existing stub-data/journey helpers from e2e/ where importable without editing them. Acceptance: canary feature spec green against the live stack, a11y leg green, frontend unit suite still green (vitest not picking up pw specs), root e2e/ untouched. Fan-out + root e2e/ retirement is p-226.",
+      "evidence": "frontend e2e/: a11y.spec.js, live-animals.spec.js, live-animals-journey.js, check-workspace-stack.js; package.json test:e2e (project=journeys) + test:a11y (project=a11y); @axe-core/playwright 4.12.1; 20 features/* folders",
+      "decision": ""
+    },
+    {
+      "id": "p-226",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Fan out per-feature Playwright specs to all features; retire replaced root e2e/ coverage",
+      "detail": "Depends on p-225 canary pattern. Roll the co-located per-feature Playwright spec pattern out to the remaining features/* folders (spec per feature: page functionality + a11y, stub data, nested e2e/ subfolder inside a feature only if that feature's specs are too big). Then retire the parts of the root-level e2e/live-animals.spec.js (and a11y.spec.js) now covered at feature level — replace, don't duplicate; whatever residual whole-journey smoke is still wanted at frontend level should be light, with the real overall-journey coverage remaining in the tests repo E2E. Acceptance: every feature folder has its spec; full frontend Playwright run green against the live stack; unit suite green; root e2e/ folder reduced to (at most) light journey smoke + infra helpers; no coverage silently dropped — map each retired root spec section to its feature-level replacement in the completion summary.",
+      "evidence": "same as p-225",
+      "decision": ""
+    },
+    {
+      "id": "p-227",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Scan feature folders; group related subcomponent files into nested folders",
+      "detail": "Sam: some complicated feature folders already have nested folders (good), but elsewhere files sit flat where they could live in a nice neat related group — e.g. he believes additional-details has a subcomponent whose controller, logic and .njk files could be grouped (a components/ folder or similar). Interpretation, two phases in one item: (1) SCAN — an agent sweeps all repos/trade-imports-animals-frontend/src/server/live-animals/features/* folders and maps file clusters that form a coherent subcomponent (controller + logic + .njk + their tests referencing each other), producing a proposed grouping per feature; (2) APPLY — implement the clearly-related groupings via git mv + import/render-path updates, following the existing nested-folder precedent already present in the complicated features (match that idiom, do not invent a new structure). Sam's standing preference: err toward more nesting; only leave flat what is genuinely standalone. Borderline/ambiguous clusters: apply if obviously related, otherwise list them in the completion summary rather than blocking. Acceptance: scan map reported; agreed clusters physically grouped; all imports and njk render paths updated; frontend unit suite green; targeted E2E smoke green (layout-only change). Sequencing: runs after p-224 (copy/ move), so grouping operates on the post-copy-move layout.",
+      "evidence": "Sam instruction 2026-07-30; existing nested-folder precedent in the more complicated features/* (scan to enumerate); memory: prefer over-nesting",
+      "decision": ""
+    },
+    {
+      "id": "p-230",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Workflow: find and fix janky CSS + broken links in the reworked FE (failing test first)",
+      "detail": "Sam wants a Workflow that investigates then fixes visual/CSS jank in the reworked frontend, with two known instances: (1) the amend flow's NEW-value text on the page that lists everything (check-answers-style list view) renders in the wrong font; (2) a link that does not work — Sam's wording was ambiguous (voice): \"the copy is new. The link just doesn't work\" — plausibly a new Copy/action link or a link in new copy; the investigation phase must probe the live app (:3100 / :3000) to identify exactly which link is dead, empirically, before touching source. MANDATORY ORDER per Sam: for each defect, (a) write the FAILING test first (Playwright, asserting the correct behaviour/appearance — e.g. computed font-family assertion for the list-view new-value text, navigation assertion for the dead link), (b) investigate root cause, (c) fix, (d) test goes green. Workflow shape: fan out probe agents over the reworked journey pages hunting CSS jank (non-GDS fonts, unstyled elements, broken/dead links, layout breakage) with the two known instances as seeds; dedupe findings; then serial fix legs each following failing-test-first. Fixes stay inside the govuk-frontend toolbox (govuk-* classes/components, no custom CSS). Acceptance: both known instances reproduced, tested, fixed; any additional confirmed jank fixed or listed; frontend unit suite + new tests green; full parity gate if journey templates change.",
+      "evidence": "Sam instruction 2026-07-30 (voice, partially garbled — interpretation flagged); govuk-toolbox-only + no-manual-verification standing rules",
+      "decision": ""
+    },
+    {
+      "id": "p-231",
+      "theme": "promotion",
+      "type": "question",
+      "status": "todo",
+      "title": "Workflow: ticket-level drift audit — every main-merged ticket since the spike began, mapped against the rewrite",
+      "detail": "This spike is a branch-off-a-branch-off-a-branch with only partial pulls from main, so main has moved on in ways the rewrite may have silently dropped. Workflow, three phases. PHASE 1 archaeology: verify the originating ticket (EUDPA-288 is probably right but confirm), find the FIRST branch across the repos that carried that ticket number in its name, and establish its start date (git log on earliest branch commits / GitHub branch+PR history; check Jira ticket created/in-progress dates as corroboration). PHASE 2 inventory: identify EVERY ticket merged to main since that date — mine main's merge/PR history per repo (frontend is the critical one, but list all repos' EUDPA-tagged merges) and cross-check via Jira JQL date-range (board has no sprints — use status changed TO Done DURING, upper bound exclusive). PHASE 3 analysis: fan out per ticket — read what it actually implemented on main (diff/PR), then map against the rewrite: [exists] present in the rewrite, with file:line evidence; [rightfully-absent] not present for a good recorded reason (page removed by design, design changed — name what replaced it, e.g. renamed page); or [DROPPED] implemented on main but lost by the rewrite — the key output. Sam's suspected drops to check explicitly: transitive countries; dashboard sorting; dashboard searching. Leverage the existing PARITY-MAPPING.md gap ledger (spec-driven) but this audit is TICKET-driven — do not assume the ledger is complete. Output: report in workareas/shared/promotion/ (per-ticket verdict table + evidence); report-only. On completion the orchestrator turns each confirmed [DROPPED] into its own follow-up backlog item.",
+      "evidence": "Sam instruction 2026-07-30; PARITY-MAPPING.md (old-to-new mapping + gap ledger); memory: EUDPA board has no sprints, JQL date-range pattern",
       "decision": ""
     }
   ]
