@@ -904,11 +904,12 @@
       "id": "p-230",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Workflow: find and fix janky CSS + broken links in the reworked FE (failing test first)",
       "detail": "Sam wants a Workflow that investigates then fixes visual/CSS jank in the reworked frontend, with two known instances: (1) the amend flow's NEW-value text on the page that lists everything (check-answers-style list view) renders in the wrong font; (2) a link that does not work — Sam's wording was ambiguous (voice): \"the copy is new. The link just doesn't work\" — plausibly a new Copy/action link or a link in new copy; the investigation phase must probe the live app (:3100 / :3000) to identify exactly which link is dead, empirically, before touching source. MANDATORY ORDER per Sam: for each defect, (a) write the FAILING test first (Playwright, asserting the correct behaviour/appearance — e.g. computed font-family assertion for the list-view new-value text, navigation assertion for the dead link), (b) investigate root cause, (c) fix, (d) test goes green. Workflow shape: fan out probe agents over the reworked journey pages hunting CSS jank (non-GDS fonts, unstyled elements, broken/dead links, layout breakage) with the two known instances as seeds; dedupe findings; then serial fix legs each following failing-test-first. Fixes stay inside the govuk-frontend toolbox (govuk-* classes/components, no custom CSS). Acceptance: both known instances reproduced, tested, fixed; any additional confirmed jank fixed or listed; frontend unit suite + new tests green; full parity gate if journey templates change.",
       "evidence": "Sam instruction 2026-07-30 (voice, partially garbled — interpretation flagged); govuk-toolbox-only + no-manual-verification standing rules",
-      "decision": ""
+      "decision": "NOT REPRODUCED on either candidate list surface (check-answers review; notification-view). No fix invented per standing rule. If Sam still sees the wrong font or dead link, need the exact page URL + element — reopen as a new item with that pointer. One residual hypothesis: Sam may have observed :3000 dev FE with a stale webpack asset (dev-mode rebuild churn earlier today) rather than a source defect.",
+      "verification": "Two Codex probe passes vs the live app: (1) amend check-answers review — per-element computed fonts all GDS Transport stack, no inline styles, no offending markup; 82 same-origin URLs + 7 external all resolve, no dead fragments; Copy action 302s to a distinct draft (already regression-covered by notification-actions spec); (2) notification-view in submitted + amending states — 106 and 161 text elements, 0 deviations, changed value measured GDS Transport 19px/400 in all three lifecycle states. Feature/e2e/unit suites re-verified green; working tree clean"
     },
     {
       "id": "p-231",
