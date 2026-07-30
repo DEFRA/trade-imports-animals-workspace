@@ -841,11 +841,18 @@
       "id": "p-225",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Canary: co-located per-feature Playwright spec pattern (one feature)",
       "detail": "DIRECTIONAL TIER from Sam: Playwright spec tests live IN the feature folders (repos/trade-imports-animals-frontend/src/server/live-animals/features/<name>/), each hammering just that feature's page functionality, using the existing stub-data plumbing already in place for e2e/. These will potentially replace the root-level e2e/ folder (Sam does not love it; tests should co-exist with the code they test). If a feature's specs get too big, nest an e2e/ folder inside that individual feature's folder (not one shared folder for all features). Light journey/task-list behaviour testing preferably also at feature level; the OVERALL journey stays covered by the tests repo E2E. Accessibility (axe) checks belong in these per-feature specs too. THIS ITEM = canary only: establish the pattern on ONE feature folder — pick a mid-complexity feature (e.g. origin or import-purpose); add its co-located Playwright spec (page functionality + a11y), wire Playwright config testMatch to pick up src/server/live-animals/features/**/ specs WITHOUT vitest collecting them (naming/config separation is a design call — vitest currently runs all of src/server/live-animals), reuse existing stub-data/journey helpers from e2e/ where importable without editing them. Acceptance: canary feature spec green against the live stack, a11y leg green, frontend unit suite still green (vitest not picking up pw specs), root e2e/ untouched. Fan-out + root e2e/ retirement is p-226.",
       "evidence": "frontend e2e/: a11y.spec.js, live-animals.spec.js, live-animals-journey.js, check-workspace-stack.js; package.json test:e2e (project=journeys) + test:a11y (project=a11y); @axe-core/playwright 4.12.1; 20 features/* folders",
-      "decision": ""
+      "decision": "Pattern locked: *.e2e.spec.js suffix, features Playwright project over src/server/live-animals/features/**, npm run test:features, vitest exclude. Canary also fixed two latent defects: stale flat copy imports in root e2e/ (from p-224) and buildActor 500 in AUTH_ENABLED=false stub mode (from p-219) — returns undefined, unit-pinned. p-226 recs recorded: per-feature a11y, CI sharding with isolated ports, retire root e2e/ only after coverage parity mapping, Welsh assertions only when locale wiring lands.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "ed0e416"
+        }
+      ],
+      "verification": "Parent-verified all four surfaces + parity: test:features 4 passed (PORT override, :3000 occupied by stack); unit suite 1443/0 with file count unchanged (vitest exclusion proven); test:e2e 37 passed; test:a11y 3 passed; full parity gate 249 passed exit 0"
     },
     {
       "id": "p-226",
