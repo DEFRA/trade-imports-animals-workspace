@@ -163,6 +163,10 @@ jobs:
             run _test_parity_reworked
 
       - name: Reseed database between suites
+        # STACK_BRANCH keeps the reseed's staged init fixtures on the PR
+        # branch — unset, bounce-mongo.sh sparse-fetches the default branch.
+        env:
+          STACK_BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
         run: ./scripts/stack/bounce-mongo.sh
 
       - name: Run main suite vs the :latest frontend (:3200)
