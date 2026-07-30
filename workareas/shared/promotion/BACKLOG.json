@@ -951,11 +951,22 @@
       "id": "p-233",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Restore dashboard search by notification reference (EUDPA-73 drop)",
       "detail": "The p-231 drift audit confirmed (high confidence) the rewrite dropped EUDPA-73: main lets users search the dashboard by exact, complete notification reference — search field on the dashboard, reference passed to the backend list endpoint, only the match returned, No notifications found empty state, sorting preserved. The rewrite has only page/sort (dashboard controller + template; fulfilment and notification list endpoints accept no reference filter). Port the behaviour: read main implementation (git show on the EUDPA-73 commits, origin/main in frontend + backend), add the search control to the rewrite dashboard (govuk toolbox), thread the reference filter through the fulfilments list endpoint (REST: filter as query param on the collection, not an action path), preserve sort/page interplay, empty state copy from main grounded in real copy. Failing-test-first per feature-spec pattern: extend features/dashboard/dashboard.e2e.spec.js. Acceptance: FE units + features project green; backend mvn verify green (list endpoint filter + tests); full parity gate green; main-suite untouched.",
       "evidence": "workareas/shared/promotion/DRIFT-AUDIT.md section 3; drift-verdicts.json EUDPA-73 entry (file:line for all absent surfaces)",
-      "decision": ""
+      "decision": "Main EUDPA-73 semantics ported exactly: optional referenceNumber query param, trimToNull, no regex, exact match; filter as query param on the collection per REST rules. Copy grounded in main home template (en) + repo Welsh conventions (cy). Stub port filters too so the feature spec runs serverless.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-backend",
+          "hash": "1e7004a"
+        },
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "cf78078"
+        }
+      ],
+      "verification": "Parent-verified: mvn verify BUILD SUCCESS (366 unit + 179 IT); features project 92 passed incl. red-then-green dashboard search tests; FE suite 1448/0; full parity gate 249 passed exit 0. One degraded parity run mid-verification was environmental (worn dev-mode FE process after 10h of hot-reload churn — timeouts across unrelated specs, serial passes) — fixed by restarting the frontend-test container."
     }
   ]
 }
