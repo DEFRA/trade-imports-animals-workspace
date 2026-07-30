@@ -915,11 +915,12 @@
       "id": "p-231",
       "theme": "promotion",
       "type": "question",
-      "status": "todo",
+      "status": "done",
       "title": "Workflow: ticket-level drift audit — every main-merged ticket since the spike began, mapped against the rewrite",
       "detail": "This spike is a branch-off-a-branch-off-a-branch with only partial pulls from main, so main has moved on in ways the rewrite may have silently dropped. Workflow, three phases. PHASE 1 archaeology: verify the originating ticket (EUDPA-288 is probably right but confirm), find the FIRST branch across the repos that carried that ticket number in its name, and establish its start date (git log on earliest branch commits / GitHub branch+PR history; check Jira ticket created/in-progress dates as corroboration). PHASE 2 inventory: identify EVERY ticket merged to main since that date — mine main's merge/PR history per repo (frontend is the critical one, but list all repos' EUDPA-tagged merges) and cross-check via Jira JQL date-range (board has no sprints — use status changed TO Done DURING, upper bound exclusive). PHASE 3 analysis: fan out per ticket — read what it actually implemented on main (diff/PR), then map against the rewrite: [exists] present in the rewrite, with file:line evidence; [rightfully-absent] not present for a good recorded reason (page removed by design, design changed — name what replaced it, e.g. renamed page); or [DROPPED] implemented on main but lost by the rewrite — the key output. Sam's suspected drops to check explicitly: transitive countries; dashboard sorting; dashboard searching. Leverage the existing PARITY-MAPPING.md gap ledger (spec-driven) but this audit is TICKET-driven — do not assume the ledger is complete. Output: report in workareas/shared/promotion/ (per-ticket verdict table + evidence); report-only. On completion the orchestrator turns each confirmed [DROPPED] into its own follow-up backlog item.",
       "evidence": "Sam instruction 2026-07-30; PARITY-MAPPING.md (old-to-new mapping + gap ledger); memory: EUDPA board has no sprints, JQL date-range pattern",
-      "decision": ""
+      "decision": "Start date 2026-06-22; lineage EUDPA-249 -> EUDPA-277 -> EUDPA-288 (origin ticket assumption corrected). 26 exists / 1 DROPPED: EUDPA-73 dashboard reference search (high confidence — no search field, no API filter param, no replacement). Sam suspicions ruled: sorting EXISTS (EUDPA-250), transited countries EXIST (EUDPA-50), searching DROPPED. EUDPA-299 medium (repo-settings AC outside commit evidence). Drop queued as p-233.",
+      "verification": "Codex Phase A (archaeology + inventory: 58 tickets, squash-merge mining + JQL Done-in-range cross-check) + Phase B in 5 serial foreground mini-batches (27 code tickets, per-ticket main-diff reading vs spike evidence); parent validated JSON shape and verdict counts; report at workareas/shared/promotion/DRIFT-AUDIT.md + drift-verdicts.json"
     },
     {
       "id": "p-232",
@@ -929,6 +930,16 @@
       "title": "Withdrawn outbox event on soft-delete (EUDPA-281 completion)",
       "detail": "Follow-on from the p-219 scout: the branch backend emits NO event on soft-delete — no withdrawn OutboxEventType, NotificationService.softDelete bypasses writeWithOutbox entirely, and FulfilmentIT pins the eventless behaviour. Full EUDPA-281 parity requires a withdrawn event carrying actor metadata + an actor-bearing statusChanges entry. Scope: add the withdrawn event type; route soft-delete (both notification + fulfilment surfaces) through the locked transactional outbox writer; actor body on the soft-delete endpoints; frontend threads actor into softDeleteJourney; withdrawal-envelope E2E in tests repo tests/e2e/features/outbox-event/. Build on the actor plumbing p-219 lands — do not start before p-219 is done. Check main backend first for any existing withdrawn-event handling to port. Acceptance: mvn verify green incl. updated FulfilmentIT/NotificationIT; FE units green; withdrawal outbox E2E green; full parity gate green.",
       "evidence": "scratchpad p219/p219-scout.md sections 3+recommended-plan step 5; OutboxEventType.java:12-21; NotificationService.java:270-283; FulfilmentIT.java:289-302",
+      "decision": ""
+    },
+    {
+      "id": "p-233",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Restore dashboard search by notification reference (EUDPA-73 drop)",
+      "detail": "The p-231 drift audit confirmed (high confidence) the rewrite dropped EUDPA-73: main lets users search the dashboard by exact, complete notification reference — search field on the dashboard, reference passed to the backend list endpoint, only the match returned, No notifications found empty state, sorting preserved. The rewrite has only page/sort (dashboard controller + template; fulfilment and notification list endpoints accept no reference filter). Port the behaviour: read main implementation (git show on the EUDPA-73 commits, origin/main in frontend + backend), add the search control to the rewrite dashboard (govuk toolbox), thread the reference filter through the fulfilments list endpoint (REST: filter as query param on the collection, not an action path), preserve sort/page interplay, empty state copy from main grounded in real copy. Failing-test-first per feature-spec pattern: extend features/dashboard/dashboard.e2e.spec.js. Acceptance: FE units + features project green; backend mvn verify green (list endpoint filter + tests); full parity gate green; main-suite untouched.",
+      "evidence": "workareas/shared/promotion/DRIFT-AUDIT.md section 3; drift-verdicts.json EUDPA-73 entry (file:line for all absent surfaces)",
       "decision": ""
     }
   ]
