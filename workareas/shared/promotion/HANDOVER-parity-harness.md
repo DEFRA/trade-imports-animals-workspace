@@ -1,5 +1,13 @@
 # Handover — build the dual-frontend parity harness (EUDPA-288 Stream C, T1–T4/T6/T7)
 
+> **COMPLETE 2026-07-30.** All tasks done + verified; `npm test` green end-to-end (reworked 125
+> passed vs :3100, main 248 passed vs :3200, 0 failures); adversarial review run (25 confirmed
+> findings — all blocking/major fixed, minors parked). One extra prerequisite emerged and was done:
+> T0 — owner-scoping (X-Owner-Id) physically ripped out of all three repos (Sam's call; the :latest
+> main FE 400'd against the branch backend's required owner headers). See
+> `DUAL-FRONTEND-PARITY-PLAN.md` for the full record incl. open follow-ups (linux visual baseline
+> post-push; parity CI needs the branch tests image).
+
 You are the orchestrator taking over the tail of the live-animals promotion test work. Your job is to
 finish the **dual-frontend parity harness**. The design is DECIDED and committed — do not re-open it.
 
