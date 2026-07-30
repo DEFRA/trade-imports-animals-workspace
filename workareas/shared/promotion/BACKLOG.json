@@ -681,6 +681,66 @@
       "detail": "Raised by Sam + Paul Hodgson (chat 2026-07-24): with yar/Redis session storage keyed by the session-id cookie, a user with the journey open in multiple tabs (different notifications) gets last-write-wins interference between tabs. ROOT CAUSE (traced): the notification/journey RECORDS are backend-backed keyed by journeyId (fine), and FLOW_ONLY_ANSWERS is ALREADY sub-keyed by journeyId (services/persistence/session/real.js:56-68, { [journeyId]: values }) — so Paul's suggested sub-key structure is already applied there. The remaining defect is that ACTIVE_JOURNEY (and OPENING_RUN) are SINGLE session-global values (real.js:3,5,26-31,48-53) and the current journey is resolved from ACTIVE_JOURNEY, NOT from the URL (engine/journey.js:64-70 currentJourney -> session.activeJourneyId). So tab B selecting notification Y overwrites ACTIVE_JOURNEY, and tab A's next request loads Y — that single wrong journeyId then also poisons the correctly-sub-keyed flow-only reads. FIX DIRECTION: carry the notification/journey id in the URL (path segment) per tab so each tab is self-identifying, retire the single ACTIVE_JOURNEY pointer (and OPENING_RUN handling), leaving the already-per-journey session sub-keying to work correctly per tab. Interlocks with auth/per-user scoping (p-012/p-025) and the URL/routing structure. Sam: 'matters for both tickets (obligations frontend and document upload)' — the document-upload flow (ownsUpload / upload page state) is session-backed and would corrupt across tabs the same way. ROUTING: architectural — a first-class Lane E promotion-plan input (URL structure + session model + auth), not a quick prototype patch. Lane E to size and sequence it.",
       "evidence": "services/persistence/session/real.js:3,5,26-31,48-53,56-68; engine/journey.js:64-70,101-113; features/documents/controller.js ownsUpload; Sam + Paul Hodgson chat 2026-07-24",
       "decision": ""
+    },
+    {
+      "id": "p-218",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Generate + commit the linux visual baseline for the main-suite visual spec",
+      "detail": "Run main-suite/tests/e2e/visual/origin-of-import.visual.spec.ts inside the branch defradigital/trade-imports-animals-tests image against :3200 with --update-snapshots, mount the snapshots dir out, commit origin-of-import-main-linux.png. Unblocks the visual spec in the CI parity job (ubuntu). The gitignore negation for main-suite/tests/e2e/visual/** already exists.",
+      "evidence": "workareas/shared/promotion/DUAL-FRONTEND-PARITY-PLAN.md (T7 caveats); tests repo .gitignore negations added in 94f69ca",
+      "decision": ""
+    },
+    {
+      "id": "p-219",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Port EUDPA-281 actor identity to the reworked journey submit/amend",
+      "detail": "Main's old client sends an actor body {id, name} on POST submit/amend so the backend stamps outbox events. The reworked journey's real persistence (live-animals/services/persistence/records/real/lifecycle/transition.js) does not send it. First check whether the branch backend needs main's ActorRequest handling merged into its submit/amend endpoints; then thread the actor from session credentials (actor-helpers.js kept on the branch as the contract reference) and pin the envelope in the outbox E2E.",
+      "evidence": "frontend merge commit 2682856 (follow-up flagged); src/server/common/helpers/actor-helpers.js; PARITY-MAPPING.md outbox row",
+      "decision": ""
+    },
+    {
+      "id": "p-220",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Close the honest-ledger E2E gaps from PARITY-MAPPING.md",
+      "detail": "Pin: the 10-document cap; at-cap (10MB) acceptance + one-byte-over reject boundary; the documents-page no-JS refresh fallback (template has js-refresh-fallback, no spec pins it); the amend outbox envelope fields (aggregateVersion 2 / NotificationSubmissionAmended).",
+      "evidence": "workareas/shared/promotion/PARITY-MAPPING.md — 'Honest ledger' section",
+      "decision": ""
+    },
+    {
+      "id": "p-221",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Parity lane polish: per-invocation artifacts + dead visual scripts",
+      "detail": "The two npm-test parity invocations share test-results/ and playwright-report/ so the second overwrites the first's HTML report — give each invocation its own output dir. Fix or retire test:docker-compose:visual and :visual:container, which now match zero specs (the only @visual spec lives in main-suite).",
+      "evidence": "Adversarial review wf_55c9dbde-0db minors (recorded in DUAL-FRONTEND-PARITY-PLAN.md)",
+      "decision": ""
+    },
+    {
+      "id": "p-222",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Stale owner-era language cleanup",
+      "detail": "4 FE test titles in live-animals/services/persistence/records/real/real.*.test.js still say 'owner headers' though assertions are unscoped; engine/journey.js ownership-authority comment (~line 66) is now false in real mode after the owner rip-out.",
+      "evidence": "Adversarial review wf_55c9dbde-0db minors; owner rip commits 03b3d5c/3ba33e9/64e225d",
+      "decision": ""
+    },
+    {
+      "id": "p-223",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Reworked-journey visual regression spec (origin page)",
+      "detail": "Deliberately not authored during the harness build (the reworked origin page invalidates the old pixel baseline). Author under the reworked parity project with a fresh baseline if wanted.",
+      "evidence": "PARITY-MAPPING.md visual row (dropped-documented)",
+      "decision": ""
     }
   ]
 }
