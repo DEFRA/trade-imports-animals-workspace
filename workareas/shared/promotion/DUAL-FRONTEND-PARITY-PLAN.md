@@ -59,12 +59,18 @@ it is main-suite-on-main-FE + reworked-suite-on-reworked-FE, both passing.)
   where the branch overwrote them) back as the `main` project's suite, routed to the `:latest` FE. Keep
   them distinct from the reworked specs (separate dir/tag). Confirm each "needed to remain" spec has a
   home; record any deliberately-dropped ones with a reason.
-- [ ] **T5 Extend the 3-shape API seed.** `NotificationApiClient`: add `replaceNotification`
-  (`PUT /notifications/{id}`) + `replaceProposedNotification` (`PUT /proposed-notifications/{id}`).
-  `createFullNotification` writes all three shapes keyed by the same `referenceNumber` (=journeyId),
-  mirroring `mutate.js`. Fix `createSubmittedNotification` to write the notification projection so the
-  submit cascade fires (admin can see it). Convert reworked specs back to fast API-seed+resume where a
-  full UI walk isn't the behaviour under test.
+- [x] **T5 Extend the 3-shape API seed. DONE + verified 2026-07-30 (tests `5814a8f`).**
+  `NotificationApiClient` now has `replaceNotification` + `replaceProposedNotification` (both upsert,
+  need only `{ referenceNumber }`); `api-journey` seeds both projections on create;
+  `createSubmittedNotification` seeds them before submit so the cascade fires (admin sees it — admin-
+  filled-state green). Two root causes found + fixed: (1) POST /fulfilments never creates the projection
+  docs → GET /notifications 404 → the "service error" I'd misdiagnosed; (2) the invented UNLOCKED_
+  FULFILMENT had the commodity code as an array `['749313']`, so Mapper A's PUT /notifications failed
+  "String from Array" — replaced with a fulfilment captured VERBATIM from a real UI unlock. **Proven:
+  API-seed (3 shapes + real fulfilment) → resume → save now works in ~0.6s (vs ~8s UI walk).** This
+  overturns the earlier "API-seed can't save via UI" conclusion. STILL TODO: convert the reworked
+  render/default specs back to fast API-seed+resume where a full UI walk isn't the behaviour under test
+  (currently they use the slower journey.to* UI-flow reach helpers — correct, just slower).
 - [ ] **T6 Restore dropped reworked coverage.** outbox-event replay; journey a11y (initial/filled/
   error/view); all-operators view; view-page draft+submitted rendering; hub six-group + CYA answered-
   rows; contact-address add-new + blank-save; change-from-CYA threading. Re-check the 3 documents
