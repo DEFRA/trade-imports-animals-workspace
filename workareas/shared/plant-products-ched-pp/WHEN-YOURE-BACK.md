@@ -7,6 +7,26 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [Phase B, deviation] Domain model is Lombok @Data/@SuperBuilder, NOT records
+The orchestrator prompt said "compilable Java records", but the designer ruled that mirroring the
+animals house shape wins: the NotificationBase-style split relies on @SuperBuilder inheritance (records
+can't extend), and an all-nullable draft aggregate is record-hostile. Records with compact-constructor
+null guards ARE used at every API boundary (DTOs, requests), exactly like the animals package — so the
+house rule is honoured where it applies. Check SCHEMA-DESIGN.md decision list (D-1..D-20) if you want
+to reverse this; it's a rename-level change, not structural.
+
+## [Phase B] Backend plant-products schema committed (backend a7961ac), compile green
+New package `uk.gov.defra.trade.imports.plantproducts` (56 files): notification aggregate with
+commodity→species→variety nesting, separate `plant_products_accompanying_documents` collection
+(async-scan boundary ruling), REST at `/plant-products/notifications` with a PUT `{ref}/status`
+sub-resource instead of house action paths (rest-nouns ruling), GBN-PP-{YY}-{XXXXXX} reference minting,
+and a PlantProductsAutoConfiguration registered via AutoConfiguration.imports (animals package
+untouched). Its `@EnableMongoRepositories` lists BOTH packages — Boot's repo auto-config backs off, so
+if this is mis-wired the animals repositories silently vanish; the designer's mandated gate (run the
+animals ITs) was deferred by the implementor, so the orchestrator is running `mvn verify` as a
+background gate now — result logged in a later entry. Design + obligation→field map under
+`backend-schema/`.
+
 ## [Phase A, decision] Sibling set planned as boot-time set switch, not co-residency
 Recon found every L1 injection seam (manifest, fulfilment-registry, journey-flow, dispatch, records,
 session, commodity-reference) is a module-level singleton — one obligation set per Node process — and
