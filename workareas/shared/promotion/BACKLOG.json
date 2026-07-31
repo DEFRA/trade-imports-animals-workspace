@@ -967,6 +967,77 @@
         }
       ],
       "verification": "Parent-verified: mvn verify BUILD SUCCESS (366 unit + 179 IT); features project 92 passed incl. red-then-green dashboard search tests; FE suite 1448/0; full parity gate 249 passed exit 0. One degraded parity run mid-verification was environmental (worn dev-mode FE process after 10h of hot-reload churn — timeouts across unrelated specs, serial passes) — fixed by restarting the frontend-test container."
+    },
+    {
+      "id": "p-234",
+      "theme": "promotion",
+      "type": "task",
+      "status": "done",
+      "title": "Check whether the MoJ date picker is used; adopt it for all date inputs if not",
+      "detail": "Sam (voice, heard as MRJ — interpreted as MoJ, the Ministry of Justice design system date picker from @ministryofjustice/frontend): check if the reworked frontend uses the MoJ date picker anywhere; if not, use it in ALL date inputs. Phase 1 CHECK: is @ministryofjustice/frontend a dependency; grep templates for moj-date-picker/moj datepicker usage; inventory every date input in src/server/live-animals (known: exit-date feature; transport arrival date in port-of-entry; sweep for others incl. govukDateInput macro usages). Phase 2 ADOPT (if unused): add the dependency, wire its SCSS/JS into the existing webpack/client bundle (build config is load-bearing — bundle entries must not be deferred), replace each date input with the MoJ date picker component (progressive enhancement — it enhances a standard input; ensure the no-JS fallback stays usable and server-side validation semantics are unchanged), update the affected feature unit tests + co-located feature specs (date entry via the picker AND via direct typing), axe legs stay green. Note: this deliberately steps outside the govuk-frontend-only rule because Sam explicitly requested the MoJ component — MoJ frontend is standard GDS-ecosystem tooling. Acceptance: FE units green; features project green incl. updated date specs; full parity gate green; main-suite untouched.",
+      "evidence": "Sam instruction 2026-07-31; known date inputs: features/exit-date, features/transport/port-of-entry (arrival date)",
+      "decision": "MoJ = @ministryofjustice/frontend@10.0.1 (Sam voice heard as MRJ — interpretation confirmed by fit). Three date inputs converted (found documents date-of-issue beyond the two known). Browser payload single dd/mm/yyyy; persistence shape unchanged. Environmental gotchas recorded: dev containers need rebuild for new npm deps (hot-reload is source-only); reworked visual baselines regenerate on intentional global CSS changes.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "d952d49"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "ce63a2a"
+        }
+      ],
+      "verification": "Parent-verified: FE suite 1453/0; features 93 passed; parity gate reworked lane 140 passed/0 failed after tests-repo date migration; main lane single fail = load flake (serial 3s pass); visual baselines regenerated for intentional MoJ global CSS drift"
+    },
+    {
+      "id": "p-235",
+      "theme": "promotion",
+      "type": "question",
+      "status": "todo",
+      "title": "Assess every accessible-autocomplete usage + the commodity search UX",
+      "detail": "Sam (voice): the accessible-autocomplete UX is pretty awful, as is the commodity search. Assessment first: inventory EVERY accessible-autocomplete usage in the reworked frontend (known candidates from prior work: origin country, destination-country, port-of-exit, port-of-entry; sweep src for the accessible-autocomplete package/init and any njk wiring) plus the commodities search surface (features/commodities/search/). For each input record: what it selects over (dataset + size), single vs multi valued, current interaction (autocomplete/search-table/etc), and the recommended replacement per Sam ruling below. Report-only; feeds p-236.",
+      "evidence": "Sam instruction 2026-07-31; src/client/javascripts autocomplete.js exists (0% coverage rows in vitest output); commodity search = features/commodities/search/",
+      "decision": ""
+    },
+    {
+      "id": "p-236",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Replace accessible-autocomplete (and commodity search if assessed so) with plain select / multi-select boxes",
+      "detail": "Sam pre-ruling: drop back to plain govuk select boxes REGARDLESS of option-list size (\"select boxes, no matter how big it gets\"); enhanced search/autocomplete options will come back later as a separate round. Some inputs must be MULTI-select where the field is genuinely multi-valued (e.g. transit countries; commodity selection if the assessment says so — use an appropriate accessible multi-select approach: govuk checkboxes are the GDS-idiomatic multi-select; a native <select multiple> is poor UX/a11y — assessment (p-235) recommends per input, implementor follows it). Scope per the p-235 report: each replaced input keeps its server-side validation semantics and copy (en+cy) coherent; remove the accessible-autocomplete dependency/bundle wiring if nothing uses it afterwards (build config load-bearing); update unit tests + co-located feature specs (the origin spec asserts the autocomplete-backed options — re-pin to the select) + axe legs. Acceptance: FE units green; features project green; full parity gate green; main-suite untouched (main lane keeps its own autocomplete — :3200 is frozen behaviour).",
+      "evidence": "driven by p-235 report; Sam ruling: selects now, enhanced search later",
+      "decision": ""
+    },
+    {
+      "id": "p-237",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Assess every MD file in the frontend: aggressively prune, centralise, flag gaps for GDS-style rewrite",
+      "detail": "Sam: sweep EVERY .md file in the frontend repo with intent to aggressively prune and centralise documentation. Expectation: much is stale — either describing the OLD pre-refactor frontend or describing interim steps on the way to the current state. Workflow shape: (1) inventory all .md files (repo root, docs/, src/server/live-animals/docs/, feature-level, .github/ excluded from pruning but listed); (2) per file, verdict: [current] accurate vs today HEAD — keep; [stale-old-fe] describes pre-rework surfaces — CUT; [stale-interim] describes journey-to-here steps/decisions already superseded — CUT (git history is the record; standing rule: no migration notes); [partial] mixed — trim the stale sections, keep the living content; [gap] a topic that NEEDS fresh writing. Evidence per verdict: the claim in the doc vs the code today (file:line). (3) APPLY the cuts and trims in the same item — delete/trim, and centralise survivors sensibly (fewer, better-placed files; prefer src/server/live-animals/docs/ for rework docs, repo root README for entry). (4) For each [gap], the orchestrator queues a follow-up write item; new writing must follow GDS language standards — plain English, short sentences, simple words, active voice. Acceptance: every md accounted for in the report (no silent skips); repo builds/tests untouched by doc changes (unit suite green — some tests read docs paths, e.g. convention tests); links between surviving docs not broken (grep for references to deleted files).",
+      "evidence": "Sam instruction 2026-07-31; known doc clusters: src/server/live-animals/docs/*.md (persistence, limits, obligation-model, flow-and-gates, architecture, engine, add-a-*, features, services, validation, decisions, test-approach, test-responsibility-matrix)",
+      "decision": ""
+    },
+    {
+      "id": "p-238",
+      "theme": "promotion",
+      "type": "refactor",
+      "status": "todo",
+      "title": "Rework feature-folder specs to Playwright best practices: self-contained, split blocks, deeper validation coverage",
+      "detail": "Sam: revisit every co-located spec in src/server/live-animals/features/** against the workspace Playwright best practices. Rules: (1) SELF-CONTAINED — no page objects; raw locators in the spec (shared journey helpers for reaching the page are acceptable plumbing, but assertions and interactions live inline so each spec reads whole); (2) SPLIT the monolithic tests — several specs currently drive everything in one long test block; break into focused tests per behaviour (rendering, each validation rule or coherent group, save/persist, a11y) accepting the setup cost per test — use beforeEach for shared arrival state; (3) DEEPEN input validation + error handling coverage — every controller validation rule individually asserted with value preservation, plus error-summary link-to-field behaviour, and server error paths where testable. Read the workspace Playwright BEST_PRACTICES.md first (tests read like HTML). Do features in batches like p-226 (A simple, B medium, C heavy). Acceptance per batch: features project green; unit suite untouched; no page-object imports remain in feature specs; test count strictly increases where blocks were split.",
+      "evidence": "Sam instruction 2026-07-31; current specs authored in p-225/p-226 batches — some single-block (e.g. cancel-amend, delete-notification are 1-test specs)",
+      "decision": ""
+    },
+    {
+      "id": "p-239",
+      "theme": "promotion",
+      "type": "question",
+      "status": "todo",
+      "title": "End-of-loop: assess changed repos and produce a same-day merge strategy",
+      "detail": "Sam: at the end of this loop, assess the repos with changes on spike/EUDPA-288-model-retrofit and produce a strategy for merging it all today. Deliverable (report to workareas/shared/promotion/MERGE-STRATEGY.md): per repo — commit count vs main, divergence (behind main?), conflict risk (files touched both sides), CI readiness (branch image availability, the parity job, linux baselines now committed), merge ORDER across repos (backend contract changes land before/with frontend consumers; tests repo alignment; workspace docs), PR shape (per-repo PRs to main, same branch name, coordinated via tests repo per workspace rules), what the frozen main-suite means post-merge (it stops being a parity lane and presumably retires — flag as decision), the 5 blocked-on-sam items and whether any block the merge, and a concrete step-by-step runbook for today incl. verification gates at each step. Report-only; Sam executes or instructs.",
+      "evidence": "Sam instruction 2026-07-31; branch state: frontend/backend/tests/workspace all carry pushed spike commits",
+      "decision": ""
     }
   ]
 }
