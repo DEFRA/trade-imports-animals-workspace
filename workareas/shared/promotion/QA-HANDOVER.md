@@ -34,6 +34,35 @@ Sign-in for both frontends: `2100010101` / `Password123`.
 
 Compare any behaviour against the old frontend at :3200 if in doubt — it is the pre-rework reference.
 
+## Old screen → new screen
+
+How the old journey (:3200) maps to the reworked one (:3100). "New" means the screen has no old equivalent.
+
+| Old screen (:3200) | Reworked screen (:3100) | What changed |
+|---|---|---|
+| Dashboard | Dashboard | Card actions are now Resume / Copy as new / Delete. Search by exact reference added. Create-new routes to the import type page. |
+| — | Import type filter | New first step. Unsupported types get a not-available page. |
+| — | Overview (hub task list) | New. The journey is a task list; sections unlock as you complete them. |
+| Origin of the import | Origin of the import | Country is a plain select (was typed dropdown). Region-code question is conditional. |
+| Import reason | Import reason + Import purpose | Split into two pages. |
+| Commodities dropdown + species selection page | Commodity selection | One page: all commodity/species pairs as grouped checkboxes. The species page and search box no longer exist. |
+| Commodity quantities table | Consignment details | Per-commodity-line animal and package counts. Live JS subtotals are gone. |
+| Species identification table | Animal identification | Per-unit add-another flow with an N-of-M counter capped at the declared animal count. |
+| Addresses landing + 5 per-party select pages | Roles and addresses hub + one party picker | One parameterised picker (search, pagination, create address) serves all five roles. |
+| Consignment contact select | Contact address | Own hub task. Blank save is allowed by design. |
+| Port of entry | Arrival details | Port is a plain select. Arrival date uses the MoJ date picker (was day/month/year boxes). |
+| Transited countries (search + checkboxes) | Transited countries | One checkbox list of all 31 countries, maximum 12. |
+| Transporters summary + select | Transporter type + selection + private details | Type radios (Commercial/Private), then selection radios or a private details form. The old details table is gone. |
+| Accompanying documents | Documents | Document type select removed — type is derived from the filename. Date of issue uses the MoJ date picker. No-JS scan refresh fallback. |
+| Additional details | Additional details | Unweaned question only shows when a triggering commodity line exists. |
+| CPH number | CPH number | Only shows when a CPH-triggering commodity is selected. |
+| Notification view (draft) | Check your answers | Change links thread back to the page and return after save. |
+| Notification view (submitted) | Notification view | Read-only with Copy as new and Delete. Amend now starts from the dashboard action, not a view button. |
+| Delete (JS confirm dialog) | Delete confirmation page | Full page with Yes/No. |
+| Declaration | Declaration | Submit path is real and lands on the confirmation page. |
+
+Spec-level mapping with per-test detail: `workareas/shared/promotion/PARITY-MAPPING.md`. Note it predates 31 July: its notes still describe the autocomplete, commodity search and add-another transit rows that were replaced by the plain selects, checkbox groups and date picker listed above.
+
 ## Automated tests — copy-paste
 
 Frontend unit suite (no stack needed):
