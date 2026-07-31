@@ -16,7 +16,7 @@ on:
         value: ${{ jobs.deploy-report.outputs.report-url }}
 
 jobs:
-  e2e:
+  sharded_e2e:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call' ||
@@ -102,14 +102,11 @@ jobs:
         if: always()
         run: docker compose -p trade-imports-animals down
 
-  # Dual-frontend parity gate (EUDPA-288): the branch frontend (:3100,
-  # test-target profile) runs the reworked suite while a :latest sibling
-  # (:3200) runs the frozen main suite — both green = feature parity. Runs
-  # the same npm scripts `npm test` chains locally, but reseeds from the
-  # runner between suites because database-reseed.sh needs docker + the
-  # workspace checkout, neither of which exists inside the tests image.
+  # Single-suite branch frontend gate. This mirrors the tests repository's
+  # `npm test` chain, with reseeding run from the workspace checkout because
+  # database-reseed.sh needs access to Docker and the stack scripts.
   # Lean gate: raw test-results artifacts only, no blob/allure merging.
-  parity:
+  e2e:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call' ||
@@ -144,7 +141,7 @@ jobs:
             echo "Tests image: latest (no branch tag)"
           fi
 
-      - name: Start stack with both frontends
+      - name: Start stack with E2E frontend
         run: >
           ./scripts/stack/run-stack.sh
           --branch "${{ inputs.branch || github.head_ref || github.ref_name }}"
@@ -152,51 +149,50 @@ jobs:
           --profile stubs --profile backend --profile frontend
           --profile test-target
 
-      - name: Run reworked suite vs the branch frontend (:3100)
+      - name: Assert E2E stack
         run: |
           docker run --rm \
             --network host \
             --user root \
-            -v ${{ github.workspace }}/artifacts/test-results-reworked:/app/test-results \
             --entrypoint npm \
             defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
-            run _test_parity_reworked
+            run _assert_stack
 
-      - name: Reseed database between suites
+      - name: Reseed database
         # STACK_BRANCH keeps the reseed's staged init fixtures on the PR
         # branch — unset, bounce-mongo.sh sparse-fetches the default branch.
         env:
           STACK_BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
         run: ./scripts/stack/bounce-mongo.sh
 
-      - name: Run main suite vs the :latest frontend (:3200)
+      - name: Run E2E suite against branch frontend
         run: |
           docker run --rm \
             --network host \
             --user root \
-            -v ${{ github.workspace }}/artifacts/test-results-main:/app/test-results \
+            -v ${{ github.workspace }}/artifacts/test-results-e2e:/app/test-results \
             --entrypoint npm \
             defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
-            run _test_parity_main
+            run _test_e2e
 
-      - name: Upload parity artifacts
+      - name: Upload E2E artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: parity-results
+          name: e2e-results
           path: artifacts/
           retention-days: 14
 
       - name: Capture stack logs
         if: failure()
-        run: docker compose -p trade-imports-animals logs --no-color --timestamps > parity-stack-logs.txt 2>&1 || true
+        run: docker compose -p trade-imports-animals logs --no-color --timestamps > e2e-stack-logs.txt 2>&1 || true
 
       - name: Upload stack logs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: parity-stack-logs
-          path: parity-stack-logs.txt
+          name: e2e-stack-logs
+          path: e2e-stack-logs.txt
           retention-days: 14
 
       - name: Tear down stack
@@ -204,8 +200,8 @@ jobs:
         run: docker compose -p trade-imports-animals down
 
   merge-reports:
-    if: always() && needs.e2e.result != 'skipped'
-    needs: e2e
+    if: always() && needs.sharded_e2e.result != 'skipped'
+    needs: sharded_e2e
     runs-on: ubuntu-latest
     steps:
       - name: Download shard artifacts
