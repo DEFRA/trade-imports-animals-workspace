@@ -1,0 +1,58 @@
+{
+  "id": "pp-015",
+  "title": "BCPs + inspection premises reference data (fixture module)",
+  "kind": "reference-data",
+  "milestone": "m1",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007"],
+  "sourceIncrement": "inc-006",
+  "recipe": "workareas/shared/plant-products-ched-pp/frontend-plan/SIBLING-SET-PLAN.md#6.1 (set-owned services — no add-a-fixture-module recipe exists in the live-animals docs corpus; exemplar transposition from the lookup-barrel shape of sets/live-animals/services/commodities/index.js)",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/bcps.js",
+      "action": "create",
+      "what": "Pure fixture module (create the reference/ dir if pp-013/pp-016 have not yet; no imports of L2, no copy, no IO at module load, all data Object.freeze'd). Internal shape: const BCPS = Object.freeze([{ code, name, controlPoints: [{ code, name }] }, ...]). Seed with EVERY BCP observed in the trace corpus, VERBATIM (labels render as `${name} - ${code}`, mirroring the live IPAFFS select where the code is embedded in the option text; source: workareas/shared/trace-requirements/ched-pp/pages/transport-before-bip.json field 'bcp'): ABC Legal x10 (codes UK6N3IVF, UKVTZOI8, UK9M301K, UK0ICKBR, UKU6G5N1, UKXZDFMB, UKK4X46Z, UKPAK5PR, UKARBQVP, UKVO3L92), ABCD x2 (WQ9z7, NiKTZ), Aberdeen Harbour Board (GBAHB4PP), Associated British Ports - Ayr (GBABP4PP), Associated British Ports - Hull (GBHLL4PP), Associated British Ports - Plymouth (GBPLP4PP), Associated British Ports - Silloth (GBPOS4PP), Automation9 Testing (TEST123), Belfast Pharmaceuticals (CHEDPP1), Birmingham International Airport (GBBXH4PP), Control Point (CONPNT), Heathrow Airport (GBLHR4PP), Port of Dover (Western) (GBDOV1PP), Port of Felixstowe (GBFXT1PP), Folkestone (GBFOL4PP — spelling CORRECTED from IPAFFS's live 'Folkstone' reference-data defect; do not carry the misspelling over). controlPoints: CONPNT gets [{ code: 'INSPBAR1', name: 'Barfoots of Botley (Chichester)' }, { code: 'INSPBER1', name: 'Berryplants Ltd' }] (the only code-confirmed premises in the corpus, in observed order); every other BCP gets [] — the association is per-BCP data, the filtering RULE is a recorded gap that arrives later. Exports (named, mirroring the pp-013/pp-016 sibling convention of options arrays + label-for-code lookups): list() => [{ value: code, text: `${name} - ${code}` }] for the govuk-select (no placeholder row — the page owns its placeholder copy); bcpLabel(code) => name-with-code text or undefined; hasControlPoints(bcpCode) => boolean; controlPointsFor(bcpCode) => [{ value, text }] premises options ([] for a premises-less or unknown BCP — never throws); controlPointCodesFor(bcpCode) => string[] of premises codes (the lazily-resolved allowlist the inspectionPremises allowListed(borderControlPost, ...) gate will consume at gate execution — pp-030 declares that gate, this module only supplies the data); controlPointLabel(code) => premises name or undefined (flat lookup across all BCPs, for check-answers/summary label rendering). Everything stored/looked-up by CODE, never display string."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/bcps.test.js",
+      "action": "create",
+      "what": "Co-located Vitest unit suite (picked up by the set-scoped test:plant-products glob). Behaviour pins, no coverage padding: (1) list() returns one option per fixtured BCP, every entry { value, text } with value = code and text containing both name and code; codes unique; includes CONPNT and GBFOL4PP with text 'Folkestone - GBFOL4PP' (corrected spelling pinned deliberately). (2) controlPointsFor('CONPNT') returns exactly [{ value: 'INSPBAR1', text: 'Barfoots of Botley (Chichester)' }, { value: 'INSPBER1', text: 'Berryplants Ltd' }] in that order. (3) controlPointsFor on a premises-less BCP (e.g. 'GBLHR4PP') and on an unknown code both return [] without throwing; hasControlPoints true for CONPNT, false for both of those. (4) controlPointCodesFor('CONPNT') = ['INSPBAR1', 'INSPBER1']; unknown BCP = []. (5) bcpLabel/controlPointLabel resolve a known code and return undefined for an unknown one. (6) exported arrays are frozen (mutation throws or is inert — pin with Object.isFrozen on list() source data or a mutation attempt)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "transport.borderControlPost (this module supplies the code vocabulary; the field itself is written by pp-030)",
+    "transport.inspectionPremises (per-BCP premises codes back the allowListed gate pp-030 declares; written by pp-030)"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/sets/plant-products/services/reference/bcps.test.js — Vitest unit suite (NOT Playwright): fixture integrity + lookup behaviour, scenarios in filesToTouch. No Playwright/axe spec in this increment: the module has no page surface — nothing renders it until pp-030 (transport-before-bip), whose e2e spec covers the select options and the premises show/hide against this fixture."
+  ],
+  "acceptanceCriteria": [
+    "sets/plant-products/services/reference/bcps.js exists and exports list, bcpLabel, hasControlPoints, controlPointsFor, controlPointCodesFor, controlPointLabel; it imports nothing from L2, contains no display copy beyond the reference-data option text itself, performs no IO at module load, and its data is frozen.",
+    "Every BCP observed in the trace corpus is present verbatim by code (all 25 label+code pairs listed in filesToTouch), option values are codes never display strings, and GBFOL4PP renders as 'Folkestone - GBFOL4PP' (IPAFFS 'Folkstone' defect not carried over).",
+    "controlPointsFor('CONPNT') returns exactly the two code-confirmed premises (INSPBAR1 'Barfoots of Botley (Chichester)', INSPBER1 'Berryplants Ltd') in observed order; every other fixtured BCP and any unknown code returns [] without throwing.",
+    "controlPointCodesFor returns the per-BCP allowlist shape the inspectionPremises allowListed gate needs (string[] of codes), so pp-030 can bind the gate without touching this module.",
+    "All lookup functions are total: unknown codes yield undefined (labels) or [] (lists), never a throw.",
+    "npm run test:plant-products green including the new bcps.test.js; npm test green (full suite); no file outside sets/plant-products/ is touched, so live-animals behaviour is unchanged by construction."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-006 as a set-owned fixture module (SIBLING-SET-PLAN §6.1: one module per fixture vocabulary, options arrays + label-for-code lookups, no priming — plant reference data is fixture-backed, hence §4.1 step 12's empty priming slot; nothing to register in the gateway, consumers import the module directly inside the set). Rulings applied: store by code never display string (recon §170); the per-BCP control-point ASSOCIATION is data in the fixture while the filtering RULE is a recorded gap (planning brief + transport-before-bip.json notes: premises visibility AND option list are both BCP-dependent — legacy did it client-side via data-bcp attributes, the sibling set will decide the server-rendered mechanism at pp-030); conditionally-mandatory premises (required IFF the chosen BCP offers premises, PartOne.java PointOfEntryControlPointValidation group) is pp-030's allowListed(borderControlPost, ..., null, ...) gate — this module only supplies controlPointCodesFor. DATA-HONESTY DECISION (headless, recorded): the planning brief and recon say '144 BCPs', but the only enumerable source in the workarea (transport-before-bip.json field 'bcp') is truncated at 25 label+code pairs (optionsTruncated: true, optionCount: 144), and only 2 premises codes are code-confirmed anywhere (both under CONPNT; the CONPNT list itself had 52 options with 21 labels captured but no values). Per the no-invented-lookalikes rule the fixture ships the 25 observed BCPs and 2 confirmed premises VERBATIM rather than fabricating ~119 codes and ~50 premises code/label pairs; the module shape (code-keyed array + total lookups) means the full list drops in without interface change. Exemplar files: sets/live-animals/services/commodities/index.js (lookup barrel, verified this session), sibling modules pp-013 countries.js / pp-016 package-types.js et al (same export convention). Not platform-touching (single new set-owned module + test), so the two-sided P-1..P-6 sibling-safety ladder is not triggered; npm test still runs as the whole-suite check.",
+  "openQuestions": [
+    "Full 144-BCP list: recon §170 claims BCPs were 'observed in full', but the page spec truncates at 25 entries. Before pp-030's e2e can assert a 144-option select, the remaining ~119 label+code pairs need sourcing — either re-mine the DOM of trace e10b7cd5117799d60c1e0fbeddc3322eefde1572 action 47 (npx playwright trace CLI can eval the select's options) or obtain the IPAFFS BCP reference extract. Until then pp-030 should assert against list().length, not a hardcoded 144.",
+    "Per-BCP premises map beyond CONPNT: which BCPs offer premises, and each BCP's premises code/label pairs, are unenumerated (each trace pins one BCP). Notably 'Sevington IBF' (paired with GBFOL4PP on the CUC branch, m5 pp-043) has NO known code — it cannot be fixtured yet; the CUC test selected it by label only.",
+    "'Via Temporary Place of Destination (POD)' pseudo-premises (value POD, data-bcp='pod'): legacy hard-disables it for CHED-PP happy path, but ChedppPodRequired/ChedppInvalidPodCheck validators exist. What turns POD on is a gap — excluded from the fixture; revisit if a rule surfaces.",
+    "The exact premises FILTERING rule (and whether the sibling set re-renders server-side on BCP change vs legacy's client-side data-bcp filter) is pp-030's design decision — flagged here so the fixture's per-BCP association is not mistaken for the rule."
+  ]
+}

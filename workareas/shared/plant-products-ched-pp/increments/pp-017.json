@@ -1,0 +1,111 @@
+{
+  "id": "pp-017",
+  "title": "import-type — certificate type entry filter (full page build)",
+  "kind": "page",
+  "milestone": "m2",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009"],
+  "sourceIncrement": "inc-008",
+  "recipe": "SIBLING-SET-PLAN.md §8 G-H (no flow-only-key recipe exists — plan is exemplar transposition of sets/live-animals/journeys/linear/features/import-type-filter/, file-for-file); sets/live-animals/docs/add-a-page.md applies for file-shape and testing conventions only (steps 2/6/7 skipped: no obligation, no flow/task-row edit, no check-answers row)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/controller.js",
+      "action": "edit",
+      "what": "Complete the pp-007 skeleton to a full transposition of sets/live-animals/journeys/linear/features/import-type-filter/controller.js. Exports: `meta = { ...page, collects: ['importType'] }` (change from the skeleton's collects: []; importType is a FLOW_ONLY_KEY per FD-8 — the same shape live-animals uses, dispatch accepts it because flowOnlyKeys are injected via configureJourneyFlow), `PLANT_PRODUCTS = 'plants'`, `NOT_AVAILABLE_SLUG = 'import-type/not-available'`, `routes`. IMPORT_TYPES = ['live-animals','poao','hrfnao','plants'] house tokens (NOT the IPAFFS wire codes CVEDA/CVEDP/CED/CHEDPP — c-006-style normalisation) mapped to copy.importTypes labels. Validation: compose(requiredOneOf('importType', values, copy.errors.importTypeRequired)) from src/server/app/lib/validate/index.js — single Joi-voice string 'Select the type of import' (c-018), server-side only (no HTML required attribute; requiredOneOf also rejects crafted out-of-list values). render() builds kit.base(copy.title, { backLink: dashboardPath(), journeyId, recoverableError }) — REAL back-link href to the dashboard (fixes the IPAFFS href='#' defect) — plus copy, values, errors, kit.errorSummary(errors), importTypeOptions with checked-state. GET: state.get() once, prefill values.importType from answers (flow-only store rehydration). POST: validate → 400 re-render with raw value; kit.recoverableSave(() => state.commit(request, h, values), 500-re-render) ; on success, if values.importType !== PLANT_PRODUCTS redirect to pagePath(journeyId, NOT_AVAILABLE_SLUG); else opening-run branch verbatim from the exemplar: shouldOpenRun = inOpeningRun(request, journeyId) || !hasCommittedNotificationAnswers(answersBeforeCommit) (import from the set's flow/entry-guard.js, built by pp-009) → beginOpeningRun + h.redirect(kit.exitTarget(request, nextRunTarget(page.id, scope, journeyId))) (nextRunTarget from the set's flow/run.js); else kit.nextTarget(request, page, scope). getNotAvailable handler renders the holding view with backLink and changeAnswerHref both pagePath(journeyId, page.slug). routes = [...kit.pageRoutes(page, { get, post }), { method: 'GET', path: pageRoutePath(NOT_AVAILABLE_SLUG), options: kit.routeOptions, handler: getNotAvailable }]. Do NOT port the overdue-debtor gate, the debt disclosure partial, or any DoA/org-selection redirect (c-024; POST always advances per the above)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/template.njk",
+      "action": "edit",
+      "what": "Full page markup replacing the skeleton stub. Extends 'shared/layout.njk' (unprefixed), includes 'shared/error-summary.njk' (GDS 'There is a problem' title — c-004), form method=post novalidate with hidden crumb input. govukRadios({ name: 'importType', fieldset: { legend: { html: <span class=\"govuk-caption-l\">caption</span> + heading text, isPageHeading: true, classes: 'govuk-fieldset__legend--l' } }, errorMessage: errors.importType and { text: errors.importType }, items: importTypeOptions }) — H1 INSIDE the legend with the caption above it inside the legend html, so the radio group has an accessible name (c-014 fix; do NOT reproduce the IPAFFS empty-legend/H1-outside-form pattern). Caption text and legend text from copy (caption 'About the consignment', legend 'What are you importing?'). govukButton({ text: copy.continueButton }) — 'Save and continue' per the page spec. 4 stacked radio items, no hints, none disabled (c-024). govuk-frontend macros only, no custom CSS."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/not-available.njk",
+      "action": "create",
+      "what": "Holding page for non-plants selections, transposed from sets/live-animals/journeys/linear/features/import-type-filter/not-available.njk: extends shared/layout.njk; H1 copy.notAvailable.title ('You cannot use this service'); body copy.notAvailable.onlyCovers ('This service currently only supports imports of plants, plant products and other objects.'); link changeAnswerHref with text copy.notAvailable.changeAnswer ('Go back and change your answer') + copy.notAvailable.ifImporting sentence tail."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/copy/copy.en.js",
+      "action": "edit",
+      "what": "Full English bundle: title 'What are you importing?', caption 'About the consignment', legend 'What are you importing?', importTypes: { 'live-animals': 'Live animals', poao: 'Products of animal origin, germinal products or animal by-products', hrfnao: 'High risk food and feed of non-animal origin', plants: 'Plants, plant products and other objects' } (labels verbatim from the trace-confirmed page spec — NOT the live-animals set's 'or' variants), continueButton 'Save and continue', errors: { importTypeRequired: 'Select the type of import' }, notAvailable: { title 'You cannot use this service', onlyCovers 'This service currently only supports imports of plants, plant products and other objects.', changeAnswer 'Go back and change your answer', ifImporting 'if you are importing plants, plant products or other objects.' }."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle with IDENTICAL leaf paths and value kinds (copy-parity enforced): Welsh renderings of every key above, following the live-animals cy bundle's translation register."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/copy/copy.test.js",
+      "action": "edit",
+      "what": "Pin the completed bundle: presence + exact en strings for title, caption, all four importTypes labels, continueButton, errors.importTypeRequired, notAvailable.*; en/cy shape equality is covered by the parameterised copy-parity suite (pp-010) but the local test pins the load-bearing strings."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/controller.test.js",
+      "action": "edit",
+      "what": "Full unit coverage replacing the skeleton test, mirroring sets/live-animals/.../import-type-filter usage of the house controller-test harness: GET renders with empty selection and prefills a previously-committed flow-only importType; POST empty → 400, error 'Select the type of import', raw values re-rendered, nothing committed; POST out-of-list value → 400 (requiredOneOf allowed-values rejection); POST 'plants' fresh journey → begins opening run and redirects to nextRunTarget's target (hub at current RUN_STEPS); POST 'plants' with committed answers outside a run → kit.nextTarget redirect; POST each non-plants value → redirect to the not-available slug, importType still committed to the flow-only store; recoverable save failure → 500 re-render with recoverableError; unexpected errors throw; GET not-available renders title + change-answer link. Assert NO disabled option and NO hint in the rendered options model (c-024 pin)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js",
+      "action": "edit",
+      "what": "Full co-located Playwright feature spec (raw role/label locators, no page objects, each test starts its own notification via the dashboard create button): (1) render — caption 'About the consignment' and H1 'What are you importing?' exposed as the radio GROUP's accessible name (assert getByRole('group', { name: 'What are you importing?' }) resolves — the c-014 fix), exactly 4 radios with the spec labels asserted on the full rendered list (no filtering), all enabled, no hints, back link is a real href to the dashboard; (2) happy path — check 'Plants, plant products and other objects', click 'Save and continue', land on the hub (current opening-run target), revisit import-type and assert the radio is still checked (flow-only session persistence); (3) validation — submit nothing, expect 'There is a problem' summary with 'Select the type of import' whose link focuses the first radio, inline error on the group, still on the page (400); (4) not-available — check 'Live animals', save, land on 'You cannot use this service', click 'Go back and change your answer', return to import-type with the previous choice preserved; (5) axe initial render and (6) axe error state — AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']), fail on any serious/critical impact, no filters."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the first case to the pp-010-created empty harness (T-5 standing rule): import-type valid POST — payload { importType: 'plants' }, no scope seed needed, asserts the controller commits exactly meta.collects (['importType'], landing in the flow-only store). Mirrors the live-animals contract case that posts importType: 'live-animals' (contract.test.js:65, P-8 note)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sections": [],
+    "taskRows": [],
+    "entryGuard": null,
+    "note": "No flow-data edits: importTypePage is already inside the `start` flow section (FD-13, landed with pp-007), RUN_STEPS already carries the import-type step and entry-guard already redirects fresh deep-links here (pp-009). importType stays in FLOW_ONLY_KEYS (FD-8) — no manifest entry, no task row, no hub GROUPS entry. features/index.js needs no edit: dispatchPages/allRoutes already reference the controller's exported meta/routes namespaces, and the not-available route rides the same `routes` export."
+  },
+  "schemaFields": [],
+  "copyKeys": [
+    "features/import-type/copy: title",
+    "features/import-type/copy: caption",
+    "features/import-type/copy: legend",
+    "features/import-type/copy: importTypes.live-animals",
+    "features/import-type/copy: importTypes.poao",
+    "features/import-type/copy: importTypes.hrfnao",
+    "features/import-type/copy: importTypes.plants",
+    "features/import-type/copy: continueButton",
+    "features/import-type/copy: errors.importTypeRequired",
+    "features/import-type/copy: notAvailable.title",
+    "features/import-type/copy: notAvailable.onlyCovers",
+    "features/import-type/copy: notAvailable.changeAnswer",
+    "features/import-type/copy: notAvailable.ifImporting"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js — render (accessible group name, 4 full labels, no hints/disabled, real back-link href), happy path to hub + flow-only persistence on revisit, empty-submit 'There is a problem'/'Select the type of import' with focus link, non-plants → not-available holding page + change-answer round trip, axe on initial render AND error state (wcag2a/2aa, serious/critical fail)"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/import-type renders the caption 'About the consignment' and H1 'What are you importing?' with the H1 INSIDE the fieldset legend (legend-as-heading, caption above it inside the legend) so the radio group HAS an accessible name — the IPAFFS empty-legend defect is fixed, not ported (c-014).",
+    "Exactly 4 stacked radios render with the trace-confirmed labels: 'Live animals', 'Products of animal origin, germinal products or animal by-products', 'High risk food and feed of non-animal origin', 'Plants, plant products and other objects'; none is disabled, none carries a hint, and no overdue-debtor disclosure exists anywhere on the page (c-024: gate NOT ported).",
+    "The back link has a real href to the dashboard (no href='#'/JS-driven destination).",
+    "Submitting with no selection returns 400 and re-renders with a GDS error summary titled 'There is a problem' (c-004) containing 'Select the type of import' (single Joi-voice canonical string, c-018) linking to the importType control; the inline error renders on the group.",
+    "Validation is server-side only: no HTML required attribute; a crafted POST with a value outside the four tokens is rejected with the same 400 path (requiredOneOf allowed-values).",
+    "Selecting 'Plants, plant products and other objects' and pressing 'Save and continue' commits importType='plants' to the flow-only session store (FD-8 — never to canonical fulfilment, never to the backend document) and redirects into the opening run (hub, given m2 RUN_STEPS); revisiting the page shows the choice pre-selected.",
+    "Selecting any of the other three options commits the answer then redirects to the 'You cannot use this service' holding page, whose 'Go back and change your answer' link returns to import-type with the choice preserved.",
+    "The dashboard 'Create a new notification' action still mints the journey (records.create, GBN-PP reference) BEFORE import-type renders — this increment changes nothing about minting; the exemplar sequence dashboard-create → import-type is preserved (the MAPPING brief's 'first save mints the reference' is realised by that create POST, per the live-animals precedent).",
+    "contract.plant-products.test.js gains the import-type valid-POST case committing exactly ['importType'].",
+    "Both axe states (initial render, error state) pass wcag2a/wcag2aa with zero serious/critical violations, no rule filters.",
+    "The ?source=dashboard query param from IPAFFS is NOT carried over (vestigial — nothing in the legacy handler read it)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "Rationale: completes the pp-007 m0 import-type skeleton to the full CHED-PP entry filter. This is FLOW-ONLY work (FD-8): importType rides the plantProductsFlowOnlyAnswers session store, not the manifest — zero obligations, zero schema fields, zero flow-data edits (start section + RUN_STEPS + entry-guard all landed with pp-007/pp-009, FD-13). §8 G-H flags there is no flow-only recipe, so the plan is a verbatim transposition of the live-animals exemplar, verified live this session: sets/live-animals/journeys/linear/features/import-type-filter/{controller.js,template.njk,not-available.njk,copy/copy.en.js} (controller pattern: requiredOneOf validation, recoverableSave, non-matching type → NOT_AVAILABLE_SLUG, opening-run branch via beginOpeningRun/inOpeningRun/nextRunTarget/hasCommittedNotificationAnswers, exemplar dashboard create POST at features/dashboard/controller.js routes → records.create → redirect to import-type). Rulings applied: c-014 (legend-as-heading + caption, fixing the IPAFFS unnamed radio group), c-004 (shared 'There is a problem' error summary), c-018 (single Joi-voice string 'Select the type of import'), c-024 (overdue-debtor gate NOT ported — no disabled radio, no hint, no debt disclosure, no throw-on-POST). Decisions taken headless: (1) radio VALUES use the house tokens live-animals/poao/hrfnao/plants, not IPAFFS codes CVEDA/CVEDP/CED/CHEDPP — set-owned vocabulary, mirrors the sibling and the contract-test precedent; (2) LABELS use the CHED-PP page-spec wording verbatim (differs from the live-animals set's 'or' variants — each set owns its copy); (3) button label 'Save and continue' per the page spec (live-animals uses 'Continue'; the spec is canonical for this set); (4) legend sizing govuk-fieldset__legend--l per the house exemplar rather than IPAFFS's xl; (5) non-plants selections get a transposed not-available holding page (the plant set serves only CHED-PP — exact inverse of the live-animals filter); (6) ?source=dashboard dropped as vestigial. Sequencing: dependsOn is pp-007+pp-009 verbatim from MAPPING; the contract.plant-products.test.js edit assumes pp-010 (m0) has landed, which the milestone order guarantees — if running out of order, create the case when pp-010 lands instead. Axe checks live inside the co-located e2e spec per house convention (cheatsheet §1.10/§8).",
+  "openQuestions": [
+    "Not-available holding-page copy for the other three CHED types ('You cannot use this service...') is transposed from the live-animals set with the goods description swapped — content-designer sign-off wanted on the exact wording, and product should confirm the holding page (rather than cross-linking to a future live-animals deployment of the sibling set) is the desired pass-1 behaviour.",
+    "Button label divergence between the sibling sets ('Save and continue' here per the CHED-PP spec vs live-animals 'Continue') is deliberate but unreviewed — flag if a single cross-set vocabulary is preferred."
+  ]
+}

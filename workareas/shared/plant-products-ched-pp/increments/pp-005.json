@@ -1,0 +1,78 @@
+{
+  "id": "pp-005",
+  "title": "P-1: inject obligation-source policy via the set manifest",
+  "kind": "platform",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": [],
+  "sourceIncrement": null,
+  "sizeGuess": "M",
+  "recipe": "SIBLING-SET-PLAN.md §5 P-1 (FD-7) — platform work, no recipe doc exists (G-A gap, item 2 of the would-be add-a-set recipe); this plan section is the script",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/model/obligations/manifest.js",
+      "action": "edit",
+      "what": "Add one export beside the existing accessors: `export const policy = () => configuredSet?.policy ?? {}`. Deliberately NOT via requireConfiguredSet(): an unconfigured manifest, or a configured set with no policy member, both yield {} (empty-safe defaults per §5 P-1) so L2 units that never configure a set stay green. No other change."
+    },
+    {
+      "path": "src/server/app/bridge/obligation-source.js",
+      "action": "edit",
+      "what": "Remove the four literal declarations (SYSTEM_POPULATED line 29, ENFORCED_AT_CONTINUE lines 31-34, MAX_ENTRIES_FROM lines 41-43, SYSTEM_ANSWER_KEYS line 70). Import { policy } from '../model/obligations/manifest.js'. Keep the export names SYSTEM_POPULATED and ENFORCED_AT_CONTINUE but as lazily-derived membership views resolved per call (nothing computed at module load — the manifest arrives only when configureObligationSet runs): `export const SYSTEM_POPULATED = { has: (name) => (policy().systemPopulated ?? []).includes(name) }` and identically ENFORCED_AT_CONTINUE over policy().enforcedAtContinue. Every existing consumer only ever calls .has(), so their import sites compile unchanged. Replace the MAX_ENTRIES_FROM export with `export const maxEntriesCountFieldFor = (collectionName) => (policy().maxEntriesFrom ?? {})[collectionName]` — its lone consumer indexes the object by key, so a plain lazy view cannot serve it without a Proxy; an accessor function is the honest shape (the ONLY consumer-visible signature change in this increment). Replace the internal SYSTEM_ANSWER_KEYS Set with a spread of `policy().systemAnswerKeys ?? []` inside topLevelKeys(). Rewrite the cap comment (currently 'only the declaration lives here') to state the declaration lives on the set manifest's policy.maxEntriesFrom — present-tense, no migration language. After the edit, grep for any obligation-name literal (poApprovedReferenceNumber, countryOfOrigin, commoditySelection, animalIdentifiers, numberOfAnimalsQuantity, referenceNumber) in this file must return nothing."
+    },
+    {
+      "path": "src/server/app/engine/evaluate/cardinality.js",
+      "action": "edit",
+      "what": "Swap `import { MAX_ENTRIES_FROM } from '../../bridge/obligation-source.js'` for `import { maxEntriesCountFieldFor }`; line 23 becomes `const countField = maxEntriesCountFieldFor(collectionName)`. Behaviour identical: an undeclared collection yields undefined and the existing null-cap path handles it. Update the file's doc comment (line ~7) so the declaration site reads: declared on the set manifest's policy.maxEntriesFrom, derived through bridge/obligation-source.js."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/obligations/index.js",
+      "action": "edit",
+      "what": "After the derived `groups` export (line ~235) add today's values verbatim: `export const policy = { systemPopulated: ['poApprovedReferenceNumber'], enforcedAtContinue: ['countryOfOrigin', 'commoditySelection'], maxEntriesFrom: { animalIdentifiers: 'numberOfAnimalsQuantity' }, systemAnswerKeys: ['referenceNumber'] }`. No wiring change anywhere else: routes.js:25/47 and test/setup-obligation-set.js:5/20 already pass this module as a namespace import to configureObligationSet, so the new export flows through automatically."
+    },
+    {
+      "path": "src/server/app/bridge/obligation-source.test.js",
+      "action": "create",
+      "what": "New unit test (input/output, no mocks) with three describes: (1) a synthetic manifest `{ obligations: [], groups: [], policy: { systemPopulated: ['fieldA'], enforcedAtContinue: ['fieldB'], maxEntriesFrom: { things: 'thingCount' }, systemAnswerKeys: ['customRef'] } }` passed to configureObligationSet changes the derived views — SYSTEM_POPULATED.has('fieldA') true / has('poApprovedReferenceNumber') false, ENFORCED_AT_CONTINUE.has('fieldB') true, maxEntriesCountFieldFor('things') === 'thingCount' and ('animalIdentifiers') undefined, unrecognisedAnswerKeys({ customRef: 'x' }) === [] while unrecognisedAnswerKeys({ referenceNumber: 'x' }) flags it; (2) a manifest with NO policy member: every view empty and no throw (empty-safe default); (3) the live-animals manifest derives today's four surfaces (has('poApprovedReferenceNumber'), has('countryOfOrigin'), has('commoditySelection'), maxEntriesCountFieldFor('animalIdentifiers') === 'numberOfAnimalsQuantity', referenceNumber recognised). afterEach restores `configureObligationSet(liveAnimalsObligationSet)` — the vitest setupFile (test/setup-obligation-set.js) configures the singleton once per worker and other tests in this file's worker rely on it."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/docs/add-a-collection.md",
+      "action": "edit",
+      "what": "The count-cap step (~line 298) shows `export const MAX_ENTRIES_FROM = { animalIdentifiers: 'numberOfAnimalsQuantity' }` living in bridge/obligation-source.js. Rewrite the snippet + surrounding sentence: the cap is declared on the set manifest — `policy.maxEntriesFrom = { animalIdentifiers: 'numberOfAnimalsQuantity' }` in sets/live-animals/obligations/index.js — and read through bridge/obligation-source.js `maxEntriesCountFieldFor`; enforcement (cardinality.js collectionCapAt, appendEntryAt rejecting at the cap) unchanged."
+    },
+    {
+      "path": "src/server/app/docs/cardinality.md",
+      "action": "edit",
+      "what": "Line ~24 links to bridge/obligation-source.js. If the surrounding prose states the cap DECLARATION lives in that file, reword to: declared on the set manifest's policy.maxEntriesFrom and derived through bridge/obligation-source.js (keep the link — the derivation still lives there). If the reference is link-only and already accurate, leave the file unchanged."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [],
+  "acceptanceCriteria": [
+    "Zero obligation-name literals remain in src/server/app/bridge/obligation-source.js: `grep -n \"poApprovedReferenceNumber\\|countryOfOrigin\\|commoditySelection\\|animalIdentifiers\\|numberOfAnimalsQuantity\\|referenceNumber\" src/server/app/bridge/obligation-source.js` returns no matches.",
+    "`grep -rn \"SYSTEM_POPULATED\\|ENFORCED_AT_CONTINUE\\|MAX_ENTRIES_FROM\\|SYSTEM_ANSWER_KEYS\" src/server/app` shows only: the derived-view definitions in obligation-source.js, the unchanged .has() consumers (flow/dispatch.js, flow/prerequisites.js, bridge/collection-complete.js, bridge/status/structure/index.js, analysis/flow-reachability/provers.js, analysis/flow-reachability/problems/obligation-problem.js, sets/live-animals/journeys/linear/flow/entry-guard.js, sets/live-animals/journeys/linear/flow/flow-reachability.test.js), comment mentions that remain accurate (bridge/scope.js:35 and the SYSTEM_POPULATED doc comments), the new obligation-source.test.js, and NO hit for MAX_ENTRIES_FROM outside docs — no straggler on the old object/Set shape.",
+    "sets/live-animals/obligations/index.js exports `policy` with exactly today's values: systemPopulated ['poApprovedReferenceNumber'], enforcedAtContinue ['countryOfOrigin','commoditySelection'], maxEntriesFrom { animalIdentifiers: 'numberOfAnimalsQuantity' }, systemAnswerKeys ['referenceNumber'].",
+    "bridge/obligation-source.test.js proves a manifest with a DIFFERENT policy changes the derived views, and that a manifest without a policy member yields empty surfaces without throwing.",
+    "engine/evaluate/cardinality.js is the only consumer whose import site changes; collectionCapAt behaviour is unchanged (undeclared collection → null cap; the existing cardinality tests stay green untouched).",
+    "Full live-animals suite green unchanged: npm run test:live-animals and npm test both exit 0 with no test-count drop versus the pre-edit baseline (recipe §8 tripwire).",
+    "Playwright regression green: test:features and test:e2e pass (self-hosted stub mode) — no user-visible behaviour change anywhere.",
+    "routes.js, test/setup-obligation-set.js, and all eight .has() consumer files are byte-identical to before the increment (the namespace import carries the new policy export with no wiring edit)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals   # BASELINE before any edit — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "grep -rn \"poApprovedReferenceNumber\\|countryOfOrigin\\|commoditySelection\\|animalIdentifiers\\|numberOfAnimalsQuantity\\|referenceNumber\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src/server/app/bridge/obligation-source.js   # expect: no matches (exit 1)",
+    "grep -rn \"MAX_ENTRIES_FROM\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src/server/app   # expect: docs mentions only, no runtime import of the old object shape",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "Export-shape decision (the one §5 P-1 left to this planner, decided with the grep-verified consumer list in hand): HYBRID of the plan's preferred option (a). SYSTEM_POPULATED and ENFORCED_AT_CONTINUE keep their export names as lazily-derived membership views ({ has(name) } objects reading the configured manifest's policy per call) because every consumer — flow/dispatch.js, flow/prerequisites.js, bridge/collection-complete.js, bridge/status/structure/index.js, analysis/flow-reachability/provers.js, analysis/flow-reachability/problems/obligation-problem.js, sets/live-animals/.../flow/entry-guard.js (the legal set→L2 import the plan flags), and flow-reachability.test.js — only ever calls .has(), so eight import sites compile untouched. MAX_ENTRIES_FROM cannot be a lazy view without a Proxy (its single consumer, engine/evaluate/cardinality.js:23, indexes it as a plain object), so that one export becomes the accessor maxEntriesCountFieldFor(collectionName) and only that one consumer changes — explicit-name accessor over Proxy magic, per house style. SYSTEM_ANSWER_KEYS was never exported (module-internal const, verified this session), so it has no external consumers and is replaced by an internal policy read. Consumer set re-verified live against the repo this session and matches §5 P-1's list, with two refinements: bridge/scope.js holds only a comment mention of ENFORCED_AT_CONTINUE (stays accurate under shape (a), no edit) and docs/cardinality.md references obligation-source.js by link (conditional prose fix listed). Empty-safe ruling: manifest.policy() returns {} for BOTH an unconfigured manifest and a configured set without a policy member — keeps L2 unit files that never call configureObligationSet green and makes the plant set's future empty policy trivially valid. Rationale for no new Playwright spec: pure behaviour-preserving refactor with zero user-visible change; the regression proof is the existing feature + e2e suites re-run in the ladder. Two-sided sibling check: the plant side is NOT runnable yet (sets/plant-products/ and test:plant-products do not exist until pp-007/pp-010, and pp-005 deliberately has no deps) — the plant-side proof of this seam is pp-007's boot under SERVED_SET=plant-products consuming the FD-7 policy shape { systemPopulated: [], enforcedAtContinue: [], maxEntriesFrom: {}, systemAnswerKeys: ['referenceNumber'] }; the sibling-safety side here is the full live-animals ladder plus the no-test-count-drop check. Exemplars: model/obligations/manifest.js accessor style for the new policy() export; bridge tests that compose a synthetic set (fulfilments.characterisation.test.js pattern) for the new unit test. Rulings applied: FD-7 (policy on the manifest via the existing configureObligationSet seam), §5 P-1 acceptance grep, memory rails: no migration comments, comments describe present behaviour only, test on input/output with afterEach singleton restore.",
+  "openQuestions": []
+}

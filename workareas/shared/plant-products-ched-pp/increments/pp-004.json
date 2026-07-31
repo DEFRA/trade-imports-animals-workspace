@@ -1,0 +1,78 @@
+{
+  "id": "pp-004",
+  "title": "Backend: stage-9 integration tests (3 ITs under mvn verify)",
+  "kind": "backend",
+  "milestone": "m0",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-002"],
+  "sourceIncrement": null,
+  "recipe": "backend-schema/SCHEMA-DESIGN.md §7 Stage 9 items 66-68 (backend increment — no frontend recipe applies; exemplars are the existing animals ITs, see notes)",
+  "repo": "backend",
+  "filesToTouch": [
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationIT.java",
+      "action": "create",
+      "what": "Full-stack lifecycle IT, `class PlantProductsNotificationIT extends IntegrationBase` (same package as the animals ITs — the recorded D-6 test exception). Constants: ENDPOINT = \"/plant-products/notifications\"; REF regex from PlantProductsReferenceNumberGenerator.REFERENCE_NUMBER_PATTERN (^GBN-PP-\\\\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$); a NONEXISTENT_REF like \"GBN-PP-00-000000\". @Autowired PlantProductsNotificationRepository + PlantProductsAccompanyingDocumentRepository; @BeforeEach deleteAll() on both (mirror NotificationIT.setUp). All HTTP via webClient(\"NoAuth\") from IntegrationBase. Private fixture builder producing a FULL PlantProductsNotificationDto exercising the depth-3 nesting: origin{countryCode,countryOfConsignmentCode,internalReference}, reasonForImport, commodity{name,inputMethod,commodityComplement:[CommodityLine{commodityCode,commodityDescription,numberOfPackages,packageType,quantity,quantityType,netWeight,controlledAtmosphereContainer,finishedOrPropagated,intendedForFinalUsers,testAndTrial,species:[PlantSpecies{eppoCode,genusAndSpecies,speciesId,varieties:[SpeciesVariety{variety,varietyClass}]}]}]}, additionalDetails{totalGrossWeight,grossVolume,grossVolumeUnit}, consignor/consignee/importer/destination/packer (PlantProductsOperator with PlantProductsAddress incl. addressLine3), responsiblePerson, nominatedContacts, transport{borderControlPost,inspectionPremises,meansOfTransport,transportIdentification,transportDocumentReference,arrivalDate,arrivalTime \"HH:mm\" String,usesContainers,containers:[TransportContainer]}, goodsMovementServices{commonTransitConvention,movementReferenceNumber,usingGvms}, isCuc, billing, declaration. Tests: (1) POST blank-ref → 201 + Location header, minted ref matches regex, status=DRAFT, chedType=\"CHEDPP\", ownership={assignedOrganisationId:\"stub-org\",assignedOrganisationName:\"Stubbed organisation\"}, created/updated non-null, every content field round-trips incl. varieties depth 3 (assert via GET reload, not just the POST body); (2) POST with body-supplied referenceNumber → 400; (3) PUT {ref} with matching body ref → 200 replaced content; (4) PUT with path/body ref mismatch → 400; (5) PUT to an unknown well-formed ref → 201 created (+Location, upsert per §3.1); (6) GET {ref} → 200 PlantProductsNotificationResponse embedding accompanyingDocuments (empty list when none); GET NONEXISTENT_REF → 404; malformed ref → 400 (@Pattern guard); (7) list GET ?page&sort&referenceNumber: 1-based page metadata, exact-match referenceNumber filter returns single row, DELETED rows hidden; (8) lifecycle happy chain in one test (mirror NotificationIT style): PUT status {SUBMITTED} → 200, then repository read proves submittedBaseline captured (it is @JsonIgnore — assert via PlantProductsNotificationRepository.findByReferenceNumber); PUT status {AMEND} → 200; content PUT edits a field while AMEND → 200; PUT status {SUBMITTED, discardChanges:true} → 200 and GET proves pre-amend content restored (cancel-amend, D-4); re-amend + edit + PUT status {SUBMITTED} (no flag) → 200 and GET proves amended content kept (baseline re-captured); (9) content PUT against SUBMITTED → 400 (not writable); (10) illegal transitions → 400 (at least DRAFT→AMEND and SUBMITTED→SUBMITTED); discardChanges:true on DRAFT→SUBMITTED → 400; (11) POST {ref}/copies on a SUBMITTED source → 201, new DRAFT with NEW minted ref, content fields retained, declaration null, accompanying documents NOT copied (D-19), source untouched; copies of a DRAFT source → 400; copies of NONEXISTENT_REF → 404; (12) PUT status {DELETED} from DRAFT/SUBMITTED → 200, repeat on already-DELETED → 200 (idempotent), deleted ref absent from list; (13) status change on NONEXISTENT_REF → 404; StatusChangeRequest with null status → 400 (bean validation)."
+    },
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsAccompanyingDocumentIT.java",
+      "action": "create",
+      "what": "Document sub-resource CRUD IT, extends IntegrationBase, same package. @Autowired PlantProductsNotificationRepository + PlantProductsAccompanyingDocumentRepository, @BeforeEach deleteAll() both. Helper: create a parent notification via POST /plant-products/notifications (blank ref) and capture the minted ref; base path …/{ref}/accompanying-documents. Tests: (1) GET list on fresh notification → 200 body { documents: [] } (never a bare array); (2) GET/POST against an unknown notification ref → 404; (3) POST PlantProductsAccompanyingDocumentDto {documentType,documentReference,issueDate,files:[DocumentFile{fileId,filename}]} → 201 + Location, response echoes fields, repository row carries notificationReferenceNumber derived FROM THE PATH (assert a divergent body-supplied notification ref, if the DTO had one, is ignored — the DTO has no such field, so assert the persisted FK equals the path ref); (4) GET list → the created doc; (5) PUT …/{document-id} with changed fields → 200 updated (repository confirms); (6) PUT/DELETE with a document id belonging to a DIFFERENT notification → 404 (findByIdAndNotificationReferenceNumber guard); (7) DELETE …/{document-id} → 204 and list is empty; DELETE unknown id → 404; (8) writability guard: transition the notification to SUBMITTED via PUT …/status, then POST/PUT/DELETE a document → 400; transition to AMEND → document writes succeed again (writable in DRAFT and AMEND only)."
+    },
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationExpiryIT.java",
+      "action": "create",
+      "what": "Expiry-sweep IT mirroring NotificationExpiryIT verbatim in shape: extends IntegrationBase; @Autowired PlantProductsNotificationService + PlantProductsNotificationRepository + PlantProductsAccompanyingDocumentRepository; @BeforeEach deleteAll() both; calls plantProductsNotificationService.deleteExpired(batchSize) DIRECTLY (deterministic — never waits on the scheduled PlantProductsNotificationExpirySweeper). Private savers building PlantProductsNotification.builder().referenceNumber(ref).status(DRAFT).expireAt(x).build() and PlantProductsAccompanyingDocument.builder().notificationReferenceNumber(ref)… refs like \"GBN-PP-26-EXP001\". Tests: (1) deleteExpired removes the due notification AND cascades to plant_products_accompanying_documents by notificationReferenceNumber, while a non-due notification and its document survive; (2) null expireAt is never swept (deleteExpired returns 0, row survives); (3) batch bound: 3 due rows, deleteExpired(2) → 2 then deleteExpired(2) → 1, collection empties; (4) isolation: an animals-collection Notification row (animals NotificationRepository) with a due expireAt is NOT touched by the plant sweep — proves the cascade is scoped to the plant collections (and, via the @Autowired mix of animals + plantproducts repositories in one Spring context, proves the D-8 dual-package repository scan end to end)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "referenceNumber (GBN-PP minted)",
+    "chedType (server-set CHEDPP)",
+    "status (DRAFT|SUBMITTED|AMEND|DELETED + transition table)",
+    "ownership.assignedOrganisationId / ownership.assignedOrganisationName (stub-org)",
+    "origin.countryCode / origin.countryOfConsignmentCode / origin.internalReference",
+    "reasonForImport",
+    "commodity.name / commodity.inputMethod",
+    "commodity.commodityComplement[] (CommodityLine all leaves)",
+    "commodity.commodityComplement[].species[] (eppoCode, genusAndSpecies, speciesId)",
+    "commodity.commodityComplement[].species[].varieties[] (variety, varietyClass — depth 3 round-trip)",
+    "additionalDetails.totalGrossWeight / grossVolume / grossVolumeUnit",
+    "consignor / consignee / importer / destination / packer (PlantProductsOperator + PlantProductsAddress)",
+    "responsiblePerson / nominatedContacts[]",
+    "transport.* incl. arrivalTime \"HH:mm\" and containers[]",
+    "goodsMovementServices.commonTransitConvention / movementReferenceNumber / usingGvms",
+    "isCuc / billing",
+    "declaration.agreed / declaration.declaredAt",
+    "created / updated / submittedBaseline (@JsonIgnore, repository-asserted) / expireAt",
+    "accompanying document: notificationReferenceNumber (path-derived FK), documentType, documentReference, issueDate, files[].fileId, files[].filename"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationIT.java — end-to-end create → save → submit → amend → cancel-amend → complete-amend → copy → soft-delete over /plant-products/notifications, plus list/404/400 guards",
+    "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsAccompanyingDocumentIT.java — document sub-resource CRUD, path-derived FK, cross-notification 404s, DRAFT/AMEND-only writability",
+    "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationExpiryIT.java — deleteExpired cascade to plant documents, null-expireAt safety, batch bound, animals-collection isolation"
+  ],
+  "acceptanceCriteria": [
+    "All three new ITs extend integration/IntegrationBase in the existing uk.gov.defra.trade.imports.animals.integration package (D-6 test exception) and run ONLY under mvn verify (Failsafe *IT naming) — mvn test must not pick them up",
+    "PlantProductsNotificationIT proves the full lifecycle over HTTP: POST 201 mints a GBN-PP-{YY}-{XXXXXX} ref, status DRAFT, chedType CHEDPP, stub ownership; PUT replaces (200), upserts an unknown ref (201), rejects ref mismatch and non-writable statuses (400); PUT …/status walks all five legal transition rows of SCHEMA-DESIGN §3.1 including cancel-amend restore via discardChanges:true, and 400s every illegal transition tried; POST …/copies yields a documentless new DRAFT with retained content and 400s a DRAFT source; soft delete is idempotent and hides the row from the list",
+    "The create/reload round-trip asserts every content field of the fixture DTO including depth-3 commodityComplement[].species[].varieties[] — proving the whole-document Mongo persistence of the nested model",
+    "submittedBaseline capture and restore are asserted via the repository (field is @JsonIgnore and must never appear in any HTTP response body)",
+    "PlantProductsAccompanyingDocumentIT proves list/create/replace/delete with 201+Location and 204 codes, list body shaped { documents: [...] }, FK always derived from the URL path, 404 for a document id under a different notification, and 400 document writes while the notification is SUBMITTED (writable again in AMEND)",
+    "PlantProductsNotificationExpiryIT proves deleteExpired cascades to plant_products_accompanying_documents, never sweeps null expireAt, respects the batch bound, and leaves animals-collection rows untouched",
+    "mvn -f … verify is green end to end: the 3 new plant ITs pass AND every pre-existing animals IT still passes (the D-8 dual-package wiring gate re-proved at the IT level)",
+    "No production code changes; no animals production or test file edited — the three new files are the entire diff"
+  ],
+  "verification": [
+    "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify -Dit.test='PlantProducts*IT'",
+    "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+  ],
+  "notes": "Rationale: these 3 ITs are the executable contract the frontend records adapter (pp-008) codes against — the op→HTTP table in SIBLING-SET-PLAN §6.2 maps engine port ops onto exactly the endpoints/status codes these tests pin (create→POST 201, replaceFulfilment→PUT, finalise/amend/cancelAmend/softDelete→PUT …/status, copy→POST …/copies). Production code already exists (pp-001 commit a7961ac, pp-002 commit 75763b9); verified live: PlantProductsNotificationService exposes create/replace/find/findAll/changeStatus/copy/deleteExpired(int)/isWritable, CHED_TYPE=\"CHEDPP\", STUB_ORGANISATION_ID=\"stub-org\", STUB_ORGANISATION_NAME=\"Stubbed organisation\". Exemplars (match their idiom, do not invent): integration/NotificationIT.java (webClient(\"NoAuth\") WebTestClient flow, @BeforeEach repository cleanup, REF_FORMAT_REGEX constant from the generator, full-DTO builder + reload-assert pattern), integration/NotificationExpiryIT.java (direct service.deleteExpired call for determinism — its Javadoc explains why, mirror it), integration/document/DocumentControllerIT.java (sub-resource pattern), IntegrationBase.java (shared static Testcontainers: mongo:7.0 replica set + MockServer + OAuth mock; no per-IT container config needed). Decisions applied: D-3/D-4 (noun status endpoint + discardChanges disambiguation — the tests assert the NEW noun surface, never the animals action paths), D-6 (ITs are the one sanctioned animals-package touchpoint), D-8 (test 4 of the expiry IT + full-verify animals-IT green is the wiring gate), D-13 (no obligation enforcement asserted — submit succeeds without declaration.agreed; do NOT test frontend rules), D-19 (copy resets documents/declaration, retains content). Fixture values: use plausible CHED-PP codes consistent with obligation-field-map.md (e.g. eppoCode-style strings, package-type codes) but any string round-trips — the backend is draft-nullable and unvalidated by design. Decision (headless): no shared PlantProductsNotificationTestData class — pp-003 (units) and pp-004 are independent siblings both depending only on pp-002, so a shared helper would create a same-file conflict; each IT builds its own private fixtures (NotificationExpiryIT precedent). Decision: focused Failsafe run first (-Dit.test='PlantProducts*IT') for the inner loop, then the full mvn verify as the two-sided check (plant ITs + animals ITs green). mvn verify needs Docker running (Testcontainers). Run output to a scratch file and read once (run-tests-to-file rule).",
+  "openQuestions": [
+    "SCHEMA-DESIGN §3.1 marks the POST 400 row '400 body carries a referenceNumber' — planned as: POST with a non-blank referenceNumber → 400 (matches 'referenceNumber must be blank'). If the implemented controller instead ignores the body ref, adjust test 2 to assert the actual implemented guard and flag the doc drift.",
+    "Whether GET with a malformed reference returns 400 (@Pattern) or 404 depends on the implemented handler mapping for ConstraintViolationException in PlantProductsExceptionHandler — assert whichever the implementation does and record it; both are defensible."
+  ]
+}

@@ -1,0 +1,211 @@
+{
+  "id": "pp-018",
+  "title": "country-of-origin — origin of the plants",
+  "kind": "page",
+  "milestone": "m2",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-010", "pp-013", "pp-017"],
+  "sourceIncrement": "inc-009",
+  "recipe": "sets/live-animals/docs/add-a-section.md (feature group + flow section + task row; the single page inside it follows sets/live-animals/docs/add-a-page.md)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/origin.js",
+      "action": "create",
+      "what": "First obligation section file of the set. Exports exactly one obligation: `export const countryOfOrigin = { id: '<fresh UUID>', name: 'countryOfOrigin', status: 'mandatory' }`. No within, no requires, no applyTo, no copy (obligation-purity enforces). pp-019 appends countryOfConsignment + internalReference to this same file later — leave room, do not pre-create them. Exemplar: sets/live-animals/obligations/sections/origin.js:12-15."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export countryOfOrigin from './sections/origin.js'; add it to the `obligations` array (was []). `groups` stays the derived formula untouched. DECISION APPLIED (SIBLING-SET-PLAN §3.3 delegated this to pp-018): add 'countryOfOrigin' to `policy.enforcedAtContinue` (now ['countryOfOrigin']), mirroring live-animals where countryOfOrigin is continue-enforced. Other policy members unchanged."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/page.js",
+      "action": "create",
+      "what": "Import-free page identities for the origin feature group (recipe §3: page.js holds ALL the group's identities). Exports `export const countryOfOriginPage = { id: 'country-of-origin', slug: 'country-of-origin' }`. pp-019 adds originOfImportPage here later."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/evaluation.js",
+      "action": "create",
+      "what": "Feature binding bundle: `feature('origin', [scalar({ field: 'countryOfOrigin', obligation: countryOfOrigin })])` importing the SAME obligation object from '../../../../obligations/sections/origin.js' (object identity is how the registry checks ownership). Exemplar: sets/live-animals/journeys/linear/features/origin/evaluation.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js",
+      "action": "create",
+      "what": "export const meta = { ...countryOfOriginPage, collects: ['countryOfOrigin'] }. GET: state.get() once, prefill select from answers.countryOfOrigin. POST: read raw payload; validate with lib/validate factories — requiredOneOf('countryOfOrigin', <selectable codes from sets/plant-products/services/reference/countries.js>, copy.errors.countryRequired) built INSIDE a fields() function (never a frozen module-level schema); invalid -> re-render raw values, status 400; valid -> state.commit(), redirect via kit.nextTarget(request, page, committed.scope); wrap the write in kit.recoverableSave() (marked failure -> re-render with recoverableError: true, status 500; other errors throw). View built with kit.base(copy.title, { backLink: hubPath(journey.journeyId), journey, ... }) — copy.title = the H1 text so the page <title> mirrors the H1 (deliberate fix of the legacy title/H1 mismatch bug recorded in the page spec). View name `${TEMPLATES}/features/origin/country-of-origin/country-of-origin`. `export const routes = kit.pageRoutes(page, { get, post })`. Exemplar: sets/live-animals/journeys/linear/features/origin/controller.js (whole file — same shape minus the region/internal-reference fields)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.njk",
+      "action": "create",
+      "what": "Extends 'shared/layout.njk' (unprefixed). Renders: govuk-caption-xl 'About the consignment' above H1 govuk-heading-xl 'Origin of the plants, plant product or other objects' (both from copy); shared error summary partial; one country select labelled 'Country of origin' (govuk-label--m), classes govuk-select govuk-!-width-one-half, first option value='' 'Select a country', then the countries fixture options with the single <optgroup label='United Kingdom of Great Britain and Northern Ireland'> wrapping GB-ENG/GB-SCT/GB-WLS/GB-NIR in the GB alphabetical slot (see notes — deliberate keep, hand-written select markup since the govukSelect macro cannot emit optgroups; all classes stay govuk-*); shared save actions with the single 'Save and continue' submit. Input name = id = error key = 'countryOfOrigin' so the error-summary link '#countryOfOrigin' focuses the select."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.en.js",
+      "action": "create",
+      "what": "Group-owned copy bundle, namespaced by page: countryOfOrigin: { title: 'Origin of the plants, plant product or other objects', caption: 'About the consignment', country: { label: 'Country of origin', placeholder: 'Select a country', ukGroupLabel: 'United Kingdom of Great Britain and Northern Ireland' }, errors: { countryRequired: 'Select the country of origin of plants, plant product or other objects' } }. The error string is the CHED-PP Joi-voice canonical (c-018) — NOT the CHED-A 'animal or product' variant, NOT the backend 'Country of origin' label style."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces). Welsh translations authored at build following house cy conventions."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per house pattern (exemplar sets/live-animals/journeys/linear/features/origin/copy/copy.test.js): pins bundle shape / key presence for both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill from answers; view model carries countryItems from the fixture (placeholder first, GB subdivisions present, IE labelled 'Republic of Ireland'); empty POST -> 400 + countryRequired error + no commit; tampered code not in the fixture list -> 400 (requiredOneOf membership); valid POST commits cleaned { countryOfOrigin: '<code>' } and redirects via kit.nextTarget; marked recoverable-save failure -> 500 with recoverableError; unexpected errors throw. Exemplar: sets/live-animals/journeys/linear/features/origin/controller.test.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the origin group's evaluationBindings and add to featureEvaluationBindings (was frozen []). Keep Object.freeze."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the country-of-origin controller namespace; add its meta to dispatchPages; spread its routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import countryOfOriginPage from '../features/origin/page.js'. Insert the origin flow section `{ id: 'origin', pages: [countryOfOriginPage] }` into `sections` immediately AFTER 'start' and BEFORE 'review' (§2.3 order: start, origin, ..., review). Derived allFlowPages/sectionOfPage/answerSections pick it up with no formula change. Exemplar: sets/live-animals/journeys/linear/flow/flow.js:38-39."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add `{ id: 'origin', pages: [countryOfOriginPage] }` as the first entry of `taskRows` (was []). Row id 'origin' is canonical per §2.1 spoke 1. rowStatus delegation unchanged. Exemplar: sets/live-animals/journeys/linear/flow/task-rows.js:28."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/run.js",
+      "action": "edit",
+      "what": "Extend RUN_STEPS: add `{ id: countryOfOriginPage.id, target: flowPageTarget(countryOfOriginPage) }` immediately after the import-type step, so the create flow goes import-type -> country-of-origin exactly as the legacy trace (page spec entryRoutes: confirmed create-flow entry). Mirrors sets/live-animals/journeys/linear/flow/run.js (originPage is step 2 there). §8 G-E note honoured: RUN_STEPS extends as m2 lands real pages."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the origin row: Not yet started with no answers; Completed once countryOfOrigin answered; row's first entry page is country-of-origin; mandatory row BLOCKS readyForCheckYourAnswers until complete and readiness true when complete (prove blocked AND complete states — recipe §3.6)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "GROUPS gains its first entry: numbered group 1 containing rows: ['origin'] (canonical row id, §2.1 spoke 1 'Origin of the import'). Follow the live-animals hub GROUPS object shape (sets/live-animals/journeys/linear/features/hub/controller.js:36). pp-029 owns the final 12-spoke shape; this lands the frame's first row per the standing rule that rows land WITH their section increments."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add group-1 caption 'Origin of the import' and row copy for 'origin' (title 'Origin of the import'; no hint) following the live-animals hub copy bundle shape. pp-029 reconciles final hub copy against notification-hub.json."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, same shape (copy-parity)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Update for the new group caption + row keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Hub now shows the numbered 'Origin of the import' group with the origin row: assert row present, status 'Not yet started' on a fresh notification, row link targets /notifications/{journeyId}/country-of-origin; re-run hub axe check for the changed hub state."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.countryOfOrigin -> dto.origin.countryCode (camelCase; the stored value is the fixture CODE — 'AT', 'GB-ENG' — never the label). A GB subdivision code is stored directly in origin.countryCode; there is NO separate regionOfOrigin field in the plant-products schema (obligation-field-map inc-009: origin.countryCode only)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Inverse: dto.origin.countryCode -> answers.countryOfOrigin for draft resume."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test: countryOfOrigin survives to-dto -> from-dto; server-set fields still never sent."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "First real case in the T-5 harness (pp-010 created it with zero cases): valid POST to country-of-origin with { countryOfOrigin: '<code from the fixture>' } commits exactly ['countryOfOrigin'] (meta.collects). Manual table — this addition is required work even while green."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/e2e/country-of-origin.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright feature spec + axe, group e2e/ folder per recipe §3. Scenarios listed under `specs`. Raw role/label/visible-copy locators, no page objects, each test starts its own notification via the UI (import-type first — the only entry route)."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "countryOfOrigin",
+      "within": null,
+      "requires": "status: 'mandatory' — no cardinality, no gate helper. Joins policy.enforcedAtContinue (decision made this increment, mirroring live-animals): later flow pages cannot continue past it unanswered.",
+      "applyTo": null,
+      "collectedBy": "country-of-origin"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "Insert { id: 'origin', pages: [countryOfOriginPage] } after 'start', before 'review' — sections becomes [start, origin, review] (§2.3 order; pp-019 appends originOfImportPage to this same section)"
+    ],
+    "taskRows": [
+      "Add { id: 'origin', pages: [countryOfOriginPage] } as the first task row (canonical id 'origin', §2.1 spoke 1); mandatory row participates in readyForCheckYourAnswers"
+    ],
+    "entryGuard": "unchanged — pp-009's fresh-deep-link -> import-type policy already covers this page",
+    "runSteps": "RUN_STEPS gains the country-of-origin step after import-type (opening run: import-type -> country-of-origin -> hub fallback)"
+  },
+  "schemaFields": ["origin.countryCode"],
+  "copyKeys": [
+    "features/origin/copy: countryOfOrigin.title",
+    "features/origin/copy: countryOfOrigin.caption",
+    "features/origin/copy: countryOfOrigin.country.label",
+    "features/origin/copy: countryOfOrigin.country.placeholder",
+    "features/origin/copy: countryOfOrigin.country.ukGroupLabel",
+    "features/origin/copy: countryOfOrigin.errors.countryRequired",
+    "features/hub/copy: groups.<group1>.caption ('Origin of the import')",
+    "features/hub/copy: rows.origin.title"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/origin/e2e/country-of-origin.e2e.spec.js — initial render: caption, H1, 'Country of origin' label + select with 'Select a country' placeholder, fixture options including the UK optgroup's four subdivisions and 'Republic of Ireland' for IE, exactly one 'Save and continue' button; page title equals the H1",
+    "same spec — opening run: saving import-type lands on country-of-origin (legacy-confirmed entry route)",
+    "same spec — happy path: select a country, save, redirected to hub, origin row 'Completed', reload page shows the persisted selection",
+    "same spec — validation: empty submit -> 'There is a problem' summary + inline 'Select the country of origin of plants, plant product or other objects'; summary link focuses the select (deliberately covers the error state NEITHER legacy source ever tested — page spec openQuestions)",
+    "same spec — axe: initial render AND error state, AxeBuilder withTags(['wcag2a','wcag2aa']), fail on serious/critical",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extended) — origin row visible under 'Origin of the import', Not yet started, links to country-of-origin"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/country-of-origin renders govuk-caption-xl 'About the consignment', H1 govuk-heading-xl 'Origin of the plants, plant product or other objects', one govuk-select (govuk-!-width-one-half) labelled 'Country of origin' (govuk-label--m) with first option 'Select a country', the pp-013 countries fixture options (253 selectable; GB-ENG/GB-SCT/GB-WLS/GB-NIR inside the single UK optgroup; IE labelled 'Republic of Ireland' per c-012), and exactly one submit button 'Save and continue' — no secondary actions (page spec refutation: legacy hardcodes one action here)",
+    "The page <title> mirrors the H1 (fixes the legacy title/H1 mismatch bug — legacy titled it 'Origin of the animal or product' even for CHED-PP)",
+    "Back link is a real server-rendered href to the hub — no href='#', no custom navigation wrapper",
+    "Valid save commits countryOfOrigin (the ISO/fixture CODE, never the label) and persists to origin.countryCode via the set-owned records service; re-entering the page (and draft resume) prefills the selection",
+    "In the opening run, saving import-type routes to country-of-origin; saving here continues to the hub (origin section has only this page until pp-019)",
+    "Empty submit returns 400 with the GDS 'There is a problem' error summary and inline error 'Select the country of origin of plants, plant product or other objects' (CHED-PP variant, c-018 single canonical string); the summary link '#countryOfOrigin' moves focus to the select; a POSTed code outside the fixture list is rejected the same way",
+    "Hub shows the 'Origin of the import' group with the origin row: 'Not yet started' fresh, 'Completed' after save, linking to country-of-origin; the mandatory row blocks readyForCheckYourAnswers until complete",
+    "countryOfOrigin is registered end-to-end: obligation in the manifest, scalar binding in the origin feature bundle, dispatch coverage green (boot assertions pass), valid-POST case added to contract.plant-products.test.js committing exactly ['countryOfOrigin']",
+    "policy.enforcedAtContinue is now ['countryOfOrigin'] and the set still boots with all boot assertions green",
+    "Both axe checks (initial + error state) pass with no serious/critical violations",
+    "copy.cy.js is structure-identical to copy.en.js (copy-parity green); the origin feature owns a complete copy/ folder (copy-convention green)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals   # sibling-safety: edits touch contract.plant-products.test.js at app root; prove live-animals untouched",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "First obligation-bearing page of the plant-products set (spoke 1 opens here: origin section + origin task row + first hub GROUPS entry). 1:1 carry of inc-009; pp-010 dependency honours §9 rule 2 (policy seam + cloned contract table must exist first). Recipe base: add-a-section/add-a-page transposed to sets/plant-products/; primary exemplar is the live-animals origin feature (sets/live-animals/journeys/linear/features/origin/{controller,evaluation,page}.js + copy/), whose controller collects countryOfOrigin the same way — this page is that controller minus the region/internal-reference fields. Flow exemplars: flow.js:38-39, task-rows.js:28, run.js (originPage step 2), hub controller.js:36. DECISIONS (headless, recorded): (1) countryOfOrigin JOINS policy.enforcedAtContinue, mirroring live-animals — SIBLING-SET-PLAN §3.3 delegated this to pp-018; (2) the UK optgroup is KEPT (hand-written select markup, all classes govuk-*): pp-013 models the optgroup structure explicitly, c-026 establishes optgroup treatment for the country vocabulary on the dashboard, both evidence traces show it, and it axe-passes — flagged as a content-design revisit in openQuestions since the govukSelect macro/Design System does not document optgroups; (3) a GB subdivision code is stored directly in origin.countryCode — the plant-products schema has NO regionOfOrigin field (obligation-field-map inc-009), so the legacy country+region two-field split is deliberately collapsed; (4) page <title> = H1, fixing the legacy mismatch bug (page spec openQuestions root-caused it); (5) the empty-submit error state gets first-class E2E coverage because BOTH legacy sources provably never tested it; (6) validation copy is the CHED-PP Joi string ONLY (c-018 one canonical string — the CHED-A variant, the backend 'Country of origin' label and the POD cross-field message are all rejected/out of scope); (7) NO check-answers work — features/check-answers/ is pp-038 (m4), which reads back every captured area including this one; (8) legacy 'Article 72' country classification and EU/ROW branching are NOT built — pp-046 owns the no-op rule hook; nothing on this page branches on the chosen country in pass 1; (9) hidden legacy fields type/orgId/crumb are not ported — chedType is a server-set constant, org scoping is the stubbed org (pp-047), CSRF is platform-level; (10) mapper edits included here because origin.countryCode is this increment's schema field and pp-008's m0 mapper had no obligations to map. Entry-guard unchanged (pp-009 policy covers deep links). c-024 does not apply here (it constrains pp-017).",
+  "openQuestions": [
+    "UK optgroup vs flattened subdivisions is ultimately a content-design call — the page spec says 'decide with content design; do not copy the optgroup by default', but pp-013/c-026 model the optgroup as real structure. KEPT for pass 1 (consistency with the dashboard filter + observed legacy DOM + axe-clean); revisit with content design.",
+    "Whether CHED-PP inherits any country-driven date/point-of-entry rules (CHED-P/CHED-A have them; no CHED-PP evidence either way — page spec flags it for a BA). Nothing built; the chosen country is a stored code only in pass 1.",
+    "Hub row/group copy ('Origin of the import' as both group caption and row title) is provisional until pp-029 reconciles the full 12-spoke hub against notification-hub.json."
+  ]
+}

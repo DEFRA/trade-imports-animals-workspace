@@ -1,0 +1,68 @@
+{
+  "id": "pp-014",
+  "title": "Commodity codes + EPPO species + variety/class fixture service",
+  "kind": "reference-data",
+  "milestone": "m1",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007"],
+  "sourceIncrement": "inc-005",
+  "recipe": "sets/live-animals/docs/services.md (set-owned reference service — exemplar transposition of sets/live-animals/services/commodities/{index.js,stub.js}; no add-a-* recipe applies, this is a pure data module)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/services/commodities/fixture.js",
+      "action": "create",
+      "what": "Pure-data fixture module (no IO, no imports, module-level frozen consts — the set-service analogue of live-animals stub.js). Exports: (1) COMMODITY_TREE — array of exactly the 11 CN chapter nodes observed in the trace root render (codes 06, 07, 08, 09, 10, 12, 14, 25, 38, 84, 87), each { code, description, children: [] }, nested chapter -> (intermediate heading nodes where the trace shows one) -> leaf nodes { code, description }; the ~10 leaf codes are the test/trace-driven set mined VERBATIM from workareas/shared/trace-requirements/ched-pp/pages/commodity-search.json (its chapter-corroboration evidence block names them: 06011010, 06042090 (+ third ch-06 code named there), 0713500010, 08059000, 0808108010, 09081100, ch-10 code as named there, 14019000, 84321000, 87019510) — do NOT invent codes or descriptions; chapters 12, 25 and 38 render as chapter rows with NO fixture leaves (recorded gap, see openQuestions). (2) SPECIES_BY_CODE — { [leafCode]: [{ eppoCode, genusAndSpecies, speciesId }] }, >=1 species per plant leaf code, values mined from workareas/shared/trace-requirements/ched-pp/pages/commodity-basic-description.json (observed EPPO codes: CIDAC='Citrus australasica' under 08059000; PHAAN, LENCU, CXQDA, GYPEL as evidenced there; machinery codes 84321000 and 87019510 carry the placeholder EPPO 'NNNXX' per the species-checkbox variant evidence); speciesId is a stable fixture string (round-trip only — transient per Open Q 1, eppoCode is THE join key). (3) VARIETIES_BY_EPPO — { [eppoCode]: [{ id, label }] }; CIDAC gets the trace-observed list (single option label 'None', id 'NONE' — variety-of-genus-and-species.json evidence; 'Other' is a page affordance, NOT a fixture variety); exactly ONE additional species gets a multi-entry real-world variety list (e.g. Malus domestica cultivars if the ch-08 apples code carries a MABSD-family species) so pp-025 can exercise a real select — flagged as fixture-invented in a code-free way (see openQuestions, no in-file migration comments). (4) CLASSES_BY_EPPO — { [eppoCode]: subset of ['CLASS_I','CLASS_II','EXTRA_CLASS'] }; CIDAC gets all three (trace-observed options 'Class I'/'Class II'/'Extra Class'); species without class data are simply absent (=> N/A, varietyClass null per §3.1). (5) CLASS_LABELS — { CLASS_I: 'Class I', CLASS_II: 'Class II', EXTRA_CLASS: 'Extra Class' }. All consts Object.freeze'd."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/commodities/index.js",
+      "action": "create",
+      "what": "The lookup barrel (§6.1: 'pure lookup barrel (index.js) over fixture.js'), mirroring the arrow-function-per-lookup style of sets/live-animals/services/commodities/index.js. Exports (all pure, synchronous, importing ONLY ./fixture.js): commodityTree() => COMMODITY_TREE; childrenOf(parentCode) => that node's children array, or the chapter list when parentCode is nullish (backs the pp-023 drill-down: root shows chapters, name=parent_<code> descends); commodityCodes() => flat array of leaf codes; isCommodityCode(code); descriptionFor(code) => leaf description (consumed by the records mapper for ref-data-derived commodityDescription, and by commodity-summary); speciesFor(code) => SPECIES_BY_CODE[code] ?? []; genusAndSpeciesFor(eppoCode) => label lookup across all species entries; isSpeciesOf(code, eppoCode); searchSpecies({ genus, eppoCode }) => case-insensitive combined filter (genus substring on genusAndSpecies AND eppoCode prefix/exact when given — the trace submits genus and eppo-code together as ONE combined filter) returning [{ commodityCode, eppoCode, genusAndSpecies, speciesId }]; varietiesFor(eppoCode) => VARIETIES_BY_EPPO[eppoCode] ?? []; varietyLabelFor(eppoCode, varietyId); classesFor(eppoCode) => CLASSES_BY_EPPO[eppoCode] ?? []; classLabelFor(classCode) => CLASS_LABELS[classCode]; hasVarietyAndClass(eppoCode) => varietiesFor(eppoCode).length > 0 && classesFor(eppoCode).length > 0 (the pp-025 render gate: the legacy template renders a species' variety/class table ONLY when both option lists are non-empty). Unknown inputs return []/undefined — never throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/commodities/commodities.test.js",
+      "action": "create",
+      "what": "Vitest unit suite pinning the fixture contract (test on input/output, no mocking — pure module): (1) commodityTree() has exactly 11 chapter nodes with codes ['06','07','08','09','10','12','14','25','38','84','87']; (2) commodityCodes() returns the mined leaf set, every leaf isCommodityCode(code)===true, and descriptionFor round-trips a known code; (3) childrenOf() with no argument returns the 11 chapters, childrenOf('06') returns chapter 06's children; (4) speciesFor('08059000') contains { eppoCode: 'CIDAC', genusAndSpecies: 'Citrus australasica' }; speciesFor for a machinery code (84321000) yields the NNNXX placeholder entry; (5) searchSpecies({ genus: 'citrus' }) finds CIDAC with its owning commodityCode, searchSpecies({ eppoCode: 'CIDAC' }) ditto, and the combined filter narrows; (6) varietiesFor('CIDAC') includes the 'None' option and classesFor('CIDAC') equals ['CLASS_I','CLASS_II','EXTRA_CLASS']; classLabelFor('EXTRA_CLASS') === 'Extra Class'; (7) the one multi-variety species: varietiesFor returns >1 entries each with stable id !== label, and varietyLabelFor resolves an id; (8) hasVarietyAndClass true for CIDAC, false for a species with no variety data AND false for an unknown eppoCode; (9) negative paths: speciesFor/varietiesFor/classesFor on unknown keys return [], descriptionFor/genusAndSpeciesFor return undefined, nothing throws. NO per-entry enumeration tests (one representative + one negative per lookup — do not scale tests with fixture size)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "commodity.commodityComplement[].commodityCode (fixture backs the code pick + validity; written by pp-023)",
+    "commodity.commodityComplement[].commodityDescription (ref-data-derived via descriptionFor; written by the pp-008 mapper)",
+    "commodity.commodityComplement[].species[].eppoCode (JOIN KEY per Open Q 1; written by pp-023/pp-024)",
+    "commodity.commodityComplement[].species[].genusAndSpecies (ref-data-derived; written by pp-024)",
+    "commodity.commodityComplement[].species[].speciesId (round-trip only, transient; written by pp-024)",
+    "commodity.commodityComplement[].species[].varieties[].variety (variety ID not label per Open Q 2; written by pp-025)",
+    "commodity.commodityComplement[].species[].varieties[].varietyClass (enum CLASS_I|CLASS_II|EXTRA_CLASS, null when N/A; allowlisted against classesFor; written by pp-025)"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/sets/plant-products/services/commodities/commodities.test.js — unit suite pinning tree shape, leaf/species/variety/class lookups and negative paths (this increment has NO UI surface, so no Playwright/axe spec; the consuming pages pp-023/pp-024/pp-025 carry the browser specs)"
+  ],
+  "acceptanceCriteria": [
+    "sets/plant-products/services/commodities/ exists as index.js (lookup barrel) + fixture.js (pure data) + commodities.test.js, importing nothing outside its own directory — no L2 services, no other set, no IO, no priming (§4.1 step 12 stays true: the plant gateway primes nothing).",
+    "The tree exposes exactly the 11 trace-observed CN chapters (06, 07, 08, 09, 10, 12, 14, 25, 38, 84, 87) and ~10 leaf commodity codes mined verbatim from the commodity-search page spec (including 06011010, 06042090, 0713500010, 08059000, 0808108010, 09081100, 14019000, 84321000, 87019510); no invented codes; chapters 12/25/38 carry no leaves.",
+    "Every plant leaf code has >=1 species entry { eppoCode, genusAndSpecies, speciesId }; 08059000 carries CIDAC 'Citrus australasica'; machinery codes 84321000/87019510 carry the placeholder EPPO 'NNNXX' (species-checkbox variant evidence); eppoCode is the join key and speciesId is a transient round-trip value (Open Q 1).",
+    "Variety entries store a stable ID distinct from the display label (Open Q 2); CIDAC's variety list matches the trace ('None'); exactly one species carries a multi-entry variety list so pp-025 can exercise a real selection.",
+    "classesFor returns enum codes (subset of CLASS_I|CLASS_II|EXTRA_CLASS) with CIDAC = all three; classLabelFor maps to 'Class I'/'Class II'/'Extra Class'; species without class data return [] and hasVarietyAndClass is false for them and for unknown EPPO codes (the pp-025 render gate contract).",
+    "searchSpecies applies genus + eppo-code as ONE combined case-insensitive filter (trace: both submitted together) and returns matches carrying their owning commodityCode.",
+    "All lookups are total: unknown code/eppoCode/classCode returns []/undefined, never throws (the varietyClass allowListed gate resolves lazily at gate execution and must not blow up on absent data — §3.3).",
+    "commodities.test.js green; full unit suite and lint green; live-animals suites untouched (no file outside sets/plant-products/services/commodities/ changes); npm run lint:arch stays green (set service imports only within its own directory)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # baseline BEFORE editing (red baseline = stop and report); if pp-010 has not landed yet the script may be absent — fall back to the npm test step below as baseline",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "1:1 carry of inc-005, re-homed as the set-owned commodities service (SIBLING-SET-PLAN §6.1) mirroring sets/live-animals/services/commodities/ (exemplar: index.js lookup-function barrel over a pure data module; live-animals calls its data file stub.js, the plan names ours fixture.js — fixture-backed by ruling, the ONE lookup that eventually goes real). Rulings applied: eppoCode is THE join key and add-species-<id>/speciesId is transient (Open Q 1, chedpp-requirements residualBlockersResolved); persist variety ID not label (Open Q 2); class enum CLASS_I|CLASS_II|EXTRA_CLASS with null-when-N/A (§3.1 varieties row); gates resolve reference data lazily at execution (§3.3 — hence total, never-throwing lookups); no priming (§4.1 step 12). Data sources (mine, don't invent — real canned data rule): workareas/shared/trace-requirements/ched-pp/pages/commodity-search.json (11-chapter tree, drill-down mechanics, test-driven leaf codes), commodity-basic-description.json (EPPO species per code incl. CIDAC/PHAAN/LENCU/CXQDA/GYPEL, NNNXX machinery placeholder, species-checkbox variant), variety-of-genus-and-species.json (CIDAC 'None' variety, three class options, both-lists-non-empty render gate, varietyId-is-reference-data evidence). Consumers this unblocks: pp-021 (varietyClass allowListed gate via classesFor), pp-023 (tree browse via commodityTree/childrenOf + searchSpecies), pp-024 (speciesFor), pp-025 (varietiesFor/classesFor/hasVarietyAndClass), pp-008/pp-026 (descriptionFor for mapper + summary). No obligations, no flow, no copy, no UI in this increment — downstream increments own those. Not platform-touching, so the two-sided sibling check is not mandated; npm test still exercises the shared app-root suites. Headless decision: gave exactly one species a multi-entry variety list beyond the trace's single 'None' observation — pp-025 cannot demonstrate variety selection against a one-option list; used real-world cultivar names for the apples species rather than lookalike strings.",
+  "openQuestions": [
+    "Chapters 12 (oil seeds), 25 (salt/earths/stone) and 38 are driven by zero tests and zero traces (commodity-search.json records this) — fixture ships them as leaf-less chapter rows; a human should confirm whether they are live CHED-PP chapters or stale legacy rows.",
+    "Variety vocabulary is thin in the evidence (CIDAC observed with the single option 'None'); the one fixture-invented multi-variety species list exists solely so pp-025 can exercise selection and must be replaced when real variety reference data arrives (varietyId provenance question recorded in variety-of-genus-and-species.json).",
+    "The legacy tree is certificate-type-filtered (CHED-P/D codes live outside these 11 chapters); the fixture bakes in only the CHED-PP chapters so no filtering rule is needed in pass 1 — if the commodities service ever goes shared, the per-certificate chapter filter becomes real work."
+  ]
+}

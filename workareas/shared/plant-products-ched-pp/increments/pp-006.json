@@ -1,0 +1,70 @@
+{
+  "id": "pp-006",
+  "title": "P-3: L1 gateway split — routes-live-animals.js + routes.js selector + router edit",
+  "kind": "platform",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": [],
+  "sourceIncrement": null,
+  "recipe": "SIBLING-SET-PLAN.md#4-l1-wiring--routes-seams-and-the-set-switch (no recipe exists — §8 G-A gap, steps 4–5 of the would-be add-a-set recipe; this increment is plan-verbatim from §4.1 items 1, 3, 4 + FD-1/FD-2)",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/routes-live-animals.js",
+      "action": "create",
+      "what": "The ENTIRE current src/server/app/routes.js body (lines 1-77, verified live this session) moved verbatim — all 41 import lines and the `export const liveAnimals = { plugin: { name: 'live-animals', register: async (server) => { ...13 wiring calls... } } }` block, byte-identical. Still exports `liveAnimals`. No behavioural change and no import-path edits needed: the file sits in the same directory (src/server/app/) as routes.js, so every relative './...' specifier resolves identically. Do not add migration comments (git history is the record)."
+    },
+    {
+      "path": "src/server/app/routes.js",
+      "action": "edit",
+      "what": "Full rewrite as the SERVED_SET selector — the ONLY reader of the env var in the repo (FD-1/FD-2). Exact content (plan §4.1.3, minus the plant-products entry which lands with pp-007):\n\nimport { liveAnimals } from './routes-live-animals.js'\n\nconst SETS = { 'live-animals': liveAnimals }\n\nexport const servedSetName = () => process.env.SERVED_SET ?? 'live-animals'\nexport const servedSet = () => {\n  const set = SETS[servedSetName()]\n  if (!set) throw new Error(`Unknown SERVED_SET \"${servedSetName()}\"`)\n  return set\n}\n\nEnv read is lazy (at call time, inside the exported functions) — never at module load. Unknown value = loud boot failure, never a silent default. No `export const liveAnimals` re-export from this file (its only importer was router.js, updated below; routes.test.js imports the set's allRoutes directly — verified)."
+    },
+    {
+      "path": "src/server/router.js",
+      "action": "edit",
+      "what": "Two lines (verified live: lines 7 and 20). Line 7: `import { liveAnimals } from './app/routes.js'` becomes `import { servedSet } from './app/routes.js'`. Line 20: `const routes = [liveAnimals]` becomes `const routes = [servedSet()]`. servedSet() is called inside register(), so SERVED_SET is read at boot, and an unknown value throws during server.register — the required loud boot failure. The `authEnabled`/signout push and everything else in router.js is untouched."
+    },
+    {
+      "path": ".dependency-cruiser.cjs",
+      "action": "edit",
+      "what": "routes-is-the-gateway rule (line 31): pathNot array `[`^${APP}/sets/`, `^${APP}/routes\\\\.js$`, '\\\\.test\\\\.js$']` gains `` `^${APP}/routes-live-animals\\\\.js$` `` — required NOW because the moved file imports sets/live-animals/** and npm run lint (which runs lint:arch) is in this increment's ladder. Do NOT add routes-plant-products.js or touch the sets-not-l1 rule here (pp-010's P-4 owns those, alongside the file pp-007 creates). Do NOT regenerate .dependency-cruiser-known-violations.json (baseline discipline, P-4)."
+    },
+    {
+      "path": "src/server/app/routes.test.js",
+      "action": "edit",
+      "what": "Keep the existing 'promoted live-animals route authentication' describe untouched (it imports allRoutes from the set directly, unaffected by the split). Add a new describe('served-set selector') with: import { servedSet, servedSetName } from './routes.js' and import { liveAnimals } from './routes-live-animals.js'. Cases (use vi.stubEnv + vi.unstubAllEnvs in afterEach): (1) SERVED_SET unset → servedSetName() === 'live-animals' and servedSet() is the liveAnimals plugin object (identity, toBe); (2) SERVED_SET='live-animals' → servedSet() toBe liveAnimals; (3) SERVED_SET='garbage' → servedSet() throws an Error whose message names the bad value (/Unknown SERVED_SET \"garbage\"/). Behaviour-on-input/output only — no toHaveBeenCalled."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [],
+  "acceptanceCriteria": [
+    "src/server/app/routes-live-animals.js exports `liveAnimals` and its content is the previous routes.js body verbatim — the git diff reads as a pure move (create + rewrite), with zero changes inside the plugin register body.",
+    "src/server/app/routes.js is the ONLY file in src/ that reads process.env.SERVED_SET (grep-verified).",
+    "SERVED_SET unset: the app serves live-animals exactly as today — full existing ladder green with no env changes anywhere (CI untouched); servedSetName() defaults to 'live-animals'.",
+    "SERVED_SET=live-animals: identical behaviour to unset (unit-tested by identity on the plugin object).",
+    "SERVED_SET=garbage: boot fails loudly — servedSet() throws Error naming the unknown value; unit test pins the message (no silent fallback to live-animals).",
+    "src/server/router.js registers [servedSet()] with the signout/auth logic unchanged.",
+    "routes.test.js: existing route-authentication test still green unchanged; new served-set selector tests green.",
+    "npm run lint (including lint:arch) green with routes-live-animals.js in place; .dependency-cruiser-known-violations.json NOT regenerated; the routes-is-the-gateway pathNot addition is the only dep-cruiser change.",
+    "No files change beyond the five listed (in particular: shared/paths.js untouched per FD-4; no sets/** file touched)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals   # BASELINE — run BEFORE editing; red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "grep -rn \"SERVED_SET\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src   # expect hits ONLY in src/server/app/routes.js (+ routes.test.js stubs)",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "Pure behaviour-preserving refactor of live-animals L1 wiring, verifiable on its own against the existing suite before any plant code exists (rationale from MAPPING.json). Consumes SIBLING-SET-PLAN §4.1 items 1, 3, 4; FD-1 (SERVED_SET, set-neutral name, default live-animals); FD-2 (routes.js becomes selector; static imports of gateways safe because configure* runs only inside the selected plugin's register — verified: all 13 wiring calls sit inside register at routes.js:47-73). FD-4: shared/paths.js untouched. Planner decisions (headless): (1) the SETS map ships live-animals-only — the brief offered selector-with-live-animals-only vs placeholder; importing a not-yet-existing routes-plant-products.js is impossible and a stub placeholder would be dead code, so pp-007 adds the plant import + map entry + its selector test case. (2) The dep-cruiser routes-is-the-gateway pathNot edit CANNOT wait for pp-010: routes-live-animals.js imports sets/** and this increment's own ladder runs lint:arch — pp-010's P-4 scope narrows to the routes-plant-products.js entry + the sets-not-l1 forbidden-target additions. (3) Selector tests live in the existing routes.test.js (the file that names routes.js) rather than a new file; the existing describe is untouched because it imports the set's allRoutes directly, not routes.js — verified live this session, so the liveAnimals export move breaks no test. (4) SERVED_SET=garbage acceptance is proven by unit test, not a manual boot (no-manual-verification rule). No new Playwright specs: zero UI/behaviour change; the existing features + journeys suites are the regression net and both run in the ladder (journey specs on a fresh stack can be flaky in beforeEach with transient 500s — recover-on-retry green is a pass). Two-sided sibling check degenerates to one side here: the plant set does not exist yet (dependsOn []), so sibling safety = the full existing live-animals ladder + default-boot-unchanged, which IS this ladder; pp-007/pp-010 pick up the plant side. Exemplar files pinned this session: src/server/app/routes.js:1-77, src/server/router.js:7,20, .dependency-cruiser.cjs:25-34, src/server/app/routes.test.js:1-13.",
+  "openQuestions": [
+    "~10 markdown docs (src/server/app/docs/{architecture,README,persistence,decisions}.md + sets/live-animals/docs/*.md) describe routes.js as the sole gateway/composition point; after the split that role is shared between the selector and routes-live-animals.js. Doc sweep deliberately NOT in this increment — decide whether it rides pp-007 (which completes the two-gateway picture) or the §8 G-A add-a-set recipe-extraction chore."
+  ]
+}

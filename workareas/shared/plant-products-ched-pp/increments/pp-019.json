@@ -1,0 +1,183 @@
+{
+  "id": "pp-019",
+  "title": "origin-of-import — countries + local reference",
+  "kind": "page",
+  "milestone": "m2",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-010", "pp-013", "pp-017", "pp-018"],
+  "sourceIncrement": "inc-010",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/origin.js",
+      "action": "edit",
+      "what": "Add two obligations to the file pp-018 created: `countryOfConsignment` (fresh UUID id, name 'countryOfConsignment', status 'mandatory') and `internalReference` (fresh UUID id, name 'internalReference', status 'optional'). Pure data — no copy, no options, no max-length (validation is controller-side per c-018). No within, no applyTo, no requires. Export both alongside the existing countryOfOrigin."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export countryOfConsignment and internalReference from sections/origin.js and append both to the `obligations` array. `groups` stays derived (formula untouched); `policy` untouched (this increment adds nothing to enforcedAtContinue — see notes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/page.js",
+      "action": "edit",
+      "what": "Add `export const originOfImportPage = { id: 'origin-of-import', slug: 'origin-of-import' }` beside pp-018's countryOfOriginPage. File stays import-free (recipe §2.1 — page.js imports NOTHING)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.js",
+      "action": "create",
+      "what": "export const meta = { ...originOfImportPage, collects: ['countryOfConsignment', 'internalReference'] }; export const routes = kit.pageRoutes(page, { get, post }). GET: state.get() once, prefill both fields from answers. POST: read raw request.payload; validate with factories from src/server/app/lib/validate/index.js — countryOfConsignment required AND must be a code present in the pp-013 countries fixture (membership rule built inside POST from the fixture module, never frozen in a module-level schema), internalReference optional with max length 30 ('Internal reference number must be 30 characters or fewer'). Invalid POST re-renders RAW values, status 400, one render() helper shared by GET and error paths, view built with kit.base() passing `journey` so the reference strip renders; back link hubPath(journey.journeyId). Valid POST commits cleaned values via state.commit() inside kit.recoverableSave() (marked persistence failure re-renders recoverableError: true status 500; other errors throw), then redirect via await kit.nextTarget(request, page, committed.scope). Does NOT render or collect countryOfOrigin (owned by country-of-origin — buildDispatch forbids a second owner) and does NOT build the CHED-P conformance/change-after-BCP radios, region-code, or customs-reference-number (uncovered/other-CHED surface — brief + page-spec rulings)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.controller.test.js",
+      "action": "create",
+      "what": "Vitest unit suite: GET prefill of both fields from answers; empty countryOfConsignment → 400 with the required error and raw values preserved; non-fixture country code → 400; internalReference of 31 chars → 400 with the max-length message; blank internalReference accepted; valid POST commits exactly cleaned {countryOfConsignment, internalReference} and redirects via kit.nextTarget; marked recoverable-save failure → 500 with recoverableError; unexpected errors throw. Mirror the shape of pp-018's country-of-origin controller test."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/origin-of-import/origin-of-import.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed — other Nunjucks root). View name resolves under the plant TEMPLATES prefix from journeys/linear/config.js. Caption 'About the consignment' (govuk-caption-xl pattern via the set's page furniture), H1 'Origin of the import'. Shared error summary partial. Field 1: govuk-select name=id='countryOfConsignment', label 'Country from where consigned' (govuk-label--m), options from the countries fixture passed in the view model — codes as values (ISO-2 plus GB-ENG/GB-SCT/GB-WLS/GB-NIR), 'United Kingdom of Great Britain and Northern Ireland' optgroup retained, leading empty-value 'Select a country' placeholder, 'Republic of Ireland' label for IE (c-012). Field 2: govuk-input name=id='internalReference', label 'Add a reference number for this consignment (optional)' (govuk-label--m), hint 'This can be whatever internal reference you use for the consignment.', maxlength attribute NOT relied on for enforcement (server rule is canonical) but may mirror 30. Save actions via the shared save-buttons partial. Input name = id = error key so #countryOfConsignment / #internalReference error-summary links focus the controls. govuk-* toolbox only, no custom CSS; back link is a real server-rendered href (do NOT copy the legacy href='#' JS back link)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the originOfImport namespace: pageTitle 'Origin of the import', caption 'About the consignment', heading 'Origin of the import', countryOfConsignment.label 'Country from where consigned', countryOfConsignment.placeholder 'Select a country', internalReference.label 'Add a reference number for this consignment (optional)', internalReference.hint 'This can be whatever internal reference you use for the consignment.', errors.countryOfConsignmentRequired 'Select the country from where consigned', errors.internalReferenceMaxLength 'Internal reference number must be 30 characters or fewer'."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle with the SAME leaf paths and value kinds as copy.en.js (copy-parity enforces shape equality). Welsh strings translated to the same altitude as pp-018's existing cy entries."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group copy test to pin the new originOfImport keys in both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/evaluation.js",
+      "action": "edit",
+      "what": "Add scalar({ field: 'countryOfConsignment', obligation: countryOfConsignment }) and scalar({ field: 'internalReference', obligation: internalReference }) to the origin feature's binding bundle (bundle already registered in journeys/linear/features/evaluation.js by pp-018 — no change there)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the origin-of-import controller namespace: add its meta to dispatchPages and spread its routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import originOfImportPage and append it to the existing origin section's pages array AFTER countryOfOriginPage: { id: 'origin', pages: [countryOfOriginPage, originOfImportPage] }. Array position controls nextInSection() and strictly-earlier continue prerequisites — origin-of-import follows country-of-origin (§2.3 order)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add originOfImportPage to the existing `origin` task row's pages array (same row — the two pages are one user task; NO new row, NO hub GROUPS change). Row status derives from the union of both pages' collects via the existing rowStatus delegation."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Extend the origin-row pins: row In progress when countryOfOrigin answered but countryOfConsignment not; Completed only when countryOfOrigin AND countryOfConsignment fulfilled (internalReference optional — must NOT block completion); first entry page still country-of-origin."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the origin-of-import valid-POST contract case (T-5 standing rule): payload { countryOfConsignment: '<fixture code, e.g. IE>', internalReference: 'REF-123' }, scope seeded with a journey whose countryOfOrigin is answered; assert the case commits exactly ['countryOfConsignment', 'internalReference'] (the manual table does not detect unlisted controllers — adding the case is required work)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.countryOfConsignment → dto.origin.countryOfConsignmentCode and answers.internalReference → dto.origin.internalReference (camelCase DTO per SCHEMA-DESIGN; server-set fields never sent). Sits beside pp-018's origin.countryCode mapping."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Inverse mapping for draft resume: dto.origin.countryOfConsignmentCode → answers.countryOfConsignment, dto.origin.internalReference → answers.internalReference."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test for both new fields (to-dto → from-dto identity); absent-internalReference case round-trips as absent (optional field never fabricated)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/e2e/origin-of-import.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (multi-page group → group e2e/ folder; raw role/label locators, no page objects, no sleeps): initial render (caption, H1, country select with placeholder + UK optgroup containing England/Scotland/Wales/Northern Ireland, reference input with hint); happy-path save → next-target redirect → reload shows both persisted values; empty-country submit → 'There is a problem' summary + 'Select the country from where consigned', raw reference value preserved, summary link focuses #countryOfConsignment; 31-char reference → 'Internal reference number must be 30 characters or fewer'; blank reference accepted on valid country; origin hub row not Completed until this page is saved, Completed after. Axe (AxeBuilder withTags ['wcag2a','wcag2aa'], fail on serious/critical) on BOTH states: initial render and validation-error state."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "country-of-consignment",
+      "name": "countryOfConsignment",
+      "within": null,
+      "requires": "status: 'mandatory' — no gate helper; plain mandatory leaf",
+      "applyTo": null,
+      "collectedBy": "origin-of-import"
+    },
+    {
+      "id": "internal-reference",
+      "name": "internalReference",
+      "within": null,
+      "requires": "status: 'optional' — no gate helper; the 30-char cap is controller validation (c-018 single-layer Joi-voice), never model data",
+      "applyTo": null,
+      "collectedBy": "origin-of-import"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "flow.js: append originOfImportPage to the existing `origin` section's pages array, after countryOfOriginPage (section order per SIBLING-SET-PLAN §2.3; position drives nextInSection() and strictly-earlier continue prerequisites)"
+    ],
+    "taskRows": [
+      "task-rows.js: add originOfImportPage to the existing `origin` row's pages (one user task, one hub row — spoke 1 unchanged); row status becomes the union of both pages' collects; NO new row, NO hub GROUPS or hub copy change"
+    ],
+    "entryGuard": "none — deep-link policy unchanged (pp-009 owns it); page is reachable via normal in-section navigation from country-of-origin"
+  },
+  "schemaFields": [
+    "origin.countryOfConsignmentCode",
+    "origin.internalReference"
+  ],
+  "copyKeys": [
+    "originOfImport.pageTitle",
+    "originOfImport.caption",
+    "originOfImport.heading",
+    "originOfImport.countryOfConsignment.label",
+    "originOfImport.countryOfConsignment.placeholder",
+    "originOfImport.internalReference.label",
+    "originOfImport.internalReference.hint",
+    "originOfImport.errors.countryOfConsignmentRequired",
+    "originOfImport.errors.internalReferenceMaxLength"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/origin/e2e/origin-of-import.e2e.spec.js — render + persistence + per-rule validation + error-summary focus + hub-row status + axe on initial AND error states (axe lives inside this spec per house convention)"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/origin-of-import renders caption 'About the consignment', H1 'Origin of the import', a govuk-select 'Country from where consigned' populated from the pp-013 countries fixture (ISO-2 codes plus GB-ENG/GB-SCT/GB-WLS/GB-NIR inside a 'United Kingdom of Great Britain and Northern Ireland' optgroup, 'Republic of Ireland' label for IE), and a govuk-input 'Add a reference number for this consignment (optional)' with hint 'This can be whatever internal reference you use for the consignment.'",
+    "The page does NOT render a Country of origin control — countryOfOrigin is owned solely by country-of-origin (pp-018); buildDispatch would reject a second owner",
+    "The CHED-P conformance/change-after-BCP radios, region-code widget, and customs-reference-number are NOT built (other-CHED / uncovered surface per the page spec and planning brief)",
+    "Submitting with no country selected returns 400 with a GDS 'There is a problem' error summary containing 'Select the country from where consigned'; the summary link focuses #countryOfConsignment; any entered reference value is re-rendered raw",
+    "Submitting a reference longer than 30 characters returns 400 with 'Internal reference number must be 30 characters or fewer'; a blank reference with a valid country is accepted",
+    "A valid POST commits cleaned {countryOfConsignment (code, never label), internalReference} via state.commit(), redirects via kit.nextTarget, and both values survive reload (persisted through the records service; in real mode they land at origin.countryOfConsignmentCode / origin.internalReference via the mapper)",
+    "The origin hub row (spoke 1) shows Completed only when countryOfOrigin AND countryOfConsignment are fulfilled; the optional internalReference never blocks completion — pinned in task-rows.test.js",
+    "contract.plant-products.test.js gains the origin-of-import case committing exactly ['countryOfConsignment', 'internalReference']",
+    "mapper.test.js proves round-trip of both fields and absent-optional behaviour",
+    "Axe (wcag2a/wcag2aa, no serious/critical violations) passes on initial render and on the validation-error state",
+    "Full plant ladder green; no existing-suite test count drops"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-010, serialised behind pp-018 because both pages share sections/origin.js, the origin feature group, the origin flow section and the origin task row that pp-018 creates. Recipe: add-a-page (§2 of the cheat-sheet) joining an existing multi-page feature group — controller + template inside features/origin/origin-of-import/, spec in the group's e2e/ folder, page identity added to the group's page.js. DECISIONS (headless, recorded): (1) Obligation NAMED `countryOfConsignment` per SIBLING-SET-PLAN §3.1 (the model source of truth), not the planning brief's shorthand 'countryOfConsignmentCode' — the mapper bridges to the backend field origin.countryOfConsignmentCode. (2) countryOfConsignment is MANDATORY, resolving the legacy two-layer split (frontend Joi optional vs submission schema @NotNull) in favour of the authoritative schema, as §3.1 rules. (3) Country of origin is NOT re-displayed on this page — the legacy page-2 re-display is a redundant pass-through (page-spec evidence: page-1 is the sole write point, amend bypasses page-2 entirely) and the platform's single-owner dispatch rule forbids re-collection; ask-once wins. (4) Required-country error copy 'Select the country from where consigned' matches the visible label (fixes the legacy label/error mismatch 'Country of consignment'); reference-field error keeps the brief's verbatim 'Internal reference number must be 30 characters or fewer' (the one deliberate CHED-PP-specific legacy rule — the 30 cap vs default 58). (5) The legacy disabled-placeholder asymmetry and href='#' back link are NOT reproduced (both flagged as defects in the page spec). (6) No policy.enforcedAtContinue change — §3.3 assigns that decision to countryOfOrigin (pp-018) and commoditySelection (pp-023) only. (7) Check-answers rows for these fields are NOT in scope — features/check-answers/ does not exist until pp-038, which owns all cards; the recipe's step-5 is deferred there by construction. Exemplars: live-animals features/origin/ (field pattern, validation, e2e shape — note it is single-page; the GROUP shape follows cheat-sheet §3's folder contract and pp-018's transposition), live-animals features/import-reason (smallest collecting page). Rulings applied: c-012 (Republic of Ireland label), c-018 (single-layer Joi-voice validation), c-004/c-014 defaults recorded at pp-009 (GDS error summary; this page has no fieldset/legend — three labelled controls under one H1, matching the legacy structure).",
+  "openQuestions": [
+    "Open Q 9 (carried from the trace corpus): countryOfConsignment equalled countryOfOrigin in every observed trace and the legacy QA suite is structurally incapable of varying it — product should confirm the field can legitimately differ from origin (goods routed via a third country) and whether a default-to-origin prefill is wanted (NOT built: the page starts on the placeholder)",
+    "The legacy origin-country select and consigned-country select are fed from different template variables (`countries` vs `allCountries`), implying the origin list may be a filtered subset — pass 1 uses the single pp-013 fixture list for both pages; confirm with the reference-data owner whether a restricted origin list exists",
+    "customs-reference-number: real optional field in the legacy notification model (PartOne.customsReferenceNumber) with CHED-PP-only Joi surface but never rendered — deliberately NOT collected here; product to decide if the rebuild needs it anywhere",
+    "Whether internalReference should be searchable on the notifications dashboard (page-spec open question) — pp-037's filter set does not currently include it"
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "id": "pp-008",
+  "title": "Set-owned records service: real REST adapter + mapper against /plant-products/notifications",
+  "kind": "scaffold",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-001", "pp-002", "pp-007"],
+  "sourceIncrement": "inc-002",
+  "recipe": "SIBLING-SET-PLAN.md §8 G-D (no records-adapter recipe exists — §6.2's op→HTTP table plus this increment's filesToTouch ARE the script; exemplars are the L2 live-animals records service files named in notes)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/services/records/config.js",
+      "action": "create",
+      "what": "Exports: backendBaseUrl = process.env.TRADE_IMPORTS_ANIMALS_BACKEND_URL ?? 'http://localhost:8085' (same backend process hosts /plant-products — decision recorded in notes); notificationsUrl = `${backendBaseUrl}/plant-products/notifications`; tracingHeader = process.env.TRACING_HEADER ?? 'x-cdp-request-id'; HTTP_NOT_FOUND = 404. Mirror of L2 services/persistence/records/real/config.js minus the projection URLs (no projections here — the notification document IS the canonical store)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/status.js",
+      "action": "create",
+      "what": "Exports mapStatus(backendStatus) mapping the backend enum to the engine constants imported from src/server/app/engine/persistence/records.js: 'DRAFT'→DRAFT('draft'), 'SUBMITTED'→SUBMITTED('submitted'), 'AMEND'→AMEND('amend'), 'DELETED'→DELETED('deleted'); unknown value throws (loud, never a silent default). Also exports BACKEND_STATUS = { SUBMITTED: 'SUBMITTED', AMEND: 'AMEND', DELETED: 'DELETED' } used by the transition ops. Exemplar: L2 real/status.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/marshal.js",
+      "action": "create",
+      "what": "Exports marshal(dto) → the engine journey record { journeyId: dto.referenceNumber, status: mapStatus(dto.status), createdAt: dto.created ?? null, submittedAt: status===SUBMITTED ? (dto.declaration?.declaredAt ?? null) : null, fulfilment: assembleFulfilments(fromDto(dto)) } — assembleFulfilments imported from src/server/app/bridge/assemble-fulfilments.js (legal set→L2 import), fromDto from ./mapper/from-dto.js. Also exports marshalListItem(dto) → { journeyId, status, createdAt, submittedAt } (mirror L2 real/marshal/list-item.js shape; pp-037 extends when the dashboard needs more columns). The engine port contract (verified live: engine/store.js:10-24, engine/write/pipeline/canonical.js, marshal exemplar services/persistence/records/real/marshal/document.js) is that every op returns this record shape with `fulfilment` as the obligation-id-keyed evaluator fulfilments map, which projectAnswers() turns back into the answers tree."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.js",
+      "action": "create",
+      "what": "Exports `records` = { create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear } implementing the engine port (surface pinned by src/server/app/engine/persistence/records.js) via global fetch against config.js URLs, per the §6.2 op→HTTP table: create(_options) POST notificationsUrl body '{}' (blank referenceNumber; backend mints GBN-PP ref), expect 201, return marshal(body) — journeyId IS the minted referenceNumber; load({ journeyId }) GET …/{journeyId}, 404→undefined, 200→marshal (response embeds accompanyingDocuments — ignored at pp-008, folding owned by pp-034/FD-11); list({ page=1, sort='arrivalDate,desc', referenceNumber }) GET with query string (encodeURIComponent on referenceNumber), map PlantProductsNotificationPageResponse → { rows: content.map(marshalListItem), page, size: pageSize, totalElements, totalPages }; has(journeyId) GET → 200 true / 404 false; replaceFulfilment(journeyId, fulfilment, { known }={}) — resolve status (use `known` when supplied else GET, exemplar L2 real/write-guards/resolve-status.js), assert writable (draft|amend else throw, exemplar L2 real/write-guards/assert-writable.js), body = toDto(projectAnswers(structuredClone(fulfilment ?? {}))) (projectAnswers from src/server/app/bridge/fulfilments/index.js), PUT …/{journeyId}, 200|201 → marshal (whole-document last-write-wins; NO documents sub-resource reconcile at pp-008 — pp-034 owns it); finalise(journeyId, _actor) PUT …/{journeyId}/status {status:'SUBMITTED'}; amend(journeyId, _actor) PUT status {status:'AMEND'}; cancelAmend(journeyId) PUT status {status:'SUBMITTED', discardChanges:true}; softDelete(journeyId, _actor) PUT status {status:'DELETED'}; copy(journeyId) POST …/{journeyId}/copies, expect 201, marshal (new DRAFT, new ref, documentless — D-19; NO Idempotency-Key header, backend has none — open question); clear() throws new Error('records.clear is not supported in real mode') per SCHEMA-DESIGN §6.2 (deliberate deviation from the L2 real no-op — recorded in notes). Every non-ok response (other than the 404s handled above) throws via a small failed(operation, response) helper (exemplar L2 real/http/failed.js); all requests send content-type application/json + the tracing header (exemplar L2 real/http/headers.js). Helpers stay inside real.js — the plan's §1 tree fixes records/ as flat files."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.test.js",
+      "action": "create",
+      "what": "Op→HTTP contract unit test: mock global fetch at the network boundary (same technique as L2 services/persistence/records/real/real.requests.test.js — match it; never module-mock). One test per op asserting method, URL (incl. query-string shape for list), body (create sends '{}'; replaceFulfilment body has NO server-set fields; status ops send exactly {status} / {status, discardChanges:true}), and the marshalled return shape (journeyId=referenceNumber, engine lowercase status, fulfilment map). Negative paths: load/has 404 → undefined/false; non-ok elsewhere throws with op name; replaceFulfilment against SUBMITTED/DELETED throws without issuing the PUT; clear throws."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/stub.js",
+      "action": "edit",
+      "what": "Upgrade the pp-007 boot-minimum in-memory stub to full semantic parity with real (planningBrief requirement: the Playwright self-hosted ladder needs no backend). In-memory Map keyed by journeyId; per-record { journeyId, status, createdAt, submittedAt, fulfilment, submittedSnapshot? }. Reference minting: GBN-PP-{YY}-{6 Crockford base32 chars} matching ^GBN-PP-\\d{2}-[0-9A-HJ-KM-NP-TV-Z]{6}$ (exemplar: L2 stub/reference-number.js, prefix swapped). Status-transition legality mirroring the backend §3.1 table exactly (exemplar: L2 stub/lifecycle/transition.js): finalise only from draft|amend → submitted (sets submittedAt=now ISO, drops snapshot); amend only from submitted → amend (captures submittedSnapshot={fulfilment clone, submittedAt}); cancelAmend only from amend with a snapshot → restores fulfilment+submittedAt, back to submitted; softDelete from draft|submitted|amend → deleted, idempotent on already-deleted; anything else throws. replaceFulfilment guards writable (draft|amend) and stores a structuredClone of the fulfilment; copy clones content into a fresh DRAFT with a newly minted ref (submittedSnapshot/submittedAt NOT carried — documentless per D-19); list hides deleted, 1-based paging with the same page/size/totalElements/totalPages envelope as real and supports the referenceNumber filter; clear() empties the store (test hook). All returns structuredClone'd journey records identical in shape to real's marshal output."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/stub.test.js",
+      "action": "create",
+      "what": "Pins the stub-only semantics not covered by the shared port suite: minted refs match the GBN-PP pattern and are unique; the five-row transition-legality table (each illegal transition throws); amend snapshot capture then cancelAmend restore round-trip; copy yields new journeyId + draft status and does not share state with the source; list paging/filter/deleted-hidden; clear resets."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/index.js",
+      "action": "edit",
+      "what": "Rewrite as the stub/real switch (mirror L2 services/persistence/records/index.js verbatim): import { isRealMode } from '../mode.js'; import { records as stubRecords } from './stub.js'; import { records as realRecords } from './real.js'; export const records = isRealMode() ? realRecords : stubRecords. (pp-007 shipped this file stub-only; FD-6: PLANT_PRODUCTS_MODE default 'real'.)"
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "create",
+      "what": "Exports toDto(answers) mapping the ANSWERS TREE → PlantProductsNotificationDto body (camelCase, D-10). At pp-008 the plant manifest is empty and importType/declaration are flow-only session keys (FD-8), so the m0 mapping is the empty answers tree → {} — but the module establishes the growth structure: a top-level toDto composing per-area section functions (empty registry at m0), so m2+ page increments add one section mapping each (recipe §1.6 discipline transposed). HARD RULES baked in now and asserted in mapper.test.js: never emit server-set fields (referenceNumber, status, chedType, ownership, created, updated, expireAt, submittedBaseline — SCHEMA-DESIGN §1 server-set list; referenceNumber is path-driven on PUT per §6.2); never invent a payload property for an answer with no backend home (explicit omission assertion instead — G-D); accompanyingDocuments group members are NEVER part of the PUT body (they project onto the sub-resource — FD-11, owned by pp-034)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "create",
+      "what": "Exports fromDto(dto) inverting to-dto: PlantProductsNotificationDto → answers tree for draft resume (marshal.js then runs assembleFulfilments over it to produce the port's fulfilment map). m0 behaviour: server-set and unknown fields dropped; empty/blank dto → {}. Explicitly IGNORES the embedded accompanyingDocuments array on the GET response at pp-008 (asserted omission — folding into the answers tree is pp-034's, FD-11). Same section-function growth structure as to-dto so each page increment adds its inverse alongside."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "create",
+      "what": "Pins: toDto({}) === {} (empty draft); round-trip fromDto(toDto(answers)) on the m0 answers tree; server-set-field omission (toDto output has NO referenceNumber/status/chedType/ownership/created/updated/expireAt/submittedBaseline keys even when present on input); fromDto drops server-set + unknown fields and ignores embedded accompanyingDocuments (explicit omission assertions). This file is the standing home for every later increment's mapping + omission tests (G-D discipline)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/records-port.test.js",
+      "action": "create",
+      "what": "Dual-implementation engine-port contract suite, pattern copied from L2 src/server/app/services/persistence/records/records-port.test.js (read it first and mirror its structure): one shared spec run against BOTH the stub and the network-mocked real impl proving identical observable semantics — create returns a draft record with a journeyId; load round-trips what replaceFulfilment saved (fulfilment map equality); has true/false; finalise→submitted, amend→amend, cancelAmend restores the submitted fulfilment, softDelete→deleted idempotent; copy returns a distinct draft journeyId; replaceFulfilment on a non-writable record rejects. This is the stub/real parity guarantee the planningBrief demands."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "referenceNumber (read: becomes the engine journeyId; NEVER sent in a body — path-driven per §6.2)",
+    "status (read via GET; written only via PUT …/{ref}/status with SUBMITTED | AMEND | DELETED | SUBMITTED+discardChanges)",
+    "created (read → record.createdAt)",
+    "declaration.declaredAt (read → record.submittedAt when status SUBMITTED — headless decision, see notes)",
+    "whole-document content fields via PUT …/{reference-number} (empty body at m0; grows per increment through mapper section functions)",
+    "server-set, never sent: chedType, ownership.assignedOrganisationId, ownership.assignedOrganisationName, created, updated, expireAt, submittedBaseline",
+    "list envelope: GET …?page&sort&referenceNumber → content/page/pageSize/totalElements/totalPages (1-based; DELETED hidden server-side)",
+    "accompanyingDocuments (embedded on GET response — explicitly ignored at pp-008; sub-resource projection owned by pp-034 per FD-11)"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "NONE new — service-layer increment with no UI surface. Coverage is unit-level: real.test.js (network-boundary op→HTTP contract), stub.test.js (transition legality + minting), mapper/mapper.test.js (round-trip + omission), records-port.test.js (stub/real parity). The pp-007 e2e specs (import-type/hub/dashboard) exercise the stub path once pp-011's Playwright project exists; live end-to-end proof against the real backend (create → persist → resume) is pp-009's explicit deliverable."
+  ],
+  "acceptanceCriteria": [
+    "real.js implements all 11 engine-port ops with exactly the §6.2 op→HTTP mapping (asserted per-op in real.test.js against a network-boundary fetch mock): POST create, GET load/has, GET list with query params, PUT whole-document replaceFulfilment, PUT …/status for finalise/amend/cancelAmend(discardChanges:true)/softDelete, POST …/copies for copy.",
+    "Every op returns the engine journey record shape { journeyId, status, createdAt, submittedAt, fulfilment } with journeyId = the backend referenceNumber (GBN-PP-…), status one of the lowercase engine constants from engine/persistence/records.js, and fulfilment the obligation-id-keyed map produced by assembleFulfilments(fromDto(dto)).",
+    "load returns undefined and has returns false on backend 404; every other non-ok response throws an error naming the operation; replaceFulfilment refuses (throws before any PUT) when the record status is not draft/amend.",
+    "clear() throws in real mode and resets the store in stub mode.",
+    "toDto output never contains referenceNumber, status, chedType, ownership, created, updated, expireAt or submittedBaseline; fromDto ignores embedded accompanyingDocuments — all pinned by explicit assertions in mapper.test.js.",
+    "stub.js enforces the backend §3.1 status-transition table (illegal transitions throw), captures/restores the amend snapshot, mints unique GBN-PP-pattern references, hides deleted records from list, supports 1-based paging + referenceNumber filter, and copy yields a fresh documentless draft — pinned by stub.test.js.",
+    "records-port.test.js runs one shared contract suite against both impls and both pass (stub/real parity).",
+    "P-2 containment: no file under sets/plant-products/ imports services/persistence/records/ (or services/mode.js); the only new L2 imports are engine/persistence/records.js constants, bridge/assemble-fulfilments.js and bridge/fulfilments/index.js projectAnswers — npm run lint (which runs lint:arch) is green with no baseline regeneration.",
+    "Sibling safety: npm run test:live-animals, npm test, and the live-animals Playwright suites are green and their test counts do not drop.",
+    "App still boots under SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub (pp-007 boot assertions unaffected)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals  # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "Re-interpretation of inc-002 per FD-5: persistence is the backend's job; this increment is the set-owned records adapter completing sets/plant-products/services/records/ (index/stub landed with pp-007). test:plant-products (T-1) and the plant Playwright project (T-6) belong to pp-010/pp-011 and are NOT dependencies — the new unit tests run inside plain `npm test`, so the ladder above needs no plant-specific scripts; the ladder's Playwright legs are the live-animals suites (sibling safety — cheap and this increment touches no L1/L2 file). PORT CONTRACT (verified live this session, not assumed): engine/persistence/records.js pins the 11 op names; engine/store.js + write/pipeline/canonical.js consume records as { journeyId, status, createdAt, submittedAt, fulfilment } where fulfilment is the obligation-id-keyed evaluator map and projectAnswers(fulfilment) yields the answers tree; replaceFulfilment receives (journeyId, fulfilment, { known }). §6.2's 'answers tree ⇄ DTO' mapper therefore bridges via the L2 bridge pair — to-dto side: projectAnswers(fulfilment) → answers → toDto; load side: fromDto(dto) → answers → assembleFulfilments → fulfilment (both legal set→L2 imports; round-trip law pinned in bridge/fulfilments/fulfilments.test.js). HEADLESS DECISIONS (flagging, not asking): (1) journeyId ≡ backend referenceNumber — GBN-PP refs ride the /notifications/{journeyId}/{slug} URLs; (2) submittedAt on the marshalled record maps from declaration.declaredAt (the backend has no submittedAt field; nearest truthful source); (3) backend base URL reuses TRADE_IMPORTS_ANIMALS_BACKEND_URL (the plant-products REST surface lives in the SAME backend app per SCHEMA-DESIGN's sibling-package design — a second env var would be a lie); (4) real clear() THROWS per SCHEMA-DESIGN §6.2 and the MAPPING brief, a recorded deviation from the L2 real impl whose clear is a silent no-op (services/persistence/records/real/lifecycle/mutate.js:71) — the plan text is canonical; (5) copy sends no Idempotency-Key (the L2 exemplar does, but the Phase-B backend POST …/copies accepts none — surfaced as an open question rather than inventing a header the backend ignores); (6) the FD-11 documents projection is a deliberate NO-OP here — pp-034 owns the sub-resource reconcile; pp-008 pins the boundary with omission assertions so nothing silently half-implements it; (7) records/ stays FLAT (real.js, stub.js, marshal.js, status.js, config.js + mapper/) per the plan's §1 tree — the L2 service's lifecycle/http/marshal directory split is not copied at this size. EXEMPLARS (read before writing): src/server/app/engine/persistence/records.js; src/server/app/services/persistence/records/{index.js, records-port.test.js, real/config.js, real/status.js, real/lifecycle/create.js, real/lifecycle/read.js, real/lifecycle/mutate.js, real/lifecycle/transition.js, real/marshal/document.js, real/marshal/list-item.js, real/write-guards/*, real/real.requests.test.js, stub/lifecycle/transition.js, stub/reference-number.js}; src/server/app/bridge/assemble-fulfilments.js; src/server/app/bridge/fulfilments/index.js. Rulings applied: FD-5 (set-owned adapter, P-2 containment), FD-6 (PLANT_PRODUCTS_MODE via ../mode.js), FD-11 (documents boundary), D-4 (cancel-amend = discardChanges:true), D-19 (copy documentless), Open Q 3 (whole-document last-write-wins, no ETag), §8 G-D (this plan supplies the missing recipe content: port surface, op→HTTP table, stub/real parity incl. transition legality, mapper omission discipline).",
+  "openQuestions": [
+    "Backend PUT …/{reference-number} body carries NO referenceNumber (§6.2: path-driven, server-set never sent) but §3.1 says 'ref must match path' — confirm the backend mismatch guard tolerates an absent body ref (it should only fire on a present, differing value). pp-004's PlantProductsNotificationIT should pin this; if the backend 400s on absence, the one-line fix is real.js setting body.referenceNumber = journeyId.",
+    "POST …/copies has no Idempotency-Key support (the live-animals backend surface does, and the L2 real adapter sends one) — a double-submitted copy action can mint two drafts. Accepted for pass 1, or should pp-003/pp-004 add idempotency to the backend copies endpoint before pp-045 (draft lifecycle) ships the Copy button?",
+    "submittedAt sourced from declaration.declaredAt is only populated when the frontend persists declaration at finalise (pp-039, Open Q 6) — until then submitted records marshal with submittedAt null; confirm the pp-037 dashboard is happy rendering that gap in the interim."
+  ]
+}

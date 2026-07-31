@@ -1,0 +1,213 @@
+{
+  "id": "pp-020",
+  "title": "about-the-consignment — main reason for import",
+  "kind": "page",
+  "milestone": "m2",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-010", "pp-017"],
+  "sourceIncrement": "inc-011",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/purpose.js",
+      "action": "create",
+      "what": "Export `reasonForImport` = { id: <fresh UUID>, name: 'reasonForImport', status: 'mandatory' }. Pure data — no copy, no options, no imports of journey/services (obligation-purity enforces at boot). Exact shape exemplar: sets/live-animals/obligations/sections/* reasonForImport (live-animals has the same-named obligation; the plant one is a NEW object with its own UUID in the plant manifest)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export `reasonForImport` from './sections/purpose.js' and append it to the `obligations` array. `groups` stays derived (formula untouched). `policy` untouched — reasonForImport does NOT join policy.enforcedAtContinue (the live-animals pair is countryOfOrigin/commoditySelection; purpose has no continue-enforcement precedent — decision recorded in notes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/purposes.js",
+      "action": "create",
+      "what": "The 3-reasons fixture module (SIBLING-SET-PLAN §6.1; landed HERE rather than waiting for pp-016 — planner's pick per the MAPPING brief). Mirror src/server/app/services/import-reason-purpose/index.js: const REASON_FOR_IMPORT_LABEL = Object.freeze({ INTERNAL_MARKET: 'Internal market', RE_ENTRY: 'Re-entry', RE_CONFORMITY_CHECK: 'For import re-conformity check' }); export const reasons = () => Object.entries(REASON_FOR_IMPORT_LABEL).map(([value, text]) => ({ value, text })); export const reasonLabel = (code) => REASON_FOR_IMPORT_LABEL[code]. Codes are the NORMALISED enum (c-006) — never the IPAFFS wire values internalmarket/import/reconformity."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/page.js",
+      "action": "create",
+      "what": "export const purposePage = { id: 'about-the-consignment', slug: 'about-the-consignment' } — import-free (exemplar: features/import-reason/page.js)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/controller.js",
+      "action": "create",
+      "what": "Transpose sets/live-animals/journeys/linear/features/import-reason/controller.js near-verbatim, swapping set-relative import depths, page identity, copy bundles, and the options service to sets/plant-products/services/reference/purposes.js. meta = { ...page, collects: ['reasonForImport'] }. view = `${TEMPLATES}/features/purpose/template`. fields = compose(oneOf('reasonForImport', purposes.reasons().map(o => o.value))). render() builds reasonOptions = reasons().map(o => ({ ...o, hint: copy.reasonHints[o.value] ? { text: copy.reasonHints[o.value] } : undefined, checked: o.value === values.reasonForImport })) — RE_CONFORMITY_CHECK has NO hint (trace-confirmed; render no empty hint object for it). GET: state.get once, prefill answers.reasonForImport ?? ''. POST: validate -> 400 re-render raw values with kit.errorSummary; valid -> state.commit via kit.recoverableSave (marked failure re-renders recoverableError:true, 500; other errors throw) -> h.redirect(await kit.nextTarget(request, page, scope)). backLink = hubPath(journey.journeyId) (real href — no '#' back link). export const routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). govukRadios with idPrefix/name 'reasonForImport' (input name = id = error key so #reasonForImport error-summary link focuses the first radio), fieldset legend AS the page heading: caption 'About the consignment' (govuk-caption-xl inside/above the legend per house pattern) + legend text 'What is the main reason for importing the consignment?' with govuk-fieldset__legend--xl + isPageHeading (c-014 FIX — the IPAFFS legendless fieldset is a defect, do not port). Plain govuk-radios: NO govuk-radios--conditional, NO custom 'purpose' item class, NO govuk-!-font-weight-bold label overrides (all three are IPAFFS bleed-through/deviations the spec says to drop). Macro-generated hint ids + aria-describedby (fixes the duplicate re-entry-hint id and missing hint association). Shared error summary ('There is a problem', c-004) + shared save actions (Save and continue)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: title 'What is the main reason for importing the consignment?', caption 'About the consignment', legend 'What is the main reason for importing the consignment?', reasonHints: { INTERNAL_MARKET: 'The consignment is intended for sale or use in Great Britain (England, Scotland and Wales). Or, it is using a transit mechanism to move goods to a control point.', RE_ENTRY: 'The consignment is authorised for re-entry or includes rejected exports that are re-entering Great Britain.' } (no RE_CONFORMITY_CHECK key — that option has no hint), errors: { reasonForImportRequired: 'Select the main reason for importing the consignment' } (c-018 single canonical string, H1-echoing wording per the MAPPING brief — NOT the legacy 'Select the purpose of the consignment'). Hint copy is character-exact from the page spec."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces): real Welsh translations of title/caption/legend/both reasonHints/error, matching house cy practice."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per house pattern (exemplar features/import-reason/copy/copy.test.js): pins key presence/shape for both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/evaluation.js",
+      "action": "create",
+      "what": "import { feature, scalar } from bridge/fulfilment-bindings.js; import { reasonForImport } from '../../../../obligations/index.js'; export const evaluationBindings = feature('purpose', [scalar({ field: 'reasonForImport', obligation: reasonForImport })]) — exemplar features/import-reason/evaluation.js verbatim shape."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the purpose feature's evaluationBindings and add to the frozen featureEvaluationBindings array."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import * as purpose controller namespace; add purpose.meta to dispatchPages; spread purpose.routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import purposePage; add sections entry { id: 'purpose', pages: [purposePage] } at its canonical §2.3 position: immediately after 'origin' if pp-018 has landed that section, otherwise immediately after 'start'; ALWAYS before 'review'. FLOW_ONLY_KEYS untouched (reasonForImport is a manifest obligation, not flow-only)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row { id: 'purpose', pages: [purposePage] } (mandatory row — no optional/conditional flags; status derives from collects union = reasonForImport). Position mirrors the sections order."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the purpose row: 'Not yet started' with no answer; 'Completed' once reasonForImport answered; first entry page = about-the-consignment; the incomplete row blocks readyForCheckYourAnswers and the complete row contributes to it."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'purpose' to GROUPS as hub spoke 2 'Purpose' (§2.1 canonical placement: after the origin spoke's row if present, else first data spoke)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "rows.purpose title 'Purpose' + hint copy, and the spoke-2 group caption if the GROUPS entry introduces a new numbered heading."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, same shape as the en additions."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new rows.purpose keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Purpose row renders under its heading with status 'Not yet started' and links to /notifications/{journeyId}/about-the-consignment."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.reasonForImport -> dto.reasonForImport (top-level document field per obligation-field-map inc-011; camelCase, sent as the normalised enum string, omitted when unanswered)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert: dto.reasonForImport -> answers.reasonForImport for draft resume."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test: reasonForImport survives to-dto/from-dto; unanswered -> field absent from the DTO (never null-invented)."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "T-5 standing rule: add the purpose controller's valid-POST case — payload { reasonForImport: 'INTERNAL_MARKET' }, no scope seed needed (unconditional obligation), asserts exactly ['reasonForImport'] committed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill from answers; view model exposes the 3 options with hints on exactly INTERNAL_MARKET and RE_ENTRY; empty POST -> 400, error 'Select the main reason for importing the consignment', raw values re-rendered, no commit; invalid enum value -> 400 (oneOf rejects); valid POST commits cleaned value and redirects via kit.nextTarget; marked recoverable-save failure -> 500 with recoverableError; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/purpose.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe (scenarios listed under specs)."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "reason-for-import",
+      "name": "reasonForImport",
+      "within": null,
+      "requires": "status: 'mandatory' — unconditional; no gate helper, no requires block, no applyTo. Does NOT join policy.enforcedAtContinue.",
+      "applyTo": null,
+      "collectedBy": "about-the-consignment"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "Add { id: 'purpose', pages: [purposePage] } to flow.js sections — canonical §2.3 order (start, origin, purpose, …, review): insert after 'origin' when that section exists, else after 'start'; always before 'review'."
+    ],
+    "taskRows": [
+      "Add { id: 'purpose', pages: [purposePage] } to task-rows.js — mandatory row, participates in readyForCheckYourAnswers; hub GROUPS gains 'purpose' as spoke 2 with en+cy row title/hint copy."
+    ],
+    "entryGuard": "No change — entry-guard policy untouched; the page is hub-reached, deep-link protection is the existing set-wide guard."
+  },
+  "schemaFields": ["reasonForImport"],
+  "copyKeys": [
+    "features/purpose/copy.{en,cy}: title",
+    "features/purpose/copy.{en,cy}: caption",
+    "features/purpose/copy.{en,cy}: legend",
+    "features/purpose/copy.{en,cy}: reasonHints.INTERNAL_MARKET",
+    "features/purpose/copy.{en,cy}: reasonHints.RE_ENTRY",
+    "features/purpose/copy.{en,cy}: errors.reasonForImportRequired",
+    "features/hub/copy.{en,cy}: rows.purpose.title",
+    "features/hub/copy.{en,cy}: rows.purpose.hint",
+    "features/hub/copy.{en,cy}: spoke-2 group caption (only if a new numbered heading is introduced)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/purpose/purpose.e2e.spec.js — initial render: caption 'About the consignment', H1 rendered as the fieldset legend 'What is the main reason for importing the consignment?', exactly 3 radios labelled Internal market / Re-entry / For import re-conformity check with hints on the first two only, no conditional-reveal markup",
+    "purpose.e2e.spec.js — happy path: select Internal market, Save and continue redirects (hub for a one-page section via nextTarget), reload shows the radio still checked (persisted through the records service)",
+    "purpose.e2e.spec.js — validation: submit with nothing selected -> 'There is a problem' summary with 'Select the main reason for importing the consignment'; the summary link focuses the first radio (#reasonForImport); no data committed",
+    "purpose.e2e.spec.js — hub row: Purpose row 'Not yet started' before, 'Completed' after answering",
+    "purpose.e2e.spec.js — axe: AxeBuilder withTags(['wcag2a','wcag2aa']) on BOTH initial render and the error state; fail on any serious/critical impact (this page's IPAFFS ancestor had never been a11y-scanned pristine or in error — both states are covered here)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (edit) — Purpose row renders under the spoke-2 heading and links to about-the-consignment"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/about-the-consignment renders caption 'About the consignment' and the question 'What is the main reason for importing the consignment?' as the fieldset legend styled as page heading (c-014: legend-as-heading, no legendless fieldset)",
+    "Exactly 3 radio options in order: 'Internal market', 'Re-entry', 'For import re-conformity check'; hints (character-exact from the page spec) on the first two only; the third has no hint",
+    "Radios are plain govuk-radios via the macro: unique per-item hint ids, aria-describedby wired, no govuk-radios--conditional modifier, no custom item classes, no bold-label overrides (IPAFFS defects fixed, not ported)",
+    "Stored value is the normalised enum INTERNAL_MARKET | RE_ENTRY | RE_CONFORMITY_CHECK (c-006) — the IPAFFS wire values internalmarket/import/reconformity appear nowhere in the set",
+    "reasonForImport is mandatory: empty submit re-renders 400 with GDS 'There is a problem' summary and the single canonical error 'Select the main reason for importing the consignment' (c-018 Joi voice, H1-echoing); error-summary link moves focus to the first radio; raw state preserved; nothing committed",
+    "A value outside the 3-value enum is rejected server-side (oneOf built from purposes.reasons() at request time, not a frozen module-level list)",
+    "Valid submit commits exactly ['reasonForImport'] and redirects via kit.nextTarget (one-page section -> hub, matching the traced IPAFFS 302-to-hub behaviour); value survives reload/draft-resume through the records service in stub and real modes (mapper round-trip)",
+    "Hub shows a mandatory 'Purpose' row (spoke 2): 'Not yet started' -> 'Completed'; the incomplete row blocks readyForCheckYourAnswers",
+    "contract.plant-products.test.js has the purpose controller's valid-POST case; task-rows.test.js pins the row states; copy bundles are en/cy shape-identical (copy-parity, copy-convention green)",
+    "Back link is a real href to the hub (no href='#')",
+    "Both axe checks (initial + error state) pass with zero serious/critical violations",
+    "No existing suite's test count drops; live-animals surfaces untouched (no L1/L2 edits in this increment)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-011 (page spec about-the-consignment.json, adversarially re-verified 2026-07-17). EXEMPLAR: the live-animals import-reason feature is a near-exact structural match — same obligation name (reasonForImport), same radios-with-hints shape, same service-backed oneOf validation; transpose features/import-reason/{page,controller,evaluation,template,copy}.js file-for-file (controller read live this session to pin the idiom: meta.collects, compose(oneOf(...)), render with reasonOptions + copy.reasonHints, kit.recoverableSave, kit.nextTarget, kit.pageRoutes). DECISIONS (headless): (1) options source = NEW sets/plant-products/services/reference/purposes.js created in THIS increment at its canonical §6.1 location, mirroring services/import-reason-purpose/index.js — chosen over inlining or adding pp-016 as a dep (MAPPING offered all three; dependsOn stays verbatim and pp-016's planner should treat purposes.js as already landed); (2) reasonForImport does NOT join policy.enforcedAtContinue — §3.3 names only countryOfOrigin (pp-018's call) and commoditySelection (pp-023's call) as candidates; (3) error copy = 'Select the main reason for importing the consignment' per the MAPPING brief and the spec's content-design signal (IPAFFS's own singleced variant echoes the H1; the legacy CHED-PP string 'Select the purpose of the consignment' is a recorded wiring gap — rejected); (4) hint mechanism = copy.reasonHints keyed by enum value, exemplar-identical; RE_CONFORMITY_CHECK deliberately hintless (trace-confirmed IPAFFS state; content-design question carried, not solved); (5) section insertion is order-aware because pp-018 (origin, spoke 1) is NOT a dependency and this increment may land first — canonical §2.3 order governs either way. RULINGS APPLIED: c-006 (normalised enum, never IPAFFS wire values — the 'import'-means-Re-entry trap is the sharpest reason), c-014 (legend-as-heading fix), c-018 (one canonical Joi-voice string), c-004 (GDS 'There is a problem'). FIXES-NOT-PORTED from the spec's nonStandardPatterns: legendless fieldset, duplicate re-entry-hint id, missing aria-describedby, vestigial govuk-radios--conditional, custom 'purpose' class, bold label overrides, href='#' back link. Check-answers row: features/check-answers does not exist until pp-038 — that increment owns the purpose card row (per §2.1 spoke-12 build order); no omission here. Mapper edit is set-owned files only (pp-008's real+stub store the whole tree; the DTO projection gains the field). No etag/optimistic concurrency: house standing deviation (whole-document last-write-wins, Open Q 3). Amend-variant 'Save and review'/'Save and return to hub' buttons: post-submission/amend surface, out of pass-1 scope — not built.",
+  "openQuestions": [
+    "Open Q 5 (carried from the spec): only 'Internal market' was ever chosen in any trace; 'For import re-conformity check' is exercised by NO trace and NO legacy test — its downstream behaviour in IPAFFS is unknown. Built here as a plain enum value with no branching; if product later learns it routes differently, that is new scope.",
+    "Cross-field rule (spec behaviours, CHED-P-confirmed only): does amending country-of-origin clear the purpose answer? Not built for CHED-PP pass 1 (no admissible CHED-PP evidence); flag to SME — if real it becomes an applyTo/wipe relationship between origin and purpose.",
+    "The third radio's missing hint is mirrored from IPAFFS as-is; the spec flags it as a possible content gap ('For import re-conformity check' is not self-explanatory) — content-designer decision pending, one copy key to add if ruled.",
+    "pp-016's planner must treat services/reference/purposes.js as already landed by this increment (scope note, not a blocker)."
+  ]
+}

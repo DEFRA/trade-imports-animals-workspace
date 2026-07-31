@@ -1,0 +1,83 @@
+{
+  "id": "pp-016",
+  "title": "Commodity measures + document types reference data (fixture modules)",
+  "kind": "reference-data",
+  "milestone": "m1",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007"],
+  "sourceIncrement": "inc-007",
+  "recipe": "SIBLING-SET-PLAN.md §6.1 Set-owned services (no add-a-reference-module recipe exists; exemplar transposition from sets/live-animals/services/commodities/index.js — pure lookup module, named accessor exports, no IO at module load)",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/package-types.js",
+      "action": "create",
+      "what": "Exports `packageTypeOptions` — a frozen array of 23 `{ value, text }` pairs (SCREAMING_SNAKE code, GDS-sentence-case label): BAG 'Bag', BALE 'Bale', BOTTLE_FLASK_OTHER_GLASS_PACKAGES 'Bottle, flask and other glass packages', BOX 'Box', BULK_SOLID_GRANULAR_PARTICLES 'Bulk solid granular particles (\"grains\")', CAN 'Can', CARTON 'Carton', CASE 'Case', CASK 'Cask', COFFER 'Coffer', CONTAINER 'Container', CRATE 'Crate', OTHER 'Other', PACKAGE 'Package', PALLET 'Pallet', POLYSTYRENE_BOX 'Polystyrene box', TRAY 'Tray', TUBE 'Tube', VIAL 'Vial', WOOD_BUNDLE 'Wood bundle', WOOD_CRATE 'Wood crate', WOODEN_BARREL 'Wooden barrel', WOODEN_CASE_WITH_PALLET_BASE 'Wooden case with pallet base'. Plus `packageTypeLabel(code)` returning the label for a code (undefined for unknown). List order = the legacy rendered order (trace-confirmed, commodity-bulk-details spec). No placeholder entry — 'Select type of package' is consumer-page copy, not data. NOTE the legacy 'Polystyrene Box' Title Case is normalised to sentence case."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/quantity-types.js",
+      "action": "create",
+      "what": "Exports `quantityTypeOptions` — frozen array of 7 `{ value, text }`: STEMS 'Stems', BULBS 'Bulbs', CORMS_AND_RHIZOMES 'Corms and rhizomes', PLANTS_IN_TISSUE_CULTURE 'Plants in tissue culture', SEEDS 'Seeds', KILOGRAMS 'Kilograms', PIECES 'Pieces' (legacy rendered order; independently corroborated by the QA repo's quantity-type vocabulary — highest-confidence list in the corpus). Plus `quantityTypeLabel(code)`. No placeholder entry."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/document-types.js",
+      "action": "create",
+      "what": "Exports `documentTypeOptions` — frozen array of 16 `{ value, text }`: AIR_WAYBILL 'Air waybill', COMMERCIAL_INVOICE 'Commercial invoice', CARGO_MANIFEST 'Cargo manifest', INSPECTION_CERTIFICATE 'Inspection certificate', PHYTOSANITARY_CERTIFICATE 'Phytosanitary certificate', IMPORT_PERMIT 'Import permit', ORIGIN_CERTIFICATE 'Origin certificate', LETTER_OF_AUTHORITY 'Letter of authority (Directive 2008/61/EC)', HEAT_TREATMENT_CERTIFICATE 'Heat treatment certificate', CONTAINER_MANIFEST 'Container manifest', SEA_WAYBILL 'Sea waybill', RAIL_WAYBILL 'Rail waybill', CUSTOMS_DECLARATION 'Customs declaration', BILL_OF_LADING 'Bill of lading', CONFORMITY_CERTIFICATE 'Conformity certificate', OTHER 'Other'. Plus `documentTypeLabel(code)`. c-016 APPLIED: exactly ONE sea-waybill entry, sentence-case 'Sea waybill' (the legacy 'Sea Waybill' Title-Case variant and the QA repo's duplicate seaWaybillCapitalW key are NOT carried). 'Cargo Manifest' likewise sentence-cased to 'Cargo manifest'. The '17' in the increment title counts the legacy placeholder option; the module carries the 16 real codes — placeholder is consumer-page copy."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/transport-options.js",
+      "action": "create",
+      "what": "Exports `meansOfTransportOptions` — frozen array of 4 `{ value, text }`: AIRPLANE 'Airplane', RAILWAY 'Railway', ROAD_VEHICLE 'Road vehicle', VESSEL 'Vessel'. Codes byte-match the backend enum PlantProductsMeansOfTransport (SCHEMA-DESIGN transport.meansOfTransport); the legacy wire values plane/rail/road/ship are NOT inherited. Plus `meansOfTransportLabel(code)`. No placeholder entry ('Select means of transport to the BCP' is consumer-page copy). NO container vocabulary is exported — the plan tree's 'container opts' note resolves to nothing that is reference data: usesContainers and officialSeal are booleans, containerNumber/sealNumber are free text, and controlledAtmosphereContainer is ruled a boolean (all copy/controller concerns of pp-027/pp-030)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/gross-volume-units.js",
+      "action": "create",
+      "what": "Exports `grossVolumeUnitOptions` — frozen array of 2 `{ value, text }`: LITRES 'litres', METRES_CUBED 'metres cubed'. Codes byte-match the backend enum GrossVolumeUnit (SCHEMA-DESIGN additionalDetails.grossVolumeUnit); the legacy stored human-readable string 'metres cubed' as a VALUE is not carried (stored by code). Plus `grossVolumeUnitLabel(code)`. No placeholder entry ('Select unit' is consumer-page copy)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/purposes.js",
+      "action": "create",
+      "what": "Exports `purposeOptions` — frozen array of 3 `{ value, text }`: INTERNAL_MARKET 'Internal market', RE_ENTRY 'Re-entry', RE_CONFORMITY_CHECK 'For import re-conformity check'. Codes byte-match the backend enum ReasonForImport; c-006 APPLIED — the IPAFFS wire values internalmarket|import|reconformity are NOT inherited (the legacy 'import' value for the 'Re-entry' label is a documented cross-CHED trap). Plus `purposeLabel(code)`. Labels character-exact from the trace (including the leading 'For ' and hyphen in 're-conformity'). Consumed by pp-020's radios; radio hint copy stays in pp-020's copy bundles."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/reference-data.test.js",
+      "action": "create",
+      "what": "One Vitest suite pinning the behaviour of all six modules: (1) option counts — packageTypeOptions 23, quantityTypeOptions 7, documentTypeOptions 16, meansOfTransportOptions 4, grossVolumeUnitOptions 2, purposeOptions 3; (2) per module, values and texts are each unique and every value matches /^[A-Z][A-Z0-9_]*$/ and no value equals its text (stored by code, never display string); (3) c-016 pin — exactly one documentTypeOptions entry whose text case-insensitively matches /sea waybill/, with text exactly 'Sea waybill' and value SEA_WAYBILL; (4) backend-enum pins — meansOfTransport values deep-equal [AIRPLANE, RAILWAY, ROAD_VEHICLE, VESSEL], grossVolumeUnit values [LITRES, METRES_CUBED], purpose values [INTERNAL_MARKET, RE_ENTRY, RE_CONFORMITY_CHECK]; (5) each label-for-code function returns the label for a known code and undefined for an unknown code (one positive + one negative per module, not per-constant tests); (6) each options array is frozen (Object.isFrozen). No per-option round-trip tests beyond this — no coverage padding."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "commodityComplement[].packageType (String code — vocabulary minted here, written by pp-027)",
+    "commodityComplement[].quantityType (String code — vocabulary minted here, written by pp-027)",
+    "plant_products_accompanying_documents.documentType (String code — vocabulary minted here, written by pp-034)",
+    "transport.meansOfTransport (PlantProductsMeansOfTransport enum — codes matched here, written by pp-030)",
+    "additionalDetails.grossVolumeUnit (GrossVolumeUnit enum — codes matched here, written by pp-028)",
+    "reasonForImport (ReasonForImport enum — codes matched here, written by pp-020)"
+  ],
+  "copyKeys": [],
+  "specs": [],
+  "acceptanceCriteria": [
+    "Six modules exist under src/server/app/sets/plant-products/services/reference/ at the exact paths above; each exports a frozen options array of { value, text } pairs plus a <name>Label(code) lookup returning the label for a known code and undefined for an unknown one.",
+    "Real-option counts are exactly 23 (package types), 7 (quantity types), 16 (document types), 4 (means of transport), 2 (gross volume units), 3 (purposes); no module includes a placeholder entry — 'Select…' placeholder text is consumer-page copy.",
+    "Every stored value is a SCREAMING_SNAKE_CASE code, never the display string; within each module both values and texts are unique.",
+    "document-types contains exactly one sea-waybill entry with label 'Sea waybill' and code SEA_WAYBILL (c-016 dedupe — neither legacy casing variant duplicated).",
+    "meansOfTransport, grossVolumeUnit and purpose codes byte-match the backend enums PlantProductsMeansOfTransport (AIRPLANE|RAILWAY|ROAD_VEHICLE|VESSEL), GrossVolumeUnit (LITRES|METRES_CUBED) and ReasonForImport (INTERNAL_MARKET|RE_ENTRY|RE_CONFORMITY_CHECK); the IPAFFS wire values (plane/rail/road/ship, 'metres cubed'-as-value, internalmarket/import/reconformity) are not inherited (c-006).",
+    "Modules are pure data + lookup functions: no IO at module load, no imports from outside the set or from L2 services, no imports of any routes-*.js (dep-cruiser sets-not-l1 clean).",
+    "reference-data.test.js passes under npm run test:plant-products; the full ladder below is green and the default live-animals surface is untouched (no file outside sets/plant-products/ changes)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "1:1 carry of inc-007 as set-owned fixture modules (SIBLING-SET-PLAN §6.1); purposes.js folded in per the plan. First verification command is the BASELINE run before editing (red baseline = stop and report); the ladder then repeats it after the change. DECISIONS (headless): (a) code scheme — SCREAMING_SNAKE_CASE codes minted from the labels, chosen because the three vocabularies that ARE backend enums (PlantProductsMeansOfTransport, GrossVolumeUnit, ReasonForImport) already use that shape and packageType/quantityType/documentType are opaque String codes backend-side (SCHEMA-DESIGN: 'packageType : String — code'), so one consistent scheme wins; (b) labels normalised to GDS sentence case ('Cargo manifest', 'Polystyrene box'), extending the c-016/c-027 sentence-case direction — proper nouns and the '(Directive 2008/61/EC)' suffix kept; (c) 'container opts' in the plan's §1 tree resolves to NO reference data — usesContainers/officialSeal are booleans, containerNumber/sealNumber free text, controlledAtmosphereContainer ruled a boolean by the mapping brief (the legacy page's four contradictory Yes/No select encodings, incl. the leaked '1364882' id, are exactly what the boolean ruling deletes), so transport-options.js carries only the means-of-transport vocabulary; (d) counts in the source title (24/8/17) include legacy placeholder options — modules carry real options only (23/7/16), placeholders are consumer-page copy; (e) module/export idiom transposed from sets/live-animals/services/commodities/index.js (named accessor exports over frozen data, no classes, no IO); (f) finishedOrPropagated (FINISHED|PROPAGATED backend enum) is deliberately NOT a module here — the plan's §6.1 list doesn't include it and pp-027 owns that control. RULINGS APPLIED: c-016 (Sea waybill dedupe), c-006 (normalised enums, never IPAFFS wire values). SIBLING SAFETY: set-only files, not platform-touching, so the P-1..P-6-style two-sided check is not required; npm test in the ladder still exercises the default set. EXEMPLARS: sets/live-animals/services/commodities/index.js (module shape); commodity-bulk-details.json, accompanying-documents.json, transport-before-bip.json, commodity-additional-details.json, about-the-consignment.json page specs (verbatim option lists + wire-value evidence). CONSUMERS (later increments, no edits here): pp-020 purposes, pp-027 package/quantity types, pp-028 gross-volume-units, pp-030 transport-options, pp-034 document-types.",
+  "openQuestions": [
+    "The legacy package-type list is a per-CHED-type filtered subset of a 33-entry shared reference-data set (trace cross-check vs the QA vocabulary). Pass 1 fixtures the 23-item CHED-PP subset by ruling; if these vocabularies ever go real (like the commodities service is slated to), the minted SCREAMING_SNAKE codes will need a mapping to the master-data source's own codes — no such code list was observable (legacy stores display strings as values).",
+    "Document-type labels are pinned by the legacy QA suite BY LABEL (Playwright selectOption resolves the copy, not wire values) — the sentence-case normalisation here ('Cargo manifest', 'Sea waybill') is correct for the rebuild but would break any reuse of the legacy QA suite against the new app; flagged in case anyone plans such reuse."
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "id": "pp-013",
+  "title": "Countries reference data (fixture module)",
+  "kind": "reference-data",
+  "milestone": "m1",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007"],
+  "sourceIncrement": "inc-004",
+  "recipe": "workareas/shared/plant-products-ched-pp/frontend-plan/SIBLING-SET-PLAN.md §6.1 'Set-owned (sets/plant-products/services/)' — no add-a-* recipe applies and no G-gap is recorded for reference-data fixtures (pure data module). Exemplar for export shape: src/server/app/services/countries/{stub.js,index.js} (label-lookup map + options-array accessors), MINUS the prime()/mode machinery — plant reference data is fixture-backed with no priming (SIBLING-SET-PLAN §4.1 step 12).",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/countries.js",
+      "action": "create",
+      "what": "Pure ESM fixture module, zero IO / zero async / zero env reads (no priming, no mode switch). Data: const COUNTRIES = Object.freeze([...]) of exactly 253 entries { code, name }, transcribed from the legacy QA fixture ~/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts (which holds exactly 253 entries and provably matches the rendered DOM labels — pages/country-of-origin.json evidence), with ONE deliberate override: IE is named 'Republic of Ireland', not country.ts's 'Ireland' (c-012 ruling: rendered-trace label wins). The 253 = 249 flat country entries (ISO 3166-1 alpha-2 codes such as AF/AT/ZW, plus a small number of ISO 3166-2 subdivision codes the legacy list carries, e.g. ES-CN Canary Islands) + the 4 UK constituent nations GB-ENG=England, GB-SCT=Scotland, GB-WLS=Wales, GB-NIR=Northern Ireland. There is NO selectable 'GB' entry (legacy renders GB as a non-selectable optgroup label; country.ts has no UnitedKingdom key). Exports: (1) COUNTRIES (frozen array, source order = country.ts order); (2) UK_SUBDIVISION_CODES = Object.freeze(['GB-ENG', 'GB-SCT', 'GB-WLS', 'GB-NIR']); (3) REGION_FILTER_CODES = Object.freeze(['EEA', 'GB-CI', 'ROW']) — the dashboard country-filter pseudo-group codes (c-026; DOM-confirmed values, notifications-dashboard.json); (4) countryLabel(code) → name or undefined (lookup keyed by code — consuming pages store the CODE, never free text); (5) countryOptions() → frozen [{ value, text }] of the 249 non-UK-subdivision entries sorted alphabetically by text (govuk-select shape, matches the rendered flat list order); (6) ukSubdivisionOptions() → frozen [{ value, text }] of the 4 subdivisions in trace order England, Scotland, Wales, Northern Ireland. NO display copy beyond country names (country names are reference data — L2 COUNTRY_LABELS precedent): the optgroup headings ('United Kingdom of Great Britain and Northern Ireland', 'Countries', 'Country') and the EEA/GB-CI/ROW display labels are page copy owned by the consuming features' copy bundles (pp-018/pp-019/pp-036/pp-037), NOT this module. No labels for the region codes here. JSDoc per workspace doc-comments guide; no explanatory/migration comments."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/reference/countries.test.js",
+      "action": "create",
+      "what": "Co-located Vitest unit test (runs under test:plant-products and npm test). Cases: (a) COUNTRIES has exactly 253 entries, all codes unique, every entry has non-empty string code and name; (b) no entry has code 'GB'; (c) countryLabel('IE') === 'Republic of Ireland' (c-012); (d) trace-verified label spot checks: AX='Aland Islands', AG='Antigua and Barbuda', BV='Bouvet Island', ES-CN='Canary Islands', VA='Holy See', TR='Turkey', US='United States of America', VN='Viet Nam', VI='Virgin Islands of the United States', AT='Austria', BZ='Belize'; (e) countryLabel of an unknown code is undefined; (f) countryOptions() has 249 entries, is alphabetical by text, every element is { value, text }, and contains no GB-* subdivision code and none of REGION_FILTER_CODES; (g) ukSubdivisionOptions() deep-equals [{value:'GB-ENG',text:'England'},{value:'GB-SCT',text:'Scotland'},{value:'GB-WLS',text:'Wales'},{value:'GB-NIR',text:'Northern Ireland'}]; (h) REGION_FILTER_CODES deep-equals ['EEA','GB-CI','ROW']; (i) COUNTRIES, UK_SUBDIVISION_CODES, REGION_FILTER_CODES and the two option arrays are frozen. Test on input/output only — no implementation-detail assertions."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "origin.countryCode (backed later by pp-018 country-of-origin)",
+    "origin.countryOfConsignmentCode (backed later by pp-019 origin-of-import)",
+    "*.address.country for consignor/consignee/importer/destination/packer (backed later by pp-035/pp-036)"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/sets/plant-products/services/reference/countries.test.js — Vitest, NOT Playwright: this increment has no UI surface (no page, no route, no template), so no e2e spec and no axe test apply; the consuming page increments (pp-018/pp-019/pp-036/pp-037) own the browser-visible assertions over these options."
+  ],
+  "acceptanceCriteria": [
+    "sets/plant-products/services/reference/countries.js exists and exports COUNTRIES with exactly 253 unique-code entries: 249 flat country entries plus GB-ENG/GB-SCT/GB-WLS/GB-NIR, and no 'GB' entry.",
+    "countryLabel('IE') returns 'Republic of Ireland' (c-012 — rendered-trace label adopted over the legacy source's 'Ireland').",
+    "Labels match the rendered-trace spot checks character for character: Aland Islands (AX), Antigua and Barbuda (AG), Bouvet Island (BV), Canary Islands (ES-CN), Holy See (VA), Turkey (TR), United States of America (US), Viet Nam (VN), Virgin Islands of the United States (VI).",
+    "countryOptions() returns 249 { value, text } entries alphabetical by text, excluding the four GB-* subdivisions and the region pseudo-codes — the flat govuk-select list the journey pages consume; values are codes so consuming pages persist by code, never free text.",
+    "ukSubdivisionOptions() returns exactly the four UK nations in the order England, Scotland, Wales, Northern Ireland with ISO 3166-2 values — the material for the UK optgroup (or its ruled replacement) on journey pages, and for the dashboard's UK group (c-026).",
+    "REGION_FILTER_CODES is exactly ['EEA','GB-CI','ROW'] — the dashboard filter's pseudo-group codes modelled explicitly as data (c-026), with their display labels deliberately absent (copy belongs to pp-037's dashboard bundles).",
+    "The module performs no IO, no async work, no env/mode reads and exports no priming hook (§4.1 step 12: fixture-backed reference data, nothing to prime).",
+    "No optgroup heading strings or other display copy (beyond country names) appear anywhere in the module.",
+    "countries.test.js passes; full frontend Vitest suite and lint green; live-animals suites unchanged and green (no live-animals file touched)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals"
+  ],
+  "notes": "Rationale and rulings applied. (1) Entry count: MAPPING's '~254' counts the rendered select's 254 <option> elements = 1 'Select a country' placeholder + 253 selectable entries; the fixture holds the 253 selectable entries — the placeholder is page copy, owned by the consuming pages. Evidence: pages/country-of-origin.json optionsStructure (254 total = 1 placeholder + 249 flat + 4 in the single UK optgroup) with the count independently corroborated against ipaffs-qa-automation/types/country.ts (exactly 253 entries, no UnitedKingdom key). (2) c-012: displayed IE label is 'Republic of Ireland' (rendered trace) — country.ts says 'Ireland', so the transcription must apply this one override; tests select by value so legacy tests never see the divergence. (3) c-026: the dashboard's country filter is genuinely grouped in legacy source (three real optgroups: 'Countries' = All + EEA/GB-CI/ROW pseudo-options, 'Country' = the ISO countries, 'United Kingdom of Great Britain and Northern Ireland' = the 4 nations); this fixture models the grouping EXPLICITLY AS DATA via three primitive exports (countryOptions / ukSubdivisionOptions / REGION_FILTER_CODES) and lets pp-037 compose the grouped control with labels from its copy bundle — decided here to keep display copy out of the service per the no-display-logic rule, matching how L2 services hold country names but no headings. (4) The journey-page UK optgroup question (raw <optgroup> is not a documented GOV.UK Select feature; page spec says 'decide with content design, do not copy by default') is pp-018's decision, not this increment's — the fixture is layout-neutral either way. (5) Also NOT ported: the legacy's regionOfOrigin side effect (GB-* selection persisting a separate partOne.commodities.regionOfOrigin) — a consuming-page/mapper concern recorded in the country-of-origin spec, out of scope for the fixture. (6) Exemplar: src/server/app/services/countries/stub.js + index.js for the label-map + options-array idiom; this module is simpler (no client.js, no prime, no mode). (7) Dep note: MAPPING's canonical dependsOn is only pp-007, but pp-010 (which adds the test:plant-products script) is m0 and will have landed by m1 build order; if it somehow has not, verification command 1 is unavailable and command 2 (npm test, which runs all of src/server/app including the plant set) is the covering check. (8) Run npm run format before commit (pre-commit hook enforces format + lint + units).",
+  "openQuestions": [
+    "The full 253-entry transcription source is the local legacy clone ~/git/defra/ipaffs/ipaffs-qa-automation/types/country.ts (verified present 2026-07-31). If that clone is missing at build time the implementor has no complete list — the trace-requirements page specs carry only truncated option evidence — so restore the clone rather than inventing entries.",
+    "Display labels for the EEA / GB-CI / ROW dashboard pseudo-options were not recovered from the trace (the a11y tree flattened them); pp-037 must source those three labels (content design or legacy searchAndFilter.html:77-121) when it builds the grouped filter — codes are pinned here, labels deliberately not."
+  ]
+}

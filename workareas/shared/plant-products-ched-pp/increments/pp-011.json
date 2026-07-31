@@ -1,0 +1,59 @@
+{
+  "id": "pp-011",
+  "title": "T-6: per-set Playwright feature project + webServer env pass-through",
+  "kind": "test",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007"],
+  "sourceIncrement": null,
+  "recipe": "SIBLING-SET-PLAN.md §7 T-6 (no in-repo recipe exists for per-set Playwright scaffolding — this is G-A step 7 territory; the plan section is the script)",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "playwright.config.js",
+      "action": "edit",
+      "what": "Two edits. (1) Append a new project object to the existing `projects` array (after the `features` project at lines 42-52), copying the `features` project's `use` block exactly: { name: 'features-plant-products', testDir: './src/server/app/sets/plant-products/journeys/linear/features', testMatch: '**/*.e2e.spec.js', use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${port}`, video: 'off', trace: 'retain-on-failure' } }. Do NOT touch the `journeys` or `features` projects. (2) On the shared `webServer` block (lines 54-63) extend/replace the existing comment to record the env-merge mechanism verbatim: Playwright spawns the webServer with the explicit `env` merged OVER `process.env` (additive — this block is NOT the complete server environment), which is how SERVED_SET / PLANT_PRODUCTS_MODE set by the test:features:plant-products npm script reach the self-hosted server; the hardcoded LIVE_ANIMALS_MODE: 'stub' is inert when SERVED_SET=plant-products; reuseExistingServer: false guarantees no stale server from the other set is reused. Leave the `env` object itself unchanged (PORT + LIVE_ANIMALS_MODE: 'stub')."
+    },
+    {
+      "path": "package.json",
+      "action": "edit",
+      "what": "Add one script directly beside the existing test:features (line 21), mirroring its exact shape (build:frontend prefix + DEMO vars) with the two set env vars prepended: \"test:features:plant-products\": \"npm run build:frontend && SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=features-plant-products\". test:features itself is untouched."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js",
+      "action": "edit",
+      "what": "CONDITIONAL — only if none of the three pp-007 m0 specs (import-type, hub, dashboard) already asserts content unique to the plant set: strengthen one existing assertion in this spec to target plant-set-only rendered copy (e.g. the CHED-PP import-type option text that the live-animals set never renders), so a live-animals server passing the suite is impossible. No new test cases; no change if the assertion already exists."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js — EXISTS from pp-007; executed (not written) under the new features-plant-products project; must contain (or gain, per conditional edit above) at least one assertion on plant-set-only content proving SERVED_SET reached the webServer",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — EXISTS from pp-007; executed under the new project (empty hub skeleton state)",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — EXISTS from pp-007; executed under the new project (m0 dashboard skeleton; confirm exact path/name against what pp-007 created before running)"
+  ],
+  "acceptanceCriteria": [
+    "playwright.config.js has a features-plant-products project with testDir './src/server/app/sets/plant-products/journeys/linear/features', testMatch '**/*.e2e.spec.js' and a use block identical to the features project's; the journeys and features projects are byte-identical to before.",
+    "package.json has the test:features:plant-products script exactly as specified (build:frontend prefix, SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub, --project=features-plant-products); test:features is unchanged.",
+    "PORT=3050 npm run test:features:plant-products passes: all pp-007 m0 e2e specs (import-type + hub + dashboard) green under the new project, self-hosting the app in plant stub mode with no workspace stack.",
+    "At least one spec executed by the new script asserts plant-set content that CANNOT render under live-animals — a server booted without SERVED_SET=plant-products would fail the suite (proves the npm-script env passed through the webServer merge).",
+    "The webServer block carries a comment recording the env-merge mechanism (explicit env merged over process.env, additive), the inertness of the hardcoded LIVE_ANIMALS_MODE under the plant set, and the reuseExistingServer:false stale-server guarantee.",
+    "Existing test:features is untouched and green; the full live-animals unit suite and npm test remain green (two-sided sibling-safety check — this increment edits shared root config)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "Rationale: T-6 per SIBLING-SET-PLAN §7 — the round-1 idea of scoping the existing test:features was a NO-OP (the features project is already live-animals-scoped via its testDir at playwright.config.js:43-45), so the real work is a NEW project + NEW script + recording the load-bearing env-pass-through subtlety. Verified against the live file: projects array lines 22-53, features project use block { ...devices['Desktop Chrome'], baseURL, video: 'off', trace: 'retain-on-failure' }, webServer lines 54-63 with env: { PORT, LIVE_ANIMALS_MODE: 'stub' } and reuseExistingServer: false, test:features at package.json line 21. DECISION (headless): the plan's literal script text omitted the build:frontend prefix and DEMO_SLOWMO/DEMO_PACE_MS vars that every existing Playwright script carries (house pattern, and memory rule: build config is load-bearing — without build:frontend the self-hosted app would 404 bundles); the planned script mirrors test:features' full shape with the two set vars prepended. DECISION: the config comment is kept despite the remove-explanatory-comments preference because the plan explicitly mandates recording the merge mechanism in-config (a corrected round-1 error worth pinning at the point of use). DECISION: verification ladder omits test:plant-products because dependsOn is only pp-007 and that script is pp-010's deliverable — if pp-010 has landed by build time, the implementor should ALSO run npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products after the baseline step. Two-sided check included (test:live-animals + test:features + npm test) because playwright.config.js and package.json are shared root files. The test:e2e whole-journey plant split is explicitly NOT this increment — it is pp-041 (m4). Exemplars: the existing features project block and test:features script are the idiom; copy, do not invent. Baseline guard: run test:live-animals and PORT=3050 test:features BEFORE editing; red baseline = stop and report.",
+  "openQuestions": [
+    "Exact filenames of the pp-007 dashboard/hub e2e specs are set by pp-007's build (assumed features/dashboard/dashboard.e2e.spec.js and features/hub/hub.e2e.spec.js per the co-location convention) — the implementor must confirm the actual paths on disk before wiring assertions; the new project's glob picks them up regardless of name."
+  ]
+}
