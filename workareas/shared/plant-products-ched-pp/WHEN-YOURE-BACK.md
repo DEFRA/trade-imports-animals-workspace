@@ -7,6 +7,23 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [Phase B, gate PASSED] mvn verify green after wiring fix (backend 75763b9)
+The corrective fix landed: `@EnableMongoRepositories` scoped to the plantproducts package only, ordering
+pinned with `@AutoConfigureAfter(MongoRepositoriesAutoConfiguration.class)`. Full `mvn verify` is green —
+449 Surefire units + 184 Failsafe ITs, 0 failures (log: `logs/phase-b-verify2.log`). Note the
+plantproducts package has NO tests of its own yet (deliberately out of tonight's scope) — the backlog
+carries backend test increments, so the schema is compile+wiring-verified, not behaviour-verified.
+
+## [Phase B, gate] IT gate CAUGHT the wiring hazard — animals ITs failed, fix in flight
+The deferred `mvn verify` gate failed exactly as the designer warned: `PlantProductsAutoConfiguration`
+listed the animals package in its `@EnableMongoRepositories`, but Boot's own Mongo auto-config had
+already registered those repositories from the `@SpringBootApplication` base package, so every animals
+repository bean was defined twice and the ApplicationContext failed for all animals ITs. Fix applied by
+a corrective agent: scope the annotation to `uk.gov.defra.trade.imports.plantproducts` only and add
+`@AutoConfigureAfter(MongoRepositoriesAutoConfiguration.class)`; full `mvn verify` re-run logged to
+`logs/phase-b-verify2.log`. The green/red outcome is recorded in a later entry — if the top entry above
+doesn't say the gate passed, treat the backend schema as compile-verified only.
+
 ## [Phase B, deviation] Domain model is Lombok @Data/@SuperBuilder, NOT records
 The orchestrator prompt said "compilable Java records", but the designer ruled that mirroring the
 animals house shape wins: the NotificationBase-style split relies on @SuperBuilder inheritance (records
