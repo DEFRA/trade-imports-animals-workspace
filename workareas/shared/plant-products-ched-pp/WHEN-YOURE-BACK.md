@@ -7,6 +7,19 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [Phase C] SIBLING-SET-PLAN.md written, adversarially verified, fixed in place
+The scaffold plan for `sets/plant-products/` is complete under `frontend-plan/`: full set folder tree,
+the 12-spoke hub→section→task-row→page mapping over all 39 pages, the manifest/within-chains for the
+commodity depth-3 nesting, the exact L1 gateway split (routes.js → routes-live-animals.js +
+routes-plant-products.js selected by SERVED_SET), platform items P-1..P-8 (obligation-policy literals
+out of bridge/obligation-source.js with a 9-importer blast radius; records-mapper containment; dep-cruiser
+and convention-test work), and a two-sided verification ladder (plant ladder AND live-animals stays
+green). An adversarial verifier refuted 3 claims (start-section shape, P-1 consumer list, Playwright
+project scoping) — all fixed in the doc, not just noted. The gap catalogue G-A..G-I is the honest
+finding: there is NO add-a-set recipe, and §8 G-A enumerates the 10 steps such a recipe needs — worth
+extracting to `docs/add-a-set.md` once plant-products proves it. Also no depth-3 collection precedent:
+P-7 mandates a platform characterisation test BEFORE any m3 commodity work.
+
 ## [Phase B, gate PASSED] mvn verify green after wiring fix (backend 75763b9)
 The corrective fix landed: `@EnableMongoRepositories` scoped to the plantproducts package only, ordering
 pinned with `@AutoConfigureAfter(MongoRepositoriesAutoConfiguration.class)`. Full `mvn verify` is green —
