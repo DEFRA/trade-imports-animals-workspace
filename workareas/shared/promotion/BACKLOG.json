@@ -1046,7 +1046,7 @@
       "title": "Rework feature-folder specs to Playwright best practices: self-contained, split blocks, deeper validation coverage",
       "detail": "Sam: revisit every co-located spec in src/server/live-animals/features/** against the workspace Playwright best practices. Rules: (1) SELF-CONTAINED — no page objects; raw locators in the spec (shared journey helpers for reaching the page are acceptable plumbing, but assertions and interactions live inline so each spec reads whole); (2) SPLIT the monolithic tests — several specs currently drive everything in one long test block; break into focused tests per behaviour (rendering, each validation rule or coherent group, save/persist, a11y) accepting the setup cost per test — use beforeEach for shared arrival state; (3) DEEPEN input validation + error handling coverage — every controller validation rule individually asserted with value preservation, plus error-summary link-to-field behaviour, and server error paths where testable. Read the workspace Playwright BEST_PRACTICES.md first (tests read like HTML). Do features in batches like p-226 (A simple, B medium, C heavy). Acceptance per batch: features project green; unit suite untouched; no page-object imports remain in feature specs; test count strictly increases where blocks were split.",
       "evidence": "Sam instruction 2026-07-31; current specs authored in p-225/p-226 batches — some single-block (e.g. cancel-amend, delete-notification are 1-test specs)",
-      "decision": "PAUSE ORDER (Sam, 2026-07-31): after batch A lands (commit + verify), HALT the loop — Sam is manually refactoring folder organisation. Do not start batch B/C or any other item until Sam says resume. On resume, re-audit batch B/C briefs against the post-refactor layout before firing.",
+      "decision": "Pause order retracted by Sam 2026-07-31 (stepping away — continue). Folder refactor deferred; batch B fired against current layout. Parallel plan active: p-239 + p-240 (worktree) run alongside.",
       "commits": [
         {
           "repo": "trade-imports-animals-frontend",
@@ -1059,21 +1059,30 @@
       "id": "p-239",
       "theme": "promotion",
       "type": "question",
-      "status": "todo",
+      "status": "done",
       "title": "End-of-loop: assess changed repos and produce a same-day merge strategy",
       "detail": "Sam: at the end of this loop, assess the repos with changes on spike/EUDPA-288-model-retrofit and produce a strategy for merging it all today. Deliverable (report to workareas/shared/promotion/MERGE-STRATEGY.md): per repo — commit count vs main, divergence (behind main?), conflict risk (files touched both sides), CI readiness (branch image availability, the parity job, linux baselines now committed), merge ORDER across repos (backend contract changes land before/with frontend consumers; tests repo alignment; workspace docs), PR shape (per-repo PRs to main, same branch name, coordinated via tests repo per workspace rules), what the frozen main-suite means post-merge (it stops being a parity lane and presumably retires — flag as decision), the 5 blocked-on-sam items and whether any block the merge, and a concrete step-by-step runbook for today incl. verification gates at each step. Report-only; Sam executes or instructs.",
       "evidence": "Sam instruction 2026-07-31; branch state: frontend/backend/tests/workspace all carry pushed spike commits",
-      "decision": ""
+      "decision": "Verdict: mergeable today with a reconcile-first runbook. Blockers found: backend 8 predicted conflict files, tests 5 (both from main-into-branch reconciliation, resolutions specified); all three branch Docker images unpublished — parity CI would silently fall back to :latest (biggest risk, draft PRs publish images at step 3); merge order backend -> frontend -> tests -> workspace. main-suite retirement flagged as Sam DECISION (recommendation: retire in a follow-up PR after old FE decommission call). None of the 5 blocked-on-sam items block the merge.",
+      "verification": "Codex read-only assessment across all four repos + gh/docker probes; parent-reviewed structure; published to workareas/shared/promotion/MERGE-STRATEGY.md"
     },
     {
       "id": "p-240",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Write the 8 missing docs identified by the p-237 prune (GDS plain English)",
       "detail": "Write fresh, current-state documentation for the 8 gaps the p-237 audit identified (full list in p-237 implementor report + backlog decision): (1) add-a-field guide (localized copy, view-model CYA rows, recoverable saves, status handling, colocated contract + e2e tests); (2) add-a-page guide (feature registration, copy bundles, controller conventions, recoverable writes, *.e2e.spec.js placement); (3) test strategy (journeys + features Playwright projects, colocated E2E, helpers, boot guards); (4) cardinality guide (requires.maxEntries, recordCountEquals, alternatives/minimums vs collection constraints); (5) services inventory derived from actual public exports + backing modes; (6) real-vs-stub persistence semantics (dashboard listing, session journey IDs); (7) Lighthouse contribution guidance from lighthouserc.cjs; (8) cross-repo test-ownership contract IF still needed — assess first, skip with rationale if the parity harness supersedes it. WRITING RULES (Sam): GDS language standards — plain English, short sentences, simple words, active voice. Ground every claim in current code (file:line checked at writing time); docs live under src/server/live-animals/docs/ with docs/README.md as index; root README links in. Acceptance: docs accurate vs HEAD, GDS-style, indexed, unit suite + lints green.",
       "evidence": "p-237 gap list (scratchpad p237/lastmsg2.txt); Sam ruling on GDS language standards",
-      "decision": ""
+      "decision": "All 8 gaps written (983 lines, GDS plain English, 60-126 lines each except extended persistence.md); test-ownership assessed as still needed (frontend delegates deployed E2E to the workspace workflow) so written rather than skipped; docs index + root README corrected.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "fa7051e",
+          "note": "merge of child branch e7924f1"
+        }
+      ],
+      "verification": "Written in an isolated worktree on a ticket-prefixed child branch; every claim code-checked at writing time; worktree suite 1450/0 + format + 21-file link check; merged clean and suite re-verified 1450/0 on the spike branch"
     }
   ]
 }
