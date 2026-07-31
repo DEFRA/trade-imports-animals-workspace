@@ -1171,6 +1171,26 @@
       "detail": "GUARD: planning-only item, and even the planning must not remove anything — Sam explicitly wants the parity tests ALIVE until he finishes his ongoing folder refactor. Do not claim this item until Sam confirms the refactor is complete. CONTEXT: QA has agreed the dual-running setup and the associated parity tests are no longer required; the merge will ship one frontend and one test suite (the new gear). SCOPE to plan: (1) workspace stack — test-target profile, frontend-main (:3200) + frontend-test (:3100) containers, dev overlay entries, run-stack/stop-stack profile wiring; (2) tests repo — main-suite/ (frozen legacy suite), playwright.parity.config.ts, dual-lane npm test / test:parity scripts, parity artifact lanes, bin/update-visual-baselines-linux.sh main-lane arm, assert-parity-stack preflight; (3) docs — DUAL-FRONTEND-PARITY-PLAN.md, PARITY-MAPPING.md, QA-HANDOVER.md references, MERGE-STRATEGY.md (its runbook assumes parity CI — revise); (4) CI that invokes any of the above; (5) what replaces the gate: reworked suite as the single E2E gate + frontend co-located specs. DELIVERABLE: a plan doc in workareas/shared/promotion/ (e.g. PARITY-RIPOUT-PLAN.md) with ordered increments, per-repo file lists, and a verification story for each increment; review with Sam before any execution item is queued.",
       "evidence": "Sam instruction 2026-07-31: QA happy dual-running + parity tests not required; keep alive until folder refactor done",
       "decision": ""
+    },
+    {
+      "id": "p-246",
+      "theme": "promotion",
+      "type": "task",
+      "status": "in-progress",
+      "title": "Architectural analysis workflow over Sam's second-pass restructure (app/ + sets/ + journeys/)",
+      "detail": "Sam completed a first pass of the deeper refactor: generic architecture at src/server/app/ (engine, model, bridge, flow, services, lib, shared, analysis, docs, root config/routes/purity/convention tests), sets at src/server/app/sets/<set> (live-animals today; hypothetical plant-products later) holding obligations/ (root data) and journeys/<style>/ (linear today; hypothetical power-user one-page journey later). He wants a multi-agent Workflow (explicit opt-in) that reads EVERY file and judges: is it in the right layer; are imports jumping up/down the stack; what must dependency-cruiser rules become; did any move break something subtle. NOT a test pass — architectural thought. Output: actionable report (workareas/shared/promotion/RESTRUCTURE-ANALYSIS.md) with three buckets: sorted / needs-sorting / should-move(+destination), every item with file:line evidence, plus a proposed dependency-cruiser rule set. The hypotheticals are lenses, not build targets.",
+      "evidence": "Sam instruction 2026-07-31 (voice): separation of generic architecture vs sets vs journeys; power-user journey hypothesis; QA context",
+      "decision": ""
+    },
+    {
+      "id": "p-247",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Stabilise second-pass restructure: apply p-246 analysis, fix configs/imports/docs, full ladder, commit",
+      "detail": "After the p-246 analysis report exists: fix all mechanical fallout of the app/sets/journeys re-parent (webpack entry, vitest/playwright/depcruise configs Sam has not already fixed, nunjucks roots, outside-tree imports, docs path citations incl. the p-243 recipes which now cite obligation-based-app paths), apply the analysis's needs-sorting items that Sam agrees with (surface should-move items to him first if they contradict his moves), adopt the proposed dependency-cruiser rule set, regenerate the baseline, run the full verification ladder ending with the dual-lane parity gate, commit Sam's moves + fixes together if uncommitted.",
+      "evidence": "p-246 report (pending); package.json already updated by Sam to src/server/app/sets/live-animals paths",
+      "decision": ""
     }
   ]
 }
