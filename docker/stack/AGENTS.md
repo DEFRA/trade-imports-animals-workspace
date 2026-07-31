@@ -99,7 +99,7 @@ curl -X POST http://localhost:8474/proxies/servicebus -H 'Content-Type: applicat
 
 With the proxy disabled, `QueueMessageSender` sees connection failures classed as
 transient, so the SQS message is redelivered up to the queue's `maxReceiveCount`
-(3, set in `repos/trade-imports-dynamics-gateway/servicebus/start-localstack.sh`)
+(3, set in `repos/trade-imports-dynamics-gateway/servicebus/setup-notification-pipeline.sh`)
 before SQS itself moves it to the DLQ (`GET /dlq/notifications` on the gateway to
 check depth). Restoring the proxy does not auto-redeliver already-DLQ'd
 messages — call `POST /dlq/notifications/replay-all` (guarded by the
@@ -133,9 +133,13 @@ stack invokes the repo-owned script rather than keeping its own copy:
 | Script | Owner | Path in owning repo |
 |---|---|---|
 | Mongo replica-set init (`10-database-setup.js`) | workspace | `docker/stack/scripts/mongodb/` |
-| Mongo notification seed fixtures (`20-…`, `21-…`) | tests repo | `seeds/mongodb/` |
+| Mongo notification seed scripts | tests repo | `seeds/mongodb/` |
 | Floci provisioning (`start-floci.sh`) | backend | `compose/start-floci.sh` |
 | ASB emulator entity config (`servicebus-config.json`) | dynamics-gateway | `servicebus/servicebus-config.json` |
+
+The tests repo's `seeds/mongodb/` may currently stage nothing — tests now
+seed notification state at test level through the front door (the backend
+API) rather than the back door (writing directly into Mongo).
 
 `run-stack.sh` and `bounce-mongo.sh` call `stage_init_scripts`
 (`lib/init-scripts.sh`), which rebuilds `docker/stack/.staged/` — generated,
