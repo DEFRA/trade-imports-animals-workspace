@@ -1,0 +1,224 @@
+{
+  "id": "pp-028",
+  "title": "commodity-additional-details — consignment totals",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-012", "pp-016", "pp-027"],
+  "sourceIncrement": "inc-019",
+  "recipe": "sets/live-animals/docs/add-a-section.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/additional-details.js",
+      "action": "create",
+      "what": "Three obligation exports, pure data, fresh UUID ids, path-safe camelCase names: `totalGrossWeight` { id: <uuid>, name: 'totalGrossWeight', status: 'mandatory' }; `grossVolume` { id: <uuid>, name: 'grossVolume', status: 'optional' }; `grossVolumeUnit` { id: <uuid>, name: 'grossVolumeUnit', applyTo: presentGate(grossVolume, <errorCode/reason per helper signature>) } — presentGate imported from src/server/app/model/obligations/helpers/index.js (export verified at helpers/index.js:83), gate argument is the grossVolume obligation OBJECT (same-file identity reference), no static status (in scope = required iff grossVolume answered; out of scope = engine wipes the stored unit). NO labels, options, hints or validation strings — obligation-purity boot guard enforces."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export totalGrossWeight, grossVolume, grossVolumeUnit; append all three to the `obligations` array. `groups` stays derived (no group here); `policy` untouched."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/page.js",
+      "action": "create",
+      "what": "IMPORT-FREE page identity: `export const commodityAdditionalDetailsPage = { id: '<stable-id>', slug: 'commodity-additional-details' }` (import-free rule prevents controller-flow cycle)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/evaluation.js",
+      "action": "create",
+      "what": "Binding bundle: feature('additional-details', [scalar({ field: 'totalGrossWeight', obligation: totalGrossWeight }), scalar({ field: 'grossVolume', obligation: grossVolume }), scalar({ field: 'grossVolumeUnit', obligation: grossVolumeUnit })]). No convert needed — cleaned page values are canonical (weight/volume as cleaned numeric strings, unit as the stored code)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the additional-details evaluationBindings and add to `featureEvaluationBindings` (frozen array — recreate frozen with the new entry, matching the file's existing idiom)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/controller.js",
+      "action": "create",
+      "what": "meta = { ...commodityAdditionalDetailsPage, collects: ['totalGrossWeight', 'grossVolume', 'grossVolumeUnit'] }. GET: state.get() ONCE; prefill from answers; compute DERIVED rollups from answers.commodityLines — netWeightTotal = sum of Number(line.netWeight), packagesTotal = sum of Number(line.numberOfPackages) — render-only, NEVER committed/stored. One render() helper for GET + POST errors; kit.base() view; back link hubPath(journey.journeyId). POST: read raw request.payload; validate with lib/validate factories, Joi-voice single-layer (c-018), one canonical string per rule: totalGrossWeight required 'Enter the total gross weight'; numeric 'Total gross weight must be a number'; must exceed the derived net rollup 'Total gross weight must be greater than the net weight'; max 5 decimal places expressed ON the field itself 'Total gross weight must have 5 decimal places or fewer'; grossVolume numeric when present 'Total gross volume must be a number'; PAIRING as controller fieldset rules (house D-13 email-OR-telephone precedent): unit posted without volume → error on grossVolume 'Enter the total gross volume'; volume posted without unit → error on grossVolumeUnit 'Select a unit type'. Unit membership rule built inside POST from services/reference/gross-volume-units.js codes (never a frozen module-level schema list). Invalid → 400 re-render RAW values; valid → state.commit() cleaned values wrapped in kit.recoverableSave() (marked failure → recoverableError:true, 500; other errors throw); redirect await kit.nextTarget(request, page, committed.scope). routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (UNPREFIXED — other Nunjucks root); view name under the plant-products TEMPLATES prefix. Caption 'Description of the goods' + H1 'Additional details' (label-above-input page, not a fieldset). 'Total' block: H2 + govukSummaryList with NO action links ('Net weight of the consignment (kg)' = derived netWeightTotal; 'Number of packages of the consignment' = derived packagesTotal) — deliberate replacement of legacy `presentation-table` per the page spec's govukAlternative; no custom CSS. govukInput totalGrossWeight: label 'Total gross weight (kg)', classes govuk-!-width-one-half, inputmode 'numeric' (house idiom — live-animals _species-quantities.njk:17). Nested govuk-grid-row: govukInput grossVolume (label 'Total gross volume (optional)', inputmode 'numeric') in govuk-grid-column-two-thirds beside govukSelect grossVolumeUnit (label 'Unit', placeholder option 'Select unit' value '', options from gross-volume-units.js rendered by label, submitted by CODE) in govuk-grid-column-one-third. Shared error summary ('There is a problem' — c-004, NOT legacy 'Please fix the following errors') + shared save actions. Input name = id = error key for every control so #<fieldName> summary links focus. NO legacy chrome: no href='#' back link, no heading-tertiary reference span (house dynamic reference caption is the hub/layout's concern), no etag field (no optimistic concurrency in the house model), no CHED-P/D radios."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: caption 'Description of the goods'; heading 'Additional details'; totals.heading 'Total', totals.netWeightLabel 'Net weight of the consignment (kg)', totals.packagesLabel 'Number of packages of the consignment'; fields.totalGrossWeight.label 'Total gross weight (kg)'; fields.grossVolume.label 'Total gross volume (optional)'; fields.grossVolumeUnit.label 'Unit', fields.grossVolumeUnit.placeholder 'Select unit'; errors.totalGrossWeightRequired 'Enter the total gross weight'; errors.totalGrossWeightNumber 'Total gross weight must be a number'; errors.totalGrossWeightGreaterThanNet 'Total gross weight must be greater than the net weight'; errors.totalGrossWeightDecimalPlaces 'Total gross weight must have 5 decimal places or fewer'; errors.grossVolumeNumber 'Total gross volume must be a number'; errors.grossVolumeRequiredWithUnit 'Enter the total gross volume'; errors.grossVolumeUnitRequired 'Select a unit type'. Resolve via copyFor({ en, cy })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, STRUCTURE-IDENTICAL to copy.en.js (same leaf paths and value kinds — copy-parity enforces). Welsh translations of every key above."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test pinning the bundle shape + key strings, matching the set's existing feature copy-test idiom (e.g. the pp-020 purpose feature's copy.test.js)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill of all three fields; rollup computation (seed commodityLines with 2 lines netWeight '1'/'10' + packages '2'/'3' → view model shows 11 and 5; zero lines → 0/0); EVERY validation branch (required, non-numeric weight, weight <= net rollup, >5 decimals, non-numeric volume, unit-without-volume, volume-without-unit) each asserting its exact message + 400 + raw payload re-render + NO commit; valid POST commits cleaned values + redirects via kit.nextTarget; presentGate wipe (commit with volume cleared → grossVolumeUnit leaves scope, stored unit purged by the engine); recoverable-save marked failure → 500 with recoverableError; unexpected error throws."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/additional-details/commodity-additional-details.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (scenarios listed under `specs`), plus the two axe checks (initial render + error state), AxeBuilder withTags(['wcag2a','wcag2aa']), fail on serious/critical."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the additional-details controller namespace: add `meta` to `dispatchPages`; spread `routes` into `allRoutes`. buildDispatch will verify single ownership + coverage of the three obligations at boot."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import commodityAdditionalDetailsPage; append section `{ id: 'additional-details', pages: [commodityAdditionalDetailsPage] }` IMMEDIATELY AFTER the `commodities` section entry and before `review` (§2.3 canonical order: start, origin, purpose, commodities, additional-details, …, review). Derived allFlowPages/sectionOfPage/answerSections pick it up automatically."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row `{ id: 'additional-details', pages: [commodityAdditionalDetailsPage] }` (canonical row id per SIBLING-SET-PLAN §2.1 spoke 4). No `parts`, no `conditional` — a plain mandatory row; status = union of the page's collects via the existing rowStatus delegation to L2 bridge/status."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the additional-details row: Not yet started (no answers) / In progress (grossVolume only) / Completed (totalGrossWeight answered; unit answered when volume present); prove the mandatory row BLOCKS readyForCheckYourAnswers while incomplete and unblocks when complete; first entry page = commodity-additional-details."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "GROUPS gains the row id 'additional-details' under its own numbered heading — spoke 4 'Additional details' per §2.1, positioned after the Commodity spoke and before Transport."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Spoke-4 group caption 'Additional details' + rows['additional-details'] title 'Additional details' and hint (short GDS sentence, e.g. 'Total gross weight and volume of the consignment')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh mirror of the spoke-4 caption + row title/hint, same leaf paths."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new group caption + row copy keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the 'Additional details' row renders under its heading with initial status and links to /notifications/{id}/commodity-additional-details; hub axe state re-checked with the new row present."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.totalGrossWeight → additionalDetails.totalGrossWeight, answers.grossVolume → additionalDetails.grossVolume, answers.grossVolumeUnit → additionalDetails.grossVolumeUnit (camelCase DTO, D-10). Unanswered → field ABSENT from the DTO (never null-invent). Rollups (net weight, package count) are NEVER sent — derived, never stored (obligation-field-map inc-019 row)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Inverse mapping for draft resume: additionalDetails.{totalGrossWeight, grossVolume, grossVolumeUnit} back onto the answers tree; absent fields stay absent."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip cases: all three answered; weight-only (volume/unit absent from DTO); nothing answered (additionalDetails absent or empty per the mapper's existing empty-shape convention). Explicit assertion that no netWeight/packages total appears anywhere in the DTO."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the valid-POST contract case for the additional-details controller (T-5 standing rule): payload { totalGrossWeight: '12', grossVolume: '5', grossVolumeUnit: '<code from gross-volume-units.js>' } + seeded commodityLines answer (so the greater-than-net rule passes against a small net total); asserts the case commits EXACTLY ['totalGrossWeight', 'grossVolume', 'grossVolumeUnit']."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "total-gross-weight",
+      "within": null,
+      "requires": "status: 'mandatory' (plain scalar; no gate helper). DECISION: the legacy two-layer split (page-optional Joi.allow('') vs backend @NotNull 'Add the total gross weight') is resolved by enforcing mandatoriness at the page/model layer, per the planningBrief's 'totalGrossWeight (mandatory)' and single-layer-validation ruling c-018.",
+      "collectedBy": "commodity-additional-details"
+    },
+    {
+      "id": "gross-volume",
+      "within": null,
+      "requires": "status: 'optional' (matches the rendered '(optional)' label; genuinely optional at every legacy layer).",
+      "collectedBy": "commodity-additional-details"
+    },
+    {
+      "id": "gross-volume-unit",
+      "within": null,
+      "requires": "applyTo: presentGate(grossVolume, …) — L2 helper (model/obligations/helpers/index.js:83); in scope (and therefore required) iff grossVolume is answered; leaving scope wipes the stored unit. Gate argument is the grossVolume obligation object by identity from the same section file.",
+      "collectedBy": "commodity-additional-details"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      {
+        "file": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+        "change": "Append { id: 'additional-details', pages: [commodityAdditionalDetailsPage] } immediately after the 'commodities' section, before 'review' (§2.3 order — array position drives nextInSection() and strictly-earlier continue prerequisites, so commodity answers are prerequisites of this page)."
+      }
+    ],
+    "taskRows": [
+      {
+        "file": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+        "change": "Add mandatory row { id: 'additional-details', pages: [commodityAdditionalDetailsPage] }; hub GROUPS (features/hub/controller.js) gains the row id under new numbered spoke-4 heading 'Additional details' (after Commodity, before Transport); row title + hint + group caption in both hub copy bundles."
+      }
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "additionalDetails.totalGrossWeight",
+    "additionalDetails.grossVolume",
+    "additionalDetails.grossVolumeUnit"
+  ],
+  "copyKeys": [
+    "features/additional-details/copy: caption, heading, totals.heading, totals.netWeightLabel, totals.packagesLabel",
+    "features/additional-details/copy: fields.totalGrossWeight.label, fields.grossVolume.label, fields.grossVolumeUnit.label, fields.grossVolumeUnit.placeholder",
+    "features/additional-details/copy: errors.totalGrossWeightRequired, errors.totalGrossWeightNumber, errors.totalGrossWeightGreaterThanNet, errors.totalGrossWeightDecimalPlaces, errors.grossVolumeNumber, errors.grossVolumeRequiredWithUnit, errors.grossVolumeUnitRequired",
+    "features/hub/copy: spoke-4 group caption 'Additional details' + rows['additional-details'].title, rows['additional-details'].hint",
+    "(every key in BOTH copy.en.js and copy.cy.js, same shape — copy-parity enforced)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/additional-details/commodity-additional-details.e2e.spec.js — initial render: caption, H1, Total summary list values derived from previously entered commodity lines, three controls with labels and the unit option list (including 'Select unit' placeholder — assert the FULL option list, dividers/placeholders included)",
+    "same spec — happy path: fill weight (> net), volume + unit, save → redirect (hub via nextTarget), reload → all three values persisted through the records service",
+    "same spec — one test per validation rule (7 rules), each asserting the exact message, raw values preserved on the 400 re-render, and the error-summary link focusing its control",
+    "same spec — presentGate purge: save volume+unit, return, clear volume, save → unit no longer stored (re-render shows placeholder)",
+    "same spec — hub row: 'Additional details' Not yet started before visiting, Completed after a valid save",
+    "same spec — axe: initial render + validation-error state, wcag2a/wcag2aa, fail serious/critical",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — extended for the spoke-4 row presence + link target"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/commodity-additional-details renders caption 'Description of the goods', H1 'Additional details', and a read-only 'Total' govukSummaryList showing 'Net weight of the consignment (kg)' = sum of commodityLines[].netWeight and 'Number of packages of the consignment' = sum of commodityLines[].numberOfPackages, derived at render time — no stored total fields anywhere (mapper test proves omission).",
+    "Controls: 'Total gross weight (kg)' text input (inputmode numeric, one-half width); 'Total gross volume (optional)' text input (inputmode numeric); 'Unit' govukSelect with placeholder 'Select unit' and options sourced from services/reference/gross-volume-units.js — displayed by label, persisted by CODE (never the display string).",
+    "totalGrossWeight is mandatory in the obligation model AND the page validator: blank POST → 400 with 'Enter the total gross weight'; the additional-details task row stays incomplete until it is answered.",
+    "Validation (single-layer Joi-voice, one canonical string per rule): non-numeric weight → 'Total gross weight must be a number'; weight <= derived net total → 'Total gross weight must be greater than the net weight'; more than 5 decimal places → 'Total gross weight must have 5 decimal places or fewer' (rule expressed on the visible field — no phantom gross-weight-decimal field); non-numeric volume → 'Total gross volume must be a number'; unit selected with blank volume → 'Enter the total gross volume'; volume entered with no unit → 'Select a unit type'. Every 400 re-renders RAW entered values; every error-summary link moves focus to its control; summary title is 'There is a problem'.",
+    "Valid POST commits exactly the cleaned values for the in-scope subset of ['totalGrossWeight','grossVolume','grossVolumeUnit'], redirects via kit.nextTarget, and all values survive reload (draft persisted through the set records service in stub mode).",
+    "presentGate behaviour: clearing grossVolume takes grossVolumeUnit out of scope and the engine wipes the stored unit — proven in controller.test.js and the e2e spec.",
+    "Hub: spoke-4 'Additional details' heading + row appear between Commodity and Transport; row Not yet started → Completed; the mandatory row blocks readyForCheckYourAnswers until complete (task-rows.test.js pins blocked AND complete states).",
+    "Explicitly absent: storage-temperature/'Ambient' radios, 'Feedingstuff' radio, 'Commodity intended for:' radios (CHED-P/D/A-only surfaces), GMS interstitial on exit, etag/optimistic-concurrency field, legacy dual-primary buttons, href='#' back link — none of these render.",
+    "Mapper round-trips additionalDetails.{totalGrossWeight, grossVolume, grossVolumeUnit}; unanswered fields are ABSENT from the DTO; no rollup totals are ever sent.",
+    "Contract case added to contract.plant-products.test.js committing exactly the three declared names; both axe states clean; live-animals suites and default-boot behaviour unchanged (no L1/L2 file touched)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals   # sibling-safety guard (cheap; this increment touches only sets/plant-products + its contract table)",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-019; closes m3. Follows the add-a-section recipe (cheat-sheet §3) in its one-page degenerate form: one page = one feature folder = one flow section = one task row = one hub spoke (spoke 4, §2.1). Exemplars: live-animals import-reason feature (smallest complete collecting page — controller/render/copy shape), transport section (section + task row + hub GROUPS wiring), origin e2e spec (per-rule validation + axe pattern), _species-quantities.njk (inputmode numeric idiom). Decisions applied, all grounded in the page spec + plan: (1) legacy page-optional/submit-required split on gross weight RESOLVED as model-mandatory (planningBrief says mandatory; c-018 single-layer validation means there is no second layer to defer to); required message uses GDS 'Enter the total gross weight' rather than legacy backend 'Add the total gross weight'. (2) gross>net rule gets ONE canonical wording — the legacy frontend string 'Total gross weight must be greater than the net weight' (page-spec discrepancies note asked Reconcile to pick one; the backend variant 'is less than' is discarded). (3) The legacy gross-weight-decimal phantom-field a11y defect is fixed by expressing the 5-decimal-places rule on the visible field with an anchorable message (page-spec openQuestion recommendation). (4) Unit persisted by CODE from pp-016's gross-volume-units.js, not the legacy hardcoded display string 'metres cubed' (page-spec openQuestion 5 decision). (5) Legacy presentation-table/table-responsive replaced by govukSummaryList without actions (page-spec govukAlternative; stays inside the govuk toolbox). (6) Rollups (net weight, packages) are DERIVED from commodityLines answers at render and never stored/sent (obligation-field-map inc-019 'derived — never stored'). (7) Legacy three-way exit collapsed: house kit.nextTarget/hub semantics; NO GMS interstitial (goods-movement is its own spoke, pp-031); review-change return is owned by the pp-038 check-answers Change machinery; back link is the house hubPath link, not href='#'. (8) CHED-P/D/A-only controls omitted per planningBrief. (9) Volume/unit pairing: presentGate gives unit-required-iff-volume in the MODEL; the reverse direction (unit posted without volume) is a controller fieldset rule per the house D-13 precedent — both directions validated in POST so no user input is silently dropped. (10) Check-answers rows for these fields are NOT built here — the check-answers feature is pp-038 (m4), which reads back every captured area; recipe step 5 is deliberately deferred to it. (11) obligation-field-map's inc-019 row also lists commodityComplement[].intendedForFinalUsers; that leaf is owned by pp-027 (commodity-bulk-details, matching its planningBrief) — recorded here so the duplicate mention is not double-built. (12) No etag equivalent: the records port is whole-document last-write-wins (Open Q 3 ruling in §6.2); lost-update protection is out of scope. Copy amounts to ~20 keys in both locales; e2e is one co-located spec plus a hub-spec extension.",
+  "openQuestions": [
+    "Gross volume + unit are completely unexercised in legacy (no trace fills them, zero QA-repo references — page-spec openQuestion). Built here per the spec, but a BA could rule them dead surface and drop two controls; cheap question worth asking before or after build, non-blocking.",
+    "Exact stored codes for the two volume units are pp-016's call (e.g. LITRES / METRES_CUBED vs litres / m3); this increment consumes whatever gross-volume-units.js exports — confirm the module landed with codes, not display strings, before wiring the select.",
+    "Legacy 'does copy-as-new carry gross weight over / does mutating commodities clear it' is unresolved in the corpus (page-spec openQuestion). House model has no such implicit clearing — an out-of-scope-only wipe applies to grossVolumeUnit alone — but the copy-flow behaviour question transfers to pp-045 (copy-as-new), not here.",
+    "The 5-decimal-places bound and 16-char maxlength are inherited legacy limits; the maxlength cap is dropped (silent truncation is the defect the page spec flags) in favour of the numeric + decimal rules — flag if product wants an explicit upper-magnitude bound instead."
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "id": "pp-023",
+  "title": "commodity-search — code tree browse + EPPO species search",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-012", "pp-014", "pp-021", "pp-022"],
+  "sourceIncrement": "inc-014",
+  "recipe": "sets/live-animals/docs/add-a-page.md (page shape, controller order, registration) + sets/live-animals/docs/add-a-collection.md batch-split/loop-page steps for the appendEntry/appendEntryAt write path; exemplar feature = sets/live-animals/journeys/linear/features/commodities/search/",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/page.js",
+      "action": "edit",
+      "what": "Add `export const commoditySearchPage = { id: '<fresh UUID>', slug: 'commodity-search' }` alongside the pp-022 commodityInputMethodPage. page.js stays import-free (controller and flow import the same object)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/search/search.controller.js",
+      "action": "create",
+      "what": "meta = { ...commoditySearchPage, collects: ['commodityLines'] } (the page owns the commodityLines GROUP; member leaves inherit ownership; species/varieties groups stay owned by their own pages — do NOT add them to collects). GET: state.get() once; read tree position from query (?parent=<chapterCode>, absent = root) and build the render model via view-model.js from the pp-014 fixture service (sets/plant-products/services/commodities/index.js); render BOTH tab panels (proper govuk-tabs — both panels in the DOM, component JS toggles client-side, anchor fallback no-JS; NOT the legacy one-panel-per-request server tabs). POST branches on which submit name arrives (single route, pure POST->302->GET, zero client XHR): (a) action='search-code' — Joi single-layer validation (c-018): required -> 'Enter a commodity code'; numeric -> 'Commodity code must be a number'; then resolve in the fixture — already on the notification (compare committed commodityLines[].commoditySelection) -> 'You cannot add the same commodity code twice' (400); resolves to a selectable code -> append a commodityLines entry { commoditySelection: <code> } via state.appendEntry(request, h, 'commodityLines', entry) wrapped in kit.recoverableSave, redirect via await kit.nextTarget(request, page, committed.scope); no fixture match -> re-render 200 with a 'No results' state (no error summary — legacy fell through silently, we render explicit copy) preserving the raw value. (b) action='search-species' — Joi: required -> 'Enter a genus and species' (400); else re-render with server-built species results (genus/species substring match over the fixture, each result showing genusAndSpecies + its commodity code, with a per-result Add submit named add-species-<speciesId>). (c) add-species-<speciesId> submit — resolve the species in the fixture (refuse forged/stale ids: unknown id re-renders 400), duplicate-code guard as in (a), then append the line ({ commoditySelection: <code> }) AND seed its first species entry via state.appendEntryAt(request, h, ['commodityLines', newIndex, 'species'], { eppoCode, genusAndSpecies }) with parent-index validation (Number.isInteger && in range) before the nested write — eppoCode is THE join key; the add-species-<id> submit name is TRANSIENT UI state and is never committed. (d) tree leaf select — submit name select-code with value=<leafCode>, same append+duplicate path as (a); tree DRILL-DOWN is plain GET links (?parent=<code>), never a POST (fixes the legacy buttons-as-links anti-pattern). Invalid POSTs re-render RAW values, status 400, GDS 'There is a problem' summary with #field links (c-004/c-014). Never port the legacy 'Invalid commodityID' developer string. export const routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/search/view-model.js",
+      "action": "create",
+      "what": "Named pure helpers so the controller reads as prose: treeLevel(commoditiesFixture, parentCode) -> { crumbs, rows: [{ code, description, isLeaf }] } for the browsable tree (root = chapter list); speciesResults(commoditiesFixture, query) -> [{ speciesId, eppoCode, genusAndSpecies, commodityCode }] (case-insensitive substring on genusAndSpecies); isDuplicateCode(lines, code). All read the pp-014 fixture barrel lazily inside the call, never frozen at module load."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/search/search.controller.test.js",
+      "action": "create",
+      "what": "Vitest: GET renders both panels + root tree; GET ?parent drills one level; empty code -> 400 'Enter a commodity code'; non-numeric -> 'Commodity code must be a number'; duplicate -> 'You cannot add the same commodity code twice'; valid code appends { commoditySelection } and redirects via nextTarget; unknown code -> 200 no-results, raw value preserved; empty species -> 400 'Enter a genus and species'; species query renders results; add-species-<id> appends line + seeds species[0].eppoCode/genusAndSpecies; forged add-species id -> 400, no write; forged out-of-range parent index cannot fabricate a phantom instance; raw values re-rendered on every 400; recoverable-save failure -> 500 recoverableError; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/search/search.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Description of the goods' (govuk-caption-xl), H1 'Commodity' (legend/heading per c-014). Full-width grid (govuk-grid-column-full) for the tree. Proper govuk-tabs with BOTH panels rendered: panel 1 'Commodity code search' = fieldset legend 'Search commodities', govuk-input name=commoditySearchCode inputmode=numeric width-one-third WITH a govuk-hint ('Enter the 8 or 10 digit commodity code') wired via aria-describedby (legacy had no hint — deliberate fix), govuk-button Search (name=action value=search-code, data-prevent-double-click), then H2 'Find the commodity in the commodity tree', breadcrumb links + chapter/level rows as real govuk-link GET anchors (?parent=<code>) with a govuk-button--secondary Select per leaf (name=select-code value=<code>) — NO bespoke nav-landmark tree, no link-button class, no custom CSS; panel 2 'Genus and species search' = fieldset legend 'Search genus and species of commodity', govuk-input name=speciesSearchTerm with hint 'Use the full scientific name. This will be in Latin, for example, Prunus dulcis' wired via aria-describedby (fixes the legacy missing-aria-describedby defect), Search button (name=action value=search-species), results list with per-row Add submit (name=add-species-<speciesId>). Error summary + inline errors with input name = id = error key so #links focus controls. NO 500-line body paragraph (no cap in the pass-1 model). All text from copy bundles via copyFor."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the commoditySearch namespace: title, caption 'Description of the goods', heading 'Commodity', tabs.{codeSearch:'Commodity code search', speciesSearch:'Genus and species search'}, codeSearch.{legend:'Search commodities', label:'Enter commodity code', hint, button:'Search'}, tree.{heading:'Find the commodity in the commodity tree', allCommodities:'All commodities', select:'Select'}, speciesSearch.{legend:'Search genus and species of commodity', label:'Enter genus and species', hint:'Use the full scientific name. This will be in Latin, for example, Prunus dulcis', button:'Search', add:'Add', noResults}, noResults copy, errors.{codeRequired:'Enter a commodity code', codeNumeric:'Commodity code must be a number', codeDuplicate:'You cannot add the same commodity code twice', speciesRequired:'Enter a genus and species'}."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle with the IDENTICAL leaf paths and value kinds (copy-parity enforced)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group copy test for the new commoditySearch namespace in both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/evaluation.js",
+      "action": "edit",
+      "what": "Verify the pp-021 grouped binding for commoditySelection exists — `grouped({ field: 'commoditySelection', obligation: commoditySelection, groups: [commodityLines] })` inside the feature('commodities', ...) bundle; add it if pp-021 left binding registration to the owning page increment. Binding depth must equal the within chain (depth 1 for line members). No new bindings for species/varieties leaves here (pp-024/pp-025 own those pages)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the search controller namespace; add its meta to dispatchPages and spread its routes into allRoutes. buildDispatch must accept commodityLines as owned by exactly this page."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Append commoditySearchPage to the 'commodities' section's pages array immediately after commodityInputMethodPage (array order = journey order; §2.3 target order for the section is input-method, search, basic-description, variety, summary, bulk-details — later pages appended by their own increments)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add commoditySearchPage to the existing 'commodities' task row's pages array (row created by pp-022; NO new row, NO hub GROUPS change). Row status stays derived from collects — the row now unions commodityInputMethod + commodityLines."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the commodities row status transitions with the group in play: Not yet started -> In progress (inputMethod answered, no line) -> still incomplete until the commodityLines minEntries-1 floor is met via collection-complete rollup; row entry page unchanged (input-method)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "DECISION EXECUTED (the §3.3 open point assigned to this increment): add 'commoditySelection' to policy.enforcedAtContinue, mirroring the live-animals pair (live-animals policy = ['countryOfOrigin','commoditySelection']). Update/extend the set's policy unit expectation if pp-018 pinned the array."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Verify (add if pp-021 did not): commoditySelection maps to commodity.commodityComplement[].commodityCode with commodityDescription DERIVED from the pp-014 fixture (code -> description) at map time; the add-species-<id> submit-name and any transient UI state never reach the DTO (explicit omission assertion in mapper.test.js). No new DTO fields — commodityCode/commodityDescription/species[].eppoCode/.genusAndSpecies already exist per SCHEMA-DESIGN."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip case: a line appended by search (commoditySelection + seeded species[0].eppoCode/genusAndSpecies) maps to commodityComplement[0].{commodityCode, commodityDescription(ref-data-derived), species[0].{eppoCode, genusAndSpecies}} and back; omission assertion for transient add-species keys."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the search controller's valid-POST case (T-5 standing rule): drive the committing branch (action='search-code' with a valid fixture code), seed importType/inputMethod=MANUAL as needed, assert exactly the committable names in meta.collects (['commodityLines']) are committed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-search.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (multi-page group -> e2e/ dir), every test starts its own notification, raw role/label locators, no page objects, no sleeps. Scenarios: initial render (caption, H1, both tab labels, code input + hint, Search, tree root chapters from the fixture, species input + Latin-name hint); code-search happy path (fill valid fixture code, Search, redirected via nextTarget, re-enter journey and see the line persisted); tree browse (follow a chapter link, deeper level renders, Select a leaf appends the line); each validation rule in its own test (empty code, non-numeric code, duplicate code, empty species) asserting 'There is a problem' summary, inline error, #link moves focus, raw value preserved; no-results state for an unknown well-formed code (no error summary, entered value preserved); species search happy path (query, results listed with code, Add appends line + species join key; verify by reloading downstream state); duplicate guard on the species-add path; axe (AxeBuilder withTags ['wcag2a','wcag2aa'], fail on serious/critical) for BOTH states — initial render and validation-error state."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "commodityLines",
+      "within": null,
+      "requires": "group, requires: { minEntries: 1, errorCode } — declared by pp-021 in obligations/sections/commodities/lines.js; no status of its own",
+      "applyTo": null,
+      "collectedBy": "commodity-search (meta.collects = ['commodityLines'] — the loop/batch page declares only the group root; members inherit)"
+    },
+    {
+      "id": "commoditySelection",
+      "within": "commodityLines",
+      "requires": "mandatory member leaf (pp-021); no gate helper; joins policy.enforcedAtContinue THIS increment (decision executed, mirrors live-animals)",
+      "applyTo": null,
+      "collectedBy": "commodity-search (inherited from the commodityLines group owner)"
+    },
+    {
+      "id": "species (WRITE-ONLY here)",
+      "within": "commodityLines",
+      "requires": "group, minEntries 1 (pp-021) — NOT collected/owned by this page; the species-add path seeds species[0].{eppoCode, genusAndSpecies} via appendEntryAt as an in-place nested write; dispatch ownership stays with commodity-basic-description (pp-024)",
+      "applyTo": null,
+      "collectedBy": "commodity-basic-description (pp-024) — pp-023 must NOT add species to any collects"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "flow.js: append commoditySearchPage to the existing 'commodities' section pages array, directly after commodityInputMethodPage (target section order per SIBLING-SET-PLAN §2.3/§2.1: input-method, search, basic-description, variety, summary, bulk-details)"
+    ],
+    "taskRows": [
+      "task-rows.js: add commoditySearchPage to the existing 'commodities' row's pages array — no new row, row status derives from the union of collects (commodityInputMethod + commodityLines group completeness)"
+    ],
+    "entryGuard": "none — entry-guard policy unchanged (pp-009 owns it)"
+  },
+  "schemaFields": [
+    "commodity.commodityComplement[].commodityCode (from commoditySelection)",
+    "commodity.commodityComplement[].commodityDescription (ref-data-derived at map time from the pp-014 fixture — never user-entered)",
+    "commodity.commodityComplement[].species[].eppoCode (JOIN KEY — seeded by the species-add path)",
+    "commodity.commodityComplement[].species[].genusAndSpecies (seeded by the species-add path)",
+    "add-species-<id> is TRANSIENT UI state — never persisted (mapper omission assertion required)"
+  ],
+  "copyKeys": [
+    "commoditySearch.title",
+    "commoditySearch.caption",
+    "commoditySearch.heading",
+    "commoditySearch.tabs.codeSearch",
+    "commoditySearch.tabs.speciesSearch",
+    "commoditySearch.codeSearch.legend",
+    "commoditySearch.codeSearch.label",
+    "commoditySearch.codeSearch.hint",
+    "commoditySearch.codeSearch.button",
+    "commoditySearch.codeSearch.noResults",
+    "commoditySearch.tree.heading",
+    "commoditySearch.tree.allCommodities",
+    "commoditySearch.tree.select",
+    "commoditySearch.speciesSearch.legend",
+    "commoditySearch.speciesSearch.label",
+    "commoditySearch.speciesSearch.hint",
+    "commoditySearch.speciesSearch.button",
+    "commoditySearch.speciesSearch.add",
+    "commoditySearch.speciesSearch.noResults",
+    "commoditySearch.errors.codeRequired",
+    "commoditySearch.errors.codeNumeric",
+    "commoditySearch.errors.codeDuplicate",
+    "commoditySearch.errors.speciesRequired"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-search.e2e.spec.js — render (both tabs, hints, fixture tree), code-search happy path + persistence, tree drill-down + leaf select, all four validation rules (each its own test, focus + raw-value assertions), no-results state, species search + Add (join-key seed), duplicate guard both paths, axe on initial render AND error state"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/commodity-search renders caption 'Description of the goods', H1 'Commodity', and a proper govuk-tabs component with BOTH panels ('Commodity code search', 'Genus and species search') present in the DOM (client-side toggle, anchor fallback) — not the legacy one-panel server-tab pattern",
+    "Code panel: label 'Enter commodity code', inputmode=numeric, a format hint covering 8- and 10-digit codes wired via aria-describedby, Search button; page uses the full-width grid",
+    "The commodity tree renders the pp-014 fixture's top level as real govuk-link anchors; following a link (GET ?parent=<code>) renders the next level with a breadcrumb back to 'All commodities'; a leaf row's Select submit appends a commodityLines entry — drill-down never POSTs, selection always POSTs",
+    "Searching a valid fixture code appends a commodityLines entry ({ commoditySelection }) and redirects via kit.nextTarget (with the section as it stands this resolves to the hub; pp-024 will make it commodity-basic-description with no pp-023 code change)",
+    "Empty code search returns 400 with GDS 'There is a problem' summary + inline error 'Enter a commodity code'; the summary link focuses the input; the raw value is preserved",
+    "Non-numeric code returns 400 with 'Commodity code must be a number'",
+    "A code already on the notification (either path — code search, tree select, or species Add) returns 400 with 'You cannot add the same commodity code twice' and writes nothing",
+    "A well-formed code with no fixture match re-renders 200 with an explicit 'No results' state (no error summary) and the entered value preserved — the legacy silent fall-through and the 'Invalid commodityID' developer string are NOT ported",
+    "Species panel: label 'Enter genus and species' with hint 'Use the full scientific name. This will be in Latin, for example, Prunus dulcis' wired via aria-describedby (legacy defect fixed); empty submit returns 400 'Enter a genus and species'; a matching query renders server-built results (genusAndSpecies + commodity code) each with an Add submit",
+    "Add on a species result appends a commodityLines entry with that species' commodity code and seeds species[0].{eppoCode, genusAndSpecies} via appendEntryAt with parent-index validation; the add-species-<id> submit name is never persisted (mapper omission test proves it); a forged/unknown add-species id is refused with no write",
+    "policy.enforcedAtContinue in sets/plant-products/obligations/index.js contains 'commoditySelection' (this increment's assigned decision — executed, mirroring live-animals)",
+    "contract.plant-products.test.js gains the search controller's valid-POST case committing exactly ['commodityLines']",
+    "commodityDescription is derived from the fixture at mapping time, never entered or stored from user input; mapper round-trip test covers code + seeded species",
+    "Both page states (initial render, validation error) pass axe wcag2a+wcag2aa with zero serious/critical violations",
+    "Zero client XHR: every search/browse/selection is a full server round-trip (POST->302->GET or plain GET); no webpack entry is added because no client JS beyond the stock govuk-frontend bundle is used"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "Sam ruling applied (chedpp-requirements residualBlockersResolved): build the REAL commodity search now — code tree browse + EPPO genus/species search, pure server round-trip (connect-src 'self', zero client XHR), fixture-backed via pp-014 (sets/plant-products/services/commodities/). Exemplar for structure: sets/live-animals/journeys/linear/features/commodities/search/{search.controller.js, search.njk, view-model, actions, selection} and its e2e/search.e2e.spec.js — match the idiom (controller order, kit.pageRoutes, recoverableSave, nextTarget) but the interaction differs: CHED-PP appends one line per visit (appendEntry) rather than reconciling a checkbox selection. Design decisions taken headless: (1) tabs rebuilt as PROPER govuk-tabs (both panels rendered, client toggle, anchor no-JS fallback) — the legacy one-panel ?tab= server navigation is a documented anti-pattern; tab state therefore no longer lives in a query param; (2) tree drill-down = GET links with ?parent=<code> (position in the URL, not a posted selectedCommodity hidden), leaf selection = POST submit — replaces the legacy 22 buttons-as-links, the name-as-payload parent_<code> convention, and the nested identically-named nav landmarks (axe/landmark hygiene); (3) code input gains a format hint (8/10 digits — legacy had none while the spec proves both lengths are accepted; validating a fixed 8 would be wrong); (4) species hint properly wired with aria-describedby (legacy WCAG defect not ported); (5) no-match renders an explicit 'No results' state (legacy silently re-rendered; 'Invalid commodityID' is a developer string ruled not-portable); (6) the 500-commodity-line body copy is OMITTED — the pass-1 model declares no cap (SIBLING-SET-PLAN §3.3: policy.maxEntriesFrom = {}); (7) enforcedAtContinue decision (assigned to this increment by §3.3): commoditySelection JOINS policy.enforcedAtContinue, mirroring live-animals; (8) FORM0/commodityDetailsPage/etag legacy artefacts not ported (spec marks them 'do not port until explained'; concurrency is last-write-wins per Open Q 3); (9) duplicate rule enforced on ALL three add paths. Validation copy is verbatim legacy-sourced (c-018 one canonical string per rule): 'Enter a commodity code', 'Commodity code must be a number', 'You cannot add the same commodity code twice', 'Enter a genus and species'. eppoCode is THE join key (Open Q 1); add-species-<id> transient. Write guards per add-a-collection §4.7 (parent-index validation before the nested species seed). Not platform-touching (all edits inside sets/plant-products/ + the plant contract table), so the two-sided live-animals sibling check is not mandated — npm test in the ladder still exercises the shared L1/L2 suites. Redirect note: kit.nextTarget resolves to the hub until pp-024 appends basic-description to the section; that later shift needs no pp-023 code change (one e2e assertion update is pp-024's).",
+  "openQuestions": [
+    "No-results behaviour is unevidenced in legacy (handler fell through silently) — pass-1 renders an explicit 'No results' state with fresh GDS copy; product should confirm the copy and whether a partial-code search should list candidate codes instead",
+    "Species-search behaviour beyond the empty-submit message is a double-confirmed legacy gap (no trace or test ever exercises it) — pass-1 defines it as substring match over the fixture with per-result Add; design/product should confirm the results interaction (legacy used an accessible-autocomplete enhancement; pass-1 is no-JS server results per the zero-XHR ruling)",
+    "500-commodity-line cap: stated in legacy body copy, enforcement unevidenced, and the pass-1 model declares no cap — confirm whether a cap ever becomes a real CHED-PP rule (it would arrive as a requires/maxEntries model change, not page copy)",
+    "The code-format hint (8 or 10 digits) is an addition over legacy (which had no hint but accepted both lengths) — confirm the full set of valid lengths with reference data before the real commodity service replaces the fixture",
+    "Tree levels beyond the chapter list are unevidenced in legacy (no trace ever drilled down) — the fixture tree's depth (pp-014) defines the pass-1 browse depth; confirm real reference-data depth when the lookup goes real"
+  ]
+}

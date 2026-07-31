@@ -1,0 +1,156 @@
+{
+  "id": "pp-026",
+  "title": "commodity-summary — commodity table + remove",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-012", "pp-021", "pp-024", "pp-025"],
+  "sourceIncrement": "inc-017",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/page.js",
+      "action": "edit",
+      "what": "Add and export commoditySummaryPage = { id: 'commodity-summary', slug: 'commodity-summary' }. page.js stays import-free (controller and flow import the same object — prevents a flow-controller module cycle)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.js",
+      "action": "create",
+      "what": "export const meta = { ...commoditySummaryPage, collects: [] } and export const routes = kit.pageRoutes(page, { get, post }). GET: state.get() ONCE; build the view via view-model/summary-groups.js (below); render with kit.base(), pass journey so the reference strip renders; back link hubPath(journey.journeyId). POST branches on the submit control (documents/consignment-details idiom — the Remove is a branch of the SAME POST so the crumb travels and no GET can delete): (a) payload.action matching 'remove:<lineIndex>:<speciesIndex>' -> delegate to remove/post-remove.js, then redirect back to this page via kit.withChangeContext(request, <own path>); (b) default Continue -> NO write, redirect via kit.hubExitTarget(request) first then await kit.nextTarget(request, page, scope) (next in section order = pp-027's commodity-bulk-details once it lands; until then nextTarget falls through per flow). Wrap the remove write in kit.recoverableSave(); marked persistence failure re-renders recoverableError: true status 500; other errors throw. The page collects NO user input — there is no Joi schema and no validation-error state; the only refusals are forged/stale indexes (no write, re-render 400). Exemplar file-for-file: sets/live-animals/journeys/linear/features/commodities/consignment-details/consignment-details.controller.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-summary/remove/post-remove.js",
+      "action": "create",
+      "what": "Named helpers mirroring the exemplar sets/live-animals/.../consignment-details/remove/post-remove.js: REMOVE_ACTION_PREFIX 'remove:', isRemoveAction(action), indicesOf(action) parsing BOTH indexes ('remove:<lineIndex>:<speciesIndex>'). Guard discipline per add-a-collection §write-guards and §8 G-B (two-level parent-index validation before any write): Number.isInteger(lineIndex) && lineIndex >= 0 && lineIndex < answers.commodityLines.length, then the same for speciesIndex against answers.commodityLines[lineIndex].species.length, AND refuse when that line has exactly one species entry (legacy parity: {{#gt variations.length 1}} — you cannot remove the last remaining row of a commodity). Valid -> state.removeEntryAt(request, h, ['commodityLines', lineIndex, 'species'], speciesIndex) — the engine removes the species instance including its nested varieties (scope/wipe is engine-owned; write no wipe code). Invalid/forged/stale index -> return null, controller performs no write."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-summary/view-model/summary-groups.js",
+      "action": "create",
+      "what": "Named pipeline helpers (no dense inline callbacks) building the render model from facts: read lines via state.collectionView(answers, ['commodityLines']) and per-line species via collectionView with the deeper path (facts only — the controller builds its own rows; no hrefs/labels from the engine). Output: one group per commodity line { lineIndex, commodityCode, commodityDescription (resolved from sets/plant-products/services/commodities lookup by code — DATA, not copy; the legacy H2 'Other' was {{commodityDescription}}), rows: [one per species entry { speciesIndex, genusAndSpecies, eppoCode, varieties: [{ varietyLabel, classLabel }], removable }] }. varietyLabel resolved from the stored variety ID via the pp-014 commodities service; classLabel maps CLASS_I|CLASS_II|EXTRA_CLASS to display labels; a species with zero varieties entries renders blank Variety/Class cells (GDS: blank, never a hardcoded 'None'). removable = line.species.length > 1. Also expose addSpeciesHref per line (commodity-basic-description with that line's context, matching how pp-024 targets a line) and addCommodityHref (commodity-search) for the controller to wrap in kit.withChangeContext."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed — other Nunjucks root); view name carries the plant-products TEMPLATES prefix from journeys/linear/config.js. Caption (govuk-caption-xl) + H1 (govuk-heading-xl) from copy. Per commodity-line group: H2 (govuk-heading-m) = commodityDescription (data), then the govukTable MACRO (NOT hand-rolled table markup — the legacy page's missing govuk-table__row classes and the govuk-!margin-bottom-9 typo are exactly the drift the macro prevents; page-spec nonStandardPatterns): visually-hidden caption from copy, head columns Commodity code / Genus (and Species) / EPPO code / Variety / Class / visually-hidden 'Actions' header (renamed from legacy 'Remove action links' — they are buttons, not links), one body row per species entry, multiple varieties stacked in the Variety/Class cells, final cell a real per-row Remove SUBMIT button (govuk-button govuk-button--secondary via govukButton macro, name='action', value='remove:<lineIndex>:<speciesIndex>') rendered ONLY when row.removable — never the legacy link-button class that disguises a mutating control as navigation. Right-align the action cell with govuk-!-text-align-right (not the bespoke text-align-right). Below the table: 'Add another Genus (and Species)' as an honest govuk-link per line; after all groups: 'Add another commodity' via govukButton with href + secondary (the Design System's supported way to get the button look on navigation) and the primary Save and continue submit. All text from copy; everything inside ONE form so the crumb travels with every Remove. No max-lines notice: policy.maxEntriesFrom = {} (SIBLING-SET-PLAN §3.3 — no cap in the CHED-PP model)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the commoditySummary namespace: caption 'Description of the goods', heading 'Commodity', tableCaption 'Commodity summary table', columns { commodityCode: 'Commodity code', genusAndSpecies: 'Genus (and Species)', eppoCode: 'EPPO code', variety: 'Variety', class: 'Class', actions: 'Actions' }, remove 'Remove', addAnotherSpecies 'Add another Genus (and Species)', addAnotherCommodity 'Add another commodity', continue 'Save and continue'. All strings verbatim from the page spec's confirmed render (trace e10b7cd5 action 28) except the actions header rename (recorded decision)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle: identical leaf paths and value kinds for the whole commoditySummary namespace (copy-parity enforces shape equality)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group copy test to pin the commoditySummary keys in both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the commodity-summary controller namespace; add its meta to dispatchPages (collects: [] pages MUST be indexed — id/slug needed for gates and navigation); spread its routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import commoditySummaryPage and append it to the 'commodities' section's pages array immediately after varietyOfGenusAndSpeciesPage (section order per §2.1 spoke 3: input-method, search, basic-description, variety-of-genus-and-species, commodity-summary; pp-027 appends bulk-details after this page). Array position controls nextInSection() and strictly-earlier continue prerequisites — do not reorder existing entries."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add commoditySummaryPage to the existing 'commodities' task row's pages array (same user task, same hub entry — NO new row). Row status stays the union of the pages' collects; a collects: [] page changes nothing."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin that the commodities row's page membership includes commodity-summary and that row status is UNCHANGED by the addition (still driven by the commodityLines-owning pages)."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the collects:[] case, exemplar contract.test.js:213-222 (consignmentDetails): expect(commoditySummary.meta.collects).toEqual([]); drive the POST remove branch with a seeded two-species commodityLines entry (seed the full depth-3 shape: commodityLines: [{ commoditySelection: <fixture code>, species: [two entries with eppoCode/genusAndSpecies] }]) and payload { action: 'remove:0:0' }; expect committedIds(result) toEqual([]) — removal writes travel through state.removeEntryAt, never fulfilment commit."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-summary/commodity-summary.controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET renders one group per line + one row per species with resolved commodityDescription/variety/class labels and blank Variety/Class cells for a species with no varieties; Remove button rendered only when a line has >1 species; valid remove POST calls state.removeEntryAt(['commodityLines', i, 'species'], j) and redirects back to the page; forged index (non-integer, negative, out-of-range at EITHER level) performs no write; last-species remove refused, no write; plain Continue performs no write and redirects via kit.nextTarget; marked recoverable-save failure -> 500 with recoverableError; unexpected errors throw. Test behaviour on input/output (drive handlers, assert response + store state), not toHaveBeenCalled internals."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-summary.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe, multi-page-group convention (features/<group>/e2e/). Each test independent, starts its own notification, builds state through the real preceding pages (commodity-search -> basic-description -> variety), raw role/label/visible-copy locators, no page objects, no sleeps. Scenarios listed under specs. Axe: AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']), fail on serious/critical, on the rendered summary state (single-row and multi-row) — this page has no validation-error state to check (captures no input; page-spec confirms the legacy handler has no validation path)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sections": [
+      "Edit the existing 'commodities' flow section in journeys/linear/flow/flow.js: append commoditySummaryPage after varietyOfGenusAndSpeciesPage (no new section)."
+    ],
+    "taskRows": [
+      "Edit the existing 'commodities' task row in journeys/linear/flow/task-rows.js: add commoditySummaryPage to its pages array (no new row, no hub GROUPS change, no hub copy change)."
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "commodityComplement[] (read — one table group per line; commodityCode read, commodityDescription re-derived from the commodities fixture, not read back)",
+    "commodityComplement[].species[] (read: eppoCode, genusAndSpecies; write path: removing a species entry drops it from the array via the whole-document PUT on next save — replaceFulfilment, pp-008)",
+    "commodityComplement[].species[].varieties[] (read: variety, varietyClass for the Variety/Class cells; removed implicitly with their parent species entry)"
+  ],
+  "copyKeys": [
+    "commoditySummary.caption",
+    "commoditySummary.heading",
+    "commoditySummary.tableCaption",
+    "commoditySummary.columns.commodityCode",
+    "commoditySummary.columns.genusAndSpecies",
+    "commoditySummary.columns.eppoCode",
+    "commoditySummary.columns.variety",
+    "commoditySummary.columns.class",
+    "commoditySummary.columns.actions",
+    "commoditySummary.remove",
+    "commoditySummary.addAnotherSpecies",
+    "commoditySummary.addAnotherCommodity",
+    "commoditySummary.continue"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-summary.e2e.spec.js — render: caption 'Description of the goods', H1 'Commodity', one H2 (= the line's commodity description from the fixture) + table per commodity line, header row Commodity code / Genus (and Species) / EPPO code / Variety / Class (+ visually-hidden Actions), row values resolved to labels; assert the FULL rendered row including blank Variety/Class cells for a varietyless species",
+    "same spec — remove: with two species on one line, clicking the row's Remove deletes exactly that species entry (and its varieties), page re-renders with one row and the Remove button now suppressed (single-row state)",
+    "same spec — remove suppression: a line with exactly one species renders NO Remove control (legacy cannot-remove-last parity)",
+    "same spec — add-another routing: 'Add another Genus (and Species)' lands on commodity-basic-description for that line; 'Add another commodity' lands on commodity-search; entered data preserved after the round trip",
+    "same spec — continue: 'Save and continue' performs no data change and advances per flow (hub exit wins when arriving via the hub)",
+    "same spec — persistence: reload after a remove shows the reduced table (round-trips through the records service)",
+    "same spec — axe: wcag2a/wcag2aa, no serious/critical violations on the rendered summary (single-row and multi-row states)"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/commodity-summary renders caption 'Description of the goods' and H1 'Commodity' (govuk-caption-xl / govuk-heading-xl), one H2 + one govukTable-macro table per commodityLines entry; the H2 text is the line's commodity description resolved from sets/plant-products/services/commodities by code (data, never copy — the legacy 'Other' was {{commodityDescription}})",
+    "Each table has a visually-hidden caption 'Commodity summary table', columns Commodity code / Genus (and Species) / EPPO code / Variety / Class / visually-hidden 'Actions', and one row per species entry; Variety and Class render resolved labels from the pp-014 fixture (variety label from the stored ID; CLASS_I|CLASS_II|EXTRA_CLASS mapped to display labels), stacked when a species carries multiple varieties entries, and BLANK when it carries none (no hardcoded 'None')",
+    "Every row of a line with more than one species carries a real submit Remove button (name='action', value='remove:<lineIndex>:<speciesIndex>'); posting it removes exactly that species entry via state.removeEntryAt(request, h, ['commodityLines', lineIndex, 'species'], speciesIndex) — nested varieties go with it — and redirects back to this page through kit.withChangeContext",
+    "A line with exactly one species entry renders no Remove control; a POST that targets it anyway, or carries a non-integer/negative/out-of-range index at EITHER level, performs NO write (two-level parent-index guard before any store touch)",
+    "'Add another Genus (and Species)' (per line, honest govuk-link) targets commodity-basic-description with that line's context; 'Add another commodity' (govukButton secondary rendered as a link via href) targets commodity-search; both wrapped in kit.withChangeContext — only the Continue exit repoints to check-your-answers, mid-loop actions never bounce there",
+    "'Save and continue' commits nothing and advances via kit.hubExitTarget then kit.nextTarget(request, page, scope); meta.collects === [] and the page captures no user input — no Joi schema, no validation-error state exists",
+    "No max-commodity-lines notice or add-suppression is built (policy.maxEntriesFrom = {} — the CHED-PP model declares no cap, SIBLING-SET-PLAN §3.3)",
+    "The page is registered in dispatchPages (collects:[] pages must be indexed), allRoutes, the 'commodities' flow section (after variety-of-genus-and-species) and the 'commodities' task row; NO new task row, no hub GROUPS or hub copy change; commodities row status is unchanged by the addition (pinned in task-rows.test.js)",
+    "contract.plant-products.test.js gains the collects:[] case: meta.collects toEqual [], remove-POST against a seeded depth-3 two-species line commits zero fulfilment ids (exemplar contract.test.js:213-222)",
+    "Both copy bundles carry the full commoditySummary namespace with identical shape (copy-parity green); no hand-rolled table markup, no link-button/table-responsive/text-align-right bespoke classes (govuk-frontend toolbox only)",
+    "Axe (wcag2a/wcag2aa) reports no serious/critical violations on the rendered summary states"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = STOP and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit; pre-commit hook enforces format + lint + full units"
+  ],
+  "notes": "1:1 carry of inc-017 per MAPPING.json: a read-only echo of the commodityLines collection — NO new data captured, no new obligations, meta.collects = []. Primary recipe add-a-page for the registration spine, with the add-a-collection loop-page steps (§4.5/§4.7 of the cheat-sheet) governing the Remove branch; exemplar file-for-file is the live-animals consignment-details page (collects:[], per-row Remove submit inside the same POST, remove/post-remove.js action parsing — verified live this session, including its contract case at contract.test.js:213-222 which this increment's contract.plant-products.test.js case mirrors). DECISIONS (headless, recorded): (1) Remove operates at the SPECIES-row level — removeEntryAt(['commodityLines', i, 'species'], j) — matching the legacy remove_species_<id> semantics; the 'line's per-instance identity' in the planning brief is honoured as the row's (lineIndex, speciesIndex) pair validated at two levels per §8 G-B before any write. Whole-commodity-line removal is NOT offered on this page (legacy offers none; deselection of a code happens via commodity-search's reconcile, pp-023). (2) Cannot-remove-last parity kept: Remove suppressed when a line has one species ({{#gt variations.length 1}} in the legacy template). (3) One row per species; multiple varieties stack inside the Variety/Class cells (legacy complements were species-level rows; our depth-3 model can hold several varieties per species — stacking keeps 1 row = 1 removable entity, avoiding several Remove buttons with identical effect). (4) GOV.UK toolbox rulings from the page spec's nonStandardPatterns applied: govukTable macro (legacy hand-rolled table dropped govuk-table__row and carried the govuk-!margin-bottom-9 typo), no link-button class in either direction (Remove is an honest secondary submit button; 'Add another commodity' uses the Button component's href form), govuk-!-text-align-right over bespoke text-align-right, visually-hidden actions header renamed 'Actions' (legacy 'Remove action links' was a misnomer — they are buttons). (5) Blank Variety/Class cells, never the legacy 'None' literal (GDS content ruling flagged in the page spec; 'None' only reaches the cell when the fixture actually offers it as a variety option, in which case its label renders like any other). (6) No max-lines notice: SIBLING-SET-PLAN §3.3 declares policy.maxEntriesFrom = {} for CHED-PP, so the legacy cap state (env-configured, never traced) is deliberately not ported. (7) No check-answers work (pp-038), no mapper change (removal rides the existing whole-document PUT via pp-008's records service), no client JS, no webpack entry. (8) Continue label 'Save and continue' kept verbatim from the confirmed trace; the legacy three-way save routing (commodity_summary.js:47-53) is NOT ported — kit.nextTarget + section order own navigation here. Depth-3 reads/writes sit on P-7-proven ground (pp-012 gate) behind the pp-021 model-extension review.",
+  "openQuestions": [
+    "Legacy renders this page ONLY when the chosen species carries variety/class reference data (the page-spec's central open question — 1 of 59 traced journeys reached it, and the spec recommends one deliberate trace: 08059000/CIDAC with no class chosen). This increment places the page unconditionally in the commodities section order per the plan's §2.1 page list; whether it should instead be conditionally skipped (or dropped in favour of the review page) is a design decision for the pp-021-adjacent review to confirm.",
+    "The legacy Remove control was never rendered in any trace and never exercised by any E2E test (template-inferred only); the cannot-remove-last suppression and immediate-removal-without-confirmation behaviours are therefore ported from template reading, not observed behaviour. The no-confirmation destructive remove matches the documents exemplar's house pattern, but flag for content/design review.",
+    "The 'Add another Genus (and Species)' link needs a line-context mechanism into commodity-basic-description; this plan defers to whatever line-targeting shape pp-024 shipped (query param vs path segment) — the implementor must match it exactly rather than invent a second convention."
+  ]
+}

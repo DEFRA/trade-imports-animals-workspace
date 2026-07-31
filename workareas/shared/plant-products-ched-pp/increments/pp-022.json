@@ -1,0 +1,214 @@
+{
+  "id": "pp-022",
+  "title": "commodity-input-method — manual vs CSV routing",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009", "pp-012"],
+  "sourceIncrement": "inc-013",
+  "recipe": "sets/live-animals/docs/add-a-section.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/commodities/input-method.js",
+      "action": "create",
+      "what": "export const commodityInputMethod = { id: '<fresh UUID>', name: 'commodityInputMethod', status: 'mandatory' }. Pure data — NO options, labels, values or copy (obligation-purity enforces at boot). The MANUAL|CSV vocabulary lives in the controller's validation + copy bundle, never the model. Scalar, no within, no requires, no applyTo. First file in obligations/sections/commodities/ — the lines/species/varieties files are pp-021's, do not create them."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "import { commodityInputMethod } from './sections/commodities/input-method.js'; re-export it; append to the `obligations` array. `groups` stays derived (do not touch the formula); `policy` unchanged (commodityInputMethod does NOT join enforcedAtContinue — no ruling asks for it)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/page.js",
+      "action": "create",
+      "what": "Import-free (recipe hard rule — page.js imports NOTHING). export const commodityInputMethodPage = { id: 'commodity-input-method', slug: 'commodity-input-method' }. This is the commodities feature GROUP's shared page.js: later commodity pages (pp-023..pp-027) append their identities here."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/evaluation.js",
+      "action": "create",
+      "what": "import { feature, scalar } from bridge/fulfilment-bindings.js and { commodityInputMethod } from the set manifest; export const evaluationBindings = feature('commodities', [scalar({ field: 'commodityInputMethod', obligation: commodityInputMethod })]). Grouped depth-3 bindings for lines/species/varieties land with pp-021+, not here. Exemplar: sets/live-animals/journeys/linear/features/import-reason/evaluation.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.js",
+      "action": "create",
+      "what": "Transpose sets/live-animals/journeys/linear/features/import-reason/controller.js (verified exemplar: single-radio collecting page). export const meta = { ...commodityInputMethodPage, collects: ['commodityInputMethod'] }. const INPUT_METHODS = ['MANUAL', 'CSV'] (normalised enum submitted as the radio values — mirrors reasonForImport; legacy 'manual'/'csv' wire values NOT carried); fields = compose(oneOf('commodityInputMethod', INPUT_METHODS)) from lib/validate. GET: state.get() once, prefill checked radio from answers.commodityInputMethod (sticky selection = house prefill, deliberate). POST: read raw payload; validate → invalid re-renders RAW values, status 400, single Joi-voice error 'Select how you want to add your commodity details' (c-018: one canonical string); valid → state.commit via kit.recoverableSave (marked failure → re-render recoverableError:true, 500; other errors throw) → h.redirect(await kit.nextTarget(request, page, committed.scope)). NO branch routing: MANUAL and CSV both continue via nextTarget (CSV branch + destructive-switch warning are pp-042's). View model builds the two radio items from copy (label + hint per option, govuk-!-font-weight-bold labels per spec), checked by value match. Back link hubPath(journey.journeyId); kit.base + journey for the reference strip. export const routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed — other Nunjucks root). Shared error summary partial (GDS 'There is a problem' — house standard, NOT legacy 'Please fix the following errors'). govukRadios with fieldset.legend.isPageHeading: true, legend text = the ONE canonical question 'How do you want to add your commodity details?' (c-013: the divergent hidden legend 'How would you like to enter your information?' is DROPPED), caption 'Description of the goods' above it. Two items: MANUAL 'Manual entry' (hint 'Enter one commodity line at a time.') and CSV 'Upload from a CSV file' (hint 'Add all details at once, by uploading a file you can prepare with most spreadsheet software. Recommended for consignments with many commodity lines.'). Input name = id = error key = 'commodityInputMethod' so '#commodityInputMethod' focuses the first radio. errorMessage via the macro (standard 'Error:' prefix + aria-describedby — fixes the legacy errorSpan defect). Save actions per house shared partial ('Save and continue')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-input-method/commodity-input-method.controller.test.js",
+      "action": "create",
+      "what": "Vitest: GET prefill (empty and saved-answer cases — saved answer renders checked); POST empty → 400, error 'Select how you want to add your commodity details', no commit; POST bad value ('csv', 'garbage') → 400 (oneOf rejects — enum is uppercase); POST MANUAL and POST CSV → commits { commodityInputMethod } and redirects to nextTarget; recoverable save failure → 500 re-render with recoverableError; unexpected error throws. Pattern: import-reason controller.test.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.en.js",
+      "action": "create",
+      "what": "Group-owned copy bundle namespaced by page (recipe §3 group shape). Keys: inputMethod.title ('How do you want to add your commodity details?'), inputMethod.caption ('Description of the goods'), inputMethod.heading (same as title — legend-as-heading), inputMethod.options.MANUAL.label ('Manual entry') / .hint, inputMethod.options.CSV.label ('Upload from a CSV file') / .hint, inputMethod.errors.required ('Select how you want to add your commodity details')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces). Welsh translations of every key."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per house pattern (pins the bundle shape/keys both locales)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the commodity-input-method controller namespace; add its meta to dispatchPages; spread its routes into allRoutes. buildDispatch will now verify commodityInputMethod has exactly one owning page."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the commodities group's evaluationBindings and add to featureEvaluationBindings (frozen array — rebuild with the new entry)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import commodityInputMethodPage; add sections entry { id: 'commodities', pages: [commodityInputMethodPage] }. POSITION (load-bearing, §2.3 canonical order start, origin, purpose, commodities, …, review): insert directly before 'review'; if 'origin'/'purpose' have already landed it therefore sits after them — assert the relative order in a flow test. Later commodity pages append INTO this section's pages array (pp-023+). FLOW_ONLY_KEYS unchanged (commodityInputMethod is persisted, NOT flow-only — FD-8)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add task row { id: 'commodities', pages: [commodityInputMethodPage] } (canonical row id per SIBLING-SET-PLAN §2.1 spoke 3). Default mandatory status (union of collects); no parts, no conditional flag. Row grows as pp-023..pp-027 append pages."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the commodities row: Not yet started (no answer) / Completed (commodityInputMethod answered); first entry page resolves to commodity-input-method; the mandatory row BLOCKS readyForCheckYourAnswers until complete (prove blocked AND complete states — recipe §3.6)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'commodities' to GROUPS under the 'Commodity' numbered heading — spoke 3 of §2.1, so it sits after the origin and purpose entries (create the group heading entry if pp-018/pp-020 have not yet landed theirs; keep numbered order 1 Origin of the import, 2 Purpose, 3 Commodity). GROUPS shape exemplar: sets/live-animals/journeys/linear/features/hub/controller.js:33."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the 'Commodity' group caption and rows.commodities title ('Commodity') + hint copy."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, same leaf paths (copy-parity)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new group caption + row keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Commodity row renders under its heading with status 'Not yet started' on a fresh notification and links to /notifications/{id}/commodity-input-method; extend the hub axe check if the new row/heading changes hub state."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.commodityInputMethod → dto.commodity.inputMethod (MANUAL|CSV; obligation-field-map inc-013 row). If pp-008 already mapped it, verify and keep; otherwise add. Omit when unanswered (never send undefined)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Inverse: dto.commodity.inputMethod → answers.commodityInputMethod for draft resume."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test: commodityInputMethod survives to-dto → from-dto; unanswered → field absent from the DTO."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "T-5 standing rule: add the valid-POST contract case — payload { commodityInputMethod: 'MANUAL' } (+ named submit as the harness requires); asserts the controller commits exactly ['commodityInputMethod'] (= meta.collects). Manual table — the case is required work even when everything is green."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-input-method.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (multi-page group → e2e/ folder) + axe. Scenarios listed under specs."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "commodityInputMethod",
+      "within": null,
+      "requires": null,
+      "applyTo": null,
+      "status": "mandatory",
+      "collectedBy": "commodity-input-method",
+      "notes": "Scalar, persisted (NOT flow-only — FD-8 explicitly excludes it from FLOW_ONLY_KEYS). Allowed values MANUAL|CSV enforced by controller oneOf validation, never by the model. Backs commodity.inputMethod (obligation-field-map inc-013). Does not join policy.enforcedAtContinue."
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      {
+        "op": "add",
+        "id": "commodities",
+        "pages": ["commodity-input-method"],
+        "position": "directly before 'review'; canonical order start, origin, purpose, commodities, …, review (§2.3) — after origin/purpose when they exist"
+      }
+    ],
+    "taskRows": [
+      {
+        "op": "add",
+        "id": "commodities",
+        "pages": ["commodity-input-method"],
+        "hub": "GROUPS heading 'Commodity' (spoke 3, §2.1); mandatory row — participates in readyForCheckYourAnswers"
+      }
+    ],
+    "entryGuard": "no change"
+  },
+  "schemaFields": ["commodity.inputMethod"],
+  "copyKeys": [
+    "features/commodities/copy: inputMethod.title",
+    "features/commodities/copy: inputMethod.caption",
+    "features/commodities/copy: inputMethod.heading",
+    "features/commodities/copy: inputMethod.options.MANUAL.label",
+    "features/commodities/copy: inputMethod.options.MANUAL.hint",
+    "features/commodities/copy: inputMethod.options.CSV.label",
+    "features/commodities/copy: inputMethod.options.CSV.hint",
+    "features/commodities/copy: inputMethod.errors.required",
+    "features/hub/copy: groups caption 'Commodity'",
+    "features/hub/copy: rows.commodities.title",
+    "features/hub/copy: rows.commodities.hint"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-input-method.e2e.spec.js — initial render: caption 'Description of the goods', single legend-as-heading H1 'How do you want to add your commodity details?', both radios with exact labels + hints, 'Save and continue'; happy path: select Manual entry → save → redirect (hub — only page in section at this increment) → reload shows Manual pre-selected; CSV selection also saves and persists; validation: empty submit → 'There is a problem' summary with one link 'Select how you want to add your commodity details' whose click focuses the first radio, inline error with 'Error:' prefix; hub row Commodity goes Not yet started → Completed after answering; axe (wcag2a+wcag2aa, fail serious/critical) on initial render AND error state",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extend) — Commodity row rendered under its numbered heading, status + link to commodity-input-method"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{id}/commodity-input-method renders caption 'Description of the goods' and ONE question 'How do you want to add your commodity details?' as legend-as-page-heading (c-013: no separate hidden legend, no divergent second wording)",
+    "Exactly two radio options: 'Manual entry' (hint 'Enter one commodity line at a time.') and 'Upload from a CSV file' (hint 'Add all details at once, by uploading a file you can prepare with most spreadsheet software. Recommended for consignments with many commodity lines.'), bold labels, no pre-selection on first visit",
+    "Submitting with no selection returns 400 re-rendering raw values with GDS 'There is a problem' error summary containing one link 'Select how you want to add your commodity details' (href #commodityInputMethod, click focuses the first radio) and a standard inline govuk error message with visually-hidden 'Error:' prefix wired via aria-describedby",
+    "Valid POST commits commodityInputMethod = MANUAL or CSV to canonical fulfilment (persisted via the records service to commodity.inputMethod — NOT the session flow-only store) and redirects via kit.nextTarget; reload prefills the saved answer",
+    "Both options route identically down the section (no CSV branch, no destructive-switch warning — pp-042 owns both); no data mutation on method change",
+    "Hub shows the Commodity row (spoke 3) as Not yet started on a fresh notification, Completed once answered; the mandatory row blocks readyForCheckYourAnswers until complete",
+    "contract.plant-products.test.js has the valid-POST case committing exactly ['commodityInputMethod']",
+    "Mapper round-trips commodityInputMethod ⇄ commodity.inputMethod; unanswered → absent from the DTO",
+    "Axe clean (no serious/critical, wcag2a+wcag2aa) on initial render and error state",
+    "Obligation is copy-free (obligation-purity green); en/cy bundles structure-identical (copy-parity green)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "First command is the BASELINE run before any edit (red baseline = stop and report); second is the same script after the change. This increment OPENS the commodities feature group, flow section, task row and hub spoke 3 with its first page; pp-023..pp-027 grow them. Recipe: cheat-sheet §3 (add-a-section — group folder shape, section+row+hub steps) with §2 (add-a-page) for the page itself. Exemplars verified live this session: features/import-reason/controller.js + evaluation.js (single-radio collecting page — transpose almost verbatim), features/transport/ (group folder shape: shared page.js/evaluation.js/copy/, per-page subdirs <name>/<name>.controller.js|.njk, specs in e2e/), features/hub/controller.js:33 (GROUPS shape). Rulings applied: c-013 (one canonical question, visible H1 wording wins, legend-as-heading), FD-8 (persisted obligation, NOT flow-only), c-018 (single Joi-voice validation string), c-004/c-014 house error rendering ('There is a problem' + 'Error:' prefix — deliberately NOT the legacy 'Please fix the following errors'/prefix-less errorSpan defects), no-display-logic-in-model (MANUAL|CSV vocabulary in controller+copy, obligation is pure data). Decisions taken headless: (1) radio values are the normalised backend enum MANUAL|CSV submitted directly (mirrors reasonForImport; legacy lowercase 'manual'/'csv' wire values not carried); (2) both options render (spec-confirmed two-option surface, backend enum accepts both) but routing does not branch — CSV selections continue down the manual spine until pp-042 lands the branch; (3) the legacy destructive-switch warning banner, CSV-side sticky pre-selection quirks (definedness trap) and the switch-time PATCH mutation are ALL deferred to pp-042 — the page spec itself marks them design questions, and with one branch there is nothing to destroy; (4) caption kept as the spec's 'Description of the goods'; (5) no check-answers work — the check-answers feature is pp-038's, which decides whether a routing choice merits a row; (6) legacy etag/optimistic-concurrency hidden field not carried (house model is last-write-wins, Open Q 3 ruling in §6.2). Not platform-touching (set files + set-cloned contract table only), so the two-sided sibling-safety check is not required; npm test still covers L1 composition, dispatch, copy-convention/parity and reachability.",
+  "openQuestions": [
+    "Should check-answers (pp-038) surface the input-method choice as a reviewable row, given it is a routing/entry-mechanism choice rather than consignment data? Deferred to pp-038's planner.",
+    "Page-name mismatch inherited from legacy (URL 'commodity-input-method', caption 'Description of the goods', hub spoke 'Commodity'): kept spec-faithful here; flag to content design if one name should win across URL/caption/hub.",
+    "Until pp-042, a user selecting 'Upload from a CSV file' continues down the manual spine (no CSV upload page exists). Accepted as pass-1 behaviour; if product prefers, the CSV radio could be temporarily suppressed — one-line change in the view model."
+  ]
+}

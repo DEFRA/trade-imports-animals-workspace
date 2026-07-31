@@ -1,0 +1,176 @@
+{
+  "id": "pp-027",
+  "title": "commodity-bulk-details — per-commodity measures",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-012", "pp-016", "pp-021", "pp-026"],
+  "sourceIncrement": "inc-018",
+  "recipe": "sets/live-animals/docs/add-a-collection.md (batch-split details page over an existing collection — the consignment-details exemplar; page registration steps per sets/live-animals/docs/add-a-page.md)",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/page.js",
+      "action": "edit",
+      "what": "Add export const commodityBulkDetailsPage = { id: 'commodity-bulk-details', slug: 'commodity-bulk-details' }. File stays import-free (controller/flow both import the same object)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.controller.js",
+      "action": "create",
+      "what": "export const meta = { ...commodityBulkDetailsPage, collects: [] } (the commodityLines root is owned by commodity-search; members inherit dispatch coverage from the group — exemplar: live-animals consignment-details.controller.js:29). GET: state.get() once; state.collectionView(answers, ['commodityLines']) for facts; build per-line view rows (code + ref-data description from the pp-014 commodities service) prefilled from each entry's nine measure leaves; empty bulk panel. POST branches on the named submit action (documents-exemplar pattern — action travels as a submit button value so the crumb rides along, no GET mutation): (a) action='apply' — validate ≥1 line checkbox selected ('Select at least one commodity line to apply changes to') and ≥1 of the six bulk fields filled ('Fill in at least one field to update the selected commodity lines'); each FILLED bulk value also passes its field's format rule; then COPY each filled value onto every selected line via state.updateEntryAt(request, h, ['commodityLines'], index, entry) per selected index (copy-per-line, never apportion — v16 ruling) and 302 back to this page (server round-trip, zero client JS); bulk values are UI only, never persisted as answers. (b) action='clear' — re-render with an empty bulk panel, per-line values untouched (fixes the legacy Clear-by-reload trap; no write). (c) default Save and continue — validate EVERY line's measures with lib/validate factories (canonical strings in copyKeys); invalid → 400 re-render raw values; valid → commit each line in place via state.updateEntryAt wrapped in kit.recoverableSave (marked failure → recoverableError re-render 500; unexpected errors throw); exit via await kit.nextTarget(request, page, committed.scope) with kit.hubExitTarget(request) winning first. Every line index guarded before any write: Number.isInteger(index) && index >= 0 && index < lines.length — refuse forged/stale indexes with no write. finishedOrPropagated is rendered+validated only for lines whose commodity code the pp-014 fixture flags as requiring intended-use (plants-for-planting analogue); never commit a value for a line where the control did not render."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.controller.test.js",
+      "action": "create",
+      "what": "GET prefill from seeded lines; apply branch: values copied to selected lines only, unselected lines untouched, partial bulk fill copies only filled fields; 'Select at least one commodity line…' when none selected; 'Fill in at least one field…' when all six empty; clear branch resets bulk panel without touching line data; each per-line validation rule its own test (required x5, whole-number packages, quantity format, net-weight min/decimals/digits, finishedOrPropagated required-when-rendered); raw values + no commit on 400; cleaned commit via updateEntryAt + redirect on success; finishedOrPropagated absent (not rendered, not validated, not committed) for a non-flagged line; forged/out-of-range index refused with no write; recoverable-save failure → 500; unexpected error throws."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/commodity-bulk-details/commodity-bulk-details.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Description of the goods' + H1 'Commodity details' (single H1 — c-014 family). Shared error summary ('There is a problem' — c-004). Bulk-apply panel: govukCheckboxes 'Select all' + one checkbox per line whose visible label names the commodity meaningfully (code + description — fixes the legacy 'commodity-<uuid>' screen-reader name defect), six bulk controls (govukInput number of packages / quantity / net weight; govukSelect package type / quantity type from pp-016 fixtures; govukRadios yes/no controlled atmosphere), Apply + Clear as named submit buttons (govuk-button / govuk-button--secondary — no bespoke .link-button, no reload-Clear). Then one govukFieldset per commodity line (legend = code + ref-data description) with the per-line controls: govukInput numberOfPackages/quantity/netWeight, govukSelect packageType (24 opts) / quantityType (8 opts) from pp-016, govukRadios controlledAtmosphereContainer (true/false), govukRadios finishedOrPropagated with values FINISHED/PROPAGATED asking the domain question directly (v17 ruling — never a Yes/No veneer), govukRadios intendedForFinalUsers (true/false), govukCheckboxes testAndTrial. EVERY control gets a real macro-emitted label/legend — no aria-label-only controls, no aria-labelledby (the two legacy a11y defects this increment fixes by construction). Derived read-only per-line and consignment subtotals (Σ netWeight, Σ packages) rendered from the data — no 'Update total' button (totals always fresh; legacy stale-display + button not ported). Input name = id = error key throughout so error-summary links focus controls. May extract a _line-fields.njk partial per the consignment-details exemplar. Govuk macros only, no custom CSS."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the commodityBulkDetails namespace: caption 'Description of the goods', title/heading 'Commodity details', bulk panel copy (heading 'Apply to all commodity lines', 'Select all', 'Apply', 'Clear'), field labels ('Number of packages', 'Type of package', 'Quantity', 'Quantity type', 'Net weight (kg)', 'Controlled atmosphere container' — sentence case everywhere, resolving the legacy bulk-vs-grid casing split), finishedOrPropagated legend + option labels naming the domain values (finished / to be grown on), intendedForFinalUsers legend + yes/no, testAndTrial label 'For test and trial', and ALL validation strings (see copyKeys — one canonical string per rule, c-018 Enter/Select voice)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend pins for the commodityBulkDetails namespace in both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the commodity-bulk-details controller namespace; add meta to dispatchPages (collects: [] pages MUST still be indexed); spread routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Append commodityBulkDetailsPage to the 'commodities' section's pages array AFTER commoditySummaryPage (order per SIBLING-SET-PLAN §2.1: …commodity-summary, commodity-bulk-details; array position controls nextInSection() and strictly-earlier continue prerequisites)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add commodityBulkDetailsPage to the existing 'commodities' task row's pages array (same row — same user task; no new hub row, no GROUPS change; row status derivation unchanged since collects is [])."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Update status pins: commodities row In progress while lines exist but measure leaves are incomplete; Completed once every line's mandatory measures (and species) are complete — collection-complete rollup now depends on the five mandatory measure leaves per line."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the commodity-bulk-details case (exemplar: contract.test.js:213 consignmentDetails): assert meta.collects toEqual([]); seed a journey with commodityInputMethod=MANUAL and one commodityLines entry (with a species) so scope/wipe keeps the write; drive the default Save-and-continue POST with a valid per-line payload; assert the nine measure leaves committed in place on that entry and nothing else."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-bulk-details.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe — scenarios in specs[]. Every test starts its own notification and builds its own lines through commodity-search/basic-description (independent tests, raw role/label locators, no page objects, no sleeps)."
+    }
+  ],
+  "obligations": [
+    { "id": "numberOfPackages", "within": "commodityLines", "requires": "mandatory (per pp-021 lines.js; legacy CHED-PP submit-mandatory)", "collectedBy": "commodity-bulk-details (edits in place; dispatch owner is commodity-search via the commodityLines group — this page declares collects: [])" },
+    { "id": "packageType", "within": "commodityLines", "requires": "mandatory", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "quantity", "within": "commodityLines", "requires": "mandatory (positive number, ≤3 decimals, ≤16 digits)", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "quantityType", "within": "commodityLines", "requires": "mandatory", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "netWeight", "within": "commodityLines", "requires": "mandatory (≥0.001, ≤3 decimals, ≤16 digits)", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "controlledAtmosphereContainer", "within": "commodityLines", "requires": "optional bool (legacy-confirmed optional)", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "finishedOrPropagated", "within": "commodityLines", "requires": "FINISHED|PROPAGATED enum; required only when rendered (line's commodity flagged plants-for-planting by the pp-014 fixture); consume whatever status/gate shape pp-021 landed — do NOT add a new L2 helper", "collectedBy": "commodity-bulk-details (in place, collects: [])" },
+    { "id": "intendedForFinalUsers", "within": "commodityLines", "requires": "optional bool", "collectedBy": "commodity-bulk-details (in place, collects: []) — see openQuestions: field-map listed it under inc-019 but the canonical brief + target model put it per-line here; pp-028 must NOT also collect it" },
+    { "id": "testAndTrial", "within": "commodityLines", "requires": "optional bool (legacy render-trigger unknown — pass 1 renders for every line)", "collectedBy": "commodity-bulk-details (in place, collects: [])" }
+  ],
+  "flowChanges": {
+    "sections": [
+      { "id": "commodities", "change": "append commodityBulkDetailsPage to pages after commoditySummaryPage (section order: commodity-input-method, commodity-search, commodity-basic-description, variety-of-genus-and-species, commodity-summary, commodity-bulk-details)" }
+    ],
+    "taskRows": [
+      { "id": "commodities", "change": "add commodityBulkDetailsPage to the existing row's pages array; no new row, no hub GROUPS change" }
+    ],
+    "entryGuard": "no change"
+  },
+  "schemaFields": [
+    "commodity.commodityComplement[].numberOfPackages",
+    "commodity.commodityComplement[].packageType",
+    "commodity.commodityComplement[].quantity",
+    "commodity.commodityComplement[].quantityType",
+    "commodity.commodityComplement[].netWeight",
+    "commodity.commodityComplement[].controlledAtmosphereContainer",
+    "commodity.commodityComplement[].finishedOrPropagated",
+    "commodity.commodityComplement[].intendedForFinalUsers",
+    "commodity.commodityComplement[].testAndTrial"
+  ],
+  "copyKeys": [
+    "commodityBulkDetails.caption ('Description of the goods')",
+    "commodityBulkDetails.title / .heading ('Commodity details')",
+    "commodityBulkDetails.bulk.heading ('Apply to all commodity lines'), .bulk.selectAll ('Select all'), .bulk.apply ('Apply'), .bulk.clear ('Clear')",
+    "commodityBulkDetails.fields.numberOfPackages.label ('Number of packages')",
+    "commodityBulkDetails.fields.packageType.label ('Type of package')",
+    "commodityBulkDetails.fields.quantity.label ('Quantity')",
+    "commodityBulkDetails.fields.quantityType.label ('Quantity type')",
+    "commodityBulkDetails.fields.netWeight.label ('Net weight (kg)')",
+    "commodityBulkDetails.fields.controlledAtmosphereContainer.legend + .options.yes/.no",
+    "commodityBulkDetails.fields.finishedOrPropagated.legend + .options.finished/.propagated (domain enum wording, not Yes/No)",
+    "commodityBulkDetails.fields.intendedForFinalUsers.legend + .options.yes/.no",
+    "commodityBulkDetails.fields.testAndTrial.label ('For test and trial')",
+    "commodityBulkDetails.errors.selectLine ('Select at least one commodity line to apply changes to')",
+    "commodityBulkDetails.errors.fillOneField ('Fill in at least one field to update the selected commodity lines')",
+    "commodityBulkDetails.errors.numberOfPackagesRequired ('Enter the number of packages')",
+    "commodityBulkDetails.errors.numberOfPackagesWhole ('Number of packages must be a whole number')",
+    "commodityBulkDetails.errors.packageTypeRequired ('Select the type of package')",
+    "commodityBulkDetails.errors.quantityRequired ('Enter the quantity')",
+    "commodityBulkDetails.errors.quantityFormat ('Quantities cannot have more than 3 decimals, or be larger than 16 digits including decimals')",
+    "commodityBulkDetails.errors.quantityTypeRequired ('Select the quantity type')",
+    "commodityBulkDetails.errors.netWeightRequired ('Enter the net weight in kilograms')",
+    "commodityBulkDetails.errors.netWeightMin ('Net weight must be 0.001 or more')",
+    "commodityBulkDetails.errors.netWeightDecimals ('Net weight cannot have more than 3 decimals')",
+    "commodityBulkDetails.errors.netWeightDigits ('Net weight cannot have more than 16 digits, including decimals')",
+    "commodityBulkDetails.errors.finishedOrPropagatedRequired ('Select whether the commodity is intended for final users or propagating')",
+    "(all keys mirrored in copy.cy.js, same shape)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/commodity-bulk-details.e2e.spec.js — initial render: every control resolvable via getByLabel/getByRole (real labels — the a11y fix asserted), caption + H1, both selects show the full pp-016 option lists (24 package types, 8 quantity types) including placeholders",
+    "same spec — happy path: fill every line's measures, Save and continue → hub (nextInSection exit), reload → every entered value persisted on its line",
+    "same spec — per-rule validation, one test per rule: 5 required strings, whole-number packages, quantity format, net-weight min/decimals/digits; raw values preserved on error; each error-summary link ('There is a problem') moves focus to its control",
+    "same spec — bulk apply: 2+ lines, select a SUBSET, fill a subset of bulk fields, Apply → filled values copied onto selected lines only (copy-per-line, unselected untouched, unfilled fields untouched); bulk apply with none selected → selectLine error; with all six empty → fillOneField error; Clear resets the bulk panel without losing per-line values",
+    "same spec — conditional finishedOrPropagated: rendered (as the FINISHED/PROPAGATED question) only for a plants-for-planting-flagged line; absent for a non-flagged line; required-when-rendered error",
+    "same spec — axe: AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']), fail on any serious/critical, for BOTH states — initial render and validation-error state"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/commodity-bulk-details renders caption 'Description of the goods', single H1 'Commodity details', one fieldset per commodityLines entry (legend = commodity code + ref-data description from the pp-014 service) and the bulk-apply panel.",
+    "EVERY form control has a real macro-emitted <label>/<legend> programmatically associated (getByLabel resolves each one); zero aria-label-only controls and zero aria-labelledby attributes — the two legacy defects (grid controls named only by aria-label; self-referential aria-labelledby on bulk selects) cannot recur.",
+    "Line-selection checkboxes are labelled with the commodity code + description, never an internal id (fixes the 'commodity-<uuid>' accessible-name defect).",
+    "finishedOrPropagated is asked as the domain enum — option values FINISHED and PROPAGATED with labels naming the real meanings — not a Yes/No (v17 ruling); it renders and validates only for lines the commodities fixture flags, and is never committed for a line where it did not render.",
+    "controlledAtmosphereContainer, intendedForFinalUsers and testAndTrial submit a single stable boolean vocabulary (true/false); the four legacy Yes/No encodings (on/off, 1364882/'', Finished/Propagated-as-Yes/No) are not ported.",
+    "Apply copies each FILLED bulk value onto EVERY selected line (copy-per-line then sum — v16 semantics; never apportion), leaves unselected lines and unfilled fields untouched, is a full server round-trip (POST → 302 → GET, zero client XHR), and persists no bulk value as an answer.",
+    "Apply with no line selected → 'Select at least one commodity line to apply changes to'; Apply with all six bulk fields empty → 'Fill in at least one field to update the selected commodity lines'.",
+    "Save and continue validates every line with exactly one canonical string per rule in the Enter/Select voice (c-018): the five required strings, 'Number of packages must be a whole number', the quantity format string, and the three net-weight strings; invalid POST re-renders the user's raw values with status 400 and a GDS 'There is a problem' summary whose links focus the offending control.",
+    "Valid save commits cleaned values in place via state.updateEntryAt per line (parent index guarded with Number.isInteger + bounds before any write; forged index → no write) inside kit.recoverableSave, then redirects via kit.nextTarget with kit.hubExitTarget winning; marked persistence failure re-renders recoverableError with status 500.",
+    "Per-line and consignment subtotals (Σ net weight, Σ packages) are derived and rendered fresh on every GET — there is no 'Update total' button and no stored rollup.",
+    "The commodities task row shows In progress while any line's mandatory measures are missing and Completed when all lines are complete; the contract case in contract.plant-products.test.js asserts meta.collects === [] and the nine leaves committing in place.",
+    "Axe (wcag2a/wcag2aa) reports no serious/critical violation in either state; the full plant verification ladder is green and npm test (L1 composition + conventions) passes unchanged."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "Design translation of the legacy bulk page (the most-driven page in the CHED-PP QA suite, page-object name 'CommodityExtendedDescriptionPage'). Transposition exemplar: sets/live-animals/journeys/linear/features/commodities/consignment-details/ (collects: [], per-line in-place edits via state.updateEntryAt, fields.js/lines.js/validation/view-model split, remove/ NOT needed here — Remove lives on commodity-summary pp-026); contract exemplar src/server/app/contract.test.js:213. Obligations and grouped bindings for all nine measure leaves ALREADY EXIST from pp-021 (sections/commodities/lines.js + the commodities feature evaluation.js — boot's assertFulfilmentBindingCoverage guarantees it); this increment adds NO obligation and NO binding. The pp-008/pp-021 records mapper already round-trips the full commodityComplement[] subtree — verify the nine fields appear in mapper.test.js and extend only if a leaf is uncovered (omission-assertion discipline). Rulings applied: c-018 (single canonical Enter/Select voice — the backend 'Add the …' variants explicitly rejected), c-004 ('There is a problem'), c-014 (single H1), v16 bulk-apply semantics (copy-per-line then sum), v17 finishedOrPropagated domain-enum finding, govuk-macros-only (the legacy govuk-tabgit class corruption and aria-labelledby defects are macro-impossible). Deliberate non-ports, all evidence-backed: 'Update total' button (totals derived fresh — legacy stale-display defect), Clear-by-page-reload (scoped clear action instead), the '499 lines remaining' cap counter (MAX_COMMODITY_LINES value never verified; plant model declares no cap, policy.maxEntriesFrom={}), etag/If-Match concurrency (last-write-wins is the standing Open Q 3 deviation), single mega-form with 7 submit buttons + 'Keyboard submit' hack (one form, three named actions: apply/clear/continue — same pattern as the documents loop POST branches), 'Save and return to hub'/'Cancel' bespoke buttons (standard kit hub-exit/back behaviour instead). CSV branch bypasses this page entirely — recorded with pp-042. Empty-lines deep link needs no special casing: derived page gates (strictly-earlier prerequisites) plus the commodityLines minEntries-1 floor at the task-row level cover it. This is the heaviest contract/validation increment of m3 — budget the copy bundle work accordingly (en+cy parity is the first thing to go red).",
+  "openQuestions": [
+    "intendedForFinalUsers placement conflict: backend-schema/obligation-field-map.md lists commodityComplement[].intendedForFinalUsers under inc-019 (commodity-additional-details), but the canonical MAPPING brief for pp-027 and the target model (chedpp-requirements.md §5 — per-line bool distinct from finishedOrPropagated) put it per-line here. Planned HERE per the canonical brief; pp-028's planner must not also collect it (one obligation, one owner). Flag to the human: the field map row should be corrected.",
+    "finishedOrPropagated render trigger: legacy gates on commodity.group.showIntendedUseDropdown ('Plants for Planting'); the rebuild derives the condition from the pp-014 commodities fixture per commodity code. Exact fixture flag name/shape depends on what pp-014 and pp-021 landed — if pp-021 landed no model applyTo gate for this leaf, the conditional is controller-side (lazy fixture lookup, varietyClass idiom) and the engine will NOT auto-wipe a value whose condition lapses; implementor must confirm pp-021's landed shape and follow it rather than invent a new L2 helper.",
+    "testAndTrial legacy trigger (variation.requiresTestAndTrial) is a recorded gap — the one exercising legacy test fires it on seeds/legumes, disjoint from the plants-for-planting condition. Pass 1 renders the optional checkbox for EVERY line (decided here — simplest, loses no data); revisit when plant-health rules supply the real condition.",
+    "Legacy 'Save and return to hub' semantics (whether partial per-line edits persist) were never tested upstream; the rebuild's standard hub-exit saves validated data — accepted as a deviation, flag if product expects discard-on-return."
+  ]
+}

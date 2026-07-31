@@ -1,0 +1,172 @@
+{
+  "id": "pp-025",
+  "title": "variety-of-genus-and-species — variety + class (depth 3)",
+  "kind": "page",
+  "milestone": "m3",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-012", "pp-014", "pp-021", "pp-024"],
+  "sourceIncrement": "inc-016",
+  "recipe": "sets/live-animals/docs/add-a-collection.md",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/page.js",
+      "action": "edit",
+      "what": "Add `export const varietyOfGenusAndSpeciesPage = { id: '<fresh UUID>', slug: 'variety-of-genus-and-species' }`. File stays import-free (page.js is the group's identity module; controller and flow both import this same object)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.js",
+      "action": "create",
+      "what": "The depth-3 loop page. `export const meta = { ...varietyOfGenusAndSpeciesPage, collects: [] }` — the varieties group's dispatch owner is inherited from the commodityLines chain (exact precedent: live-animals features/commodities/animal-identification/animal-identification.controller.js:25 `collects: []`). GET: `state.get()` once; resolve the current commodity line context the same way animal-identification does; for each species j on the current line, look up per-species varieties + class applicability from the pp-014 commodities service (sets/plant-products/services/commodities/); render ONLY species with >0 variety options AND >0 class options (legacy template-gate parity); if NO species on the line qualifies, redirect onward via `kit.nextTarget(request, page, scope)` — the skip is controller-side, keeping flow.js data-free. Saved pairs read via `state.collectionView(answers, ['commodityLines', i, 'species', j, 'varieties'])` (facts only; controller builds rows). POST branches on an explicit `action` payload value (NEVER name-sniffing, NEVER EPPO-keyed field names — stable indexed names varietySelect-<j>, otherVariety-<j>, varietyClass-<j>): (a) `action = 'add:<j>'` validates the row then `state.appendEntryAt(request, h, ['commodityLines', i, 'species', j, 'varieties'], { variety, varietyClass })`; (b) `action = 'remove:<j>:<k>'` looks the instance up first, refuses a forged/stale index (no write), then `state.removeEntryAt(...)`; (c) default Save-and-continue validates any part-filled row, commits it, then advances via `kit.nextTarget` (hub exit wins via `kit.hubExitTarget`). WRITE GUARDS at TWO levels before any ...At call: `Number.isInteger(i) && i >= 0 && i < lines.length` AND the same for j against `lines[i].species.length` — an out-of-range parent would fabricate a phantom instance (recipe §4.7 / §8 G-B). Committed `variety` value = the selected variety ID from reference data; when the select = the OTHER sentinel, the committed value is the cleaned free text from otherVariety-<j> (the sentinel itself is transient form state, never committed). `varietyClass` committed as CLASS_I | CLASS_II | EXTRA_CLASS enum code. Validation via factories from src/server/app/lib/validate/index.js, Joi voice (c-018) one canonical string per rule: variety required when the row is part-filled ('Select the variety'); class required when the row is part-filled ('Select the class'); at least one pair required when the species has zero saved entries ('At least one species variety must be added'); duplicate pair for the same species rejected ('You have already added this variety and class for this species' — legacy string ruled ungrammatical, not ported); other-variety required when variety = Other ('Enter the name of the other variety'); other-variety length/charset ('Other variety name must be 32 characters or fewer'). Invalid POST re-renders RAW values, status 400; GDS 'There is a problem' summary (c-004) with #fieldName links focusing controls. All writes wrapped in `kit.recoverableSave()` (marked failure → re-render recoverableError:true 500; other errors throw). `export const routes = kit.pageRoutes(page, { get, post })`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill + per-species render gate (species without variety+class ref data omitted; whole page redirects onward when none qualify); every validation branch above, each asserting its single canonical message; raw values + no commit on 400; add branch commits exactly { variety, varietyClass } at ['commodityLines', i, 'species', j, 'varieties']; OTHER sentinel commits the free text into variety (sentinel never persisted); remove branch deletes the addressed instance; forged/stale parent index (i or j out of range, non-integer) refused with no write; duplicate pair rejected; recoverable save failure → 500; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/variety-of-genus-and-species/variety-of-genus-and-species.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Description of the goods' above H1 'Variety and class of commodity' (govuk-caption-xl + govuk-heading-xl). One block per qualifying species: H2 '<eppoCode> - <genusAndSpecies>' (govuk-heading-m); saved pairs as a govuk-table (columns Variety / Class / Remove — visually-hidden 'Remove' header text, per-row Remove as a govuk-button--secondary submit carrying action='remove:<j>:<k>'); entry row as labelled form groups — govuk-select 'Variety' (options from the pp-014 fixture per species, plus 'Other'), govuk-input 'Other variety name' with hint 'Only if you chose Other' rendered ALWAYS-VISIBLE (no select-driven JS reveal — the legacy jQuery js-hidden widget is ruled un-portable and the set has no client JS), govuk-select 'Class' (placeholder + only the classes applicable to that species). Every control has a REAL visible <label> (fixes the legacy aria-label-only defect; no aria-label overrides). 'Add another variety' = govuk-button--secondary submit action='add:<j>'. 'Add another Genus (and species)' = plain govuk link back to the commodity-basic-description page (navigation, not mutation — no submit). Primary 'Save and continue' govuk-button. Error summary at top. govuk-frontend toolbox only — no bespoke table-responsive/link-button/hook classes, no breadcrumbs (real back link from kit.base)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add the varietyOfGenusAndSpecies namespace: title, caption ('Description of the goods'), heading ('Variety and class of commodity'), speciesHeading template, varietyLabel, otherVarietyLabel, otherVarietyHint, classLabel, classPlaceholder, classOptions (CLASS_I 'Class I', CLASS_II 'Class II', EXTRA_CLASS 'Extra Class' — display labels for the enum codes), table headings (variety, class, remove), addAnotherVariety, addAnotherSpecies, remove, and the six error strings from the controller spec."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle with IDENTICAL leaf paths and value kinds (copy-parity enforces shape equality)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group copy test for the new varietyOfGenusAndSpecies keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the controller namespace; add `meta` to dispatchPages (collects: [] pages MUST still be indexed for gates/navigation); spread `routes` into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Append varietyOfGenusAndSpeciesPage to the 'commodities' section's pages array immediately after commodityBasicDescriptionPage (array order drives nextInSection() and strictly-earlier continue prerequisites; commodity-summary slots in after it when pp-026 lands)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add varietyOfGenusAndSpeciesPage to the existing 'commodities' task row's pages array (row id, hub GROUPS and status derivation unchanged — collects: [] contributes nothing to row status)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Extend the commodities-row pins for the new page membership (row first-entry page unchanged; status transitions unchanged)."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the loop-page case per recipe §4.8: drive the `action='add:<j>'` POST with a valid payload, seeding a commodityLines entry with one species carrying variety/class reference data; assert exactly the bound leaf ids (variety, varietyClass) committed at the nested path and nothing else."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/variety-of-genus-and-species.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (multi-page group → e2e/ folder). See specs field for scenarios; includes the two axe checks."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "varieties",
+      "within": "species (within commodityLines) — depth-3 chain, OBJECT-IDENTITY within references",
+      "requires": "optional group — no minEntries (a species may legitimately have zero variety/class pairs)",
+      "applyTo": null,
+      "collectedBy": "variety-of-genus-and-species (meta.collects: [] — dispatch owner inherited from the commodityLines chain per nearest-ancestor-group rule; declared in sections/commodities/varieties.js by pp-021, NOT re-declared here)"
+    },
+    {
+      "id": "variety",
+      "within": "varieties",
+      "requires": "leaf — required per-row by controller Joi when the row is active (model-optional by deliberate policy, see openQuestions); value is the variety ID from the pp-014 fixture, never the display label (Open Q 2); Other → cleaned free text",
+      "applyTo": null,
+      "collectedBy": "variety-of-genus-and-species"
+    },
+    {
+      "id": "varietyClass",
+      "within": "varieties",
+      "requires": "leaf — required per-row by controller Joi when the row is active",
+      "applyTo": "allowListed(eppoCode, per-species class applicability from sets/plant-products/services/commodities/, varieties projection group, reasons) — lazily resolved at gate execution; CLASS_I | CLASS_II | EXTRA_CLASS, null when N/A (gate authored by pp-021; this page is its first collecting surface)",
+      "collectedBy": "variety-of-genus-and-species"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "commodities section: pages array gains varietyOfGenusAndSpeciesPage after commodityBasicDescriptionPage (order per SIBLING-SET-PLAN §2.1 row 3: input-method, search, basic-description, variety-of-genus-and-species, summary, bulk-details)"
+    ],
+    "taskRows": [
+      "commodities row: pages array gains varietyOfGenusAndSpeciesPage; no new row, no hub GROUPS change, no status-derivation change"
+    ],
+    "entryGuard": "none"
+  },
+  "schemaFields": [
+    "commodity.commodityComplement[].species[].varieties[].variety",
+    "commodity.commodityComplement[].species[].varieties[].varietyClass"
+  ],
+  "copyKeys": [
+    "varietyOfGenusAndSpecies.title",
+    "varietyOfGenusAndSpecies.caption",
+    "varietyOfGenusAndSpecies.heading",
+    "varietyOfGenusAndSpecies.speciesHeading",
+    "varietyOfGenusAndSpecies.varietyLabel",
+    "varietyOfGenusAndSpecies.otherVarietyLabel",
+    "varietyOfGenusAndSpecies.otherVarietyHint",
+    "varietyOfGenusAndSpecies.classLabel",
+    "varietyOfGenusAndSpecies.classPlaceholder",
+    "varietyOfGenusAndSpecies.classOptions.CLASS_I",
+    "varietyOfGenusAndSpecies.classOptions.CLASS_II",
+    "varietyOfGenusAndSpecies.classOptions.EXTRA_CLASS",
+    "varietyOfGenusAndSpecies.table.variety",
+    "varietyOfGenusAndSpecies.table.class",
+    "varietyOfGenusAndSpecies.table.remove",
+    "varietyOfGenusAndSpecies.addAnotherVariety",
+    "varietyOfGenusAndSpecies.addAnotherSpecies",
+    "varietyOfGenusAndSpecies.remove",
+    "varietyOfGenusAndSpecies.errors.varietyRequired",
+    "varietyOfGenusAndSpecies.errors.classRequired",
+    "varietyOfGenusAndSpecies.errors.atLeastOneVariety",
+    "varietyOfGenusAndSpecies.errors.duplicatePair",
+    "varietyOfGenusAndSpecies.errors.otherVarietyRequired",
+    "varietyOfGenusAndSpecies.errors.otherVarietyLength"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/commodities/e2e/variety-of-genus-and-species.e2e.spec.js — initial render for a species WITH variety/class data (caption, H1, per-species H2, labelled variety/other/class controls, fixture-sourced options); skip: a line whose species carry no variety/class data never shows the page (advances past it); happy path: add a pair → row appears in the table → Save and continue exits via nextTarget → reload shows the persisted pair; each validation rule in its own test (variety required, class required, at-least-one, duplicate pair, other required, other length) with raw values preserved and error-summary links focusing controls; Other branch: choose Other + type a name → committed value round-trips; Remove: per-row Remove deletes only that pair; multi-species: a line with two ref-data species renders two blocks with independent add/remove; axe (wcag2a+wcag2aa, fail serious/critical) on initial render AND on the error state — the one legacy page never axe-scanned MUST be scanned here"
+  ],
+  "acceptanceCriteria": [
+    "From commodity-basic-description, a commodity line with at least one species carrying BOTH variety options and class applicability reaches variety-of-genus-and-species; a line with none skips straight past it (controller redirect via kit.nextTarget) — mirroring the legacy render gate (varietyOptions.length>0 AND classOptions.length>0).",
+    "Page shows caption 'Description of the goods', H1 'Variety and class of commodity', and one block per qualifying species headed '<eppoCode> - <genusAndSpecies>'.",
+    "Every form control has a real visible label (variety select, always-visible 'Other variety name' input with hint, class select) — zero aria-label-only controls; the legacy jQuery select-driven reveal is NOT ported and the page ships no client JS.",
+    "Variety options come from the pp-014 per-species fixture plus 'Other'; the committed variety value is the variety ID, never the display label; choosing 'Other' commits the cleaned free text (the Other sentinel is never persisted).",
+    "Class options are only the classes applicable to that species per the pp-014 fixture, stored as CLASS_I | CLASS_II | EXTRA_CLASS enum codes (display labels 'Class I'/'Class II'/'Extra Class' live in copy).",
+    "Add writes via state.appendEntryAt at ['commodityLines', i, 'species', j, 'varieties']; Remove via removeEntryAt at the same path; BOTH parent indexes (line and species) are validated (integer, in range) before any write and a forged/stale index is refused with no store mutation.",
+    "Validation (one canonical Joi-voice string each, c-018): 'Select the variety' (class chosen, variety blank), 'Select the class' (variety chosen, class blank), 'At least one species variety must be added' (empty row, zero saved entries for that species), 'You have already added this variety and class for this species' (exact duplicate pair), 'Enter the name of the other variety' (Other selected, text blank), 'Other variety name must be 32 characters or fewer' (over-length). Invalid POST re-renders raw values with status 400, GDS 'There is a problem' summary, #field links focusing controls.",
+    "Saved pairs render per species in a govuk-table (Variety / Class / Remove) with per-row Remove submit buttons; 'Add another Genus (and species)' is a plain link back to commodity-basic-description.",
+    "Save and continue commits any valid part-filled row and advances via kit.nextTarget (hub until pp-026 lands commodity-summary as next-in-section; the e2e asserts the current target and pp-026 updates it); no max-commodity-lines cap states exist (policy.maxEntriesFrom = {} per plan §3.3).",
+    "All copy in en AND cy bundles with identical shape; contract.plant-products.test.js gains the add-branch case committing exactly variety + varietyClass at the nested path; axe passes (wcag2a/wcag2aa, no serious/critical) on initial render and error state.",
+    "Depth-3 engine behaviour holds live: removing a species (via pp-024's surface) takes its varieties with it; collection facts come from state.collectionView — no scope/wipe code written in the feature."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "The riskiest m3 page: first real (non-fixture) exercise of depth-3 nested collections on the platform, allowed only because pp-012's P-7 characterisation test proved appendEntryAt/updateEntryAt/removeEntryAt, per-instance scope+wipe, collection-complete rollup and dispatch inheritance at ['lines', i, 'species', j, 'varieties'] (§8 G-B: the live exemplar animalIdentifiers is only depth 2). Run test:plant-products BEFORE editing — a red baseline (e.g. pp-021 landed without the 3-chain grouped bindings in features/commodities/evaluation.js) means STOP and report; this increment does NOT declare obligations or bindings — sections/commodities/varieties.js, the grouped({ groups: [line, species, variety] }) bindings and the varietyClass allowListed gate are pp-021's, and whitelists.test.js pinning that allowlist is pp-021's too. Exemplars: features/commodities/animal-identification/ (nested loop, collects: [], line-context resolution, records/ append-remove structure — transpose its shape one level deeper), features/commodities/evaluation.js:35-38 (depth-2 grouped bindings as the pattern the 3-chain extends), features/documents/ (single-page add-another loop table). Decisions taken headless: (1) 'Other' input always visible with real label+hint — the legacy jQuery js-hidden reveal is ruled un-portable by the page spec (select-driven reveals are an a11y problem; no-JS users cannot complete the legacy page) and CHED-PP m0–m4 ships zero client JS; (2) Other free text commits into the variety member (legacy parity: ComplementParameterSet stores the resolved text as the 'variety' value) keeping the manifest at two leaves; (3) legacy duplicate message ('Variety and class has already been entered for species') rewritten — spec explicitly says do not port verbatim; (4) legacy lowercase-only /^[a-z ]{1,32}$/ Other rule relaxed to a 32-char length cap — the legacy rule rejects conventionally-capitalised cultivar names and is flagged as bad copy in the spec; recorded as a deliberate deviation; (5) EPPO-keyed dynamic field names (add-variety-{eppoCode}) NOT ported — the spec's sharpest finding is that client and server derive the EPPO code from field names by DIFFERENT string-surgery rules (breaks for hyphenated codes); we use stable indexed names and the server-held collection is the model; (6) legacy hidden etag/commodityDetailsPage fields dropped — last-write-wins is the ruled concurrency posture (Open Q 3) and CSRF is the platform's; (7) skip-when-no-ref-data is controller-side, not an authored flow gate — flow.js stays data-free and the condition is reference-data-driven, matching the lazily-resolved commodities-gate idiom; (8) no commodity-line cap: plan §3.3 rules policy.maxEntriesFrom = {}, so the three legacy advisory paragraphs and the cap error are out of scope; (9) 'Add another Genus (and species)' is a link (navigation) not a submit — mutation-by-link-button is a ruled-out legacy pattern; the legacy drifted aria-label is not ported. Serial build order (pp ids) means pp-022's commodities section/row and pp-023's search page land before this runs even though only pp-024 is a declared dependency.",
+  "openQuestions": [
+    "Variety/class mandatoriness policy: legacy is FE-mandatory-when-offered but model-optional (no @NotNull on the variety/class keyDataPairs), which is why the CSV route reaches 'Valid' with both blank. This increment ships the FE Joi rules when the page renders (matching legacy manual journey); product should confirm the model-level policy once — the spec demands ONE answer, and the pp-042 CSV branch will inherit whatever is decided.",
+    "Is class a genuinely fixed 3-value list (EU marketing standards) or per-species reference data? QA models it as a closed enum and only 3 values were ever observed, but the legacy template drives it per-species. Built here as per-species applicability over the 3-value enum (pp-014 fixture) — confirm with product.",
+    "Other-variety free text commits into the variety member as text while fixture varieties commit IDs — for 'Other' the eventual risk-engine join (varietyId-keyed) would be on a label. Acceptable for pass 1 (fixture-backed); flag when the commodities lookup goes real.",
+    "Legacy hidden field commodityDetailsPage (suspected return-destination routing state, always empty in evidence) was dropped; confirm no CHED-PP flow needed it — our change-context mechanism (kit.withChangeContext) covers deep-link-back-to-check-answers."
+  ]
+}
