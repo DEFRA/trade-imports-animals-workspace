@@ -7,12 +7,19 @@
 
 You are the **orchestrator** for an overnight planning run. You do not implement — you spawn
 workflows and subagents, read their results, decide the next step, and synthesise. Your single
-deliverable is **a very detailed, journey-builder-ready plan to build `plant-products/ched-pp` as a
-sibling of the `live-animals` set** — frontend (obligation-model sibling set) + backend (new
-`/plant-products/` schema and endpoints) — grounded in the already-mined CHED-PP requirements.
+deliverable is **a very detailed, journey-builder-ready `backlog.json`** for building
+`plant-products/ched-pp` as a sibling of the `live-animals` set — frontend (obligation-model sibling
+set) + backend (new `/plant-products/` schema and endpoints) — grounded in the already-mined CHED-PP
+requirements.
 
-This is a **proof-of-concept planning** run. Produce the PLAN (and the concrete backend schema as a
-compilable artefact). Do **not** attempt to build the full frontend journey tonight.
+**The plan is JSON, not markdown.** The master artefact is a canonical machine-readable
+`backlog.json` that a serial build loop can iterate over (status flips, per-increment rulings,
+dependsOn ordering) — exactly like the trace-requirements CHED-PP `backlog.json` pattern that has
+already survived a spec-gate review. Markdown exists only as logs/handover (`WHEN-YOURE-BACK.md`,
+`HANDOVER.md`) and per-topic design notes — never as the plan of record.
+
+This is a **proof-of-concept planning** run. Produce the backlog (and the concrete backend schema as
+a compilable artefact). Do **not** attempt to build the full frontend journey tonight.
 
 ## Operating mode (non-negotiable)
 
@@ -109,23 +116,60 @@ pattern is NOT yet covered by an existing recipe (there is no "add-a-set" recipe
 finding).
 
 **Phase D — Per-increment planning fan-out (the core ask).** Take the **unblocked frontend
-increments** from the CHED-PP backlog (m0–m4 own-org happy path; the 5 deferred ones stay deferred).
-For EACH increment, spawn one planner agent (fan out — `pipeline`/`parallel`, one per increment).
-Each planner: reads the increment's `pages/<slug>.json` spec + the matching **frontend-change recipe**
-(add-a-field/page/section/collection or the obligation/flow-maintenance guard rails) + the Phase-C
-sibling-set plan + the Phase-B schema, and emits a **detailed, obligation-model-specific
-implementation plan** for that increment: which recipe applies, exact files to create/edit in
-`sets/plant-products/**`, the obligations to add (id/status/within/requires/applyTo — data only, no
-copy), flow/task-row changes, the schema fields it fills, the copy keys (en+cy), and the co-located
-Playwright + axe specs. Save each as `increments/<inc-id>.md`. (Consume the recipe DOCS as the
-planning template — do not rely on the Skill tool being available inside a workflow subagent.)
+increments** from the CHED-PP backlog (m0–m4 own-org happy path; the 5 deferred ones stay deferred —
+carry them into the new backlog as `status:"deferred"` stubs with their rulings, don't re-plan them).
+For EACH increment, spawn one planner agent (fan out — `pipeline`/`parallel`, one per increment, with
+a `schema` option so the output is validated JSON, not prose). Each planner: reads the increment's
+`pages/<slug>.json` spec + the matching **frontend-change recipe** (add-a-field/page/section/
+collection or the obligation/flow-maintenance guard rails) + the Phase-C sibling-set plan + the
+Phase-B schema, and emits a **detailed, obligation-model-specific increment object** (the JSON shape
+below). Save each as `increments/<inc-id>.json`. (Consume the recipe DOCS as the planning template —
+do not rely on the Skill tool being available inside a workflow subagent.)
 
-**Phase E — Synthesis + completeness critic.** Assemble `PLAN.md` — the master journey-builder plan:
-ordered milestones/increments, the sibling-set scaffold, the backend schema, the frontend↔backend
-contract, sequencing + model-extension gates (mirror the CHED-PP inc-012 nested-collection gate),
-and an explicit "what's a plan vs what's built" ledger. Then a completeness-critic agent asks
-"what's missing — an increment with no recipe fit, an obligation with no schema field, a page with no
-plan?" and its findings become a final gap list in `PLAN.md`. Commit + push. Write `HANDOVER.md`.
+**Per-increment JSON shape** (extend the trace-requirements backlog entry shape — same spine so
+existing tooling/habits transfer; add the obligation-model planning detail):
+
+```json
+{
+  "id": "pp-014",
+  "title": "...",
+  "kind": "scaffold|model-extension|reference-data|obligation|page|collection|section|flow|backend|variant|stub",
+  "milestone": "m0",
+  "sizeGuess": "S|M|L",
+  "status": "todo|blocked|deferred",
+  "gate": null,
+  "dependsOn": ["pp-003"],
+  "sourceIncrement": "inc-014",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend|backend|both",
+  "filesToTouch": [{ "path": "src/server/app/sets/plant-products/...", "action": "create|edit", "what": "..." }],
+  "obligations": [{ "id": "...", "within": "...", "requires": "...", "applyTo": "..." }],
+  "flowChanges": { "sections": [], "taskRows": [], "entryGuard": null },
+  "schemaFields": ["origin.countryCode"],
+  "copyKeys": ["..."],
+  "specs": ["co-located Playwright feature spec", "axe test"],
+  "acceptanceCriteria": ["..."],
+  "verification": ["npm --prefix ... run test:live-animals", "..."],
+  "notes": "...",
+  "openQuestions": []
+}
+```
+
+Every field a build-loop implementor needs must be IN the object — an increment whose plan says
+"see the markdown" is a defect. Free-text rationale goes in `notes`, unresolved points in
+`openQuestions` (and surface the important ones in `WHEN-YOURE-BACK.md`).
+
+**Phase E — Backlog assembly + completeness critic.** Assemble **`backlog.json`** — the master
+journey-builder artefact: a top-level object with `generated`, `brief`, `scopeDecisions` (carry the
+CHED-PP rulings forward), `deviations`, `sequencingNotes` (incl. model-extension gates mirroring the
+CHED-PP inc-012 nested-collection gate), `milestones[]`, and `increments[]` = the Phase-D objects
+merged in dependency order (plus the backend-schema increments from Phase B recorded as
+`status:"done"` with their commit SHAs, and the deferred stubs). Validate with
+`jq empty`; every `dependsOn` must reference an existing id and the graph must be acyclic — check it,
+don't assume. Then a completeness-critic agent asks "what's missing — a hub spoke with no increment,
+an obligation with no schema field, a page with no plan, a dependsOn cycle?" and its findings are
+fixed in the backlog or recorded per-increment in `openQuestions` — NOT in a separate report. Commit
++ push. Write `HANDOVER.md` (pointer + how-to-iterate, not a duplicate of the plan).
 
 ## Guardrails (baked in — keep them in every subagent/workflow prompt)
 
@@ -163,12 +207,12 @@ plan?" and its findings become a final gap list in `PLAN.md`. Commit + push. Wri
 workareas/shared/plant-products-ched-pp/
   WHEN-YOURE-BACK.md        # running decision/attention log (seeded — keep appending, newest on top)
   ORCHESTRATOR-PROMPT.md    # this file
-  HANDOVER.md               # final summary (write at the end)
-  PLAN.md                   # THE master journey-builder plan (Phase E)
-  recon/                    # Phase A structured maps
+  HANDOVER.md               # final pointer + how-to-iterate (write at the end; NOT a plan duplicate)
+  backlog.json              # THE master journey-builder backlog (Phase E) — the plan of record
+  recon/                    # Phase A structured maps (JSON preferred)
   backend-schema/           # SCHEMA-DESIGN.md + obligation→field map (Java lands in the backend repo)
   frontend-plan/            # SIBLING-SET-PLAN.md + recipe cheat-sheet
-  increments/               # one <inc-id>.md per unblocked frontend increment (Phase D)
+  increments/               # one <inc-id>.json per unblocked frontend increment (Phase D)
   logs/                     # test/compile logs (gitignore-noise; keep out of commits if large)
 ```
 
@@ -180,8 +224,11 @@ workareas/shared/plant-products-ched-pp/
    `spike/trace-to-requirements` branch; `mvn compile` green; obligation→field map written.
 3. `frontend-plan/SIBLING-SET-PLAN.md`: complete scaffold plan for `sets/plant-products/` incl. the
    `routes.js` `configure*` wiring and the "no add-a-set recipe" gap.
-4. `increments/`: one detailed, obligation-model-specific plan per unblocked frontend increment.
-5. `PLAN.md`: the master journey-builder plan tying it together + completeness-critic gap list.
+4. `increments/`: one detailed, obligation-model-specific JSON object per unblocked frontend
+   increment, conforming to the per-increment shape.
+5. `backlog.json`: the master journey-builder backlog — `jq empty` clean, dependency graph acyclic
+   with no dangling `dependsOn`, every increment self-contained (no "see markdown" indirection),
+   completeness-critic findings folded in as fixes or `openQuestions`.
 6. Everything committed + pushed on all three `spike/trace-to-requirements` branches;
    `WHEN-YOURE-BACK.md` current; `HANDOVER.md` written.
 
