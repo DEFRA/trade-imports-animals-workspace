@@ -1,0 +1,426 @@
+[
+  {
+    "key": "EUDPA-50",
+    "delivered": "Added the transited-countries step for railway and road consignments, skipped it for air and vessel, cleared previously saved transit countries when transport changed to a non-overland mode, sourced choices from the GBNAG_SPS_EX country block, prevented duplicate selections, and persisted the selected country codes in transport data.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/model/obligations/sections/transport.js:84",
+      "frontend:src/server/live-animals/model/obligations/sections/transport.js:92",
+      "frontend:src/server/live-animals/features/transport/transit-countries/transit-countries.controller.js:21",
+      "frontend:src/server/live-animals/features/transport/transit-countries/transit-countries.controller.js:71",
+      "frontend:src/server/live-animals/features/transport/transit-countries/transit-countries.controller.js:99",
+      "frontend:src/server/live-animals/services/countries/index.js:7"
+    ],
+    "reason": "The rewrite has a conditional transit-countries obligation for RAILWAY and ROAD_VEHICLE; the evaluator purges it when it falls out of scope. Its page uses the same live GBNAG_SPS_EX-backed country list, deduplicates submitted codes, supports multiple autocomplete-enhanced country rows, and commits the array. A real-mode browser run against reference data and persistence would further strengthen the static evidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-73",
+    "delivered": "Added dashboard search by an exact, complete notification reference, passed the reference to the backend list endpoint, returned only the matching notification, and displayed \"No notifications found\" for no match while preserving dashboard sorting.",
+    "verdict": "DROPPED",
+    "evidence": [
+      "frontend:src/server/live-animals/features/dashboard/controller.js:42",
+      "frontend:src/server/live-animals/features/dashboard/controller.js:44",
+      "frontend:src/server/live-animals/features/dashboard/controller.js:79",
+      "frontend:src/server/live-animals/features/dashboard/template.njk:34",
+      "frontend:src/server/live-animals/features/dashboard/template.njk:38",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/fulfilment/FulfilmentController.java:117",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java:169"
+    ],
+    "reason": "The rewrite dashboard accepts and propagates only page and sort, and its only list-control form is the sort form; there is no keyword/reference field, search action, filtered list call, or search-specific empty state. Both the rewrite fulfilment list API and the retained notification list API likewise accept only page and sort. Dashboard SORTING is present, but dashboard SEARCHING is not, and no replacement mechanism or design reason was found. Discovery of another routed dashboard implementation with reference filtering would change this verdict.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-122",
+    "delivered": "Reworked the port page into \"Arrival details\" with arrival date, port of entry, mandatory single-choice means of transport (airplane, railway, road vehicle, vessel), optional transport identification and document-reference fields capped at 58 characters, validation, persistence, and onward routing.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/transport/copy/copy.en.js:3",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.controller.js:22",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.controller.js:48",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.controller.js:104",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.njk:16",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.njk:29",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.njk:41"
+    ],
+    "reason": "The rewrite's Arrival details page collects all five delivered fields, renders the four transport choices, enforces membership/date and 58-character rules, persists the normalized values, and uses the rewrite flow engine for the next target. A browser-level real persistence run would further strengthen the controller/template evidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-154",
+    "delivered": "Replaced the hardcoded port dropdown with live reference-data: the frontend consumes /ports-of-entry, the reference-data service fetches the MDM BCP POE endpoint for system GBNAG with caching, and options display as port name plus code.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/services/ports/client.js:4",
+      "frontend:src/server/live-animals/services/ports/index.js:7",
+      "frontend:src/server/live-animals/features/transport/port-of-entry/port-of-entry.controller.js:38",
+      "reference-data:src/main/java/uk/gov/defra/trade/imports/portsofentry/PortsOfEntryController.java:17",
+      "reference-data:src/main/java/uk/gov/defra/trade/imports/client/MdmService.java:17",
+      "reference-data:src/main/java/uk/gov/defra/trade/imports/client/MdmService.java:22",
+      "reference-data:src/main/java/uk/gov/defra/trade/imports/client/MdmClient.java:27"
+    ],
+    "reason": "In real mode the rewrite primes its port service from the shared /ports-of-entry endpoint, validates against that returned list, and formats every option as name plus code. The common reference-data service still calls MDM /mdm/trade/bcp/poes with system GBNAG and caches the result. A live MDM integration response would further strengthen the code-path evidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-171",
+    "delivered": "Implemented the backend amend lifecycle: only a SUBMITTED notification can move to AMEND, AMEND records remain listable/editable and can be resubmitted to SUBMITTED, and amend emits the NotificationSubmissionAmended outbox event. The ticket's merged code was backend-only; dashboard/view CTAs were not part of its ticket commits.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java:100",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java:119",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java:161",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java:183",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxEventType.java:18",
+      "frontend:src/server/live-animals/services/persistence/records/real/lifecycle/transition.js:16",
+      "frontend:src/server/live-animals/features/dashboard/view-model/row/actions.js:25",
+      "frontend:src/server/live-animals/engine/journey.js:98"
+    ],
+    "reason": "This backend-only delivery remains in the shared backend, so it applies to the rewrite. The rewrite also exposes Amend for submitted dashboard rows and its real persistence adapter calls the amend endpoint; its engine treats AMEND as editable, while the shared backend accepts AMEND for resubmission and emits the amended event. An integrated amend-edit-resubmit run with outbox verification would further strengthen the static evidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-194",
+    "delivered": "Added a Lighthouse post-processing step to the frontend PR workflow. It reads representative Lighthouse JSON reports, extracts scored performance, accessibility and best-practices audits below 1 (excluding SEO), writes flagged-audits.json, and supplies that artifact to the PR status-comment action. The later EUDPA-194 commit only removed the deliberately inserted empty-link accessibility violation used to smoke-test the reporting.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:.github/workflows/lighthouse.yml:117",
+      "frontend:.github/workflows/lighthouse.yml:180",
+      "frontend:.github/workflows/lighthouse.yml:188",
+      "frontend:scripts/lighthouse/flag-simple-findings.cjs:15",
+      "frontend:scripts/lighthouse/flag-simple-findings.cjs:29",
+      "frontend:scripts/lighthouse/flag-simple-findings.cjs:64"
+    ],
+    "reason": "The rewrite is in the same frontend repository and still uses the repository-wide Lighthouse workflow. The audit extractor and flagged-audits handoff remain present unchanged in purpose, so they cover rewrite pages audited by that workflow as well. Confidence is high from the retained executable workflow and script; a PR workflow run would only add runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-208",
+    "delivered": "Created the notification SNS FIFO topic and subscribed SQS FIFO queue with a dead-letter queue, then added a dynamics-gateway listener that consumes NotificationSubmitted JSON, preserves the aggregate MessageGroupId as the Azure Service Bus session ID and a stable event/deduplication ID as the ASB message ID, forwards the event to ASB, and leaves transient failures for SQS redelivery and eventual DLQ routing.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:compose/start-floci.sh:36",
+      "backend:src/main/resources/application-local.yml:55",
+      "dynamics-gateway:servicebus/start-localstack.sh:15",
+      "dynamics-gateway:servicebus/start-localstack.sh:31",
+      "dynamics-gateway:servicebus/start-localstack.sh:36",
+      "dynamics-gateway:servicebus/start-localstack.sh:50",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/NotificationSqsListener.java:44",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/NotificationSqsListener.java:74",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/NotificationErrorHandler.java:18",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/events/QueueMessageSender.java:72"
+    ],
+    "reason": "This is a backend/gateway integration shared by both frontend implementations, not a legacy-frontend surface. The spike continues to use the same backend and dynamics gateway, where the complete topic/queue/DLQ, listener, ordering/session, forwarding and retry behavior is retained. Confidence is high from the current shared service code; a deployed end-to-end notification submission would only add environment confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-213",
+    "delivered": "Added a dev-run Docker stage, optional Spring Boot DevTools dependency, local restart configuration and an in-container compile watcher to backend, stub and reference-data. Under docker-compose-dev, Java source changes are recompiled, a trigger file is touched, and spring-boot:run restarts the application without rebuilding its container.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:Dockerfile:67",
+      "backend:docker/dev-run.sh:35",
+      "backend:docker/dev-run.sh:45",
+      "backend:pom.xml:92",
+      "backend:src/main/resources/application-local.yml:27",
+      "stub:Dockerfile:67",
+      "stub:docker/dev-run.sh:35",
+      "stub:pom.xml:78",
+      "reference-data:Dockerfile:67",
+      "reference-data:docker/dev-run.sh:35",
+      "reference-data:pom.xml:78"
+    ],
+    "reason": "This development tooling is shared across the application rather than belonging to the replaced frontend journey. All three Java service spike working trees retain the dev-only image stage, compile loop, spring-boot:run command and optional DevTools dependency. Confidence is high from matching implementations in all three services; exercising docker-compose-dev on a source edit would only add runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-232",
+    "delivered": "Turned the Addresses page into the Consignment addresses hub, showing Place of origin, Consignor or exporter, Consignee, Importer, Place of destination and CPH with add/change state. It folded CPH into that address area and removed the old mandatory standalone CPH step before Port of Entry.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/addresses/copy/copy.en.js:3",
+      "frontend:src/server/live-animals/features/addresses/copy/copy.en.js:9",
+      "frontend:src/server/live-animals/features/addresses/controller.js:13",
+      "frontend:src/server/live-animals/features/addresses/controller.js:46",
+      "frontend:src/server/live-animals/features/addresses/controller.js:48",
+      "frontend:src/server/live-animals/features/addresses/template.njk:7",
+      "frontend:src/server/live-animals/flow/flow.js:63",
+      "frontend:src/server/live-animals/flow/flow.js:67"
+    ],
+    "reason": "The rewrite has a Consignment addresses hub with the same five operator roles, conditional CPH row, add/change links and continue action. CPH is a spoke inside the Addresses task rather than an unconditional linear page. The rewrite's task-list design returns Continue to Overview, and Port of Entry is the first page of the separate Transport task, which supersedes the legacy direct linear redirect without losing the user capability. Confidence is high from the hub controller/template and explicit flow structure; an end-to-end browser run would only confirm the rendered journey.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-239",
+    "delivered": "Added selection journeys for Place of origin, Consignor or exporter, Consignee, Importer and Place of destination. Each page presents operators as radio choices, validates that one is selected, persists it and returns to the Consignment addresses hub; the shared backend notification model was flattened to reusable Operator fields for those roles and the consignment contact.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/addresses/parties.js:11",
+      "frontend:src/server/live-animals/features/addresses/parties.js:15",
+      "frontend:src/server/live-animals/features/addresses/party-picker/_address-picker.njk:17",
+      "frontend:src/server/live-animals/features/addresses/party-picker/_address-picker.njk:77",
+      "frontend:src/server/live-animals/features/addresses/party-picker/party-picker.controller.js:56",
+      "frontend:src/server/live-animals/features/addresses/party-picker/party-picker.controller.js:65",
+      "frontend:src/server/live-animals/features/addresses/party-picker/party-picker.controller.js:96",
+      "frontend:src/server/live-animals/features/addresses/party-picker/party-picker.controller.js:113",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/Operator.java:12",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationBase.java:31"
+    ],
+    "reason": "The rewrite implements all five roles through one role-configured picker. It retains radio selection, required-selection validation, persisted role-specific values and return to the address hub, and enhances the main behavior with search, pagination and add-new-address support. The common backend still exposes the Operator-shaped notification fields. Confidence is high from the route/controller/template implementation and shared backend model; its rewrite E2E coverage would only add execution confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-248",
+    "delivered": "Added a Cancel amendment action for notifications in AMEND, a yes/no confirmation page, and backend snapshot restoration: confirming discards amendment changes, restores the submitted content and SUBMITTED status, then shows a success banner on the read-only notification view; declining returns without changing the amendment. The legacy frontend also removed the success query/banner with a same-page redirect after three seconds.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/check-answers/controller.js:57",
+      "frontend:src/server/live-animals/features/cancel-amend/controller.js:39",
+      "frontend:src/server/live-animals/features/cancel-amend/controller.js:46",
+      "frontend:src/server/live-animals/features/cancel-amend/template.njk:8",
+      "frontend:src/server/live-animals/features/check-answers/template.njk:20",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/fulfilment/FulfilmentService.java:174",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/fulfilment/FulfilmentService.java:193"
+    ],
+    "reason": "The rewrite exposes Cancel amendment only for AMEND, offers confirm and return-without-cancelling controls, calls the shared fulfilment cancel-amend endpoint, restores the saved submitted fulfilment and SUBMITTED state, and redirects straight to the read-only notification view with a success banner. Its immediate post/redirect/get replaces the legacy three-second same-view refresh; the user is already back on the restored notification view, so no capability is lost. The rewrite E2E exercises both No and Yes paths and checks the restored submitted data; a real-backend browser run would add integrated persistence confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-250",
+    "delivered": "Allowed sort and page query parameters on the legacy notification-view route so dashboard links opened notifications instead of failing Joi validation after sorting by arrival oldest-to-newest or navigating a results page.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/dashboard/controller.js:42",
+      "frontend:src/server/live-animals/features/dashboard/controller.js:45",
+      "frontend:src/server/live-animals/features/dashboard/view-model/row/actions.js:25",
+      "frontend:src/server/live-animals/features/dashboard/view-model/row/actions.js:39",
+      "frontend:src/server/live-animals/shared/kit.js:121"
+    ],
+    "reason": "Dashboard SORTING is present: the rewrite parses page/sort and sends both to the list service. Its row actions no longer append dashboard list-state queries to notification links, and its shared page-route builder has no restrictive query validator, so sorted and paged dashboard rows open without the legacy 400 failure. Dashboard SEARCHING remains absent, but that is the separate EUDPA-73 loss and not part of this bug. Opening rows after each sort/page combination in a browser would add runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-251",
+    "delivered": "Fixed the populated notification dashboard's WCAG dlitem violation by enclosing each group of dt/dd term-value pairs in a dl while preserving the grid layout, and added Nunjucks files to the frontend development watch extensions.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:src/server/live-animals/features/dashboard/template.njk:85",
+      "frontend:src/server/live-animals/features/dashboard/template.njk:86",
+      "frontend:src/server/live-animals/features/dashboard/template.njk:100",
+      "frontend:src/server/live-animals/features/dashboard/template.njk:116"
+    ],
+    "reason": "The rewrite dashboard renders every dt/dd group inside dl elements, including commodity/origin/arrival, party/status, and created/submitted rows, so the accessibility behavior is retained on the replacement dashboard. The old home-template-specific CSS/watch edits are not needed to establish the rendered WCAG fix. An axe run against a populated real dashboard would add runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-253",
+    "delivered": "Defined and implemented the dynamics-gateway failure process: transient Azure Service Bus failures are left unacknowledged for native SQS redelivery and eventual dead-lettering; operators can list the notification DLQ and bulk replay all messages to the source queue or bulk delete all messages. Replay/delete are shared-secret protected, surfaced through an admin DLQ page with confirmation and result banners, documented, and covered by service, security, integration and full-stack tests.",
+    "verdict": "exists",
+    "evidence": [
+      "dynamics-gateway:README.md:51",
+      "dynamics-gateway:README.md:91",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/NotificationErrorHandler.java:18",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/DlqController.java:23",
+      "dynamics-gateway:src/main/java/uk/gov/defra/cdp/dynamicsgateway/notification/DlqService.java:81",
+      "admin:src/server/dlq-events/controller.js:55",
+      "admin:src/server/dlq-events/controller.js:90",
+      "admin:src/server/dlq-events/index.njk:60"
+    ],
+    "reason": "This gateway/admin behavior is shared by both frontend implementations and remains intact outside the rewritten live-animals journey. The gateway still classifies transient failures for SQS retry/DLQ routing and implements native StartMessageMoveTask/PurgeQueue operations; the admin service still lists messages and exposes Replay all/Delete all controls. A deployed transient-failure and redrive exercise would only add environment confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-261",
+    "delivered": "Changed OutboxPublishService from publishing only event data to publishing the complete event envelope in the SNS message body, including eventId, aggregateId, aggregateType, subType, aggregateVersion, eventType, timestamp, metadata and data, while retaining message attributes and FIFO grouping/deduplication.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:83",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:85",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:88",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxEvent.java:28",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxEvent.java:34"
+    ],
+    "reason": "The common backend now serializes the OutboxEvent itself as the SNS body, whose model contains all fields required by EUDPA-261; existing SNS attributes and FIFO message group/deduplication IDs are still set. Later tickets deliberately extended that envelope with publishedAt, actor and statusChanges, but did not remove any EUDPA-261 field, so the rewrite inherits the corrected publisher through the shared backend. Inspecting a live SNS delivery would add environment confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-263",
+    "delivered": "Upgraded the tests repository's Playwright, axe, Allure, MongoDB, lint, formatting and TypeScript dependencies, including the ESLint 10, TypeScript 6 and lint-staged 17 major upgrades; aligned the Playwright Docker image to 1.61.1 and pinned TypeScript 6 compatibility settings so the existing suite retained its prior effective strictness.",
+    "verdict": "exists",
+    "evidence": [
+      "tests:package.json:44",
+      "tests:package.json:49",
+      "tests:package.json:54",
+      "tests:package.json:56",
+      "tests:package.json:59",
+      "tests:Dockerfile:1",
+      "tests:tsconfig.json:3",
+      "tests:tsconfig.json:8"
+    ],
+    "reason": "The rewrite continues to use the same shared tests repository, whose spike branch contains the merged upgrade and still resolves the delivered dependency versions, matching Playwright image, and TypeScript 6 compatibility settings. Confidence is high from the current manifests and configuration; a fresh npm ci plus lint/typecheck/test run would add runtime verification.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-264",
+    "delivered": "Upgraded govuk-frontend to 6.3.0 in the user frontend, admin frontend and Defra ID stub. The stub's v5-to-v6 migration also adopted the v6 layout extension points and service-navigation placement and replaced removed colour and rebrand options; the admin upgrade additionally cleared the high-severity undici advisory.",
+    "verdict": "exists",
+    "evidence": [
+      "frontend:package.json:76",
+      "admin:package.json:63",
+      "defra-id-stub:package.json:52",
+      "defra-id-stub:src/views/layouts.njk:13",
+      "defra-id-stub:src/views/layouts.njk:21"
+    ],
+    "reason": "All three current repositories retain govuk-frontend 6.3.0, including the rewritten user frontend. The Defra ID stub also retains the v6-compatible header and service-navigation template structure, while admin and the stub remain shared services outside the replaced journey. Confidence is high from the live manifests and migrated template; rebuilding assets and running each frontend's tests would only add execution confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-267",
+    "delivered": "Added admin-triggered replay of every outbox event for a notification: the backend reads the aggregate's events in aggregate-version order, republishes them without changing the outbox using aggregateId as the FIFO MessageGroupId and eventId as MessageDeduplicationId, and writes an audit record. Admin gained the replay button, backend client call, result banners and a DLQ-count advisory warning; the merged implementation warned about a non-empty DLQ but did not block replay.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxService.java:92",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxReplayService.java:27",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxReplayService.java:48",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:83",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:89",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationController.java:208",
+      "admin:src/server/outbox-events/controller.js:43",
+      "admin:src/server/outbox-events/controller.js:74",
+      "admin:src/server/outbox-events/index.njk:79",
+      "admin:src/server/outbox-events/index.njk:86"
+    ],
+    "reason": "Replay is implemented in the shared backend and shared admin service, so replacing the user-facing frontend does not remove it. The current code retains ordered read-only replay, stable FIFO identities, auditing, the admin action and its advisory-only DLQ warning. Confidence is high from the complete request path; an integrated replay against SNS FIFO would only add environment confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-268",
+    "delivered": "Collapsed the separate published-message envelope into OutboxEvent and changed the worker to set a millisecond-truncated publishedAt before SNS publication, serialize that same event and then persist it, so every published event envelope and its outbox record carry the same publication timestamp.",
+    "verdict": "exists",
+    "evidence": [
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxEvent.java:44",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:60",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:62",
+      "backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxPublishService.java:83"
+    ],
+    "reason": "This publishing behavior lives entirely in the backend shared by the main and rewritten frontends. The spike backend retains the single serializable OutboxEvent, sets publishedAt before publish at millisecond precision, and saves that same instance afterward. Confidence is high from the current publish path; consuming one real SNS message and comparing it with Mongo would only add runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-272",
+    "delivered": "Added a documented command that runs @visual Playwright tests in a Linux container against the workspace stack and bind-mounts the tests repository so locally generated *-linux.png baselines are written back for commit; it also added container host resolution for localhost OIDC redirects and removed the pending-Linux-baseline skip comment.",
+    "verdict": "exists",
+    "evidence": [
+      "tests:package.json:39",
+      "tests:package.json:40",
+      "tests:README.md:169",
+      "tests:README.md:175",
+      "tests:bin/update-visual-baselines-linux.sh:30",
+      "tests:bin/update-visual-baselines-linux.sh:50",
+      "tests:bin/update-visual-baselines-linux.sh:61",
+      "tests:bin/update-visual-baselines-linux.sh:78",
+      "tests:utils/playwright/with-container-host-resolver.ts:3"
+    ],
+    "reason": "The rewrite's shared tests branch retains the Linux-baseline capability, now superseded by a parity-aware test:visual:update:linux script that can target the frozen main or reworked lane and still writes Linux snapshots through a bind-mounted Playwright container. Confidence is high from the current command, script and documentation; running it with the workspace stack would add Docker/runtime confirmation.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-273",
+    "delivered": "Added configurable expiry metadata for newly app-created notifications and a shedlock-protected scheduled sweeper that, when non-production TTL settings are enabled, deletes due notifications and their accompanying-document metadata in bounded batches while leaving audit records and pre-existing notifications untouched. Production is protected by both an explicit environment guard when stamping expireAt and a separately disabled sweeper.",
+    "verdict": "exists",
+    "evidence": [
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/configuration/NotificationTtlConfig.java:14",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/configuration/NotificationTtlConfig.java:77",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/Notification.java:29",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationExpirySweeper.java:27",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationExpirySweeper.java:36",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java:323",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java:342",
+      "backend@origin/main:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java:353",
+      "backend@origin/main:src/main/resources/application.yml:138"
+    ],
+    "reason": "This ticket is backend-only and therefore exists via the common backend used by both frontend implementations; no rewrite-specific copy is required. The checked-out spike backend predates this merge, so the evidence is explicitly from authoritative origin/main, where configurable stamping, prod guards, scheduled sweeping and cascading Mongo metadata deletion are present. Confidence is high for rewrite parity because both frontends consume that same merged backend; deployment values for NOTIFICATION_TTL_DAYS=7 and NOTIFICATION_TTL_SWEEP_ENABLED=true would confirm that each non-prod environment has opted in.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-274",
+    "delivered": "Replaced the notification-shaped outbox payload with a GBN-AG event-data model and mapper, including the schema model/type markers and mapped exchanged-document and consignment structures; submission E2E expectations were updated to the new payload shape.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-animals-backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxService.java:59",
+      "trade-imports-animals-backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/gbnag/GbnAgEventData.java:13",
+      "trade-imports-animals-backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/gbnag/GbnAgEventData.java:16"
+    ],
+    "reason": "The rewrite uses the same backend. Its current spike branch still maps every outbox event through GbnAgEventDataMapper before persistence, so this backend behaviour is shared rather than reimplemented in the frontend. Direct source evidence is sufficient for high confidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-280",
+    "delivered": "Expanded the @a11y Playwright suite from a small journey subset to initial, filled and validation-error scans across the notification and admin page surfaces, plus notification-view, dashboard state and responsive-viewport scans, using a common WCAG 2.2 AA fixture.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-animals-tests:tests/a11y/notification-journey-initial-state.spec.ts:13",
+      "trade-imports-animals-tests:tests/a11y/notification-journey-filled-state.spec.ts:14",
+      "trade-imports-animals-tests:tests/a11y/notification-journey-error-state.spec.ts:16",
+      "trade-imports-animals-tests:tests/a11y/admin/admin-initial-state.spec.ts:4",
+      "trade-imports-animals-tests:fixtures/a11y.ts:71"
+    ],
+    "reason": "The spike test branch retains the expanded suite and has adapted its navigation and scans to rewrite-only pages such as import type, overview, consignment details, arrival details and transited countries. The dashboard suite explicitly scans default, sorted and paginated states; it has no search-state scan because the rewrite has no search control, but dashboard search was not behaviour delivered by EUDPA-280. Direct adapted test source gives high confidence; a full @a11y CI run would verify execution rather than presence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-281",
+    "delivered": "Added acting-user identity to submit/amend requests and the outbox envelope, distinguishing B2C Dynamics contacts from B2B Entra users and carrying acting/on-behalf-of organisation IDs; each event also accumulates timestamped status-change history with its actor.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-animals-frontend:src/server/common/helpers/actor-helpers.js:1",
+      "trade-imports-animals-frontend:src/server/live-animals/engine/write/submit.js:16",
+      "trade-imports-animals-frontend:src/server/live-animals/services/persistence/records/real/lifecycle/transition.js:6",
+      "trade-imports-animals-backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxService.java:46",
+      "trade-imports-animals-backend:src/main/java/uk/gov/defra/trade/imports/animals/outbox/OutboxService.java:76"
+    ],
+    "reason": "The rewrite explicitly builds an actor from the authenticated credentials and sends it on its fulfilment submit/amend lifecycle calls. The shared backend persists that actor and appends the status change to prior history. Direct end-to-end call-path evidence gives high confidence.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-289",
+    "delivered": "Added a Playwright HTTP client and ApiJourney fixture that create, populate, submit, amend, copy and delete notifications through backend APIs, allowing tests to jump directly to the UI state under test; static Mongo notification seeding was retired.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-animals-tests:adapters/http/notification-api-client.ts:13",
+      "trade-imports-animals-tests:adapters/http/notification-api-client.ts:39",
+      "trade-imports-animals-tests:flows/api-journey.ts:67",
+      "trade-imports-animals-tests:flows/api-journey.ts:73",
+      "trade-imports-animals-tests:fixtures/ui.ts:36"
+    ],
+    "reason": "The API-seeding mechanism remains on the spike test branch and has been retrofitted to the rewrite's fulfilment model: it seeds the fulfilment plus both notification projections before resuming in the UI. This is stronger evidence than mere retention of the old helper, so confidence is high.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-291",
+    "delivered": "Replaced the defra-id-stub S3 LocalStack integration container with Floci and replaced the dynamics-gateway LocalStack dependency and SQS/DLQ integration containers with Floci, including endpoint/credential wiring and related naming/docs cleanup.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-defra-id-stub:test/integration/data/s3.test.js:45",
+      "trade-imports-dynamics-gateway:pom.xml:160",
+      "trade-imports-dynamics-gateway:src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/NotificationSqsListenerIT.java:64",
+      "trade-imports-dynamics-gateway:src/test/java/uk/gov/defra/cdp/dynamicsgateway/integration/DlqServiceIT.java:54"
+    ],
+    "reason": "These are shared support services, not alternate frontend implementations, so the rewrite consumes the same Floci-backed setup. Evidence is from each repository's authoritative origin/main because the local main checkouts are stale. The merged source directly establishes the migration; running the affected integration suites would additionally verify emulator compatibility.",
+    "confidence": "high"
+  },
+  {
+    "key": "EUDPA-299",
+    "delivered": "Cleared the frontend npm audit gate with targeted transitive overrides and made Dependabot updates reliably merge-ready by pinning npm across CI/build paths, grouping patch/minor updates while leaving majors separate, and moving the live security audit into a visible non-gating job.",
+    "verdict": "exists",
+    "evidence": [
+      "trade-imports-animals-frontend:package.json:8",
+      "trade-imports-animals-frontend:package.json:124",
+      "trade-imports-animals-frontend:.github/dependabot.yml:21",
+      "trade-imports-animals-frontend:.github/workflows/check-pull-request.yml:29",
+      "trade-imports-animals-frontend:.github/workflows/check-pull-request.yml:60"
+    ],
+    "reason": "The spike branch retains the dependency grouping, npm pin/helper, audit overrides and split audit job unchanged in the same frontend repository, so the rewrite did not lose the delivered code/configuration. The commits do not themselves expose the repository-level auto-merge and branch-protection settings named in the Jira acceptance criteria; checking those GitHub settings would raise confidence about that external part.",
+    "confidence": "medium"
+  }
+]

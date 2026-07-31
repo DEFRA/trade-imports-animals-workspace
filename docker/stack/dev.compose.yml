@@ -3,6 +3,9 @@ services:
     build:
       context: ../../repos/trade-imports-animals-frontend
       target: development
+    # Overrides the linux/amd64 pin in frontend.compose.yml so the webpack
+    # build runs native. Set by run-stack.sh from the Docker daemon's arch.
+    platform: ${DEV_BUILD_PLATFORM:-linux/amd64}
     image: ''
     volumes:
       - ../../repos/trade-imports-animals-frontend/src:/home/node/src
@@ -12,10 +15,25 @@ services:
       start_period: 30s
       retries: 10
 
+  trade-imports-animals-frontend-test:
+    build:
+      context: ../../repos/trade-imports-animals-frontend
+      target: development
+    image: ''
+    volumes:
+      - ../../repos/trade-imports-animals-frontend/src:/home/node/src
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3100/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10
+
   trade-imports-animals-admin:
     build:
       context: ../../repos/trade-imports-animals-admin
       target: development
+    # See the note on trade-imports-animals-frontend above.
+    platform: ${DEV_BUILD_PLATFORM:-linux/amd64}
     image: ''
     volumes:
       - ../../repos/trade-imports-animals-admin/src:/home/node/src

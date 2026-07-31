@@ -26,7 +26,8 @@ source "$LIB_DIR/colour.sh"
 # shellcheck source=lib/compose.sh
 source "$LIB_DIR/compose.sh"
 
-valid_profiles=("${ALL_PROFILES[@]}")
+# test-target is opt-in only: valid for --profile, but excluded from the default (all-profiles) run.
+valid_profiles=("${ALL_PROFILES[@]}" test-target)
 
 # shellcheck source=lib/flags.sh
 source "$LIB_DIR/flags.sh"
@@ -36,7 +37,7 @@ parse_run_stack_flags "$@"
 source "$LIB_DIR/init-scripts.sh"
 stage_init_scripts "$branch"
 
-[ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${valid_profiles[@]}")
+[ ${#selected_profiles[@]} -eq 0 ] && selected_profiles=("${ALL_PROFILES[@]}")
 [ "$dev" -eq 1 ] && compose_files_add_dev
 
 # Sanitisation must match the per-repo publish-branch.yml workflows.
@@ -181,6 +182,17 @@ for entry in "${services[@]}"; do
   fi
 done
 
+# frontend-test (test-target profile, :3100) runs the same frontend image but
+# reads its tag from FRONTEND_TEST_TAG, not TRADE_IMPORTS_ANIMALS_FRONTEND.
+# Keep it in lockstep with the frontend's branch resolution — without this,
+# branch mode runs the branch frontend on :3000 while :3100 silently stays
+# on :latest.
+if [ "$dev" -ne 1 ] && [ -n "$sanitised" ] && [ -n "$probe_tmpdir" ] && [ -f "$probe_tmpdir/frontend" ]; then
+  export FRONTEND_TEST_TAG="$sanitised"
+else
+  unset FRONTEND_TEST_TAG 2>/dev/null
+fi
+
 [ ${#up_services[@]} -gt 0 ] || { print_error "error: would start no services"; exit 1; }
 
 up_args=(up --wait --detach --pull always)
@@ -228,7 +240,10 @@ if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
     if [ "$now_branch" -eq 0 ]; then
       # Still no branch tag — nothing published, nothing to do.
       printf '  %-16s no change\n' "$label:"
-    elif [ "$first_branch" -eq 0 ]; then
+      continue
+    fi
+
+    if [ "$first_branch" -eq 0 ]; then
       # Flipped latest -> branch: the image landed during startup.
       export "$env_var=$sanitised"
       recheck_services+=("$image")
@@ -240,6 +255,16 @@ if [ -n "$sanitised" ] && [ "$dev" -ne 1 ]; then
       printf '  %-16s %sdigest updated%s\n' "$label:" "$COLOUR_GREEN" "$COLOUR_RESET"
     else
       printf '  %-16s no change\n' "$label:"
+      continue
+    fi
+
+    # A frontend flip must carry frontend-test (:3100, FRONTEND_TEST_TAG) with
+    # it when the test-target profile is active — same image, separate tag var.
+    if [ "$label" = "frontend" ]; then
+      export FRONTEND_TEST_TAG="$sanitised"
+      for s in ${active_services[@]+"${active_services[@]}"}; do
+        [ "$s" = "trade-imports-animals-frontend-test" ] && recheck_services+=("trade-imports-animals-frontend-test")
+      done
     fi
   done
 
