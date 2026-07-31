@@ -1166,11 +1166,19 @@
       "id": "p-245",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "PLAN the rip-out of dual-running + parity harness (do NOT start until Sam confirms the folder refactor is complete)",
-      "detail": "GUARD: planning-only item, and even the planning must not remove anything — Sam explicitly wants the parity tests ALIVE until he finishes his ongoing folder refactor. Do not claim this item until Sam confirms the refactor is complete. CONTEXT: QA has agreed the dual-running setup and the associated parity tests are no longer required; the merge will ship one frontend and one test suite (the new gear). SCOPE to plan: (1) workspace stack — test-target profile, frontend-main (:3200) + frontend-test (:3100) containers, dev overlay entries, run-stack/stop-stack profile wiring; (2) tests repo — main-suite/ (frozen legacy suite), playwright.parity.config.ts, dual-lane npm test / test:parity scripts, parity artifact lanes, bin/update-visual-baselines-linux.sh main-lane arm, assert-parity-stack preflight; (3) docs — DUAL-FRONTEND-PARITY-PLAN.md, PARITY-MAPPING.md, QA-HANDOVER.md references, MERGE-STRATEGY.md (its runbook assumes parity CI — revise); (4) CI that invokes any of the above; (5) what replaces the gate: reworked suite as the single E2E gate + frontend co-located specs. DELIVERABLE: a plan doc in workareas/shared/promotion/ (e.g. PARITY-RIPOUT-PLAN.md) with ordered increments, per-repo file lists, and a verification story for each increment; review with Sam before any execution item is queued.",
+      "detail": "GUARD: planning-only item, and even the planning must not remove anything — Sam explicitly wants the parity tests ALIVE until he finishes his ongoing folder refactor. Do not claim this item until Sam confirms the refactor is complete. CONTEXT: QA has agreed the dual-running setup and the associated parity tests are no longer required; the merge will ship one frontend and one test suite (the new gear). SCOPE to plan: (1) workspace stack — test-target profile, frontend-main (:3200) + frontend-test (:3100) containers, dev overlay entries, run-stack/stop-stack profile wiring; (2) tests repo — main-suite/ (frozen legacy suite), playwright.parity.config.ts, dual-lane npm test / test:parity scripts, parity artifact lanes, bin/update-visual-baselines-linux.sh main-lane arm, assert-parity-stack preflight; (3) docs — DUAL-FRONTEND-PARITY-PLAN.md, PARITY-MAPPING.md, QA-HANDOVER.md references, MERGE-STRATEGY.md (its runbook assumes parity CI — revise); (4) CI that invokes any of the above; (5) what replaces the gate: reworked suite as the single E2E gate + frontend co-located specs. DELIVERABLE: a plan doc in workareas/shared/promotion/ (e.g. PARITY-RIPOUT-PLAN.md) with ordered increments, per-repo file lists, and a verification story for each increment; review with Sam before any execution item is queued. UNBLOCKED 2026-07-31: Sam confirmed the folder refactor is complete and instructed the rip-out to proceed (plan + execute, no review gate).",
       "evidence": "Sam instruction 2026-07-31: QA happy dual-running + parity tests not required; keep alive until folder refactor done",
-      "decision": ""
+      "decision": "Sam unblocked plan AND execution in one instruction; design calls flagged in the plan: keep :3100/test-target as the single E2E target; rename surviving lane honestly (parity config -> e2e, project reworked -> e2e with snapshot renames); historical workarea docs stay as history, only forward-looking docs revised",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-workspace",
+          "hash": "pending",
+          "note": "PARITY-RIPOUT-PLAN.md"
+        }
+      ],
+      "verification": "Plan produced at workareas/shared/promotion/PARITY-RIPOUT-PLAN.md after estate survey (tests repo scripts/configs/bin, compose files, workspace CI)"
     },
     {
       "id": "p-246",
@@ -1227,6 +1235,16 @@
         }
       ],
       "verification": "Per-increment: build + 1450 units + 3 lints (pre-commit hook) + 262 feature/2 journey stackless Playwright + secrets scan. Final: containers rebuilt from new tree, :3100 assets serve unaided (p-244 fix), full dual-lane parity gate exit 0 — reworked 139/1 flaky/0 failed, main 249/4 flaky/0 failed. depcruise proven non-vacuous; baseline = 3 pinned bridge-no-up edges"
+    },
+    {
+      "id": "p-248",
+      "theme": "promotion",
+      "type": "task",
+      "status": "in-progress",
+      "title": "Execute the parity/dual-running rip-out per PARITY-RIPOUT-PLAN.md",
+      "detail": "Increment 1: tests repo (delete main-suite, single-lane scripts/config renames, assert-stack, README). Increment 2: workspace compose (remove frontend-main :3200). Increment 3: workspace CI e2e-tests.yml single-lane + MERGE-STRATEGY.md revision. Final gate: stack restart without :3200, reseed, full npm test green under the new single-lane definition.",
+      "evidence": "Sam instruction 2026-07-31 (refactor complete, do the rip-out); PARITY-RIPOUT-PLAN.md",
+      "decision": ""
     }
   ]
 }
