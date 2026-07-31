@@ -1025,11 +1025,18 @@
       "id": "p-237",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Assess every MD file in the frontend: aggressively prune, centralise, flag gaps for GDS-style rewrite",
       "detail": "Sam: sweep EVERY .md file in the frontend repo with intent to aggressively prune and centralise documentation. Expectation: much is stale — either describing the OLD pre-refactor frontend or describing interim steps on the way to the current state. Workflow shape: (1) inventory all .md files (repo root, docs/, src/server/live-animals/docs/, feature-level, .github/ excluded from pruning but listed); (2) per file, verdict: [current] accurate vs today HEAD — keep; [stale-old-fe] describes pre-rework surfaces — CUT; [stale-interim] describes journey-to-here steps/decisions already superseded — CUT (git history is the record; standing rule: no migration notes); [partial] mixed — trim the stale sections, keep the living content; [gap] a topic that NEEDS fresh writing. Evidence per verdict: the claim in the doc vs the code today (file:line). (3) APPLY the cuts and trims in the same item — delete/trim, and centralise survivors sensibly (fewer, better-placed files; prefer src/server/live-animals/docs/ for rework docs, repo root README for entry). (4) For each [gap], the orchestrator queues a follow-up write item; new writing must follow GDS language standards — plain English, short sentences, simple words, active voice. Acceptance: every md accounted for in the report (no silent skips); repo builds/tests untouched by doc changes (unit suite green — some tests read docs paths, e.g. convention tests); links between surviving docs not broken (grep for references to deleted files).",
       "evidence": "Sam instruction 2026-07-31; known doc clusters: src/server/live-animals/docs/*.md (persistence, limits, obligation-model, flow-and-gates, architecture, engine, add-a-*, features, services, validation, decisions, test-approach, test-responsibility-matrix)",
-      "decision": ""
+      "decision": "25 -> 15 md files, net -1,538 lines. Deleted with per-claim code evidence: pre-rework recipes (add-a-field/add-a-page), interim pr-012 matrix, stale testing docs, scaffold placeholders. 8 gaps queued as p-240 for fresh GDS-plain-English writing.",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "7df4de3"
+        }
+      ],
+      "verification": "Parent-verified: change set matches report (all under src/server/live-animals/docs/ + root README + scaffold READMEs; zero moves); pre-commit hook green (suite 1450/0, lints); link check clean, zero refs to deleted files"
     },
     {
       "id": "p-238",
@@ -1049,6 +1056,16 @@
       "title": "End-of-loop: assess changed repos and produce a same-day merge strategy",
       "detail": "Sam: at the end of this loop, assess the repos with changes on spike/EUDPA-288-model-retrofit and produce a strategy for merging it all today. Deliverable (report to workareas/shared/promotion/MERGE-STRATEGY.md): per repo — commit count vs main, divergence (behind main?), conflict risk (files touched both sides), CI readiness (branch image availability, the parity job, linux baselines now committed), merge ORDER across repos (backend contract changes land before/with frontend consumers; tests repo alignment; workspace docs), PR shape (per-repo PRs to main, same branch name, coordinated via tests repo per workspace rules), what the frozen main-suite means post-merge (it stops being a parity lane and presumably retires — flag as decision), the 5 blocked-on-sam items and whether any block the merge, and a concrete step-by-step runbook for today incl. verification gates at each step. Report-only; Sam executes or instructs.",
       "evidence": "Sam instruction 2026-07-31; branch state: frontend/backend/tests/workspace all carry pushed spike commits",
+      "decision": ""
+    },
+    {
+      "id": "p-240",
+      "theme": "promotion",
+      "type": "task",
+      "status": "todo",
+      "title": "Write the 8 missing docs identified by the p-237 prune (GDS plain English)",
+      "detail": "Write fresh, current-state documentation for the 8 gaps the p-237 audit identified (full list in p-237 implementor report + backlog decision): (1) add-a-field guide (localized copy, view-model CYA rows, recoverable saves, status handling, colocated contract + e2e tests); (2) add-a-page guide (feature registration, copy bundles, controller conventions, recoverable writes, *.e2e.spec.js placement); (3) test strategy (journeys + features Playwright projects, colocated E2E, helpers, boot guards); (4) cardinality guide (requires.maxEntries, recordCountEquals, alternatives/minimums vs collection constraints); (5) services inventory derived from actual public exports + backing modes; (6) real-vs-stub persistence semantics (dashboard listing, session journey IDs); (7) Lighthouse contribution guidance from lighthouserc.cjs; (8) cross-repo test-ownership contract IF still needed — assess first, skip with rationale if the parity harness supersedes it. WRITING RULES (Sam): GDS language standards — plain English, short sentences, simple words, active voice. Ground every claim in current code (file:line checked at writing time); docs live under src/server/live-animals/docs/ with docs/README.md as index; root README links in. Acceptance: docs accurate vs HEAD, GDS-style, indexed, unit suite + lints green.",
+      "evidence": "p-237 gap list (scratchpad p237/lastmsg2.txt); Sam ruling on GDS language standards",
       "decision": ""
     }
   ]
