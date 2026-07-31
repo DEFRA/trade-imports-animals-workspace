@@ -1145,11 +1145,22 @@
       "id": "p-244",
       "theme": "promotion",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Fix dev-container asset race: startup serves only production-hashed assets, pages 404 on unhashed names",
       "detail": "docker:dev runs build:frontend (NODE_ENV=production, hashed output) and frontend:watch (development, unhashed) concurrently via run-p; the production build finishes last, CleanWebpackPlugin wipes .public, and the watch never re-emits until a source edit — so after every container (re)start :3100/:3000 serve 404 for /public/stylesheets/application.css and /public/javascripts/documents.js (unstyled pages, broken upload-status polling, visual-spec failures). Bit twice on 2026-07-31; manual remedy each time was docker exec + NODE_ENV=development npx webpack. Candidate fixes: drop build:frontend from the dev script (watch alone suffices), or serialise (build then watch), or make the watch emit an initial compile after the production build. Decide in the frontend repo (script change), verify by restarting frontend-test container and probing /public/stylesheets/application.css without any manual build.",
       "evidence": "container logs 12:24 + 12:44 (404s, no compiled line); docker exec manual builds fixed it twice; dev.compose.yml mounts only src/ so configs/scripts are baked",
-      "decision": ""
+      "decision": "Dropped build:frontend from npm run dev (dev:debug precedent — watch alone builds dev assets); root cause of the visual-spec inversion found en route: frontend-chromium project had NO committed baseline, so Playwright first-run wrote the broken unstyled render as baseline — regenerated styled and committed to the tests repo",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-frontend",
+          "hash": "3e67124"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "497165e"
+        }
+      ],
+      "verification": "Rebuilt frontend-test container serves /public/stylesheets/application.css immediately after start AND after docker restart with no manual build; scan-lifecycle (2) + visual (1) specs green serially; pre-commit hook green (1450 units)"
     }
   ]
 }
