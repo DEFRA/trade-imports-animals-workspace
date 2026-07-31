@@ -1258,6 +1258,39 @@
         }
       ],
       "verification": "Tests repo: typecheck + lint green, 140 tests discovered (122 e2e + 18 admin), zero live parity refs. Workspace: compose parses base+test-target, workflow YAML parses, :3200 container removed, stack re-upped healthy. Final gate: new single-lane npm test exit 0 — 138 passed / 2 flaky-recovered / 0 failed"
+    },
+    {
+      "id": "p-249",
+      "theme": "promotion",
+      "type": "task",
+      "status": "done",
+      "title": "Post-rip-out hygiene sweep: sync all spike branches with origin + main, rebuild stack, run all test suites",
+      "detail": "Sam instruction: (1) for every repo carrying spike/EUDPA-288-model-retrofit, pull the latest branch state from origin (backend just had a push); (2) merge latest origin/main into each branch and push (audit merge conflicts per feedback rule); (3) rebuild the stack via tim docker dev + test-target profile so everything runs the merged code; (4) run the per-repo suites (backend mvn verify, frontend units + stackless Playwright) and the tests repo single-lane npm test gate.",
+      "evidence": "Sam instruction 2026-07-31 post-p-248",
+      "decision": "Merge principle: spike structure wins, main coverage survives. 7 ported assertions removed as genuinely inapplicable spike design deltas (amend-from-dashboard not view; amending cards not view-only; amending CYA no Copy/Delete; admin deletion does not touch frontend journey store; no cross-channel API-create-then-UI-amend; withdrawn-on-soft-delete removed matching deliberate backend revert 0ef4c66; replay UI cleanup dropped). Frontend+backend main merges were no-ops (already current).",
+      "commits": [
+        {
+          "repo": "trade-imports-animals-backend",
+          "hash": "0ef4c66",
+          "note": "fast-forward only (incl. deliberate withdrawn-on-delete revert + TTL sweeper)"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "a9f5b44",
+          "note": "merge origin/main (23 conflicts resolved, coverage ported)"
+        },
+        {
+          "repo": "trade-imports-animals-tests",
+          "hash": "6035a85",
+          "note": "ported coverage adapted to spike DOM"
+        },
+        {
+          "repo": "trade-imports-animals-workspace",
+          "hash": "d35f636",
+          "note": "merge origin/main (dev-platform override, skill removal)"
+        }
+      ],
+      "verification": "Backend mvn verify BUILD SUCCESS (184 ITs, coverage met); frontend 1450 units + 262 features + 2 journeys; stack rebuilt via tim docker dev + test-target, healthy; tests gate after locator adaptation: 154 passed / 1 skipped / 0 failed / 0 flaky (first gate failed 120/158 — ported old-frontend locators, fixed spec-by-spec with serial verification)"
     }
   ]
 }
