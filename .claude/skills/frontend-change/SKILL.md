@@ -1,6 +1,6 @@
 ---
 name: frontend-change
-description: 'Make a change to the live-animals frontend (src/server/app in trade-imports-animals-frontend) by following the repo''s own recipe docs as strict scripts — add a field, page, section (feature group + flow section + task row), or collection, or a routed general change. One increment, full verification ladder, then stop (triggers: "add a field to the frontend", "add a page to the frontend", "add a section to the frontend", "add a collection to the frontend", "change the frontend", "frontend-change add-field|add-page|add-section|add-collection"). NOT for the prototype (use prototype-element / journey-builder), NOT for the tests repo''s E2E suite, NOT for planning a Jira ticket (use the ticket skill).'
+description: 'Make a change to the live-animals frontend (src/server/app in trade-imports-animals-frontend) by following the repo''s own recipe docs as strict scripts — add a field, page, section (feature group + flow section + task row), or collection; maintain obligations (gates, requires/applyTo, scope, cardinality) or journey flow (page order, task rows, entry guards); or a routed general change. One increment, full verification ladder, then stop (triggers: "add a field to the frontend", "add a page to the frontend", "add a section to the frontend", "add a collection to the frontend", "change an obligation", "change the journey flow", "change the frontend", "frontend-change add-field|add-page|add-section|add-collection"). NOT for the prototype (use prototype-element / journey-builder), NOT for the tests repo''s E2E suite, NOT for planning a Jira ticket (use the ticket skill).'
 ---
 
 Make one change to the live-animals frontend by following the recipe the repo
@@ -54,6 +54,8 @@ All recipe/guide paths below are inside
 | "add a page to the frontend" | `sets/live-animals/docs/add-a-page.md` |
 | "add a section to the frontend" (feature group + flow section + task row) | `sets/live-animals/docs/add-a-section.md` |
 | "add a collection to the frontend" (repeatable records) | `sets/live-animals/docs/add-a-collection.md` |
+| "change an obligation" (gate condition, `requires`/`applyTo`, scope, status, cardinality) | Obligation-maintenance guard rails below + `sets/live-animals/docs/obligation-model.md`, `docs/obligation-model.md`, `docs/scope-and-wipe.md`, `docs/cardinality.md` |
+| "change the journey flow" (page order, task rows, entry guards, section gating) | Flow-maintenance guard rails below + `sets/live-animals/docs/journey-flow-and-gates.md`, `docs/flow-and-gates.md` |
 | "change the frontend" (anything else) | Step 1 routing below — pick the guide(s) for the layer you are touching |
 
 NOT for `prototypes/` work (`prototype-element`, `journey-builder`), NOT for the
@@ -106,6 +108,45 @@ tests pass):
 - Every recipe change includes its co-located Playwright feature spec and axe
   accessibility test per the recipe's own sections — self-contained specs, raw
   locators, no page objects, auto-waiting (no sleeps).
+
+### Obligation-maintenance guard rails ("change an obligation")
+
+Obligation definitions live in `sets/live-animals/obligations/sections/*` and
+aggregate in `sets/live-animals/obligations/index.js` (the manifest). When
+changing one:
+
+- Obligations are pure data-first definitions: id/name/status/within/requires/
+  applyTo. NO copy, NO journey imports, NO IO at module load — reference-data
+  bindings resolve lazily at gate execution (the commodities gates are the
+  exemplar). `obligation-purity` and the boot guard enforce this.
+- A gate or scope change ripples: re-read `docs/scope-and-wipe.md` for what an
+  answer leaving scope wipes, and `docs/cardinality.md` for collection floors/
+  caps (`requires.maxEntries`, `recordCountEquals`). Changing `applyTo` can
+  strand previously-entered answers — the engine's purge behaviour is the
+  contract, not your intuition.
+- The reachability analysis (`analysis/`, run inside `npm test`) proves every
+  obligation can be both satisfied and violated. If your change makes a state
+  unreachable, those suites go red — that is the tripwire working, not noise.
+  Fix the model, don't weaken the prover.
+- Set-pinned tests (`whitelists`, `coverage` beside the manifest) walk the
+  concrete manifest — update them WITH the change, in the same increment.
+
+### Flow-maintenance guard rails ("change the journey flow")
+
+The journey owns its flow data (`sets/live-animals/journeys/linear/flow/` —
+`flow.js` sections/page order, `task-rows.js` hub rows, entry guard) and its
+`config.js`; the machinery in `app/flow/` is generic and consumes the data via
+`configureJourneyFlow` in `routes.js`:
+
+- Page order, section membership, task rows and entry-guard policy change in
+  the JOURNEY's files. If a change seems to need editing `app/flow/*`
+  machinery, that is a platform change — different blast radius, treat it as
+  L2 work and re-read `docs/flow-and-gates.md` first.
+- Task rows drive both the hub AND submit readiness — a row change is
+  behaviour, not presentation. The `task-rows` tests and the hub feature specs
+  pin it.
+- Adding entries to existing flow/task-row arrays needs no new L1 wiring
+  (routes.js injects the whole exports); new EXPORT SHAPES do.
 
 Self-repair budget: at most 3 fix attempts per red step. Past that, stop and
 report the failure honestly.
