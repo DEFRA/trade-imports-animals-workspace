@@ -7,6 +7,36 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [Phase E, DONE] backlog.json is the plan of record — 52 increments, validated
+The run is complete. `backlog.json` holds 52 increments in dependency order (2 done, 45 todo, 5
+deferred) with scopeDecisions SD-1..SD-14, deviations DV-1..DV-18, 12 sequencing rules, gaps G-A..G-I
+and milestones m0..m5. I re-ran the validation myself rather than trusting the assembler: `jq empty`
+clean, zero dangling `dependsOn`, topological order holds, no planned increment is thin, and no
+increment defers to "see the markdown". Start at `HANDOVER.md` for how to iterate it.
+
+## [Phase E, decision] Consignee has no writer in either repo — frontend fills it (SD-14)
+Two critics independently found that `consignee` is declared in the backend model but nothing writes it:
+the Java service only stamps the stub organisation. Ruling made headless: for pass 1 consignee = importer
+= the single stubbed org, written by the frontend mapper in pp-035, recorded as scopeDecision SD-14 and
+back-propagated into `obligation-field-map.md` and `SCHEMA-DESIGN.md`. This is the one entry here that
+changes a data contract — if you disagree, SD-14 and pp-035 are the two places to edit. The alternative
+(backend fills it) was actively refuted against the source: nothing in the Java writes that field.
+
+## [Phase E] 23 critic findings folded in — none punted to a report
+Two adversarial critics (coverage lens, buildability lens) ran over the assembled backlog and returned
+23 findings. All were resolved IN the artefact: fixes applied where the critic was right (duplicate
+`create` of the same file in two increments, a missing dependency edge that would have let the depth-3
+gate be walked out of order, the 11th hub spoke having no carrier at m4, a stubbed-organisation service
+with no owning increment), and rejected with file:line evidence where the critic was wrong. Nothing was
+recorded as an open question by the editor and no findings report file exists — by design.
+
+## [Phase D] All 39 planner-bound increments planned (7 lost to a session limit, recovered)
+Three batches produced one detailed JSON object per increment. Batch 3 lost 7 planners to the usage
+limit that resets at 00:30; 11 of the 13 had already written their file to disk before failing, so only
+pp-039 genuinely needed a re-run — it was re-planned after the reset. I checked every file for the full
+21-key set and non-trivial content rather than trusting the workflow's success list; two (pp-016,
+pp-021) were missing `sizeGuess` and I filled them in (M and L).
+
 ## [Phase C] SIBLING-SET-PLAN.md written, adversarially verified, fixed in place
 The scaffold plan for `sets/plant-products/` is complete under `frontend-plan/`: full set folder tree,
 the 12-spoke hub→section→task-row→page mapping over all 39 pages, the manifest/within-chains for the

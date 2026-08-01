@@ -97,7 +97,7 @@ PlantProductsNotificationBase (abstract @Data @SuperBuilder)
 │   ├── grossVolume : BigDecimal              optional
 │   └── grossVolumeUnit : GrossVolumeUnit     enum LITRES | METRES_CUBED (required-iff-grossVolume: frontend rule)
 ├── consignor : PlantProductsOperator         HAND-ENTERED (POP-4) — the one typed party
-├── consignee : PlantProductsOperator         auto-populated = owning org (POP-3, server/stub-filled)
+├── consignee : PlantProductsOperator         auto-populated = owning org (POP-3); pass 1 = SAME stubbed org as importer, WRITTEN BY THE FRONTEND MAPPER (pp-035) — the service fills only ownership.* (SD-14)
 ├── importer : PlantProductsOperator          auto-populated = owning org + registered address (POP-1)
 ├── destination : PlantProductsOperator       'Same as consignee' or entered (house name kept)
 ├── packer : PlantProductsOperator            OPTIONAL — CHED-PP addition, house has no packer
