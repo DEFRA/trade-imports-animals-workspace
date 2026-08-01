@@ -1,0 +1,212 @@
+{
+  "id": "pp-038",
+  "title": "review-notification — check your answers",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-028", "pp-030", "pp-031", "pp-032", "pp-034", "pp-035", "pp-036"],
+  "sourceIncrement": "inc-029",
+  "recipe": "SIBLING-SET-PLAN.md §8 G-F (no check-answers-from-scratch recipe — transpose the live-animals exemplar sets/live-animals/journeys/linear/features/check-answers/ file-for-file); registration steps per recipe-cheatsheet §2 add-a-page steps 1, 3-5 (collects: [] page)",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/page.js",
+      "action": "create",
+      "what": "export const reviewNotificationPage = { id: 'review-notification', slug: 'review-notification' } — import-free (page.js must import NOTHING; controller and flow both import this one object). Slug matches the page spec; do NOT reuse the live-animals 'notification-view' id."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/controller.js",
+      "action": "create",
+      "what": "Transpose live-animals check-answers/controller.js, PRE-SUBMISSION ONLY: export const meta = { ...page, collects: [] }; GET = one state.get(request, h) -> h.view(`${TEMPLATES}/features/check-answers/template`, { pageTitle/heading from copy, copy, sharedCopy, journeyStrip: journeyStrip(journey) [dynamic reference caption — no DRAFT->CHEDPP id-flip], sections: buildSections(answers, scope, evaluation, journey.journeyId), backLink: hubPath(journey.journeyId), breadcrumbs }); POST = state.get -> h.redirect(nextInSection(page.id, scope, request.params.journeyId)). export const routes = pageRoutes(page, { get, post }). OMIT the exemplar's readOnly / copyAction / deleteHref / cancelAmendHref / amendmentCancelled branches — submitted/amend/view-details modes are pp-045+ and post-submission surfaces are out of scope. No etag/If-Match hidden input (records adapter is whole-document last-write-wins, Open Q 3)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Renders the sections view-model: govuk-summary-list per name/value card (with per-row actions/Change links); govuk-table ONLY for genuinely tabular data — commodity lines/species/varieties/measures, accompanying documents, nominated contacts (per the page spec's govukAlternative rulings: no presentation-table, no review-summary-list clone, no audit-flag, no heading-with-change-link). Consistent heading scheme: h1 govuk-heading-xl 'Review your notification', h2 govuk-heading-m per card (deliberately fixes the legacy h3/h5/heading-l mismatches). Missing-answer rows render the missing message as a link to the owning page. Continue button via the shared save-actions partial (exemplar parity). Nominated-contacts empty state is an explicit 'No nominated contacts added' paragraph, never a headers-only empty table."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: title 'Review your notification'; per-card headings (About the consignment, Description of the goods, Additional details, Transport to the Border Control Post, Goods movement services, Contact details, Nominated contacts, Accompanying documents, Traders); every row label; value labels for coded/boolean values (Yes/No, reason-for-import enum labels, CTC option labels, class labels); missing-answer message text; nominated-contacts empty-state text; table column headers. GDS sentence case throughout."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per house pattern (both bundles resolvable, key spot-checks)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/index.js",
+      "action": "create",
+      "what": "export const buildSections = (answers, scope, evaluation, journeyId) => ordered array of card view-models (exemplar contract: sets/live-animals/.../check-answers/view-model/index.js). Order mirrors the hub spokes: about-consignment, commodities, additional-details, transport, goods-movement, contact, nominated-contacts, documents, traders. Facts only — no L2 imports beyond the engine barrel/dispatch and shared paths."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/rows/summary-row.js",
+      "action": "create",
+      "what": "Transpose live-animals view-model/rows/summary-row.js: row({ label, value, obligationName, journeyId, scope }) builds a govuk-summary-list row; unanswered in-scope obligation -> missing-answer message + link to owning page; out-of-scope -> row omitted."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/rows/change-link.js",
+      "action": "create",
+      "what": "Transpose live-animals view-model/rows/change-link.js: changeAction(obligationName, journeyId) resolves the owning page through the dispatch index (engine barrel) and returns the Change href + visually-hidden text. RULING (recorded): per-ROW Change links throughout — do NOT reproduce the legacy per-page grouped links or the #country-of-origin-change-link id/row mismatch."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/rows/value-text.js",
+      "action": "create",
+      "what": "Transpose value-text.js: value formatting helpers — code->label via the set reference services (countries, bcps, package-types, quantity-types, document-types, transport-options, gross-volume-units, purposes, commodities), boolean Yes/No, date and time display formats."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/about-consignment.js",
+      "action": "create",
+      "what": "Card: 'What are you importing?' (flow-only importType from the session flow-only store, rendered as a no-action row — FD-8), countryOfOrigin, countryOfConsignment, internalReference (origin section), reasonForImport (purpose section). Country codes -> labels via services/reference/countries.js; reasonForImport enum -> copy labels."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/commodities.js",
+      "action": "create",
+      "what": "Per-commodityLines-entry card set (exemplar: live-animals cards/consignment/species/species-cards.js family): commodity code + ref-data description; species table rendering 'Genus and species' as '<genusAndSpecies>, <eppoCode>' (ONE representation, the Notification-tab format); varieties rows (variety label via pp-014 lookup from the stored variety ID, varietyClass) rendered only when present; per-line measures (numberOfPackages, packageType, quantity, quantityType, netWeight, controlledAtmosphereContainer, finishedOrPropagated, testAndTrial) with intendedForFinalUsers as a conditional row (in scope only for the applicable commodity group). One Change action per line resolving to the commodity pages via dispatch (grouped rows use the group obligation name commodityLines)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/additional-details.js",
+      "action": "create",
+      "what": "Card: totalGrossWeight, grossVolume, grossVolumeUnit (row omitted when grossVolume unanswered — presentGate scope); plus DERIVED read-only rollup rows Total net weight (sum of line netWeight) and Total packages (sum of numberOfPackages) — computed here, never stored, no Change link on derived rows."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/transport.js",
+      "action": "create",
+      "what": "Card: borderControlPost, inspectionPremises, meansOfTransport, transportIdentification, transportDocumentReference, arrivalDate, arrivalTime, usesContainers; containers group entries (containerNumber, sealNumber, officialSeal per instance) rendered only when usesContainers is true (equalsGate scope drives omission)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/goods-movement.js",
+      "action": "create",
+      "what": "Card: commonTransitConvention (enum label), movementReferenceNumber (row present only when CTC = ADD_MRN_NOW — equalsGate scope), usingGvms (Yes/No)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/contact.js",
+      "action": "create",
+      "what": "Card: responsiblePersonName, responsiblePersonEmail, responsiblePersonTelephone ('Mobile number' single term, c-020)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/nominated-contacts.js",
+      "action": "create",
+      "what": "Table view-model over the nominatedContacts group via state.collectionView: columns Name | Email address | Mobile number | Agent; zero entries -> explicit empty-state flag (template renders 'No nominated contacts added'); one Change action to the nominated-contact page."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/documents.js",
+      "action": "create",
+      "what": "Table view-model over the accompanyingDocuments group (exemplar: live-animals view-model/sections/documents.js + cards/documents.js): columns Document type (label via document-types.js) | Document reference | Date of issue; Change action to the accompanying-documents page. Metadata only — no attachment/filename column (file bytes deferred, pp-051)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/view-model/cards/traders.js",
+      "action": "create",
+      "what": "Card: Importer (read-only stubbed-org row, POP-1 — no Change link), Delivery address (destinationSameAsConsignee=true -> render the importer/consignee address with the same-as note; false -> the entered destination leaves), Consignor or exporter (consignor* leaves as name + address block), packer* rows only when answered (optional). Change actions resolve to traders-addresses / consignor-create via dispatch."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/check-answers.test.js",
+      "action": "create",
+      "what": "Vitest unit suite for the view-model: buildSections card order; per-row value formatting (code->label); scope-driven omission (MRN gone when CTC=NO, containers gone when usesContainers=false, grossVolumeUnit gone when grossVolume unanswered, varieties absent when none captured, destination leaves vs same-as); derived rollup arithmetic; missing-answer row for an in-scope unanswered obligation with the owning-page href; nominated-contacts empty state; per-row changeAction hrefs."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/controller.test.js",
+      "action": "create",
+      "what": "Controller unit tests: GET renders view with sections + journeyStrip + hub back link; POST redirects via nextInSection; no commit occurs (collects: [])."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/check-answers/review-notification.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe (see specs)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the check-answers controller namespace; add its meta to dispatchPages (collects: [] pages must still be indexed for gates/navigation); spread its routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import reviewNotificationPage from ../features/check-answers/page.js and add it as the FIRST entry of the existing review section's pages array (exemplar: live-animals flow.js:83-85 [notificationViewPage, declarationPage, confirmationPage]; declaration/confirmation land with pp-039/pp-040). The section's authored gate (scope.readyForCheckYourAnswers, FD-12) is already in place from pp-007 — unchanged."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sections": [
+      {
+        "id": "review",
+        "change": "pages gains reviewNotificationPage as its first entry; authored gate scope.readyForCheckYourAnswers unchanged (FD-12). Section order unchanged — review stays last."
+      }
+    ],
+    "taskRows": [],
+    "entryGuard": "unchanged — FD-12: the review spoke is a flow section behind the authored gate, NOT a task row; no task-rows.js, hub GROUPS or entry-guard edits (the hub's review-spoke rendering is pp-029's)"
+  },
+  "schemaFields": [
+    "READ-ONLY over the whole document via records.load/from-dto (obligation-field-map inc-029 row); no writes.",
+    "origin.countryCode",
+    "origin.countryOfConsignmentCode",
+    "origin.internalReference",
+    "reasonForImport",
+    "commodity.inputMethod",
+    "commodity.commodityComplement[].{commodityCode, commodityDescription, numberOfPackages, packageType, quantity, quantityType, netWeight, controlledAtmosphereContainer, finishedOrPropagated, intendedForFinalUsers, testAndTrial}",
+    "commodity.commodityComplement[].species[].{eppoCode, genusAndSpecies}",
+    "commodity.commodityComplement[].species[].varieties[].{variety, varietyClass}",
+    "additionalDetails.{totalGrossWeight, grossVolume, grossVolumeUnit}",
+    "transport.{borderControlPost, inspectionPremises, meansOfTransport, transportIdentification, transportDocumentReference, arrivalDate, arrivalTime, usesContainers, containers[]}",
+    "goodsMovementServices.{commonTransitConvention, movementReferenceNumber, usingGvms}",
+    "responsiblePerson.{name, email, telephone}",
+    "nominatedContacts[].{name, email, telephone, isAgent}",
+    "accompanying documents sub-resource (embedded in GET response): documentType, documentReference, issueDate",
+    "consignor.* / importer.* / destination.* / packer.* (PlantProductsOperator blocks)",
+    "referenceNumber (caption strip)"
+  ],
+  "copyKeys": [
+    "checkAnswers.title",
+    "checkAnswers.missingAnswer",
+    "checkAnswers.cards.aboutConsignment.{heading, rows.*}",
+    "checkAnswers.cards.commodities.{heading, columns.*, rows.*, valueLabels.*}",
+    "checkAnswers.cards.additionalDetails.{heading, rows.*, derived.{totalNetWeight, totalPackages}}",
+    "checkAnswers.cards.transport.{heading, rows.*, containers.*}",
+    "checkAnswers.cards.goodsMovement.{heading, rows.*, ctcOptions.*}",
+    "checkAnswers.cards.contact.{heading, rows.*}",
+    "checkAnswers.cards.nominatedContacts.{heading, columns.*, empty}",
+    "checkAnswers.cards.documents.{heading, columns.*}",
+    "checkAnswers.cards.traders.{heading, rows.*, sameAsConsignee}",
+    "(mirrored key-for-key in copy.cy.js — copy-parity enforces shape equality)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/check-answers/review-notification.e2e.spec.js — (1) fill the whole journey in stub mode via UI, open review from the hub review spoke: heading, reference caption, and EVERY captured value rendered in its card (assert the full rendered card contents including tables); (2) per-row Change link navigates to the owning page and returns to review; (3) scope omission: CTC=No hides the MRN row, usesContainers=No hides container rows, no-variety species shows no variety rows; (4) derived rollups match the entered line values; (5) nominated-contacts empty state text when none added; (6) Continue POST redirects via nextInSection; (7) axe (AxeBuilder withTags ['wcag2a','wcag2aa'], fail serious/critical) on the fully-populated render AND on a render containing at least one missing-answer message (the page has no 400 error state — collects: [])."
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/review-notification on a complete draft renders 'Review your notification' (h1 govuk-heading-xl) with the dynamic reference caption from journeyStrip — no DRAFT->CHEDPP id-flip, the strip shows the minted GBN-PP reference throughout.",
+    "One card per captured area in hub-spoke order (about-consignment, commodities, additional-details, transport, goods-movement, contact, nominated-contacts, documents, traders) reading back every stored value; coded values render as labels resolved through the set reference services, booleans as Yes/No.",
+    "Every editable row carries its OWN Change link resolved through the dispatch index to the owning page (per-row ruling — the legacy per-page grouped links and the #country-of-origin-change-link id/row mismatch are deliberately not reproduced); read-only rows (Importer POP-1, derived rollups) have no action.",
+    "Scope-driven omission: movementReferenceNumber row only when commonTransitConvention = ADD_MRN_NOW; container rows only when usesContainers = true; grossVolumeUnit only when grossVolume answered; destination leaves only when destinationSameAsConsignee = false; varieties rows only when captured; intendedForFinalUsers only for the applicable commodity group; packer rows only when answered.",
+    "Total net weight and Total packages are DERIVED from the commodity lines and rendered read-only — never stored, no Change link.",
+    "An in-scope unanswered obligation renders a missing-answer message linking to its owning page; entry to the page remains gated by the review section's authored gate scope.readyForCheckYourAnswers (unchanged from pp-007), so the hub's review spoke stays locked until every mandatory row is complete.",
+    "Nominated contacts with zero entries renders the explicit 'No nominated contacts added' empty state, not a headers-only table.",
+    "Continue POSTs and redirects via nextInSection(page.id, scope, journeyId) (reaches declaration once pp-039 lands; hub fallback until then). No data is committed by this page (meta.collects = []).",
+    "GOV.UK toolbox only: govuk-summary-list for all name/value content, govuk-table only for commodity lines/species/measures, accompanying documents and nominated contacts; consistent h2 govuk-heading-m card headings; none of the legacy presentation-table / review-summary-list / audit-flag / heading-with-change-link / phase-tag patterns; no custom CSS.",
+    "PRE-submission only: no tabs, no Checks/Valid/Rejected/Control content, no split messages, no Copy/Copy-as-new/View-CHED/Amend/Delete controls, no Submission-information table, no etag hidden input — all post-submission or pp-045+ surfaces.",
+    "Welsh bundle structure-identical to English; copy-convention and copy-parity green; dispatch registration accepts the collects:[] page; no existing-suite test count drops.",
+    "Axe: zero serious/critical violations on both the fully-populated render and a missing-answer render."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-029 per MAPPING.json. G-F: no check-answers-from-scratch recipe — the plan is an exemplar transposition of sets/live-animals/journeys/linear/features/check-answers/ (verified live: page.js {id,slug} import-free; controller.js one state.get -> buildSections(answers, scope, evaluation, journeyId) -> h.view, POST -> nextInSection; view-model/index.js section-builder contract; rows/{summary-row,change-link,value-text}.js helpers; cards/ per area). The live-animals readOnly/copy/delete/cancel-amend branches are deliberately NOT transposed — draft-state check-answers only; lifecycle actions are pp-045, post-submission tabs/checks/split are out of pass-1 scope entirely. Rulings applied: FD-12 (review is a gated flow section, not a task row — no task-rows/hub edits, flow.js gains only the page entry); FD-8 (importType read from the session flow-only store as a no-action display row; declaration not rendered here); page-spec govukAlternative rulings (summary-list over presentation-table, standard tag/table components, consistent h2 scheme fixing the legacy h3/h5/heading-l defects, no ellipsis truncation — every value readable in full); per-row Change links chosen over the legacy per-page grouped links (the spec's id/row-mismatch trap); 'Genus and species' rendered once as '<genus species>, <EPPO>' (the Notification-tab representation — one representation, per the spec's two-tab inconsistency finding); c-020 'Mobile number'; missing-answer aggregation honoured via the exemplar's row-level missing messages + the section gate (the legacy page was the whole notification's validation aggregation point; here readiness is engine-derived from task rows, and row-level missing messages cover the residue). Continue-button wording comes from the shared save-actions copy (exemplar parity), replacing the legacy 'Save and continue' misnomer. Contract table: NO contract.plant-products.test.js case — collects: [] means this is not a collecting controller (T-5 rule binds collecting controllers only). Exemplar files to open while building: sets/live-animals/journeys/linear/features/check-answers/{controller.js, template.njk, view-model/index.js, view-model/rows/*.js, view-model/cards/consignment/species/species-cards.js, view-model/sections/documents.js} and flow.js:83-86 for the section wiring.",
+  "openQuestions": [
+    "Per-row Change links ruled here (GDS Summary list default) over the legacy per-page grouped links — the page spec explicitly asked for a human ruling on this; confirm with Sam/design before m4 review.",
+    "Legacy review carries an etag optimistic-concurrency hidden input; pass-1 persistence is whole-document last-write-wins (Open Q 3), so this page ships with NO concurrent-edit protection — flagged as a product decision, not built.",
+    "dependsOn (copied verbatim) omits pp-020 (purpose) and pp-033 (nominated-contact) whose data this page reads back; serial numeric execution order covers both, but if the loop ever reorders, add them as explicit deps before building.",
+    "Legacy CHED-PP validation makes consignee mandatory yet renders no consignee review row; the pass-1 parties model has no consignee obligation (importer POP-1/stub only), so no consignee row is rendered here — confirm when the parties model grows.",
+    "The 'What are you importing?' row renders the flow-only importType from session; a resumed draft's flow-only store rehydration (pp-009) must supply it — if it proves absent on resume, render the constant CHED-PP label instead and flag."
+  ]
+}

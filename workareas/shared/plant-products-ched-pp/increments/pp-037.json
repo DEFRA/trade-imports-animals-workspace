@@ -1,0 +1,148 @@
+{
+  "id": "pp-037",
+  "title": "notifications-dashboard — list own notifications (full build)",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-008", "pp-013"],
+  "sourceIncrement": "inc-028",
+  "recipe": "SIBLING-SET-PLAN.md §8 G-G — no dashboard recipe exists; transpose the live-animals exemplar sets/live-animals/journeys/linear/features/dashboard/ file-for-file (controller.js, notification-helper.js, view-model/row/, view-model/sort-options.js, template.njk, copy/, dashboard.e2e.spec.js)",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/controller.js",
+      "action": "edit",
+      "what": "Complete the m0 skeleton to the full renderDashboard, mirroring the live-animals exemplar controller: (1) parse query — page (Number.parseInt + normalizePageNumber, 1-based), sort (parseNotificationSort over the allowed tokens), referenceNumber (trimmed string or undefined), plus the NEW filter params status, countryOfOrigin, and start/end date parts (day/month/year); (2) validate the filter query with factories from src/server/app/lib/validate/index.js — keywords max 255, each date range must compose a real calendar date, start <= end; invalid → re-render with 'There is a problem' error summary, raw values preserved, status 400; (3) list via the engine: listKnownJourneys(request, { page, sort, referenceNumber }) from src/server/app/engine/journey.js (set-agnostic; backed by the pp-008 set-owned records service through configureRecords — DELETED hidden server-side, keep the exemplar's defensive .filter(status !== DELETED) anyway); (4) apply status/country/arrival-range filters controller-side over the returned page rows via the named helpers in notification-helper.js (pass-1 limitation, see openQuestions); (5) build the view model: notificationRows via toRow(), resultsLabel via buildPageResultsRangeLabel (pluralises '1 result' vs 'n results', empty-state copy on zero), pagination via buildPaginationLinks (preserves ALL filters + sort in the query string via buildListQueryString), sortOptions, current filter values echoed back. Routes (kept from m0, verify): GET dashboardPath() → renderDashboard; POST createPath() → startJourney(request, h) then redirect to pagePath(journeyId, importTypePage.slug). meta stays { ...page, collects: [] } — no contract-table case needed (no collecting POST)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/template.njk",
+      "action": "edit",
+      "what": "Full page markup, GOV.UK toolbox only: H1 'Your import notifications' (from copy); 'Create a new notification' govuk-button in a POST form to the create route; filter panel as a plain (non-collapsible) GET form to dashboardPath — govuk-input Keywords/reference (with hint), govuk-select Status (options All + the shared status vocabulary), govuk-select Country of origin rendered with REAL <optgroup>s from the pp-013 countries fixture's optgroup structure (c-026: 'United Kingdom' group GB-ENG/SCT/WLS/NIR + the A–Z countries group; stored/posted by code, 'Republic of Ireland' label for IE per c-012; NO EEA/GB-CI/ROW pseudo-options), two plain govuk-date-input groups Start/End date range (NO bespoke calendar datepicker — spec-condemned pattern), Search govuk-button + Clear link to bare dashboardPath; sort govuk-select + Apply (govuk-button--secondary), submit-driven; shared error summary partial at top ONLY for real validation errors (never a persistent banner); results count paragraph (singular/plural + empty-state message when zero); results as a govuk-table (Reference number, Status, Origin, Arrival, Created, Submitted, Actions) — NOT the legacy dl-card/percentage-grid hybrid (serious axe defect in the source spec); status column renders govuk-tag with the colour from view-model/statuses.js; row action links are real <a> elements (no button.govuk-link anti-pattern); GOV.UK pagination from the pagination view model. Input name = id = error key for every filter control so error-summary links focus the control."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/notification-helper.js",
+      "action": "create",
+      "what": "Named helpers (no dense inline pipelines): normalizePageNumber(raw, totalPages) — 1-based clamp; NOTIFICATION_SORT_OPTIONS + parseNotificationSort(raw) — allowed sort tokens matching what the pp-008 records adapter/backed list accepts (implementor reads sets/plant-products/services/records/real.js for the accepted sort values; default newest-first); buildListQueryString({ page, sort, referenceNumber, status, countryOfOrigin, startDate, endDate }) — preserves every filter across pagination/sort links; formatDisplayDate(iso) — ONE GDS format '7 March 2026' (the legacy page had three formats; pin one); parseDateRangeQuery(query) + validateFilters(query) — compose day/month/year parts, real-date and start<=end checks returning error objects keyed by field name; applyStatusFilter(rows, status), applyCountryFilter(rows, countryCode), applyArrivalRangeFilter(rows, { start, end }) — inclusive bounds, each a named pure function over row facts."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/notification-helper.test.js",
+      "action": "create",
+      "what": "Vitest unit tests on input/output: page normalisation (NaN, 0, negative, > totalPages); sort parsing (each allowed token, unknown → default); query-string building preserves and omits params correctly; date formatting; each filter helper (match, no-match, unset filter passes all, inclusive range bounds); validateFilters (valid, keywords > 255, impossible date 31 Feb, start after end)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/view-model/statuses.js",
+      "action": "create",
+      "what": "THE single status vocabulary (c-027): export a frozen map of the pass-1 backend status codes → { copyKey, tagClass }: DRAFT → { 'statuses.draft', 'govuk-tag--grey' }, SUBMITTED → { 'statuses.submitted', 'govuk-tag--blue' }, AMEND → { 'statuses.amend', 'govuk-tag--yellow' }. DELETED is never rendered. Export statusFilterOptions(copy) deriving the Status select options from the SAME map, so tag text and filter labels are one vocabulary in GDS sentence case (fixes the legacy VALID/VALIDATED code split and Title-Case/sentence-case drift). Post-submission statuses (New/In progress/Valid…) are out of pass-1 scope — the map grows when upstream decisioning arrives."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/view-model/row/index.js",
+      "action": "create",
+      "what": "toRow(journey) mirroring the live-animals exemplar shape: { reference (referenceNumber, fallback journeyId), status: { label, tagClass } resolved through view-model/statuses.js + copy, origin: label-for-code via the pp-013 sets/plant-products/services/reference/countries.js lookup (fallback to the raw code), arrival/created/submitted via formatDisplayDate, actions }. Pass-1 actions: DRAFT (and AMEND) rows get one 'Continue' link to hubPath(journeyId); SUBMITTED rows get no actions (delete/amend/copy-as-new arrive with pp-045). Only include consignor/consignee/commodity columns if the pp-008 list projection actually carries those fields — implementor verifies against sets/plant-products/services/records/mapper/from-dto.js and OMITS any column with no data home (never invent a property)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/view-model/row/row.test.js",
+      "action": "create",
+      "what": "Unit tests: each status renders its one-vocabulary label + tag class; origin code resolves to fixture label ('Republic of Ireland' for IE); date formatting; DRAFT row has the Continue-to-hub action, SUBMITTED row has none; unknown/missing fields degrade to empty string, never throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/view-model/sort-options.js",
+      "action": "create",
+      "what": "Maps NOTIFICATION_SORT_OPTIONS to { value, text } using copyFor({ en, cy }) sort-option copy, exemplar-verbatim shape (sets/live-animals/.../dashboard/view-model/sort-options.js)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/copy/copy.en.js",
+      "action": "edit",
+      "what": "Extend the m0 bundle with (leaf paths, values English GDS sentence case): title, heading 'Your import notifications', createButton 'Create a new notification', statuses.{draft:'Draft', submitted:'Submitted', amend:'Amend in progress'}, table.headings.{reference,status,origin,arrival,created,submitted,actions}, actions.continue 'Continue', filters.{keywords.label,keywords.hint,status.label,status.all 'All',country.label,country.all 'All',country.groups.uk,startDate.label 'Start date range',endDate.label 'End date range',search 'Search',clear 'Clear'}, sort.{label,apply,options.*}, pagination.{results.{none,single,range},next,previous}, search.noResults 'No notifications found', errors.{keywordsMax:'Search term must be 255 characters or fewer', startDateReal:'Start date must be a real date', endDateReal:'End date must be a real date', startBeforeEnd:'The start date must be the same as or before the end date'} — GDS Joi-voice one-canonical-string per rule (c-018); do NOT inherit the legacy quoted-label style ('\"Search\" must be…', a recorded copy defect)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforced)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend to pin the new keys (statuses vocabulary present in both locales, error strings, empty-state, pluralised results labels)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/controller.test.js",
+      "action": "edit",
+      "what": "Full controller coverage: GET renders rows from the stub records service, newest-first default; DELETED rows never rendered; referenceNumber query passed through to listKnownJourneys and echoed into the search input; zero-result render shows '0 results' + empty-state copy; '1 result' singularises; each filter (status, country, date range) narrows rows and combines with the others; filter + sort + page preserved in pagination links; each validation rule → 400, raw values re-rendered, error summary keys match control names; valid POST to create → journey started + redirect to the import-type page; recoverable persistence failure on create → re-render with recoverableError, 500; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js",
+      "action": "edit",
+      "what": "Complete the m0 spec to the full scenario set (see specs) including the two axe checks. Every test independent, creates its own notifications through the UI; raw role/label/visible-copy locators, no page objects, no sleeps."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "READ-ONLY via the pp-008 records list op (GET /plant-products/notifications?page&sort&referenceNumber): referenceNumber, status, createdAt, submittedAt, origin.countryCode, transport.arrivalDate (+ consignor/importer names ONLY if the list projection carries them — verify against pp-008's from-dto mapper, omit otherwise)",
+    "WRITE: none by this page directly — the Create button drives the existing engine startJourney → records.create (POST /plant-products/notifications, server-minted GBN-PP reference)"
+  ],
+  "copyKeys": [
+    "dashboard.title",
+    "dashboard.heading",
+    "dashboard.createButton",
+    "dashboard.statuses.draft",
+    "dashboard.statuses.submitted",
+    "dashboard.statuses.amend",
+    "dashboard.table.headings.{reference,status,origin,arrival,created,submitted,actions}",
+    "dashboard.actions.continue",
+    "dashboard.filters.keywords.{label,hint}",
+    "dashboard.filters.status.{label,all}",
+    "dashboard.filters.country.{label,all,groups.uk}",
+    "dashboard.filters.startDate.label",
+    "dashboard.filters.endDate.label",
+    "dashboard.filters.search",
+    "dashboard.filters.clear",
+    "dashboard.sort.{label,apply,options.*}",
+    "dashboard.pagination.{results.none,results.single,results.range,next,previous}",
+    "dashboard.search.noResults",
+    "dashboard.errors.{keywordsMax,startDateReal,endDateReal,startBeforeEnd}"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — initial render: H1 'Your import notifications', Create button, filter controls (incl. country select with real optgroups), empty-state when no notifications exist (plant-set content that cannot render under live-animals)",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — list behaviour: created draft appears with 'Draft' grey tag + Continue link into its hub; reference search narrows to one row; no-match search renders '0 results' + 'No notifications found'; Clear restores the unfiltered list",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — filters: status filter and country filter each narrow the rows and combine; filter values survive a sort/pagination round-trip",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — validation: >255-char keywords, impossible start date, start-after-end each render 'There is a problem' with one canonical message, raw values preserved, error-summary link focuses the offending control",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — Create a new notification POSTs, redirects to the import-type entry filter, and the new draft is listed on return",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — axe: AxeBuilder withTags(['wcag2a','wcag2aa']) on (1) initial render with rows and (2) the validation-error state; fail on any serious/critical impact (this page starts from ZERO — the legacy page needed a raised threshold; do not inherit)"
+  ],
+  "acceptanceCriteria": [
+    "Under SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub, GET / renders 'Your import notifications' listing the stubbed org's notifications via records.list, newest-first by default; DELETED notifications never appear.",
+    "Results render as a govuk-table (Reference number, Status, Origin, Arrival, Created, Submitted, Actions) — the legacy dl-card/percentage-grid hybrid (2 serious axe violations) is NOT ported.",
+    "Status is ONE vocabulary (c-027): the row govuk-tag text and the Status filter option labels come from the same statuses.* copy keys, GDS sentence case, one code list (DRAFT/SUBMITTED/AMEND), colours grey/blue/yellow; no VALID-vs-VALIDATED style dual coding.",
+    "Origin renders the fixture label for the stored country code (never the bare code); 'Republic of Ireland' for IE (c-012).",
+    "The Country of origin filter select uses real <optgroup>s from the pp-013 countries fixture (c-026): UK nations (GB-ENG/SCT/WLS/NIR) grouped separately from the A–Z countries; no EEA/GB-CI/ROW pseudo-options; posted value is the code.",
+    "Keywords/reference search is passed to records.list as the referenceNumber param; an exact reference narrows to that row; a no-match search renders '0 results' plus the 'No notifications found' empty-state copy (the legacy page had none — GAP filled).",
+    "The results count pluralises correctly: '1 result' at one match (fixes the legacy '1 results' defect).",
+    "Status, country and arrival date-range filters narrow the visible rows, combine additively, and survive sort + pagination round-trips (all filters carried in the list query string).",
+    "Filter validation (single canonical GDS-voice string per rule, c-018): keywords over 255 characters; start/end dates that do not compose real calendar dates; start date after end date ('The start date must be the same as or before the end date'). Errors render the standard 'There is a problem' summary, status 400, raw values preserved, each summary link focusing its control. The error summary appears ONLY for validation errors — never as a persistent banner.",
+    "Date ranges use plain govuk-date-input day/month/year groups — no bespoke calendar datepicker. Arrival dates display in exactly one format: '7 March 2026'.",
+    "'Create a new notification' POSTs, starts a journey (records.create mints the GBN-PP reference server-side), and redirects to the import-type entry filter; the new draft is listed with a Continue link into its hub.",
+    "DRAFT (and AMEND) rows expose a 'Continue' link (a real <a>, not button.govuk-link) to the notification hub; SUBMITTED rows have no row actions in pass 1 (lifecycle actions are pp-045).",
+    "Legacy-only surfaces are NOT built: BCP filter, Commodity filter, Consignee filter, Microchip filter, Notification type filter, My alerts panel, broadcast-message banners, Clone a certificate, account bar, org switcher, Trade Partner badge, archive recovery, customs-mismatch banner.",
+    "Both axe states pass at zero serious/critical violations.",
+    "Full plant verification ladder green; live-animals suites untouched (no file outside sets/plant-products/ changes)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "Completes the pp-007 m0 dashboard skeleton to the full inc-028 build. No recipe covers dashboards (SIBLING-SET-PLAN §8 G-G) — the plan is an exemplar transposition of sets/live-animals/journeys/linear/features/dashboard/ (controller.js's renderDashboard/query-parsing/pagination shape, notification-helper.js, view-model/row + sort-options, buildPageResultsRangeLabel's singular/plural/empty handling), verified live this session. Rulings applied: c-026 (real optgroups on the country select, data shipped by pp-013), c-027 (one GDS-sentence-case status vocabulary shared by tags and filter — implemented as view-model/statuses.js so both surfaces read one map), c-012 ('Republic of Ireland'), c-018 (one canonical validation string per rule; the legacy '\"Search\" must be 255 characters or less' quoted-label defect is not inherited). FD-13: the dashboard page is already inside the flow 'start' section from pp-007 — no flow.js/task-rows/entry-guard change, hence flowChanges {}. Scoping: pass 1 is single-org own-behalf — the list is the stubbed org's notifications (pp-047 later formalises the auth stub); every DoA surface in the page spec (Trade Partner badge, org context switcher, cross-org visibility) is deferred with pp-048. The page spec's condemned patterns are deliberately excluded: bespoke datepicker, dl-card grid (source of both serious axe violations), persistent error-summary banner, 'hidden-search' toggle, pipe-separated account bar, implied-consent cookie banner, button.govuk-link actions. Headless decisions: (1) status/country/date filters run controller-side over the listed page because the engine records port only supports page/sort/referenceNumber — see openQuestions; (2) date shortcut buttons (Today/Tomorrow/Next seven days) omitted as pure convenience; (3) pass-1 row actions limited to Continue-into-hub for DRAFT/AMEND (delete/amend/copy-as-new are pp-045; post-submit view pages are out of scope); (4) status labels Draft/Submitted/'Amend in progress' with grey/blue/yellow. meta.collects stays [] so no contract.plant-products.test.js case is due (no collecting POST); the create POST is engine startJourney, already covered by engine/journey behaviour. Exemplar files to imitate: sets/live-animals/journeys/linear/features/dashboard/{controller.js,notification-helper.js,view-model/row/index.js,view-model/sort-options.js,template.njk,dashboard.e2e.spec.js}.",
+  "openQuestions": [
+    "Status/country/date-range filters are applied controller-side to the CURRENT listed page because the engine records port (and the Phase-B backend list endpoint) only supports page/sort/referenceNumber — so filtered result counts and pagination are per-page-correct only. Acceptable at pass-1 single-org volumes, but the durable home is backend list-query parameters (status, countryOfOrigin, arrivalFrom/arrivalTo) plus a port extension: candidate follow-up backend increment for Sam to rule on.",
+    "Date shortcut buttons (Today / Tomorrow / Next seven days / Clear date range) were omitted as pure input-filling convenience; the legacy tests prove users rely on exact-reference search instead. Add as a small follow-up if product wants them.",
+    "Sort vocabulary: sort options must match the tokens the pp-008 real adapter / backend accept; the implementor pins them from services/records/real.js at build time. If the backend only sorts by updated/created date, the 'arrival' sort options from the live-animals exemplar are dropped rather than faked.",
+    "Consignor/consignee/commodity columns render only if the pp-008 list projection carries those fields — if the backend list summary omits them, the columns are omitted (per-notification loads to enrich rows are NOT acceptable). Confirm desired column set when the list DTO is final.",
+    "Post-submission status vocabulary (New, In progress, Valid, Rejected…) is out of pass-1 scope — the c-027 single-vocabulary map must be extended, not forked, when upstream decisioning statuses arrive."
+  ]
+}

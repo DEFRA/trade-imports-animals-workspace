@@ -1,0 +1,245 @@
+{
+  "id": "pp-031",
+  "title": "goods-movement-services — CTC / MRN / GVMS",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009"],
+  "sourceIncrement": "inc-022",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/goods-movement.js",
+      "action": "create",
+      "what": "Three obligations (SIBLING-SET-PLAN §3.1 row goods-movement.js). (1) export const commonTransitConvention = { id: <fresh UUID>, name: 'commonTransitConvention', status: 'mandatory' } — value domain is the NORMALISED enum ADD_MRN_NOW | ADD_MRN_LATER | NO (never the IPAFFS wire values YES/YES_ADD_LATER/NO; the legacy page even mixes casing conventions between its two questions — normalise both). (2) export const movementReferenceNumber = { id: <fresh UUID>, name: 'movementReferenceNumber', applyTo: equalsGate(commonTransitConvention, 'ADD_MRN_NOW', { inScope: true, status: 'mandatory', reasons: [movementReferenceNumberReason] }, { inScope: false }) } — exact signature exemplar: sets/live-animals/obligations/sections/import-reason.js purposeInInternalMarket (read live this session); reasons object shape { code: 'obligation.movementReferenceNumber.applicable.becauseAddMrnNow', explanation: 'movementReferenceNumber applies when commonTransitConvention is ADD_MRN_NOW' }. (3) export const usingGvms = { id: <fresh UUID>, name: 'usingGvms', status: 'mandatory' } — canonical value is a BOOLEAN (obligation-field-map inc-022). Pure data: no copy, no options, no IO (obligation-purity enforces at boot). Import equalsGate from '../../../../model/obligations/helpers/index.js'."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export commonTransitConvention, movementReferenceNumber, usingGvms from './sections/goods-movement.js' and append all three to the `obligations` array. `groups` stays derived (formula untouched — none of these is a group). `policy` untouched (no enforcedAtContinue candidacy — §3.3 names only countryOfOrigin and commoditySelection; no maxEntriesFrom)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/page.js",
+      "action": "create",
+      "what": "export const goodsMovementServicesPage = { id: 'goods-movement-services', slug: 'goods-movement-services' } — import-free (exemplar: features/import-reason/page.js)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/controller.js",
+      "action": "create",
+      "what": "Single-page collecting controller, transposed from the live-animals single-page radios idiom (features/import-reason/controller.js for shape; features/contact for a second-fieldset page). meta = { ...page, collects: ['commonTransitConvention', 'movementReferenceNumber', 'usingGvms'] }. view = `${TEMPLATES}/features/goods-movement/template`. GET: state.get() once; prefill values.commonTransitConvention ?? '', values.movementReferenceNumber ?? '', and usingGvms mapped boolean->'yes'/'no' string for the radios ('' when unanswered). POST validation (single-layer Joi voice, c-018; whitespace trimmed by the lib/validate factories): commonTransitConvention oneOf ['ADD_MRN_NOW','ADD_MRN_LATER','NO'] with error 'Select if using the Common Transit Convention (CTC)'; usingGvms oneOf ['yes','no'] with error 'Select if using the Goods Vehicle Movement Service (GVMS)'; movementReferenceNumber validated ONLY when scope.has('movementReferenceNumber') (i.e. commonTransitConvention === 'ADD_MRN_NOW' — build the conditional rule from the submitted CTC value the way house conditional controllers do): required, exactly 18 chars, pattern /^\\d{2}[A-Za-z0-9]{16}$/, ALL failure modes mapping to the single canonical message 'Enter a valid Movement Reference Number' (c-018; matches the legacy live wiring — the two more-specific legacy strings are dead copy, recorded in openQuestions). NEVER validate or commit movementReferenceNumber when CTC is not ADD_MRN_NOW (never commit a hidden value; the engine purges out-of-scope data). Invalid POST -> 400 re-render RAW values with kit.errorSummary. Valid POST -> state.commit cleaned values ('yes'/'no' string for usingGvms — the binding converts, see evaluation.js) via kit.recoverableSave (marked failure re-renders recoverableError: true, 500; other errors throw) -> h.redirect(await kit.nextTarget(request, page, committed.scope)). backLink = hubPath(journey.journeyId) — REAL href (the IPAFFS href='#' JS back-link with bespoke classes is a recorded defect, not ported). export const routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Transport' (govuk-caption-xl) + standalone H1 'Goods movement services' (govuk-heading-xl) — two fieldsets on one page, so legends are govuk-fieldset__legend--m, NOT legend-as-heading (matches the traced structure). Shared error-summary include ('There is a problem', c-004). Then, in order: (1) govukRadios name='commonTransitConvention', idPrefix='commonTransitConvention', legend 'Are you using the Common Transit Convention (CTC) to move goods, such as to a control point?' (--m), hint 'If yes, you must provide the Movement Reference Number (MRN) that will have been generated by NCTS.' passed as the macro `hint` so aria-describedby is WIRED (FIXES the confirmed IPAFFS a11y defect: #ctc-question-hint is orphaned because the legacy fieldset was hand-authored) — 3 items with values ADD_MRN_NOW/ADD_MRN_LATER/NO and labels 'Yes – add MRN now' / 'Yes – add MRN later' / 'No' (EN-DASH – in both Yes labels, character-exact from the trace), first item carrying conditional: { html: govukInput for movementReferenceNumber } — macro-generated reveal (label 'Movement Reference Number (MRN)' with govuk-label--s, hint 'It is 18 characters, starting with 2 numbers, a 2-letter country code then 14 letters and numbers. For example, 24GB123456789AB012.', classes govuk-!-width-two-thirds, input name = id = error key 'movementReferenceNumber', NO maxlength — GDS guidance, matching the legacy DOM). (2) govukDetails 'What is the CTC?' (govuk-!-margin-top-4): the CTC explainer paragraphs, the bulleted list (the UK / the EU / other CTC countries), the numbered to-do list, and the outbound link 'Find out more about using transit to move goods (opens in new tab)' href https://www.gov.uk/government/collections/using-common-or-union-transit-to-move-goods-into-through-and-out-of-the-uk target=_blank rel=noopener. (3) govukRadios name='usingGvms', legend 'Will the transport use the Goods Vehicle Movement Service (GVMS)?' (--m), 2 items values 'yes'/'no' labels 'Yes'/'No' — macro throughout (the legacy GVMS group's missing data-module and the CTC group's hand-authored markup are provenance warts, not requirements). (4) govukDetails 'What is the GVMS?': GVMS explainer paragraphs incl. the GMR paragraphs and the driver-check paragraph, numbered list of the three outbound links — 'Find out which ports use the GVMS (opens in new tab)' https://www.gov.uk/guidance/list-of-ports-using-the-goods-vehicle-movement-service, 'Register for the GVMS (opens in new tab)' https://www.gov.uk/guidance/register-for-the-goods-vehicle-movement-service, 'Get a goods movement reference (GMR) (opens in new tab)' https://www.gov.uk/guidance/get-a-goods-movement-reference, all target=_blank rel=noopener. (5) Shared save-actions include (primary 'Save and continue' + the house secondary/cancel actions — fixes the IPAFFS two-equal-primary-buttons pattern; no etag hidden field, house whole-document last-write-wins). All text from the copy bundles; every class govuk-* (no bespoke classes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: title 'Goods movement services', caption 'Transport', ctc: { legend, hint, options: { ADD_MRN_NOW: 'Yes – add MRN now', ADD_MRN_LATER: 'Yes – add MRN later', NO: 'No' } }, mrn: { label: 'Movement Reference Number (MRN)', hint: 'It is 18 characters, starting with 2 numbers, a 2-letter country code then 14 letters and numbers. For example, 24GB123456789AB012.' }, ctcDetails: { summary: 'What is the CTC?', intro/bullets (the UK, the EU, other CTC countries)/benefits paragraph/steps (check if you can use it, find out how to use it to move goods, plan your route before you use it)/linkText 'Find out more about using transit to move goods (opens in new tab)' }, gvms: { legend, options yes/no }, gvmsDetails: { summary: 'What is the GVMS?', paragraphs (GVMS helps to speed up customs clearance…, GMR single-reference paragraph, driver must check…), links: portsList/register/gmr texts }, errors: { commonTransitConventionRequired: 'Select if using the Common Transit Convention (CTC)', movementReferenceNumberInvalid: 'Enter a valid Movement Reference Number', usingGvmsRequired: 'Select if using the Goods Vehicle Movement Service (GVMS)' }. Body copy character-exact from the page spec bodyCopy list; the two Select-if errors are the legacy backend-submission strings adopted as the point-of-answer messages (decision in notes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces): real Welsh translations throughout, matching house cy practice."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per house pattern (exemplar features/import-reason/copy/copy.test.js): pins key presence/shape for both locales, including all three error strings and the three outbound-link texts."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/evaluation.js",
+      "action": "create",
+      "what": "import { feature, scalar } from bridge/fulfilment-bindings.js; import the three obligations from '../../../../obligations/index.js'; export const evaluationBindings = feature('goods-movement', [scalar({ field: 'commonTransitConvention', obligation: commonTransitConvention }), scalar({ field: 'movementReferenceNumber', obligation: movementReferenceNumber }), scalar({ field: 'usingGvms', obligation: usingGvms, convert: (v) => v === 'yes' })]) — the convert makes canonical fulfilment a boolean while the page value stays 'yes'/'no' (convert idiom exemplar: features/commodities/evaluation.js:51 toNumberWhenParses; recipe §1.2 'convert only when canonical fulfilment needs a different value')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the goods-movement feature's evaluationBindings and add to the frozen featureEvaluationBindings array."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import * as goodsMovement controller namespace; add goodsMovement.meta to dispatchPages; spread goodsMovement.routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import goodsMovementServicesPage; add sections entry { id: 'goods-movement', pages: [goodsMovementServicesPage] } at its canonical §2.3 position: immediately after 'transport' when pp-030 has landed that section, otherwise at the canonical slot in whatever order exists (after additional-details/commodities/purpose/origin as present), ALWAYS before 'review'. FLOW_ONLY_KEYS untouched (all three fields are manifest obligations)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row { id: 'goods-movement', pages: [goodsMovementServicesPage] } (mandatory row — no optional/conditional flags; status derives from collects union). Position mirrors the sections order."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the goods-movement row: 'Not yet started' with no answers; 'In progress' with only commonTransitConvention answered; 'Completed' with CTC='NO' + usingGvms answered (MRN out of scope); ALSO completed with CTC='ADD_MRN_NOW' + valid MRN + usingGvms; first entry page = goods-movement-services; incomplete row blocks readyForCheckYourAnswers."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'goods-movement' to GROUPS as hub spoke 6 'Goods movement services' (§2.1 canonical placement: after the transport spoke's row when present, before contact)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "rows.goodsMovement title 'Goods movement services' + hint copy, and the spoke-6 group caption if the GROUPS entry introduces a new numbered heading."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, same shape as the en additions."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new rows.goodsMovement keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Goods movement services row renders under its heading with status 'Not yet started' and links to /notifications/{journeyId}/goods-movement-services."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map the three answers onto the nested DTO object per obligation-field-map inc-022: dto.goodsMovementServices = { commonTransitConvention (enum string), movementReferenceNumber (only when present/in scope — omit otherwise, never null-invent), usingGvms (boolean — the binding's converted value) }. Omit goodsMovementServices entirely when nothing in the group is answered."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert: dto.goodsMovementServices.{commonTransitConvention,movementReferenceNumber,usingGvms} -> the answers tree for draft resume (usingGvms boolean -> the canonical stored representation the binding/controller round-trip expects)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip tests: (1) CTC='ADD_MRN_NOW' + MRN + usingGvms=true survives to-dto/from-dto; (2) CTC='NO' -> movementReferenceNumber ABSENT from the DTO (omission assertion, never invented); (3) nothing answered -> goodsMovementServices absent; (4) usingGvms is a boolean in the DTO, not a 'yes'/'no' string."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "T-5 standing rule: add the goods-movement controller's valid-POST case — payload { commonTransitConvention: 'ADD_MRN_NOW', movementReferenceNumber: '24GB123456789AB012', usingGvms: 'no' }, asserts exactly ['commonTransitConvention', 'movementReferenceNumber', 'usingGvms'] committed (the ADD_MRN_NOW payload puts all of meta.collects in scope)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill of all three values (incl. boolean usingGvms -> checked radio); empty POST -> 400 with BOTH 'Select if…' errors, raw values re-rendered, no commit; CTC='ADD_MRN_NOW' with empty MRN -> 400 'Enter a valid Movement Reference Number'; 17-char MRN -> 400 same message; bad-pattern MRN (letters in first two chars) -> 400 same message; whitespace-padded ' 24GB123456789AB012 ' passes (trimmed); CTC='NO' with a stale MRN in the payload -> MRN neither validated nor committed; valid POST commits cleaned values and redirects via kit.nextTarget; marked recoverable-save failure -> 500 with recoverableError; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/goods-movement.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe (scenarios listed under specs)."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "common-transit-convention",
+      "name": "commonTransitConvention",
+      "within": null,
+      "requires": "status: 'mandatory' — unconditional; enum ADD_MRN_NOW | ADD_MRN_LATER | NO. Does NOT join policy.enforcedAtContinue.",
+      "applyTo": null,
+      "collectedBy": "goods-movement-services"
+    },
+    {
+      "id": "movement-reference-number",
+      "name": "movementReferenceNumber",
+      "within": null,
+      "requires": "no static status — status supplied by the gate outcome (mandatory when in scope)",
+      "applyTo": "equalsGate(commonTransitConvention, 'ADD_MRN_NOW', { inScope: true, status: 'mandatory', reasons: [...] }, { inScope: false }) — purge-on-flip: leaving ADD_MRN_NOW wipes any stored MRN (engine contract; reproduces the legacy delete-on-save behaviour)",
+      "collectedBy": "goods-movement-services"
+    },
+    {
+      "id": "using-gvms",
+      "name": "usingGvms",
+      "within": null,
+      "requires": "status: 'mandatory' — unconditional; canonical value BOOLEAN via binding convert (page value 'yes'/'no')",
+      "applyTo": null,
+      "collectedBy": "goods-movement-services"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "Add { id: 'goods-movement', pages: [goodsMovementServicesPage] } to flow.js sections — canonical §2.3 order (…, transport, goods-movement, contact, …): insert after 'transport' when that section exists (pp-030 is NOT a dependency and may land later), else at the canonical slot among whatever sections exist; always before 'review'."
+    ],
+    "taskRows": [
+      "Add { id: 'goods-movement', pages: [goodsMovementServicesPage] } to task-rows.js — mandatory row, participates in readyForCheckYourAnswers; hub GROUPS gains 'goods-movement' as spoke 6 'Goods movement services' with en+cy row title/hint copy."
+    ],
+    "entryGuard": "No change — the page is hub-reached; deep-link protection is the existing set-wide guard from pp-009."
+  },
+  "schemaFields": [
+    "goodsMovementServices.commonTransitConvention",
+    "goodsMovementServices.movementReferenceNumber",
+    "goodsMovementServices.usingGvms"
+  ],
+  "copyKeys": [
+    "features/goods-movement/copy.{en,cy}: title",
+    "features/goods-movement/copy.{en,cy}: caption",
+    "features/goods-movement/copy.{en,cy}: ctc.legend",
+    "features/goods-movement/copy.{en,cy}: ctc.hint",
+    "features/goods-movement/copy.{en,cy}: ctc.options.{ADD_MRN_NOW,ADD_MRN_LATER,NO}",
+    "features/goods-movement/copy.{en,cy}: mrn.label",
+    "features/goods-movement/copy.{en,cy}: mrn.hint",
+    "features/goods-movement/copy.{en,cy}: ctcDetails.{summary,intro,bullets,benefits,steps,linkText}",
+    "features/goods-movement/copy.{en,cy}: gvms.legend",
+    "features/goods-movement/copy.{en,cy}: gvms.options.{yes,no}",
+    "features/goods-movement/copy.{en,cy}: gvmsDetails.{summary,paragraphs,links.portsList,links.register,links.gmr}",
+    "features/goods-movement/copy.{en,cy}: errors.commonTransitConventionRequired",
+    "features/goods-movement/copy.{en,cy}: errors.movementReferenceNumberInvalid",
+    "features/goods-movement/copy.{en,cy}: errors.usingGvmsRequired",
+    "features/hub/copy.{en,cy}: rows.goodsMovement.title",
+    "features/hub/copy.{en,cy}: rows.goodsMovement.hint",
+    "features/hub/copy.{en,cy}: spoke-6 group caption (only if a new numbered heading is introduced)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/goods-movement/goods-movement.e2e.spec.js — initial render: caption 'Transport', H1 'Goods movement services', CTC fieldset legend with 3 radios labelled 'Yes – add MRN now' / 'Yes – add MRN later' / 'No' (en-dash literal), CTC hint text visible AND the fieldset carries aria-describedby pointing at it (pins the a11y fix over legacy), MRN reveal hidden, GVMS fieldset with Yes/No, both details components ('What is the CTC?', 'What is the GVMS?') collapsed with all 4 outbound links present inside them (href + '(opens in new tab)' text)",
+    "goods-movement.e2e.spec.js — conditional reveal: selecting 'Yes – add MRN now' reveals the MRN input with label + format hint; selecting 'No' hides it",
+    "goods-movement.e2e.spec.js — happy path (No/No): select No + No, Save and continue redirects via nextTarget (hub for a one-page section), reload shows both radios still checked (persisted through the records service)",
+    "goods-movement.e2e.spec.js — happy path (MRN): select 'Yes – add MRN now', enter 24GB123456789AB012, select GVMS Yes, save; reload shows the reveal open with the MRN persisted",
+    "goods-movement.e2e.spec.js — scope wipe: save with ADD_MRN_NOW + MRN, revisit, switch to 'Yes – add MRN later', save; reload shows no stored MRN (engine purge)",
+    "goods-movement.e2e.spec.js — validation, one test per rule: nothing selected -> 'There is a problem' with 'Select if using the Common Transit Convention (CTC)' AND 'Select if using the Goods Vehicle Movement Service (GVMS)', each summary link focusing its first radio; ADD_MRN_NOW + empty MRN -> 'Enter a valid Movement Reference Number' with the summary link focusing #movementReferenceNumber; ADD_MRN_NOW + 17-char MRN -> same message; entered values preserved on error",
+    "goods-movement.e2e.spec.js — hub row: 'Goods movement services' row 'Not yet started' before, 'Completed' after answering",
+    "goods-movement.e2e.spec.js — axe: AxeBuilder withTags(['wcag2a','wcag2aa']) on THREE states — initial render (reveal collapsed), reveal EXPANDED (the state legacy never scanned anywhere), and the validation-error state; fail on any serious/critical impact; aria-allowed-attr NOT suppressed (the legacy suite's global waiver is deliberately not inherited — if the stock macro's reveal trips the rule, that is a finding to report upstream, not to disable)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (edit) — Goods movement services row renders under the spoke-6 heading and links to goods-movement-services"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/goods-movement-services renders caption 'Transport', H1 'Goods movement services' (govuk-heading-xl), and two govuk-fieldsets with --m legends: the CTC question and the GVMS question, in that order, each followed by its govukDetails explainer",
+    "CTC radios: exactly 3 options 'Yes – add MRN now' / 'Yes – add MRN later' / 'No' (en-dash character-exact), values stored as the normalised enum ADD_MRN_NOW | ADD_MRN_LATER | NO (legacy wire values YES/YES_ADD_LATER and mixed casing appear nowhere in the set)",
+    "The CTC hint is passed through the govukRadios macro so the fieldset's aria-describedby references it — the legacy orphaned-hint defect (confirmed in traces: #ctc-question-hint referenced by nothing) is fixed, not ported",
+    "The MRN input is a macro-generated conditional reveal on 'Yes – add MRN now' only: label 'Movement Reference Number (MRN)', format hint with the 24GB123456789AB012 example wired via aria-describedby, no maxlength attribute, input name = id = error key so #movementReferenceNumber focuses it",
+    "Both details explainers carry the traced body copy and all 4 outbound GOV.UK links with target=_blank, rel=noopener and '(opens in new tab)' in the link text",
+    "Both questions are MANDATORY at the point of answer (single-layer Joi voice, c-018 — the legacy optional-to-save/required-to-submit two-tier split is deliberately collapsed): empty submit -> 400 with 'Select if using the Common Transit Convention (CTC)' and 'Select if using the Goods Vehicle Movement Service (GVMS)' in a GDS 'There is a problem' summary (c-004), raw state preserved, nothing committed",
+    "MRN validation applies ONLY when CTC = ADD_MRN_NOW: required, trimmed, exactly 18 characters matching /^\\d{2}[A-Za-z0-9]{16}$/, all failure modes -> the single canonical message 'Enter a valid Movement Reference Number'; when CTC is any other value the MRN is neither validated nor committed",
+    "Switching a saved ADD_MRN_NOW answer to ADD_MRN_LATER or NO puts movementReferenceNumber out of scope and the engine wipes the stored value (purge contract proven in unit + e2e)",
+    "usingGvms persists as a BOOLEAN in canonical fulfilment and the DTO (binding convert from the 'yes'/'no' page value); unanswered never fabricates false",
+    "Valid submit commits via kit.recoverableSave and redirects via kit.nextTarget; values survive reload/draft-resume through the records service in stub and real modes (mapper round-trip: goodsMovementServices.{commonTransitConvention,movementReferenceNumber,usingGvms}; MRN omitted from the DTO when out of scope)",
+    "Hub shows a mandatory 'Goods movement services' row (spoke 6): 'Not yet started' -> 'Completed'; the incomplete row blocks readyForCheckYourAnswers",
+    "contract.plant-products.test.js has the controller's valid-POST case committing exactly the three collects; task-rows.test.js pins the row states; copy bundles en/cy shape-identical (copy-parity, copy-convention green)",
+    "Back link is a real href to the hub (no href='#', no bespoke back-link classes); save actions use the house shared pattern (one primary button; no legacy double-primary, no etag hidden field)",
+    "All three axe checks (initial, reveal-expanded, error state) pass with zero serious/critical violations WITHOUT disabling aria-allowed-attr",
+    "No existing suite's test count drops; live-animals surfaces untouched (no L1/L2 edits in this increment)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-022 (page spec goods-movement-services.json — adversarially re-verified; the page is DATA capture, not a GVMS/NCTS integration). EXEMPLARS pinned live this session: sets/live-animals/obligations/sections/import-reason.js (equalsGate signature + reasons-object shape + purge-on-flip comment idiom), features/import-reason/controller.js (single-page collecting idiom), features/contact/template.njk (govukRadios macro usage), features/commodities/evaluation.js:51 (binding convert idiom). DECISIONS (headless): (1) TWO-TIER COLLAPSED — legacy lets you save the page with both questions blank and only blocks at backend submission (@NotNull on provideCtcMrn/isGVMSRoute); the spec flags this as a policy choice, and pp-009 records the set as single-layer Joi-voice, so both radios are required at the point of answer, adopting the legacy submission strings 'Select if using the Common Transit Convention (CTC)' / 'Select if using the Goods Vehicle Movement Service (GVMS)' as the page errors; (2) MRN error = the single canonical 'Enter a valid Movement Reference Number' for empty/length/pattern (c-018 one string per field; matches the legacy LIVE wiring — the two more-specific legacy strings are dead copy there); regex copied verbatim /^\\d{2}[A-Za-z0-9]{16}$/ with trim-before-validate (legacy trims too); (3) caption 'Transport' kept spec-verbatim even though goods-movement is its own hub spoke — spokes 5 and 6 are both transport-family and mirror-existing wins over inventing a new caption; (4) enum + boolean normalisation: CTC stored as ADD_MRN_NOW|ADD_MRN_LATER|NO, usingGvms canonical boolean via binding convert (fixes the legacy value-casing inconsistency and the string-vs-boolean split); (5) MRN as a gated SCALAR obligation with equalsGate — the engine's purge-on-flip exactly reproduces the legacy delete-on-save behaviour (including 'add later' clearing a saved MRN), so no controller-side delete code exists; (6) 'Save and review' change-from-review button variant and etag optimistic concurrency NOT built (house: change-context via kit + whole-document last-write-wins, Open Q 3); (7) legacy per-CHED-type render gates (enableCtcQuestion/enableGvmsQuestion) are dead code for a CHED-PP-only set — both questions render unconditionally; (8) conditional-reveal JS comes from the stock govuk-frontend bundle already loaded by the shared layout — no webpack entry needed. FIXES-NOT-PORTED from the spec's nonStandardPatterns: orphaned CTC hint (confirmed WCAG-relevant defect axe cannot see), href='#' back link with bespoke classes, hand-authored fieldset markup, two-equal-primary-buttons, the global aria-allowed-attr axe suppression (deliberately dropped — scan with the rule ON, including the expanded-reveal and error states legacy never scanned). Check-answers row: features/check-answers does not exist until pp-038 — that increment owns the goods-movement card rows; no omission here. RULINGS APPLIED: c-004 (There is a problem), c-014 family (proper heading structure), c-018 (canonical Joi-voice strings), FD-5/FD-6 (set-owned records), obligation-field-map inc-022 (goodsMovementServices.* nested DTO object).",
+  "openQuestions": [
+    "Deferred-MRN flow is unmapped: legacy has a separate add_ncts_mrn page (outside the 28-page CHED-PP journey map, never traced) where an 'add later' MRN is presumably captured. Pass 1 builds NO second MRN page, and in this model ADD_MRN_LATER leaves movementReferenceNumber out of scope — so a notification CAN be submitted with 'add later' and no MRN. Product must confirm whether submission should be blocked or a later capture point added (new scope if so).",
+    "Data-loss semantics carried from the spec: switching from 'add MRN now' to 'add later'/'No' wipes a saved MRN with no warning (legacy behaviour, reproduced here as the engine's purge contract). Intended? If product wants a confirmation step, that is new scope.",
+    "MRN regex is looser than the hint promises: /^\\d{2}[A-Za-z0-9]{16}$/ enforces no country code, so '24123456789AB0123X' passes. Copied verbatim pending the real NCTS MRN spec — confirm before real submissions matter.",
+    "MRN error message granularity: c-018 single canonical string chosen ('Enter a valid Movement Reference Number'), but the spec notes GDS favours per-failure-mode messages and legacy defines (dead) specific strings for length/pattern. Content-designer call; wiring is one copy key + validator mapping per mode if ruled.",
+    "aria-allowed-attr: the legacy suite globally suppresses this axe rule blaming govuk-frontend's conditional-radio aria-expanded. This increment scans with the rule ON using the stock macro; if the violation reproduces on pristine macro markup it is an upstream govuk-frontend issue to raise (with the plant page as the repro), not to suppress — the implementor should report, not disable.",
+    "'GMS declaration' name-clash (spec): the legacy journey has a separate earlier GMS-declaration page, relationship to GVMS=Yes unknown and never exercised for CHED-PP; it is NOT in the 39-page map and is not built. If product links GVMS=Yes to a declaration requirement, that is new scope.",
+    "GVMS=Yes and the full CTC Yes branches were never exercised by any CHED-PP trace or test (cross-CHED evidence only) — built per spec/source but with no observed CHED-PP behaviour to mirror downstream."
+  ]
+}

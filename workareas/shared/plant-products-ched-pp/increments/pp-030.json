@@ -1,0 +1,254 @@
+{
+  "id": "pp-030",
+  "title": "transport-before-bip — BCP, premises, transport, arrival, containers",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009", "pp-015", "pp-016"],
+  "sourceIncrement": "inc-021",
+  "recipe": "sets/live-animals/docs/add-a-section.md (new flow section + task row + hub spoke 5) with sets/live-animals/docs/add-a-collection.md for the containers group (single-page add-another loop — documents exemplar); page build steps per sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/transport.js",
+      "action": "create",
+      "what": "The transport obligation section (SIBLING-SET-PLAN §3.1 row 'transport.js', verbatim). Exports (each a fresh-UUID obligation object, camelCase path-safe names): borderControlPost (mandatory), inspectionPremises (applyTo: allowListed(borderControlPost, perBcpControlPoints, null, reasons) — the per-BCP control-point map resolved LAZILY at gate execution from sets/plant-products/services/reference/bcps.js (pp-015); commodities gates are the lazy-resolution exemplar), meansOfTransport (mandatory), transportIdentification (mandatory), transportDocumentReference (mandatory), arrivalDate (mandatory), arrivalTime (mandatory), usesContainers (mandatory bool), containers GROUP (no status, no requires — applyTo: equalsGate(usesContainers, true, reasons)), and members within: containers (object-identity reference): containerNumber (optional), sealNumber (optional), officialSeal (optional). NO copy, options, labels or validation in this file (obligation-purity enforced at boot). Helpers from src/server/app/model/obligations/helpers/index.js only — no new helper needed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export every transport.js obligation and append all of them to the obligations array. groups stays derived (never hand-edited); policy untouched (no enforcedAtContinue addition for this section, no maxEntriesFrom entry — plan §3.3)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/whitelists.test.js",
+      "action": "edit",
+      "what": "Pin the inspectionPremises allowlist against sets/plant-products/services/reference/bcps.js: for a BCP with premises the gate admits exactly that BCP's premises codes and rejects a control value (a premises code belonging to a different BCP); for a BCP with no premises the obligation is out of scope. CREATE the file with this as its first suite if pp-021/pp-025 have not yet landed it (T-7 names it m3; this increment's dependsOn does not include m3, so create-if-absent)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/page.js",
+      "action": "create",
+      "what": "export const transportBeforeBipPage = { id: '<fresh-uuid>', slug: 'transport-before-bip' } — import-free (controller and flow import the same object; prevents the controller↔flow module cycle)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/evaluation.js",
+      "action": "create",
+      "what": "Feature binding bundle: scalar({ field, obligation }) for borderControlPost, inspectionPremises, meansOfTransport, transportIdentification, transportDocumentReference, arrivalDate, arrivalTime, usesContainers; a group descriptor for containers ({ field: 'containers', token, obligation: containers }) and grouped({ field, obligation, groups: [container] }) for containerNumber, sealNumber, officialSeal (depth-1 chain — binding depth must equal the within chain). convert on arrivalDate (three D/M/Y inputs → ISO 'YYYY-MM-DD') and arrivalTime (hour+minutes inputs → 'HH:mm' string, the backend shape)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/controller.js",
+      "action": "create",
+      "what": "export const meta = { ...transportBeforeBipPage, collects: ['borderControlPost', 'inspectionPremises', 'meansOfTransport', 'transportIdentification', 'transportDocumentReference', 'arrivalDate', 'arrivalTime', 'usesContainers', 'containers'] } (container members inherit the owning page from the group root). GET: state.get() ONCE; prefill from answers; premises select options resolved from bcps.js for the currently-answered/selected BCP (out-of-scope → not rendered); containers rows via state.collectionView(answers, ['containers']) — facts only, controller builds its own row view-models. POST branches on the submit action (documents-exemplar single-page loop): (a) action === 'add-container' → validate the entry row (at-least-one of containerNumber/sealNumber — controller fieldset rule, NOT model, house D-13 parity; max lengths 32/100) then state.appendEntry(request, h, 'containers', entry); (b) action === 'remove-container:<index>' → Number.isInteger index guard + look the instance up and refuse a forged/stale index, then state.removeEntry; (c) default Save/Continue → validate every in-scope field with factories from src/server/app/lib/validate/index.js — BCP membership rule built inside POST from the bcps.js fixture (never a frozen module-level schema), premises validated against the POSTed BCP's own allowlist (so a 400 re-render shows the premises options for the newly-chosen BCP — the no-JS way premises follows BCP), single-layer Joi with ONE canonical message per rule (c-018), arrivalDate real-date + window [today, today+90] inclusive, arrivalTime 24-hour validity; invalid → 400 re-render RAW values; valid → state.commit() cleaned values, kit.recoverableSave() (marked failure → recoverableError re-render 500, other errors throw), redirect via await kit.nextTarget(request, page, committed.scope). Never commit an out-of-scope value (engine wipes premises when the BCP changes off-allowlist, and container rows when usesContainers flips to No). All row/back/internal links wrapped in kit.withChangeContext. Copy via copyFor({ en, cy }); routes via kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed); view name under the plant TEMPLATES prefix. govuk-caption-xl 'Description of the goods'; H1 'Transport to the Border Control Post (BCP)'. Controls (all govuk macros, no custom CSS): govukSelect Entry border control post (options from bcps.js, placeholder first); govukSelect Inspection premises rendered ONLY when the selected BCP offers premises, options filtered to that BCP; H2 'Means of transport to the BCP' + govukSelect with a REAL visible label 'Means of transport to the BCP' (drop the legacy 'Choose from:' non-label), options from transport-options.js (pp-016); govukInput Transport identification (hint verbatim from the page spec, aria-describedby wired); govukRadios usesContainers 'Are any road trailers or shipping containers being used to transport the consignment?' with NO pre-selected default (fixes the confirmed GDS anti-pattern) and a conditional reveal containing: read-back rows table (container/seal/official-seal per row) each with a Remove submit button (action=remove-container:<index> so the crumb travels — no GET deletes), entry inputs Container or trailer number (visible label, hint) + Seal number + Official seal checkbox WITH a real visible label 'This is an official seal' (fixes the official-seal-1 accessible-name defect), and an 'Add another container or trailer' govuk-button--secondary (action=add-container); govukInput Transport document reference; H2 'Estimated arrival at BCP' + stock govukDateInput D/M/Y (NO custom datepicker — dropped per spec ruling) with hint id + fieldset aria-describedby wired; a REAL fieldset legend 'Time of estimated arrival' (govuk-fieldset__legend--m wrapping the heading — fixes the bare-div defect) over two govukInput govuk-input--width-2 Hour/Minutes fields per the GDS asking-for-a-time pattern, hint wired; shared error summary ('There is a problem', links focus controls — input name = id = error key throughout); shared save actions (house Save and continue / Save and return pattern from the live-animals exemplar, not the legacy double-primary); Back link is a real href via the house back-link helper."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle — every user-facing string for the page: caption, heading, per-field labels/hints (spec-verbatim hints for identification, containers question, container number, seal number, official seal, document reference, date 'For example, 27 3 2023', time 24-hour hint), containers table/add/remove copy, and ONE canonical error message per rule generated from the VISIBLE labels (never the legacy strings): 'Select the entry border control post'; 'Select the inspection premises'; 'Select the means of transport to the BCP'; 'Enter the transport identification'; 'Transport identification must be 50 characters or fewer'; 'Enter the transport document reference'; 'Transport document reference must be 32 characters or fewer'; 'Enter the estimated arrival date at the BCP'; 'The estimated arrival date must be a real date'; 'The estimated arrival date must be today or within the next 90 days'; 'Enter the estimated arrival time at the BCP'; 'Enter a time using the 24-hour format, for example 14 50'; 'Select yes if road trailers or shipping containers are being used'; 'Enter a container or trailer number, or a seal number'; 'Container or trailer number must be 32 characters or fewer'; 'Seal number must be 100 characters or fewer'."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces shape equality)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per the house pattern (bundle shape + key presence for both locales)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/controller.test.js",
+      "action": "create",
+      "what": "Unit suite: GET prefill (incl. premises options for the answered BCP, containers rows from collectionView); every validation rule in its own test (BCP required/membership, premises required-when-in-scope + rejected when not on the POSTed BCP's allowlist, means required, identification required + max 50, document reference required + max 32, date required/real/window boundaries today−1 rejected, today allowed, today+90 allowed, today+91 rejected, time required/invalid, usesContainers required, container row at-least-one + max lengths); raw values + no commit on 400; cleaned values + redirect on success; add-container appends and re-renders; remove-container removes and refuses a forged/out-of-range index; usesContainers=No hides the reveal and the engine purges committed rows; premises wiped when the BCP changes to one not offering it; marked recoverable-save failure → 500; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe (see specs list for scenarios). Raw role/label/visible-copy locators, no page objects, each test starts its own notification, expect.poll not sleeps."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the transport controller namespace; add meta to dispatchPages; spread routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the transport feature's evaluationBindings and add to featureEvaluationBindings (frozen array)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Add sections entry { id: 'transport', pages: [transportBeforeBipPage] } in the canonical §2.3 order: start, origin, purpose, commodities, additional-details, transport, goods-movement, contact, nominated-contacts, documents, traders, review — insert after the latest earlier canonical section present in the array and always before review (array order controls nextInSection() and strictly-earlier continue prerequisites). Derived allFlowPages/sectionOfPage/answerSections pick it up automatically."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row { id: 'transport', pages: [transportBeforeBipPage] } (row status = union of the page's collects; mandatory row — participates in readyForCheckYourAnswers). Same relative position as the section order."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the transport row: Not yet started on empty answers; In progress after a partial commit; Completed when all in-scope transport obligations fulfilled (incl. usesContainers=No path where containers is out of scope, and =Yes with a satisfying row); readiness blocked while the row is incomplete AND unblocked when complete."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add 'transport' to GROUPS under the spoke-5 heading ('Transport to the BCP' — §2.1 row 5); numbered-heading caption already exists or lands with its group per the hub skeleton conventions."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "rows.transport title 'Transport to the BCP' + hint, and the spoke-5 group caption if not already present."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh mirror of the hub additions, same leaf paths."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new row copy."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Transport to the BCP row renders under spoke 5, links to /notifications/{id}/transport-before-bip, and shows Not yet started on a fresh notification."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the transport-before-bip valid-POST case (T-5 standing rule — the table is MANUAL): drive the default save branch with a full valid payload, seed usesContainers so the containers group is in scope with one appended row, assert exactly the committable names in meta.collects are committed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map the transport answers subtree → DTO: transport.borderControlPost, .inspectionPremises, .meansOfTransport, .transportIdentification, .transportDocumentReference, .arrivalDate (ISO date), .arrivalTime ('HH:mm' string), .usesContainers, .containers[] = [{ containerNumber, sealNumber, officialSeal }] (camelCase, server-set fields never sent)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert the transport subtree for draft resume (containers array back onto the answers-tree group instances)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test for the transport subtree incl. a populated containers array and the usesContainers=No shape (no containers key invented — omission asserted)."
+    }
+  ],
+  "obligations": [
+    { "id": "border-control-post", "name": "borderControlPost", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "inspection-premises", "name": "inspectionPremises", "within": null, "requires": null, "applyTo": "allowListed(borderControlPost, perBcpControlPoints, null, reasons) — per-BCP premises map lazily resolved from sets/plant-products/services/reference/bcps.js (pp-015); out of scope when the chosen BCP offers no premises", "collectedBy": "transport-before-bip" },
+    { "id": "means-of-transport", "name": "meansOfTransport", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "transport-identification", "name": "transportIdentification", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "transport-document-reference", "name": "transportDocumentReference", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "arrival-date", "name": "arrivalDate", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "arrival-time", "name": "arrivalTime", "within": null, "requires": "status: mandatory", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "uses-containers", "name": "usesContainers", "within": null, "requires": "status: mandatory (bool)", "applyTo": null, "collectedBy": "transport-before-bip" },
+    { "id": "containers", "name": "containers", "within": null, "requires": "GROUP — no status, no minEntries (plan §3.1 declares none)", "applyTo": "equalsGate(usesContainers, true, reasons)", "collectedBy": "transport-before-bip" },
+    { "id": "container-number", "name": "containerNumber", "within": "containers", "requires": "status: optional (at-least-one-of container/seal is a controller fieldset rule, not model — house D-13 parity)", "applyTo": null, "collectedBy": "transport-before-bip (inherited from group root)" },
+    { "id": "seal-number", "name": "sealNumber", "within": "containers", "requires": "status: optional", "applyTo": null, "collectedBy": "transport-before-bip (inherited from group root)" },
+    { "id": "official-seal", "name": "officialSeal", "within": "containers", "requires": "status: optional (bool)", "applyTo": null, "collectedBy": "transport-before-bip (inherited from group root)" }
+  ],
+  "flowChanges": {
+    "sections": [
+      {
+        "id": "transport",
+        "pages": ["transport-before-bip"],
+        "position": "canonical §2.3 order — after additional-details (or the latest earlier canonical section present when this runs), always before review"
+      }
+    ],
+    "taskRows": [
+      {
+        "id": "transport",
+        "pages": ["transport-before-bip"],
+        "mandatory": true,
+        "hubGroup": "spoke 5 — 'Transport to the BCP' heading in hub GROUPS"
+      }
+    ],
+    "entryGuard": "no change"
+  },
+  "schemaFields": [
+    "transport.borderControlPost",
+    "transport.inspectionPremises",
+    "transport.meansOfTransport",
+    "transport.transportIdentification",
+    "transport.transportDocumentReference",
+    "transport.arrivalDate",
+    "transport.arrivalTime (\"HH:mm\" string)",
+    "transport.usesContainers",
+    "transport.containers[].containerNumber",
+    "transport.containers[].sealNumber",
+    "transport.containers[].officialSeal"
+  ],
+  "copyKeys": [
+    "features/transport/copy: caption",
+    "features/transport/copy: heading",
+    "features/transport/copy: bcp.label, bcp.errors.required",
+    "features/transport/copy: premises.label, premises.errors.required",
+    "features/transport/copy: means.heading, means.label, means.errors.required",
+    "features/transport/copy: identification.label, identification.hint, identification.errors.required, identification.errors.maxLength",
+    "features/transport/copy: documentReference.label, documentReference.hint, documentReference.errors.required, documentReference.errors.maxLength",
+    "features/transport/copy: arrivalDate.heading, arrivalDate.hint, arrivalDate.errors.required, arrivalDate.errors.real, arrivalDate.errors.window",
+    "features/transport/copy: arrivalTime.legend, arrivalTime.hint, arrivalTime.errors.required, arrivalTime.errors.invalid",
+    "features/transport/copy: usesContainers.legend, usesContainers.hint, usesContainers.errors.required",
+    "features/transport/copy: containers.containerNumber.label, .hint, .errors.maxLength",
+    "features/transport/copy: containers.sealNumber.label, .hint, .errors.maxLength",
+    "features/transport/copy: containers.officialSeal.label, .hint",
+    "features/transport/copy: containers.errors.oneOfContainerOrSeal",
+    "features/transport/copy: containers.add, containers.remove, containers.tableCaption",
+    "features/hub/copy: rows.transport.title, rows.transport.hint (+ spoke-5 group caption if new)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — initial render: caption, H1, BCP select with fixture options, means select with real visible label + 4 options and placeholder, unanswered usesContainers radios (NO pre-selected default), stock date input, time fieldset with visible 'Time of estimated arrival' legend, every hint wired",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — happy path (usesContainers=No): fill all fields, save, redirect per nextTarget, reload persists every value, hub row Completed",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — premises follows BCP: BCP with premises renders the filtered premises select; a BCP without premises hides it; changing BCP invalidates a stale premises answer",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — containers loop: Yes reveals the collection; add-container appends a row (server round-trip); Remove deletes exactly that row; row with neither container nor seal number rejected with 'Enter a container or trailer number, or a seal number'; flipping back to No purges rows on save",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — one test per validation rule (BCP/premises/means/identification/document/date required, date real + window boundaries, time required/invalid, usesContainers required, max lengths 50/32/32/100); raw values preserved on error; every error-summary link focuses its control",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — axe (wcag2a+wcag2aa, fail on serious/critical): initial render state",
+    "src/server/app/sets/plant-products/journeys/linear/features/transport/transport-before-bip.e2e.spec.js — axe: validation-error state AND the open containers reveal (the surface legacy axe never scanned)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — (extend) Transport to the BCP row under spoke 5, Not yet started, links to the page"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/transport-before-bip renders caption 'Description of the goods', H1 'Transport to the Border Control Post (BCP)', and all controls as govuk macros — no custom datepicker, no repurposed date-input for time, no custom CSS",
+    "Entry border control post is a govuk-select sourced from sets/plant-products/services/reference/bcps.js; empty submit → 'Select the entry border control post'",
+    "Inspection premises renders ONLY when the selected BCP offers premises, options filtered to that BCP's control points; when in scope and empty → 'Select the inspection premises'; a premises value not on the POSTed BCP's allowlist is rejected; the model wipes an out-of-scope premises answer when the BCP changes",
+    "Means of transport is a govuk-select with the visible label 'Means of transport to the BCP' (the legacy 'Choose from:' accessible-name defect is NOT carried over), options from transport-options.js (pp-016); empty → 'Select the means of transport to the BCP'",
+    "Transport identification: required, max 50; Transport document reference: required, max 32; error copy generated from the visible labels (never the legacy 'Identification'/'Document'/'Add … details' strings) — one canonical message per rule (c-018)",
+    "Estimated arrival date is the stock GOV.UK date input; rejects a missing or unreal date; accepts today and today+90, rejects yesterday and today+91 ([today, today+90] inclusive — CHED-PP window, not a sibling CHED's numbers)",
+    "Time of estimated arrival is a real fieldset legend over two govuk-input--width-2 Hour/Minutes fields (GDS asking-for-a-time pattern); commits as an 'HH:mm' string; date and time hints are wired via aria-describedby (legacy unassociated-hint defect fixed)",
+    "usesContainers radios render with NO pre-selected default (legacy server-checked 'No' anti-pattern fixed); empty submit → 'Select yes if road trailers or shipping containers are being used'",
+    "Yes reveals the containers collection: rows can be added ('Add another container or trailer', govuk-button--secondary, POST round-trip) and removed (per-row POST Remove; forged/out-of-range index refused); each row requires at least ONE of container number (max 32) or seal number (max 100) via a controller fieldset rule; Official seal is a checkbox with the visible label 'This is an official seal' (legacy 'official-seal-1' accessible-name defect fixed)",
+    "usesContainers=No takes the containers group out of scope: reveal hidden, previously-committed rows purged by the engine, transport row still completable",
+    "Errors render as GDS 'There is a problem' summary with links that move focus to the offending control (input name = id = error key); invalid POST re-renders RAW values with status 400",
+    "Valid save commits cleaned values, persists through the records service (transport.* incl. containers[]), redirects via kit.nextTarget; draft resume rehydrates every field including container rows",
+    "Hub shows the mandatory 'Transport to the BCP' row under spoke 5: Not yet started → In progress → Completed; readiness for review is blocked while incomplete",
+    "contract.plant-products.test.js has the transport-before-bip valid-POST case committing exactly the names in meta.collects",
+    "Axe (wcag2a/wcag2aa) reports no serious/critical violations on initial render, on the error state, and with the containers reveal open",
+    "Both copy bundles are structure-identical (copy-parity green); obligation section file contains no display text (obligation-purity green); dep-cruiser green (no L2 edits in this increment)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before any edit — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit; pre-commit hook enforces format + lint + full units"
+  ],
+  "notes": "1:1 carry of inc-021 as the plant transport section (SIBLING-SET-PLAN §2.1 spoke 5, §3.1 transport.js row — obligation set followed verbatim; containers is applyTo-gated with NO minEntries and NO cap, matching §3.3 'no MAX_ENTRIES_FROM declarations'). Single page owning both scalars and a depth-1 gated collection: add-a-section supplies section/row/hub wiring, add-a-collection (documents single-page-loop exemplar: sets/live-animals/journeys/linear/features/documents/{controller.js,template.njk}) supplies the add/remove POST-branch pattern; live-animals features/transport/ is the section-registration exemplar. Rulings applied from the page spec: dropped the defra-datepicker (unexercised by every trace and test — low-risk drop), no pre-selected 'No' on usesContainers (confirmed GDS anti-pattern; the reason the reveal had zero legacy coverage), real time fieldset legend replacing the bare govuk-heading-m div, wired hints, visible Official seal label, error copy generated from visible labels (spec discrepancies[3]), one message per field resolving the legacy frontend-vs-submission-model mandatoriness conflicts in favour of MANDATORY (plan §3.1 marks identification/documentReference/date/time all mandatory — single-layer validation c-018, no draft-vs-submit split). At-least-one-of container/seal per row is the validator-sourced rule (CONSIGNMENT_SEAL_OR_CONTAINER_REQUIRED) implemented as a controller fieldset rule like the house email-OR-telephone pattern. Premises-follows-BCP is server-rendered (zero client XHR): GET renders premises for the answered BCP; a POST that changes the BCP validates premises against the new BCP's allowlist and the 400 re-render presents the new BCP's options — the allowListed gate owns scope/wipe. Legacy etag/optimistic concurrency deliberately not carried (whole-document PUT last-write-wins, §6.2/Open Q 3). Legacy MAX_CONTAINERS=70 recorded but not built (plan declares no caps). No check-answers card here — features/check-answers/ is pp-038's, which already depends on pp-030 and reads this section back. CUC: the BCP choice is NOT wired to isCuc in this increment (billing trigger is pp-043's provisional c-007 flag). Whitelists.test.js is nominally m3 (T-7); created-if-absent here since pp-030's dependsOn does not include the m3 increments. Not a platform-touching increment (no L1/L2 edits) so the two-sided live-animals check is not required; npm test still exercises the shared L1 suites.",
+  "openQuestions": [
+    "Containers floor: plan §3.1 declares no minEntries on the containers group, so usesContainers=Yes with zero rows currently completes the row — confirm with product whether Yes should require at least one container/trailer row (legacy always rendered one row).",
+    "Container row cap: legacy MAX_CONTAINERS=70; built unbounded per plan §3.3 (no cap declarations) — confirm a cap is genuinely not wanted (documents has a 10-cap precedent).",
+    "'This is an official seal' checkbox label is placeholder copy for a confirmed legacy content gap — needs a content designer's wording.",
+    "CUC trigger (Folkestone/Sevington pairing → billing branch): the real rule (BCP? premises? reference-data flag?) is unconfirmed; this page ships as a leaf and pp-043 gates billing on the free-standing isCuc flag — confirm with IPAFFS before pp-043 finalises.",
+    "POD pseudo-premises ('Via Temporary Place of Destination', legacy showTemporaryPlaceOfDestinationOption + ChedppPodRequired validators): condition unknown, not built — recorded gap.",
+    "Per-BCP premises mapping in bcps.js is fixture data with a recorded gap on the authoritative rule (which BCPs offer which premises) — pp-015's gap, restated because this page is its first consumer.",
+    "Arrival-date window day 91 was untested in legacy (proven closed at 90, open at 92); built as [today, today+90] inclusive — flag if product wants a different boundary."
+  ]
+}

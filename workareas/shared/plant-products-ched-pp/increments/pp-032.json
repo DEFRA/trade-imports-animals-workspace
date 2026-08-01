@@ -1,0 +1,231 @@
+{
+  "id": "pp-032",
+  "title": "contact-details — responsible person",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009"],
+  "sourceIncrement": "inc-023",
+  "recipe": "sets/live-animals/docs/add-a-section.md (one-page degenerate form per recipe cheat-sheet §3: one page = one feature folder = one flow section = one task row = one hub spoke; field-level steps per docs/add-a-field.md)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/contacts.js",
+      "action": "create",
+      "what": "NEW section file (SIBLING-SET-PLAN §3.1 contacts.js row — this increment ships ONLY the responsible-person leaves; the nominatedContacts group + members are pp-033's and land in this same file later). Three top-level leaf obligations, fresh UUID ids, path-safe camelCase names doubling as DOM field names: export const responsiblePersonName = { id: '<uuid>', name: 'responsiblePersonName', status: 'mandatory' }; export const responsiblePersonEmail = { id: '<uuid>', name: 'responsiblePersonEmail', status: 'optional' }; export const responsiblePersonTelephone = { id: '<uuid>', name: 'responsiblePersonTelephone', status: 'optional' }. DECISION (recorded, see notes): email/telephone are OPTIONAL at model level because the legacy rule is 'at least one of email/telephone' — the joint-OR is a controller fieldset rule per house D-13 parity (the planningBrief's own instruction 'email-OR-telephone rule is a controller fieldset rule, NOT model'); marking both model-mandatory would make a legal email-only save leave the row permanently incomplete. NO copy, no display logic, no gate helpers (obligation-purity enforces). Exemplar shape: sets/live-animals/obligations/sections/misc.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export responsiblePersonName, responsiblePersonEmail, responsiblePersonTelephone from './sections/contacts.js'; append all three to the obligations array. groups stays derived (no group in this increment); policy untouched."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/page.js",
+      "action": "create",
+      "what": "Import-free page identity: export const contactDetailsPage = { id: 'contact-details', slug: 'contact-details' }."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/controller.js",
+      "action": "create",
+      "what": "export const meta = { ...contactDetailsPage, collects: ['responsiblePersonName', 'responsiblePersonEmail', 'responsiblePersonTelephone'] }. GET: state.get() ONCE, prefill the three inputs from answers (entry page in pass 1 — POP-2 auto-population deferred to pp-048, so no server-populated values). One render() helper for GET + POST errors: kit.base(copy.title, { backLink: hubPath(journey.journeyId), journey }), copy, errors, kit.errorSummary(errors). POST: read raw request.payload; validate with lib/validate factories in Joi voice, one canonical string per rule (c-018): responsiblePersonName required 'Enter your name', max 32 'Name must be 32 characters or fewer'; responsiblePersonEmail optional, format via pattern() with a pragmatic email regex 'Enter an email address in the correct format, like name@example.com', max 255 'Email address must be 255 characters or fewer'; responsiblePersonTelephone optional, format via pattern(/^\\+?[\\d\\s]+$/) (the legacy acceptance — digits/spaces, optional leading +) 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982', max 30 'Mobile number must be 30 characters or fewer' (c-020: 'Mobile number', fixing the legacy 'Telephone number' error-copy inconsistency). FIELDSET RULE (house D-13 parity, pp-028 pairing precedent): after field validation, if BOTH email and telephone are empty add error 'Enter an email address or mobile number' keyed on responsiblePersonEmail (error-summary link focuses the email input, the first field of the pair). Invalid → 400 re-render RAW values; valid → state.commit() cleaned values (trim; commit only non-empty of email/telephone — never commit an empty-string answer) wrapped in kit.recoverableSave() (marked failure → recoverableError:true, 500; other errors throw); redirect await kit.nextTarget(request, page, committed.scope). routes = kit.pageRoutes(page, { get, post }). Do NOT port: the legacy Agent free-text field, the etag hidden field, entry-point hidden fields/query decoration, or the four-way legacy button routing — house kit/hub/change-context semantics replace them (review-change return is pp-038's Change machinery)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/evaluation.js",
+      "action": "create",
+      "what": "export const evaluationBindings = feature('contact', [scalar({ field: 'responsiblePersonName', obligation: responsiblePersonName }), scalar({ field: 'responsiblePersonEmail', obligation: responsiblePersonEmail }), scalar({ field: 'responsiblePersonTelephone', obligation: responsiblePersonTelephone })]) — same obligation OBJECTS imported from obligations/index.js (shared identity is how the registry checks ownership)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). govukFieldset with legend-as-heading: legend.govuk-fieldset__legend--l wrapping H1 'Contact details' (c-014; the legacy used --xl — follow the house --l sizing as the sibling pages do). NO caption (page spec confirms CHED-PP renders none). Inside the fieldset, the two intro sentences as two p.govuk-body paragraphs (DECISION: the legacy multi-paragraph div.govuk-hint is an atypical hint usage flagged in the page spec's nonStandardPatterns; govuk-body is the spec's own recommended alternative): 'These are the details we have for you. Make sure they are up to date.' / 'We will use these details if your consignment is chosen for inspection.' Then three govukInput macros, name = id = error key: responsiblePersonName (label 'Name', autocomplete='name', govuk-!-width-two-thirds), responsiblePersonEmail (label 'Email address', type='email', autocomplete='email', spellcheck=false), responsiblePersonTelephone (label 'Mobile number', type='tel', autocomplete='tel'). NO Agent input (dropped — see notes). Shared error summary ('There is a problem', c-004) + house save actions block (Save and continue + Save and return to hub + Cancel and return to hub), transposed from the sibling collecting pages."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: title 'Contact details', legend 'Contact details', intro1 'These are the details we have for you. Make sure they are up to date.', intro2 'We will use these details if your consignment is chosen for inspection.', fields.responsiblePersonName.label 'Name', fields.responsiblePersonEmail.label 'Email address', fields.responsiblePersonTelephone.label 'Mobile number', errors.nameRequired 'Enter your name', errors.nameMax 'Name must be 32 characters or fewer', errors.emailOrTelephoneRequired 'Enter an email address or mobile number', errors.emailFormat 'Enter an email address in the correct format, like name@example.com', errors.emailMax 'Email address must be 255 characters or fewer', errors.telephoneFormat 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982', errors.telephoneMax 'Mobile number must be 30 characters or fewer'."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces); Welsh translations of every string."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy pin test per house convention (asserts key structure + the load-bearing strings, e.g. the seven error messages)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/controller.test.js",
+      "action": "create",
+      "what": "Vitest unit suite: GET prefills all three values from answers; empty name → 400 with 'Enter your name'; name > 32 → nameMax; bad email format → emailFormat; email > 255 → emailMax; telephone with letters → telephoneFormat; telephone > 30 → telephoneMax; BOTH email and telephone empty → 400 with 'Enter an email address or mobile number' on responsiblePersonEmail; name+email only → commits { responsiblePersonName, responsiblePersonEmail } (no empty-string telephone committed) and redirects via nextTarget; name+telephone only → symmetric; raw values re-rendered on 400 and NOT committed; marked recoverable-save failure → 500 with recoverableError; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/contact/contact.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (small single-page feature: features/<name>/<name>.e2e.spec.js). Scenarios: initial render (H1 'Contact details' as fieldset legend, no caption, both intro paragraphs, labels Name / Email address / Mobile number, NO Agent field, house button set); happy path name+email → redirect to next target, reload shows persisted values; name+telephone-only happy path (OR rule satisfied by telephone alone); each validation rule its own test (empty name; both email+telephone empty → fieldset error; bad email; bad telephone; the three max-lengths); raw entered values + other fields preserved on error; every error-summary link ('There is a problem') moves focus to its control (the OR-rule link focuses the email input); hub row 'Contact details' Not yet started → link into this page → Completed after save; axe (AxeBuilder withTags ['wcag2a','wcag2aa'], fail on serious/critical) on initial render AND on the validation-error state."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the contact feature's evaluationBindings and add to featureEvaluationBindings."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the contact controller namespace; add its meta to dispatchPages and spread its routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Add flow section { id: 'contact', pages: [contactDetailsPage] } in the canonical §2.3 position: after 'goods-movement', before 'nominated-contacts'/'documents'/'traders'/'review' (whichever of those exist when this builds — always after start, before review; array order drives nextInSection() and strictly-earlier continue prerequisites)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add mandatory task row { id: 'contact', pages: [contactDetailsPage] } (canonical row id per §2.1 spoke 7). Row status derives from the union of the page's collects; participates in readyForCheckYourAnswers (a mandatory incomplete row blocks Check and submit). Position matches the flow-section order."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the contact row: Not yet started with no answers; Completed once responsiblePersonName + (email or telephone) committed via the page save; row entry page is contact-details; prove the mandatory row BLOCKS readyForCheckYourAnswers while incomplete and stops blocking when complete."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'contact' to GROUPS as spoke 7 'Contact details' (numbered heading between Goods movement services (6) and Nominated contacts (8) per §2.1; if spokes 5/6/8+ are not yet built the entry still lands in its canonical relative position)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Spoke-7 group caption 'Contact details' + row entry for 'contact' (title 'Contact details', hint per house hub row convention — short GDS description, e.g. 'Details we can use if your consignment is chosen for inspection')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, structure-identical."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend hub copy pins for the new group caption + row title/hint in both locales."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the hub renders the 'Contact details' spoke with the contact row linking to /notifications/{id}/contact-details, initial status Not yet started; extend the hub axe state if the new heading changes the page."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the contact-details valid-POST contract case (T-5 standing rule; manual table): payload { responsiblePersonName: 'Isabel Irwin', responsiblePersonEmail: 'isabel@example.com', responsiblePersonTelephone: '0123456789' }, no scope seed needed (all top-level, ungated); must commit exactly the committable names in meta.collects."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers responsiblePersonName/responsiblePersonEmail/responsiblePersonTelephone → dto.responsiblePerson { name, email, telephone } (PlantProductsContact, SCHEMA-DESIGN §1.1). Omit responsiblePerson entirely when none of the three is answered (follow the mapper's existing empty-shape convention). NEVER send responsiblePerson.isAgent — no obligation backs it in pass 1 (the legacy Agent field is dropped; see notes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert: dto.responsiblePerson.{name,email,telephone} → the three answers keys for draft resume; absent/null fields yield no answer key."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip cases: all three answered; name+email only (telephone absent from DTO, not null-stuffed); none answered (no responsiblePerson in DTO). Explicit omission assertion: responsiblePerson.isAgent never appears in the outbound DTO."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "responsible-person-name",
+      "within": null,
+      "requires": "status: 'mandatory' (plain scalar, no gate helper). Legacy corroboration: frontend Joi string.empty is reachable (cleanUpPayload never strips empty name) AND backend @NotNull for the CHED-PP group — mandatory at every legacy layer.",
+      "collectedBy": "contact-details"
+    },
+    {
+      "id": "responsible-person-email",
+      "within": null,
+      "requires": "status: 'optional' at model level (no gate helper). The at-least-one-of email/telephone rule is a CONTROLLER fieldset rule (house D-13 parity, per the planningBrief) — legacy layers agree each is individually optional (no per-field @NotNull; class-level @ChedppContactDetailsEmailOrTelephoneRequired is the joint rule).",
+      "collectedBy": "contact-details"
+    },
+    {
+      "id": "responsible-person-telephone",
+      "within": null,
+      "requires": "status: 'optional' at model level (no gate helper); joint-OR with email enforced in the controller POST, error keyed on responsiblePersonEmail.",
+      "collectedBy": "contact-details"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      {
+        "file": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+        "change": "Append { id: 'contact', pages: [contactDetailsPage] } after 'goods-movement', before any of nominated-contacts/documents/traders/review (canonical §2.3 order: start, origin, purpose, commodities, additional-details, transport, goods-movement, contact, nominated-contacts, documents, traders, review)."
+      }
+    ],
+    "taskRows": [
+      {
+        "file": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+        "change": "Add mandatory row { id: 'contact', pages: [contactDetailsPage] }; hub GROUPS (features/hub/controller.js) gains the row id under new numbered spoke-7 heading 'Contact details'; row title + hint + group caption in both hub copy bundles; task-rows.test.js pins Not-yet-started/Completed and the readyForCheckYourAnswers blocking behaviour."
+      }
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "responsiblePerson.name",
+    "responsiblePerson.email",
+    "responsiblePerson.telephone",
+    "(deliberately unmapped: responsiblePerson.isAgent — backend home exists but no pass-1 obligation backs it; mapper omission assertion required)"
+  ],
+  "copyKeys": [
+    "contact.title",
+    "contact.legend",
+    "contact.intro1",
+    "contact.intro2",
+    "contact.fields.responsiblePersonName.label",
+    "contact.fields.responsiblePersonEmail.label",
+    "contact.fields.responsiblePersonTelephone.label",
+    "contact.errors.nameRequired",
+    "contact.errors.nameMax",
+    "contact.errors.emailOrTelephoneRequired",
+    "contact.errors.emailFormat",
+    "contact.errors.emailMax",
+    "contact.errors.telephoneFormat",
+    "contact.errors.telephoneMax",
+    "hub groups: spoke-7 caption 'Contact details' (en+cy)",
+    "hub rows.contact.title + rows.contact.hint (en+cy)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/contact/contact.e2e.spec.js — render (H1/legend, intro copy, 3 labelled inputs, no Agent field), name+email and name+telephone happy paths with reload persistence, each of the 7 validation rules in its own test (incl. the fieldset-level OR error anchored to the email input), raw-value preservation on error, error-summary focus, hub row status transition, axe on initial + error states",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extended) — 'Contact details' spoke renders with the contact row linking to contact-details, initial status Not yet started"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/contact-details renders H1 'Contact details' as the fieldset legend (legend-as-heading, c-014), NO section caption, the two intro sentences as govuk-body paragraphs, and exactly three text inputs labelled 'Name', 'Email address', 'Mobile number' with input name = id = error key (responsiblePersonName/responsiblePersonEmail/responsiblePersonTelephone); the legacy 'Agent' field is NOT rendered.",
+    "POST with name + email only saves (no empty telephone committed), redirects via kit.nextTarget, and a reload shows both persisted values; POST with name + telephone only behaves symmetrically — one of email/telephone is sufficient.",
+    "POST with empty name → 400, inline + summary error 'Enter your name'; name over 32 chars → 'Name must be 32 characters or fewer'.",
+    "POST with BOTH email and telephone empty → 400 with the single fieldset-level error 'Enter an email address or mobile number', whose error-summary link moves focus to the email input.",
+    "Invalid email format → 'Enter an email address in the correct format, like name@example.com'; email over 255 → 'Email address must be 255 characters or fewer'; telephone failing /^\\+?[\\d\\s]+$/ → 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982'; telephone over 30 → 'Mobile number must be 30 characters or fewer' (c-020 single term 'Mobile number', c-018 one canonical string per rule).",
+    "On any 400 the user's RAW entered values are re-rendered in all three inputs and nothing is committed; the error summary title is 'There is a problem' (c-004).",
+    "The hub shows spoke 7 'Contact details' with the contact row: Not yet started before any save, linking into contact-details; Completed after a valid save; while incomplete the mandatory row blocks readyForCheckYourAnswers (pinned in task-rows.test.js).",
+    "The records mapper round-trips responsiblePerson.{name, email, telephone} (unanswered fields absent from the DTO, not null-stuffed) and NEVER emits responsiblePerson.isAgent (explicit omission assertion).",
+    "contract.plant-products.test.js has the contact-details valid-POST case committing exactly ['responsiblePersonName','responsiblePersonEmail','responsiblePersonTelephone'].",
+    "Axe (wcag2a + wcag2aa, fail on serious/critical) passes on initial render and on the validation-error state.",
+    "Marked persistence failure on save re-renders with recoverableError, status 500; unexpected errors throw."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-023 (MAPPING verbatim). Opens the contacts section (spoke 7, §2.1): new sections/contacts.js, contact flow section, contact task row, hub GROUPS entry. Follows add-a-section in its one-page degenerate form (pp-028 precedent). Exemplars pinned this session: sets/live-animals/journeys/linear/features/contact/ (single-page feature shape — controller/render/copyFor/recoverableSave/pageRoutes idiom, verified live; note it is a radios page, so take the STRUCTURE not the field handling), cph-number (text-input validation idiom per add-a-field), transport (section + task row + hub GROUPS wiring), origin e2e spec (per-rule validation + axe pattern). Decisions taken headless, all grounded in the page spec + plan: (1) MODEL STATUS — §3.1's shorthand 'responsiblePersonName/Email/Telephone (mandatory)' is resolved as name mandatory, email/telephone OPTIONAL in the model with the joint at-least-one rule as a controller fieldset rule; this is the only reading consistent with the same sentence's 'email-OR-telephone is a controller fieldset rule, NOT model (house D-13 parity)' and with legacy semantics (each individually optional; class-level joint annotation) — both-model-mandatory would strand the row Incomplete on a legal email-only save. (2) AGENT FIELD DROPPED — the legacy CHED-PP-only free-text 'Agent' input is not built: the page spec's own analysis marks it a prime deletion candidate (only ever echoes itself, never displayed anywhere, never exercised, optional at both layers), §3.1's contacts row omits it for the responsible person, and the backend responsiblePerson.isAgent stays unsent with a mapper omission assertion (obligation-field-map lists isAgent as the schema home; nominatedContacts' contactIsAgent is pp-033's separate concern). (3) VALIDATION COPY — frontend 'Enter …' voice wins over the backend 'Add …' variants (c-018 single-layer Joi voice; backend is draft-nullable per D-13 so its strings never render); the legacy 'Telephone number must be 30 characters or fewer' becomes 'Mobile number …' per c-020 (one term for the field across label + errors). (4) TELEPHONE ACCEPTANCE — keep the legacy regex /^\\+?[\\d\\s]+$/ via the pattern() factory rather than a stricter ukPhone rule (the legacy field accepts landline-shaped values; DoA fixture '0123456789' must stay valid). (5) INTRO COPY kept verbatim from the spec (both sentences) but rendered as govuk-body paragraphs, not the legacy multi-paragraph div.govuk-hint (the spec's nonStandardPatterns entry recommends exactly this); sentence 1 presumes pre-population — flagged in openQuestions since pass 1 is an entry page. (6) LEGACY MACHINERY NOT PORTED — no etag hidden field (records port is whole-document last-write-wins, §6.2 Open Q 3 ruling), no entry-point hidden fields/decorateUrl, no four-way button routing: house save-actions + kit.nextTarget/hubExit/change-context semantics replace them; review-change re-entry is owned by pp-038's Change machinery. (7) CHECK-ANSWERS ROWS deferred to pp-038 (which reads back every captured area), matching the pp-028 precedent — recipe step 5 deliberately not done here. (8) POP-2 auto-population (responsible person derived from the owning-org member) is DEFERRED with pp-048; this page is plain entry in pass 1, so no system-populated policy entry and no records-derived prefill beyond normal answer prefill. (9) OR-error anchor: keyed on responsiblePersonEmail so the summary link lands on the first field of the pair (GDS error-summary focus contract). Sequencing: dependsOn pp-007+pp-009 verbatim from MAPPING; the contract.plant-products.test.js edit and hub/task-row wiring assume the m0 scaffolding family (pp-010) and hub skeleton (pp-007) landed, which milestone order guarantees. Not platform-touching (all edits inside sets/plant-products + the plant-only contract table), so the two-sided sibling-safety check is not mandatory — npm test in the ladder still exercises the parameterised copy-convention/copy-parity suites over both sets.",
+  "openQuestions": [
+    "Intro sentence 1 ('These are the details we have for you. Make sure they are up to date.') presumes pre-population, which is deferred with POP-2/pp-048 — kept verbatim for copy parity with the spec; Sam may prefer entry-appropriate wording for pass 1 and reinstating this line when auto-population lands.",
+    "The legacy 'Agent' free-text field is dropped on the strength of the page spec's dead-field analysis; if a real off-the-automated-path user relies on it, it would need a responsiblePersonIsAgent-shaped obligation and mapper line adding later — the backend home (responsiblePerson.isAgent) already exists.",
+    "Label/acceptance pairing: the field is labelled 'Mobile number' (c-020) but the kept legacy regex accepts landline numbers (the legacy DoA fixture is landline-shaped). If product wants strict mobile validation, the pattern and the example copy both change — one decision, flagged not taken.",
+    "The 'prerequisites NOT complete' single-button legacy variant and the review-amend 'Save and review' sole-action variant are not reproduced (house button set + pp-038 Change machinery instead) — confirm no requirement to mirror the legacy button-set variance."
+  ]
+}

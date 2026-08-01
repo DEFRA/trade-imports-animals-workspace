@@ -1,0 +1,245 @@
+{
+  "id": "pp-034",
+  "title": "accompanying-documents — mandatory document metadata + sub-resource projection",
+  "kind": "collection",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-008", "pp-009", "pp-016"],
+  "sourceIncrement": "inc-025",
+  "recipe": "sets/live-animals/docs/add-a-collection.md (documents single-page add-another loop exemplar, recipe cheat-sheet §4) + SIBLING-SET-PLAN.md §6.2/FD-11 for the records sub-resource projection (§8 G-D gap — no records-adapter recipe; §6.2's table plus this plan ARE the script for that part)",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/documents.js",
+      "action": "create",
+      "what": "Four obligation exports (SIBLING-SET-PLAN §3.1 documents.js row, fresh UUIDs, copy-free): `accompanyingDocuments` GROUP { id, name: 'accompanyingDocuments', requires: { minEntries: 1, errorCode: 'obligation.accompanyingDocuments.required' } } — no status, no applyTo (top-level user-driven group, always in scope; c-015 RULED MANDATORY ≥1 document, submit-blocking via collection-complete rollup); members all `within: accompanyingDocuments` (object identity import), all status 'mandatory': `documentType`, `documentReference`, `issueDate`. NO files/attachment obligation (bytes deferred to pp-051) and NO maxEntries cap (§3.1 declares only the floor — deviation from the live-animals 10-cap recorded in notes). Exemplar shape: sets/live-animals/obligations/sections/documents.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export accompanyingDocuments, documentType, documentReference, issueDate from './sections/documents.js'; append all four to the `obligations` array. `groups` stays derived (never hand-kept); `policy` untouched (no systemPopulated/enforcedAtContinue/maxEntriesFrom membership for any of these)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/page.js",
+      "action": "create",
+      "what": "Import-free page identity: exports `accompanyingDocumentsPage = { id: 'accompanying-documents', slug: 'accompanying-documents' }`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/evaluation.js",
+      "action": "create",
+      "what": "Group descriptor `const document = { field: 'accompanyingDocuments', token: 'doc', obligation: accompanyingDocuments }`; exports `evaluationBindings = feature('documents', [...])` binding each leaf with grouped({ field, obligation, groups: [document] }): documentType, documentReference, issueDate. Depth-1 chain — binding depth must equal the within chain. Exemplar: sets/live-animals/journeys/linear/features/documents/evaluation.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/controller.js",
+      "action": "create",
+      "what": "Single-page add-another loop controller (transpose the live-animals documents controller MINUS every upload/scan/client-JS concern — no uploadId/filename/attachment branch, no scan-poll, no webpack entry). `export const meta = { ...accompanyingDocumentsPage, collects: ['accompanyingDocuments'] }` (group root only — members inherit dispatch from the nearest ancestor group). GET: state.get() once, state.collectionView(answers, ['accompanyingDocuments']) → controller-built read-back rows (type label via documentTypeLabel(code) from '../../../../services/reference/document-types.js', reference, issue date rendered from the stored {day,month,year} value — same rendering approach as the live-animals documents view-model rows) + blank entry form. POST branches on the submit action: (1) action==='add' → read raw payload; entry = { documentType: (payload.documentType ?? '').trim(), documentReference: (payload.documentReference ?? '').trim(), issueDate: kit.readDate(payload, 'issueDate') }; validate single-layer Joi-voice (c-018, one canonical string per field): documentType required + must be a member of documentTypeOptions values (membership rule built inside POST from the reference module, never frozen in a module-level schema) → 'Select a document type'; documentReference required → 'Enter a reference', maxText 100 → 'Document reference must be 100 characters or fewer'; issueDate required (isBlank) → 'Enter a date of issue', dateText/dateParts calendar validity → 'Date of issue must be a real date'; invalid → re-render RAW values status 400 with GDS 'There is a problem' summary (error-summary hrefs #documentType / #documentReference / #issueDate matching input ids); valid → state.appendEntry(request, h, 'accompanyingDocuments', entry) wrapped in kit.recoverableSave, re-render the page (fresh blank row + new saved row). (2) action startsWith 'remove:' → parse index, look the instance up via collectionView first and REFUSE a forged/stale index (no write), else state.removeEntry(...) — submit-button action so the crumb travels, never a GET delete. (3) plain Continue → NO validation, NO write, redirect via await kit.nextTarget(request, page, scope) with kit.hubExitTarget winning first; the minEntries-1 floor bites at the task row/submit readiness, not at Continue (dissolves the legacy 'started row' rule — notes). All internal links/redirects wrapped in kit.withChangeContext. `export const routes = kit.pageRoutes(page, { get, post })`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Documents' + H1 'Accompanying documents' (view name under the plant-products/journeys/linear TEMPLATES prefix). govuk-inset-text carrying the phytosanitary warning copy (c-015 on-page statement). Read-back of saved documents as a REAL govuk-table (Document type / Document reference / Date of issue / Remove action column) — fixes the legacy div-grid fake table. Entry form: govukSelect for documentType (placeholder option 'Select document type' + the 16 options from documentTypeOptions), govukInput for documentReference, kit.dateField-style single date text input for issueDate (house pattern — dd/mm/yyyy one input, NOT the legacy 3-part + datepicker widget; datepicker dropped per page-spec govukAlternative). Every control gets a REAL visible <label> (fixes the legacy aria-label-only defect). Per-row Remove as a govuk-button--secondary submit button (value 'remove:<index>') — no link-buttons. 'Add document' submit button (action=add), then shared save actions (Continue/Save-and-return) per the live-animals documents template. Input name = id = error key throughout so #<fieldName> summary links move focus."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: pageTitle, caption ('Documents'), heading ('Accompanying documents'), insetWarning ('A phytosanitary certificate must be attached to the notification or your consignment will be rejected'), labels.{documentType,documentReference,issueDate}, hints.issueDate ('For example, 27/3/2026' — house dd/mm/yyyy hint voice), placeholderOption ('Select document type'), table.{headings:{documentType,documentReference,issueDate},caption}, actions.{addDocument ('Add document'),remove ('Remove')}, errors.{documentTypeRequired:'Select a document type', referenceRequired:'Enter a reference', referenceMaxLength:'Document reference must be 100 characters or fewer', dateRequired:'Enter a date of issue', dateInvalid:'Date of issue must be a real date'}."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforced by the T-2 parameterised walker)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/copy/copy.test.js",
+      "action": "create",
+      "what": "Pins the bundle shape + the five error strings + the inset warning (clone the live-animals documents copy.test.js pattern)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/controller.test.js",
+      "action": "create",
+      "what": "Unit coverage: GET renders blank form + prefilled read-back rows from seeded collection state; add with valid payload appends exactly { documentType, documentReference, issueDate:{day,month,year} } and re-renders with the saved row; EVERY validation rule its own case (type missing, type not in the reference allowlist, reference missing, reference 101 chars, date missing, impossible calendar date) asserting the canonical string, status 400, raw values echoed, NO write; remove with a valid index deletes that entry; remove with a forged/out-of-range/non-integer index refuses without touching the store; Continue commits nothing and redirects via nextTarget (hub exit honoured); marked recoverable-save failure → 500 re-render with recoverableError; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/documents/accompanying-documents.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (raw role/label locators, no page objects, each test starts its own notification, no sleeps) + axe: initial render (caption, H1, inset warning, visible labels, 17 select options INCLUDING the placeholder — assert the full rendered option list); happy path add → saved row shows type label/reference/date → hub row 'Accompanying documents' flips from Incomplete to Completed (collection-complete rollup, minEntries 1); reload persistence of the saved document (round-trips the records service); each validation message in its own test with raw values preserved and error-summary link moving focus; add-another (second document renders two rows); remove deletes the row and the hub row reverts to Incomplete when the last document goes; Continue with zero documents still navigates (floor is readiness-blocking, not page-blocking); AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']) on BOTH states (initial render + validation error state), fail on serious/critical."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import { evaluationBindings as documentsBindings } from './documents/evaluation.js' and append to featureEvaluationBindings (frozen array grows by one feature())."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the documents controller namespace; add its `meta` to dispatchPages and spread its `routes` into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import accompanyingDocumentsPage; insert section { id: 'documents', pages: [accompanyingDocumentsPage] } at the §2.3 canonical position: after 'nominated-contacts' when it exists, else after whichever of [contact, goods-movement, transport, additional-details, commodities, purpose, origin, start] has landed latest in the canonical order, always before 'traders' and 'review'. Derived allFlowPages/sectionOfPage/answerSections pick it up automatically."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row { id: 'documents', pages: [accompanyingDocumentsPage] } (spoke 9). Mandatory row — NO conditional flag, NO optional status; rowStatus delegation to L2 bridge/status is already generic, and bridge/collection-complete.js makes the row incomplete until the minEntries-1 floor is met (one complete document)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the documents row: Not yet started with no documents; In progress/Incomplete semantics per the collection floor; Completed with one complete document; the row BLOCKS readyForCheckYourAnswers while empty and unblocks with one document (prove blocked AND complete states); first entry page = accompanying-documents."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'documents' to GROUPS under the spoke-9 'Accompanying documents' numbered heading (creating that GROUPS entry with its heading position per §2.1 if the pp-029 12-spoke frame has not yet landed; if it has, the placement slot already exists)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "rows.documents = { title: 'Accompanying documents', hint: <one-line hint stating at least one document, including the phytosanitary certificate, is required> } + the numbered group caption for spoke 9 if this increment creates the GROUPS entry."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Same keys, Welsh values, structure-identical."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new row title/hint (+ caption if added)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Accompanying documents row renders under its heading with Incomplete status on a fresh notification and links to /notifications/{id}/accompanying-documents."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "create",
+      "what": "EDIT-in-spirit (file exists from pp-008; listed create-safe if the build loop reordered): keep the standing assertion that accompanyingDocuments NEVER appears in the PUT notification body; ADD export `documentToDto(entry)` mapping one answers-tree entry → PlantProductsAccompanyingDocumentDto body for the sub-resource: { documentType, documentReference, issueDate: ISO 'YYYY-MM-DD' zero-padded from the {day,month,year} answer value }. NO notificationReferenceNumber (FK is URL-path-driven per obligation-field-map), NO files (bytes deferred pp-051 — explicit omission, never an invented property), NO id (server-assigned).",
+      "note": "action is edit"
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "REPLACE the pp-008 ignore-behaviour (FD-11 boundary now closes): fold the GET response's embedded accompanyingDocuments array into the answers tree as answers.accompanyingDocuments = dto.accompanyingDocuments.map(d => ({ documentType: d.documentType, documentReference: d.documentReference, issueDate: {day,month,year} from ISO (unpadded strings, inverse of documentToDto) })) preserving backend list order; absent/empty array → no accompanyingDocuments key. Per-document id and files[] metadata dropped (omission assertions — ids are not durable under naive replace, files are pp-051's)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "New cases: documentToDto pads the date ('4'/'12'/'2025' → '2025-12-04') and emits exactly {documentType, documentReference, issueDate}; documentToDto omission assertions (no files, no notificationReferenceNumber, no id even when present on input); fromDto folds a 2-document embedded array into ordered answers entries and inverts the date; round-trip law entry → documentToDto → (as embedded dto) → fromDto → same entry; toDto(answers with accompanyingDocuments) still emits NO accompanyingDocuments key (the pp-008 assertion retained, now load-bearing)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.js",
+      "action": "edit",
+      "what": "FD-11 sub-resource projection inside replaceFulfilment (this increment OWNS the detail pp-008 stubbed): after the whole-document PUT succeeds, reconcile the accompanyingDocuments group onto the sub-resource with naive replace — docs = projectAnswers(fulfilment).accompanyingDocuments ?? []; GET {notificationsUrl}/{journeyId}/accompanying-documents → existing list; DELETE …/accompanying-documents/{id} for each existing (expect 204); POST …/accompanying-documents with documentToDto(entry) for each current entry (expect 201); then re-GET the notification and marshal THAT response (embeds the fresh documents) so replaceFulfilment's return agrees with a subsequent load. Non-ok on any leg throws via the existing failed(operation, response) helper. load/create/copy/status ops unchanged (load already picks the folding up via from-dto; copy is documentless per D-19 so the backend's own copy semantics stand)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.test.js",
+      "action": "edit",
+      "what": "Extend the network-boundary fetch-mock suite: replaceFulfilment with an accompanyingDocuments group issues, in order, PUT notification (body WITHOUT accompanyingDocuments) → GET sub-resource → DELETE per pre-existing id → POST per current entry (body = documentToDto shape) → GET notification, and returns the marshalled re-GET; replaceFulfilment with NO documents in the answers still clears pre-existing sub-resource docs (delete-only reconcile); a non-ok DELETE/POST throws naming the operation; load with embedded documents returns fulfilment whose projected answers contain the folded entries."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/records-port.test.js",
+      "action": "edit",
+      "what": "Add a shared parity case run against BOTH impls: replaceFulfilment with a fulfilment containing two accompanyingDocuments entries, then load, yields the same entries back (stub stores the group in-memory; real is proven via the mocked sub-resource round-trip) — the stub/real parity guarantee now covers FD-11. stub.js itself needs NO change (it persists the whole fulfilment, trivially consistent)."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "T-5 standing rule: add the accompanying-documents controller's valid-POST case — action 'add' with a valid documentType/documentReference/issueDate payload committing exactly the declared group root 'accompanyingDocuments' (collection commit shape per the recipe §4.8 contract-case discipline)."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "accompanyingDocuments",
+      "within": null,
+      "requires": "GROUP — requires: { minEntries: 1, errorCode: 'obligation.accompanyingDocuments.required' } (c-015 RULED MANDATORY: ≥1 document blocks submit via collection-complete rollup + task-row readiness). No status, no applyTo, no maxEntries.",
+      "applyTo": null,
+      "collectedBy": "accompanying-documents"
+    },
+    {
+      "id": "documentType",
+      "within": "accompanyingDocuments",
+      "requires": "status: 'mandatory' per instance; value must be one of the 16 documentTypeOptions codes (controller membership rule from services/reference/document-types.js — allowlist lives in the controller per c-018 single-layer validation, not as a model allowListed gate, matching the live-animals documents exemplar)",
+      "applyTo": null,
+      "collectedBy": "accompanying-documents (inherited via group root in meta.collects)"
+    },
+    {
+      "id": "documentReference",
+      "within": "accompanyingDocuments",
+      "requires": "status: 'mandatory' per instance; max 100 chars (controller Joi maxText)",
+      "applyTo": null,
+      "collectedBy": "accompanying-documents (inherited via group root)"
+    },
+    {
+      "id": "issueDate",
+      "within": "accompanyingDocuments",
+      "requires": "status: 'mandatory' per instance; real calendar date (controller dateText validation; stored as {day,month,year})",
+      "applyTo": null,
+      "collectedBy": "accompanying-documents (inherited via group root)"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      "Insert { id: 'documents', pages: [accompanyingDocumentsPage] } into flow.js sections at the §2.3 canonical slot: …, contact, nominated-contacts, ➜documents, traders, review — concretely, immediately after 'nominated-contacts' if landed (pp-033), else after the latest-landed earlier section, always before 'traders'/'review'"
+    ],
+    "taskRows": [
+      "Add { id: 'documents', pages: [accompanyingDocumentsPage] } to task-rows.js — mandatory row (spoke 9), status via the generic rowStatus/L2 bridge delegation; incomplete until one complete document exists (minEntries-1 floor through bridge/collection-complete.js); participates in readyForCheckYourAnswers (submit-blocking per c-015)",
+      "Hub GROUPS: row id 'documents' under the spoke-9 'Accompanying documents' numbered heading in features/hub/controller.js + en/cy row title & hint copy"
+    ],
+    "entryGuard": "No change — standard deep-link policy from pp-009 covers the new page"
+  },
+  "schemaFields": [
+    "plant_products_accompanying_documents.documentType (write via POST …/accompanying-documents; one of the 16 codes)",
+    "plant_products_accompanying_documents.documentReference (write)",
+    "plant_products_accompanying_documents.issueDate (write; ISO YYYY-MM-DD from the {day,month,year} answer)",
+    "plant_products_accompanying_documents.notificationReferenceNumber (FK — URL-path-driven, NEVER in a request body)",
+    "plant_products_accompanying_documents.files[] (NOT written — metadata/bytes deferred to pp-051; explicit mapper omission)",
+    "endpoints: GET/POST /plant-products/notifications/{ref}/accompanying-documents, DELETE …/accompanying-documents/{document-id} (naive list+delete+recreate reconcile at save — FD-11; PUT …/{document-id} exists but is unused by the naive pass-1 reconcile)",
+    "GET /plant-products/notifications/{ref} response's embedded accompanyingDocuments array (read — folded into answers.accompanyingDocuments by from-dto; closes the pp-008 ignore boundary)",
+    "PUT /plant-products/notifications/{ref} body (unchanged — accompanyingDocuments group NEVER rides the whole-document PUT)"
+  ],
+  "copyKeys": [
+    "documents feature bundle (copy.en.js/copy.cy.js): pageTitle, caption, heading, insetWarning, labels.documentType, labels.documentReference, labels.issueDate, hints.issueDate, placeholderOption, table.caption, table.headings.{documentType,documentReference,issueDate}, actions.addDocument, actions.remove, errors.documentTypeRequired, errors.referenceRequired, errors.referenceMaxLength, errors.dateRequired, errors.dateInvalid",
+    "hub bundle: rows.documents.title, rows.documents.hint (+ spoke-9 group caption if this increment creates the GROUPS entry)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/documents/accompanying-documents.e2e.spec.js — full loop lifecycle: render (incl. full 17-option select list), add + hub-row completion, reload persistence, per-rule validation with raw-value preservation + error-summary focus, add-another, remove + hub-row reversion, Continue-with-zero-docs navigates; axe on initial AND error states (wcag2a/wcag2aa, fail serious/critical)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extended) — documents row presence, status, link target"
+  ],
+  "acceptanceCriteria": [
+    "Manifest: accompanyingDocuments group (minEntries 1 + errorCode) with mandatory members documentType/documentReference/issueDate registers cleanly — boot assertions (obligation purity, fulfilment-binding coverage, dispatch) green under SERVED_SET=plant-products; coverage.test.js green; groups stays derived.",
+    "The /notifications/{id}/accompanying-documents page renders caption 'Documents', H1 'Accompanying documents', the phytosanitary inset warning, a REAL govuk-table read-back, and an entry form where EVERY control has a visible <label> (defect-fix vs legacy: no aria-label-only inputs, no div fake table, no datepicker widget, no link-buttons).",
+    "Document type select offers exactly placeholder + the 16 codes from services/reference/document-types.js (c-016 single sentence-case 'Sea waybill'); submitted values outside the allowlist are rejected with 'Select a document type'.",
+    "Validation is single-layer Joi-voice with ONE canonical string per field (c-018): 'Select a document type', 'Enter a reference', 'Document reference must be 100 characters or fewer', 'Enter a date of issue', 'Date of issue must be a real date'; invalid POST re-renders raw values at 400 with a 'There is a problem' summary whose links focus the controls; no legacy per-part date-message ladder.",
+    "Add appends { documentType, documentReference, issueDate:{day,month,year} } via state.appendEntry only after full validation; Remove is a POST submit action that refuses forged/stale indexes; Continue never validates or writes and exits via kit.nextTarget/hubExitTarget with change-context preserved.",
+    "Hub row 'Accompanying documents' (spoke 9) is mandatory: Incomplete with zero documents, Completed with one complete document, and blocks readyForCheckYourAnswers while empty — pinned in task-rows.test.js (blocked AND complete states) and observed in the e2e spec.",
+    "FD-11 closed: on save, real.js projects the group onto the sub-resource via naive replace (GET list → DELETE each → POST each documentToDto) and returns the marshalled re-GET; the whole-document PUT body still NEVER contains accompanyingDocuments; load folds the embedded array back into answers (from-dto), so draft resume round-trips documents end to end.",
+    "documentToDto emits exactly {documentType, documentReference, issueDate ISO} — no files, no id, no notificationReferenceNumber (omission assertions in mapper.test.js); stub/real parity suite proves a two-document replaceFulfilment→load round-trip on BOTH impls.",
+    "contract.plant-products.test.js gains the accompanying-documents valid-POST 'add' case committing exactly ['accompanyingDocuments'] (T-5).",
+    "Copy: en/cy bundles structure-identical (copy-parity + copy-convention walkers green over the plant root); no display text in the model.",
+    "Axe green (no serious/critical) on both page states.",
+    "Sibling safety: live-animals suites green with no test-count drop; default-SERVED_SET boot unchanged; lint:arch green with no baseline regeneration (all new files are set-side; the records edits stay inside sets/plant-products/services/records/)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products  # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "1:1 carry of inc-025 with the c-015 ruling (MANDATORY ≥1 document) and ownership of the FD-11 sub-resource projection pp-008 deliberately stubbed with omission assertions — this increment flips those assertions from 'ignored' to 'projected/folded'. DESIGN TRANSPOSITION, not replication: the legacy page's fake div table, aria-label-only inputs, bespoke datepicker, link-button submits and 'started row' partial-validation rule are all replaced by the house single-page add-another loop (live-animals documents exemplar, recipe §4 'documents' layout) — the page spec's own govukAlternative column prescribes exactly this. The legacy 12-message date ladder collapses to required + one canonical invalid string per c-018 and the house dateText/kit.readDate single-input date pattern (verified live: sets/live-animals/journeys/linear/features/documents/form/payload.js uses dateText + kit.readDate; kit.dateField renders one dd/mm/yyyy input). Upload/attachment surface entirely absent (pp-051 deferred): no 'Add attachment', no files obligation, no client JS, hence no webpack entry (build-config rule not triggered). Reference max length 100 per the legacy-confirmed cap (live-animals uses 58 — plant follows its own page spec). HEADLESS DECISIONS: (1) no maxEntries cap — §3.1's documents row declares only the floor; flagged as open question rather than importing the live-animals 10-cap; (2) reconcile order = PUT document, then sub-resource replace, then re-GET + marshal so replaceFulfilment/load agree (one extra GET, acceptable at pass-1 volumes); (3) sub-resource document ids are NOT durable under naive replace — from-dto drops them (consistent with snapshot-local collection positions); pp-051 will need keyed reconcile when bytes attach to stable ids; (4) documentType allowlist enforced in the controller (POST-time membership rule from the reference module) not as a model allowListed gate — matches the live-animals documents exemplar where type validity is feature-side, keeps the manifest free of a gate with no answer dependency; (5) the phytosanitary inset warning ships as page copy (c-015's on-page statement) while the MODEL floor is any-document ≥1 — type-specific enforcement is NOT modelled (see open questions). EXEMPLARS (read before writing): sets/live-animals/obligations/sections/documents.js; sets/live-animals/journeys/linear/features/documents/{evaluation.js, controller.js, form/payload.js, form/errors.js, view-model/rows.js, template.njk, copy/*, controller.test.js}; src/server/app/shared/kit.js (readDate, dateField, pageRoutes, nextTarget, hubExitTarget, withChangeContext, recoverableSave); src/server/app/lib/validate/index.js (compose, maxText, dateText); bridge/collection-complete.js. Rulings applied: c-015 (mandatory ≥1), c-016 (Sea waybill dedupe via pp-016), c-018 (one canonical string, Joi voice), c-004/c-014 (GDS error summary, legend/label discipline, caption+H1), FD-11 (sub-resource projection detail owned here), D-19 (copy documentless — no reconcile change needed for copy), mirror-existing-frontend/no-gold-plating (loop page shape matches live-animals documents minus upload).",
+  "openQuestions": [
+    "c-015 collapse: the ruling models the floor as ANY ≥1 document, but the legacy submit-time rule was specifically 'Add a phytosanitary certificate' (conditional on PHSI/JOINT commodity regulatory authority) plus a phytosanitary-attachment-required rule. Pass 1 enforces the plain minEntries-1 floor and states the phytosanitary need as inset-text copy only — confirm with product whether a documentType==='PHYTOSANITARY_CERTIFICATE'-specific readiness rule is wanted before/with pp-051 (attachment enforcement is impossible until bytes exist anyway).",
+    "No maxEntries cap declared (SIBLING-SET-PLAN §3.1 documents row has only the floor; the legacy page's cap is unobserved and its MAX_ATTACHMENTS=10 was per-attachment). Live-animals caps documents at 10 — should plant adopt the same cap for parity, or stay uncapped until product rules?",
+    "Backend acceptance of a documents POST with no files: SCHEMA-DESIGN's PlantProductsAccompanyingDocumentDto carries files[] — confirm (ideally in pp-004's PlantProductsAccompanyingDocumentIT) that an absent/empty files list is accepted with metadata-only bodies; if the backend requires the key, documentToDto sends files: [] (one-line change).",
+    "Naive replace churns sub-resource document ids on every save — harmless in pass 1 (ids are never surfaced to the frontend), but pp-051 must switch to a keyed reconcile before attachments bind bytes to ids; recorded here so the FD-11 'naive acceptable' ruling has an explicit expiry condition.",
+    "Saved-row date display: legacy renders 'D MMMM YYYY' ('4 December 2025'); this plan renders via the live-animals documents view-model approach. If product wants the long format, it is a one-line formatter in the read-back row builder — flagged, not decided, since the page spec itself lists the display format as unconfirmed."
+  ]
+}

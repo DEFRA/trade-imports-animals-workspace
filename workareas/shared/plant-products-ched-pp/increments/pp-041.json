@@ -1,0 +1,76 @@
+{
+  "id": "pp-041",
+  "title": "Whole-journey E2E: happy-path fixture + test:e2e plant split",
+  "kind": "test",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-011", "pp-029", "pp-040"],
+  "sourceIncrement": null,
+  "recipe": "SIBLING-SET-PLAN.md#7-test-scaffolding-work-items-named (T-6 tail — the test:e2e split; no whole-journey-E2E recipe exists: G-A step 7 territory, plan by exemplar transposition of e2e/journey-smoke.spec.js + e2e/live-animals-journey.js + playwright.config.js 'journeys' project)",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/fixtures/happy-path.json",
+      "action": "create",
+      "what": "Whole-journey answers fixture, shape { \"schema_version\": 1, \"values\": { ... } } mirroring the live exemplar src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json. Members (every value MUST resolve against the set's own fixture services — real canned data, never invented lookalikes): importType (the exact value the pp-017 import-type controller commits for CHED-PP — read it from sets/plant-products/journeys/linear/features/import-type/controller.js; flow-only key, included in values exactly as the live fixture includes its importType); countryOfOrigin + countryOfConsignment (real ISO-2 codes from services/reference/countries.js); internalReference (<=30 chars); reasonForImport 'INTERNAL_MARKET'; commodityInputMethod 'MANUAL'; commodityLines: ONE line carrying all ten leaf members (commoditySelection = a real commodity code from services/commodities/fixture.js, numberOfPackages, packageType code from services/reference/package-types.js, quantity, quantityType code from quantity-types.js, netWeight, controlledAtmosphereContainer, finishedOrPropagated, intendedForFinalUsers, testAndTrial) with nested species: ONE entry (eppoCode / genusAndSpecies / speciesId — real values for the chosen code) with nested varieties: ONE entry (variety = real variety ID, varietyClass valid per that species' class applicability in the commodities fixture) — full depth-3 per FD-9; totalGrossWeight (numeric, greater than the net weight so pp-028's cross-field rule passes), grossVolume + grossVolumeUnit (code from gross-volume-units.js); borderControlPost (real code from services/reference/bcps.js) + inspectionPremises (a control point valid for THAT BCP per the per-BCP map) + meansOfTransport (code from transport-options.js) + transportIdentification + transportDocumentReference + arrivalDate ({day,month,year} or the landed shape from pp-030) + arrivalTime + usesContainers true + containers: ONE entry (containerNumber, sealNumber, officialSeal); commonTransitConvention 'NO' (keeps movementReferenceNumber out of scope — its gate is covered by pp-031's page spec) + usingGvms false; responsiblePersonName / responsiblePersonEmail / responsiblePersonTelephone; accompanyingDocuments: ONE entry (documentType code from document-types.js, documentReference, issueDate {day,month,year}) satisfying the c-015 minEntries-1 floor; consignor leaves (consignorName, consignorAddressLine1, consignorCity, consignorPostcode, consignorCountry real code, plus email/telephone if pp-036's page requires them); destinationSameAsConsignee true (destination leaves stay out of scope); packer* omitted (optional). NOTE the location: MAPPING's brief abbreviates to journeys/linear/fixtures/ but the SIBLING-SET-PLAN §1 tree AND the live exemplar both place it under flow/fixtures/ — flow/fixtures/ is correct."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Add a fixture-driven completeness case mirroring live-animals flow/task-rows.test.js:25 (readFileSync(new URL('./fixtures/happy-path.json', import.meta.url))): load the fixture values, evaluate the rows, assert EVERY mandatory task row reports Completed, the nominated-contacts row is Optional and does not gate, and scope.readyForCheckYourAnswers is true — proving in unit-land that the fixture really closes the journey (guards the E2E suite against silent fixture drift)."
+    },
+    {
+      "path": "e2e/plant-products-journey.js",
+      "action": "create",
+      "what": "Journey helper transposing e2e/live-animals-journey.js: export const { values } = JSON.parse(readFileSync(new URL('../src/server/app/sets/plant-products/journeys/linear/flow/fixtures/happy-path.json', import.meta.url), 'utf8')); BASE = ''; journeyIdFromPage(page) (match /\\/notifications\\/([^/]+)/, throw when absent) and journeyUrl(page, slug); startNotification(page) — goto '/', click the dashboard's 'Create a new notification' button, complete the import-type filter with the CHED-PP option, continue into the opening run / hub per the landed pp-009/pp-017 behaviour; ONE fill-helper per mandatory hub spoke, each driving the real UI with fixture values and ending back at the hub: fillOrigin (country-of-origin + origin-of-import), fillPurpose (about-the-consignment), fillCommodities (manual branch: commodity-input-method MANUAL, commodity-search code pick, commodity-basic-description species add, variety-of-genus-and-species variety + class, commodity-summary continue, commodity-bulk-details measures), fillAdditionalDetails, fillTransport (incl. one container row), fillGoodsMovement, fillContact, addAccompanyingDocument, fillTraders (traders-addresses -> consignor-create -> consignor-confirmation 'Add to notification' -> back); plus completeAllMandatorySpokes(page) composing them in hub order. Where a value is a code, resolve its visible label through the SAME set fixture module the page uses (import from ../src/server/app/sets/plant-products/services/..., mirroring how live-animals-journey.js imports COUNTRY_LABELS/PORTS). If pp-030's arrival-date validation demands a current/future date, transpose the chooseTodayFromDatePicker pattern from live-animals-journey.js instead of the static fixture value. Raw role/label/visible-copy locators only, no page objects, auto-waiting assertions, never a sleep."
+    },
+    {
+      "path": "e2e/plant-products-journey-smoke.spec.js",
+      "action": "create",
+      "what": "The whole-journey smoke spec (name deliberately does NOT match the existing journeys project's testMatch '**/journey-smoke.spec.js'). Two tests, each independent and starting its own notification: (1) 'full CHED-PP journey reaches confirmation' — startNotification, completeAllMandatorySpokes, open Review and submit, walk review-notification (spot-check at least one summary value per card family: an origin value, the commodity line's code/species/variety, a transport value, the document reference), continue to declaration, tick the attestation checkbox, 'Submit notification', assert the confirmation govuk-panel has an H1 and contains the GBN-PP reference captured via journeyIdFromPage/hub caption at journey start, and at least one asserted string is plant-set-only content that CANNOT render under live-animals (proves SERVED_SET reached the webServer); (2) 'review is locked until every mandatory row is complete' — start a notification, complete all mandatory spokes EXCEPT one (leave accompanying-documents empty so the c-015 floor bites), assert the hub shows no usable Review-and-submit link/that the review row is locked, assert a direct page.goto of the review-notification URL redirects away (entry-guard/section-gate behaviour), leave nominated-contacts empty throughout (proving the optional row never gates), then add the missing document and assert the review link becomes available. No axe checks here — per-page axe coverage lives in the co-located feature specs (pp-017..pp-040), matching the live exemplar which carries none."
+    },
+    {
+      "path": "playwright.config.js",
+      "action": "edit",
+      "what": "Add a project to the projects array: { name: 'journeys-plant-products', testMatch: '**/plant-products-journey-smoke.spec.js', use: identical shape to the existing 'journeys' project (playwright.config.js:22-41 — Desktop Chrome, baseURL http://localhost:${port}, DEMO_SLOWMO-driven launchOptions.slowMo, video: 'on', trace: 'on') }. It inherits the top-level testDir './e2e'. Existing 'journeys' project untouched (its testMatch cannot pick up the new file). webServer block untouched — SERVED_SET/PLANT_PRODUCTS_MODE reach the self-hosted server via the additive env merge over process.env recorded by pp-011's T-6 comment; the hardcoded LIVE_ANIMALS_MODE: 'stub' is inert under the plant set; reuseExistingServer: false prevents stale-server reuse."
+    },
+    {
+      "path": "package.json",
+      "action": "edit",
+      "what": "Add beside test:e2e (line 20): \"test:e2e:plant-products\": \"npm run build:frontend && SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub DEMO_SLOWMO=0 DEMO_PACE_MS=0 playwright test --project=journeys-plant-products\". Align the env-prefix style with the test:features:plant-products script pp-011 landed (same SERVED_SET/PLANT_PRODUCTS_MODE pair, same position in the scripts block family)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "e2e/plant-products-journey-smoke.spec.js — test 1: full stub-mode CHED-PP journey (dashboard -> create -> import-type -> every mandatory spoke from the happy-path fixture -> review -> declaration -> confirmation panel with the GBN-PP reference); test 2: hub readiness gating (review locked + review-notification deep-link redirected while a mandatory row is incomplete; empty nominated-contacts never gates; review unlocks when the last mandatory row completes)"
+  ],
+  "acceptanceCriteria": [
+    "PORT=3050 npm run test:e2e:plant-products exits 0 self-hosting the app in stub mode (SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub) — no backend, no workspace stack.",
+    "The happy-path test drives the complete create -> fill-every-mandatory-spoke -> review -> declare -> confirmation run through the real UI; the confirmation assertion includes the govuk-panel H1 and the GBN-PP reference minted at journey start.",
+    "At least one assertion in the suite is plant-set content that cannot render under live-animals, proving the env pass-through reached the Playwright webServer.",
+    "Review and submit is unreachable while any mandatory row is incomplete: the hub exposes no usable review link AND a direct GET of review-notification redirects away; it unlocks exactly when the last mandatory row completes; an empty nominated-contacts row never gates (optional semantics).",
+    "happy-path.json holds only values that resolve against the set's fixture services (countries, commodities, BCPs + per-BCP control points, package/quantity/document/transport/gross-volume-unit codes); it exercises full depth-3 commodity nesting (1 line, 1 species, 1 variety with a valid class) and carries >=1 accompanying document (c-015 floor).",
+    "The new task-rows.test.js fixture case is green: every mandatory row Completed, nominated-contacts Optional, scope.readyForCheckYourAnswers true on the fixture values.",
+    "Existing suites are untouched and green: test:e2e (live-animals journeys project), test:features, test:features:plant-products, test:plant-products, npm test — with no test-count drop in any existing suite (recipe §8 tripwire)."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "Plan-born m4 closer: SIBLING-SET-PLAN §1 marks flow/fixtures/happy-path.json [m4] ('built when the journey closes') and §7 T-6 says 'Same split for test:e2e when the whole-journey plant suite exists (m4)'. Exemplars pinned live this session: playwright.config.js:22-41 ('journeys' project — testMatch '**/journey-smoke.spec.js', slowMo/video/trace), package.json:20 (test:e2e = build:frontend + DEMO_SLOWMO=0 DEMO_PACE_MS=0 + --project=journeys), e2e/journey-smoke.spec.js + e2e/live-animals-journey.js (helper reads the fixture at src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json:62-70 and exports { values } plus per-area fill helpers; chooseTodayFromDatePicker for current-date fields), live-animals flow/task-rows.test.js:25 + status.test.js:30 (unit consumers of the same fixture — the plant task-rows.test edit mirrors this). Fixture path decision: MAPPING's brief writes journeys/linear/fixtures/happy-path.json but both the plan's §1 tree and the live exemplar place it under flow/fixtures/ — flow/fixtures/ chosen. Fixture content rules applied: real canned data from the set's own fixture services only (workspace standing rule); commonTransitConvention 'NO' and destinationSameAsConsignee true keep gated branches out of the happy path (their gates are covered by pp-031/pp-035 page specs); usesContainers true exercises the containers group; declaration is NOT a fixture value — the spec ticks the checkbox (flow-only, FD-8, persisted at finalise per pp-039). Spec-file naming avoids the existing journeys project's testMatch so no config change to it is needed. This increment touches shared config (playwright.config.js, package.json), so the two-sided sibling-safety check (test:live-animals + the existing test:e2e journeys run) is in the ladder. No new copy, obligations, flow entries or schema fields — pure test/fixture/config work. Playwright best-practices: independent tests, raw role/label locators, no page objects, no sleeps, expect.poll only for non-locator state.",
+  "openQuestions": [
+    "The exact committed importType value for CHED-PP is whatever pp-017's landed controller commits — the implementor must read it from the import-type controller and use it verbatim in the fixture; a mismatch shows up as the task-rows fixture case failing.",
+    "If pp-030's arrival-date validation requires a current/future date, the static fixture arrivalDate cannot drive the UI — the helper must transpose chooseTodayFromDatePicker from live-animals-journey.js and the fixture value becomes the unit-test-side value only; implementor checks the landed pp-030 validation before choosing."
+  ]
+}

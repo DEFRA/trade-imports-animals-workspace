@@ -1,0 +1,109 @@
+{
+  "id": "pp-029",
+  "title": "notification-hub — full 12-spoke task-list build",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-020", "pp-028"],
+  "sourceIncrement": "inc-020",
+  "recipe": "frontend-plan/SIBLING-SET-PLAN.md#8 G-C (no create-the-hub-from-scratch recipe exists; recipe §3.6 only covers adding a row to an existing hub). Per G-C, transpose the live-animals hub feature file-for-file: src/server/app/sets/live-animals/journeys/linear/features/hub/{controller.js,template.njk,copy/copy.en.js,copy/copy.cy.js,hub.e2e.spec.js} are the verbatim idiom for controller GROUPS shape, status-tag mapping, review-spoke unlock wiring, conditional-hide semantics and copy contract.",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Bring the m0 skeleton controller to the full live-animals hub shape (exemplar: sets/live-animals/journeys/linear/features/hub/controller.js — transpose file-for-file, only set-local imports and GROUPS/copy data differ). Exports: `routes` = [{ method: 'GET', path: hubRoutePath(), options: routeOptions, handler }]. Internals, all per exemplar: (1) GROUPS — ordered array of { id, rows } per the SIBLING-SET-PLAN §2.1 canonical 12-spoke mapping, ONE GROUP PER SPOKE (each spoke is its own numbered hub heading), containing at this increment exactly the groups whose task rows exist by now: [ { id: 'origin', rows: ['origin'] }, { id: 'purpose', rows: ['purpose'] }, { id: 'commodities', rows: ['commodities'] }, { id: 'additional-details', rows: ['additional-details'] }, { id: 'review', rows: ['review'] } ]. Groups 5-11 (transport, goods-movement, contact, nominated-contacts, documents, traders) and m5 billing are appended by their own section increments (pp-030 onward) — each adds one { id, rows } entry plus copy; the frame this file establishes must make that a one-line append. (2) STATUS_TAG map keyed on L2 bridge statuses: FULFILLED -> { tag: { text: copy.statuses.completed, classes: 'govuk-tag--green' } }, OPTIONAL -> { text: copy.statuses.optional }, IN_PROGRESS -> light-blue tag, NOT_STARTED -> blue tag; statusTag() falling back to NOT_STARTED; CANNOT_START_STATUS = { text: copy.statuses.cannotStartYet, classes: 'govuk-task-list__status--cannot-start-yet' }. (3) buildRowItem(id, answers, scope, evaluation, journeyId): special-cases id === 'review' to buildReviewItem — the review spoke is NOT a task row (FD-12): it resolves the 'review' flow section (sections.find), returns CANNOT_START_STATUS unless sectionGatePasses(section, scope) (the authored scope.readyForCheckYourAnswers gate seeded at m0), else href = sectionEntry('review', scope, journeyId) and status = statusTag(sectionStatus(...)). All other ids: row = taskRowById(id), status = rowStatus(row, answers, scope.inScope, evaluation) (delegating to L2 bridge/status), isHiddenRow(row, status) => row.conditional && status === NA returns null (the mechanism m5 billing's conditional: true row relies on — hidden when isCuc is unanswered/false), rowGatePasses(row, scope) ? openRowItem (href = rowEntry(row, scope, journeyId)) : blockedRowItem. OPTIONAL text-only status is the mechanism the pp-032 nominated-contacts row relies on — never gates. (4) buildGroups mapping GROUPS to { id, caption: copy.groups[group.id], items: rows.map(buildRowItem).filter(Boolean) }. (5) handler: completeOpeningRun(request, h, journeyId); { journey, answers, scope, evaluation } = await state.get(request, h); h.view(view, { pageTitle: copy.title, heading: copy.title, copy, sharedCopy, journeyStrip: journeyStrip(journey), groups: buildGroups(...), dashboardHref: dashboardPath(), backLink: dashboardPath(), breadcrumbs: false }). journeyStrip (shared/kit.js) IS the dynamic reference caption: it renders the notification's single stable referenceNumber plus a status tag driven by `status` — satisfying the standing 'no DRAFT->CHEDPP id-flip' deviation (one stable id, status moves). DO NOT transpose buildCommodityTotals/commodityTotals — a live-animals-only display (animal counts) with no CHED-PP requirement. No POST handler, no form, no contract-table case."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/template.njk",
+      "action": "edit",
+      "what": "Transpose sets/live-animals/journeys/linear/features/hub/template.njk minus the commodityTotals block: extends shared/layout.njk; block journeyContent; h1.govuk-heading-xl {{ heading }}; one intro paragraph p.govuk-body {{ copy.intro }} under the H1 ('These sections can be completed in any order. You can save your progress and return at any time.' — carried from the page spec bodyCopy); then for each group: h2.govuk-heading-m {{ group.caption }} + govukTaskList({ idPrefix: group.id, items: group.items, classes: 'app-task-list govuk-!-margin-bottom-8' }); finally govukButton({ text: copy.returnToDashboard, href: dashboardHref, classes: 'govuk-button--secondary' }). govuk-frontend macros only, no custom CSS. Deliberate departures from the legacy page (all ruled/spec-flagged, see notes): NO hardcoded status literals anywhere (the legacy review tag lied), NO href=\"#\" back link and NO back-link+breadcrumbs duplication (real-href back affordance to the dashboard only — standing 'real-href back links' rule), NO Attachments shortcut button (duplicate of the documents row's target; untested legacy accretion), NO phase-tag class."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Bring the bundle to target shape (exemplar: live-animals hub copy.en.js). Keys: title: 'Notification overview'; intro: 'These sections can be completed in any order. You can save your progress and return at any time.'; returnToDashboard: 'Return to dashboard'; statuses: { completed: 'Completed', optional: 'Optional', inProgress: 'In progress', notYetStarted: 'Not yet started', cannotStartYet: 'Cannot start yet' }; groups (numbered captions — numbers are the CANONICAL §2.1 spoke numbers, authored literally per the live-animals precedent, NOT computed): { origin: '1. Origin of the import', purpose: '2. Purpose', commodities: '3. Commodity', 'additional-details': '4. Additional details', review: '12. Review and submit' }; rows keyed by canonical task-row id, each { title, hint }: origin: { title: 'Origin of the import', hint: 'Where the consignment comes from and your internal reference' }, purpose: { title: 'Purpose of the consignment', hint: 'The main reason for importing the consignment' }, commodities: { title: 'Commodity', hint: 'The commodities, species and quantities you are importing' }, 'additional-details': { title: 'Additional details', hint: 'Total gross weight and volume of the consignment' }, review: { title: 'Review and submit', hint: 'Check your answers before you submit the notification' }. Row titles are the hard-coded CHED-PP spoke labels from the page spec (never the template-variable other-CHED variants); hints are new GDS-plain content (the legacy hub had none) — flagged in openQuestions for content review. Later section increments append their own groups.* and rows.* keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces). Translate every string; keep the numeric prefixes on group captions ('1. ', '2. ', '3. ', '4. ', '12. ')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group-owned copy test to pin the new surface: statuses object complete (5 keys), groups keys exactly ['origin','purpose','commodities','additional-details','review'] with captions starting '1.'/'2.'/'3.'/'4.'/'12.', every rows.<id> having non-empty title and hint, en/cy same shape."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Replace the m0 smoke spec with the full co-located Playwright suite (scenarios in specs[]). Raw role/label/visible-copy locators, no page objects, every test starts its own notification, locator auto-waiting / expect.poll only, no sleeps. Include the axe scenario (AxeBuilder withTags ['wcag2a','wcag2aa'], fail on serious/critical) — initial render only; the hub has no form so there is no validation-error second state."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sections": [],
+    "taskRows": [],
+    "entryGuard": null,
+    "hubGroups": "GROUPS in features/hub/controller.js set to the §2.1 canonical order with one group per spoke, containing the rows that exist by this point: origin, purpose, commodities, additional-details, review (review rendered via the authored-gate section path, not taskRowById). flow/flow.js, flow/task-rows.js and entry-guard.js are NOT touched: the review section + scope.readyForCheckYourAnswers authored gate landed at m0 (pp-007, FD-12/FD-13), and rows/sections for transport, goods-movement, contact, nominated-contacts, documents, traders and billing land with their own increments (pp-030+/m5), each appending its GROUPS entry + copy per recipe §3.6."
+  },
+  "schemaFields": ["referenceNumber (read — journey-strip caption)", "status (read — journey-strip status tag; DRAFT|SUBMITTED|AMEND|DELETED)"],
+  "copyKeys": [
+    "features/hub/copy: title",
+    "features/hub/copy: intro",
+    "features/hub/copy: returnToDashboard",
+    "features/hub/copy: statuses.completed",
+    "features/hub/copy: statuses.optional",
+    "features/hub/copy: statuses.inProgress",
+    "features/hub/copy: statuses.notYetStarted",
+    "features/hub/copy: statuses.cannotStartYet",
+    "features/hub/copy: groups.origin",
+    "features/hub/copy: groups.purpose",
+    "features/hub/copy: groups.commodities",
+    "features/hub/copy: groups.additional-details",
+    "features/hub/copy: groups.review",
+    "features/hub/copy: rows.origin.title / rows.origin.hint",
+    "features/hub/copy: rows.purpose.title / rows.purpose.hint",
+    "features/hub/copy: rows.commodities.title / rows.commodities.hint",
+    "features/hub/copy: rows.additional-details.title / rows.additional-details.hint",
+    "features/hub/copy: rows.review.title / rows.review.hint"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — renders H1, intro paragraph and the numbered group headings in §2.1 order ('1. Origin of the import', '2. Purpose', '3. Commodity', '4. Additional details', '12. Review and submit'), one govuk task list per heading, and NO headings/rows for unbuilt sections",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — every rendered row links to its section's first entry page (click Origin of the import -> country-of-origin page; click Purpose of the consignment -> about-the-consignment page)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — row statuses are computed and full-vocabulary: fresh notification shows 'Not yet started' on every row; answering part of a section flips its row to 'In progress'; completing the purpose section flips its row to 'Completed' (green tag) — asserting the full rendered status list including tags, not a filtered subset",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — 'Review and submit' shows 'Cannot start yet' (no link) while mandatory rows are incomplete; asserts no hardcoded 'To do' literal behaviour is reintroduced",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — the journey-strip caption shows the notification's reference and it is STABLE: reference text identical before and after saving answers and after leaving and re-entering the hub (no DRAFT->CHEDPP id flip)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — single back affordance: a real-href link/button to the dashboard navigates there; no href='#' element on the page",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — axe scenario: AxeBuilder withTags ['wcag2a','wcag2aa'] on the rendered hub, zero serious/critical violations (the hub a11y baseline G-C requires)",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js — pins bundle shape: 5 statuses, exactly the 5 group captions with their canonical numbers, non-empty title+hint per row, en/cy parity"
+  ],
+  "acceptanceCriteria": [
+    "GET the hub for a fresh plant-products notification (SERVED_SET=plant-products, stub mode): page shows H1 'Notification overview', the intro paragraph, and exactly five numbered task-list groups in canonical order — 1 Origin of the import, 2 Purpose, 3 Commodity, 4 Additional details, 12 Review and submit — each an h2.govuk-heading-m followed by one govukTaskList; no other groups render",
+    "Each of the four section rows carries a computed status from rowStatus -> L2 bridge/status (Not yet started / In progress / Completed / Optional vocabulary) — statuses change as answers are saved; no status string is hardcoded in the template",
+    "The review spoke renders via the authored-gate section path (FD-12): status 'Cannot start yet' with no href while scope.readyForCheckYourAnswers fails; once every mandatory row is complete it becomes a link into the review section with a computed status (unit-provable at this increment via a synthetic-answers test if the full journey cannot yet be completed; e2e-provable once pp-033 lands)",
+    "The controller supports the two deferred row semantics without further structural change: a row with conditional: true whose status is NA is omitted from its group (m5 billing), and an OPTIONAL status renders as plain text, never gating (pp-032 nominated-contacts) — code paths present and exercised by transposed logic, one-line GROUPS append is all a later increment needs",
+    "The caption above the task list is the journeyStrip: the notification's single stable referenceNumber plus a status tag; the reference never changes across save/resume or edits (no DRAFT->CHEDPP id-flip — standing deviation)",
+    "Exactly one back affordance: a real-href route to the dashboard; no href='#' anywhere; no Attachments shortcut; no phase-tag class; govuk-frontend components only",
+    "Both copy bundles are structure-identical (copy-parity green) and the hub feature passes copy-convention; all new keys listed in copyKeys exist in en and cy",
+    "Axe (wcag2a/wcag2aa) on the rendered hub reports zero serious/critical violations",
+    "All existing plant-products suites stay green and no live-animals file is touched (git diff confined to sets/plant-products/journeys/linear/features/hub/)"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "RATIONALE: completes the m0 hub skeleton (pp-007) to the ruled 12-spoke experience for everything built through m3. The build is a file-for-file transposition of the live-animals hub feature (G-C — no hub-from-scratch recipe): controller.js is the exemplar for GROUPS, STATUS_TAG, CANNOT_START, buildReviewItem, isHiddenRow and buildGroups; template.njk and copy bundles likewise. RULINGS APPLIED: FD-12 (review = flow section with authored gate scope.readyForCheckYourAnswers, NOT a task row — fixes the legacy hardcoded 'To do' review tag, the page spec's clearest defect); §2.1 (canonical row ids and spoke numbering — each spoke is its own numbered hub heading, so GROUPS degenerates deliberately to one row per group); standing deviations from chedpp-requirements.md: one stable id with status moves (journeyStrip caption replaces the legacy heading-tertiary DRAFT->CHEDPP flip), real-href back links (no href='#', no back-link+breadcrumbs duplication), govuk-frontend toolbox only (no phase-tag, no action-button/button-small). DECISIONS TAKEN HEADLESS: (1) GROUPS at this increment contains only the rows that exist (origin, purpose, commodities, additional-details, review) — rows for unbuilt sections land WITH their section increments per the planning brief; taskRowById on a missing row would throw, so the frame must not reference future rows. (2) Group-caption numbers are authored literally per §2.1 (live-animals precedent), so the rendered sequence reads 1,2,3,4,12 until m4/m5 fill the middle — a transient scaffolding state, accepted to keep the canonical numbers stable. (3) commodityTotals summary cards NOT transposed (live-animals-specific animal-count display; no CHED-PP requirement; read-only rollups belong to pp-028's additional-details page). (4) Attachments shortcut dropped (same target as the documents row, zero test coverage in legacy, spec flags it redundant). (5) Legacy prerequisite-gating of the hub (redirect-away when prerequisites incomplete) is NOT reproduced — reachability policy belongs to entry-guard.js (m0) and the 'complete in any order' promise; the target model's per-row Cannot-start/gate mechanics carry any genuine ordering constraints. (6) No 'Expired' status: the legacy Expired tag maps to no state in the target model (commodity-code validity is enforced at collection time via allowListed gates, not surfaced as a hub status). EXEMPLAR FILES: sets/live-animals/journeys/linear/features/hub/{controller.js,template.njk,copy/copy.en.js,copy/copy.cy.js,hub.e2e.spec.js}; shared/kit.js (journeyStrip); flow/navigation.js (rowEntry/rowGatePasses/sectionEntry); flow/section-status.js; bridge/status/index.js. OVERLAP DISCIPLINE: earlier section increments (pp-018..pp-028) may already have added some GROUPS entries/row copy per recipe §3.6 — this increment brings the hub to the exact target state described here (idempotent reconciliation), and later increments (pp-030+) append theirs. Not platform-touching (diff confined to the set), so the two-sided live-animals check is not mandated; the full `npm test` step still exercises copy-parity/copy-convention across both sets.",
+  "openQuestions": [
+    "Row hint strings are planner-authored (the legacy hub had no hints) — content design should review the five hints before external exposure.",
+    "Group captions render 1,2,3,4,12 until m4/m5 land groups 5-11 — confirm this transient numbering gap is acceptable for the build period (alternative — computing numbers at render — was rejected to keep §2.1 numbers canonical).",
+    "The 'Review and submit' completed-state e2e leg cannot run until pp-033 (check-answers) lands; until then the unlock is proven by unit-level synthetic answers only — pp-033 must add the end-to-end unlock assertion.",
+    "Legacy hub prerequisite-gating (bounce to next incomplete prerequisite page) deliberately not reproduced — a human should confirm free hub reachability is the intended CHED-PP behaviour (spec openQuestion carried forward)."
+  ]
+}

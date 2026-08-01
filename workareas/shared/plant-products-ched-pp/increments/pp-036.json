@@ -1,0 +1,228 @@
+{
+  "id": "pp-036",
+  "title": "consignor-create (+ confirmation) — hand-entered consignor",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-013", "pp-035"],
+  "sourceIncrement": "inc-027",
+  "recipe": "sets/live-animals/docs/add-a-page.md",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/parties.js",
+      "action": "edit",
+      "what": "Add the 9 consignor leaf obligations to the parties section file pp-035 created (POP-4 — the ONE hand-typed party). Each is a plain top-level leaf (no within, no applyTo), fresh UUID id, path-safe camelCase name: consignorName (mandatory), consignorAddressLine1 (mandatory), consignorAddressLine2 (optional), consignorAddressLine3 (optional), consignorCity (mandatory), consignorPostcode (optional), consignorTelephone (mandatory), consignorCountry (mandatory), consignorEmail (mandatory). Copy-free — no labels/options (obligation-purity enforces at boot). Mandatoriness is the legacy frontend-Joi contract (consignor-create.json fields[]): the backend model imposes NO per-field CHED-PP mandatoriness, so these flags are the deliberate single-place decision the spec's backendMandatoriness note demands."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export the 9 new consignor obligations and append them to the obligations array. groups stays derived (no group here). No policy change (none of these join enforcedAtContinue)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/page.js",
+      "action": "edit",
+      "what": "Add two import-free page identities to the traders group's page.js: export const consignorCreatePage = { id: '<uuid>', slug: 'consignor-create' } and export const consignorConfirmationPage = { id: '<uuid>', slug: 'consignor-confirmation' }."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.controller.js",
+      "action": "create",
+      "what": "meta = { ...consignorCreatePage, collects: ['consignorName','consignorAddressLine1','consignorAddressLine2','consignorAddressLine3','consignorCity','consignorPostcode','consignorTelephone','consignorCountry','consignorEmail'] }. GET: state.get() once, prefill all 9 from answers (draft-resume rehydrates a previously typed consignor). POST: read raw request.payload; validate with lib/validate factories — required(consignorName) 'Enter a consignor or exporter name', max 255; required(consignorAddressLine1) 'Enter an address line 1', max 255; addressLine2/3 optional max 255; required(consignorCity) 'Enter a city or town', max 58 'City or town must be 58 characters or fewer'; consignorPostcode optional max 32 'Postcode or ZIP code must be 32 characters or fewer' (c-010: error names the field as labelled, never 'Post code'); required(consignorTelephone) 'Enter a telephone number', max 30 'Telephone number must be 30 characters or fewer' (c-011 fix — never 'Enter a telephone'); consignorCountry required 'Select a country' + membership check against the pp-013 countries fixture codes built INSIDE POST (never a frozen module-level list) — empty placeholder and forged/unknown code both re-render 400 with 'Select a country'; required(consignorEmail) 'Enter an email address', format 'Enter an email address in the correct format, like name@example.com', max 255. Invalid POST re-renders RAW values, status 400. Valid POST commits cleaned values via state.commit() wrapped in kit.recoverableSave() (marked persistence failure → re-render recoverableError: true, 500; other errors throw), then redirect via await kit.nextTarget(request, page, committed.scope) — next-in-section resolves to consignor-confirmation. One render() helper for GET + POST errors; kit.base() with journey so the shared dynamic-reference strip renders; back link hubPath fallback per house pattern (real href, never href='#'). routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET prefill of all 9 values; every validation rule above in its own case (empty required fields, each max-length, email format, country placeholder, forged country code); raw values + no commit on 400; cleaned values + redirect to consignor-confirmation on success; recoverable-save failure → 500 with recoverableError; unexpected error throws."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-create/consignor-create.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). H1 'Add consignor or exporter' (govuk-heading-xl); dynamic reference caption comes from the set's shared heading block INSIDE main (govuk-caption pattern — do NOT reproduce IPAFFS's heading-tertiary-outside-main). govukInput for 'Consignor or exporter name' with govuk-label--m, autocomplete='organization', ABOVE a govuk-fieldset with legend 'Consignor or exporter' (govuk-fieldset__legend--m) wrapping the 8 address controls: Address line 1 (autocomplete address-line1), Address line 2 (optional) (address-line2), Address line 3 (optional) (address-line3), City or town (address-level2), Postcode or ZIP code (optional) (postal-code), Telephone number (type=tel, autocomplete tel), Country govukSelect (options + 'Please select your country' empty-value placeholder from the pp-013 countries fixture — 'Republic of Ireland' label for IE, GB-ENG/SCT/WLS/NIR present, values are codes), Email address (type=email, autocomplete email). All controls govuk-!-width-one-half; input name = id = error key so #<fieldName> error-summary links focus. Shared error summary ('There is a problem') + 'Save and continue' submit. No title attributes on inputs (legacy artefact — drop). All copy via copyFor({ en, cy })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-confirmation/consignor-confirmation.controller.js",
+      "action": "create",
+      "what": "meta = { ...consignorConfirmationPage, collects: [] } (no-data interstitial; must still be in dispatchPages so id/slug are indexed). GET: render the confirmation view (no state read needed beyond kit.base + journey for the reference strip). POST: no write; redirect back to the traders-addresses page (kit.withChangeContext(request, href) so a future check-answers change context still round-trips) — mirrors the legacy 'Add to notification' → traders behaviour; a hub exit wins first via kit.hubExitTarget(request). routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-confirmation/consignor-confirmation.controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET renders the panel view model; POST redirects to the traders-addresses path; no commit/state mutation on POST."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/consignor-confirmation/consignor-confirmation.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk. govukPanel (govuk-panel--confirmation) whose panel title IS the page's only H1: 'The consignor or exporter has been created' — no second heading above it (legacy pattern confirmed correct; keep it). Form POST with single govuk-button 'Add to notification' (preventDoubleClick: true). NO 'Return to search' link (address-book search is the deferred pp-044 stub; the only entry is traders-addresses → consignor-create). Dynamic reference caption via the shared heading block inside main."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.en.js",
+      "action": "edit",
+      "what": "Add consignorCreate.* and consignorConfirmation.* namespaces (group copy is namespaced by page): pageTitle, heading 'Add consignor or exporter', legend 'Consignor or exporter', per-field labels (Consignor or exporter name / Address line 1 / Address line 2 (optional) / Address line 3 (optional) / City or town / Postcode or ZIP code (optional) / Telephone number / Country + placeholder 'Please select your country' / Email address), continueLabel 'Save and continue', all error strings listed in the controller entry; consignorConfirmation: pageTitle, panelTitle 'The consignor or exporter has been created', continueLabel 'Add to notification'."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh bundle with the identical leaf paths and value kinds (copy-parity enforces shape equality). Full literal Welsh strings — never concatenated/composed copy (the legacy displayType concatenation is the anti-pattern this rebuild bans)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend the group copy test for the new namespaces (both locales, key completeness)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/evaluation.js",
+      "action": "edit",
+      "what": "Add scalar({ field, obligation }) bindings for all 9 consignor leaves to the traders feature bundle (top-level scalars, no groups array). Bundle already registered in features/evaluation.js by pp-035 — no registration change."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import both controller namespaces; add both meta objects to dispatchPages (including the collects: [] confirmation page — id/slug must be indexed for gates/navigation); spread both routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Append consignorCreatePage then consignorConfirmationPage AFTER tradersAddressesPage inside the EXISTING traders section's pages array (§2.3: never a new section; array order controls nextInSection so create → confirmation)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Append both page identities to the EXISTING traders row's pages array (row id 'traders', spoke 10). Row status = union of the pages' collects, so the 9 consignor leaves now gate the Traders row. No new row, no hub GROUPS change, no hub copy change."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Extend status pins: traders row In progress with traders-addresses answered but consignor leaves empty; Completed only when the mandatory consignor leaves are answered too; first-entry-page unchanged (traders-addresses)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Project the consignor leaves onto the PlantProductsNotificationDto consignor operator (obligation-field-map inc-027): consignorName → consignor.name, consignorTelephone → consignor.telephone, consignorEmail → consignor.email, consignorAddressLine1/2/3 → consignor.address.addressLine1/2/3, consignorCity → consignor.address.city, consignorPostcode → consignor.address.postcode, consignorCountry → consignor.address.country. consignor.operatorId is NOT sent (stays null while free-typed — pp-044 owns it): explicit omission assertion, never an invented property."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert the projection for draft resume: consignor.{name,telephone,email,address.*} → the 9 answers-tree leaves; absent consignor → no leaves set."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test for a fully-populated consignor; partial consignor (optional line2/3/postcode absent); operatorId omission assertion; absent-consignor resume."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the consignor-create valid-POST contract case (T-5 standing rule): full 9-field payload with a real fixture country code; assert it commits exactly the 9 committable names in meta.collects. consignor-confirmation collects [] → no case."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/consignor-create.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (group e2e/ folder, raw role/label locators, no page objects, each test starts its own notification): initial render (H1, name field + legend, all 9 labels incl. both '(optional)' suffixes, country options incl. 'Republic of Ireland' and GB-ENG — full rendered option list where asserted, dividers/placeholder included); happy-path save → consignor-confirmation → 'Add to notification' → traders-addresses shows the consignor name; reload/resume persistence of every entered value; each validation rule in its own test (incl. 'Enter a telephone number' and 'Postcode or ZIP code must be 32 characters or fewer' — the c-010/c-011 fixed strings); raw values preserved on error; every error-summary link focuses its control; axe on initial render AND error state (AxeBuilder withTags ['wcag2a','wcag2aa'], fail serious/critical)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/consignor-confirmation.e2e.spec.js",
+      "action": "create",
+      "what": "Playwright spec: panel H1 'The consignor or exporter has been created' is the page's only H1 (inside the panel); single 'Add to notification' button; POST returns to traders-addresses with the created consignor rendered; axe on render (no error state exists — no user-editable controls)."
+    }
+  ],
+  "obligations": [
+    { "id": "consignorName", "within": null, "requires": "status: mandatory (no gate helper)", "collectedBy": "consignor-create" },
+    { "id": "consignorAddressLine1", "within": null, "requires": "status: mandatory", "collectedBy": "consignor-create" },
+    { "id": "consignorAddressLine2", "within": null, "requires": "status: optional", "collectedBy": "consignor-create" },
+    { "id": "consignorAddressLine3", "within": null, "requires": "status: optional", "collectedBy": "consignor-create" },
+    { "id": "consignorCity", "within": null, "requires": "status: mandatory", "collectedBy": "consignor-create" },
+    { "id": "consignorPostcode", "within": null, "requires": "status: optional", "collectedBy": "consignor-create" },
+    { "id": "consignorTelephone", "within": null, "requires": "status: mandatory", "collectedBy": "consignor-create" },
+    { "id": "consignorCountry", "within": null, "requires": "status: mandatory (membership vs the pp-013 countries fixture is controller validation, not a model allowList — mirrors house countryOfOrigin handling)", "collectedBy": "consignor-create" },
+    { "id": "consignorEmail", "within": null, "requires": "status: mandatory", "collectedBy": "consignor-create" }
+  ],
+  "flowChanges": {
+    "sections": [
+      "flow.js: append consignorCreatePage then consignorConfirmationPage after tradersAddressesPage inside the EXISTING 'traders' section's pages array — no new section, order controls nextInSection (create → confirmation → section end)"
+    ],
+    "taskRows": [
+      "task-rows.js: append both page identities to the EXISTING 'traders' row (spoke 10); row status becomes the union of traders-addresses + consignor-create collects; no new row and no hub GROUPS/copy change"
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "consignor.name",
+    "consignor.telephone",
+    "consignor.email",
+    "consignor.address.addressLine1",
+    "consignor.address.addressLine2",
+    "consignor.address.addressLine3",
+    "consignor.address.city",
+    "consignor.address.postcode",
+    "consignor.address.country",
+    "consignor.operatorId (explicitly NOT written — stays null while free-typed; pp-044 owns it; mapper omission assertion)"
+  ],
+  "copyKeys": [
+    "consignorCreate.pageTitle",
+    "consignorCreate.heading",
+    "consignorCreate.legend",
+    "consignorCreate.fields.consignorName.label",
+    "consignorCreate.fields.consignorAddressLine1.label",
+    "consignorCreate.fields.consignorAddressLine2.label",
+    "consignorCreate.fields.consignorAddressLine3.label",
+    "consignorCreate.fields.consignorCity.label",
+    "consignorCreate.fields.consignorPostcode.label",
+    "consignorCreate.fields.consignorTelephone.label",
+    "consignorCreate.fields.consignorCountry.label",
+    "consignorCreate.fields.consignorCountry.placeholder",
+    "consignorCreate.fields.consignorEmail.label",
+    "consignorCreate.errors.consignorName.required",
+    "consignorCreate.errors.consignorName.max",
+    "consignorCreate.errors.consignorAddressLine1.required",
+    "consignorCreate.errors.consignorAddressLine1.max",
+    "consignorCreate.errors.consignorAddressLine2.max",
+    "consignorCreate.errors.consignorAddressLine3.max",
+    "consignorCreate.errors.consignorCity.required",
+    "consignorCreate.errors.consignorCity.max",
+    "consignorCreate.errors.consignorPostcode.max",
+    "consignorCreate.errors.consignorTelephone.required",
+    "consignorCreate.errors.consignorTelephone.max",
+    "consignorCreate.errors.consignorCountry.required",
+    "consignorCreate.errors.consignorEmail.required",
+    "consignorCreate.errors.consignorEmail.format",
+    "consignorCreate.errors.consignorEmail.max",
+    "consignorCreate.continueLabel",
+    "consignorConfirmation.pageTitle",
+    "consignorConfirmation.panelTitle",
+    "consignorConfirmation.continueLabel"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/consignor-create.e2e.spec.js — render, happy path through confirmation back to traders-addresses, resume persistence, each of the 14 validation rules, error-summary focus, axe both states",
+    "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/consignor-confirmation.e2e.spec.js — panel-as-only-H1, single 'Add to notification' action returning to traders-addresses with the consignor attached, axe"
+  ],
+  "acceptanceCriteria": [
+    "consignor-create renders with H1 'Add consignor or exporter', the name input (govuk-label--m, autocomplete organization) above a fieldset legend 'Consignor or exporter' wrapping the 8 address controls, all width-one-half, with autocomplete tokens address-line1/2/3, address-level2, postal-code, tel, email",
+    "Country is a plain govuk-select populated from the pp-013 countries fixture: empty-value 'Please select your country' placeholder, 'Republic of Ireland' label for IE (c-012), GB-ENG/GB-SCT/GB-WLS/GB-NIR present, no 'United Kingdom' option; the stored value is the code, never the label",
+    "Labels signal optionality consistently: 'Address line 2 (optional)', 'Address line 3 (optional)', 'Postcode or ZIP code (optional)' (deliberate fix of the legacy unsignalled-optional postcode defect)",
+    "Validation (one canonical string per rule, c-018): 'Enter a consignor or exporter name' / 'Consignor or exporter name must be 255 characters or fewer'; 'Enter an address line 1' / 255; line 2 and 3 max 255; 'Enter a city or town' / 'City or town must be 58 characters or fewer'; 'Postcode or ZIP code must be 32 characters or fewer' (c-010 — never 'Post code'); 'Enter a telephone number' / 'Telephone number must be 30 characters or fewer' (c-011 — never 'Enter a telephone'); 'Select a country' for placeholder-still-selected AND for a forged/unknown code; 'Enter an email address' / 'Enter an email address in the correct format, like name@example.com' / 255",
+    "Invalid POST re-renders the user's raw values with status 400, 'There is a problem' summary, and every summary link moves focus to its control",
+    "Valid POST commits exactly the 9 cleaned values (persisted through the set records service — reload and draft re-entry rehydrate all of them) and redirects to consignor-confirmation",
+    "consignor-confirmation renders a govuk-panel--confirmation whose panel title is the page's ONLY H1, 'The consignor or exporter has been created', with a single 'Add to notification' button and no other controls; POST returns to traders-addresses where the consignor name renders",
+    "The traders hub row (spoke 10) is not Completed while any mandatory consignor leaf is unanswered, and completes when traders-addresses + consignor answers are all in",
+    "contract.plant-products.test.js gains the consignor-create valid-POST case committing exactly the 9 declared names",
+    "Mapper round-trips consignor.{name,telephone,email,address.addressLine1/2/3,city,postcode,country} and asserts consignor.operatorId is omitted",
+    "Both pages pass axe (wcag2a+wcag2aa, no serious/critical) — create in initial AND error state, confirmation in its single state; back links are real hrefs, never href='#'"
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # baseline BEFORE editing (red baseline = stop), then re-run after",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-027 as two add-a-page increments inside the traders feature group pp-035 created (recipe: sets/live-animals/docs/add-a-page.md steps 1-12, with the plant ladder substituted per SIBLING-SET-PLAN §7; §2.1 spoke 10 fixes section id 'traders' and row id 'traders'). Exemplars: live-animals origin feature (multi-field collecting page with service-backed select + full validation set), live-animals features/confirmation (govuk-panel page markup), traders group's own traders-addresses page (pp-035) for the group file shape — its 'Add a consignor or exporter' link is the sole entry route to consignor-create (address-book search is bypassed until the pp-044 m5 stub, so NO 'Return to search' link is rendered on either page). Decisions taken headless: (a) the confirmation interstitial is KEPT per the canonical MAPPING brief even though consignor-create.json/consignor-confirmation.json both recommend dropping it — dropping is a cross-CHED design decision, not pp-local; in this model the consignor is already committed to the answers tree by consignor-create's save, so 'Add to notification' performs no write and simply returns to traders-addresses (no orphan-record problem, unlike IPAFFS's create-then-attach); (b) 'Select a country' replaces the legacy 'Enter a country' (GOV.UK select convention; the page spec itself recommends it) and also covers the forged-code case, replacing 'Country is not valid'; (c) consignorPostcode stays optional (frontend-Joi parity) and the label gains '(optional)' to fix the legacy unsignalled-optional defect; no country-conditional postcode rule (that would be NEW behaviour, not parity); (d) the 58-char city cap and 30-char telephone cap are carried deliberately (both unit-test-pinned in IPAFFS; likely TRACES constraints); (e) email/telephone mandatoriness is a frontend-only legacy rule (backend model has no @NotNull for them for ANY CHED type) — carried as the de-facto user contract; (f) no autocomplete token on the Country select, mirroring legacy (the values are non-pure-ISO codes like GB-ENG, so neither 'country' nor 'country-name' fits cleanly); (g) legacy artefacts NOT reproduced: title attributes on inputs, duplicated govuk-label class, heading-tertiary caption outside main, href='#' back link, the labelKey/article/displayType templating (all copy is literal strings in both locales); (h) country membership is controller-side validation against the pp-013 fixture built inside POST, not a model allowList gate — mirrors house handling of country selects; (i) obligation names are camelCase (path-safe answers keys per the manifest contract), not kebab. Not platform-touching (set files + the plant-owned contract clone only), so the two-sided live-animals check is not mandated; npm test still exercises the shared L1 suites.",
+  "openQuestions": [
+    "City-or-town 58-character cap carried from legacy (every other text field is 255) — almost certainly a downstream TRACES/EU width constraint; confirm with the business before relaxing.",
+    "Confirmation interstitial kept per MAPPING, but both page specs recommend dropping it (attach-on-create + notification banner on traders-addresses); in this rebuild it is already write-free, so removing it later is copy/flow-only — flag to Sam/design as a cross-CHED simplification.",
+    "Postcode optionality: kept optional (legacy Joi parity) with an added '(optional)' label suffix; whether a mandatory postcode for GB addresses is the REAL requirement (legacy accepts a US ZIP against GB-ENG with no cross-field rule) is a business question — building that rule would be new behaviour.",
+    "Welsh strings for the new copy keys need content-design review (the legacy page had no Welsh at all; the copy here is first-cut translation).",
+    "Telephone format is deliberately unconstrained beyond max 30 (legacy parity); whether +44/spaced/international formats should be validated or normalised is a business question."
+  ]
+}

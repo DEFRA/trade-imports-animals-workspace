@@ -1,0 +1,250 @@
+{
+  "id": "pp-035",
+  "title": "traders-addresses — traders table",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-009", "pp-013"],
+  "sourceIncrement": "inc-026",
+  "recipe": "sets/live-animals/docs/add-a-section.md",
+  "repo": "frontend",
+  "sizeGuess": "L",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/parties.js",
+      "action": "create",
+      "what": "The parties section opens (pp-036 later appends consignor leaves to this same file). Exports 15 obligations, each { id: <fresh UUID>, name } plus status/applyTo, NO copy, NO IO at module load. (1) destinationSameAsConsignee — status 'mandatory' (bool: true|false). (2) Gated destination leaves, all applyTo: equalsGate(destinationSameAsConsignee, false, <in-scope decision>, <out-of-scope decision>) per model/obligations/helpers/index.js (exemplars: regionCode status-flip, purposeInInternalMarket purge-on-flip in sets/live-animals/obligations/sections/): destinationName, destinationAddressLine1, destinationCity, destinationPostcode, destinationCountry mandatory-in-scope; destinationAddressLine2, destinationAddressLine3 optional-in-scope (equalsGate whenTrue/whenFalse decisions are caller-supplied, so optional-in-scope is expressible — mirror the live-animals decision-object shapes exactly). (3) Packer leaves, all status 'optional', no gates: packerName, packerAddressLine1, packerAddressLine2, packerAddressLine3, packerCity, packerPostcode, packerCountry. Importer and consignee are NOT obligations (POP-1/POP-3 server/stub-populated — SIBLING-SET-PLAN §3.1). All names are path-safe camelCase answers keys and DOM field names."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export every parties.js obligation by name; append all 15 to the `obligations` array. `groups` stays derived (no new groups). `policy` untouched."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/page.js",
+      "action": "create",
+      "what": "Import-free page-identity module for the traders feature GROUP (multi-page: pp-036 adds consignorCreatePage/consignorConfirmationPage here later). Exports `tradersAddressesPage = { id: 'traders-addresses', slug: 'traders-addresses' }`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/evaluation.js",
+      "action": "create",
+      "what": "feature('traders', [...]) with one scalar({ field, obligation }) binding per parties.js obligation (15 bindings; all top-level scalars, no groups). Exports `evaluationBindings`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.js",
+      "action": "create",
+      "what": "export const meta = { ...tradersAddressesPage, collects: [all 15 obligation names] }; export const routes = kit.pageRoutes(page, { get, post }). GET: state.get() ONCE; prefill from answers; view model via kit.base() with journey (reference strip); back link hubPath(journey.journeyId); importer card data from services/stub-org.js (read-only, POP-1); consignor card: 'Not yet added' state + 'Add a consignor or exporter' link to the consignor-create slug path (page lands with pp-036 — link renders now, dead until then). POST: Joi validation built with factories from src/server/app/lib/validate/index.js — destinationSameAsConsignee required ('Select yes if the delivery address is the same as the importer's address'); when scope.has(destinationName) (i.e. answered false): destinationName required ('Enter the delivery address name'), destinationAddressLine1 required ('Enter address line 1 of the delivery address'), destinationCity required ('Enter the town or city of the delivery address'), destinationPostcode required ('Enter the postcode or ZIP code' — c-010 term), destinationCountry required ('Select the country of the delivery address'), lines 2/3 optional; packer fields all optional (length caps only, reuse the standard validate factories' caps); country values must be members of the pp-013 countries fixture (membership rule built inside POST, never a frozen module-level list). Invalid POST: re-render RAW values, status 400. Valid POST: commit cleaned values via state.commit() — NEVER commit destination leaves when destinationSameAsConsignee is true (out of scope; the evaluator purges on flip); redirect via await kit.nextTarget(request, page, committed.scope); wrap the write in kit.recoverableSave() (marked failure → re-render recoverableError: true, 500; other errors throw). NO consignor-presence rule in this controller — consignor mandatoriness arrives with pp-036's manifest leaves and rolls up through the traders task row."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed). Caption 'Traders' (govuk-caption-xl) + H1 (govuk-heading-xl). DELIBERATE deviations from the legacy page (page-spec nonStandardPatterns rulings): (1) NO four-column trader-tables — each populated party renders as a govuk-summary-list; an EMPTY slot renders heading + link/copy only, never an empty table (a11y defect not ported). (2) NO 'Same as consignee' bespoke link-button — the delivery address is govukRadios legend 'Is the delivery address the same as the importer's address?' (legend-as-heading m-size, honest label naming the IMPORTER — fixes the consignee copy defect and the one-shot irreversibility for free), No reveals the destination fields via the radios conditional-reveal pattern: govukInput destinationName / destinationAddressLine1 / destinationAddressLine2 ('(optional)') / destinationAddressLine3 ('(optional)') / destinationCity / destinationPostcode ('Postcode or ZIP code', c-010) + govukSelect destinationCountry from the pp-013 countries fixture options. (3) Importer: H2 + read-only govuk-summary-list of the stub org (name/address/country), NO Change action. (4) Packer: H2 'Packer (optional)' + the seven optional packer inputs (same field layout as destination, packerCountry a govukSelect). (5) Consignor or exporter: H2 + populated summary-list OR 'Add a consignor or exporter' govuk-link (no font-size override — the legacy 19px link modifier is not ported). (6) ONE primary govuk-button Continue + the standard shared save actions (Save and return to hub secondary, Cancel link) per the house kit partials — not the legacy two-equal-primaries. Shared error summary ('There is a problem', c-004); input name = id = error key so #<fieldName> summary links focus controls. GOV.UK macros only, no custom CSS."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/traders-addresses/traders-addresses.controller.test.js",
+      "action": "create",
+      "what": "GET prefill (incl. importer stub-org rows in the view model, radios prefill, conditional destination prefill); every validation rule branch (missing radio; each missing mandatory destination field when No; country not in fixture); raw values + no commit on 400; cleaned values + redirect on success; destination leaves NOT committed when radio = Yes; scope purge on flip Yes→No→Yes; packer optional fields commit when provided and page saves with them all empty; recoverable-save failure → 500; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.en.js",
+      "action": "create",
+      "what": "Group-owned copy bundle, namespaced by page (tradersAddresses.*): caption, heading, importer.heading, packer.heading + per-field labels, delivery.legend ('Is the delivery address the same as the importer's address?'), delivery.yes/no, delivery per-field labels (incl. '(optional)' suffixes on lines 2/3, 'Postcode or ZIP code'), consignor.heading, consignor.addLink ('Add a consignor or exporter'), consignor.notAdded, errors.* (the six canonical messages from the controller — one canonical string per field, c-018). Resolved with copyFor({ en, cy })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per the live-animals group-copy pattern (bundle shape + key presence)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/traders-addresses.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec + axe (multi-page group → e2e/ folder). Scenarios listed under `specs`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the traders feature's evaluationBindings and add to featureEvaluationBindings (frozen array grows by one feature entry)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the traders-addresses controller namespace; add meta to dispatchPages; spread routes into allRoutes."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import tradersAddressesPage; add sections entry { id: 'traders', pages: [tradersAddressesPage] } inserted immediately BEFORE the review section, keeping the §2.3 relative order (… documents, traders, review) against whichever m4 sections already exist. Derived allFlowPages/sectionOfPage/answerSections pick it up automatically."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add row { id: 'traders', pages: [tradersAddressesPage] } (canonical row id per SIBLING-SET-PLAN §2.1 spoke 10). Mandatory row (participates in readyForCheckYourAnswers); status = union of the page's collects via the existing rowStatus delegation — no bespoke status code."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the traders row: Not yet started; In progress (radio answered No, destination incomplete); Completed at the CURRENT manifest (destinationSameAsConsignee answered + in-scope destination leaves complete; packer stays empty — optional); row blocks readyForCheckYourAnswers while incomplete and unblocks when complete. (pp-036 will re-pin Completed once consignor leaves join the manifest.)"
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add the 'traders' row id to GROUPS as its own numbered group heading 'Traders' (spoke 10, §2.1; pp-029 consolidates the full 12-spoke layout)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Group caption 'Traders' + rows.traders title ('Traders') and hint copy."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh equivalents, same shape."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new group caption + row keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Traders row renders under its heading with Not yet started status and links to /notifications/{id}/traders-addresses; re-run hub axe with the new row present."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/stub-org.js",
+      "action": "create",
+      "what": "Single source of the pass-1 fixed importer organisation (POP-1): exports stubOrganisationOperator() → { name, address: { addressLine1, city, postcode, country } } (values = the pp-007/pp-008 stubbed org identity; align with ownership.assignedOrganisationName). Consumed by the traders controller (importer card) and the records mapper (importer + same-as copy). pp-047 (auth stub) formalises/absorbs this later — keep it one tiny module so the swap is one import."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map the parties area onto PlantProductsNotificationDto: importer = stubOrganisationOperator() on every save (POP-1 pass-1); destination = copy of the importer operator when destinationSameAsConsignee === true, else the entered destination leaves ({ name, address: { addressLine1, addressLine2, addressLine3, city, postcode, country } }); packer = the packer leaves when any are answered, else omitted. destinationSameAsConsignee itself is NEVER sent — no backend field (derived, see from-dto). Do not send email/telephone for destination or packer (not collected in pass 1)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Fold destination + packer operators back into the answers tree; DERIVE destinationSameAsConsignee on load: destination present and deep-equal to importer → true; present and different → false; absent → unanswered (key omitted). Importer is never folded into answers (not an obligation)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trips: same-as true → DTO destination === importer copy → load re-derives true; entered address → round-trips verbatim → derives false; no answer → no destination → derives unanswered; packer round-trip + omitted-when-empty. Omission assertions: no destinationSameAsConsignee property on the DTO; no email/telephone properties on destination or packer (never invent a payload property)."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the traders-addresses valid-POST case (T-5 standing rule): payload with destinationSameAsConsignee=false + all mandatory destination fields + optionally packer fields; assert exactly the committable names in meta.collects commit (out-of-scope destination leaves excluded when seeding the true branch — use the false branch so the full leaf set commits)."
+    }
+  ],
+  "obligations": [
+    { "id": "destination-same-as-consignee", "within": null, "requires": "status: 'mandatory' (bool true|false)", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "destination-name", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, mandatory-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-address-line-1", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, mandatory-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-address-line-2", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, optional-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-address-line-3", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, optional-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-city", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, mandatory-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-postcode", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, mandatory-in-scope, out-of-scope)", "collectedBy": "traders-addresses" },
+    { "id": "destination-country", "within": null, "requires": null, "applyTo": "equalsGate(destinationSameAsConsignee, false, mandatory-in-scope, out-of-scope); stored by code from the pp-013 countries fixture", "collectedBy": "traders-addresses" },
+    { "id": "packer-name", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-address-line-1", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-address-line-2", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-address-line-3", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-city", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-postcode", "within": null, "requires": "status: 'optional'", "applyTo": null, "collectedBy": "traders-addresses" },
+    { "id": "packer-country", "within": null, "requires": "status: 'optional'; stored by code from the pp-013 countries fixture", "applyTo": null, "collectedBy": "traders-addresses" }
+  ],
+  "flowChanges": {
+    "sections": [
+      "ADD { id: 'traders', pages: [tradersAddressesPage] } to flow.js sections, inserted immediately before 'review', preserving the §2.3 relative order (… documents, traders, review) against whichever m4 sections exist at build time. pp-036 appends consignorCreatePage/consignorConfirmationPage to this section."
+    ],
+    "taskRows": [
+      "ADD { id: 'traders', pages: [tradersAddressesPage] } to task-rows.js — mandatory row, spoke 10; hub GROUPS gains the 'traders' row id under a new numbered 'Traders' heading (hub copy en+cy, hub copy.test, hub e2e updated)."
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "importer.name / importer.address.{addressLine1, city, postcode, country} — WRITTEN by to-dto from the stub org on every save (POP-1 pass 1); never an obligation, never folded back into answers",
+    "destination.name",
+    "destination.address.addressLine1",
+    "destination.address.addressLine2",
+    "destination.address.addressLine3",
+    "destination.address.city",
+    "destination.address.postcode",
+    "destination.address.country",
+    "packer.name",
+    "packer.address.addressLine1",
+    "packer.address.addressLine2",
+    "packer.address.addressLine3",
+    "packer.address.city",
+    "packer.address.postcode",
+    "packer.address.country",
+    "destinationSameAsConsignee — NO backend field: to-dto projects true as destination=importer-copy; from-dto derives the bool by destination↔importer equality (explicit mapper omission assertion)"
+  ],
+  "copyKeys": [
+    "tradersAddresses.caption",
+    "tradersAddresses.heading",
+    "tradersAddresses.importer.heading",
+    "tradersAddresses.packer.heading",
+    "tradersAddresses.packer.fields.{name,addressLine1,addressLine2,addressLine3,city,postcode,country}",
+    "tradersAddresses.delivery.legend",
+    "tradersAddresses.delivery.options.{yes,no}",
+    "tradersAddresses.delivery.fields.{name,addressLine1,addressLine2,addressLine3,city,postcode,country}",
+    "tradersAddresses.consignor.heading",
+    "tradersAddresses.consignor.notAdded",
+    "tradersAddresses.consignor.addLink",
+    "tradersAddresses.errors.destinationSameAsConsignee",
+    "tradersAddresses.errors.destinationName",
+    "tradersAddresses.errors.destinationAddressLine1",
+    "tradersAddresses.errors.destinationCity",
+    "tradersAddresses.errors.destinationPostcode",
+    "tradersAddresses.errors.destinationCountry",
+    "hub copy: groups.traders caption + rows.traders.{title,hint} (en + cy)"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/traders/e2e/traders-addresses.e2e.spec.js — initial render: caption/H1, importer summary-list shows the stub org with no Change action, 'Packer (optional)' fields, delivery radios legend, consignor 'Add a consignor or exporter' link, NO empty tables anywhere",
+    "same spec — happy path (same-as): select Yes, save, redirected per nextTarget, reload persists Yes and no destination fields rendered open",
+    "same spec — happy path (entered address): select No, conditional reveal opens, fill name/line1/city/postcode/country, save, reload persists every value",
+    "same spec — each validation rule in its own test (radio missing; each of the five mandatory destination fields missing when No), raw values + other values preserved on error, every error-summary link moves focus to its control",
+    "same spec — scope flip purge: save an entered address, change to Yes, save, back to No → destination fields are empty (engine wiped them)",
+    "same spec — packer optional: page saves with packer empty; packer values entered round-trip on reload; hub row completeness unaffected by packer",
+    "same spec — hub integration: traders row Not yet started → In progress → Completed as above; completed state does not regress review-gate behaviour for other rows",
+    "same spec — axe both states: initial render and validation-error state; AxeBuilder withTags(['wcag2a','wcag2aa']), fail on serious/critical"
+  ],
+  "acceptanceCriteria": [
+    "The traders-addresses page renders at /notifications/{journeyId}/traders-addresses under SERVED_SET=plant-products with caption 'Traders', an H1, and four party areas: Importer (read-only), Packer (optional), Delivery address, Consignor or exporter.",
+    "Importer renders as a read-only govuk-summary-list populated from the fixed stub organisation, with no Change/Add affordance (POP-1 pass 1); it is not an obligation and never appears in the answers tree.",
+    "The delivery address is asked as radios 'Is the delivery address the same as the importer's address?' (legend references the IMPORTER — the legacy 'Same as consignee' label/copy defect is not ported); the choice is reversible: flipping Yes→No→Yes at any time works and the engine wipes out-of-scope destination values.",
+    "Selecting No reveals destination name, address lines 1–3 (2 and 3 optional), town or city, 'Postcode or ZIP code' (c-010), and a country select sourced from the pp-013 countries fixture stored by code; all five mandatory fields validate with one canonical Joi message each (c-018), rendered via the GDS 'There is a problem' summary with working focus links (c-004/c-014).",
+    "Submitting with no radio selection shows 'Select yes if the delivery address is the same as the importer's address'; invalid submits re-render raw values with status 400 and commit nothing.",
+    "Packer is genuinely optional: the page saves with all packer fields empty; entered packer values persist and round-trip through draft resume; packer never affects task-row completeness.",
+    "No empty govuk-table (or any table) renders for an unpopulated party — empty slots show heading + link/copy only (legacy empty-table a11y defect not ported); no bespoke CSS classes (link-button, trader-table, col-*, table-responsive) appear in the template.",
+    "The consignor area shows 'Add a consignor or exporter' linking to the consignor-create slug path; this increment does NOT block continue on a missing consignor (enforcement arrives with pp-036's manifest leaves).",
+    "The traders flow section and mandatory 'traders' task row exist; the hub shows the Traders row (en + cy copy) linking to the page; row status transitions Not yet started → In progress → Completed are pinned in task-rows.test.js and the row participates in readyForCheckYourAnswers.",
+    "Persistence: with destinationSameAsConsignee=true the saved DTO's destination equals the importer operator; with false it carries the entered address; the bool itself is never a DTO property (mapper omission assertion); draft resume re-derives the radio state correctly in stub and real modes.",
+    "contract.plant-products.test.js contains the traders-addresses valid-POST case committing exactly meta.collects' committable names.",
+    "Both copy bundles (en/cy) are structure-identical; copy-convention and copy-parity stay green."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-026 as the spoke-10 opener. RULINGS APPLIED from the traders-addresses page spec: the legacy page's architecture is deliberately NOT ported — (a) mini-hub-inside-a-form with hidden etag → a normal collecting page in the house model (no etag; last-write-wins per Open Q 3); (b) four-column trader-tables with bespoke col-*/trader-table/table-responsive CSS → govuk-summary-list per populated party (the spec's own govukAlternative); (c) empty-slot placeholder tables (screen-reader-meaningless, shown to pass axe while defective) → no table when empty; (d) the 'Same as consignee' link-button (no double-click guard, wrong label — it copies the IMPORTER, one-shot irreversible) → the spec's recommended Radios question naming the importer honestly, which also makes the choice reversible; (e) two equal-weight primary buttons → house single-primary + shared save actions; (f) legacy slot-level messages ('Add a delivery address') → per-field Joi messages, since the destination is now collected in-page rather than via a sub-journey. Mandatoriness grounded in legacy PartOne @NotNull evidence (importer/destination/consignor mandatory, packer optional): importer satisfied by POP-1 auto-population (modelled as derived value, exactly as the spec's requiredEvidence note recommends); destination via the gated leaves; consignor deferred to pp-036 (its 'Add a consignor or exporter' enforcement becomes manifest mandatoriness rolling into the traders row, not a controller rule here). destinationSameAsConsignee has no backend field — projected as destination=importer-copy on save (matching the legacy asserted copy behaviour) and re-derived by equality on load; flagged in openQuestions. Destination/packer email+telephone deliberately omitted in pass 1 (legacy sub-journey optionality unverified; §3.1 does not list them) with mapper omission assertions. EXEMPLARS: sets/live-animals/docs/add-a-section.md + add-a-page.md; transport feature group (multi-page group shape); origin feature (conditional scope + service-backed select); regionCode/purposeInInternalMarket obligations (equalsGate status-flip and purge-on-flip decision shapes, model/obligations/helpers/scalar/equals-gate.js verified live this session). Check-answers rows are NOT this increment's work — features/check-answers is built whole by pp-038, which already depends on pp-035. ORDERING ASSUMPTION: pp-010 (contract.plant-products.test.js, T-5) precedes all m2+ pages per §9 rule 2 even though it is not in this increment's canonical dependsOn.",
+  "openQuestions": [
+    "destinationSameAsConsignee has no backing schema field; pass 1 derives it from destination↔importer address equality at load. A hand-entered destination that happens to equal the importer's address would re-derive as 'Yes' — cosmetically wrong, data-identical. If product cares, add an explicit boolean to the backend DTO (small backend change) — flag at review.",
+    "Destination and packer email/telephone are omitted in pass 1 (legacy delivery-address sub-journey collected them but their optionality is unverified; SIBLING-SET-PLAN §3.1 does not list them for destination/packer). Confirm whether the backend PlantProductsOperator requires them before m4 closes.",
+    "PACKER IS COMPLETELY UNMINED in the legacy corpus (zero traces, zero QA coverage) — carried forward as seven flat optional fields per the planningBrief, but the page spec recommends a human confirms CHED-PP needs a packer at all; strong deletion candidate.",
+    "Legacy 'Save and return to hub' on this page had zero automated coverage and unknown validation semantics; this increment uses the house shared save-action semantics uniformly. Confirm nothing product-side depended on a validation-bypassing partial save.",
+    "The legacy fraud warning ('Providing a false address is an act of fraud') is NOT shown on CHED-PP (template-gated to other CHED types) and is not added here; product may want it on the delivery address — decide with pp-038/design review.",
+    "Until pp-036 lands, the 'Add a consignor or exporter' link targets a not-yet-existing consignor-create route (404). Acceptable within the m4 build order (pp-036 directly depends on pp-035); if the increments are demoed separately, hide the link behind a dispatch-index existence check instead."
+  ]
+}

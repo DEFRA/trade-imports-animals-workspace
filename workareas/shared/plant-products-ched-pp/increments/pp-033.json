@@ -1,0 +1,230 @@
+{
+  "id": "pp-033",
+  "title": "nominated-contact — repeating optional contacts",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-032"],
+  "sourceIncrement": "inc-024",
+  "recipe": "sets/live-animals/docs/add-a-collection.md",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/obligations/sections/contacts.js",
+      "action": "edit",
+      "what": "Add to the file pp-032 created: `nominatedContacts` GROUP obligation (new UUID id, name 'nominatedContacts'; NO status, NO minEntries floor — optional group per plan §3.1; `requires: { maxEntries: 5 }` fixed cap mirroring the documents ten-cap house pattern, backed by the legacy 'up to 5' copy + Joi index bound 0..4) and four member obligations, each with a new UUID and `within: nominatedContacts` (object identity — real import of the group const): `contactName` (status 'mandatory' — per-instance: a saved contact must have a name, transposing the legacy conditional-add rule), `contactEmail` (status 'optional'), `contactTelephone` (status 'optional'), `contactIsAgent` (status 'optional'). No copy, no display logic (obligation-purity enforces). The email-OR-telephone rule is a controller fieldset rule, NOT model (house D-13 parity per plan §3.1)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/obligations/index.js",
+      "action": "edit",
+      "what": "Import + re-export nominatedContacts, contactName, contactEmail, contactTelephone, contactIsAgent from sections/contacts.js and append all five to the `obligations` array. `groups` is derived — do not hand-edit it. `policy` unchanged (no MAX_ENTRIES_FROM entry: the cap is a fixed requires.maxEntries, not a sibling-count declaration — plan §3.3)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/page.js",
+      "action": "create",
+      "what": "Import-free page identity: `export const nominatedContactPage = { id: '<stable-id>', slug: 'nominated-contact' }` (slug per page-spec URL tail; imports NOTHING — flow/controller cycle guard)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/controller.js",
+      "action": "create",
+      "what": "Single-page add-another loop controller, transposed from the live-animals documents exemplar (sets/live-animals/journeys/linear/features/documents/controller.js loop branches only — none of its upload/scan machinery). `export const meta = { ...nominatedContactPage, collects: ['nominatedContacts'] }` (group root only; members inherit ownership). GET: one `state.get()`, build view via `kit.base()` + `state.collectionView(answers, ['nominatedContacts'])` → saved-contact rows (facts only; controller builds its own row view-models), entry-form render gated on savedCount < 5 (at cap: no inputs/Add button, render the max-reached message instead — improve on the legacy silent disappearance). POST branches on submit action: (a) `action === 'add'` → validate the entry (Joi via lib/validate factories: contactName required + max 32; contactEmail optional, email format ignoreLength + max 255; contactTelephone optional, telephone format + max 30; fieldset rule: name present but neither email nor telephone → emailOrTelephone error anchored to the contactEmail input so the error-summary link focuses a control; contactIsAgent optional boolean checkbox); invalid → 400 re-render RAW values; valid → `state.appendEntry(request, h, 'nominatedContacts', entry)` (returns null at the cap — no write on a stale form) then re-render/redirect back to the page in add-another style; (b) `action === 'remove:<index>'` (submit button value so the crumb travels; no GET deletes) → validate index is an integer with an existing entry (refuse forged/out-of-range without a write) → `state.removeEntry(...)`; (c) plain Continue → no write, `kit.nextTarget(request, page, scope)` with `kit.hubExitTarget(request)` winning first; mid-loop links wrapped in `kit.withChangeContext(request, href)`. All writes inside `kit.recoverableSave()` (marked failure → re-render `recoverableError: true`, 500; other errors throw). `export const routes = kit.pageRoutes(page, { get, post })`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/controller.test.js",
+      "action": "create",
+      "what": "Unit tests: GET renders zero saved rows on an empty draft (NO phantom row — the legacy [{}] view-model default is a recorded bug, assert its absence explicitly); GET prefill of saved contacts; add happy path commits cleaned values; every validation branch its own test (name required, name >32, email format, email >255, telephone format, telephone >30, name-only → emailOrTelephone fieldset error); 400 re-renders raw values with no commit; remove removes exactly the indexed entry; forged/out-of-range remove index refused with no write; at 5 entries the entry form + Add button are not rendered and a stale add POST does not write; Continue with zero contacts advances (optional section); recoverable save failure → 500; unexpected errors throw."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/evaluation.js",
+      "action": "create",
+      "what": "Grouped bindings: describe the group `{ field: 'nominatedContacts', token: <token>, obligation: nominatedContacts }` then `grouped({ field, obligation, groups: [contactsGroup] })` for each of contactName, contactEmail, contactTelephone, contactIsAgent (depth-1 chain — binding depth must equal the within chain). Export the feature bundle per the set idiom (feature('nominated-contacts', [...]))."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed); view resolved under the plant TEMPLATES prefix. GOV.UK toolbox ONLY, deliberately NOT the legacy markup: caption 'Contacts' (govuk-caption-xl) + H1 'Nominated contacts (optional)' via the fieldset legend-as-heading pattern; hint referenced ONCE from the fieldset (page spec: do not duplicate aria-describedby onto the table); shared error summary partial ('There is a problem'); saved contacts as a govuk-table (or summary-list) of read-back rows — Name | Email address | Mobile number | per-row Remove as a real govuk-button govuk-button--secondary with visually-hidden ' contact <n>' suffix (NO link-button class, NO data-module bolt-on); entry fields as three stacked govuk-input each with its OWN govuk-label (Name, Email address, Mobile number — never aria-labelledby onto a th) + govuk-checkboxes single checkbox for contactIsAgent; 'Add another person' as govuk-button--secondary submit; save actions via the set's shared save-actions partial. Input name = id = error key for each field so #contactName etc. focus works. At-cap state: no entry inputs/Add button, govuk-body message stating the 5-contact maximum. No custom CSS (no table-responsive wrapper)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle: caption 'Contacts'; title 'Nominated contacts (optional)'; hint 'Nominate up to 5 contacts. They will be notified if your consignment is chosen for inspection.'; labels { contactName: 'Name', contactEmail: 'Email address', contactTelephone: 'Mobile number', contactIsAgent: '<agent checkbox label>' }; table headers matching the labels + visually-hidden remove column text 'Remove contact details'; buttons { addAnother: 'Add another person', remove: 'Remove' }; maxReached message naming the 5-contact limit; errors { contactNameRequired: 'Enter a name', contactNameMax: 'Name must be 32 characters or fewer', contactEmailFormat: 'Enter an email address in the correct format, like name@example.com', contactEmailMax: 'Email address must be 255 characters or fewer', contactTelephoneFormat: 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982', contactTelephoneMax: 'Mobile number must be 30 characters or fewer', contactMethodRequired: 'Enter an email address or mobile number' }. ONE term 'Mobile number' throughout (c-020) — the legacy 'Telephone number must be…' max-length string is deliberately re-termed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, structure-identical to copy.en.js (same leaf paths and value kinds — copy-parity enforces)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy test per the set convention (pins bundle shape/keys; satisfies copy-convention.test.js's complete-copy-folder rule)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/nominated-contact.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec (single-page feature convention) + axe. Scenarios listed under specs[]."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
+      "action": "edit",
+      "what": "Import the nominated-contacts feature bundle and add it to `featureEvaluationBindings`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "Import the controller namespace; add `meta` to `dispatchPages`; spread `routes` into `allRoutes`."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "Import nominatedContactPage; insert flow section `{ id: 'nominated-contacts', pages: [nominatedContactPage] }` at the §2.3 canonical position: after `contact`, before `documents`/`traders`/`review` (whichever of those exist at build time — always before `review`)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
+      "action": "edit",
+      "what": "Add task row `{ id: 'nominated-contacts', pages: [nominatedContactPage] }`. Row status derives from the pages' collects → the optional group yields Optional status and NEVER gates readyForCheckYourAnswers (plan §2.1 spoke 8; no special flag — L2 bridge/status derives it from the optional group)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
+      "action": "edit",
+      "what": "Pin the new row: Optional status with zero contacts; Completed once at least one complete contact exists; readyForCheckYourAnswers NOT blocked while the row is untouched (optional rows never gate); row entry page is nominated-contact."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
+      "action": "edit",
+      "what": "Add row id 'nominated-contacts' to the GROUPS entry for spoke 8 (canonical §2.1 placement, after 'contact')."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.en.js",
+      "action": "edit",
+      "what": "Row title 'Nominated contacts' + hint under rows.nominatedContacts (spoke heading only if §2.1 requires a new numbered group at this point — follow the GROUPS structure pp-029/pp-007 established)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.cy.js",
+      "action": "edit",
+      "what": "Welsh mirror of the hub row copy, same shape."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/copy/copy.test.js",
+      "action": "edit",
+      "what": "Extend for the new row keys."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
+      "action": "edit",
+      "what": "Assert the Nominated contacts row renders under its spoke with Optional status and links to /notifications/{id}/nominated-contact."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
+      "action": "edit",
+      "what": "Map answers.nominatedContacts[] → dto.nominatedContacts[] as PlantProductsContact objects: { name: contactName, email: contactEmail, telephone: contactTelephone, isAgent: contactIsAgent } (SCHEMA-DESIGN document shape; camelCase, server-set fields never sent)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/from-dto.js",
+      "action": "edit",
+      "what": "Invert: dto.nominatedContacts[] → answers.nominatedContacts[].{contactName, contactEmail, contactTelephone, contactIsAgent}; ABSENT/empty list rehydrates to [] (never [{}] — the legacy phantom-row default is a recorded bug, do not reproduce)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Round-trip test for a draft with two contacts (mixed optional fields: one email-only, one telephone-only + isAgent true); empty-list case maps to []/omitted both ways."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the valid-POST contract case (T-5 standing rule): drive the committing `action === 'add'` POST with a valid contact payload; assert exactly the committable names in meta.collects (['nominatedContacts']) committed."
+    }
+  ],
+  "obligations": [
+    {
+      "id": "nominatedContacts",
+      "within": null,
+      "requires": "GROUP obligation — no status, no minEntries floor (optional, plan §3.1); requires: { maxEntries: 5 } fixed cap (documents ten-cap precedent: manifest declares, feature enforces on the write path; corroborated by legacy 'up to 5' copy + Joi remove-index bound 0..4). No applyTo gate — always in scope.",
+      "collectedBy": "nominated-contact"
+    },
+    {
+      "id": "contactName",
+      "within": "nominatedContacts",
+      "requires": "status 'mandatory' (per-instance: a saved contact must have a name — transposes the legacy conditional-add Joi rule into per-instance completeness); no gate helper",
+      "collectedBy": "nominated-contact"
+    },
+    {
+      "id": "contactEmail",
+      "within": "nominatedContacts",
+      "requires": "status 'optional'; the email-OR-telephone rule is a controller fieldset rule, NOT model (house D-13 parity)",
+      "collectedBy": "nominated-contact"
+    },
+    {
+      "id": "contactTelephone",
+      "within": "nominatedContacts",
+      "requires": "status 'optional'; same fieldset rule note as contactEmail",
+      "collectedBy": "nominated-contact"
+    },
+    {
+      "id": "contactIsAgent",
+      "within": "nominatedContacts",
+      "requires": "status 'optional' boolean (checkbox); no gate helper",
+      "collectedBy": "nominated-contact"
+    }
+  ],
+  "flowChanges": {
+    "sections": [
+      {
+        "id": "nominated-contacts",
+        "pages": ["nominatedContactPage"],
+        "position": "after 'contact', before 'documents'/'traders'/'review' — §2.3 canonical order (always before 'review')"
+      }
+    ],
+    "taskRows": [
+      {
+        "id": "nominated-contacts",
+        "pages": ["nominatedContactPage"],
+        "semantics": "Optional-status row (spoke 8) — derives Optional from the optional group, never gates readyForCheckYourAnswers; hub GROUPS gains the row id + en/cy row title 'Nominated contacts' and hint"
+      }
+    ],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "nominatedContacts[].name",
+    "nominatedContacts[].email",
+    "nominatedContacts[].telephone",
+    "nominatedContacts[].isAgent"
+  ],
+  "copyKeys": [
+    "nominated-contacts feature copy (en+cy): caption, title, hint, labels.{contactName,contactEmail,contactTelephone,contactIsAgent}, table.{headers,removeHidden}, buttons.{addAnother,remove}, maxReached, errors.{contactNameRequired,contactNameMax,contactEmailFormat,contactEmailMax,contactTelephoneFormat,contactTelephoneMax,contactMethodRequired}",
+    "hub copy (en+cy): rows.nominatedContacts.{title,hint}"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/nominated-contacts/nominated-contact.e2e.spec.js — initial render (caption, H1 'Nominated contacts (optional)', hint, three labelled inputs + agent checkbox, Add another person, zero saved rows on a fresh draft); add happy path (server round-trip appends a read-back row, reload persists); remove deletes only the indexed row; each validation rule in its own test (name required / name >32 / email format / email >255 / mobile format / mobile >30 / name-only → 'Enter an email address or mobile number') with raw values preserved and every error-summary link focusing its control; Continue with zero contacts returns to hub with Optional row status; cap behaviour (5 contacts → entry form and Add button gone, max message shown); axe wcag2a+wcag2aa no serious/critical on initial render AND error state",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extended) — Nominated contacts row under spoke 8, Optional status, links to the page"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{id}/nominated-contact on a fresh draft renders caption 'Contacts', H1 'Nominated contacts (optional)' (fieldset legend-as-heading), hint 'Nominate up to 5 contacts. They will be notified if your consignment is chosen for inspection.', three text inputs each with a REAL govuk-label (Name, Email address, Mobile number), an optional agent checkbox, and 'Add another person' as a govuk-button--secondary — and ZERO saved-contact rows (no phantom row; the legacy [{}] default is not reproduced).",
+    "None of the legacy defects are reproduced: no link-button class, no aria-labelledby-onto-th input labelling, no duplicated aria-describedby on fieldset AND table, no table-responsive custom CSS.",
+    "Adding a contact (name + at least one of email/mobile) is a full server round-trip (POST→302→GET, no client XHR) that appends a read-back row (Name | Email address | Mobile number | Remove); values persist across reload and draft resume (records service round-trip via the set-owned mapper to nominatedContacts[].{name,email,telephone,isAgent}).",
+    "Validation on add, each with GDS 'There is a problem' summary, inline error, raw values preserved, status 400: blank name → 'Enter a name'; name >32 → 'Name must be 32 characters or fewer'; bad email → 'Enter an email address in the correct format, like name@example.com'; email >255 → 'Email address must be 255 characters or fewer'; bad mobile → 'Enter a mobile number in the correct format, like 07700 900 982 or +44 7700 900 982'; mobile >30 → 'Mobile number must be 30 characters or fewer'; name with neither email nor mobile → 'Enter an email address or mobile number' (anchored to the email input so the summary link moves focus). One term 'Mobile number' everywhere (c-020).",
+    "Remove is a submit-button branch of the same POST (crumb travels; no GET can delete); it removes exactly the indexed entry; a forged or out-of-range index is refused with no write.",
+    "At 5 saved contacts the entry inputs and Add button are not rendered and the page states the 5-contact maximum (no silent disappearance); a stale add POST at the cap performs no write (appendEntry returns null).",
+    "The section is optional end-to-end: Continue/Save with zero contacts succeeds; the hub row 'Nominated contacts' shows Optional status, flips to Completed when at least one complete contact exists, and NEVER blocks readyForCheckYourAnswers (pinned in task-rows.test.js).",
+    "contract.plant-products.test.js gains the add-POST case committing exactly ['nominatedContacts']; copy en/cy bundles are structure-identical; axe (wcag2a, wcag2aa) reports no serious/critical violations on initial render and error state.",
+    "buildDispatch/boot assertions pass: members inherit page ownership from the group, meta.collects lists only the group root."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-024 per MAPPING.json. Recipe: add-a-collection §4, SINGLE-PAGE LOOP variant — exemplar is the live-animals documents feature (sets/live-animals/journeys/linear/features/documents/{controller.js,evaluation.js,template.njk} — transpose ONLY the loop mechanics: action-branched POST, appendEntry/removeEntry, collectionView read-back; none of its upload/scan machinery), plus add-a-page §2 registration steps and add-a-section §3.6 for the new flow section + optional task row + hub row. Decisions taken headless: (1) 5-contact cap declared as requires.maxEntries: 5 in the manifest and enforced on the write path — mirrors the documents ten-cap house pattern; plan §3.1 said 'no floor' (true) and §3.3's 'no MAX_ENTRIES_FROM' refers to sibling-count-derived caps, which this is not. (2) At-capacity UX improves on the legacy silent control-hiding: the max message renders (GOV.UK: state the limit). (3) Single term 'Mobile number' (c-020) including the max-length error re-termed from legacy 'Telephone number must be 30 characters or fewer' → 'Mobile number must be...'. (4) The fieldset-level email-OR-telephone error anchors to the contactEmail input so the error-summary link always focuses a control (legacy had no label to hang it on). (5) Legacy defects deliberately NOT reproduced, per the page spec's nonStandardPatterns rulings: phantom [{}] view-model default (default to [] everywhere, one source of truth for row-render and input-gating), link-button class, inconsistent data-module bolt-on, aria-labelledby-th labelling, duplicated aria-describedby, table-responsive wrapper. (6) Per-instance mandatoriness of contactName transposes the legacy frontend-only conditional-add rule into the model (page-spec note: the Java schema never enforced it; the rebuild re-implements it deliberately). (7) Check-answers rows for nominated contacts are NOT this increment's work — pp-038 builds the whole check-answers feature later and reads back every captured area; nothing to extend yet. Mapper edit is legal here: pp-008 (records adapter) is transitively done before pp-032 in the serial loop. Not platform-touching (no L2/L1 edits), so no two-sided sibling-safety ladder required; `npm test` still covers conventions + contract.",
+  "openQuestions": [
+    "contactIsAgent has NO observed control on the legacy page (traces show only name/email/telephone) yet the backend schema and the plan both carry it — built here as an optional govuk-checkbox with invented label copy ('This person is an agent' or similar); product/content to confirm the label and whether the field belongs on this page at all.",
+    "The mobile-number validation accepts any telephone-shaped value (legacy TELEPHONE_REGEX) despite the label 'Mobile number' and the notify-on-inspection promise — carried from the page spec as a product decision (enforce mobile, or soften the promise); this increment transposes the permissive rule.",
+    "No cross-contact validation exists in legacy (e.g. duplicate email across contacts) — not added here; flag for product.",
+    "The seven user-facing validation strings are `legacy`-tier (derived from IPAFFS source, never seen rendered) — wording could be upgraded by a targeted legacy error-state trace, but the build is not blocked on it.",
+    "Exact max-reached message wording is new copy (legacy has none) — content-designer review when available."
+  ]
+}
