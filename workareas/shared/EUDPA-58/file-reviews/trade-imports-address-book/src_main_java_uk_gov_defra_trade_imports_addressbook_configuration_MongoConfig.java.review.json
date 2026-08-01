@@ -1,0 +1,22 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/MongoConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:20:26Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The diff itself (package rename plus @EnableMongoAuditing) is correct and covered by an IT, but enabling auditing without a companion @Version on Address leaves update/delete as last-write-wins read-modify-write.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 31,
+      "severity": "Major",
+      "category": "concurrency",
+      "issue": "The PR adds @EnableMongoAuditing here, which turns on @CreatedDate/@LastModifiedDate but NOT optimistic locking — Address has no @Version field, so OperatorService.update() and delete() are unguarded read-modify-write full-document save() calls (last-write-wins; a concurrent delete can be resurrected by an in-flight PUT). Corroborates the open cross-file finding on Address.java.",
+      "fix": "Add a @Version Long field to Address so Spring Data emits a version-predicated update, and map the resulting OptimisticLockingFailureException to 409 in GlobalExceptionHandler (or switch update/delete to a targeted findAndModify with a status/version predicate instead of save()).",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

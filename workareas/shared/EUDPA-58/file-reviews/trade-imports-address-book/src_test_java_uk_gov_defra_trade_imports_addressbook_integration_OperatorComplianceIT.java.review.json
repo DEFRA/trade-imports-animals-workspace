@@ -1,0 +1,61 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorComplianceIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:04Z",
+  "verdict": "RISKY",
+  "verdict_reason": "The file's headline contract gate asserts only paths/methods/operationIds while its Javadoc and the README claim full surface equivalence with api-contract.locked.yaml, so a complete snake_case-vs-camelCase schema divergence and two missing query parameters pass the build invisibly.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 226,
+      "severity": "Critical",
+      "category": "contract-gate",
+      "issue": "The 'divergence gate' in apiDocsMatchTheCommittedArtifactAndTheLockedContract compares ONLY path keys, HTTP-method keys and operationIds against api-contract.locked.yaml - it never reads components.schemas, so the total snake_case-vs-camelCase divergence (locked declares operator_type/page_size/total_items/trace_id/organisation_id/created_at/modified_at and schemas OperatorRequest/Operator/OperatorPage/OperatorType/TransporterCategory/OperatorStatus; live emits camelCase and AddressRequest/OperatorResponse/OperatorPageResponse) passes green",
+      "fix": "Assert locked vs live components.schemas: schema-name set equality and per-schema property-key-set equality, plus the response schema $ref per operation; or if camelCase is a deliberate supersede of the locked ruling, regenerate the locked file and record the decision"
+    },
+    {
+      "id": 2,
+      "line": 38,
+      "severity": "Major",
+      "category": "misleading-doc",
+      "issue": "Class Javadoc line 38 claims the live doc is asserted 'surface-equivalent to the in-repo docs/openapi/api-contract.locked.yaml (the lock)' and line 30-31 claims 'real requests prove the boundary is camelCase' - neither is true: surface equivalence covers only paths/methods/operationIds (no schemas, no parameters, no request bodies, no response refs), and the wire tests use MockMvc (mock servlet layer), not real HTTP over the RANDOM_PORT server",
+      "fix": "Either widen the assertions to match the claim, or reword the Javadoc (and README 'OpenAPI contract' section) to say exactly 'paths, HTTP methods and operationIds only'; replace 'real requests' with 'MockMvc requests'"
+    },
+    {
+      "id": 3,
+      "line": 165,
+      "severity": "Major",
+      "category": "tautological-test",
+      "issue": "apiDocsCarryTheWholeCamelCaseAndAnyOfContractSurface enumerates components.schemas from the LIVE doc and asserts its own property names match [a-z][a-zA-Z0-9]* - the live doc is generated from the implementation's Jackson naming, so the check is self-referential and can only fail if someone adds an explicit snake_case @JsonProperty; it makes the implementation the de-facto contract and directly contradicts the locked file's stated convention 'snake_case JSON properties and query params ... errors map of snake_case field name -> [messages]'",
+      "fix": "Drive the expected property names from api-contract.locked.yaml (assert live property keys equal locked property keys per schema) rather than from a regex over the live doc, so the locked file - not the implementation - decides the naming convention"
+    },
+    {
+      "id": 4,
+      "line": 231,
+      "severity": "Major",
+      "category": "contract-gate",
+      "issue": "The divergence gate never compares operation 'parameters', so the locked contract's required query params operator_type and page_size (locked lines 110-132) are absent from the live spec entirely (live GET list exposes only page, q, countryCode - no page-size param at all, despite the runtime test asserting a pageSize=25 field in the response body) and the build stays green",
+      "fix": "Extend the per-operation comparison to the parameters list - assert the set of (name, in) pairs on each live operation equals the locked operation's, resolving $ref'd component parameters first"
+    },
+    {
+      "id": 5,
+      "line": 254,
+      "severity": "Major",
+      "category": "tautological-test",
+      "issue": "assertAnyOfProblem(locked, ...) asserts the committed static YAML file against itself - it exercises no production code and can only fail if someone edits api-contract.locked.yaml, yet the comment calls it 'the pin the whole design leans on'",
+      "fix": "Compare the live 400 schema's anyOf branch $refs against the locked file's branch $refs (live-vs-locked), instead of asserting the locked file in isolation"
+    },
+    {
+      "id": 6,
+      "line": 213,
+      "severity": "Major",
+      "category": "test-escape-hatch",
+      "issue": "The -Dopenapi.generate=true branch writes GENERATED_DOC and returns before any assertion, so the staleness gate AND the divergence gate both silently disappear on a green build if that property ever leaks into a CI profile or a developer's MAVEN_OPTS - and the README documents running verify with exactly that flag",
+      "fix": "Move regeneration out of the assertion test - e.g. a separate @Test guarded by @EnabledIfSystemProperty(named=\"openapi.generate\", matches=\"true\") or a maven-exec/springdoc plugin goal - so the contract test has no code path that passes without asserting"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

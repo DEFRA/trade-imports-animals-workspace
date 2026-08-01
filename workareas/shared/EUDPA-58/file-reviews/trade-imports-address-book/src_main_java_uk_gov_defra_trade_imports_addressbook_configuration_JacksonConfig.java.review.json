@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/JacksonConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:20:47Z",
+  "verdict": "RISKY",
+  "verdict_reason": "Mechanically the config is correct and idiomatic (a Jackson2ObjectMapperBuilderCustomizer, so Boot's JavaTimeModule and problemdetails wiring survive), but the naming strategy it sets — LOWER_CAMEL_CASE — puts the shipped wire format in direct conflict with the repo's own committed snake_case api-contract.locked.yaml and the rest-api best practice, and the compliance IT's divergence gate does not catch it",
+  "todos": [
+    {
+      "id": 1,
+      "line": 23,
+      "severity": "Critical",
+      "category": "api-contract",
+      "issue": "propertyNamingStrategy(LOWER_CAMEL_CASE) makes the whole HTTP boundary camelCase (addressLine1, townOrCity, traceId), directly contradicting the committed docs/openapi/api-contract.locked.yaml, which mandates snake_case JSON properties throughout (address_line_1, created_at, organisation_id, and trace_id described there as 'a deliberate divergence from the animals-backend camelCase'), and the rest-api best practice ('snake_case for properties', 'Don't: camelCase in JSON'); OperatorComplianceIT's divergence gate only compares paths/HTTP methods/operationIds, so the property-name reversal passes CI unnoticed",
+      "fix": "Pick one and make it explicit: either drop this customizer (or switch to PropertyNamingStrategies.SNAKE_CASE plus @JsonProperty for the address_line_1 style names SNAKE_CASE cannot derive) to honour the locked contract, or reissue/retire api-contract.locked.yaml as camelCase with the decision recorded, and extend the compliance IT's divergence gate to compare component-schema property names so the two can never silently disagree again",
+      "best_practice": "rest-api/rest-api.md"
+    },
+    {
+      "id": 2,
+      "line": 20,
+      "severity": "Minor",
+      "category": "contract-test-gap",
+      "issue": "The customizer pins two contract-visible Jackson knobs (naming, unknown properties) but leaves date/time serialisation to the Spring Boot default, and no test asserts it: OperatorResponse exposes Instant createdAt/modifiedAt which the contract declares as RFC 3339 date-time strings, yet OperatorComplianceIT only asserts jsonPath('$.createdAt').exists() — a later spring.jackson.serialization.write-dates-as-timestamps=true would silently turn them into epoch numbers with a green build",
+      "fix": "Either add .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) here to pin the behaviour explicitly alongside the other two knobs, or tighten OperatorComplianceIT to assert createdAt/modifiedAt match an ISO-8601 instant pattern rather than merely existing",
+      "best_practice": "rest-api/rest-api.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

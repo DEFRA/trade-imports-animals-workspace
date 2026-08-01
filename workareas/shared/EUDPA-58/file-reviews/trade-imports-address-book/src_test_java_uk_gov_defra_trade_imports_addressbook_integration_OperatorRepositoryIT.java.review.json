@@ -1,0 +1,40 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorRepositoryIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:18Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The new repository-level IT is correct and passes, but it guards only the safest of the five org-scoped methods and leaves the org lead and ACTIVE clause of two hand-written @Query search variants unexercised anywhere in the suite.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 17,
+      "severity": "Major",
+      "category": "test-coverage-security",
+      "issue": "The only repository-level IT guards findByIdAndOrganisationId (a Spring Data derived query, so its org predicate is generated); the two hand-written @Query variants whose org lead is a compiler-invisible string literal — searchByCountryCode and searchByQueryAndCountryCode — are never exercised with cross-org data anywhere, so deleting \"'organisationId': ?0\" from either query string leaves the whole suite green while every organisation's addresses leak.",
+      "fix": "Add repository-level tests here (or cross-org fixtures to AddressSearchIT) that seed an OTHER_ORG ACTIVE address and assert searchByCountryCode(ORG_A, \"GB\", page) and searchByQueryAndCountryCode(ORG_A, regex, \"GB\", page) return only ORG_A rows.",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 2,
+      "line": 17,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "The \"'status': 'ACTIVE'\" clause in the same two @Query variants is also unguarded: AddressSearchIT.searchIsOrgScopedAndExcludesSoftDeleted only seeds a DELETED row for the q-only path (searchByQuery), and OperatorListIT.listExcludesDeletedTombstones only covers the derived findByOrganisationIdAndStatus, so a countryCode-only or q+countryCode search could return soft-deleted tombstones with no test failing.",
+      "fix": "In the same new repository-level tests, seed a DELETED address matching the country code and assert searchByCountryCode and searchByQueryAndCountryCode exclude it.",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 3,
+      "line": 43,
+      "severity": "Minor",
+      "category": "weak-assertion",
+      "issue": "Both tests hold exactly one document, so neither can fail on the defect the class claims to prove: if the id half of the composite predicate were dropped (org-only match), test 1 still returns the single ORG-A row and test 2 still returns empty for ORG-B, and both pass.",
+      "fix": "Seed a second ORG-A address plus an ORG-B address before each assertion, so the positive test proves the returned id is the one requested and the negative test proves ORG-B's own row is not substituted.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

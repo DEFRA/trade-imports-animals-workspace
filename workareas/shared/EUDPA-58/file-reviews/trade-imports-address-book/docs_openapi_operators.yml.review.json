@@ -1,0 +1,84 @@
+{
+  "file": "docs/openapi/operators.yml",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T08:59:31Z",
+  "verdict": "RISKY",
+  "verdict_reason": "The published contract declares the POST/PUT 400 body as 'type: string' (breaking strict validation and codegen for the commonest error) and contradicts the in-repo locked contract it claims equivalence with, on top of wildcard media types, an all-optional schema set and zero descriptions.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 83,
+      "severity": "Critical",
+      "category": "contract-schema",
+      "issue": "The POST/PUT 400 schema emits 'type: string' alongside the anyOf (lines 83 and 210), so the published contract says a problem+json 400 body is a JSON string; no object body validates and generated clients type the 400 as String, defeating the anyOf pin the design leans on.",
+      "fix": "Give the @Content in OperatorController an explicit object type - @Schema(anyOf = {ValidationProblem.class, Problem.class}, type = \"object\") - or register a named composed schema, then regenerate with -Dopenapi.generate=true.",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 3,
+      "line": 1,
+      "severity": "Critical",
+      "category": "contract-divergence",
+      "issue": "This generated contract contradicts the in-repo docs/openapi/api-contract.locked.yaml it is documented to be surface-equivalent to: camelCase vs snake_case properties, no Trade-Imports-Crn header, 'deleted' boolean vs 'status' enum, countryCode/phone/townOrCity vs country/telephone/town, no operator_type, no page_size param, no 500 responses, no Location header - OperatorComplianceIT's divergence gate only compares path set, HTTP methods and operationIds, so it cannot catch any of it",
+      "fix": "Decide which document is the contract: either regenerate/rewrite api-contract.locked.yaml to the ruled camelCase model (and record the ruling that superseded it) or delete it, and widen OperatorComplianceIT's divergence gate to compare parameters, request/response schemas and status-code sets - not just operationIds"
+    },
+    {
+      "id": 4,
+      "line": 202,
+      "severity": "Major",
+      "category": "media-type",
+      "issue": "Every 2xx response is published under the wildcard media type '*/*' (lines 35, 75, 167, 202) instead of application/json, because each @ApiResponse in OperatorController overrides the 200/201 without a content block",
+      "fix": "Give each 2xx @ApiResponse an explicit content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = OperatorResponse.class / OperatorPageResponse.class)) and regenerate with -Dopenapi.generate=true",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 5,
+      "line": 253,
+      "severity": "Major",
+      "category": "lying-contract",
+      "issue": "AddressRequest publishes 'type' and 'role' as ordinary optional untyped ('type: object') request properties, but AddressRequest.java annotates both @Null so any supplied value is rejected with a 400 - a consumer following the contract will send them and fail",
+      "fix": "Annotate both fields @Schema(hidden = true), or keep them visible with @Schema(description = \"Not supported - omit; any value is rejected with a 400\") plus an explicit constraint, then regenerate the artifact",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 6,
+      "line": 284,
+      "severity": "Major",
+      "category": "schema-required",
+      "issue": "No response schema declares 'required': OperatorResponse (lines 297-330) marks all 14 fields optional despite OperatorResponse.java null-guarding 11 of them, and neither Problem (284) nor ValidationProblem (265) mandates anything - so ValidationProblem does not require 'errors', making the two 400 anyOf branches structurally identical open objects and defeating the anyOf-not-oneOf rationale the design leans on",
+      "fix": "Add @Schema(requiredMode = Schema.RequiredMode.REQUIRED) to the non-nullable components of OperatorResponse, OperatorPageResponse, Problem (type/title/status) and ValidationProblem (plus errors), regenerate, and assert the ValidationProblem 'required: [errors]' in OperatorComplianceIT",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 7,
+      "line": 3,
+      "severity": "Major",
+      "category": "documentation",
+      "issue": "The published contract carries no descriptions at all - not one schema or property in components has a description, and the info block is springdoc's untouched default (title 'OpenAPI definition', version 'v0'), so consumers and generated SDKs get an unnamed, unversioned, undocumented API",
+      "fix": "Add @Schema(description = ...) to AddressRequest, OperatorResponse, OperatorPageResponse, Problem and ValidationProblem and their fields, and add an @OpenAPIDefinition(info = @Info(title = \"trade-imports-address-book\", version = ...)) to OpenApiConfig, then regenerate",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 8,
+      "line": 221,
+      "severity": "Minor",
+      "category": "validation-mismatch",
+      "issue": "Published constraints disagree with server validation: name, addressLine1, townOrCity, postcode, phone and email carry minLength 0 (lines 221-252) although @NotBlank rejects an empty string with a 400, and the 'page' query param (line 148) has no minimum although an out-of-range page is a 400",
+      "fix": "Use @Size(min = 1, max = ...) on the @NotBlank string components of AddressRequest and add @Min(1) (or @Schema(minimum = \"1\")) to the page parameter, then regenerate",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 9,
+      "line": 199,
+      "severity": "Minor",
+      "category": "incomplete-responses",
+      "issue": "The 201 (line 199) does not document the Location header OperatorController.create actually returns, and no operation documents a 500 problem+json response even though GlobalExceptionHandler produces one - the locked contract declares both",
+      "fix": "Add headers = @Header(name = \"Location\", ...) to the 201 @ApiResponse and a shared 500 @ApiResponse (mediaType application/problem+json, schema Problem) - via an OperationCustomizer if you do not want it repeated on all five operations - then regenerate",
+      "best_practice": "java/openapi-springdoc.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

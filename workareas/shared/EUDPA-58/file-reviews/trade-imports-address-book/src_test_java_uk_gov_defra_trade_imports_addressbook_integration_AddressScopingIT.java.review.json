@@ -1,0 +1,31 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressScopingIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:20:35Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Strong multi-tenant scoping coverage, but the authoriseOrg path-vs-header mismatch guard is untested for DELETE - the one destructive verb - leaving a cross-tenant data-loss path with no test anywhere in the repo.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 118,
+      "severity": "Major",
+      "category": "security-test-coverage",
+      "issue": "forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404 exercises the OperatorController.authoriseOrg mismatch guard for GET-by-id, list, PUT and POST but NOT DELETE - and no other test in the repo ever issues a DELETE where the path orgId differs from the Trade-Imports-Organisation-Id header, so deleting authoriseOrg(orgId, sessionOrg) from OperatorController.delete would let org B soft-delete org A's address via A's path with the whole suite still green",
+      "fix": "Add a DELETE leg to forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404: perform delete(/organisation/{orgId}/addresses/{operator-id}, ORG_A, id).header(ORG_HEADER, ORG_B), expect 404, then assert the stored address is still AddressStatus.ACTIVE via repository.findById(id)",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 2,
+      "line": 235,
+      "severity": "Minor",
+      "category": "test-weakening",
+      "issue": "problemWithoutInstance strips an 'instance' key that this service never emits - GlobalExceptionHandler builds ProblemDetail.forStatusAndDetail and never calls setInstance, and it does not extend ResponseEntityExceptionHandler, so instance is null and omitted; the comment at line 229-231 claiming instance echoes the request URI is wrong for this codebase and the exclusion pre-weakens the byte-identical assertion against a future change that does populate instance",
+      "fix": "Drop problemWithoutInstance and compare the two parsed bodies directly, adding an explicit assertion that neither body contains an 'instance' key; if instance is later populated per-URI, reinstate the exclusion with a comment that matches the actual handler",
+      "best_practice": "rest-api/rest-api.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

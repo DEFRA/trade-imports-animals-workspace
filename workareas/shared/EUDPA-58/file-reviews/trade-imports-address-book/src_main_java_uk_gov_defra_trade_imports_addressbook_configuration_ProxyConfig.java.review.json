@@ -1,0 +1,71 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:21:11Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Blank/absent proxy is correctly a no-op and startup cannot fail, but the error paths log the raw proxy URL (credential leak), no nonProxyHosts bypass is configured so loopback traffic is forced through the proxy, and ProxyConfigIT covers none of the branches.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 59,
+      "severity": "Major",
+      "category": "security",
+      "issue": "Both the invalid-format warn (line 59) and the parse-failure error (line 77) log the raw httpProxy value; CDP proxy URLs are of the form http://user:password@host:port, so a malformed value (e.g. missing scheme) leaks proxy credentials into CloudWatch logs",
+      "fix": "Log a redacted form only - strip userinfo before logging (e.g. httpProxy.replaceAll(\"//[^@/]+@\", \"//***@\")), or log just the fact that parsing failed plus proxyUri.getHost()"
+    },
+    {
+      "id": 2,
+      "line": 70,
+      "severity": "Major",
+      "category": "correctness",
+      "issue": "ProxySelector.of() builds a selector with no bypass list and http.nonProxyHosts/https.nonProxyHosts are never set, so once HTTP_PROXY is present every outbound HTTP call - including localhost targets such as the cdp.cloudwatch.endpoint default http://localhost:4566, actuator self-calls and any in-test WireMock stub - is forced through the proxy and will fail; the class Javadoc's claim that no bypass is needed only covers *.cdp-int.defra.cloud routing by the squid proxy, not loopback",
+      "fix": "Set System.setProperty(\"http.nonProxyHosts\", \"localhost|127.*|[::1]|*.cdp-int.defra.cloud\") (and the https equivalent) and use a ProxySelector implementation that honours it rather than the unconditional ProxySelector.of(...)"
+    },
+    {
+      "id": 3,
+      "line": 46,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "configureProxy() has no effective test coverage: ProxyConfigIT gates every meaningful assertion on System.getenv(\"HTTP_PROXY\") being set, which it never is in CI, so the tests degrade to assertThat(proxyConfig).isNotNull() and a literal assertThat(true).isTrue() - none of the four branches (blank, invalid host/port, parse failure, happy path) is exercised",
+      "fix": "Extract the parsing into a package-private method taking the proxy URL as an argument and unit-test it directly, or drive the Spring context with @TestPropertySource(properties = \"cdp.proxyUrl=http://localhost:3128\") plus negative cases, so the branches are asserted without depending on the OS environment"
+    },
+    {
+      "id": 4,
+      "line": 72,
+      "severity": "Minor",
+      "category": "side-effects",
+      "issue": "configureProxy() mutates JVM-global state (four System properties plus ProxySelector.setDefault) from @PostConstruct and never restores it; ProxyConfigIT's @AfterAll clears the system properties but not the default ProxySelector, so once any test context sets a proxy it stays set for every later test class in the same Surefire/Failsafe JVM",
+      "fix": "Prefer configuring a ProxyConfiguration on the specific RestClient/HttpClient builder the service uses; if the global approach is kept for CDP parity, capture and restore the previous ProxySelector in the test and document the global mutation as a deliberate CDP requirement"
+    },
+    {
+      "id": 5,
+      "line": 54,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "Any userinfo in the proxy URL (http://user:pass@host:port) is silently discarded - only host and port are propagated and no java.net.Authenticator is installed - so against an authenticated proxy every request fails with 407 and the logs say the proxy was configured successfully",
+      "fix": "Read proxyUri.getUserInfo(); if present, install an Authenticator (and set jdk.http.auth.tunneling.disabledSchemes=\"\" for HTTPS CONNECT), or log a warn that credentials in HTTP_PROXY are not supported so the failure mode is visible"
+    },
+    {
+      "id": 6,
+      "line": 48,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "The no-proxy guard uses isEmpty() rather than isBlank(), so a whitespace-only HTTP_PROXY (easy to produce from a CDP env-var template) falls through to URI.create(\" \"), throws IllegalArgumentException and is reported as an ERROR instead of taking the benign 'no proxy configured' path",
+      "fix": "Use if (httpProxy == null || httpProxy.isBlank()) and strip() the value before URI.create - modern-java.md prefers isBlank()/strip() over isEmpty()/trim()",
+      "best_practice": "java/modern-java.md"
+    },
+    {
+      "id": 7,
+      "line": 42,
+      "severity": "Minor",
+      "category": "style",
+      "issue": "cdp.proxyUrl is injected with @Value onto a private field, which is the field-injection anti-pattern the Spring Boot guide bans (section 7: always constructor injection, never field injection); it also makes the class untestable without a Spring context, which is why ProxyConfigIT is reduced to null checks",
+      "fix": "Take the value as a constructor parameter - public ProxyConfig(@Value(\"${cdp.proxyUrl}\") String httpProxy) - and assign to a final field",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

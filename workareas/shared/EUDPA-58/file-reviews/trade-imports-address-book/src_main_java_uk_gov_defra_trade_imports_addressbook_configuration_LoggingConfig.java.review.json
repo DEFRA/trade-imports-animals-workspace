@@ -1,0 +1,49 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/LoggingConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:20:19Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The PR's own change (package rename to addressbook) is correct and consistent with logback-spring.xml, but the class it moves is dead code whose stated purpose is not how service.version actually reaches the ECS encoder.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 23,
+      "severity": "Major",
+      "category": "dead-code",
+      "issue": "The whole class is a no-op: setupServiceVersion() writes a JVM system property 'service.version' that nothing ever reads — logback-spring.xml resolves service.version via <springProperty name=\"service.version\" source=\"cdp.service-version\"/>, and a springProperty always shadows a same-named system property; worse, @PostConstruct fires long after Logback has initialised, so a system property set here could never influence the encoder even if the XML did read it.",
+      "fix": "Delete LoggingConfig (EcsLoggingIT's service.version assertion is satisfied by the springProperty/<serviceVersion> wiring alone); if a real system property is ever needed for logging, set it from an EnvironmentPostProcessor that runs before LoggingApplicationListener.",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 17,
+      "severity": "Minor",
+      "category": "naming",
+      "issue": "MDC key naming is inconsistent with RequestTracingFilter: there the MDC_* constants (MDC_TRACE_ID, MDC_HTTP_METHOD, MDC_URL_FULL) really are MDC.put keys, whereas MDC_SERVICE_VERSION here is used as a System.setProperty key and the class Javadoc claims it 'Sets up service version in MDC' — nothing in this class touches MDC.",
+      "fix": "If the class survives, rename the constant to SERVICE_VERSION_PROPERTY and correct the Javadoc; otherwise remove it with the class.",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 3,
+      "line": 4,
+      "severity": "Minor",
+      "category": "unused-import",
+      "issue": "org.springframework.boot.info.BuildProperties and java.util.Optional are imported but never used; the pom has no spotless/checkstyle/PMD plugin, so nothing in the build will catch them.",
+      "fix": "Remove both imports (or the whole class per item 1).",
+      "best_practice": "java/modern-java.md"
+    },
+    {
+      "id": 4,
+      "line": 20,
+      "severity": "Minor",
+      "category": "injection",
+      "issue": "@Value field injection on serviceVersion contradicts the bundle's constructor-injection rule ('@Autowired field injection -> Constructor injection'), and leaves the field non-final and untestable without reflection.",
+      "fix": "If retained, take the value as a constructor parameter (@Value on the ctor arg) and make the field final.",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

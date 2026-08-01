@@ -1,0 +1,22 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/filter/RequestTracingFilter.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:19:21Z",
+  "verdict": "SAFE",
+  "verdict_reason": "This PR only re-packages the file (rename, 97% similarity); MDC clear-in-finally, x-cdp-request-id header naming, filter ordering and PII exposure all check out, leaving one Minor dead-MDC-key nit.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 58,
+      "severity": "Minor",
+      "category": "observability",
+      "issue": "http.response.status_code is put into MDC after chain.doFilter returns and is wiped by MDC.clear() in the finally block, so no log line ever carries it (and it is skipped entirely when the chain throws) - the ECS field the class javadoc promises is never emitted; carried through unchanged by this PR's package rename",
+      "fix": "Either drop the MDC_HTTP_STATUS put, or emit a single request-completion log line (log.info) immediately after setting it, before the finally clears MDC; add an EcsLoggingIT assertion for http.response.status_code",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

@@ -1,0 +1,29 @@
+{
+  "file": ".github/workflows/publish-branch.yml",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T09:16:20Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Workflow is functionally correct (fork/dependabot guards, OIDC role, tag sanitisation all match the estate standard) but duplicates the shared reusable workflow inline and has already drifted by pinning docker/build-push-action to v4.0.0.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 19,
+      "severity": "Major",
+      "category": "duplication",
+      "issue": "Inlines a full 78-line copy of the shared reusable workflow DEFRA/trade-imports-animals-workspace/.github/workflows/publish-branch.yml@main, which all 8 sibling repos call with a 6-line caller; the copy will silently drift from the estate (it already has, see the action pin) and fixes to the shared workflow will not reach this repo.",
+      "fix": "Replace the job body with 'uses: DEFRA/trade-imports-animals-workspace/.github/workflows/publish-branch.yml@main' plus 'with: image-name: trade-imports-address-book' and 'secrets: inherit', matching trade-imports-dynamics-gateway/.github/workflows/publish-branch.yml."
+    },
+    {
+      "id": 2,
+      "line": 61,
+      "severity": "Major",
+      "category": "ci-dependency",
+      "issue": "docker/build-push-action is pinned to SHA 3b5e8027fcad23fda98b2e3ac259d8d67585f671, which resolves to tag v4.0.0 (Feb 2023, action runtime 'node16') - three majors behind the @v7 used by the shared workspace workflow and every other repo; node16 action runtimes are deprecated and force-migrated by GitHub with warnings, and the pin carries no version comment so nobody can tell what it is.",
+      "fix": "Use the shared reusable workflow (which is on @v7), or if the inline copy stays, repin to the v7 release SHA with a trailing '# v7.x.x' comment."
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

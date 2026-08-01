@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorPageResponse.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T14:15:12Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Page metadata field set and semantics are correct and well tested, but the record carries no @Schema annotations so the generated OpenAPI drops the required/minimum constraints the locked contract declares.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 15,
+      "severity": "Major",
+      "category": "openapi-contract",
+      "issue": "No @Schema on the record or any component, so springdoc emits OperatorPageResponse with no 'required' array, no descriptions and no minimum bounds (docs/openapi/operators.yml lines 329-346) while the locked contract's OperatorPage declares items/page/page_size/total_items/total_pages all required with minimums (api-contract.locked.yaml lines 589-614); the compliance IT's divergence gate only compares path set + operationIds so the drift is unenforced.",
+      "fix": "Add @Schema(description=...) on the record and @Schema(description=..., requiredMode = Schema.RequiredMode.REQUIRED, minimum=...) on each of items/page/pageSize/totalItems/totalPages, matching the locked contract's minimums (page>=1, pageSize>=1, totalItems>=0, totalPages>=0).",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 2,
+      "line": 19,
+      "severity": "Minor",
+      "category": "immutability",
+      "issue": "The compact constructor null-guards items with Objects.requireNonNull but does not defensively copy it, so the record advertised as immutable keeps a live reference to whatever List the caller passed (OperatorService today passes an immutable Stream.toList(), but nothing enforces that on future callers or tests).",
+      "fix": "Replace Objects.requireNonNull(items, \"items\") with items = List.copyOf(items); it both null-guards (List.copyOf throws NPE on null) and makes the component genuinely unmodifiable.",
+      "best_practice": "java/modern-java.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

@@ -1,0 +1,22 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/Address.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T14:14:36Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Multi-tenant scoping is sound — organisationId is on the entity, leads the only compound index and is enforced on every service/repository read and write path — but the entity carries no @Version, leaving the update/delete read-modify-write open to lost updates and tombstone resurrection.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 69,
+      "severity": "Major",
+      "category": "concurrency",
+      "issue": "Address has no @Version field, so the read-modify-write in OperatorService.update()/delete() is last-write-wins: repository.save() replaces the whole document, so a PUT that loaded an ACTIVE address and saves after a concurrent DELETE writes status=ACTIVE back and resurrects the tombstone (and two concurrent PUTs silently lose one edit).",
+      "fix": "Add '@Version private Long version;' alongside the audit fields, add matching @Mapping(target=\"version\", ignore=true) / ignoreUnmappedSourceProperties entries in OperatorMapper (unmappedTargetPolicy and unmappedSourcePolicy are both ERROR), and map OptimisticLockingFailureException to a 409 problem in GlobalExceptionHandler.",
+      "best_practice": "java/spring-data-mongodb.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

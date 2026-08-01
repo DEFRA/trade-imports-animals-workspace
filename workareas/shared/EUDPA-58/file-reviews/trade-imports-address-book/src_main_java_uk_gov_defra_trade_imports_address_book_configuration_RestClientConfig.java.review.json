@@ -1,0 +1,22 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/address/book/configuration/RestClientConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T09:16:34Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The file is deleted outright with no replacement; nothing breaks today because no code makes outbound HTTP calls, but the deletion orphans TraceIdPropagationInterceptor and leaves the CDP trace-header requirement unenforced for future clients.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 1,
+      "severity": "Major",
+      "category": "dead-code",
+      "issue": "Deleting RestClientConfig removes the only wiring of TraceIdPropagationInterceptor, which survives as an orphaned @Component (plus its test and the cdp.tracing.header-name property) whose Javadoc still claims it adds x-cdp-request-id to every outbound RestClient/RestTemplate call - it now adds it to none, so the stated CDP tracing requirement is silently unenforced for any future outbound client (the 10s connect / 30s read timeouts went with it too).",
+      "fix": "Finish the cleanup either way: delete TraceIdPropagationInterceptor, its test and the cdp.tracing.header-name property alongside RestClientConfig; or keep a minimal @Configuration exposing a RestClient.Builder bean with .requestInterceptor(traceIdInterceptor) and the timeouts, per best-practice section 17.",
+      "best_practice": "java/spring-boot.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

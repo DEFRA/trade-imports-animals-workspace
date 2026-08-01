@@ -1,0 +1,22 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/configuration/MetricsConfigTest.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:28:36Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Rename-only: the sole diff hunk is the package declaration (address.book -> addressbook); the two pre-existing tests are tautological (isNotNull/isInstanceOf on a compile-time-guaranteed return type) but that is untouched by this PR and MetricsConfig has no @ConditionalOnProperty to cover, so it is logged as Minor.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 29,
+      "severity": "Minor",
+      "category": "test-quality",
+      "issue": "Both tests are tautological: the declared return types are TimedAspect/CountedAspect, so isNotNull() plus isInstanceOf() can only fail if the factory returns null — nothing asserts the aspect was bound to the supplied MeterRegistry (pre-existing; this PR only changes the package line).",
+      "fix": "Assert observable behaviour instead — e.g. exercise the aspect against a @Timed/@Counted proxy and assert the SimpleMeterRegistry records the meter, or drop the trivial tests and cover the beans via a @SpringBootTest/ApplicationContextRunner context assertion.",
+      "best_practice": "java/testing/unit.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

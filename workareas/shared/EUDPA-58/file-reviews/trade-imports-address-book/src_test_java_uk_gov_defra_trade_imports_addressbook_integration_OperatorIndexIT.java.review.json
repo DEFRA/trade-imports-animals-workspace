@@ -1,0 +1,56 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:04Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The index pin is real (name plus exact key order) but stops at declaration - no explain plan proves the planner uses it - and the test violates the repo's @BeforeEach cleanup rule by leaking an all-null Address into the shared collection.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 33,
+      "severity": "Major",
+      "category": "test-quality",
+      "issue": "The test asserts only that the index is DECLARED (name + key order from listIndexes); it never runs an explain plan, so it cannot detect the failure it claims to guard - a declared index the planner does not actually choose for findByOrganisationIdAndStatus or the searchBy* $or/regex queries (COLLSCAN or in-memory SORT) still passes green.",
+      "fix": "Add a behavioural assertion alongside the metadata one: run an explain (e.g. mongoTemplate.execute(db -> db.runCommand(new Document(\"explain\", findCommand))) or Query with a real page+sort) for findByOrganisationIdAndStatus and assert winningPlan reaches an IXSCAN on indexName 'org_status_created' with no SORT stage.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 2,
+      "line": 29,
+      "severity": "Major",
+      "category": "test-isolation",
+      "issue": "Cleanup is inline at the top of the test body instead of @BeforeEach, and the test then saves an all-null Address (builder().build(), no organisationId/status) that is never removed - it leaks into the shared 'addresses' collection of the shared Spring context/Mongo container for whatever IT class runs next; every sibling IT (AddressGetIT, AddressSearchIT, OperatorListIT etc.) only survives this because each happens to call deleteAll() in its own @BeforeEach.",
+      "fix": "Move the deleteAll() into a @BeforeEach setUp() per the repo convention, and drop the save() entirely - auto-index-creation:true already creates the collection and index at context startup, so no document is needed to observe listIndexes.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 3,
+      "line": 36,
+      "severity": "Minor",
+      "category": "dead-assertion",
+      "issue": "assertThat(indexNames).doesNotContain(\"crn_status_type_created\", \"org_status\") is vacuous: neither name appears anywhere in the codebase (grep confirms only this line), the Mongo container is created fresh per run, and Spring's auto-index-creation only creates indexes declared on @Document classes - so no mechanism can ever put those names in the list and the assertion cannot fail. It reads as a migration guard against a stale deployed index, which a throwaway container structurally cannot see.",
+      "fix": "Replace it with an exhaustive assertion that actually bites - assertThat(indexNames).containsExactlyInAnyOrder(\"_id_\", \"org_status_created\") - which catches index bloat, renames and accidental extra @Indexed fields."
+    },
+    {
+      "id": 4,
+      "line": 43,
+      "severity": "Minor",
+      "category": "assertion-strength",
+      "issue": "The pin covers key names and key order but not sort directions: extracting(IndexField::getKey).containsExactly(...) passes unchanged if createdAt flips from -1 to 1 (or organisationId/status flip to -1), even though the class javadoc and Address.java both make 'newest-first' load-bearing. Flipping the whole def to descending would silently break Pageable sorts that the equality-prefix reverse scan cannot rescue.",
+      "fix": "Extract the pair, e.g. .extracting(IndexField::getKey, IndexField::getDirection).containsExactly(tuple(\"organisationId\", ASC), tuple(\"status\", ASC), tuple(\"createdAt\", DESC)), so the assertion matches the @CompoundIndex def exactly."
+    },
+    {
+      "id": 5,
+      "line": 28,
+      "severity": "Minor",
+      "category": "convention",
+      "issue": "The test omits the mandatory // Given // When // Then comment blocks that every other IT in this repo carries, and mongoTemplate.indexOps(\"addresses\") hardcodes the collection name instead of deriving it from the entity, so a change to @Document(collection=...) on Address is not caught by the type system.",
+      "fix": "Add the // Given // When // Then blocks per the repo IT convention, and use mongoTemplate.indexOps(Address.class) so the collection name is resolved from the @Document annotation.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

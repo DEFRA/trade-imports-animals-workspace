@@ -1,0 +1,47 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/OpenApiConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:21:54Z",
+  "verdict": "RISKY",
+  "verdict_reason": "The class does its narrow job correctly but its Javadoc asserts a contract-divergence guarantee OperatorComplianceIT does not provide, and it omits the global info/servers/securityScheme declaration that would give the committed spec an identity and reconcile it with the locked contract.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 11,
+      "severity": "Critical",
+      "category": "doc-accuracy",
+      "issue": "Javadoc claims the ModelResolver stops /v3/api-docs diverging from 'the locked contract - the exact divergence OperatorComplianceIT fails the build on', but that gate (OperatorComplianceIT lines 231-251) compares only path keys, HTTP-method keys and operationIds against docs/openapi/api-contract.locked.yaml; components.schemas, parameters, securitySchemes and info are never compared, so the locked contract's snake_case operator_type/crn/approval_number/transporter_category fields and its Trade-Imports-Crn header pass green despite existing nowhere in the code",
+      "fix": "Withdraw the overclaim (the resolver only binds swagger-core to the app ObjectMapper) and extend OperatorComplianceIT's divergence gate to also compare components.schemas property-name sets and operation parameter names, so a locked contract documenting fields the service does not implement fails the build"
+    },
+    {
+      "id": 2,
+      "line": 16,
+      "severity": "Major",
+      "category": "openapi-metadata",
+      "issue": "OpenApiConfig declares no @OpenAPIDefinition and no OpenAPI bean, so the spec published at /v3/api-docs and committed as docs/openapi/operators.yml carries springdoc placeholders 'title: OpenAPI definition' and 'version: v0' (operators.yml lines 3-4) with no servers block (OperatorComplianceIT line 210 strips servers before writing) - an untitled, unversioned, base-URL-less artifact that README line 185 advertises as committed 'for downstream consumers', and that contradicts the locked contract's title trade-imports-address-book / version 1.0.0 / servers block",
+      "fix": "Add @OpenAPIDefinition(info = @Info(title = \"trade-imports-address-book\", version = \"1.0.0\", description = ...)) to this class and an @Bean OpenAPI declaring the deployed servers, so the generated document carries real identity and matches api-contract.locked.yaml lines 2-4 and 76",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 3,
+      "line": 16,
+      "severity": "Major",
+      "category": "security-scheme",
+      "issue": "No SecurityScheme is declared here, so the identity contract is documented two incompatible ways and nothing reconciles them: the generated spec models Trade-Imports-Organisation-Id as a per-operation @RequestHeader parameter (operators.yml lines 21/55/104/141/187) while api-contract.locked.yaml lines 376-396 declares securitySchemes Trade-Imports-Crn AND Trade-Imports-Organisation-Id, with Trade-Imports-Crn described as the primary identity header - IdentityHeaderFilter lines 46/73 reads only Trade-Imports-Organisation-Id and 400s otherwise, so a consumer coding to the locked contract sends Trade-Imports-Crn and is rejected",
+      "fix": "Declare a single apiKey-in-header SecurityScheme for Trade-Imports-Organisation-Id in an @Bean OpenAPI here plus a matching @SecurityRequirement, and delete the Trade-Imports-Crn scheme and its narrative from api-contract.locked.yaml since no code enforces it",
+      "best_practice": "java/openapi-springdoc.md"
+    },
+    {
+      "id": 4,
+      "line": 19,
+      "severity": "Minor",
+      "category": "side-effect",
+      "issue": "new ModelResolver(objectMapper) hands swagger-core the application's singleton ObjectMapper; swagger-core's AbstractModelConverter constructor calls mapper.registerModule(...) which inserts SwaggerAnnotationIntrospector into that mapper, so swagger annotations begin influencing real HTTP serialisation (hasRequiredMarker, findSubtypes, findTypeName) and not just the generated document",
+      "fix": "Pass a copy - new ModelResolver(objectMapper.copy()) - which keeps the JacksonConfig LOWER_CAMEL_CASE strategy the Javadoc relies on while leaving the runtime mapper unmutated"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

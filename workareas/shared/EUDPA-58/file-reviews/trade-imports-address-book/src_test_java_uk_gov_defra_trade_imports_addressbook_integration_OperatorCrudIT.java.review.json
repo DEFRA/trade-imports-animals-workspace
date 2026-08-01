@@ -1,0 +1,76 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:51Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The CRUD contract IT never sends a malformed body, leaving the GlobalExceptionHandler 500-instead-of-400 path unguarded, and roughly two thirds of the class duplicates sibling IT classes added in the same PR.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 90,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "No POST or PUT test sends a truncated, empty or otherwise malformed JSON body, so the file never exercises HttpMessageNotReadableException — which is a RuntimeException and so falls through GlobalExceptionHandler's @ExceptionHandler(RuntimeException.class) catch-all to a 500 internal-error, contradicting the POST/PUT 400 anyOf(ValidationProblem, Problem) contract declared on OperatorController.",
+      "fix": "Add two tests here — POST with content(\"{\\\"name\\\":\") and PUT with content(\"\") — asserting 400, application/problem+json, type .../problems/bad-request and $.errors doesNotExist; then add an @ExceptionHandler(HttpMessageNotReadableException.class) to GlobalExceptionHandler so they pass.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 2,
+      "line": 273,
+      "severity": "Major",
+      "category": "duplication",
+      "issue": "Roughly two thirds of this new class re-tests behaviour that sibling IT classes added in the same PR already cover verbatim: getReturns200WithTheAddressAndItsDeletedFalseSignal / getOfADeletedTombstoneReturns200WithDeletedTrueNotA404 / getOfAnUnknownIdReturns404NotFoundProblem duplicate AddressGetIT; putReplacesTheMutableFields.../putClearsAnOmittedOptionalField.../putOnADeletedTombstoneReturns404 duplicate AddressUpdateIT; deleteOfAnUnknownIdReturns404.../deleteOfAnAddressOwnedByAnotherOrganisationReturns404 duplicate AddressDeleteIT; putWithoutTheOrgHeaderReturns400... duplicates AddressScopingIT; createReturns400ValidationProblemKeyedByCamelCaseFieldNames duplicates OperatorComplianceIT.validationProblemCarriesCamelCaseErrorsMapAndTraceId. Every duplicate is a second Testcontainers-backed round trip and a second place to update when the contract moves.",
+      "fix": "Cut this class down to what only it covers — the create leg (201 + Location + stamped organisationId, the type/role rejection, the unknown-field drop, countryCode/phone pass-through) and fullCrudRoundTrip... — and delete the get/put/delete/org-header tests that AddressGetIT, AddressUpdateIT, AddressDeleteIT and AddressScopingIT already own.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 3,
+      "line": 266,
+      "severity": "Minor",
+      "category": "flaky-test",
+      "issue": "saveAddress seeds createdAt/modifiedAt with the fixed instant 2026-07-14T09:15:27Z, but MongoConfig has @EnableMongoAuditing and Address carries @CreatedDate/@LastModifiedDate, so both are overwritten with now() on repository.save. putReplacesTheMutableFieldsReturns200AndBumpsModifiedAt therefore asserts isAfter() on two wall-clock instants a few milliseconds apart at Mongo's millisecond precision, not the intended 17-day gap — it can flake if the seed save and the PUT land in the same millisecond, and the fixed instants read as meaningful fixture state when they are dead.",
+      "fix": "Drop the .createdAt/.modifiedAt builder calls from saveAddress (auditing owns them), and re-read the persisted modifiedAt after the seed save as the baseline, or assert the bump via isAfterOrEqualTo plus an explicit not-equal-to-createdAt check.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 4,
+      "line": 173,
+      "severity": "Minor",
+      "category": "weak-assertion",
+      "issue": "createIgnoresEchoedReadOnlyAndUnrelatedUnknownFieldsRatherThanRejectingThem echoes createdAt 2020-01-01T00:00:00Z in the body but never asserts it was ignored — it only checks $.id and $.deleted. id is Mongo-assigned so a leak there is impossible anyway; createdAt is the one echoed read-only field where a client-supplied value silently overwriting the audited timestamp would pass this test unnoticed.",
+      "fix": "Add .andExpect(jsonPath(\"$.createdAt\").value(org.hamcrest.Matchers.not(startsWith(\"2020\")))) and assert repository.findAll() single element getCreatedAt() isAfter Instant.parse(\"2020-01-01T00:00:00Z\").",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 5,
+      "line": 23,
+      "severity": "Minor",
+      "category": "doc-accuracy",
+      "issue": "The class Javadoc says 'Full-stack CRUD integration test for {@code /operators}', but no such route exists — every request in the file targets /organisation/{orgId}/addresses (OperatorController @RequestMapping). The class name OperatorCrudIT is likewise out of step with the sibling AddressGetIT / AddressUpdateIT / AddressDeleteIT / AddressSearchIT naming for the same resource.",
+      "fix": "Correct the Javadoc to name /organisation/{orgId}/addresses and rename the class to AddressCrudIT to match its siblings.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 6,
+      "line": 418,
+      "severity": "Minor",
+      "category": "null-safety",
+      "issue": "getHeader(\"Location\") is dereferenced immediately by location.substring(location.lastIndexOf('/') + 1) with no null guard; if the Location header ever stops being emitted the round-trip test fails with a bare NullPointerException instead of naming the missing header (Sonar java:S2259).",
+      "fix": "Assert the header first — .andExpect(header().exists(\"Location\")) on the chain, or assertThat(location).isNotNull() before the substring.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 7,
+      "line": 41,
+      "severity": "Minor",
+      "category": "test-conventions",
+      "issue": "Test methods use free-form sentence names (createReturns201WithLocationAndServerStampedOrganisation, putOnADeletedTombstoneReturns404) and carry no Given/When/Then comment blocks, against the integration-testing guide which mandates {subject}_{shouldDoWhat}[_{whenContext}] with the HTTP method as the subject prefix and states the Given/When/Then comment blocks must be present.",
+      "fix": "Rename to the documented pattern (post_shouldReturn201WithLocationAndStampedOrganisation, put_shouldReturn404_whenTargetIsATombstone) and add the // Given // When // Then blocks.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

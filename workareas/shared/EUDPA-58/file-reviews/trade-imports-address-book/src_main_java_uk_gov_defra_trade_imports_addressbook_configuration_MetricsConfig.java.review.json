@@ -1,0 +1,38 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/MetricsConfig.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:20:42Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Diff on this file is only the package rename, but the metrics feature it owns is inert without @EnableScheduling, and the file carries 17 unused imports plus a Javadoc that describes beans and classes that do not exist",
+  "todos": [
+    {
+      "id": 1,
+      "line": 41,
+      "severity": "Major",
+      "category": "observability",
+      "issue": "No @EnableScheduling anywhere in the app (grep of src finds none, Application.java has only @SpringBootApplication + @EnableConfigurationProperties), so EmfMetricsPublisher's @Scheduled(fixedRate = 60000) publishMetrics() never fires and no EMF metric is ever flushed to CloudWatch — MetricsConfigurationPropertiesTest asserts the annotation exists but nothing proves it runs",
+      "fix": "Add @EnableScheduling to MetricsConfig (the metrics @Configuration class) or to Application, and cover it with a context test asserting a ScheduledAnnotationBeanPostProcessor / TaskScheduler bean is present",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 2,
+      "line": 5,
+      "severity": "Minor",
+      "category": "dead-code",
+      "issue": "17 of the 23 imports are unused (Counter, DistributionSummary, FunctionCounter, FunctionTimer, Gauge, Measurement, Meter, Meter.Id, Meter.Type, Timer, CompositeMeterRegistry, DistributionStatisticConfig, PauseDetector, SimpleMeterRegistry, TimeUnit, ToDoubleFunction, ToLongFunction) — carried through the package rename; sonar java:S1128",
+      "fix": "Delete every import except CountedAspect, TimedAspect, MeterRegistry, Slf4j, Bean and Configuration"
+    },
+    {
+      "id": 3,
+      "line": 27,
+      "severity": "Minor",
+      "category": "docs",
+      "issue": "Class Javadoc is factually wrong for the code it sits on: it claims the class 'only provides a fallback SimpleMeterRegistry when metrics are disabled' (no such bean exists — only TimedAspect and CountedAspect) and points at EmfMetricsConfig and MetricsService, neither of which exists in the repo (grep finds them only in this comment)",
+      "fix": "Rewrite the Javadoc to describe the two AOP aspect beans and reference the real collaborators (EmfMetricsPublisher, application.yml management.metrics.*), or drop the ARCHITECTURE block"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

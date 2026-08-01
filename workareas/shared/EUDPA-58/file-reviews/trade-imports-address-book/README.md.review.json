@@ -1,0 +1,53 @@
+{
+  "file": "README.md",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T09:00:21Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The rewritten README is accurate about the API, config, tests and OpenAPI contract, but its recommended 'Workspace stack' onboarding path documents an integration that does not exist in the workspace repo, plus four smaller factual mismatches.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 25,
+      "severity": "Major",
+      "category": "docs-accuracy",
+      "issue": "The whole 'Workspace stack (recommended)' section documents an integration that does not exist: trade-imports-address-book appears nowhere in the workspace repo (no match in docker/stack/*.compose.yml, scripts/stack/, or any workspace file), so run-stack.sh will not start this service, -b/-d/-e will not pick it up, and 'This service runs on port 8089 in the stack' is false.",
+      "fix": "Either add the service to the workspace stack compose files first, or demote this section to a clearly-labelled 'Planned' note and make 'Repo Docker Compose' the recommended local path until the workspace integration lands."
+    },
+    {
+      "id": 2,
+      "line": 43,
+      "severity": "Minor",
+      "category": "docs-accuracy",
+      "issue": "'./scripts/stack/bounce-backend.sh trade-imports-address-book' implies the script takes a service argument; it does not — scripts/stack/bounce-backend.sh line 21 hardcodes 'trade-imports-animals-backend' and ignores $@, so the documented command silently bounces the wrong service.",
+      "fix": "Drop the argument (and the whole line, given the service is not in the stack), or raise a workspace change making bounce-backend.sh accept a service name before documenting it."
+    },
+    {
+      "id": 3,
+      "line": 90,
+      "severity": "Minor",
+      "category": "docs-accuracy",
+      "issue": "The API overview table and the soft-delete section document the single-address routes as '/organisation/{orgId}/addresses/{id}', but the real path template is '{operator-id}' (OperatorController @GetMapping(\"/{operator-id}\"), and both docs/openapi/operators.yml and api-contract.locked.yaml).",
+      "fix": "Use {operator-id} in the README table and in the DELETE example at line 201 so the README matches the locked OpenAPI contract."
+    },
+    {
+      "id": 4,
+      "line": 100,
+      "severity": "Minor",
+      "category": "docs-accuracy",
+      "issue": "countryCode is described as an 'Exact ISO 3166-1 alpha-2 filter', which reads as an AND-narrowing of q; the implementation ORs them — OperatorRepository.searchByQueryAndCountryCode builds a single $or over name/townOrCity/postcode/countryCode, so 'q=gree&countryCode=FR' widens rather than narrows the result set.",
+      "fix": "State the combined semantics explicitly in the table (or fix the query to AND the two and keep the wording), so integrators are not surprised by the widening behaviour."
+    },
+    {
+      "id": 5,
+      "line": 7,
+      "severity": "Minor",
+      "category": "docs-completeness",
+      "issue": "The table of contents lists nine sections but the document has ten '##' headings — 'Indexes' (line 212) is missing from the TOC.",
+      "fix": "Add '* [Indexes](#indexes)' between the soft-delete and licence entries."
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

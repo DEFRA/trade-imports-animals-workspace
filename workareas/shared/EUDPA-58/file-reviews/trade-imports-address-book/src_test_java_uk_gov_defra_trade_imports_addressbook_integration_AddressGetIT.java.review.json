@@ -1,0 +1,58 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:33Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Cross-org and tombstone coverage is correct and the 404 non-disclosure assertion is sound, but the happy-path GET pins only 5 of 14 response fields, the cross-org test duplicates AddressScopingIT verbatim, and the camelCase assertions contradict the locked snake_case contract committed in the same PR.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 69,
+      "severity": "Major",
+      "category": "contract-drift",
+      "issue": "Assertions pin camelCase wire names (jsonPath $.countryCode, $.organisationId, $.deleted) but the same PR commits docs/openapi/api-contract.locked.yaml declaring snake_case (address_line_1, organisation_id, trace_id, country, telephone, status) — and docs/best-practices/rest-api/rest-api.md lists 'camelCase in JSON' under Don't. The compliance gate in OperatorComplianceIT only diffs path set, HTTP methods and operationIds against the locked contract, never schema properties, so this whole-model divergence ships untested. PR-wide issue, raised once here.",
+      "fix": "Pick one authority: either regenerate/delete api-contract.locked.yaml so it matches the camelCase implementation, or move the implementation to snake_case; then extend the OperatorComplianceIT divergence gate to compare component schema property names, not just operationIds.",
+      "best_practice": "rest-api/rest-api.md"
+    },
+    {
+      "id": 2,
+      "line": 102,
+      "severity": "Major",
+      "category": "duplicate-test",
+      "issue": "getCrossOrgIdReturns404IdenticalToUnknownId is a near-verbatim duplicate of AddressScopingIT.a404ForAnotherOrgsLiveAddressIsByteIdenticalToA404ForAnUnknownId (same ORG_A/ORG_B/UNKNOWN_ID constants, same two requests, same problem-body equality) and assertThatProblemBodiesMatch duplicates AddressScopingIT.problemWithoutInstance. Both files are new in this PR, so the duplication is introduced here — two copies of a security-critical assertion will drift apart, and only one carries the comment explaining why instance is excluded.",
+      "fix": "Delete the duplicate test from AddressGetIT and leave the cv-040 non-disclosure assertion in AddressScopingIT, which is the class that owns org scoping; or hoist the problem-body comparison helper into IntegrationBase and keep a single test.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 3,
+      "line": 67,
+      "severity": "Major",
+      "category": "assertion-gap",
+      "issue": "The happy-path GET asserts only 5 of the 14 OperatorResponse fields (id, name, countryCode, organisationId, deleted). The save() fixture seeds addressLine1, townOrCity, postcode, phone, email, createdAt and modifiedAt but none is asserted, so an OperatorMapper regression that drops or mis-maps any of them — including addressLine1, the exact field the two committed contract documents disagree about — passes this IT green. For the endpoint the class javadoc frames as the GET contract test, that is the wrong half of the payload pinned.",
+      "fix": "Assert the remaining mapped fields on getLiveAddressReturns200WithDeletedFalse (addressLine1, townOrCity, postcode, phone, email, and createdAt/modifiedAt as exists()), or compare the whole body against an expected JSON document with content().json(...).",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 4,
+      "line": 52,
+      "severity": "Minor",
+      "category": "misleading-fixture",
+      "issue": "save() seeds createdAt and modifiedAt with fixed Instants, but Address carries @CreatedDate/@LastModifiedDate and MongoConfig enables @EnableMongoAuditing, so repository.save() overwrites both with the current clock on insert. The seeded 2026-07-14T09:15:27Z values never reach the database and are never asserted — dead fixture that implies deterministic timestamps the test does not have.",
+      "fix": "Drop the createdAt/modifiedAt builder calls from save(), or assert the auditing behaviour explicitly (e.g. read the saved entity back and assert the timestamps are non-null and were set by auditing rather than by the fixture).",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 5,
+      "line": 23,
+      "severity": "Minor",
+      "category": "doc-accuracy",
+      "issue": "The class javadoc claims cross-org and unknown ids yield 'byte-identical 404s (cv-040)', but assertThatProblemBodiesMatch deserialises both bodies into a Map and removes the instance key before comparing — so neither byte identity, key order, nor the Content-Type header is actually asserted, and instance legitimately differs. AddressScopingIT documents the instance exclusion inline; this copy states a stronger guarantee than its own assertion provides.",
+      "fix": "Reword the javadoc to 'identical problem bodies apart from the RFC 9457 instance, which echoes the caller own request URI', matching the comment already written in AddressScopingIT.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

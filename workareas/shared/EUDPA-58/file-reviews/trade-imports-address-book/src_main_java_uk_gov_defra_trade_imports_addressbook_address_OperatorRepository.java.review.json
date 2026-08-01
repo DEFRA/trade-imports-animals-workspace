@@ -1,0 +1,40 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorRepository.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T14:15:27Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Every declared finder and search constrains on organisationId and the index supports them, but the inherited MongoRepository CRUD leaves unscoped id-only methods on the interface and the two countryCode query paths have no cross-org test.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 12,
+      "severity": "Major",
+      "category": "multi-tenancy",
+      "issue": "Extending MongoRepository<Address, String> publishes unscoped id-only CRUD (findById, deleteById, delete, existsById, findAll, deleteAll) alongside the org-scoped finders, so the tenant guard the class javadoc claims (cv-010) is a convention, not a constraint",
+      "fix": "Extend Repository<Address, String> and declare only what is used - save, the three org-scoped @Query searches, findByIdAndOrganisationId, findByOrganisationIdAndStatus (plus deleteAll for test cleanup) - so findById/deleteById are not on the interface at all",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 2,
+      "line": 63,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "The 'organisationId': ?0 term is the only tenant guard in the hand-written searchByCountryCode and searchByQueryAndCountryCode queries, and neither has a cross-org test - AddressSearchIT seeds OTHER_ORG only in searchIsOrgScopedAndExcludesSoftDeleted, which exercises the q-only searchByQuery path",
+      "fix": "In AddressSearchIT, add an OTHER_ORG (and a DELETED) row to countryCodeParamMatchesStoredAlpha2Code and combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode, asserting totalItems excludes them",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 3,
+      "line": 49,
+      "severity": "Minor",
+      "category": "consistency",
+      "issue": "The three @Query methods hard-code the string literal 'ACTIVE' for status while findByOrganisationIdAndStatus binds the AddressStatus enum, so the persisted status representation now has two sources of truth",
+      "fix": "Bind status as a parameter in the raw queries ('status': ?N) and pass AddressStatus.ACTIVE from OperatorService.queryPage, matching the derived method",
+      "best_practice": "java/spring-data-mongodb.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

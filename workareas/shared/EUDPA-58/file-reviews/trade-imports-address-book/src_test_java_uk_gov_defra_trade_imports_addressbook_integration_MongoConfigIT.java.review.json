@@ -1,0 +1,22 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/MongoConfigIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T08:58:10Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The renamed read-preference test is a clearer assertion than the tautology it replaced, but it only exercises the integration-test profile's own duplicate of the property so it does not guard the production default its comment describes.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 47,
+      "severity": "Major",
+      "category": "test-quality",
+      "issue": "The new primaryPreferred assertion is satisfied by the test profile's own copy of the property (src/test/resources/application-integration-test.yml:13 sets read-preference: primaryPreferred), so it does not lock the production default the comment claims to protect — reverting src/main/resources/application.yml:13 to 'secondary' leaves this test green.",
+      "fix": "Delete the read-preference key from application-integration-test.yml so the integration-test profile inherits the main application.yml value, making this assertion a real regression guard on the production default.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

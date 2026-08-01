@@ -1,0 +1,21 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/exceptions/BadRequestException.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T14:13:35Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Minimal RuntimeException subclass matching the custom-exception pattern in the Spring Boot best-practices bundle and wired to a working 400 bad-request handler; the only issue is a class Javadoc that misdescribes which conditions actually throw it.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 4,
+      "severity": "Minor",
+      "category": "documentation",
+      "issue": "Class Javadoc names two triggers that never throw this exception: a missing identity header is rejected inside IdentityHeaderFilter (which writes problem+json itself because @RestControllerAdvice cannot see filter exceptions) and a malformed query parameter surfaces as MethodArgumentTypeMismatchException with its own handler; the sole production throw site is OperatorService.list for an out-of-range page (< 1).",
+      "fix": "Reword the Javadoc to describe the real trigger (a request parameter that is syntactically valid but out of range, e.g. page < 1) and drop the missing-identity-header and malformed-query-param examples, so nobody throws this from a servlet filter expecting the advice to map it."
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

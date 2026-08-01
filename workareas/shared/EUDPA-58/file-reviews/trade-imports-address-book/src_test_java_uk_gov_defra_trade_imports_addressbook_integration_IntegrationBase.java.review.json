@@ -1,0 +1,31 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/IntegrationBase.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:22:48Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Correctly wired for testcontainers 2.0.2 (opt-in withReplicaSet + getReplicaSetUrl) and sets no default identity header, but provides no per-test database cleanup hook, leaving IT isolation to per-subclass discipline.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 18,
+      "severity": "Major",
+      "category": "test-isolation",
+      "issue": "The new IntegrationBase starts one shared MongoDB container and one shared Spring context for every IT but provides no per-test cleanup hook, so collection isolation is opt-in per subclass; 8 ITs each hand-roll repository.deleteAll(), OperatorIndexIT cleans inside its @Test and leaves a saved Address row behind, and MongoConfigIT does no cleanup at all — order dependence is latent rather than prevented.",
+      "fix": "Add the documented base-class hook: @BeforeEach void cleanDatabase(@Autowired MongoTemplate mongoTemplate) { mongoTemplate.getDb().listCollectionNames().forEach(mongoTemplate::dropCollection); } and drop the duplicated deleteAll() calls from the subclasses.",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 2,
+      "line": 24,
+      "severity": "Minor",
+      "category": "duplication",
+      "issue": "The base exposes only mockMvc and port, so every derived IT redeclares the same identity constants — ORG_HEADER = \"Trade-Imports-Organisation-Id\" is copied into 8 new IT classes and the sample organisation UUID into most of them; a header rename means editing 8 files.",
+      "fix": "Hoist protected static final String ORG_HEADER (and the shared sample organisation id) into IntegrationBase and have the ITs reference them — as constants only, never as a header applied by default.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

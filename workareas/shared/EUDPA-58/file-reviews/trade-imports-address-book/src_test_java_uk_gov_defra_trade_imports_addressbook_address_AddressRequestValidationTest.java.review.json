@@ -1,0 +1,46 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/AddressRequestValidationTest.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:22:16Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Broad and well-structured constraint matrix, but the email @Size leg is confounded by @Email, the declared error messages are never asserted, and the test pins an unbounded 300-character countryCode as intended behaviour.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 90,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "The 'over-length email' case (repeat(243) + \"@example.com\") also violates @Email — Hibernate Validator 8 caps the local part at 64 chars — so with the assertion checking only the property path, @Size(max = 254) on email is never independently exercised and would survive deletion, contradicting the class Javadoc claim to pin 'every max-length'.",
+      "fix": "Use a format-valid 255-character address (local part <= 64 chars plus a long multi-label domain) so only @Size can fire, or assert the violated constraint annotation rather than just the path."
+    },
+    {
+      "id": 2,
+      "line": 114,
+      "severity": "Major",
+      "category": "unbounded-input",
+      "issue": "countryCodeIsPresenceOnlyAndAcceptsAnyNonBlankValueRegardlessOfLength pins a 300-character countryCode as VALID, turning an unvalidated field into an asserted contract: AddressRequest, Address and OperatorRepository all document countryCode as ISO 3166-1 alpha-2, yet it carries @NotBlank only and is persisted verbatim and used in Mongo equality/regex queries, so arbitrary-length client text is accepted and stored.",
+      "fix": "Add @Size(max = 2) (or @Pattern(\"^[A-Za-z]{2}$\")) to AddressRequest.countryCode and rewrite this test as an over-length/malformed rejection case; if the gap is a deliberate deferral, drop the 300-char pin and record it as a known limitation instead of asserting it as intended behaviour.",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 3,
+      "line": 105,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "invalidFieldProducesAViolationOnThatField asserts only the violated property path, so none of the ten bespoke user-facing messages declared on AddressRequest ('Enter a name', 'Postcode must be 12 characters or less', ...) is asserted anywhere in the repo — the ITs assert only errors.<field> exists and GlobalExceptionHandlerTest hand-builds FieldError copies rather than reading the record's declared messages.",
+      "fix": "Add the expected message as a fourth column of the invalidFields Arguments and assert that a violation exists with that property path AND that message (e.g. extracting propertyPath/message tuples), so the GDS error copy is pinned where the constraints are declared."
+    },
+    {
+      "id": 4,
+      "line": 80,
+      "severity": "Minor",
+      "category": "boundary-coverage",
+      "issue": "The @Size matrix is one-sided: every sized field is probed at max+1 only, and the valid fixture values are short, so tightening any limit (e.g. name to @Size(max = 10)) leaves the whole suite green even though the field table and the error copy promise 255/100/12/20/254.",
+      "fix": "Add a companion parameterized case per sized field at exactly the maximum (255/255/255/100/100/12/20/254) asserting no violations, so both edges of each declared max are pinned."
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

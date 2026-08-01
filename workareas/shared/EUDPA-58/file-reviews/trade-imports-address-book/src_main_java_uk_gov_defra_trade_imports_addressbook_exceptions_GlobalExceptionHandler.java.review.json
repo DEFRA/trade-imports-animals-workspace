@@ -1,0 +1,31 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandler.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T14:16:24Z",
+  "verdict": "RISKY",
+  "verdict_reason": "No information leaks on any error path, but the RuntimeException catch-all turns a malformed JSON body into a 500 and the camelCase problem fields contradict the still-snake_case locked contract.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 118,
+      "severity": "Critical",
+      "category": "error-handling",
+      "issue": "The RuntimeException catch-all swallows Spring's own runtime client-error exceptions: HttpMessageNotReadableException extends NestedRuntimeException, and spring.mvc.problemdetails.enabled is not set anywhere in src/main/resources, so Spring's ProblemDetailsExceptionHandler is not registered — a POST/PUT with a truncated or absent JSON body returns 500 internal-error (logged at ERROR with a full stack trace) instead of the contract's 400 bad-request, exactly the fall-through the new handleTypeMismatch handler was added to close.",
+      "fix": "Add an @ExceptionHandler(HttpMessageNotReadableException.class) returning the bad-request problem (same shape as handleTypeMismatch), plus an IT posting a malformed body; consider narrowing the catch-all or setting spring.mvc.problemdetails.enabled.",
+      "best_practice": "rest-api/rest-api.md"
+    },
+    {
+      "id": 2,
+      "line": 38,
+      "severity": "Major",
+      "category": "contract-drift",
+      "issue": "The handler emits camelCase problem fields (traceId property, errors keyed by the Java field name e.g. addressLine1) but the in-repo docs/openapi/api-contract.locked.yaml at this commit still declares trace_id and 'Map of snake_case wire field name -> list of messages' (keys 'address_line_1, never addressLine1'), so the declared source of truth contradicts the shipped wire; OperatorComplianceIT's divergence gate only compares path sets, HTTP methods and operationIds, so the drift passes CI unnoticed.",
+      "fix": "Update the Problem/ValidationProblem schemas, the info description and the ValidationProblemExample/TypeChangeProblemExample in docs/openapi/api-contract.locked.yaml to camelCase (cv-001), and extend the divergence gate to compare component-schema property names, not just operationIds.",
+      "best_practice": "java/openapi-springdoc.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

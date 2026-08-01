@@ -1,0 +1,67 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:58Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Solid scoping/tombstone/pagination coverage, but the hand-copied update path leaves four of nine fields unasserted (phone unasserted anywhere in the suite) and the delete-idempotency test cannot fail if the guard is removed.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 182,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "update() hand-copies nine request fields with no MapStruct @MappingTarget (so no unmappedTargetPolicy=ERROR compile guard as on create), but this test asserts only name, addressLine1, townOrCity, postcode and email — addressLine2, county, countryCode and phone are unasserted; phone is asserted nowhere on the PUT path in any unit or integration test, so deleting existing.setPhone(request.phone()) leaves the whole suite green",
+      "fix": "Assert all nine copied fields on the update test (or switch update() to an @MappingTarget mapper so the compile guard covers it); at minimum add assertThat(updated.getPhone()).isEqualTo(\"+44 1738 111222\"), plus countryCode, addressLine2 and county",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 2,
+      "line": 241,
+      "severity": "Major",
+      "category": "false-negative-test",
+      "issue": "deleteOfAnAlreadyDeletedTombstoneIsIdempotentAndLeavesTheTombstoneUntouched does not actually cover the early-return guard in delete(): repository.save is not stubbed here, so if the 'if status == DELETED return' branch were deleted the mock save() would be a silent no-op and both assertions still hold (status is already DELETED, and modifiedAt is only bumped by real Spring Data auditing, which is mocked out)",
+      "fix": "Add verify(repository, never()).save(any()) so removing the idempotency guard fails the test",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 3,
+      "line": 183,
+      "severity": "Minor",
+      "category": "tautological-assertion",
+      "issue": "The modifiedAt 'bump' assertions at lines 183 and 237 assert the test's own thenAnswer stub, not production behaviour — the test sets saved.setModifiedAt(bumped) inside the mock and then asserts it; modifiedAt is a @LastModifiedDate field written by Spring Data auditing at the mocked repository boundary, so no unit test can observe the bump (same pattern for created.getId() at line 79)",
+      "fix": "Drop the modifiedAt assertions and the 'BumpsModifiedAt' clause from both test names — AddressUpdateIT.putBumpsModifiedAtAndPreservesCreatedAt already covers the bump against a real Mongo",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 4,
+      "line": 371,
+      "severity": "Minor",
+      "category": "test-mirrors-implementation",
+      "issue": "The partialMatchRegex helper re-implements OperatorService.toPartialMatchRegex verbatim, so any change to the production regex moves both sides together and the eq() matcher still matches — the regex construction is effectively untested; relatedly the q.trim()/countryCode.trim() calls and the isBlank() branches in queryPage are never exercised (only null and already-trimmed non-blank values are passed)",
+      "fix": "Assert against a literal expected regex (eq(\".*\\\\Qfarm\\\\E.*\")) instead of a mirrored helper, and add cases for a whitespace-padded q, a blank q and a blank countryCode so the trim and isBlank branches are covered",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 5,
+      "line": 343,
+      "severity": "Minor",
+      "category": "weak-assertion",
+      "issue": "The three search-dispatch tests (lines 336, 348, 359) make no assertion on the OperatorPageResponse that list() returns — their only 'assertion' is a fully-qualified org.mockito.Mockito.verify that restates the eq()-matched when(...) stub already made three lines earlier, which strict stubs would fail on anyway if the call did not match",
+      "fix": "Drop the redundant verify and assert on the returned response (e.g. items()/totalItems()); if a verify is kept, static-import it like every other Mockito member in this file",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 6,
+      "line": 62,
+      "severity": "Minor",
+      "category": "naming-convention",
+      "issue": "Test method names drop the documented {subject}_{shouldDoWhat} prefix and there are no // Given / // When / // Then blocks — the sibling OperatorMapperTest in the same package does follow it (toResponse_copiesEveryFieldFromTheEntity...), so the two files in one package read differently",
+      "fix": "Rename to the subject-prefixed form (create_stampsOrganisationIdFromTheHeader, update_appliesTheNewFieldValues, delete_isIdempotentForATombstone, list_...) and add the Given/When/Then blocks",
+      "best_practice": "java/testing/unit.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

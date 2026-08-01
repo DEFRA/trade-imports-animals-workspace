@@ -1,0 +1,67 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-07-31T19:21:30Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Solid happy-path and 404 coverage for soft delete, but two Major gaps: the DELETE-racing-PUT tombstone-resurrection path is untested (and Address has no @Version to prevent it), and the cross-org case never exercises the controller's authoriseOrg guard for the destructive verb.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 145,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "No test covers a DELETE racing a concurrent PUT (tombstone resurrection): Address has no @Version, so OperatorService.delete and update are both read-modify-write with a full-document repository.save(); a PUT that loaded the ACTIVE doc before the DELETE committed will save status=ACTIVE back over the tombstone and silently un-delete the address. Verified: no @Version, no ExecutorService/CountDownLatch anywhere in src/, so concurrency is untested in this IT and in the whole repo.",
+      "fix": "Add an IT that interleaves the two read-modify-writes deterministically (load the entity, DELETE via mockMvc, then have the PUT save its stale copy) and assert the row stays DELETED; if it resurrects, add @Version to Address (or make delete/update partial @Query updates) so the losing write fails with OptimisticLockingFailureException.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 2,
+      "line": 132,
+      "severity": "Major",
+      "category": "security-test-gap",
+      "issue": "deleteCrossOrgIdReturns404AndLeavesAddressUntouched sends OTHER_ORG in BOTH the path and the Trade-Imports-Organisation-Id header, so it only exercises the scoped-query miss, never the controller authoriseOrg guard (session-org != path orgId). AddressScopingIT.forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404 covers GET/list/PUT/POST but not DELETE, so deleting authoriseOrg(orgId, sessionOrg) from OperatorController.delete leaves every test in the repo green while allowing org B to soft-delete org A's address.",
+      "fix": "Add a case with path=ORG and header=OTHER_ORG (and its mirror) asserting 404 plus the row still ACTIVE, or extend AddressScopingIT.forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404 with the DELETE verb.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 3,
+      "line": 115,
+      "severity": "Minor",
+      "category": "test-quality",
+      "issue": "The only evidence that the second DELETE did not re-save is modifiedAt equality, and Mongo stores Instant at millisecond precision. If both DELETEs land within the same millisecond the assertion holds even with the early-return guard in OperatorService.delete removed, so the test can pass vacuously; it is a weak mutation detector for the very behaviour its name claims.",
+      "fix": "Assert the write itself rather than its timestamp side effect - e.g. wrap OperatorRepository in a @SpyBean and verify(repository, times(1)).save(any()) across the two calls, or drive auditing from a controllable DateTimeProvider bean so the second save would produce a provably different modifiedAt.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 4,
+      "line": 50,
+      "severity": "Minor",
+      "category": "dead-fixture",
+      "issue": "saveActive() sets .createdAt/.modifiedAt to a fixed Instant, but MongoConfig has @EnableMongoAuditing and Address carries @CreatedDate/@LastModifiedDate, so on save of a new (null-id) entity Spring Data overwrites both with now(). The two builder calls have no effect and mislead a reader into thinking the fixture's timestamps are the baseline the later modifiedAt assertions compare against.",
+      "fix": "Drop the .createdAt/.modifiedAt builder calls and read the audited values back from the entity returned by repository.save() where a baseline is needed.",
+      "best_practice": "java/spring-data-mongodb.md"
+    },
+    {
+      "id": 5,
+      "line": 57,
+      "severity": "Minor",
+      "category": "test-coverage",
+      "issue": "Nothing asserts that a soft delete actually bumps modifiedAt and preserves createdAt, although both OperatorController.delete and OperatorService.delete document that modifiedAt is bumped on save. The unit test deleteFlipsAnActiveAddressToAdeletedTombstoneAndBumpsModifiedAt fakes the bump inside a mocked repository.save, so this IT is the only place real @LastModifiedDate auditing on the delete path can be proven - AddressUpdateIT.putBumpsModifiedAtAndPreservesCreatedAt does exactly this for PUT.",
+      "fix": "In deleteLiveAddressReturns204AndKeepsRowWithDeletedStatus, capture the saved entity's createdAt/modifiedAt before the DELETE and assert modifiedAt isAfter the baseline and createdAt unchanged, mirroring AddressUpdateIT.putBumpsModifiedAtAndPreservesCreatedAt.",
+      "best_practice": "java/testing/integration.md"
+    },
+    {
+      "id": 6,
+      "line": 56,
+      "severity": "Minor",
+      "category": "test-conventions",
+      "issue": "Test methods do not follow the bundled IT convention {subject}_{shouldDoWhat}[_{whenContext}] (e.g. delete_shouldReturn204_whenAddressIsLive) and no test carries the mandated // Given, // When, // Then comment blocks; the doc states all ITs use them.",
+      "fix": "Rename the five tests to the subject-prefixed form and add the Given/When/Then comment blocks, or - if this new repo is deliberately adopting a different convention - record that decision so the address-book best-practices bundle stops contradicting the code.",
+      "best_practice": "java/testing/integration.md"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}

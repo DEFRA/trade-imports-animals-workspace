@@ -1,0 +1,72 @@
+{
+  "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/filter/IdentityHeaderFilter.java",
+  "repo": "trade-imports-address-book",
+  "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
+  "pr": 1,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-01T00:20:33Z",
+  "verdict": "RISKY",
+  "verdict_reason": "The 400 rejection contract itself is correct, well tested and leaks nothing, but the filter treats an unauthenticated client-supplied header as a trusted identity with no trust boundary anywhere in the repo, and its whole gate rests on a fail-open getRequestURI().startsWith check with the cross-tenant match delegated to five hand-written controller calls.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 73,
+      "severity": "Critical",
+      "category": "security",
+      "issue": "The 'trusted forwarded header' Trade-Imports-Organisation-Id is read straight off the client request with nothing establishing the trust: the repo has no Spring Security (no starter in pom.xml, no SecurityFilterChain), no gateway/ingress config and no documented requirement that an upstream strips inbound copies of the header, so any caller able to reach the service can read, create, amend or delete any organisation's address PII by setting one header",
+      "fix": "Establish and document the trust boundary before this ships: strip/overwrite Trade-Imports-Organisation-Id at the CDP ingress or the calling BFF, and add either an authenticated principal check (JWT resource server) or an explicit allowlist of the forwarding hop in this filter; at minimum record the boundary and its owner in README plus an IT that proves a direct caller cannot self-assert an org id"
+    },
+    {
+      "id": 2,
+      "line": 68,
+      "severity": "Major",
+      "category": "security",
+      "issue": "The whole tenant guard hangs on a raw string test, httpRequest.getRequestURI().startsWith(\"/organisation\"), so it silently fails OPEN the moment the request URI stops starting with that literal - setting server.servlet.context-path, mounting the app under a path prefix, or any ingress that forwards a rewritten path disables enforcement on every endpoint with no test failing; it also over-matches unrelated paths such as /organisation-summary",
+      "fix": "Let the container do the matching: register the filter with a FilterRegistrationBean using addUrlPatterns(\"/organisation/*\"), or extend OncePerRequestFilter and implement shouldNotFilter with a PathPatternParser/AntPathMatcher over getServletPath() so the context path is excluded by construction; add an IT asserting a request under a configured context path is still rejected without the header",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 3,
+      "line": 81,
+      "severity": "Major",
+      "category": "security",
+      "issue": "The filter only proves the header is PRESENT; the actual cross-tenant check (header value equals path orgId) is hand-repeated as the first line of all five OperatorController handlers via authoriseOrg, so the guard is opt-in per method - a future handler under /organisation/** that omits @RequestHeader + authoriseOrg gets zero cross-org protection and nothing in the build fails, even though the filter already holds both the path and the header value",
+      "fix": "Move the match into the filter: parse the {orgId} segment from the gated path and reject a mismatch centrally (keeping the 404 no-existence-disclosure shape), leaving authoriseOrg in the controller only as a redundant assertion; alternatively add an architecture test asserting every handler method mapped under /organisation/{orgId} calls authoriseOrg"
+    },
+    {
+      "id": 4,
+      "line": 83,
+      "severity": "Major",
+      "category": "testing",
+      "issue": "The finally MDC.remove(organisationId) is the only thing stopping one tenant's id bleeding onto the next request on a pooled Tomcat thread, yet IdentityHeaderFilterTest only asserts the value is PRESENT during the chain (validHeader_proceedsAndOrganisationIdLandsInMdcDuringTheChain) - there is no assertion that it is gone after doFilter returns, and none that it is still removed when the chain throws, so deleting the finally would leave the suite green",
+      "fix": "Add two cases to IdentityHeaderFilterTest: after a successful doFilter assert MDC.get(\"organisationId\") is null, and with a chain that throws a RuntimeException assert the exception propagates AND MDC.get(\"organisationId\") is null afterwards",
+      "best_practice": "java/testing/unit.md"
+    },
+    {
+      "id": 5,
+      "line": 44,
+      "severity": "Minor",
+      "category": "best-practice",
+      "issue": "Implements the raw jakarta.servlet.Filter rather than extending OncePerRequestFilter, so it hand-rolls the HttpServletRequest/HttpServletResponse instanceof narrowing and the path check that shouldNotFilter exists for, and gains no protection against re-running on a FORWARD/ASYNC dispatch if the registration's dispatcher types are ever widened - the sibling RequestTracingFilter has the same shape, and the workspace Spring Boot guide models filters on OncePerRequestFilter",
+      "fix": "Extend OncePerRequestFilter, move the path test into shouldNotFilter and drop the instanceof narrowing from doFilterInternal",
+      "best_practice": "java/spring-boot.md"
+    },
+    {
+      "id": 6,
+      "line": 46,
+      "severity": "Minor",
+      "category": "maintainability",
+      "issue": "The security-critical header name is declared twice as independent literals - IdentityHeaderFilter.ORGANISATION_ID_HEADER here and a private copy in OperatorController line 44 (plus a third in each IT) - so renaming one leaves the filter gating on a header the controller no longer binds, or vice versa, with no compile error",
+      "fix": "Promote one public constant (e.g. an IdentityHeaders holder in the filter package) and have OperatorController and the ITs import it rather than restating the literal"
+    },
+    {
+      "id": 7,
+      "line": 74,
+      "severity": "Minor",
+      "category": "validation",
+      "issue": "isBlank is the only validation applied to the value that becomes the tenant key: an arbitrary-length, arbitrary-charset client string is pushed into the MDC (so it lands in every ECS log line for the request) and, on POST, is persisted verbatim as Address.organisationId, giving an unbounded attacker-controlled field in both the log store and Mongo",
+      "fix": "Reject a value that does not match a bounded pattern (for example ^[A-Za-z0-9_-]{1,64}$) with the same 400 bad-request problem, so the tenant key is a known shape before it reaches MDC or the repository"
+    }
+  ],
+  "reconciled_at": "2026-08-01T13:56:20Z"
+}
