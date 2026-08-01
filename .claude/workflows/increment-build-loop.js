@@ -87,10 +87,22 @@ const FINDINGS_SCHEMA = {
 
 const VERDICT_SCHEMA = {
   type: 'object',
-  required: ['real', 'reasoning'],
+  required: ['verdicts'],
   properties: {
-    real: { type: 'boolean' },
-    reasoning: { type: 'string', description: 'Evidence for or against, citing file:line' }
+    verdicts: {
+      type: 'array',
+      description: 'One entry per finding you were given, same numbering. Omit none.',
+      items: {
+        type: 'object',
+        required: ['n', 'real', 'reasoning'],
+        properties: {
+          n: { type: 'number', description: 'The finding number exactly as numbered in the list you were given' },
+          real: { type: 'boolean' },
+          reasoning: { type: 'string', description: 'Evidence for or against, citing file:line' }
+        },
+        additionalProperties: false
+      }
+    }
   },
   additionalProperties: false
 }
@@ -331,32 +343,57 @@ Return the structured output only.`,
   let confirmed = []
   if (rawFindings.length > 0) {
     phase('Verify findings')
+    // Grouped BY FILE: every finding still gets refuted independently, but the
+    // file, the diff and the increment are read once per file instead of once
+    // per finding — that redundancy was the loop's dominant cost.
+    const byFile = new Map()
+    rawFindings.forEach((f, i) => {
+      const key = f.file || '(whole change)'
+      if (!byFile.has(key)) byFile.set(key, [])
+      byFile.get(key).push({ ...f, n: i + 1 })
+    })
+
     const verdicts = await parallel(
-      rawFindings.map((f, i) => () =>
+      [...byFile.entries()].map(([file, items]) => () =>
         agent(
-          `You are an ADVERSARIAL VERIFIER for increment ${id}. Your job is to REFUTE this finding. Default to
-refuted unless the evidence is clear — a wrong finding that survives costs more than a real one that is missed,
-because it drives a pointless edit to working code.
+          `You are an ADVERSARIAL VERIFIER for increment ${id}. You are given ${items.length} finding(s) against ONE
+file: ${file}. Your job is to REFUTE each of them. Default to refuted unless the evidence is clear — a wrong
+finding that survives costs more than a real one that is missed, because it drives a pointless edit to working code.
 ${GUARDRAILS}
-THE FINDING:
-  file: ${f.file}${f.line ? ' line ' + f.line : ''}
-  severity: ${f.severity}
-  what: ${f.what}
-  why: ${f.why}
-  proposed fix: ${f.fix}
-CHECK IT against the ACTUAL code (\`git -C ${TILDE}/<repoPath> diff --staged -- ${f.file}\`, and Read the file in
+Judge each finding INDEPENDENTLY and on its own evidence. They do not stand or fall together, and the number of
+them tells you nothing about whether any one is real.
+
+THE FINDINGS:
+${items
+  .map(
+    (f) =>
+      `${f.n}. [${f.severity}] ${f.file}${f.line ? ' line ' + f.line : ''}\n   WHAT: ${f.what}\n   WHY: ${f.why}\n   PROPOSED FIX: ${f.fix}`
+  )
+  .join('\n')}
+
+CHECK THEM against the ACTUAL code (\`git -C ${TILDE}/<repoPath> diff --staged -- ${file}\`, and Read the file in
 full — the diff alone can mislead), against the increment's acceptanceCriteria
 (\`jq '.increments[] | select(.id=="${id}")' ${WORKAREA_TILDE}/backlog.json\`), and against the house conventions the
 repo actually follows (find a comparable file and compare — "unconventional" is only a finding if the convention
-really exists here).
-Return real:false if the finding is wrong, already handled elsewhere, out of the increment's scope, or a matter of
-taste dressed as a defect. Return real:true only if you could not refute it. Cite file:line in your reasoning.
-Return the structured output only.`,
-          { label: `${id} verify:${i + 1}`, phase: 'Verify findings', schema: VERDICT_SCHEMA }
-        ).then((v) => (v && v.real ? { ...f, verdict: v.reasoning } : null))
+really exists here). Read those sources ONCE and reuse them across all ${items.length} findings.
+For each: real:false if it is wrong, already handled elsewhere, out of the increment's scope, or a matter of taste
+dressed as a defect. real:true ONLY if you could not refute it. Cite file:line in every reasoning.
+Return one verdict per finding, using the SAME numbers as above. Return the structured output only.`,
+          { label: `${id} verify:${file.split('/').pop()}`, phase: 'Verify findings', schema: VERDICT_SCHEMA }
+        ).then((v) => {
+          // A dead verifier must not silently delete findings — pass them to the
+          // judge marked unrefuted rather than dropping them on the floor.
+          if (!v) return items.map((f) => ({ ...f, verdict: 'VERIFIER FAILED — unrefuted, treat with caution' }))
+          const byN = new Map((v.verdicts ?? []).map((x) => [x.n, x]))
+          return items.map((f) => {
+            const verdict = byN.get(f.n)
+            if (!verdict) return { ...f, verdict: 'NO VERDICT RETURNED — unrefuted, treat with caution' }
+            return verdict.real ? { ...f, verdict: verdict.reasoning } : null
+          })
+        })
       )
     )
-    confirmed = verdicts.filter(Boolean)
+    confirmed = verdicts.filter(Boolean).flat().filter(Boolean)
     log(`${id}: ${confirmed.length}/${rawFindings.length} findings survived refutation`)
   }
 

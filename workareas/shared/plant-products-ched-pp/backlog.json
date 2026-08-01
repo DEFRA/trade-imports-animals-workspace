@@ -507,7 +507,7 @@
       "kind": "docs",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [],
       "sourceIncrement": null,
@@ -552,14 +552,15 @@
       "openQuestions": [
         "Sequencing: the orchestrator set dependsOn [] (R6, recipe first) while SIBLING-SET-PLAN §9 step 7 sequences the recipe after P-9/P-10. Resolved headless as dependsOn [] with a mandatory doc-reconciliation step folded into pp-056, pp-057 and pp-006 acceptance. If Sam prefers the plan's ordering, the fix is one edge (dependsOn: ['pp-056','pp-057','pp-006']) and the reconciliation obligation disappears.",
         "Whether src/server/app/docs/README.md is an index that enumerates the platform docs — if it is, add-a-set.md must be listed in it and that edit joins this increment's diff. The implementor reads README.md first and decides; a one-line index entry is in scope, anything larger is not."
-      ]
+      ],
+      "commit": "ecd4a6f7"
     },
     {
       "id": "pp-003",
       "title": "Backend: stage-9 unit tests for the plant-products classes",
       "kind": "backend",
       "milestone": "m0",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-002"
@@ -658,7 +659,8 @@
         "grep -rn \"uk.gov.defra.trade.imports.animals\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/src/test/java/uk/gov/defra/trade/imports/plantproducts"
       ],
       "notes": "Plans SCHEMA-DESIGN §7 Stage 9 items 57-65 (units only; items 66-68 = pp-004 under mvn verify). All production classes exist on disk (pp-001 commit a7961ac, pp-002 commit 75763b9) — verified under repos/trade-imports-animals-backend/src/main/java/uk/gov/defra/trade/imports/plantproducts/. Exemplars to mirror (read before writing each test): animals/notification/{ReferenceNumberGeneratorTest, NotificationSortTest, NotificationMapperTest, NotificationContentSnapshotTest, NotificationCopyMapperTest, NotificationServiceTest, NotificationControllerTest, NotificationExpirySweeperTest, NotificationExpirySweeperConditionTest}.java and animals/utils/NotificationTestData.java. Production-class facts verified live: service constructor takes (notificationRepository, accompanyingDocumentRepository, notificationMapper, notificationCopyMapper, referenceNumberGenerator, ttlConfig, @Value listPageSize default 25); mapper surface is applyContent(dto, entity) + toDto(entity); stub ownership constants are 'stub-org'/'Stubbed organisation'; controller takes @Value app.base-url and builds Location itself (no animals AppConfig import — D-6 holds); the house @WebMvcTest slice needs admin.secret + app.base-url TestPropertySource. HEADLESS DECISIONS: (1) enum round-trip/negative tests consolidated into ONE PlantProductsEnumJsonTest rather than 8 micro-classes — the stage-9 list has no per-enum classes and feedback_no_per_enum_round_trip_tests caps tests per enum, not classes; (2) added PlantProductsNotificationContentSnapshotTest and PlantProductsNotificationExpirySweeperConditionTest beyond the 9 listed items because the animals exemplar suite has both and 'one unit test class per production class, house naming' governs — snapshot capture/restore is named a highest-value target by the planning brief; (3) no standalone PlantProductsExceptionHandler test — the two @WebMvcTest slices exercise the scoped advice's 400/404 problem bodies, matching how the house covers its handler; (4) added PlantProductsNotificationTestData because five test classes need the same fully-populated depth-3 aggregate (declared once, house NotificationTestData parity); (5) tests-only increment, but if a test exposes a genuine production defect the implementor fixes the production class in the same increment and flags it (red-on-my-branch rule) rather than weakening the test. Verification is `mvn test` (Surefire) — running `mvn verify` here would drag Testcontainers ITs that are pp-004's concern; the D-8 wiring gate was already proven in pp-002. The grep command must return zero matches (D-6 guard). Backend pom has a jacoco-check gate; this increment only raises coverage.",
-      "openQuestions": []
+      "openQuestions": [],
+      "commit": "87cee91"
     },
     {
       "id": "pp-004",
@@ -666,7 +668,7 @@
       "kind": "backend",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-002"
@@ -738,7 +740,8 @@
       "openQuestions": [
         "SCHEMA-DESIGN §3.1 marks the POST 400 row '400 body carries a referenceNumber' — planned as: POST with a non-blank referenceNumber → 400 (matches 'referenceNumber must be blank'). If the implemented controller instead ignores the body ref, adjust test 2 to assert the actual implemented guard and flag the doc drift.",
         "Whether GET with a malformed reference returns 400 (@Pattern) or 404 depends on the implemented handler mapping for ConstraintViolationException in PlantProductsExceptionHandler — assert whichever the implementation does and record it; both are defensible."
-      ]
+      ],
+      "commit": "92bac7b"
     },
     {
       "id": "pp-054",
@@ -746,7 +749,7 @@
       "kind": "backend",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-002"
@@ -831,7 +834,8 @@
         "JSON visibility of copyIdempotencyKey: planned as a plain field (live-animals parity, R4 'exactly'), so it surfaces in the POST …/copies 201 body. The plant aggregate otherwise @JsonIgnores its internal bookkeeping (submittedBaseline, expireAt). If Sam prefers consistency within the plant aggregate over parity with live-animals, the change is one annotation and one IT assertion.",
         "Idempotency scope: live-animals keys the dedupe on the KEY ALONE (findByCopyIdempotencyKey), so a replayed key returns the same copy even if a different source reference is in the path — whereas the frontend contract test named in R4 is worded 'copy idempotency scoped to the source reference'. The plant frontend stub achieves the source-scoped reading by using `${journeyId}\\u0000${idempotencyKey}` as its dedupe key. Planned resolution: keep the backend key-alone (live-animals parity) and let the FRONTEND mint a fresh key per rendered action per source, which makes the two readings indistinguishable in practice; IT case 3 pins the backend behaviour explicitly so nobody assumes source-scoping. If Sam wants true source scoping server-side, the change is a compound unique index on {referenceNumber, copyIdempotencyKey} plus findByReferenceNumberAndCopyIdempotencyKey — flag before building.",
         "Whether a missing required header already yields 400 through Spring's default ServletRequestBindingException handling or is swallowed by a catch-all in PlantProductsExceptionHandler. Decided by running the new controller test, not by reading; the handler edit is conditional on that result."
-      ]
+      ],
+      "commit": "4ebf8b3"
     },
     {
       "id": "pp-056",
@@ -839,7 +843,7 @@
       "kind": "platform",
       "milestone": "m0",
       "sizeGuess": "XL",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [],
       "sourceIncrement": null,
@@ -984,7 +988,8 @@
         "resetDispatchState() semantics under keying: planned as 'clears the CURRENT set's record'. If a test turns out to depend on it clearing everything (plausible for a suite that composes two fixture sets in one file), add an explicit all-sets variant rather than widening the default — and record which test forced it.",
         "flow/journey-flow.js today initialises `configured` to a default object. If any reader relies on that default BEFORE configureJourneyFlow runs (i.e. a read at module load), per-set keying will surface it as a 'journey flow not configured for set' throw. Planned as: preserve the default per configured set; if a pre-configure read exists, that is a latent boot-order bug and gets reported, not hidden behind a default.",
         "Whether shared/ is the right home for set-context.js or whether it belongs beside the seams it serves. Planned as shared/ per SIBLING-SET-PLAN §4.1, which every other section cites by that path — moving it would invalidate the plan's cross-references for no gain."
-      ]
+      ],
+      "commit": "a89b6fab"
     },
     {
       "id": "pp-057",
@@ -1560,7 +1565,7 @@
       "title": "P-1: inject obligation-source policy via the set manifest (accessor functions — co-residency safe)",
       "kind": "platform",
       "milestone": "m0",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-056"
@@ -1685,7 +1690,8 @@
       "notes": "AMENDED FOR RULING R7 (Sam, 2026-08-01, later session) — SYMMETRIC MOUNTS. R7 changes no logic in this increment, but it changes the BLAST-RADIUS OVERLAP and that must be planned rather than discovered: `sets/live-animals/journeys/linear/flow/entry-guard.js` is edited by BOTH this increment (SYSTEM_POPULATED → systemPopulated().has(...)) and pp-057 (BASE/JOURNEY_PREFIX → setBase()/journeyPrefix(), PLUS the behavioural startsWith/slice fix now that request.path carries the mount prefix). ORDER per §9 m0-a: pp-056 → pp-005 (this) → pp-057. So this increment edits the file first and pp-057 edits it again. DECISION (headless, recorded): confine this increment's edit to the policy import and its single membership test; leave every URL-shaped line alone. The two edits are in different parts of the file, so no reorder is needed and each diff stays reviewable on its own. If the implementor finds the file has already been URL-migrated (i.e. the increments ran out of order), that is a sequencing fault to report, not to reconcile inline.\n\nAMENDED 2026-08-01 for Sam's ruling R3 (co-residency). SCOPE HARDENED — this is the change of record: the round-1 plan of this increment chose a HYBRID of option (a) (keep the SCREAMING_SNAKE export names as lazily-derived one-shot membership views so eight import sites compiled untouched). **That option is now DEAD.** A lazily-derived view resolves ONCE per process; under co-residency the correct value differs per REQUEST, so a cached view would serve live-animals' ENFORCED_AT_CONTINUE to a plant-products request. P-1 therefore takes option (b) — four accessor FUNCTIONS evaluated on every call — which puts EVERY file in the 10-strong consumer list in scope. There is no smaller option; sizeGuess rises M→L accordingly. NEW DEPENDENCY: pp-056 (the P-9 set-context increment) must land first, because policy() reads the per-set obligation-set registry through currentSetId(); before P-9 there is nothing per-set to read. ID CONVENTION for the four increments the reversal adds (used across the amended files so the graph stays acyclic): pp-056 = P-9 set-context module + per-set seam keying; pp-057 = P-10 per-set URL namespace; pp-058 = P-11 setId-first convention tripwire; pp-053 = G-A/R6 author src/server/app/docs/add-a-set.md. The two consumers needing most care are flow/dispatch.js:3,77 (runs at BOOT inside buildDispatch, so it resolves the set being built via the gateway's withSetContext wrapper) and sets/live-animals/.../flow/entry-guard.js (runs PER REQUEST inside the realm-scoped guard) — neither may capture an accessor result outside its call. Return-type choice (headless decision): systemPopulated/enforcedAtContinue/systemAnswerKeys return Sets and maxEntriesFrom returns a plain object, so each consumer body changes by one token pair rather than being restructured — smallest honest diff, no Proxy magic, explicit names per house style. Empty-safe ruling retained and widened: policy() returns {} for an unconfigured set, a set with no policy member, AND an unresolvable set context (FD-17 throws only when 2+ sets are mounted with no active context; a policy read degrades to {} rather than propagating that). Every OTHER manifest accessor keeps throwing — the softening is local and deliberate. bridge/scope.js is now an EDIT (it was 'no edit' in round 1): its comment names ENFORCED_AT_CONTINUE, a name that ceases to exist. CO-RESIDENCY ACCEPTANCE SPLIT: §5 P-1 requires the co-residency suite to prove the two sets read different enforcedAtContinue values in one process, but co-residency.test.js is CREATED by pp-006 (P-3), which lands after this increment in the §9 m0-a order. This increment therefore proves per-set divergence at the unit level (two configured set ids + withSetContext, no server needed) and hands the HTTP-level assertion to pp-006, whose acceptance now names it explicitly. Two-sided verification rule (REVISED, R3): 'both sets serve from one process' cannot be exercised here — no plant files exist and only live-animals is mounted — so the bar for this increment is FD-17's sole-set fallback keeping the ENTIRE existing suite green with only mechanical edits, plus the unit-level two-set proof above. Exemplars: model/obligations/manifest.js accessor style; bridge tests that compose a synthetic set (fulfilments.characterisation.test.js pattern). Rulings applied: R3 (co-residency reverses SD-9/FD-1/FD-2/FD-4), FD-7 (policy on the manifest via the existing seam), FD-14/FD-17 (set-context + sole-set fallback), §4.2 row 9, §5 P-1 as revised. Memory rails: no migration comments, comments describe present behaviour only, test on input/output, no coverage-padding tests.",
       "openQuestions": [
         "pp-056/pp-057/pp-058/pp-053 are the working ids for the four increments the reversal adds (P-9, P-10, P-11, G-A). If the backlog assigns different ids when those increments are authored, sweep the dependsOn arrays of pp-005, pp-006, pp-007, pp-009 and pp-010 to match — the ids were chosen to sort before the increments that depend on them so the acyclic-by-construction rule still holds."
-      ]
+      ],
+      "commit": "a4a3078b"
     },
     {
       "id": "pp-006",
@@ -2592,7 +2598,7 @@
       "title": "P-7: depth-3 nested-collection characterisation test (GATE for all m3 work)",
       "kind": "test",
       "milestone": "m0",
-      "status": "todo",
+      "status": "done",
       "gate": "P-7 depth-3 gate — GREEN clears all m3 commodity increments; ANY platform-deficiency RED raises a NEW platform increment before pp-021",
       "dependsOn": [],
       "sourceIncrement": null,
@@ -2633,7 +2639,8 @@
         "Positional composite-id format at depth 3 is assumed 'line0/species0/variety0' by extrapolation from the depth-2 'line0/unit0' convention — the implementor characterises the observed format on first run and pins that (a different-but-coherent format is a finding to record, not a red).",
         "Whether the ...At primitives fabricate phantom parent instances on out-of-range ancestor indices at depth 3 is unknown until run; the recipe (§4.7) says they write at whatever path they are given, so fabrication is the expected pin — only a crash/corruption beyond that expectation counts as a platform red.",
         "If the depth-mismatch negative case does NOT throw (registry accepts a depth-2 binding for a depth-3 leaf), that is itself a platform red: the boot-time depth check is the safety net every m3 increment relies on."
-      ]
+      ],
+      "commit": "89699c35"
     },
     {
       "id": "pp-013",
@@ -3980,6 +3987,73 @@
       ]
     },
     {
+      "id": "pp-070",
+      "title": "Platform: make nested collection cardinality, completeness and ancestor writes safe at depth N",
+      "kind": "platform",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": "Raised by pp-012's red depth-3 characterisation. This must land and flip all four pp-012 it.fails cases before pp-021 or any m3 commodity page proceeds.",
+      "dependsOn": [
+        "pp-012"
+      ],
+      "sourceIncrement": "pp-012",
+      "recipe": "No recipe exists (SIBLING-SET-PLAN.md §8 G-B). The four it.fails cases in bridge/depth-three-collection.characterisation.test.js are the executable specification; fix the generic L2 engine only, never a commodity page.",
+      "repo": "frontend",
+      "filesToTouch": [
+        {
+          "path": "src/server/app/model/obligations/state-queries.js",
+          "action": "edit",
+          "what": "Make minEntries/maxEntries cardinality for a nested group evaluate per immediate parent instance rather than once over the global record list. Top-level groups retain the existing single aggregate error. Nested errors carry the parent fulfilment id as instanceId and the count for only that parent; use the group's within implication records as the parent worklist. Preserve anyOfIds, allOrNothingOfIds and recordCountEquals semantics unchanged."
+        },
+        {
+          "path": "src/server/app/bridge/collection-complete.js",
+          "action": "edit",
+          "what": "Include nested minEntries/maxEntries cardinality errors when rolling a parent entry's completeness. A lines instance with zero required species must be incomplete even when its own mandatory line leaf is filled. Keep optional empty varieties complete and retain the direct mandatory-leaf check for a positional empty variety."
+        },
+        {
+          "path": "src/server/app/engine/write/entries/mutate.js",
+          "action": "edit",
+          "what": "Validate every numeric ancestor in collectionPath against the current positional answer tree before appendEntryAt/updateEntryAt/removeEntryAt calls setAt. An absent, non-integer or out-of-range parent is rejected without calling replaceJourneyFulfilment: append returns null and update/remove remain no-ops. This prevents sparse fulfilments being saved before projectAnswers throws."
+        },
+        {
+          "path": "src/server/app/bridge/depth-three-collection.characterisation.test.js",
+          "action": "edit",
+          "what": "Flip the four pp-012 it.fails contracts to ordinary tests without changing their names or assertions: species minEntries per line, missing species rolling up to line incomplete, and clean rejection at each of the two out-of-range ancestor levels."
+        },
+        {
+          "path": "src/server/app/model/obligations/state-queries.test.js, src/server/app/bridge/collection-complete.test.js, src/server/app/engine/mutators.test.js",
+          "action": "edit",
+          "what": "Add focused depth-2 regression coverage for per-parent min/max counting, parent completeness rollup and mutation rejection so the generic behavior is pinned below the pp-012 integrated fixture. Do not alter existing assertions, expectations or test names."
+        }
+      ],
+      "obligations": [],
+      "flowChanges": {},
+      "schemaFields": [],
+      "copyKeys": [],
+      "specs": [
+        "The existing pp-012 depth-three characterisation is the acceptance suite; all four it.fails declarations become plain tests with assertions unchanged.",
+        "Focused L2 unit cases cover two parents where only one has nested records, nested max counting per parent, and both invalid ancestor levels before persistence."
+      ],
+      "acceptanceCriteria": [
+        "groupInvariantErrors(species, state) reports one MIN_ENTRIES error with instanceId line1 when line0 has a species and line1 has none; a sibling's records can no longer satisfy another parent's floor.",
+        "Nested maxEntries is counted per immediate parent as well as nested minEntries; top-level min/max output remains byte-compatible.",
+        "entryComplete returns false for a line whose required species collection is empty, while an absent optional varieties collection remains complete.",
+        "appendEntryAt at ['lines', 5, 'species', 0, 'varieties'] and ['lines', 0, 'species', 9, 'varieties'] returns null, leaves canonical records unchanged and never persists a sparse fulfilment map; update/remove at equivalent invalid parents are no-ops.",
+        "All four pp-012 it.fails cases are plain green tests with names and assertions unchanged; no production file under sets/ and no commodity page is edited.",
+        "npm test, npm run lint and npm run lint:arch are green; .dependency-cruiser-known-violations.json retains SHA-1 0762285ef5bfdd1f06af6fbea491e5e69b53e19a."
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:arch",
+        "shasum ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/.dependency-cruiser-known-violations.json"
+      ],
+      "notes": "pp-012 proved the failure is generic L2 behavior, not plant-products modeling. The evaluator enumerates depth-3 paths correctly, but checkMinEntries/checkMaxEntries count the whole nested group globally and emit no parent identity. collection-complete only consults per-instance anyOf errors, so it cannot see a nested collection floor. The write path calls setAt before validating either ancestor; replaceJourneyFulfilment persists line5/species0/variety0 or line0/species9/variety0, then projectAnswers rejects the sparse indices, leaving storage already replaced. Fix all three layers together so the test can flip without weakening it. Status derivation already performs a parent-scoped recursive walk and must remain unchanged.",
+      "openQuestions": []
+    },
+    {
       "id": "pp-021",
       "title": "Commodity collection model extension — depth-3 obligations (HALT-FOR-REVIEW GATE)",
       "kind": "model-extension",
@@ -3990,6 +4064,7 @@
       "dependsOn": [
         "pp-008",
         "pp-012",
+        "pp-070",
         "pp-014"
       ],
       "sourceIncrement": "inc-012",
@@ -9504,6 +9579,114 @@
         "The clone SUCCESS flow was never observed in the corpus and must be sourced (from IPAFFS or from product) before this can be planned."
       ],
       "noPlanner": true
+    },
+    {
+      "id": "pp-068",
+      "title": "Backend: malformed status-change body returns 500 instead of 400 — fix the error handling and reconcile the controller slice that wrongly pins 400",
+      "kind": "fix",
+      "milestone": "m0",
+      "sizeGuess": "S",
+      "status": "todo",
+      "gate": null,
+      "dependsOn": [
+        "pp-003",
+        "pp-004"
+      ],
+      "sourceIncrement": null,
+      "recipe": "No recipe. Follow the workspace Java best practices (docs/best-practices/java/, incl. testing/unit.md and testing/integration.md) and mirror how the animals package's GlobalExceptionHandler handles the same class of malformed-body failure — find the animals equivalent first and copy its shape rather than inventing one.",
+      "repo": "backend",
+      "filesToTouch": [
+        {
+          "path": "src/main/java/uk/gov/defra/trade/imports/plantproducts/**",
+          "action": "edit",
+          "what": "Make a malformed status-change body produce 400, not 500. DIAGNOSE FIRST — do not assume the site. Observed: PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 500 over the real HTTP stack; a literal-null body and a missing body do the same. The reporting implementor's read was that processing fails before bean validation can produce a 400, which points at StatusChangeRequest deserialisation or the controller's argument binding rather than at the service. Whatever the true site, the fix must yield the house problem-style 400 body with no stack-trace content, consistent with how the animals package handles an unreadable or invalid request body."
+        },
+        {
+          "path": "src/test/java/uk/gov/defra/trade/imports/plantproducts/notification/PlantProductsNotificationControllerTest.java",
+          "action": "edit",
+          "what": "RECONCILE THE MISLEADING SLICE. This @WebMvcTest currently asserts 'missing status -> 400' and PASSES, while the real application returns 500 — so the slice is not representative of production and is giving false confidence. Establish WHY (the slice almost certainly loads a different exception-handling stack than the full context does), then either make the slice representative or move the assertion to the IT layer where it is actually proved. Do not simply delete it. Whatever is decided, no test may be left claiming behaviour the running application does not exhibit."
+        },
+        {
+          "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationIT.java",
+          "action": "edit",
+          "what": "Restore the null-status assertion that pp-004 removed as out-of-scope, now that production returns 400. Assert over the real HTTP stack that a null status, a literal-null body and a missing body each return 400 with the problem-style body — all three were observed returning 500."
+        }
+      ],
+      "obligations": [],
+      "flowChanges": {},
+      "schemaFields": [],
+      "copyKeys": [],
+      "specs": [
+        "IT: PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 400 with the house problem-style body and no stack-trace content.",
+        "IT: the same endpoint with a literal-null body and with a missing body each return 400, not 500.",
+        "The controller slice and the IT agree about this behaviour — no test asserts a status code the running application does not produce."
+      ],
+      "acceptanceCriteria": [
+        "PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 400, proved by an integration test over the real HTTP stack (not only a @WebMvcTest slice).",
+        "A literal-null request body and a missing request body also return 400 on that endpoint.",
+        "The 400 body is the house problem-style shape and contains no stack-trace content.",
+        "The pp-003 controller-slice assertion and the pp-004 IT assertion no longer contradict each other; the reason the slice passed while production failed is stated in the commit message, because it is a false-confidence pattern that will recur across every other slice in this package.",
+        "No behaviour change to any legal transition: the five-row transition table of SCHEMA-DESIGN §3.1 still behaves exactly as pp-003 and pp-004 pin it.",
+        "mvn verify is green end to end — the new assertions, all pre-existing plant tests, and every animals IT."
+      ],
+      "verification": [
+        "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+      ],
+      "notes": "RAISED DURING THE BUILD (orchestrator, 2026-08-01), not by the planners. pp-004's implementor wrote an IT asserting that a null status yields 400, found it returned 500, correctly refused to weaken the assertion, and stopped at ok:false after its three permitted repair attempts. Ruling: the defect is real but OUT OF SCOPE for pp-004, whose acceptance criteria require 400 only on illegal TRANSITIONS and state explicitly that 'the three new files are the entire diff'. So pp-004 removed the assertion and this increment owns it. Evidence: logs/pp-004-focused-verify.log line 1136 — 'AssertionError: Status expected:<400 BAD_REQUEST> but was:<500 INTERNAL_SERVER_ERROR>', 21 of 22 new plant ITs passing.\n\nTHE SECOND FINDING IS THE MORE IMPORTANT ONE. pp-003's controller slice asserts 'missing status -> 400' and passes, while the full stack returns 500. A slice test that passes where production fails is false confidence, and pp-003 shipped a whole package of controller slices built the same way — so whatever explains this one probably applies to the others. Treat 'why did the slice pass' as the real deliverable of this increment; the 400 fix itself is small.\n\nSCOPE FENCE: fix the error handling, reconcile the two tests, restore the IT assertion. Do not refactor the exception handler beyond what the defect requires, and do not touch the animals package.",
+      "openQuestions": [
+        "Does the same malformed-body path return 500 on the OTHER plant-products endpoints (POST /notifications, PUT /{ref}, the document sub-resource)? The implementor should check before fixing — if it is general, the fix belongs at the handler level once rather than per-endpoint, and this increment's title understates it.",
+        "Whether the animals package has the same defect. If it does, that is a separate ticket against animals, not scope for this increment — but it should be raised rather than silently left."
+      ]
+    },
+    {
+      "id": "pp-069",
+      "title": "Backend (live-animals): fulfilment-copy idempotency recovery runs inside an aborted Mongo transaction — concurrent replay can error instead of returning the existing copy",
+      "kind": "fix",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": "HALT-FOR-REVIEW",
+      "dependsOn": [
+        "pp-054"
+      ],
+      "sourceIncrement": null,
+      "recipe": "No recipe. The fix shape is whatever pp-054 landed for the plant-products equivalent — read that first and transpose it back, so the two implementations converge again rather than diverging further.",
+      "repo": "backend",
+      "filesToTouch": [
+        {
+          "path": "src/main/java/uk/gov/defra/trade/imports/animals/**",
+          "action": "edit",
+          "what": "The live-animals fulfilment-copy idempotency path. Same defect pp-054's review found in the transposed plant-products copy: the duplicate-key recovery lookup runs inside the same @Transactional method whose insert has just thrown DuplicateKeyException. MongoTransactionManager is registered unconditionally (animals/configuration/MongoConfig.java:91), so this IS a real Mongo transaction and the server-side duplicate-key error can end it — meaning the concurrent loser's recovery read executes through an aborted session and fails, instead of returning the existing copy with 201. Apply the same restructure pp-054 used: keep the single-document insert and its recovery out of the aborted transaction, or recover in a fresh transaction after rollback."
+        },
+        {
+          "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/**",
+          "action": "edit",
+          "what": "Add a genuinely concurrent integration test over the real HTTP stack: two simultaneous fulfilment-copy requests with the same Idempotency-Key against the same source, both returning 201 with identical body and Location, and exactly one document persisted. Use a CountDownLatch or equivalent so the requests actually overlap. The existing coverage does NOT reach this path — the replay test is sequential and the unit test mocks a successful post-exception lookup, which proves the catch block compiles rather than that the contract holds."
+        }
+      ],
+      "obligations": [],
+      "flowChanges": {},
+      "schemaFields": [],
+      "copyKeys": [],
+      "specs": [
+        "IT: two concurrent fulfilment-copy requests sharing an Idempotency-Key both return 201 with the same body and Location, and exactly one document exists afterwards.",
+        "The existing sequential replay behaviour, the unique partial index behaviour, and missing/blank header rejection are all unchanged."
+      ],
+      "acceptanceCriteria": [
+        "The duplicate-key recovery lookup can no longer execute inside a transaction aborted by the failed insert.",
+        "A genuinely concurrent IT proves the losing request returns the existing copy with 201 rather than an error, with exactly one document persisted. A Mockito-fabricated post-exception lookup does not satisfy this criterion.",
+        "The live-animals and plant-products idempotency implementations are behaviourally aligned again, restoring Sam's R4 ruling that the two match.",
+        "No behaviour change to the sequential replay path, the partial unique index, or header validation.",
+        "mvn verify is green end to end, including every pre-existing animals test."
+      ],
+      "verification": [
+        "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+      ],
+      "notes": "RAISED DURING THE BUILD (orchestrator, 2026-08-01), not by the planners, and it is a defect in ALREADY-SHIPPED live-animals code rather than in anything this programme wrote. Found by transposition: pp-054 copied the animals idempotency scheme per Sam's ruling R4 ('match live-animals exactly'), and reviewing the copy surfaced a flaw that had gone unnoticed in the original. The orchestrator independently verified the premise before acting — MongoTransactionManager is a plain unconditional @Bean at animals/configuration/MongoConfig.java:91 and the copy method is @Transactional, so there genuinely is a transaction to abort.\n\nWHY IT CARRIES A GATE: this edits shipped live-animals production code on a path that is exercised in a real deployment, and the failure it fixes is a race that current tests do not reach. That combination — shipped code, concurrency, no existing coverage of the path — is worth a human look before it lands, which is why the increment halts for review rather than landing autonomously.\n\nWHY pp-054 DID NOT JUST FIX BOTH: pp-054's scope is the plant-products package. Reaching into animals from a plant-products increment would have put a concurrency change to shipped code inside a diff nobody was reviewing for that, and R4 alignment is restored by this increment instead. The R4 deviation is deliberate and is recorded in WHEN-YOURE-BACK.md: R4 means 'do not invent a different scheme', not 'faithfully reproduce a concurrency bug'.\n\nSCOPE FENCE: the idempotency recovery path and its test coverage. Do not refactor the surrounding fulfilment service, and do not change the sequential replay semantics.",
+      "openQuestions": [
+        "Is the same aborted-transaction recovery pattern used anywhere else in the animals package — any other @Transactional method that catches DuplicateKeyException and then reads? If so this is a class of bug rather than one instance, and the fix should sweep them together.",
+        "Does this need a Jira ticket in its own right, given it is a defect in shipped code rather than programme work? The orchestrator's view is yes, but that is Sam's call and no ticket has been raised."
+      ]
     }
   ],
   "revisions": [

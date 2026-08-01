@@ -1,0 +1,48 @@
+{
+  "id": "pp-069",
+  "title": "Backend (live-animals): fulfilment-copy idempotency recovery runs inside an aborted Mongo transaction — concurrent replay can error instead of returning the existing copy",
+  "kind": "fix",
+  "milestone": "m0",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": "HALT-FOR-REVIEW",
+  "dependsOn": ["pp-054"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The fix shape is whatever pp-054 landed for the plant-products equivalent — read that first and transpose it back, so the two implementations converge again rather than diverging further.",
+  "repo": "backend",
+  "filesToTouch": [
+    {
+      "path": "src/main/java/uk/gov/defra/trade/imports/animals/**",
+      "action": "edit",
+      "what": "The live-animals fulfilment-copy idempotency path. Same defect pp-054's review found in the transposed plant-products copy: the duplicate-key recovery lookup runs inside the same @Transactional method whose insert has just thrown DuplicateKeyException. MongoTransactionManager is registered unconditionally (animals/configuration/MongoConfig.java:91), so this IS a real Mongo transaction and the server-side duplicate-key error can end it — meaning the concurrent loser's recovery read executes through an aborted session and fails, instead of returning the existing copy with 201. Apply the same restructure pp-054 used: keep the single-document insert and its recovery out of the aborted transaction, or recover in a fresh transaction after rollback."
+    },
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/**",
+      "action": "edit",
+      "what": "Add a genuinely concurrent integration test over the real HTTP stack: two simultaneous fulfilment-copy requests with the same Idempotency-Key against the same source, both returning 201 with identical body and Location, and exactly one document persisted. Use a CountDownLatch or equivalent so the requests actually overlap. The existing coverage does NOT reach this path — the replay test is sequential and the unit test mocks a successful post-exception lookup, which proves the catch block compiles rather than that the contract holds."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "IT: two concurrent fulfilment-copy requests sharing an Idempotency-Key both return 201 with the same body and Location, and exactly one document exists afterwards.",
+    "The existing sequential replay behaviour, the unique partial index behaviour, and missing/blank header rejection are all unchanged."
+  ],
+  "acceptanceCriteria": [
+    "The duplicate-key recovery lookup can no longer execute inside a transaction aborted by the failed insert.",
+    "A genuinely concurrent IT proves the losing request returns the existing copy with 201 rather than an error, with exactly one document persisted. A Mockito-fabricated post-exception lookup does not satisfy this criterion.",
+    "The live-animals and plant-products idempotency implementations are behaviourally aligned again, restoring Sam's R4 ruling that the two match.",
+    "No behaviour change to the sequential replay path, the partial unique index, or header validation.",
+    "mvn verify is green end to end, including every pre-existing animals test."
+  ],
+  "verification": [
+    "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+  ],
+  "notes": "RAISED DURING THE BUILD (orchestrator, 2026-08-01), not by the planners, and it is a defect in ALREADY-SHIPPED live-animals code rather than in anything this programme wrote. Found by transposition: pp-054 copied the animals idempotency scheme per Sam's ruling R4 ('match live-animals exactly'), and reviewing the copy surfaced a flaw that had gone unnoticed in the original. The orchestrator independently verified the premise before acting — MongoTransactionManager is a plain unconditional @Bean at animals/configuration/MongoConfig.java:91 and the copy method is @Transactional, so there genuinely is a transaction to abort.\n\nWHY IT CARRIES A GATE: this edits shipped live-animals production code on a path that is exercised in a real deployment, and the failure it fixes is a race that current tests do not reach. That combination — shipped code, concurrency, no existing coverage of the path — is worth a human look before it lands, which is why the increment halts for review rather than landing autonomously.\n\nWHY pp-054 DID NOT JUST FIX BOTH: pp-054's scope is the plant-products package. Reaching into animals from a plant-products increment would have put a concurrency change to shipped code inside a diff nobody was reviewing for that, and R4 alignment is restored by this increment instead. The R4 deviation is deliberate and is recorded in WHEN-YOURE-BACK.md: R4 means 'do not invent a different scheme', not 'faithfully reproduce a concurrency bug'.\n\nSCOPE FENCE: the idempotency recovery path and its test coverage. Do not refactor the surrounding fulfilment service, and do not change the sequential replay semantics.",
+  "openQuestions": [
+    "Is the same aborted-transaction recovery pattern used anywhere else in the animals package — any other @Transactional method that catches DuplicateKeyException and then reads? If so this is a class of bug rather than one instance, and the fix should sweep them together.",
+    "Does this need a Jira ticket in its own right, given it is a defect in shipped code rather than programme work? The orchestrator's view is yes, but that is Sam's call and no ticket has been raised."
+  ]
+}

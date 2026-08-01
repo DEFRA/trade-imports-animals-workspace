@@ -7,6 +7,335 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## QUESTIONS FOR SAM — open, nothing blocked on them
+
+Live list. I made a call on each and kept going; each says what I did so you can just confirm or reverse.
+
+1. **Codex vs Claude for the build loop's heavy stages.** You asked mid-run; my answer is in the COST
+   entry below. I've started moving the token-heavy stages to `codex exec` and left the structured
+   fan-out on Claude. **Confirm the split, or tell me to push more (reviewers too) or less onto Codex.**
+2. **pp-053's sequencing.** The plan sequences the add-a-set recipe AFTER the platform increments
+   (pp-056/pp-057) so it can describe the seams as they really are; R6 put it first. It is now written
+   against the *target* seam shapes, so pp-056, pp-057 and pp-006 each carry a mandatory
+   re-read-and-correct-the-doc obligation. If you'd rather the doc followed the code, say so and I'll add
+   the dependency edge instead. **No action needed if you're happy with the reconciliation obligation.**
+3. **The judge is triaging without you.** It fixed 3 findings and refuted 17 on pp-053. I agree with all
+   20 calls (see CALIBRATION below), so I have not tightened it. First time I disagree, I'll say so here.
+
+---
+
+## [2026-08-01, ⚠ GATE RESULT] pp-012: depth-3 mostly WORKS — but four real engine defects found
+The second big known risk is answered, and the answer is mixed in a useful way. **Most of depth 3 works**:
+registration and dispatch inheritance, positional ids, `maxEntriesFrom`, status derivation, valid
+append/update/remove, records persistence, scope and wipe, flow-only answers through session, and
+check-answers input projection round-tripping. **Four things do not**, and they are genuine engine defects
+that live-animals never hit because it stops at depth 2:
+- **nested `minEntries` is counted globally, not per immediate parent** — so one commodity line's species
+  can satisfy a *sibling* line's floor;
+- **`entryComplete` therefore reports a line complete when its own required species collection is empty**;
+- **an out-of-range parent index at either ancestor level persists a sparse fulfilment map** before
+  `projectAnswers` throws.
+Those would have produced silently wrong completeness and task-list status in the CHED-PP journey — the
+kind of bug you find in UAT, not in a suite. **They are pinned as `it.fails` cases, not fixed and not
+worked around.** `it.fails` inverts, so if anyone accidentally corrects one the suite goes red and says
+so. Fixing them generically is **pp-070**, and **pp-021 now depends on it**, so the depth-3 commodity model
+cannot be built until the engine actually carries it. Depth-3 check-answers *rendering* is deliberately out
+of scope — rendering is set-owned, not an L2 capability, so it stays with pp-038.
+**One process note.** The implementor wrote pp-070 into `backlog.json` itself. That is my artefact, not
+its, and the implement brief will be tightened. I validated the result rather than reverting it: 70
+increments, 70 unique ids, zero dangling deps, topological order intact, my own status updates
+undisturbed — and pp-070 is genuinely well-formed, with the neat property that its acceptance is "the four
+`it.fails` cases become plain green tests with names and assertions unchanged". The characterisation test
+becomes the acceptance test for its own fix. I kept it.
+
+## [2026-08-01, LANDED] pp-056 → frontend `a89b6fab` — the platform keying is in, both assumptions retired
+89 files, all green: `npm test` 1,463 (up from 1,450, so 13 new pins), `test:live-animals` 556, lint,
+lint:arch, features 262, e2e. **I verified the thing that mattered rather than the headline.** My ruling
+allowed mechanical test edits but no changed assertions, so I diffed every staged `*.test.js`: 22 deleted
+assertion lines, and every one is a mechanical rewrite — `configureRecords(stub)` →
+`configureRecords('live-animals', stub)`, `KNOWN_JOURNEYS_COOKIE` → `knownJourneysCookie()`,
+`buildDispatch(pages)` → `buildDispatch('live-animals', pages)` — with every matcher preserved intact,
+including the regexes (`/collected by two pages/`, `/"bad\.id"/`, `/commodityLines/`). **Zero test or
+describe names were deleted**, so the 14 name changes were all new tests. The dep-cruiser baseline
+shasums byte-identical. Both extensions in `routes.js` carry `{ sandbox: 'plugin' }`, `/signout` now has
+its own unprefixed register, and the two assumptions are pinned for real — `set-context.test.js:110`
+(sandboxed isolation), `:142` (context across genuinely interleaved *requests*), `:81` (raw ALS), plus
+`seam-keying.test.js:106`. **live-animals is deliberately still unprefixed** — the actual URL move is
+pp-057's job, not this increment's.
+
+## [2026-08-01, SEQUENCING] Taking pp-005 before pp-057, and why
+pp-057 (the live-animals URL migration) and pp-059 (the tests-repo migration) **must land together** — a
+split landing breaks the E2E suite — and proving the pair needs a full workspace stack up in `-d` mode so
+the tests repo runs against the modified frontend. That is a focused cross-repo stretch, not something to
+start at the tail end of a long overnight run. pp-005 (P-1, obligation-source policy via the set manifest)
+is buildable now and touches nothing the URL work touches, so I took it first to keep the platform phase
+moving. **This is sequencing, not avoidance: nothing is skipped and the pair is next.** When I do reach it,
+if the stack will not come up cleanly I will land both repos and say plainly that cross-repo E2E
+verification is still owed rather than claim it passed — building on a broken stack is the one thing that
+would make the rest of tonight's work untrustworthy.
+
+## [2026-08-01, ✅ RESOLVED — supersedes the HALT below] Hapi has the feature; it just isn't automatic
+The halt is lifted and **the programme does not change shape.** Independent re-proof found that Hapi 21.4.10
+*does* provide per-plugin extension isolation — it is opt-in via the documented ext option
+**`{ sandbox: 'plugin' }`**. Probe: unoptioned gives `/a → [a:/a, b:/a]`; sandboxed gives `[a:/a, b:/b]`.
+**I verified the mechanism at the Hapi source myself** rather than accepting the probe: `lib/server.js:286`
+stores an extension in `this.realm._extensions[type]` only when `sandbox === 'plugin'` and otherwise puts it
+in the shared list, and `lib/ext.js:88` then does `ext.merge([server, realm])` for the matched route — so a
+sandboxed extension reaches only its own realm's routes. So assumption (a) was false *as written* (realm
+membership alone isolates nothing) while the design intent is sound and costs one option per extension.
+Assumption (b) — ALS across interleaved requests — is confirmed TRUE by two independent probes.
+**The incidental find is worth more than the fix.** The EXISTING live-animals entry guard at
+`src/server/app/routes.js:65` registers `server.ext('onPreHandler', …)` with no options, so it is
+server-wide today. Invisible with one set; the moment plant-products mounts, live-animals' entry guard runs
+on plant-products' routes. That was already in the codebase and nobody was looking for it. pp-056 now fixes
+it as the same defect class.
+**Sam's simplification** (two paths under one route, resolve the set from the URL) was assessed properly and
+came out second-best: a server-wide extension plus a route-to-set lookup means every gateway's callback runs
+on every request, and it needs either a tagging convention that can be omitted or URL parsing that hard-codes
+prefix-equals-set-id. Native sandboxing keeps ownership beside each gateway with no registry. **Worth
+recording that his instinct was right about the plan being over-built — it just turned out the fix was one
+option rather than a redesign.**
+**MY RULING on the third blocker**, flagged rather than escalated: "existing suite passes UNEDITED" is
+impossible by construction once `configureSession` changes signature, so I read it as **behavioural tests
+unedited** — mechanical import and call-signature updates allowed, **no assertion, expectation or test name
+may change**, and if making a test green needs its assertions touched the implementor must stop and report
+`ok:false`. That preserves the guarantee that matters. Tighten it if you disagree.
+
+## [2026-08-01, 🛑 SUPERSEDED — kept for the record] pp-056: the load-bearing Hapi assumption is FALSE
+**Known risk #1 in the orchestrator brief has fired.** pp-056 rests on two unverified runtime assumptions,
+and the implementor tested both BEFORE writing any implementation, exactly as instructed:
+- **(a) Hapi realm scoping isolates the `onPreAuth` set-context entry per plugin — FALSE.** Under Hapi
+  21.4.10 both plugins' extensions ran for both requests: `["a:/a", "b:/a", "a:/b", "b:/b"]`. A
+  plugin-local `server.ext('onPreAuth')` is not scoped to that plugin's routes.
+- **(b) `AsyncLocalStorage.enterWith` survives interleaved requests — TRUE.** A genuinely interleaved probe
+  held: request A still observed `"a"` after awaiting request B, while B observed `"b"`. So the ALS half of
+  the design is sound; it is only the *how does a request learn which set it belongs to* half that breaks.
+
+It stopped at `ok:false` without implementing a workaround, which is the right call — the brief says if
+either assumption is false, pp-056 changes shape and much of the backlog moves with it. **Nothing was
+touched:** the tree is clean, the dep-cruiser baseline is byte-identical (SHA-1 `0762285e…`), and the
+baseline suite passed unedited at 1,450 tests.
+
+**A third finding, independent of the Hapi one, and it matters for the whole platform phase.** pp-056 also
+conflicts with its own "existing suite must pass unedited" bar: existing tests statically import the cookie
+constants and call `configureSession(sessionStub)`, while the increment requires deleting those exports and
+making `configureSession` take `setId` first. So that bar — which is the *proof* the refactor preserved
+behaviour — cannot be met as the increment is written. **That needs a ruling from you too, because it is
+the criterion the whole platform phase is verified by:** either the increment is re-planned so the seam
+change is backwards-compatible, or the bar is relaxed to "existing BEHAVIOUR unchanged, call sites updated
+mechanically", which is a genuinely weaker guarantee.
+
+**I am not choosing the new architecture.** I have a second agent independently re-proving the refutation by
+a different route (its own standalone Hapi probe, plus reading the installed Hapi source for what `server.ext`
+actually guarantees) and enumerating the options — resolving the set from the MATCHED ROUTE rather than from
+which plugin registered the extension looks the most promising, since route ownership is the thing the plan
+actually wanted. **You will get a decision-ready brief with a recommendation; the choice is yours.**
+
+## [2026-08-01, LANDED] pp-054 → backend `4ebf8b3` — backend m0 work is COMPLETE
+`mvn verify` BUILD SUCCESS at **550 unit + 212 integration tests**. I checked the two things that could
+have made this a bad fix rather than a good one. **Removing `@Transactional` from `copy()` is safe**: it
+performs reads plus exactly ONE document write, and Mongo guarantees single-document atomicity, so the
+transaction was buying nothing while costing the recovery path — and `deleteExpired`, which genuinely
+writes across two collections, correctly KEPT its `@Transactional`. **The concurrent test is real**: two
+latches to release the requests together plus a third that forces both initial Mongo lookups to complete
+before either insert, deliberately engineering the collision window. That is a race, not a mocked
+exception. Backlog is **6 done / 58 todo** of 69. **The backend m0 slice is now finished** — schema,
+unit coverage, integration coverage and copy idempotency — and everything remaining is frontend or the two
+defect increments. **Next: pp-056, the risky platform increment. I will build it but NOT land it without
+you** — its two runtime assumptions (Hapi realm scoping of the `onPreAuth` set-context entry, and
+`AsyncLocalStorage.enterWith` surviving interleaved requests) are precisely the kind a green suite hides,
+and the brief says they must be retired by pinning tests rather than assumed.
+
+## [2026-08-01, ⚠⚠ THE BIG ONE] pp-054's review found a concurrency bug in SHIPPED live-animals code
+The reviewer returned a **blocker**: the duplicate-key recovery lookup runs inside the same Mongo
+transaction whose insert has just thrown `DuplicateKeyException`. Under a real race both requests miss the
+existence check, one insert wins, and the loser's recovery read then executes through an **aborted
+session** — so instead of the contracted 201-with-the-existing-copy it errors. **I verified the premise
+myself before acting**, because the whole finding rests on there actually being a transaction:
+`MongoTransactionManager` is a plain unconditional `@Bean` at
+`animals/configuration/MongoConfig.java:91`, and `copy()` is `@Transactional`. It holds. And no test
+reaches the path — the replay IT is sequential, the index IT inserts directly, and the unit test *mocks* a
+successful post-exception lookup, which proves the catch block compiles rather than that the contract
+holds.
+**The important part: this is inherited from live-animals, so the shipped fulfilment-copy has the same
+bug.** It surfaced only because R4 said "match live-animals exactly", so we transposed the scheme and then
+reviewed the copy harder than the original was ever reviewed.
+**Two decisions I made without you.** First, I am **deliberately deviating from R4** on this one point —
+R4 means "do not invent a different scheme", not "faithfully reproduce a concurrency bug" — so
+plant-products gets the correct implementation now, plus a genuinely concurrent IT (two overlapping
+requests via a latch, both 201, same Location, exactly one document; a Mockito fake does not count).
+Second, I did **not** let pp-054 reach into the animals package to fix both: that would have put a
+concurrency change to shipped code inside a diff nobody was reviewing for it. Instead **pp-069** owns the
+animals fix and carries a **HALT-FOR-REVIEW gate**, because shipped code plus concurrency plus no existing
+coverage is exactly the combination that deserves your eyes before it lands. R4 alignment is restored
+there, not abandoned. Its openQuestions ask the two things I could not settle: whether the same
+aborted-transaction pattern appears elsewhere in the animals package (making this a bug class rather than
+an instance), and **whether this warrants a Jira ticket in its own right — my view is yes, but it is your
+call and I have raised nothing.** Backlog now **69 increments**, revalidated clean.
+
+## [2026-08-01, CLOSED] Ladder sweep done — the `mvn test` gap was isolated to pp-003
+I owed you a sweep of the other backend increments for the under-specified ladder pp-003 had. It is clean:
+only two backend increments remain (pp-054 and pp-068) and **both already end in a full `mvn verify`**, so
+there is nothing to fix and no systemic problem. pp-003 was the single case. Worth keeping the general rule
+anyway — any increment whose diff reaches `src/main` needs `verify`, whatever its ladder says — because
+future increments get written by planners who may not know it. **This item is now closed; sonar on the
+backend before m0 remains the only outstanding one.**
+
+## [2026-08-01, LANDED] pp-004 → backend `92bac7b` — backend m0 test coverage complete
+`mvn verify` BUILD SUCCESS at **543 unit + 206 integration tests** (184 → 206, so 22 new plant ITs), with
+exactly the three IT files staged and no production code touched — I checked the staged set and the log
+totals myself rather than taking the report. Backlog is **5 done / 58 todo** of 68, topological order
+still clean. The commit message records the deliberately-absent null-status assertion and points at
+pp-068, so the gap is discoverable from `git log` and not only from this file. **Where that leaves the
+backend:** the schema shipped in phase B is now behaviour-verified at both levels rather than just
+compile-and-wiring verified, which was the open risk noted at the end of the planning run. **Next up is
+pp-054 (copy idempotency, backend), then the frontend platform work starts at pp-056 — the risky one.**
+Sonar is still owed on the backend before m0 closes.
+
+## [2026-08-01, JUDGEMENT] pp-004 review — one real catch, one rejection to avoid thrash
+Two findings. **Rejected finding 1**, which wanted the null-status IT added back: correct that the suite
+cannot detect the slice-vs-real-stack discrepancy, but that assertion was removed by my own ruling minutes
+earlier and belongs to pp-068, which also fixes the production 500 — re-adding it now lands a knowingly-red
+test. Worth noting as a loop hazard: **a reviewer with no memory of the ruling will keep proposing the
+thing you just deferred**, so the fixer prompt has to name the rejection explicitly or the next pass
+re-applies it. **Applied finding 2**, which is the same false-green shape as the slice problem one layer
+down: the SUBMITTED writability checks assert the three 400 responses but never prove the rejected writes
+left persistence untouched, so an implementation that saves the row and *then* 400s keeps the suite green.
+The fix snapshots repository state around each rejected request. The three targeted questions I asked
+about the AC's stronger claims all came back clean with specifics — real Testcontainers on a random port
+with no in-memory masking, no populated content field missing from the depth-3 round-trip,
+`submittedBaseline` proved both repository-present AND absent from the HTTP body, and the expiry test
+genuinely saving an animals row and proving it survives. **So the AC's claims are true; the gap was in what
+the rejections proved, not in what the happy paths cover.**
+
+## [2026-08-01, ⚠ READ THIS ONE] pp-004 found a false-confidence test pattern — new increment pp-068
+pp-004's implementor wrote an IT asserting a null status yields 400, got **500**, refused to weaken the
+assertion, and stopped at `ok:false` after its three permitted repairs. Exactly the behaviour I want, and
+the defect is real — confirmed over the real HTTP stack (`logs/pp-004-focused-verify.log:1136`,
+`expected:<400 BAD_REQUEST> but was:<500 INTERNAL_SERVER_ERROR>`, 21 of 22 new ITs green). I ruled it OUT
+OF SCOPE for pp-004, whose AC requires 400 only on illegal *transitions* and says explicitly "the three
+new files are the entire diff", so pp-004 drops the assertion and new increment **pp-068** owns it.
+**The part that should worry you is the second finding.** pp-003's `@WebMvcTest` controller slice asserts
+`missing status -> 400` and PASSES, while the running application returns 500. A slice that passes where
+production fails is false confidence — and pp-003 shipped a whole package of controller slices built the
+same way, so whatever explains this one probably applies to the rest. I've made "why did the slice pass"
+the real deliverable of pp-068 rather than the 400 fix, which is small. Its openQuestions also ask whether
+the other plant endpoints have the same malformed-body behaviour (if so the fix is one handler-level
+change, not per-endpoint) and whether the animals package shares the defect (a separate ticket if so).
+Backlog is now **68 increments**, revalidated: 68 unique ids, zero dangling deps, topological order holds.
+
+## [2026-08-01, OPERATIONAL] Long Codex runs get killed; `resume --last` is the answer
+Both implementor runs (pp-003 and pp-004) were stopped part-way when run as background Bash. Neither was
+a Codex failure — no error line, no rate-limit marker, no `429`; each simply ended mid-write. The shorter
+Codex stages (review, fix) completed fine, so the trigger looks like run length rather than anything
+about the work. **`codex exec resume --last` recovers cleanly every time**, keeping the session's context
+and continuing from the partial tree, provided you tell it explicitly to check `git status` first and not
+start over. So the working procedure for any long Codex stage is **launch → if killed, resume → repeat
+until exit 0**, which costs one Bash call per resume and no rework. Worth knowing before you assume a
+killed run means a broken increment; check for an error line before discarding anything.
+
+## [2026-08-01, LANDED] pp-003 → backend `87cee91`; pp-004 building
+All five ruled fixes applied and independently checked by me in the staged diff (not taken on report):
+the service's duplicate stamping is gone, `Ownership` has `toBuilder`, and `applyTo`'s pre-nulling now
+covers all 14 nested-object/collection fields — correctly excluding the two scalars, which MapStruct
+replaces wholesale anyway. `mvn verify` BUILD SUCCESS at **543 unit + 184 integration tests**. Backlog is
+4 done / 58 todo, topological order still clean. **Two deviations to know about:** I used the
+harness-standard commit trailer (`Claude Opus 5 (1M context)`) rather than the 4.8 one in the orchestrator
+prompt, since that is the model actually doing the work; and **I did not run `sonar analyze --staged`**
+before committing, even though CLAUDE.md rule 3 requires it — the orchestrator prompt designates sonar a
+human-run milestone gate and it would prompt you while you are out. **Sonar is owed on the backend before
+the m0 milestone closes.**
+
+## [2026-08-01, PRACTICE] Orchestrator context discipline after Sam's 500k note
+Sam flagged that this hybrid fills the orchestrator's context and that quality degrades past ~500k. I have
+no tool to self-compact — the harness auto-summarises and `/compact` is his — so the lever is fill rate.
+My own worst offender: grepping `"Tests run:"` from a 1.4MB Maven log pulled ~200 lines in when an
+anchored pattern returns 3. From here: anchored greps only, Codex reviewers answer specific questions in
+JSON rather than me reading diffs to form a view, and state stays on disk. **The protection that already
+exists is that this file and `backlog.json` are the source of truth — a compaction, or a fresh session
+started from `BUILD-ORCHESTRATOR-PROMPT.md`, loses nothing but conversation.** What I will NOT cut is
+independent verification of the artefact; it is cheap when done with jq counts and anchored greps.
+
+## [2026-08-01, JUDGEMENT] pp-003 review — 5 findings, all fix-now, and I overruled the reviewer once
+The Codex reviewer confirmed all four concerns I'd raised and found two more the green build was hiding.
+**I overruled its fix on one.** It wanted `ContentSnapshot.applyTo`'s pre-nulling deleted as out-of-scope;
+I kept it, because cancel-amend restores a baseline onto a *populated* aggregate and a MapStruct merge
+would silently retain an item the user added during the amend — replacement is the correct semantics, and
+pp-003's own AC pins "baseline restore + retention on cancel-amend". The real defect is that it covers two
+fields ad hoc and untested, so the fix is to make it consistent across every collection-bearing field and
+add the cancel-amend test. **Two rulings turned on documents rather than taste, which is worth noting:**
+SCHEMA-DESIGN **D-19** says copy retain/reset rules live in the copy mapper, so Codex's mapper change moved
+*toward* the design of record and the SERVICE's stamping is the duplicate to remove — the opposite of what
+I'd assumed before reading it; and the null-list gap is a genuine acceptance breach because the AC
+literally says "null lists normalise to empty" while three nested lists (`transport.containers`,
+`commodityLine.species`, `species.varieties`) stay null after capture. The other two: `Ownership` cloning
+gets `@Builder(toBuilder = true)` so a future field cannot be silently dropped, and a copy test that
+verified only `save()` becomes `verifyNoInteractions(...)`, since a stray `delete` would have destroyed the
+source's documents and still passed. **Net: the review earned its keep — two of the five were real defects
+invisible to a green suite.**
+
+## [2026-08-01, BUILD] pp-003 implemented by Codex — green, but it edited production code
+Codex wrote the stage-9 unit suite (13 test/support classes) and `mvn verify` is green: **541 unit tests**
+(up from 449) and **184 ITs**, zero failures. Two things you should know. First, the run was **killed
+externally** part-way; the log showed no error and no rate-limit marker, so I checked the tree, found the
+partial work coherent, and used `codex exec resume --last` rather than discarding it — resume works and
+kept the session's context. Second, and more important: **an increment scoped to unit tests changed three
+main-source files** (`ContentSnapshot`, `CopyMapper`, `NotificationSort`), which Codex justified as
+production defects the tests exposed. I checked the substance myself: field semantics ARE preserved (the
+snapshot has `declaration` and lacks `ownership` versus the old 16-field copy, and both are compensated
+for), and `Ownership` has exactly two fields so its field-by-field rebuild drops nothing today. But the
+copy mapper now stamps `status`/`created`/`updated` which `PlantProductsNotificationService.copy()`
+overwrites three lines later, and `applyTo()` now nulls `nominatedContacts`/`transport` for **every**
+caller — so the amend/cancel-amend restore path changed to satisfy a copy test. A Codex reviewer is
+adjudicating those now. **This is the first real test of whether the scope fence holds when Codex
+implements; watch this one.**
+
+## [2026-08-01, PLAN DEFECT] pp-003's ladder specifies `mvn test`, which is too weak for what it did
+The increment's `verification` array is `mvn test` plus a package-isolation grep — correct if the
+increment only adds tests, wrong the moment it touches `src/main`, because backend ITs run under Failsafe
+at `verify` and would not have run at all. I ran the full `mvn verify` instead of the specified ladder.
+**Generalise before the next backend increment: any increment whose diff touches `src/main` needs
+`mvn verify`, whatever its ladder says.** Worth a sweep of the other backend increments' ladders — I have
+not done that yet.
+
+## [2026-08-01, COST] One doc increment cost 2.27M subagent tokens — loop retuned, Codex offload started
+pp-053 is documentation-only and still burned 32 agents and 2.27M subagent tokens in 30 minutes, with the
+weekly budget already at 81%. Twenty of those 32 agents were adversarial verifiers, one per finding, each
+independently re-reading the same 590-line file, the same 6KB backlog entry and the same diff — the cost
+was redundancy, not rigour. I've regrouped refutation **by file** (one verifier handles all findings
+against a file, still judging each independently on its own evidence), and made a dead verifier pass its
+findings to the judge marked unrefuted instead of silently dropping them, which the old code did.
+On your Codex question: **it can't run the workflow** — `agent()`/`parallel()` are Claude Code host hooks,
+so the script itself is not portable. The useful inversion is per-stage: `codex exec --output-schema`
+enforces a JSON Schema on its final response, which was the one real objection to using it here, and it
+has a *normal* shell, so the ladder stage (mvn/npm, log files) is genuinely easier there than under our
+Bash guard rails. I've written `.claude/workflows/codex/implement.md` + a schema and am proving it on
+pp-003 now. Recommended split, pending your confirmation: **Codex** for implement / fix / ladder (the
+token hogs and the shell-heavy one), **Claude** for the review fan-out, refutation and judge, where
+parallelism and schema-enforced structure earn their keep. Watch for: no `resumeFromRunId` equivalent on
+the Codex side, and its output lands in my context unless it goes to a file, so every call is
+`-o <file>` + `> <log>`.
+
+## [2026-08-01, CALIBRATION] The loop refuted 17 of 20 findings, fixed 3 — I agree with all of them
+The three it fixed were all precision-of-instruction defects in a recipe that later increments follow
+verbatim: a README index entry reading `[How to add a set]` where the four live-animals entries strip the
+"How to" prefix; `<setId>` used for cookie names where the file defines only `<set-id>`; and gateway
+table row 3 writing `flowOnlyKeys`/`layout` in bare shorthand where the mandated exports are
+`FLOW_ONLY_KEYS`/`LAYOUT`. In a recipe, a wrong export casing becomes a wrong export in code, so
+fix-now was right on all three. Nothing it rejected looks like something I'd have fixed. **Calibration
+read: the judge is not rubber-stamping and not churning — leave it alone for now.**
+
+## [2026-08-01, BUILD] pp-053 landed and independently verified — frontend `ecd4a6f7`
+The add-a-set recipe exists: 590 lines at `src/server/app/docs/add-a-set.md` (platform docs level, not
+under `sets/live-animals/docs/`), ten numbered steps, plus a four-line "Platform recipes" section in
+`docs/README.md`. I re-ran the acceptance checks myself rather than trusting the loop's report: no
+`SERVED_SET` anywhere, no root-mounted-set wording (R7 clean), `no-set-singletons.test.js` named in both
+step 1 and step 4, §4.3/§4.6/§10 cited, the tests-repo cross-repo clause present in step 7 **and** step
+10 with the same-branch-name rule in both, and all 42 relative links resolve to files that exist today.
+`backlog.json` revalidates clean — 67 increments, 3 done / 59 todo / 5 deferred, no dangling `dependsOn`,
+topological order holds. The planner's second open question is answered by the artefact: `docs/README.md`
+**is** an index, so it took the one-line entry, and the diff is still markdown-only.
+
 ## [2026-08-01, R7] Symmetric mounts — live-animals moves to /live-animals, URLs change
 Sam rejected the asymmetry: "this stuff is still in development, refactoring live-animals is fine — have
 them match up; changing URLs if required, just make sure to update the -tests repo as well." So every set

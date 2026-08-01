@@ -1,0 +1,67 @@
+{
+  "id": "pp-070",
+  "title": "Platform: make nested collection cardinality, completeness and ancestor writes safe at depth N",
+  "kind": "platform",
+  "milestone": "m0",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": "Raised by pp-012's red depth-3 characterisation. This must land and flip all four pp-012 it.fails cases before pp-021 or any m3 commodity page proceeds.",
+  "dependsOn": [
+    "pp-012"
+  ],
+  "sourceIncrement": "pp-012",
+  "recipe": "No recipe exists (SIBLING-SET-PLAN.md §8 G-B). The four it.fails cases in bridge/depth-three-collection.characterisation.test.js are the executable specification; fix the generic L2 engine only, never a commodity page.",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/model/obligations/state-queries.js",
+      "action": "edit",
+      "what": "Make minEntries/maxEntries cardinality for a nested group evaluate per immediate parent instance rather than once over the global record list. Top-level groups retain the existing single aggregate error. Nested errors carry the parent fulfilment id as instanceId and the count for only that parent; use the group's within implication records as the parent worklist. Preserve anyOfIds, allOrNothingOfIds and recordCountEquals semantics unchanged."
+    },
+    {
+      "path": "src/server/app/bridge/collection-complete.js",
+      "action": "edit",
+      "what": "Include nested minEntries/maxEntries cardinality errors when rolling a parent entry's completeness. A lines instance with zero required species must be incomplete even when its own mandatory line leaf is filled. Keep optional empty varieties complete and retain the direct mandatory-leaf check for a positional empty variety."
+    },
+    {
+      "path": "src/server/app/engine/write/entries/mutate.js",
+      "action": "edit",
+      "what": "Validate every numeric ancestor in collectionPath against the current positional answer tree before appendEntryAt/updateEntryAt/removeEntryAt calls setAt. An absent, non-integer or out-of-range parent is rejected without calling replaceJourneyFulfilment: append returns null and update/remove remain no-ops. This prevents sparse fulfilments being saved before projectAnswers throws."
+    },
+    {
+      "path": "src/server/app/bridge/depth-three-collection.characterisation.test.js",
+      "action": "edit",
+      "what": "Flip the four pp-012 it.fails contracts to ordinary tests without changing their names or assertions: species minEntries per line, missing species rolling up to line incomplete, and clean rejection at each of the two out-of-range ancestor levels."
+    },
+    {
+      "path": "src/server/app/model/obligations/state-queries.test.js, src/server/app/bridge/collection-complete.test.js, src/server/app/engine/mutators.test.js",
+      "action": "edit",
+      "what": "Add focused depth-2 regression coverage for per-parent min/max counting, parent completeness rollup and mutation rejection so the generic behavior is pinned below the pp-012 integrated fixture. Do not alter existing assertions, expectations or test names."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "The existing pp-012 depth-three characterisation is the acceptance suite; all four it.fails declarations become plain tests with assertions unchanged.",
+    "Focused L2 unit cases cover two parents where only one has nested records, nested max counting per parent, and both invalid ancestor levels before persistence."
+  ],
+  "acceptanceCriteria": [
+    "groupInvariantErrors(species, state) reports one MIN_ENTRIES error with instanceId line1 when line0 has a species and line1 has none; a sibling's records can no longer satisfy another parent's floor.",
+    "Nested maxEntries is counted per immediate parent as well as nested minEntries; top-level min/max output remains byte-compatible.",
+    "entryComplete returns false for a line whose required species collection is empty, while an absent optional varieties collection remains complete.",
+    "appendEntryAt at ['lines', 5, 'species', 0, 'varieties'] and ['lines', 0, 'species', 9, 'varieties'] returns null, leaves canonical records unchanged and never persists a sparse fulfilment map; update/remove at equivalent invalid parents are no-ops.",
+    "All four pp-012 it.fails cases are plain green tests with names and assertions unchanged; no production file under sets/ and no commodity page is edited.",
+    "npm test, npm run lint and npm run lint:arch are green; .dependency-cruiser-known-violations.json retains SHA-1 0762285ef5bfdd1f06af6fbea491e5e69b53e19a."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:arch",
+    "shasum ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/.dependency-cruiser-known-violations.json"
+  ],
+  "notes": "pp-012 proved the failure is generic L2 behavior, not plant-products modeling. The evaluator enumerates depth-3 paths correctly, but checkMinEntries/checkMaxEntries count the whole nested group globally and emit no parent identity. collection-complete only consults per-instance anyOf errors, so it cannot see a nested collection floor. The write path calls setAt before validating either ancestor; replaceJourneyFulfilment persists line5/species0/variety0 or line0/species9/variety0, then projectAnswers rejects the sparse indices, leaving storage already replaced. Fix all three layers together so the test can flip without weakening it. Status derivation already performs a parent-scoped recursive walk and must remain unchanged.",
+  "openQuestions": []
+}

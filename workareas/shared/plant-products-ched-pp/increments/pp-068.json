@@ -1,0 +1,55 @@
+{
+  "id": "pp-068",
+  "title": "Backend: malformed status-change body returns 500 instead of 400 — fix the error handling and reconcile the controller slice that wrongly pins 400",
+  "kind": "fix",
+  "milestone": "m0",
+  "sizeGuess": "S",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-003", "pp-004"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. Follow the workspace Java best practices (docs/best-practices/java/, incl. testing/unit.md and testing/integration.md) and mirror how the animals package's GlobalExceptionHandler handles the same class of malformed-body failure — find the animals equivalent first and copy its shape rather than inventing one.",
+  "repo": "backend",
+  "filesToTouch": [
+    {
+      "path": "src/main/java/uk/gov/defra/trade/imports/plantproducts/**",
+      "action": "edit",
+      "what": "Make a malformed status-change body produce 400, not 500. DIAGNOSE FIRST — do not assume the site. Observed: PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 500 over the real HTTP stack; a literal-null body and a missing body do the same. The reporting implementor's read was that processing fails before bean validation can produce a 400, which points at StatusChangeRequest deserialisation or the controller's argument binding rather than at the service. Whatever the true site, the fix must yield the house problem-style 400 body with no stack-trace content, consistent with how the animals package handles an unreadable or invalid request body."
+    },
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/plantproducts/notification/PlantProductsNotificationControllerTest.java",
+      "action": "edit",
+      "what": "RECONCILE THE MISLEADING SLICE. This @WebMvcTest currently asserts 'missing status -> 400' and PASSES, while the real application returns 500 — so the slice is not representative of production and is giving false confidence. Establish WHY (the slice almost certainly loads a different exception-handling stack than the full context does), then either make the slice representative or move the assertion to the IT layer where it is actually proved. Do not simply delete it. Whatever is decided, no test may be left claiming behaviour the running application does not exhibit."
+    },
+    {
+      "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/PlantProductsNotificationIT.java",
+      "action": "edit",
+      "what": "Restore the null-status assertion that pp-004 removed as out-of-scope, now that production returns 400. Assert over the real HTTP stack that a null status, a literal-null body and a missing body each return 400 with the problem-style body — all three were observed returning 500."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "IT: PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 400 with the house problem-style body and no stack-trace content.",
+    "IT: the same endpoint with a literal-null body and with a missing body each return 400, not 500.",
+    "The controller slice and the IT agree about this behaviour — no test asserts a status code the running application does not produce."
+  ],
+  "acceptanceCriteria": [
+    "PUT /plant-products/notifications/{ref}/status with {\"status\": null} returns 400, proved by an integration test over the real HTTP stack (not only a @WebMvcTest slice).",
+    "A literal-null request body and a missing request body also return 400 on that endpoint.",
+    "The 400 body is the house problem-style shape and contains no stack-trace content.",
+    "The pp-003 controller-slice assertion and the pp-004 IT assertion no longer contradict each other; the reason the slice passed while production failed is stated in the commit message, because it is a false-confidence pattern that will recur across every other slice in this package.",
+    "No behaviour change to any legal transition: the five-row transition table of SCHEMA-DESIGN §3.1 still behaves exactly as pp-003 and pp-004 pin it.",
+    "mvn verify is green end to end — the new assertions, all pre-existing plant tests, and every animals IT."
+  ],
+  "verification": [
+    "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+  ],
+  "notes": "RAISED DURING THE BUILD (orchestrator, 2026-08-01), not by the planners. pp-004's implementor wrote an IT asserting that a null status yields 400, found it returned 500, correctly refused to weaken the assertion, and stopped at ok:false after its three permitted repair attempts. Ruling: the defect is real but OUT OF SCOPE for pp-004, whose acceptance criteria require 400 only on illegal TRANSITIONS and state explicitly that 'the three new files are the entire diff'. So pp-004 removed the assertion and this increment owns it. Evidence: logs/pp-004-focused-verify.log line 1136 — 'AssertionError: Status expected:<400 BAD_REQUEST> but was:<500 INTERNAL_SERVER_ERROR>', 21 of 22 new plant ITs passing.\n\nTHE SECOND FINDING IS THE MORE IMPORTANT ONE. pp-003's controller slice asserts 'missing status -> 400' and passes, while the full stack returns 500. A slice test that passes where production fails is false confidence, and pp-003 shipped a whole package of controller slices built the same way — so whatever explains this one probably applies to the others. Treat 'why did the slice pass' as the real deliverable of this increment; the 400 fix itself is small.\n\nSCOPE FENCE: fix the error handling, reconcile the two tests, restore the IT assertion. Do not refactor the exception handler beyond what the defect requires, and do not touch the animals package.",
+  "openQuestions": [
+    "Does the same malformed-body path return 500 on the OTHER plant-products endpoints (POST /notifications, PUT /{ref}, the document sub-resource)? The implementor should check before fixing — if it is general, the fix belongs at the handler level once rather than per-endpoint, and this increment's title understates it.",
+    "Whether the animals package has the same defect. If it does, that is a separate ticket against animals, not scope for this increment — but it should be raised rather than silently left."
+  ]
+}
