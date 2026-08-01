@@ -1,0 +1,169 @@
+{
+  "id": "pp-039",
+  "title": "declaration — attestation + submit",
+  "kind": "page",
+  "milestone": "m4",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-007", "pp-038"],
+  "sourceIncrement": "inc-030",
+  "recipe": "SIBLING-SET-PLAN.md §8 G-H (no flow-only-key recipe exists) — transpose sets/live-animals/journeys/linear/features/declaration/ file-for-file; the add-a-page recipe (sets/live-animals/docs/add-a-page.md) applies ONLY for its registration/flow/testing steps — skip its obligation, binding, check-answers and mapper steps entirely (declaration is a FLOW_ONLY key, FD-8: no obligation, no evaluation.js, no check-answers row, no to-dto mapping)",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/page.js",
+      "action": "create",
+      "what": "export const declarationPage = { id: 'declaration', slug: 'declaration' } — import-free (page.js must import NOTHING; controller and flow both import this one object). Exemplar: sets/live-animals/journeys/linear/features/declaration/page.js."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/confirmation/page.js",
+      "action": "create",
+      "what": "export const confirmationPage = { id: 'confirmation', slug: 'confirmation' } — import-free page IDENTITY only, created here so the declaration controller's post-submit redirect target compiles. pp-040 builds the confirmation feature (controller/template/copy) around this file and appends it to the flow; pp-040's plan already expects pp-039 to have landed exactly this (its conditional controller edit says 'if pp-039 already wired this, touch nothing'). Until pp-040 lands, GET /notifications/{id}/confirmation 404s — acceptable interim, the pp-039 e2e asserts redirect URL + submitted-state behaviour, never confirmation content."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/controller.js",
+      "action": "create",
+      "what": "Transpose sets/live-animals/journeys/linear/features/declaration/controller.js (read it whole first — it is the exact shape) with these substitutions: (1) export const meta = { ...page, collects: ['declaration'] } — legal for a flow-only key, precedent live-animals controller.js:20; (2) view = `${TEMPLATES}/features/declaration/template` using the PLANT TEMPLATES prefix from ../../config.js; (3) backLink = pagePath(journey.journeyId, reviewNotificationPage.slug) importing reviewNotificationPage from '../check-answers/page.js' — do NOT use kit.CYA_SLUG (that constant is the live-animals 'notification-view' slug; the plant CYA slug is 'review-notification', pp-038); (4) validation: fields = compose(requiredOneOf('declaration', ['confirmed'], copy.errors.declarationRequired)) from src/server/app/lib/validate/index.js; (5) GET: state.get(request, h); if journey.status === state.SUBMITTED redirect to pagePath(journeyId, confirmationPage.slug) (import from '../confirmation/page.js'); else render with values { declaration: answers.declaration ?? '' }; (6) POST: same SUBMITTED guard; invalid -> re-render raw values, HTTP_STATUS_BAD_REQUEST; valid -> inside kit.recoverableSave: await state.commit(request, h, values) (flow-only split stores it in session — engine/write/pipeline/split.js) then result = await state.submitJourney(request, h); recoverable failure -> re-render recoverableError:true, 500; !result.ok (scope.readyForCheckYourAnswers false) -> redirect pagePath(journeyId, reviewNotificationPage.slug); ok -> redirect pagePath(journeyId, confirmationPage.slug); (7) dateText helper (toLocaleDateString 'en-GB', day numeric/month long/year numeric) passed as submissionDate for the 'Date of declaration:' display line — display text only, NO hidden submissionDate/etag form fields (the legacy tamperable round-trip is deliberately not replicated; declaredAt is derived server-side at finalise); (8) export const routes = kit.pageRoutes(page, { get, post })."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/template.njk",
+      "action": "create",
+      "what": "Extends shared/layout.njk (unprefixed), journeyContent block, shared error-summary include, govukCheckboxes + govukButton macros — skeleton per live-animals declaration/template.njk. Content = the CHED-PP legal declaration per pages/declaration.json with the spec's govukAlternative fixes: (1) single h1 govuk-heading-l copy.title 'Declaration'; reference caption comes from the shared journey strip INSIDE main (kit.base with journey) — do NOT replicate the legacy outside-main referenceNumberHeaderDiv; (2) intro paragraphs copy.intro[0..1]; (3) SIX h2 headings class govuk-heading-m (FIXES the legacy h1->h4 jump — never h4): englandWales, scotland, terms, enquiries, dataProtection, legal; (4) England and Wales paras incl. the enforcement-policy link rendered with destination-naming visible text copy.englandWales.enforcementPolicyLinkText ('DEFRA enforcement policy (PDF)') href https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/470454/defra-enforcement-policy-statement-2015.pdf, rel='noopener noreferrer' target='_blank', NO aria-label override (fixes the WCAG 2.5.3 label-in-name defect); (5) Scotland paras; (6) terms: aphaDefinition para + govuk-list govuk-list--number over copy.terms.items (6 items); (7) enquiries: 'APHA:' + address lines joined with <br> + 'SASA:' + email para; (8) dataProtection: body composed around two links — copy.dataProtection.aphaPrivacyLinkText ('APHA privacy notice (PDF)') href .../897608/apha-privacy-notice.pdf and copy.dataProtection.sasaPrivacyLinkText ('SASA privacy statement') href https://www.sasa.gov.uk/content/privacy, both rel='noopener noreferrer' target='_blank', no aria-labels; (9) legal: request para + govuk-list govuk-list--bullet over copy.legal.regulations (4 items) + generalConditions para; (10) form method=post novalidate with hidden crumb input (live-animals template.njk:27 precedent), govukCheckboxes name='declaration' single item value 'confirmed' text copy.declarationLabel checked when values.declaration=='confirmed', errorMessage from errors.declaration (standard govuk error pattern — fixes the legacy bare-div hand-rolled errorSpan); (11) 'Date of declaration:' + submissionDate as body text; (12) govukButton copy.submitButton 'Submit notification' (submit, single button, no secondary actions per spec). NO CUC paragraph (billing/isCuc is m5 pp-043). NO hidden submissionDate/etag inputs. NO custom classes (drop review-form/heading-tertiary legacy classes)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/copy/copy.en.js",
+      "action": "create",
+      "what": "English bundle. Key shape (both locales identical): title 'Declaration'; intro[2] = the two intro paragraphs VERBATIM from pages/declaration.json bodyCopy[0..1] ('By clicking on the check box…', 'Submission of the form will not be allowed…'); englandWales { heading 'For England and Wales', apha, defra, policyStatementLabel 'APHA Import Enforcement Policy Statement', inspectorates (the PHSI/HMI sentence), enforcementPolicyLinkText 'DEFRA enforcement policy (PDF)' }; scotland { heading 'For Scotland', controls, division } (bodyCopy[8..9] verbatim, incl. the missing-subject sentence — flagged, not fixed); terms { heading 'Statement of terms and conditions for applications', aphaDefinition, items[6] } = bodyCopy[11..17] verbatim including the 'used issued' typo and the numbered list order; enquiries { heading 'Imports enquiries', aphaLabel 'APHA:', aphaAddressLines[7] (Animal and Plant Health Agency, / Foss House / Kings Pool, 1-2 Peasholme Green, / York, / YO1 7PX / Tel: 0300 1000 313 / Email: phsi-importers@apha.gov.uk), sasaLabel 'SASA:', sasaEmail 'Email: hort.marketing@gov.scot' }; dataProtection { heading 'Data Protection Statement', body (the Defra data-controller sentence pair, recomposed only where the link text changed), aphaPrivacyLinkText 'APHA privacy notice (PDF)', sasaPrivacyLinkText 'SASA privacy statement' }; legal { heading 'Legal Declarations', request (the 'I/We hereby request…' paragraph verbatim incl. its opening quote), regulations[4] (the four 'Regulation (EU) …, (retained EU legislation)\"' strings verbatim incl. unbalanced closing quotes), generalConditions 'I/We have read and accept the general conditions relating to the examination of consignments for import.' }; declarationLabel 'I/We have read and understood the Conditions, Data Protection Statement and Legal Declarations' (verbatim — the accessible name every legacy test targets); dateOfDeclaration 'Date of declaration:'; submitButton 'Submit notification'; errors { declarationRequired 'You must confirm that you have read and understood the Conditions, Data Protection Statement and Legal Declarations' } (legacy en.js:68 verbatim — flagged for content-designer confirmation). Legal/policy strings are carried verbatim WITH their defects per the page spec's instruction ('flag rather than silently correcting'); the only text changes are the three link texts (destination-naming, WCAG 2.5.3 fix)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/copy/copy.cy.js",
+      "action": "create",
+      "what": "Welsh bundle, EXACTLY the same key shape and value kinds as copy.en.js (copy-parity enforces). Implementor authors Welsh translations of the legal text; proper nouns (APHA, SASA, PHSI, HMI, Defra), the address block, email addresses, phone number and the four regulation citations stay as-is inside translated sentences. Flagged in openQuestions for translator/legal sign-off — house rule is same-shape bundles, not machine-perfect Welsh."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/copy/copy.test.js",
+      "action": "create",
+      "what": "Copy pins (pattern: live-animals declaration/copy/copy.test.js and neighbouring plant features): en/cy same JSON shape; title, declarationLabel, submitButton, errors.declarationRequired exact en values; terms.items length 6; legal.regulations length 4; enquiries.aphaAddressLines length pinned."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/controller.test.js",
+      "action": "create",
+      "what": "Transpose live-animals declaration/controller.test.js to the plant set (Vitest, mock at the network/engine boundary the same way it does): GET renders title, checkbox unchecked, submissionDate text, backLink to /notifications/{id}/review-notification; GET on SUBMITTED journey redirects to /notifications/{id}/confirmation; POST without declaration -> 400, error declarationRequired, raw values re-rendered, no commit, no submit; POST with declaration='confirmed' -> commits { declaration: 'confirmed' } then submitJourney, redirect to confirmation slug on ok; submitJourney ok:false -> redirect to review-notification slug (and the commit still happened); recoverable save failure -> re-render recoverableError true, 500; unexpected error throws; POST on SUBMITTED journey redirects to confirmation without committing."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.js",
+      "action": "edit",
+      "what": "Extend finalise(journeyId, _actor) — currently PUT …/{journeyId}/status {status:'SUBMITTED'} only (pp-008) — to persist declaration first, per the §6.2/Open Q 6 ruling and pp-008's own deferred note ('submittedAt sourced from declaration.declaredAt is only populated when the frontend persists declaration at finalise (pp-039)'): (1) GET …/{journeyId} -> dto (404 -> failed('finalise', response) as elsewhere); (2) body = toDto(fromDto(dto)) (the sanctioned round-trip — never emits server-set fields, omits accompanyingDocuments per FD-11) then body.declaration = { agreed: true, declaredAt: new Date().toISOString() }; (3) PUT …/{journeyId} with body; (4) PUT …/{journeyId}/status { status: 'SUBMITTED' }; (5) return marshal(status response body) — marshal already maps submittedAt from dto.declaration?.declaredAt (pp-008), so submitted records now marshal with a real submittedAt. agreed is true by construction: the frontend only calls finalise after the checkbox validated (D-13 — obligation enforcement is the frontend's job; the backend status endpoint takes only StatusChangeRequest{status, discardChanges} and never sets declaration). declaredAt comes from the frontend server clock — deliberately replacing the legacy tamperable client-posted submissionDate (page-spec rebuildNote). The declaration overlay is a literal DTO property set in finalise, NOT a to-dto mapping: declaration is flow-only session data and never appears in the answers tree."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/real.test.js",
+      "action": "edit",
+      "what": "Extend the pp-008 per-op fetch-mock suite for the new finalise sequence: finalise issues exactly GET document -> PUT document -> PUT status in order; the document PUT body carries declaration { agreed: true, declaredAt: <ISO instant> } and NO server-set fields (referenceNumber/status/chedType/ownership/created/updated/expireAt/submittedBaseline absent); the status PUT body is exactly { status: 'SUBMITTED' }; the marshalled return has status 'submitted' and submittedAt === the declaredAt it wrote; a non-ok document PUT throws and the status PUT is never issued."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/records-port.test.js",
+      "action": "edit",
+      "what": "Extend the pp-008 dual-implementation parity suite (edit whichever file name pp-008 landed it under in records/): after finalise, load returns submittedAt non-null and status submitted in BOTH stub and real (the stub already sets submittedAt=now at finalise per pp-008 — this pin is what proves the real impl's declaration write brings it to parity). No stub.js change is needed."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/services/records/mapper/mapper.test.js",
+      "action": "edit",
+      "what": "Omission assertions (G-D discipline): toDto never emits a declaration property from any answers tree, and fromDto ignores dto.declaration (it never appears in the answers tree — declaration is flow-only, FD-8; the ONLY writer is real.js finalise and the only reader is marshal's submittedAt)."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
+      "action": "edit",
+      "what": "import * as declaration from './declaration/controller.js'; add declaration.meta to dispatchPages and spread declaration.routes into allRoutes (live-animals features/index.js:29,54,86 precedent). Do NOT register the confirmation page identity anywhere here — it has no controller until pp-040."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
+      "action": "edit",
+      "what": "import { declarationPage } from '../features/declaration/page.js' and append it to the existing review section's pages array AFTER reviewNotificationPage (target per §2.1 spoke 12: review-notification, declaration, confirmation; live-animals flow.js:83-85 is the exact precedent — pp-040 appends confirmationPage after this). review keeps its authored gate scope.readyForCheckYourAnswers (FD-12) and stays excluded from answerSections (live-animals flow.js:97 pattern). FLOW_ONLY_KEYS already contains 'declaration' from the m0 scaffold (FD-8) — no change to it; no task-rows change (review is not a row); no run.js change; no entry-guard change."
+    },
+    {
+      "path": "src/server/app/contract.plant-products.test.js",
+      "action": "edit",
+      "what": "Add the declaration case to the T-5 manual table, transposing live-animals contract.test.js:161-164 exactly: { id: 'declaration', collects: declaration.meta.collects, handler: postHandlerOf(declaration), payload: { declaration: 'confirmed' } } — asserts the flow-only commit of exactly ['declaration']."
+    },
+    {
+      "path": "e2e/plant-products-journey.js",
+      "action": "create",
+      "what": "Repo-root shared journey helper mirroring e2e/live-animals-journey.js (read it first — same export shape and locator style): startNotification(page) — goto '/', submit the dashboard create form, complete the import-type filter choosing the CHED-PP option, land on the first origin page; completeAnswerSections(page) — drive EVERY mandatory spoke via UI with valid stub-mode values in hub order (origin both pages, purpose, commodities manual branch: input-method MANUAL -> search pick a fixture code -> basic-description pick a species -> variety when offered -> summary continue -> bulk-details, additional-details, transport incl. usesContainers No, goods-movement CTC No + GVMS No, contact, documents one document, traders + consignor-create) until the hub review spoke unlocks; submitDeclaration(page) — open review from the hub, Continue to the declaration page, tick the checkbox, click 'Submit notification'. Role/label locators from the features' own copy, no page objects, no sleeps. pp-040's confirmation spec and pp-041's whole-journey suite extend/reuse THIS module — build it as the shared helper they expect."
+    },
+    {
+      "path": "src/server/app/sets/plant-products/journeys/linear/features/declaration/declaration.e2e.spec.js",
+      "action": "create",
+      "what": "Co-located Playwright spec, shape transposed from live-animals declaration.e2e.spec.js (two describes: deep-linked render/validation on a fresh notification; full-journey submission via the e2e/plant-products-journey.js helper). Scenarios: (1) render — h1 'Declaration' exactly once, both intro paragraphs, all SIX section headings as level-2 headings (assert heading role with level 2 — pins the h1->h4 fix), the 6 numbered terms and 4 regulation bullets visible (full list contents, dividers/order included), APHA address block and both enquiry labels, the three external links by their new destination-naming names each with correct href, the checkbox by its full accessible name, 'Date of declaration:' text, exactly one submit button named 'Submit notification', NO 'As my consignment is in scope of the common user charge' text (pass-1 pin), and no hidden submissionDate/etag inputs (locator count 0); (2) validation — submit unticked: error summary alert with link 'You must confirm that you have read and understood the Conditions, Data Protection Statement and Legal Declarations', clicking it focuses the (still unchecked) checkbox, inline govuk error message shown; (3) back link href and navigation to /notifications/{id}/review-notification; (4) submission (full journey via helper) — tick + submit redirects to /notifications/{id}/confirmation URL, then revisiting the declaration URL redirects straight back to confirmation (proves SUBMITTED persisted through the records service — asserts URL only, never confirmation content, which is pp-040's); (5) submit on an INCOMPLETE notification (deep-linked fresh draft, tick + submit) lands back on review-notification (readiness re-check, ok:false branch); (6) axe on initial render AND on the validation-error state — AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']), zero serious/critical."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sections": [
+      {
+        "id": "review",
+        "change": "append declarationPage after reviewNotificationPage (pages: [reviewNotificationPage, declarationPage]; pp-040 later appends confirmationPage). Authored gate scope.readyForCheckYourAnswers unchanged (FD-12); review stays out of answerSections."
+      }
+    ],
+    "taskRows": [],
+    "entryGuard": null
+  },
+  "schemaFields": [
+    "declaration.agreed — written true by the set records service at finalise (whole-document PUT before the status PUT); consent enforcement is frontend-only (D-13, backend has no guard)",
+    "declaration.declaredAt — ISO instant from the frontend server clock at finalise; marshalled back as the record's submittedAt (pp-008); replaces the legacy tamperable client-posted submissionDate",
+    "status — DRAFT|AMEND -> SUBMITTED via PUT /plant-products/notifications/{reference-number}/status { status: 'SUBMITTED' } (backend captures submittedBaseline, freezes ownership — OWN-3)"
+  ],
+  "copyKeys": [
+    "declaration.title",
+    "declaration.intro[0..1]",
+    "declaration.englandWales.{heading, apha, defra, policyStatementLabel, inspectorates, enforcementPolicyLinkText}",
+    "declaration.scotland.{heading, controls, division}",
+    "declaration.terms.{heading, aphaDefinition, items[0..5]}",
+    "declaration.enquiries.{heading, aphaLabel, aphaAddressLines[0..6], sasaLabel, sasaEmail}",
+    "declaration.dataProtection.{heading, body, aphaPrivacyLinkText, sasaPrivacyLinkText}",
+    "declaration.legal.{heading, request, regulations[0..3], generalConditions}",
+    "declaration.declarationLabel",
+    "declaration.dateOfDeclaration",
+    "declaration.submitButton",
+    "declaration.errors.declarationRequired"
+  ],
+  "specs": [
+    "src/server/app/sets/plant-products/journeys/linear/features/declaration/declaration.e2e.spec.js — render (h1 x1, six h2s, full lists, fixed link names+hrefs, checkbox, no CUC text, no hidden submissionDate/etag), validation error + focus, back link to review-notification, full-journey submit -> /confirmation URL + revisit-redirect, incomplete-journey submit -> back to review-notification, axe both states",
+    "src/server/app/sets/plant-products/journeys/linear/features/declaration/controller.test.js — GET/POST branches incl. SUBMITTED redirects, 400 raw re-render, commit+submitJourney ordering, ok:false -> review-notification, recoverable 500",
+    "src/server/app/sets/plant-products/services/records/real.test.js — finalise GET->PUT(document with declaration, no server-set fields)->PUT(status) sequence + marshal submittedAt",
+    "src/server/app/sets/plant-products/services/records/records-port.test.js — stub/real parity: finalise then load -> submittedAt non-null, status submitted",
+    "e2e/plant-products-journey.js — shared startNotification/completeAnswerSections/submitDeclaration helper (consumed here, extended by pp-040/pp-041)"
+  ],
+  "acceptanceCriteria": [
+    "GET /notifications/{journeyId}/declaration renders h1 'Declaration' (govuk-heading-l, the page's only h1) with the shared journey reference strip inside main — no legacy outside-main reference bar.",
+    "All CHED-PP declaration copy renders: two intro paragraphs; six sections each under an h2 (never h4 — fixes the legacy heading-order defect): For England and Wales, For Scotland, Statement of terms and conditions for applications, Imports enquiries, Data Protection Statement, Legal Declarations; the 6-item numbered terms list; the 4-item retained-EU-legislation bullet list; the APHA address block and SASA email; legal/policy strings verbatim from the page spec (defects carried and flagged, not silently corrected).",
+    "Exactly three external links, visible text naming the destination with NO aria-label overrides (WCAG 2.5.3 fix): 'DEFRA enforcement policy (PDF)' -> assets.publishing.service.gov.uk .../470454/defra-enforcement-policy-statement-2015.pdf, 'APHA privacy notice (PDF)' -> .../897608/apha-privacy-notice.pdf, 'SASA privacy statement' -> www.sasa.gov.uk/content/privacy; all rel='noopener noreferrer' target='_blank'.",
+    "One visible form control only: the checkbox 'I/We have read and understood the Conditions, Data Protection Statement and Legal Declarations' rendered via govukCheckboxes with the standard form-group/error-message pattern (no legacy bare-div/errorSpan markup); one submit button 'Submit notification'; a 'Date of declaration: <today>' display line; NO hidden submissionDate or etag inputs (crumb only); NO CUC paragraph in pass 1 (pp-043 adds it behind isCuc).",
+    "Submit with the checkbox unticked: HTTP 400, GDS 'There is a problem' error summary whose link 'You must confirm that you have read and understood the Conditions, Data Protection Statement and Legal Declarations' moves focus to the checkbox, matching inline error on the form group — the negative path the legacy suite never tested.",
+    "Submit with the checkbox ticked on a ready notification: the flow-only 'declaration' answer commits to session (FD-8), records.finalise persists declaration{agreed:true, declaredAt:<server ISO instant>} via a whole-document PUT then PUT .../status {status:'SUBMITTED'} (real mode; stub mirrors observable semantics), and the user is redirected to /notifications/{journeyId}/confirmation.",
+    "Submit on a notification whose scope.readyForCheckYourAnswers is false: nothing is submitted and the user is redirected to /notifications/{journeyId}/review-notification (submitJourney ok:false branch).",
+    "GET or POST on an already-SUBMITTED notification redirects to /notifications/{journeyId}/confirmation without re-committing or re-submitting.",
+    "Back link targets /notifications/{journeyId}/review-notification (the plant CYA slug — not the live-animals 'notification-view').",
+    "After finalise, load/list marshal the record with status submitted and submittedAt === declaration.declaredAt in BOTH stub and real modes (records-port parity pin).",
+    "contract.plant-products.test.js carries the declaration case: payload { declaration: 'confirmed' } commits exactly ['declaration'].",
+    "Axe (wcag2a+wcag2aa, zero serious/critical) passes on initial render and on the validation-error state.",
+    "toDto/fromDto never map a declaration property (omission assertions) — the finalise overlay in real.js is the single writer."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products   # BASELINE before editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:plant-products",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format   # before commit"
+  ],
+  "notes": "1:1 carry of inc-030 per MAPPING.json. G-H transposition: declaration is the second FLOW_ONLY key (FD-8) — it rides state.commit's flow-only split into the plantProductsFlowOnlyAnswers session cookie (engine/write/pipeline/split.js + flow-only.js, verified live), never the manifest: NO obligation, NO evaluation.js binding, NO check-answers row (pp-038 explicitly excludes it), NO to-dto mapping, no task row, no hub or run.js change. Exemplars verified live this session: sets/live-animals/journeys/linear/features/declaration/{page.js, controller.js (meta collects ['declaration'], SUBMITTED guards, commit-then-submitJourney inside recoverableSave, ok:false -> CYA redirect), template.njk (govukCheckboxes value 'confirmed', hidden crumb, dateOfDeclaration line), copy/*, declaration.e2e.spec.js (two-describe shape, error-summary focus test, revisit-redirect assertion)}; engine/write/submit.js (submitJourney re-checks scope.readyForCheckYourAnswers then records.finalise(journeyId, actor) — readiness is re-verified at submit regardless of how the user reached the page; live-animals deep-links render the page unguarded and rely on this, mirrored here); live-animals flow.js:83-85/97 (review section order, answerSections exclusion); contract.test.js:161-164 (declaration case shape). RECORDS DESIGN (the increment's one non-transposition piece, owed to pp-008's deferred note and MAPPING's 'persisting declaration{agreed,declaredAt} at finalise — Open Q 6 kept explicit'): the backend status endpoint accepts only StatusChangeRequest{status, discardChanges} and never writes declaration (SCHEMA-DESIGN §3.1: 'require declaration.agreed == true is frontend's job (D-13)'), and the flow-only value never reaches replaceFulfilment, so real.js finalise persists it: GET dto -> toDto(fromDto(dto)) round-trip body (sanctioned mapper path — server-set fields never emitted, documents stay on the sub-resource per FD-11) + literal declaration overlay { agreed: true, declaredAt: now ISO } -> PUT document -> PUT status. HEADLESS DECISIONS: (1) agreed is hardcoded true at finalise — the checkbox is validated before submitJourney runs and the value is otherwise meaningless (D-13); (2) declaredAt = frontend server clock, replacing the legacy client-posted human-readable submissionDate (page-spec rebuildNote: tamperable field — do not replicate; the visible 'Date of declaration' line remains display-only); (3) confirmation/page.js identity created HERE so the redirect compiles — pp-040's conditional edit expects exactly this; interim /confirmation 404 accepted, e2e asserts URLs not content; (4) CUC paragraph omitted in pass 1 — its trigger (isCuc) is the m5 pp-043 billing increment, which also owns adding the conditional paragraph here; (5) legal copy carried VERBATIM with its three documented defects (unbalanced quotes, 'used issued', Scotland missing subject) per the page spec's flag-don't-fix instruction; the ONLY text changes are the three link texts (destination-naming, WCAG 2.5.3) — a recorded deviation with spec backing (govukAlternative); (6) validation message = legacy en.js:68 string verbatim, spec says do not assume it survives content review — flagged; (7) e2e journey helper placed at repo-root e2e/plant-products-journey.js mirroring e2e/live-animals-journey.js (the features project can import it by relative path, live-animals precedent) because pp-040 and pp-041 both expect to reuse 'the helper the pp-039 declaration spec established'. Structural fixes applied from the page spec: h2 sections (heading-order), standard checkbox error pattern, caption-in-main via the shared journey strip, no redundant form attribute, no review-form class, negative validation test added (the legacy suite's flagged gap). Sibling-safety: no L1/L2/platform file is touched (all edits under sets/plant-products/, contract.plant-products.test.js and the new repo-root helper), so the two-sided live-animals ladder legs are not mandated; npm test still runs the shared app-root suites.",
+  "openQuestions": [
+    "Legal/policy copy needs content-designer + legal sign-off before release: carried verbatim WITH the three documented defects (unbalanced closing quotes on the four regulation bullets, 'used issued' in numbered term 3, the subject-less 'For plants… entering into Scotland' sentence), plus re-confirmation that the four retained-EU citations, the APHA address/phone/email, hort.marketing@gov.scot and the two pinned publishing.service.gov.uk PDF URLs (470454 from 2015, 897608 from 2020) are still current.",
+    "Welsh translation of the full legal declaration is implementor-authored to satisfy copy-parity — needs a translator/Welsh-language-scheme review before release.",
+    "Validation message uses the legacy string verbatim ('You must confirm that you have read and understood…', en.js:68); the page spec explicitly warns not to assume this survives content review — confirm with a content designer.",
+    "Open Q 6 residual: declaredAt is written by the frontend at finalise because the backend status transition deliberately does not touch declaration (D-13). If the backend later takes ownership of declaredAt (a stronger anti-tamper stance), real.js finalise drops its document PUT and marshal is unaffected — revisit when the backend evolves.",
+    "The CUC declaration paragraph (isBillable) is deferred with billing to pp-043; its legacy trigger is feature-flag + chargeability and the upstream chargeability rule is still a recorded gap — pp-043 must confirm before wiring the conditional copy into this template.",
+    "Between pp-039 and pp-040 the post-submit redirect lands on a 404 /confirmation URL (page identity exists, no route). Accepted interim — pp-040 is the immediate next increment; flagged so a partial rollout is not mistaken for a defect."
+  ],
+  "sizeGuess": "M"
+}
