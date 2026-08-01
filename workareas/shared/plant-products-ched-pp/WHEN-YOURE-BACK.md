@@ -7,6 +7,42 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-01, SAM'S RULINGS APPLIED] Co-residency replaces the set switch — backlog now 58 increments
+Sam walked the open decisions and reversed the biggest one: live-animals and plant-products must be
+served **from one Node process**, because the L1–L4 architecture was designed set-agnostic and the
+singletons were an implementation limit, not a design one. That killed the boot-time SERVED_SET switch
+and added two large platform increments: **pp-056/P-9** (an AsyncLocalStorage set context in a new
+`shared/set-context.js`; every `configure*` takes `setId` first, every read accessor resolves via
+`currentSetId()`; requests resolve to a set by route ownership through a realm-scoped `onPreAuth`, not
+URL parsing) and **pp-057/P-10** (per-set URL namespace: `shared/paths.js` splits into prefix-free
+route-shape builders and prefix-bearing link builders). **Live-animals keeps the root mount and its URLs
+do not change at all** — plant-products mounts under `/plant-products`; the asymmetry is deliberate
+because moving live-animals' URLs would ripple into the tests-repo E2E suite, bookmarks and the cookie
+path. The whole platform phase lands against live-animals-only before any plant file exists, so the
+existing suite passing unedited is the proof the refactor was behaviour-preserving.
+
+## [2026-08-01, caught in review] The re-plan left 19 increments with stale framing — swept
+The workflow that applied the reversal only amended the increments it had itself listed as affected, so
+everything outside that list kept round-1 framing: seven increments still used `SERVED_SET=` as a live
+env var and seventeen still asserted plant pages at the root `/notifications/...` instead of the new
+mount. Left alone, an implementor building pp-035 would have registered the traders page at the wrong
+path. A sweep corrected 19 files and re-synced them into `backlog.json`, also adding the route-shape vs
+link-builder distinction wherever an increment registers routes or emits links — the failure mode there
+is a doubled prefix or a dropped one, and with live-animals at prefix `''` neither shows up until a
+second set mounts. Worth knowing as a pattern: a decision reversal needs a full sweep, not a
+targeted-edit list.
+
+## [2026-08-01] Sam's other five rulings
+**add-a-set recipe written UPFRONT** (pp-053, first in the array, before any m0 work) rather than
+extracted after the fact — the scaffold increments then follow it, as with the other recipes.
+**Copy idempotency matches live-animals exactly** (pp-054 backend, pp-055 frontend), sequenced before
+pp-045 ships the Copy button; live-animals already has the full implementation (required header, blank
+rejected, unique partial index, return-existing-on-repeat, contract tests pinning one draft per key) —
+the transposition detail is that it lives on *fulfilment* copy there and on the *notification* resource
+here. **SD-14 amended**: consignee and importer are two separate fields, both auto-populated from the
+acting org — the legacy IPAFFS conflation is deliberately not inherited. **Lombok domain model
+confirmed**, no rework. **The 11 m5 stubs stay unplanned.**
+
 ## [Phase E, DONE] backlog.json is the plan of record — 52 increments, validated
 The run is complete. `backlog.json` holds 52 increments in dependency order (2 done, 45 todo, 5
 deferred) with scopeDecisions SD-1..SD-14, deviations DV-1..DV-18, 12 sequencing rules, gaps G-A..G-I

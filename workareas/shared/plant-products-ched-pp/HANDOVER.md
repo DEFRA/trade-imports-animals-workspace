@@ -10,8 +10,8 @@ Read `WHEN-YOURE-BACK.md` first for the decision log (newest on top).
 
 | Artefact | What it is |
 |---|---|
-| `backlog.json` | **The plan.** 52 increments in dependency order, 2 done, 45 todo, 5 deferred. Plus `scopeDecisions` (SD-1..SD-14), `deviations` (DV-1..DV-18), `sequencingNotes` (12 ordering rules), `gaps` (G-A..G-I), `milestones` (m0..m5). |
-| `increments/pp-*.json` | The 39 planner outputs, byte-identical to their entries in `backlog.json`. Edit `backlog.json`, not these — they are provenance. |
+| `backlog.json` | **The plan.** 58 increments in dependency order, 2 done, 51 todo, 5 deferred. Plus `scopeDecisions`, `deviations`, `sequencingNotes`, `gaps` (G-A..G-I), `milestones` (m0..m5) and `revisions`. |
+| `increments/pp-*.json` | The 45 planner outputs, byte-identical to their entries in `backlog.json`. Edit `backlog.json`, not these — they are provenance. |
 | `increments/MAPPING.json` | How each `pp-*` id relates to a source CHED-PP `inc-*` increment, with the planner briefs. Provenance. |
 | `frontend-plan/SIBLING-SET-PLAN.md` | How `sets/plant-products/` is stood up as a sibling of `live-animals`. Increments cite it by heading. Adversarially verified against the repo. |
 | `backend-schema/SCHEMA-DESIGN.md` + `obligation-field-map.md` | The backend design (D-1..D-20) and which schema field backs which journey area. |
@@ -68,10 +68,27 @@ one set. If plant-products proves it, extracting `docs/add-a-set.md` from it is 
 G-B (depth-3 collections) is the riskiest: it is unproven engine territory, which is why `pp-012`
 exists.
 
+## Co-residency — the shape of the platform work
+
+Sam ruled on 2026-08-01 that both sets must be served **from one Node process**. There is no
+`SERVED_SET` env var. Two platform increments carry it: **pp-056** keys every `configure*` seam by set
+behind an AsyncLocalStorage request context (`shared/set-context.js`), and **pp-057** splits
+`shared/paths.js` into prefix-free route-shape builders and prefix-bearing link builders. Live-animals
+keeps the root mount with **no URL changes at all**; plant-products mounts under `/plant-products`.
+
+The whole platform phase lands against live-animals-only, before any plant file exists — so the existing
+suite passing *unedited* is the proof the refactor preserved behaviour. If a platform increment needs a
+test changed to go green, the keying is wrong. Two-sided verification now means both sets serving
+correctly from the same running process, proven by `co-residency.test.js` and `test:features:all`.
+
+The trap to watch for when implementing: route tables are built at module load and take the prefix from
+Hapi's plugin `routes.prefix`, while links resolve per request via `setBase()`. Getting them the wrong
+way round gives you either `/plant-products/plant-products/...` or a link that silently lands on the
+live-animals page — and with live-animals at prefix `''`, neither shows up until a second set mounts.
+
 ## Scope of pass 1
 
-The m0–m4 own-org manual happy path, built as a sibling set selected by a boot-time switch (one set per
-Node process — co-residency is out of scope and recorded as such). Delegated authority, CSV upload, CUC
+The m0–m4 own-org manual happy path, built as a sibling set co-resident with live-animals. Delegated authority, CSV upload, CUC
 billing, file bytes and AV, address-book search, draft lifecycle, Article 72 and cloning are all m5:
 carried as `noPlanner` stubs with their rulings intact, so they are visible but unplanned. Any stub
 needs a planner run before it can be built — its `openQuestions` says so.

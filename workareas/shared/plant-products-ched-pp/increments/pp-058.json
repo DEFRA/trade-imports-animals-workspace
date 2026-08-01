@@ -1,0 +1,56 @@
+{
+  "id": "pp-058",
+  "title": "P-11: setId-first convention tripwire — no-set-singletons.test.js guards against re-singletoning a seam",
+  "kind": "platform",
+  "milestone": "m0",
+  "sizeGuess": "S",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-056"],
+  "sourceIncrement": null,
+  "recipe": "No recipe covers convention tests. The script is SIBLING-SET-PLAN.md §5 P-11 and §7 T-10; the FORM is the existing fs-walk convention test src/server/app/copy-convention.test.js — read it first and mirror its structure (node:fs readdirSync + node:url fileURLToPath + a describe with a 'Should find the …' guard case before the real assertions).",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/no-set-singletons.test.js",
+      "action": "create",
+      "what": "A cheap, mechanical tripwire so a future increment cannot quietly reintroduce a single-slot seam after pp-056 removed them all.\n\nWALK: the L2 directories model/, bridge/, flow/, engine/ and services/ under src/server/app, recursively, collecting every .js file that is not a .test.js. Use the same idiom as copy-convention.test.js — `readdirSync(dir, { recursive: true, withFileTypes: true })` (or the plain recursive form plus a path join, whichever the repo's Node version and existing file use) and `fileURLToPath(new URL('./model', import.meta.url))` for the roots, so the test is location-independent.\n\nRULE: read each file's source and find every exported function whose name starts with `configure`. For each one, assert its FIRST PARAMETER IS NAMED `setId`. Match the declaration forms the codebase actually uses — `export const configureX = (setId, …) =>` and `export function configureX(setId, …)` — with a regex over the source text; this is a convention test, not a compiler, and a source-text match is both sufficient and the cheapest thing that cannot rot. If a configure* export is found whose first parameter is not setId, FAIL with a message naming the file, the export and the parameter it found, so the failure is self-explaining without opening the test.\n\nGUARD CASE FIRST (copy-convention.test.js precedent): an `it('Should find the configure seams')` asserting the walk discovered at least the seven known seams by name — configureObligationSet, configureFulfilmentRegistry, configureJourneyFlow, configureRecords, configureSession, configureCommodityReference (and buildDispatch, see below). Without that guard, a broken walk that finds NOTHING passes vacuously, which is the classic way a convention test dies silently.\n\nbuildDispatch: it is a seam with the same setId-first contract but does not match the configure* name pattern. Include it as an explicit named check in the same file rather than widening the regex (widening would sweep in every build* helper in the codebase and produce false positives).\n\nALLOW-LIST: an empty array, exported as a named const at the top of the file with a comment saying it is empty BY DESIGN and that adding an entry means a seam has been exempted from co-residency — which is a decision, not a fix.\n\nNO dependency-cruiser rule accompanies this: the constraint is about a function's parameter shape, which dep-cruiser cannot express. That is exactly why a convention test is the right instrument here."
+    },
+    {
+      "path": "src/server/app/docs/add-a-set.md",
+      "action": "edit",
+      "what": "Step 4 of the recipe (write the L1 gateway) already points at this tripwire by name per pp-053. Verify it does, and correct it to name the file exactly as shipped — `src/server/app/no-set-singletons.test.js` — and to state the rule in one sentence: every configure* seam takes setId as its first parameter, the allow-list is empty by design, and a new seam that cannot take setId is a co-residency decision to raise, not a test to exempt. If pp-053's text already says this correctly, make no edit and drop the file from the diff."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/no-set-singletons.test.js — IS the deliverable; it is a convention test, not a test of new behaviour."
+  ],
+  "acceptanceCriteria": [
+    "src/server/app/no-set-singletons.test.js walks model/, bridge/, flow/, engine/ and services/ under src/server/app and fails any non-test .js file that exports a configure* function whose first parameter is not named setId.",
+    "It additionally pins buildDispatch's setId-first contract by name, without widening the configure* regex to build*.",
+    "It is GREEN on pp-056's output with an EMPTY allow-list — no seam needs an exemption.",
+    "It is RED if setId is dropped from any seam: prove this during the increment by temporarily removing setId from one seam's signature, watching the test fail with a message naming that file and export, then reverting. Record in the commit message that the red was observed — a tripwire never seen red is a tripwire that may not work.",
+    "A vacuous pass is impossible: a guard case asserts the walk discovered the seven known seams by name, so a broken walk fails loudly instead of finding nothing and going green.",
+    "The failure message names the file, the export and the offending parameter name.",
+    "It follows the fs-walk idiom of copy-convention.test.js (node:fs readdirSync, fileURLToPath-based roots, a 'Should find …' guard case first) so it reads as idiomatic to this codebase rather than as a foreign gadget.",
+    "docs/add-a-set.md step 4 names this file and states the rule, so the next set's author meets it before writing their gateway.",
+    "No dependency-cruiser rule is added and .dependency-cruiser-known-violations.json is not regenerated.",
+    "npm test, npm run test:live-animals and npm run lint are green; no existing suite's test count drops; no production file is edited by this increment."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test  # baseline BEFORE editing — red baseline = stop and report",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "RULING R3 (Sam, 2026-08-01) makes co-residency a standing property of the platform, not a one-off migration. pp-056 keyed every seam by set; this increment stops the keying from decaying. It is deliberately the cheapest thing that works — a source-text convention test — because an expensive guard gets deleted the first time it is inconvenient.\n\nWHY A CONVENTION TEST AND NOT A LINT/ARCH RULE: dependency-cruiser reasons about MODULE GRAPHS. The constraint here is about a FUNCTION'S PARAMETER SHAPE, which dep-cruiser cannot express at all. ESLint could in principle, via a custom rule, but a custom rule is a package, a config entry and a maintenance surface; the fs-walk convention test is a pattern this codebase ALREADY uses (copy-convention.test.js, copy-parity.test.js), so it is idiomatic and needs no new tooling.\n\nSEQUENCING: it lands immediately after pp-056 and BEFORE the gateway split (pp-006), so that nothing from the gateway work onwards can re-singleton a seam. SIBLING-SET-PLAN §9 phase m0-a puts it at step 4, between P-10 and P-4/P-3 — dependsOn is pp-056 only, because it needs the keyed seams to be green against but has no relationship to the URL namespace.\n\nEXEMPLAR (read first): src/server/app/copy-convention.test.js — verified live this session; it imports readdirSync from node:fs, path from node:path and fileURLToPath from node:url, builds its root with `fileURLToPath(new URL('./sets/live-animals/journeys/linear/features', import.meta.url))`, filters directory entries, uses `readdirSync(dir, { recursive: true })` for the deep walk, and opens its describe with an `it('Should find the feature folders')` guard asserting the walk found something. Mirror all four of those choices.\n\nTHE SEVEN SEAMS the guard case must name (from SIBLING-SET-PLAN §4.2 rows 1-7): configureObligationSet (model/obligations/manifest.js), configureFulfilmentRegistry (bridge/fulfilment-registry.js), configureJourneyFlow (flow/journey-flow.js), buildDispatch (flow/dispatch.js — named separately, see filesToTouch), configureRecords (engine/persistence/records.js), configureSession (engine/persistence/session.js), configureCommodityReference (services/persistence/records/notification-mapper/commodity-reference.js).\n\nOBSERVE THE RED. The single most common failure mode for a tripwire is that it never actually fires. The acceptance criteria require temporarily breaking one seam's signature, seeing the named failure, and reverting — do it, and say so in the commit message.\n\nSCOPE FENCE: this increment adds ONE test file (plus at most a one-paragraph doc correction). It edits no production file. If the walk finds a genuine violation in existing code, that is pp-056 work that leaked — report it rather than fixing it here, so the fix lands with the increment that owns the seam.",
+  "openQuestions": [
+    "Whether to also assert the mirror-image rule — that no L2 file declares a module-level mutable binding intended as a seam slot (`let configured…`, `export let …`). It would catch a re-singletoning that avoided the configure* name entirely. Planned as NOT in scope: the regex would be noisy against legitimate module state (caches, memos) and a noisy tripwire gets disabled. Raise it again only if a real regression slips through the parameter-shape rule.",
+    "Whether services/ is too broad a walk root — it contains set-agnostic session/records implementations that have no configure* exports, so it costs only walk time today. If it ever produces a false positive, narrow the root rather than adding an allow-list entry; an allow-list entry means a seam was exempted from co-residency, which is a decision for Sam."
+  ]
+}

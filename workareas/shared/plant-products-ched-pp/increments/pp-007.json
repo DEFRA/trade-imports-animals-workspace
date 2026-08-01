@@ -1,65 +1,65 @@
 {
   "id": "pp-007",
-  "title": "Set scaffold: sets/plant-products/ m0 skeleton + routes-plant-products.js gateway + boot under SERVED_SET=plant-products",
+  "title": "Set scaffold: sets/plant-products/ m0 skeleton + routes-plant-products.js gateway + boot CO-RESIDENT (one process serves live-animals at / and plant-products under /plant-products)",
   "kind": "scaffold",
   "milestone": "m0",
   "status": "todo",
   "gate": null,
-  "dependsOn": ["pp-005", "pp-006"],
+  "dependsOn": ["pp-005", "pp-006", "pp-053"],
   "sourceIncrement": "inc-001",
-  "recipe": "SIBLING-SET-PLAN.md §8 G-A (no add-a-set recipe exists; the plan's 10-step G-A sequence IS the recipe — this increment executes steps 1-5 and 8-9 plus the m0 slice of step 10; steps 6-7 are pp-010/pp-011)",
+  "recipe": "src/server/app/docs/add-a-set.md — AUTHORED BY pp-053 AND FOLLOWED VERBATIM HERE (ruling R6). This increment executes add-a-set steps 2, 3, 4, 5, 8, 9 and the m0 slice of step 10; steps 6 and 7 are pp-010/pp-011. Every file below cites the add-a-set step it is executing. The recipe in turn cites SIBLING-SET-PLAN.md §1 (m0 file list), §4.4.3 (the gateway call table) and §4.5 (acceptance) for the CHED-PP specifics.",
   "repo": "frontend",
   "sizeGuess": "L",
   "filesToTouch": [
     {
       "path": "src/server/app/sets/plant-products/obligations/index.js",
       "action": "create",
-      "what": "THE MANIFEST. Exports: `obligations = []`; `groups = obligations.filter((o) => obligations.some((other) => other.within === o))` (derived formula verbatim from sets/live-animals/obligations/index.js — never hand-kept); `policy = { systemPopulated: [], enforcedAtContinue: [], maxEntriesFrom: {}, systemAnswerKeys: ['referenceNumber'] }` (FD-7 shape, consumed through pp-005's manifest policy seam). No copy, no journey imports, no IO at module load — assertObligationPurity() runs at boot."
+      "what": "add-a-set STEP 2 (L3 skeleton). THE MANIFEST. Exports: `obligations = []`; `groups = obligations.filter((o) => obligations.some((other) => other.within === o))` (derived formula verbatim from sets/live-animals/obligations/index.js — never hand-kept); `policy = { systemPopulated: [], enforcedAtContinue: [], maxEntriesFrom: {}, systemAnswerKeys: ['referenceNumber'] }` (FD-7 shape, consumed through pp-005's accessor functions — systemPopulated()/enforcedAtContinue()/maxEntriesFrom()/systemAnswerKeys() — which resolve THIS set's policy whenever a plant request is in context). No copy, no journey imports, no IO at module load — assertObligationPurity() runs at boot inside the gateway's withSetContext wrapper."
     },
     {
       "path": "src/server/app/sets/plant-products/obligations/coverage.test.js",
       "action": "create",
-      "what": "Structural-integrity suite cloned from the sets/live-animals/obligations/coverage.test.js pattern, scoped to the plant manifest: within-chain termination, unique ids and path-safe names, dependsOn coverage, KNOWN_UNWIRED allowlist (empty). All assertions written empty-safe so the suite is trivially green on `obligations = []` and starts biting at m2."
+      "what": "add-a-set STEP 7 slice. Structural-integrity suite cloned from the sets/live-animals/obligations/coverage.test.js pattern, scoped to the plant manifest: within-chain termination, unique ids and path-safe names, dependsOn coverage, KNOWN_UNWIRED allowlist (empty). Empty-safe so it is trivially green on `obligations = []` and starts biting at m2. Composes exactly ONE set, so FD-17's sole-registered-set fallback applies and no withSetContext plumbing is needed."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/config.js",
       "action": "create",
-      "what": "export const TEMPLATES = 'plant-products/journeys/linear'; export const LAYOUT = 'shared/layout.njk' (unprefixed — resolves from the other Nunjucks root; no nunjucks config change needed, app/sets is already a template root); export const SESSION_COOKIE_NAMES = { knownJourneys: 'plantProductsKnownJourneys', openingRun: 'plantProductsOpeningRun', flowOnlyAnswers: 'plantProductsFlowOnlyAnswers' } (FD-3). Mirror of sets/live-animals/journeys/linear/config.js."
+      "what": "add-a-set STEP 3 (L4 skeleton). export const TEMPLATES = 'plant-products/journeys/linear'; export const LAYOUT = 'shared/layout.njk' (unprefixed — resolves from the other Nunjucks root; app/sets is already a template root, no nunjucks config change); export const SESSION_COOKIE_NAMES = { knownJourneys: 'plantProductsKnownJourneys', openingRun: 'plantProductsOpeningRun', flowOnlyAnswers: 'plantProductsFlowOnlyAnswers' } (FD-3). Under co-residency these set-prefixed names are LOAD-BEARING, not cosmetic: both sets' cookies are live in the same browser at the same time, and the gateway scopes them to path '/plant-products'."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/flow/flow.js",
       "action": "create",
-      "what": "export const FLOW_ONLY_KEYS = ['importType', 'declaration'] (FD-8). export const sections = [{ id: 'start', pages: [dashboardPage, importTypePage] }, { id: 'review', gate: (scope) => scope.readyForCheckYourAnswers, pages: [] }] (FD-13 start section transposed from live-animals flow.js:32-36; FD-12 authored review gate; review pages land at m4/pp-038). Derived exports allFlowPages / sectionOfPage / answerSections with the live-animals formulas verbatim (flow.js:89-98)."
+      "what": "add-a-set STEP 3. export const FLOW_ONLY_KEYS = ['importType', 'declaration'] (FD-8). export const sections = [{ id: 'start', pages: [dashboardPage, importTypePage] }, { id: 'review', gate: (scope) => scope.readyForCheckYourAnswers, pages: [] }] (FD-13 start section transposed from live-animals flow.js:32-36; FD-12 authored review gate; review pages land at m4/pp-038). Derived exports allFlowPages / sectionOfPage / answerSections with the live-animals formulas verbatim (flow.js:89-98)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.js",
       "action": "create",
-      "what": "export const taskRows = [] (rows land with their section increments); taskRowById(id); rowParts(row) = row.parts ?? row.pages.flatMap((page) => collectsOf(page.id)); rowStatus(row, answers, inScope, evaluation) delegating to L2 bridge/status statusOf — verbatim transposition of sets/live-animals/journeys/linear/flow/task-rows.js:61-67 minus the rows."
+      "what": "add-a-set STEP 3. export const taskRows = [] (rows land with their section increments); taskRowById(id); rowParts(row) = row.parts ?? row.pages.flatMap((page) => collectsOf(page.id)); rowStatus(row, answers, inScope, evaluation) delegating to L2 bridge/status statusOf — verbatim transposition of sets/live-animals/journeys/linear/flow/task-rows.js:61-67 minus the rows. collectsOf keeps its existing signature (pp-056 keyed the dispatch seam but every READ accessor is unchanged)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/flow/run.js",
       "action": "create",
-      "what": "export const RUN_STEPS = [{ id: importTypePage.id, target: flowPageTarget(importTypePage) }] with the flowPageTarget helper (pageGatePasses + pagePath) from the live-animals run.js exemplar; export const nextRunTarget(stepId, scope, journeyId) — verbatim formula, hubPath(journeyId) fallback. At m0 the opening run has one step, so after import-type the run exits to the hub; m2 extends RUN_STEPS as real pages land."
+      "what": "add-a-set STEP 3. export const RUN_STEPS = [{ id: importTypePage.id, target: flowPageTarget(importTypePage) }] with the flowPageTarget helper (pageGatePasses + pagePath) from the live-animals run.js exemplar; export const nextRunTarget(stepId, scope, journeyId) — verbatim formula, hubPath(journeyId) fallback. pagePath/hubPath are pp-057's PREFIX-BEARING link builders, so under a plant request they emit /plant-products/… automatically; do NOT hand-prefix anything. At m0 the opening run has one step, so after import-type the run exits to the hub."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/flow/entry-guard.js",
       "action": "create",
-      "what": "Transpose sets/live-animals/journeys/linear/flow/entry-guard.js: guardedJourneyPath(path) (journey prefix under BASE, createPath() exempt, ACTION_SLUGS amend/cancel-amend/copy/delete exempt, import-type entry surface exempt), userEntered/hasCommittedNotificationAnswers using obligationByName + SYSTEM_POPULATED from bridge/obligation-source.js (the post-pp-005 lazily-derived export shape), and export entryGuardTarget(request, h) redirecting a fresh journey's deep link to pagePath(journeyId, importTypePage.slug). On the empty manifest no answer is user-entered, so every fresh deep-link redirects to the import-type filter."
+      "what": "add-a-set STEP 9. Transpose sets/live-animals/journeys/linear/flow/entry-guard.js with TWO mandatory deviations, both forced by co-residency. (1) The journey prefix is a FUNCTION, never a module-load const: `const journeyPrefix = () => `${setBase()}/notifications/`` using setBase() from shared/paths.js — the live-animals `const JOURNEY_PREFIX = `${BASE}/notifications/`` bug class captures the wrong (or no) set at import time and pp-057 converts the live-animals file for exactly this reason. (2) The policy read uses pp-005's accessor form — `systemPopulated().has(key)` called INSIDE the guard body, never hoisted. Exports: guardedJourneyPath(path) (paths under journeyPrefix() that are not createPath(), not an ACTION_SLUG amend/cancel-amend/copy/delete, not the import-type entry surface), hasCommittedNotificationAnswers(answers) (obligationByName + not the flow-only importType key + not systemPopulated() + isAnswered), entryGuardTarget(request, h) redirecting a fresh journey's deep link to pagePath(journeyId, importTypePage.slug). The guard is installed by the gateway as a realm-scoped onPreHandler, so it can never fire on a live-animals route — pp-007's co-residency case pins that."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/flow/task-rows.test.js",
       "action": "create",
-      "what": "Pins: taskRows is [] at m0; rowParts falls back to collectsOf-derived parts for a synthetic row; rowStatus delegates its answer to statusOf (drive with a synthetic row + fixture answers, input/output only). Grows one pin per row from m2."
+      "what": "add-a-set STEP 7 slice. Pins: taskRows is [] at m0; rowParts falls back to collectsOf-derived parts for a synthetic row; rowStatus delegates its answer to statusOf (drive with a synthetic row + fixture answers, input/output only). Composes one set — no context plumbing (FD-17)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/index.js",
       "action": "create",
-      "what": "export const dispatchPages = [importType.meta] (dashboard and hub controllers export no meta — live-animals exemplar parity; their pages are indexed via the flow, not dispatch). export const allRoutes = [...dashboard.routes, ...importType.routes, ...hub.routes]."
+      "what": "add-a-set STEP 3. export const dispatchPages = [importType.meta] (dashboard and hub controllers export no meta — live-animals exemplar parity; their pages are indexed via the flow, not dispatch). export const allRoutes = [...dashboard.routes, ...importType.routes, ...hub.routes]. Every route path here is PREFIX-FREE — the /plant-products mount comes from the plugin registration's routes.prefix option, not from the path strings (§4.3)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/evaluation.js",
       "action": "create",
-      "what": "export const featureEvaluationBindings = Object.freeze([]) — grows one feature() bundle per area from m2 (assertFulfilmentBindingCoverage is vacuously green against the empty manifest)."
+      "what": "add-a-set STEP 3. export const featureEvaluationBindings = Object.freeze([]) — grows one feature() bundle per area from m2 (assertFulfilmentBindingCoverage is vacuously green against the empty manifest)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/page.js",
@@ -69,7 +69,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/controller.js",
       "action": "create",
-      "what": "Transpose sets/live-animals/journeys/linear/features/import-type-filter/controller.js. export const meta = { ...page, collects: ['importType'] } (flow-only key rides FLOW_ONLY_KEYS/session). Radios from copy: the four IPAFFS certificate types (live-animals, poao, hrfnao, plant-products — labels per the import-type page spec: 'Live animals', 'Products of animal origin, germinal products or animal by-products', 'High risk food and feed of non-animal origin', 'Plants, plant products and other objects'). requiredOneOf validation with copy.errors.importTypeRequired = 'Select the type of import'. Valid POST commits { importType }; 'plant-products' begins the opening run (beginOpeningRun + nextRunTarget — at m0 this exits to the hub); the other three redirect to NOT_AVAILABLE_SLUG = 'import-type/not-available' (holding page GET route registered alongside kit.pageRoutes). kit.recoverableSave around the commit; 400 re-render with raw values. Deliberate GDS fixes over IPAFFS (per the page spec's defect log): H1 'What are you importing?' inside the fieldset legend (legend-as-heading, c-014) with caption 'About the consignment', error-summary title 'There is a problem'. pp-017 completes the page to full spec."
+      "what": "add-a-set STEP 9. Transpose sets/live-animals/journeys/linear/features/import-type-filter/controller.js. export const meta = { ...page, collects: ['importType'] } (flow-only key rides FLOW_ONLY_KEYS/session — the plant flow-only cookie, scoped to /plant-products). Radios from copy: the four IPAFFS certificate types (live-animals, poao, hrfnao, plant-products — labels 'Live animals', 'Products of animal origin, germinal products or animal by-products', 'High risk food and feed of non-animal origin', 'Plants, plant products and other objects'). requiredOneOf validation with copy.errors.importTypeRequired = 'Select the type of import'. Valid POST commits { importType }; 'plant-products' begins the opening run (beginOpeningRun + nextRunTarget — at m0 this exits to the hub); the other three redirect to NOT_AVAILABLE_SLUG = 'import-type/not-available'. kit.recoverableSave around the commit; 400 re-render with raw values. Routes via kit.pageRoutes(page, …) — prefix-free by construction (pageRoutePath is a route-shape builder). Deliberate GDS fixes over IPAFFS: H1 inside the fieldset legend (legend-as-heading, c-014) with caption 'About the consignment', error-summary title 'There is a problem'. pp-017 completes the page to full spec."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/controller.test.js",
@@ -104,7 +104,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js",
       "action": "create",
-      "what": "Playwright spec (runnable under pp-011's features-plant-products project): renders caption + legend-as-heading H1 + 4 radios; selecting 'Plants, plant products and other objects' saves and lands on the hub (m0 run exit); empty submit shows 'There is a problem' + 'Select the type of import' and the summary link focuses the radios; non-plant option lands on the not-available page; axe (wcag2a+wcag2aa, fail serious/critical) on initial AND error states. Asserts plant-set-specific content that cannot render under live-animals (pp-011's env-proof)."
+      "what": "Playwright spec (runnable under pp-011's features-plant-products project). ALL navigation is under /plant-products/… — this spec must never hit a root-mounted URL. Covers: renders caption + legend-as-heading H1 + 4 radios; selecting 'Plants, plant products and other objects' saves and lands on the plant hub (m0 run exit); empty submit shows 'There is a problem' + 'Select the type of import' and the summary link focuses the radios; non-plant option lands on the not-available page; axe (wcag2a+wcag2aa, fail serious/critical) on initial AND error states. At least one assertion targets plant-set-only rendered content, so a page served by live-animals could not satisfy it."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/page.js",
@@ -114,17 +114,17 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/controller.js",
       "action": "create",
-      "what": "Minimal transposition of sets/live-animals/journeys/linear/features/dashboard/controller.js: GET '/' renders 'Your import notifications' from records.list (empty list on a fresh stub) with startAction: createPath(); POST createPath() (the exemplar registers this route itself, controller.js:126) → records.create() → redirect into the new journey's import-type page. No filters/status-tag vocabulary/optgroups yet — the full build is pp-037; keep the m0 view to list + create button + empty-state so pp-037 owns the rest."
+      "what": "add-a-set STEP 9. Minimal transposition of the live-animals dashboard controller, with pp-057's builder split applied FROM THE START (this is the trap the URL work exists to close): use the PREFIX-FREE ROUTE-SHAPE builders `dashboardRoutePath()` and `createRoutePath()` for the two Hapi route path strings, and the PREFIX-BEARING LINK builders `dashboardPath()` and `createPath()` for anything rendered or redirected to (startAction, listAction, the post-create redirect). Under the /plant-products mount those produce different strings; using a link builder as a route path registers the route at /plant-products/plant-products, and using a route-shape builder as a link drops the prefix. GET dashboardRoutePath() renders 'Your import notifications' from records.list (empty on a fresh stub) with startAction: createPath(); POST createRoutePath() → records.create() → redirect to pagePath(journeyId, importTypePage.slug). No filters/status-tag vocabulary/optgroups yet — the full build is pp-037."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/controller.test.js",
       "action": "create",
-      "what": "GET renders the (empty) list view model from records.list; POST create calls records.create and redirects to the new journey's import-type page; records failure behaviour mirrors the exemplar."
+      "what": "GET renders the (empty) list view model from records.list; POST create calls records.create and redirects to the new journey's import-type page; records failure behaviour mirrors the exemplar. Add one pin that the registered route paths are the PREFIX-FREE forms (dashboardRoutePath()/createRoutePath()) while the rendered startAction is the PREFIX-BEARING createPath() — cheap, and it catches the builder mix-up at unit level."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/template.njk",
       "action": "create",
-      "what": "Extends shared/layout.njk: 'Your import notifications' H1, govukButton 'Create a new notification' (POST createPath()), empty-state message, minimal list markup for existing rows (reference, status, updated)."
+      "what": "Extends shared/layout.njk: 'Your import notifications' H1, govukButton 'Create a new notification' (POST to createPath()), empty-state message, minimal list markup for existing rows (reference, status, updated)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/copy/copy.en.js",
@@ -144,12 +144,12 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js",
       "action": "create",
-      "what": "Playwright spec (runnable under pp-011): dashboard renders title + create button + empty state; Create a new notification lands on the import-type page of a fresh journey; axe on the rendered dashboard."
+      "what": "Playwright spec (runnable under pp-011): the plant dashboard renders at /plant-products (NOT /) with title + create button + empty state; Create a new notification lands on the import-type page of a fresh journey under /plant-products/notifications/…; axe on the rendered dashboard. Add one assertion that GET / in the same run still serves the LIVE-ANIMALS dashboard — the E2E-level co-residency proof at the page that would collide first."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/controller.js",
       "action": "create",
-      "what": "Transpose sets/live-animals/journeys/linear/features/hub/controller.js: GROUPS = [] at m0 (task-row placements land with their section increments; pp-029 completes the 12-spoke build), STATUS_TAG map + cannotStartYet status, completeOpeningRun on hub arrival, journeyStrip reference caption, review item built from the review flow section — GUARDED for pages.length === 0 (render the 'Review and submit' entry with cannot-start styling and NO link until pp-038 lands review pages; the exemplar links the section's first page, which does not exist yet). Registers the hub route at hubRoutePath."
+      "what": "add-a-set STEP 9. Transpose sets/live-animals/journeys/linear/features/hub/controller.js: GROUPS = [] at m0 (task-row placements land with their section increments; pp-029 completes the 12-spoke build), STATUS_TAG map + cannotStartYet status, completeOpeningRun on hub arrival, journeyStrip reference caption, review item built from the review flow section — GUARDED for pages.length === 0 (render the 'Review and submit' entry with cannot-start styling and NO link until pp-038 lands review pages). Registers the hub route at the PREFIX-FREE hubRoutePath(); every rendered link uses the prefix-bearing hubPath()/pagePath()."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/template.njk",
@@ -174,22 +174,22 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
       "action": "create",
-      "what": "Playwright spec (runnable under pp-011): after creating a journey via import-type, the hub renders the reference caption and the empty task list with the Review and submit entry in cannot-start state; axe on the hub."
+      "what": "Playwright spec (runnable under pp-011): after creating a journey via the plant import-type filter, the hub renders at /plant-products/notifications/{journeyId} with the reference caption and the empty task list with the Review and submit entry in cannot-start state; axe on the hub."
     },
     {
       "path": "src/server/app/sets/plant-products/services/mode.js",
       "action": "create",
-      "what": "export const mode = () => process.env.PLANT_PRODUCTS_MODE ?? 'real'; export const isRealMode = () => mode() === 'real' (FD-6 — mirrors L2 services/mode.js shape with the plant env var; L2 mode.js untouched)."
+      "what": "add-a-set STEP 8. export const mode = () => process.env.PLANT_PRODUCTS_MODE ?? 'real'; export const isRealMode = () => mode() === 'real' (FD-6 — mirrors L2 services/mode.js shape with the plant env var; L2 mode.js untouched). Under co-residency this is a FEATURE, not a workaround: one process can run live-animals against the real backend (LIVE_ANIMALS_MODE) and plant-products against its stub (PLANT_PRODUCTS_MODE) simultaneously."
     },
     {
       "path": "src/server/app/sets/plant-products/services/records/index.js",
       "action": "create",
-      "what": "export const records: the stub impl when mode() === 'stub'; in real mode every op throws 'plant-products real records adapter not implemented — pp-008' (decision: real.js + mapper belong to pp-008; a loud throw beats silently serving stub data under PLANT_PRODUCTS_MODE=real)."
+      "what": "add-a-set STEP 8. export const records: the stub impl when mode() === 'stub'; in real mode every op throws 'plant-products real records adapter not implemented — pp-008' (real.js + mapper belong to pp-008; a loud throw beats silently serving stub data under PLANT_PRODUCTS_MODE=real)."
     },
     {
       "path": "src/server/app/sets/plant-products/services/records/stub.js",
       "action": "create",
-      "what": "In-memory store implementing the FULL engine port pinned by engine/persistence/records.js:10-22 — { create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear }. create mints a GBN-PP-prefixed reference and a 'draft' record; replaceFulfilment stores the answers snapshot whole-document; finalise/amend/cancelAmend/softDelete enforce status-transition legality (draft→submitted; submitted→amend; amend→submitted incl. cancelAmend discard; →deleted idempotent) and throw on an illegal move (seeds the pp-008 stub/real-parity requirement now); list hides DELETED and returns the shape the dashboard reads; clear resets the store (test hook)."
+      "what": "In-memory store implementing the FULL engine port pinned by engine/persistence/records.js — { create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear }. create mints a GBN-PP-prefixed reference and a 'draft' record; replaceFulfilment stores the answers snapshot whole-document; finalise/amend/cancelAmend/softDelete enforce status-transition legality (draft→submitted; submitted→amend; amend→submitted incl. cancelAmend discard; →deleted idempotent) and throw on an illegal move; list hides DELETED and returns the shape the dashboard reads; clear resets the store (test hook). Instance state must be per-set-instance only — this module is the plant set's records impl and is injected through configureRecords('plant-products', records); it must never be reachable from a live-animals request."
     },
     {
       "path": "src/server/app/sets/plant-products/services/records/stub.test.js",
@@ -199,27 +199,37 @@
     {
       "path": "src/server/app/sets/plant-products/docs/README.md",
       "action": "create",
-      "what": "Set charter: CHED-PP scope, SERVED_SET/one-set-per-process contract, pointers to SIBLING-SET-PLAN rulings (FD table distilled), the P-2 containment note (future option of retiring the L2 live-animals mapper into sets/live-animals/services/), and the pp-008/pp-010/pp-011 follow-ups this scaffold leaves open."
+      "what": "add-a-set STEP 1 output for this set. Set charter: CHED-PP scope; the CO-RESIDENCY contract (both gateways register in ONE process; every configure* seam is keyed by set id; a request resolves its set from the owning plugin realm, not from URL parsing; live-animals holds the root mount and plant-products is mounted at /plant-products — FD-1/FD-14/FD-15/FD-16). Explicitly record that there is NO served-set env var. Pointers to the SIBLING-SET-PLAN rulings (FD table distilled), the P-2 containment note (future option of retiring the L2 live-animals mapper into sets/live-animals/services/), and the pp-008/pp-010/pp-011 follow-ups this scaffold leaves open."
     },
     {
       "path": "src/server/app/routes-plant-products.js",
       "action": "create",
-      "what": "export const plantProducts — Hapi plugin, name 'plant-products' (FD-3). Register body mirrors the live-animals gateway call-for-call in the LOAD-BEARING order (SIBLING-SET-PLAN §4.1.2 13-row table): (1) configureObligationSet(plantProductsObligationSet) — namespace import of sets/plant-products/obligations/index.js carrying .obligations/.groups/.policy; (2) configureFulfilmentRegistry(featureEvaluationBindings); (NO configureCommodityReference — FD-5, its only consumer is the L2 live-animals mapper); (4) configureJourneyFlow({ sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT }); (5) assertObligationPurity(); (6) assertFulfilmentBindingCoverage(); (7) buildDispatch(dispatchPages); (8) configureRecords(records) — the SET-OWNED impl from sets/plant-products/services/records/index.js; (9) configureSession(session, SESSION_COOKIE_NAMES) — L2 set-agnostic session impl + plant cookie names; (10) registerJourneyCookie(server); (11) server.ext('onPreHandler', ...) entry-guard wrapper verbatim; (NO countries.prime()/ports.prime() — fixture-backed reference data, §4.1 row 12); (13) server.route(allRoutes)."
+      "what": "add-a-set STEP 4. export const plantProducts — Hapi plugin, name 'plant-products' (FD-3). Register body mirrors routes-live-animals.js call-for-call in the LOAD-BEARING order of the §4.4.3 14-row table: (0) `registerSetMount('plant-products', '/plant-products')`, then `server.ext('onPreAuth', (request, h) => { enterSetContext('plant-products'); return h.continue })` as the first extension, with the WHOLE body wrapped in `await withSetContext('plant-products', async () => { … })` so the boot gates read this set; (1) configureObligationSet('plant-products', plantProductsObligationSet) — namespace import carrying .obligations/.groups/.policy; (2) configureFulfilmentRegistry('plant-products', featureEvaluationBindings); (3) NO configureCommodityReference — FD-5: its only consumer is the L2 live-animals mapper, so under per-set keying the plant slot is simply never filled and a plant request that somehow reached that mapper throws loudly instead of mapping with live-animals vocabulary; (4) configureJourneyFlow('plant-products', { sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT }); (5) assertObligationPurity(); (6) assertFulfilmentBindingCoverage(); (7) buildDispatch('plant-products', dispatchPages); (8) configureRecords('plant-products', records) — the SET-OWNED impl (FD-5); (9) configureSession('plant-products', session, SESSION_COOKIE_NAMES) — the L2 set-agnostic session impl plus the plant cookie names; (10) registerJourneyCookie(server, { base: '/plant-products', cookieNames: SESSION_COOKIE_NAMES }) so the three plant cookies carry path '/plant-products'; (11) server.ext('onPreHandler', …) entry-guard wrapper verbatim — realm-scoped, so it never fires on live-animals routes; (12) NO countries.prime()/ports.prime() — plant reference data is fixture-backed and the L2 primed caches are live-animals machinery; (13) server.route(allRoutes) with PREFIX-FREE paths (the mount comes from the registration option in router.js)."
     },
     {
       "path": "src/server/app/routes.js",
       "action": "edit",
-      "what": "Add `import { plantProducts } from './routes-plant-products.js'` and the `'plant-products': plantProducts` entry to the SETS map of the pp-006 selector. servedSetName()/servedSet() semantics unchanged: SERVED_SET unset → live-animals; unknown value → loud boot failure."
+      "what": "add-a-set STEP 5. Add the barrel's second line: `export { plantProducts } from './routes-plant-products.js'`. The file is then exactly the two-line barrel of §4.4.4. Still no env read, no selector, no SETS map."
+    },
+    {
+      "path": "src/server/router.js",
+      "action": "edit",
+      "what": "add-a-set STEP 5. Add `plantProducts` to the existing `import { liveAnimals } from './app/routes.js'` and add ONE new line after the existing `await server.register(routes)`: `await server.register(plantProducts, { routes: { prefix: '/plant-products' } })`. It must be a SEPARATE register call — the prefix option applies to the whole call, and live-animals must keep the root mount. The live-animals registration, the authEnabled/signout push and everything else in router.js stay exactly as they are."
+    },
+    {
+      "path": "src/server/app/co-residency.test.js",
+      "action": "edit",
+      "what": "Add the PLANT HALF to the file pp-006 created, using its bootServer({ sets }) helper — extend, do not rewrite. New cases, all against ONE booted server with BOTH gateways registered (plant via { routes: { prefix: '/plant-products' } }): (a) GET '/' returns live-animals dashboard content AND GET '/plant-products' returns plant dashboard content that CANNOT render under live-animals, in the same run; (b) a page from each set resolves its OWN manifest, journey flow, records impl and cookie names — assert the plant response sets plantProducts* cookies at path '/plant-products' and no liveAnimals* cookie, and vice versa; (c) REALM SCOPING, cross-set form: a request to a plant route does NOT execute the live-animals entry guard, and a request to a live-animals route does NOT execute the plant one; (d) ALS INTERLEAVING, cross-set form: one plant and one live-animals request in flight together, the first deliberately awaiting inside its handler, each still reading its own set — a red here is a STOP-and-replan (the contingency is explicit setId threading, a materially larger increment); (e) the P-1 handover from pp-005 — the two sets read DIFFERENT enforcedAtContinue values in this one process; (f) MODE INDEPENDENCE (P-6) — with the plant set on its records stub and live-animals on a fake real client, both serve correctly, and countries.prime()/ports.prime() ran ONCE, on the live-animals gateway only, and was not re-triggered by the plant registration."
     },
     {
       "path": ".dependency-cruiser.cjs",
       "action": "edit",
-      "what": "ONLY IF pp-006 did not already allowlist both gateway files: add ^src/server/app/routes-plant-products\\.js$ to the routes-is-the-gateway pathNot allowlist so the new gateway may import sets/plant-products/**. Minimal slice of P-4 pulled forward because lint:arch cannot pass this increment without it; pp-010 completes P-4 (sets-not-l1 forbidden targets + deliberate probe). .dependency-cruiser-known-violations.json NOT regenerated."
+      "what": "Minimal slice of P-4, pulled forward only because lint:arch cannot pass this increment otherwise: add `` `^${APP}/routes-plant-products\\\\.js$` `` to the routes-is-the-gateway `from.pathNot` allowlist (pp-006 already added routes-live-animals.js). Do NOT touch the sets-not-l1 rule — pp-010 owns widening its forbidden-target regex to `^${APP}/(routes|routes-live-animals|routes-plant-products|obligation-purity)\\\\.js$` plus the deliberate probe. shared/set-context.js needs no rule. .dependency-cruiser-known-violations.json NOT regenerated."
     },
     {
       "path": "src/server/app/routes-plant-products.test.js",
       "action": "create",
-      "what": "Boot-proof Vitest suite colocated with the gateway (own file — Vitest per-file worker isolation keeps the plant configure* singletons from leaking into other app-root suites, the FD-10 rationale). With PLANT_PRODUCTS_MODE=stub (vi.stubEnv): create a @hapi/hapi server, register plantProducts — successful registration proves assertObligationPurity + assertFulfilmentBindingCoverage + buildDispatch accept the m0 skeleton; then server.inject: GET '/' → 200 plant dashboard; POST createPath() → 302 into the new journey's import-type page; GET the import-type page → 200; GET the hub → 200 with the empty task list; GET a guarded journey slug on a fresh journey → 302 to import-type (entry-guard). Plus selector checks: SERVED_SET=plant-products → servedSet() is plantProducts; SERVED_SET=garbage → throws. Distinct from pp-010's routes.plant-products.test.js clone (auth walk) — near-name is deliberate colocation with routes-plant-products.js."
+      "what": "add-a-set STEP 7 slice. Boot-proof Vitest suite colocated with the gateway, composing the PLANT set alone (FD-17's sole-registered-set fallback applies, so no withSetContext plumbing is needed — that is what co-residency.test.js is for). With PLANT_PRODUCTS_MODE=stub (vi.stubEnv): create a @hapi/hapi server, register plantProducts with { routes: { prefix: '/plant-products' } } — successful registration proves assertObligationPurity + assertFulfilmentBindingCoverage + buildDispatch accept the m0 skeleton; then server.inject: GET '/plant-products' → 200 plant dashboard; POST the create path → 302 into the new journey's import-type page under /plant-products/notifications/…; GET the import-type page → 200; GET the hub → 200 with the empty task list; GET a guarded journey slug on a fresh journey → 302 to import-type (entry-guard). NO selector tests and NO SERVED_SET stubbing — ruling R3 deleted both. Distinct from pp-010's routes.plant-products.test.js clone (auth walk); the near-name is deliberate colocation."
     }
   ],
   "obligations": [],
@@ -229,7 +239,7 @@
       "review: { id: 'review', gate: (scope) => scope.readyForCheckYourAnswers, pages: [] } — FD-12 authored gate; pages land at m4 (pp-038/pp-039/pp-040); set-side hub controller guards the empty pages array"
     ],
     "taskRows": [],
-    "entryGuard": "Authored entryGuardTarget (transposed from live-animals): fresh deep-links into a journey redirect to the import-type filter; createPath, action slugs (amend/cancel-amend/copy/delete) and the import-type entry surface are exempt; a journey with committed user answers or an in-progress opening run is not redirected"
+    "entryGuard": "Authored entryGuardTarget (transposed from live-animals, with the journey prefix as a setBase()-derived FUNCTION not a module-load const): fresh deep-links into a journey redirect to the import-type filter; createPath, action slugs (amend/cancel-amend/copy/delete) and the import-type entry surface are exempt; a journey with committed user answers or an in-progress opening run is not redirected. Installed as a realm-scoped onPreHandler so it can never fire on a live-animals route."
   },
   "schemaFields": [],
   "copyKeys": [
@@ -238,21 +248,29 @@
     "features/hub/copy: title, statuses.completed, statuses.inProgress, statuses.notYetStarted, statuses.optional, statuses.cannotStartYet, review.title, review.hint, captions.checkAndSubmit"
   ],
   "specs": [
-    "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js — entry filter renders (caption, legend-as-heading H1, 4 radios), plant option → hub, validation error ('There is a problem' + 'Select the type of import' + focus link), non-plant option → not-available page, axe on initial + error states; asserts plant-only content (pp-011 env-proof)",
-    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — dashboard renders title + Create a new notification + empty state, create lands on import-type, axe",
-    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — post-create hub renders reference caption + empty task list + Review and submit entry in cannot-start state, axe",
-    "src/server/app/routes-plant-products.test.js — Vitest boot proof: plugin registers (boot assertions pass on the empty manifest), injected GET /, create→import-type 302, hub 200, entry-guard redirect, selector known/unknown SERVED_SET behaviour"
+    "src/server/app/sets/plant-products/journeys/linear/features/import-type/import-type.e2e.spec.js — entry filter under /plant-products renders (caption, legend-as-heading H1, 4 radios), plant option → plant hub, validation error ('There is a problem' + 'Select the type of import' + focus link), non-plant option → not-available page, axe on initial + error states; asserts plant-only content",
+    "src/server/app/sets/plant-products/journeys/linear/features/dashboard/dashboard.e2e.spec.js — plant dashboard renders at /plant-products (never at /), create lands on import-type, GET / in the same run still serves live-animals, axe",
+    "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js — post-create hub at /plant-products/notifications/{journeyId} renders reference caption + empty task list + Review and submit in cannot-start state, axe",
+    "src/server/app/routes-plant-products.test.js — Vitest boot proof for the plant gateway alone: plugin registers under its prefix, injected GET /plant-products, create→import-type 302, hub 200, entry-guard redirect",
+    "src/server/app/co-residency.test.js — EXTENDED here with the plant half: both sets served from one process, per-set cookies/manifests/records, cross-set realm scoping, cross-set ALS interleaving, divergent enforcedAtContinue, independent stub/real modes, prime() runs once"
   ],
   "acceptanceCriteria": [
-    "With SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub the app boots: plugin registration passes assertObligationPurity, assertFulfilmentBindingCoverage and buildDispatch on the empty manifest; '/' serves the plant dashboard; a created journey serves the import-type filter and the (empty) hub — all proven by the injected boot test, not manual browsing",
-    "SERVED_SET unset serves live-animals exactly as today: npm run test:live-animals, npm test and PORT=3050 npm run test:features all green with no env changes (two-sided sibling-safety check, §4.3)",
-    "SERVED_SET=garbage still fails boot loudly with the unknown-set error after the SETS-map edit",
-    "Fresh deep-link to a guarded journey slug redirects to the import-type filter (entry-guard policy); createPath and action slugs are exempt",
-    "Nothing under sets/plant-products/ imports services/persistence/records/, services/countries/ or services/ports/ (P-2 containment); routes-plant-products.js calls neither configureCommodityReference nor any prime()",
-    "The stub records service implements all 11 engine-port ops with status-transition legality; PLANT_PRODUCTS_MODE=real (or unset) throws the not-implemented-until-pp-008 error rather than silently stubbing",
-    "en and cy copy bundles are structure-identical for all three features; obligations/index.js contains zero display copy",
-    "npm run lint and npm run lint:arch green; .dependency-cruiser-known-violations.json untouched",
-    "The three co-located e2e specs + axe checks exist and are syntactically complete; they execute under pp-011's features-plant-products project (pp-011's acceptance runs them — record as its obligation, do not delete or skip them here)"
+    "CO-RESIDENCY (the headline): ONE booted server serves the live-animals dashboard at '/' and the plant dashboard at '/plant-products' in the SAME run — proven by co-residency.test.js, not by two separate boots and not by any env var.",
+    "Plugin registration for plant-products passes assertObligationPurity, assertFulfilmentBindingCoverage and buildDispatch('plant-products', …) on the empty manifest; a created plant journey serves the import-type filter and the (empty) hub.",
+    "`grep -rn 'SERVED_SET' .` across the repo returns EMPTY — no served-set env var is introduced by the plant set, its scripts, its docs or its tests.",
+    "Live-animals is untouched: npm run test:live-animals, npm test, PORT=3050 npm run test:features and PORT=3050 npm run test:e2e are green with NO spec edits for URL changes and NO new env vars in CI. Every live-animals URL is byte-identical to before.",
+    "Every plant page renders under /plant-products/…; a plant link never emits a root-mounted URL and a live-animals link never emits a prefixed one. The plant dashboard route is registered via dashboardRoutePath()/createRoutePath() (prefix-free) while its rendered links use dashboardPath()/createPath() (prefix-bearing).",
+    "Cookies: liveAnimals* at path '/', plantProducts* at path '/plant-products'; a journey started in one set is provably invisible to the other.",
+    "REALM SCOPING PIN (cross-set): a request to a plant route does not run the live-animals entry guard, and vice versa.",
+    "ALS INTERLEAVING PIN (cross-set): a plant request and a live-animals request in flight together, the slower awaiting inside its handler, each resolve their own manifest, journey flow, records impl and cookie names. A failure here STOPS the increment for re-planning — it is not patched around.",
+    "Fresh deep-link to a guarded plant journey slug redirects to the plant import-type filter; createPath and action slugs are exempt. The plant entry guard derives its journey prefix from setBase() at call time — grep the file for a module-load JOURNEY_PREFIX-style const: there must be none.",
+    "MODE INDEPENDENCE (P-6): with PLANT_PRODUCTS_MODE=stub the plant set runs on its in-memory records stub WHILE live-animals in the same process independently honours LIVE_ANIMALS_MODE; countries.prime()/ports.prime() runs once, on the live-animals gateway only, and is not re-triggered by the plant registration.",
+    "P-2 containment: nothing under sets/plant-products/ imports services/persistence/records/, services/countries/ or services/ports/; routes-plant-products.js calls neither configureCommodityReference nor any prime(). The plant slot of configureCommodityReference is provably ABSENT (not overwritten) — a negative test proves a plant-context call into the L2 mapper throws loudly rather than mapping with live-animals vocabulary.",
+    "The stub records service implements all 11 engine-port ops with status-transition legality; PLANT_PRODUCTS_MODE=real (or unset) throws the not-implemented-until-pp-008 error rather than silently stubbing.",
+    "en and cy copy bundles are structure-identical for all three features; obligations/index.js contains zero display copy.",
+    "npm run lint and npm run lint:arch green; .dependency-cruiser-known-violations.json untouched.",
+    "Every file created here cites the docs/add-a-set.md step it executes, and no step of that recipe is departed from without the deviation being recorded in sets/plant-products/docs/README.md.",
+    "The three co-located e2e specs + axe checks exist and are syntactically complete; they execute under pp-011's features-plant-products project (pp-011's acceptance runs them — record as its obligation, do not delete or skip them here)."
   ],
   "verification": [
     "BASELINE (before editing; red = stop and report): npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:live-animals",
@@ -260,14 +278,17 @@
     "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend test",
     "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint",
     "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint:arch",
+    "grep -rn \"SERVED_SET\" ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend   # expect: NO matches (exit 1)",
     "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:e2e",
     "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run format"
   ],
-  "notes": "Re-interpretation of inc-001 per MAPPING: the sibling-set skeleton, not a CDP app. ONE increment because the gateway's configure-call chain needs every skeleton export present to boot (the rationale in MAPPING). Decisions taken headless: (1) real-mode records throws until pp-008 — index.js switches on mode(), loud failure beats silent stub under 'real'; real.js/mapper are NOT created here. (2) The review flow section ships with pages: [] per FD-13/FD-12; the set-owned hub controller guards zero pages (renders the Review entry unlinked/cannot-start) because the live-animals exemplar links the section's first page, which does not exist until pp-038 — this guard is set-side and legal. (3) A minimal .dependency-cruiser.cjs pathNot edit is pulled forward from pp-010 ONLY if pp-006 did not already whitelist both routes-*.js files — lint:arch cannot pass otherwise; pp-010 still owns sets-not-l1 + the probe test + T-1..T-5. (4) Boot verification is a Vitest inject suite at the app root (routes-plant-products.test.js) because neither test:plant-products (pp-010) nor the features-plant-products Playwright project (pp-011) exists yet; the three co-located e2e specs are authored now and first executed by pp-011. (5) Import-type m0 copy follows the trace page spec (caption 'About the consignment', H1 'What are you importing?', the 4 IPAFFS option labels, error 'Select the type of import') with the deliberate GDS fixes the spec's defect log demands: legend-as-heading (the IPAFFS legend is empty — a11y defect), 'There is a problem' error-summary title (not 'Please fix the following errors'), and NO overdue-debtor gate (c-024, pp-017's flag honoured from the start). pp-017 completes the page; pp-037 completes the dashboard; pp-029 completes the hub. Exemplars pinned this session: src/server/app/routes.js:43-76 (gateway order), sets/live-animals/journeys/linear/flow/flow.js:30-98 (FD-13 start section + derived exports), flow/task-rows.js:61-67 (rowStatus delegation), flow/run.js (flowPageTarget/nextRunTarget), flow/entry-guard.js (guard policy), features/import-type-filter/controller.js (flow-only collecting controller incl. not-available branch), features/dashboard/controller.js:70,126 (startAction + POST createPath route), features/hub/controller.js:33-49 (GROUPS shape), features/index.js:33-55 (dispatchPages excludes dashboard/hub), engine/persistence/records.js:10-22 (the 11-op port). Sibling-safety: this is a platform-touching increment (routes.js + dep-cruiser edits), so the two-sided check is mandatory and included in the ladder.",
+  "notes": "AMENDED 2026-08-01 for Sam's rulings R3 (co-residency) and R6 (recipe first) — RETITLED, which reflects a genuine scope change. 'Boot under SERVED_SET=plant-products' is now wrong in fact: there is no served-set env var. The definition of done is CO-RESIDENT — one Node process serves live-animals at the root AND plant-products under /plant-products, proven by co-residency.test.js in a single boot. R6 also changes this increment's RELATIONSHIP TO THE RECIPE: docs/add-a-set.md is authored FIRST, by pp-053, and this increment FOLLOWS it verbatim the way add-a-field.md / add-a-page.md / add-a-collection.md are followed, citing the step each file executes. It is no longer the source from which a recipe is later extracted; that ordering was what left gap G-A open. Hence the new dependsOn pp-053. ID CONVENTION for the reversal's new increments: pp-056 = P-9 set-context; pp-057 = P-10 URL namespace; pp-058 = P-11 setId-first tripwire; pp-053 = G-A/R6 add-a-set.md. WHAT THE REVERSAL ADDED TO THIS INCREMENT'S FILE LIST: routes-plant-products.js now carries registerSetMount + the realm-scoped onPreAuth context entry + the withSetContext wrapper + setId as the first argument of every configure*/buildDispatch call + a per-set registerJourneyCookie(server, { base: '/plant-products', cookieNames }) — the 14-row call table of §4.4.3, not the old 13-row one; routes.js gains the barrel's SECOND line; src/server/router.js is a NEW file to touch (the separate prefixed register call, which pp-006 deliberately left to this increment because the plant gateway did not exist then); co-residency.test.js is EDITED (the plant half) rather than created. WHAT IT REMOVED: all SERVED_SET selector-map wiring and the selector test cases in routes-plant-products.test.js. FD-17 keeps the per-set skeleton suites simple — each composes exactly one set, so the sole-registered-set fallback resolves them with no context plumbing; co-residency.test.js is the only file that needs explicit context. TRAPS THIS INCREMENT MUST NOT FALL INTO, each closed above: (1) the dashboard controller's dual-use of dashboardPath()/createPath() as BOTH route paths and links — under a prefix those must be different builders, which is exactly why pp-057 adds dashboardRoutePath()/createRoutePath(); (2) a module-load journey-prefix const in entry-guard.js (the live-animals JOURNEY_PREFIX bug class) — it must be a setBase()-derived function called per request; (3) hoisting pp-005's policy accessors out of their call sites. Retained decisions from round 1: real-mode records throws until pp-008; the review flow section ships with pages: [] and the hub controller guards it set-side; boot verification is a Vitest inject suite because test:plant-products (pp-010) and the plant Playwright project (pp-011) do not exist yet; import-type m0 copy follows the trace page spec with the deliberate GDS fixes (legend-as-heading, 'There is a problem', no overdue-debtor gate). Exemplars pinned: src/server/app/routes-live-animals.js as pp-006 landed it (the call-for-call model for the plant gateway), sets/live-animals/journeys/linear/flow/flow.js:30-98, flow/task-rows.js:61-67, flow/run.js, flow/entry-guard.js, features/import-type-filter/controller.js, features/dashboard/controller.js:114,126 (the two route-shape call sites pp-057 swapped), features/hub/controller.js:33-49, features/index.js:33-55, engine/persistence/records.js (the 11-op port), shared/set-context.js and shared/paths.js as pp-056/pp-057 landed them.",
   "openQuestions": [
     "Does L2 flow/navigation machinery tolerate a section with pages: [] everywhere the review section is read (sectionEntry, sectionStatus, answerSections)? The set-side hub guard covers the hub path; if any L2 reader throws on empty pages, raise a NEW platform work item rather than hacking L2 inline — do not silently drop the review section (FD-13 mandates [start, review] at m0).",
-    "Confirm at implementation time whether pp-006 already added both routes-*.js files to the dep-cruiser routes-is-the-gateway pathNot; if yes, drop this increment's .dependency-cruiser.cjs edit entirely.",
+    "Confirm at implementation time which routes-*.js entries pp-006 already added to the dep-cruiser routes-is-the-gateway pathNot; if it allowlisted both, drop this increment's .dependency-cruiser.cjs edit entirely.",
     "contract.plant-products.test.js does not exist until pp-010 (T-5 creates the harness) — the import-type valid-POST contract case created here must be added by pp-010; flagged so the standing every-collecting-controller rule is not silently violated for the first controller.",
-    "Import-type option VALUES for the three non-plant types ('live-animals', 'poao', 'hrfnao') are internal vocabulary transposed from the live-animals set, not IPAFFS wire codes (CVEDA/CVEDP/CED) — pp-017 confirms the canonical values against the page spec when it completes the page."
+    "Import-type option VALUES for the three non-plant types ('live-animals', 'poao', 'hrfnao') are internal vocabulary transposed from the live-animals set, not IPAFFS wire codes (CVEDA/CVEDP/CED) — pp-017 confirms the canonical values against the page spec when it completes the page.",
+    "pp-056/pp-057/pp-058/pp-053 are working ids for the reversal's four new increments (P-9, P-10, P-11, G-A). If the backlog assigns different ids, sweep the dependsOn arrays of pp-005, pp-006, pp-007, pp-009 and pp-010."
   ]
 }

@@ -34,7 +34,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/controller.js",
       "action": "create",
-      "what": "Transpose sets/live-animals/journeys/linear/features/import-reason/controller.js near-verbatim, swapping set-relative import depths, page identity, copy bundles, and the options service to sets/plant-products/services/reference/purposes.js. meta = { ...page, collects: ['reasonForImport'] }. view = `${TEMPLATES}/features/purpose/template`. fields = compose(oneOf('reasonForImport', purposes.reasons().map(o => o.value))). render() builds reasonOptions = reasons().map(o => ({ ...o, hint: copy.reasonHints[o.value] ? { text: copy.reasonHints[o.value] } : undefined, checked: o.value === values.reasonForImport })) — RE_CONFORMITY_CHECK has NO hint (trace-confirmed; render no empty hint object for it). GET: state.get once, prefill answers.reasonForImport ?? ''. POST: validate -> 400 re-render raw values with kit.errorSummary; valid -> state.commit via kit.recoverableSave (marked failure re-renders recoverableError:true, 500; other errors throw) -> h.redirect(await kit.nextTarget(request, page, scope)). backLink = hubPath(journey.journeyId) (real href — no '#' back link). export const routes = kit.pageRoutes(page, { get, post })."
+      "what": "Transpose sets/live-animals/journeys/linear/features/import-reason/controller.js near-verbatim, swapping set-relative import depths, page identity, copy bundles, and the options service to sets/plant-products/services/reference/purposes.js. meta = { ...page, collects: ['reasonForImport'] }. view = `${TEMPLATES}/features/purpose/template`. fields = compose(oneOf('reasonForImport', purposes.reasons().map(o => o.value))). render() builds reasonOptions = reasons().map(o => ({ ...o, hint: copy.reasonHints[o.value] ? { text: copy.reasonHints[o.value] } : undefined, checked: o.value === values.reasonForImport })) — RE_CONFORMITY_CHECK has NO hint (trace-confirmed; render no empty hint object for it). GET: state.get once, prefill answers.reasonForImport ?? ''. POST: validate -> 400 re-render raw values with kit.errorSummary; valid -> state.commit via kit.recoverableSave (marked failure re-renders recoverableError:true, 500; other errors throw) -> h.redirect(await kit.nextTarget(request, page, scope)). backLink = hubPath(journey.journeyId) (real href — no '#' back link). export const routes = kit.pageRoutes(page, { get, post }). BUILDER FAMILIES (§4.3): kit.pageRoutes builds the route path from the PREFIX-FREE route-shape builder pageRoutePath at module load and the /plant-products mount is supplied by the plugin's routes.prefix — never hand-prefix a route path; everything rendered or redirected to (backLink hubPath(...), kit.nextTarget's target) uses the PREFIX-BEARING link builders resolved per request and already carries the mount."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/template.njk",
@@ -109,7 +109,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
       "action": "edit",
-      "what": "Assert the Purpose row renders under its heading with status 'Not yet started' and links to /notifications/{journeyId}/about-the-consignment."
+      "what": "Assert the Purpose row renders under its heading with status 'Not yet started' and links to /plant-products/notifications/{journeyId}/about-the-consignment (the rendered href comes from the prefix-bearing pagePath link builder, so it carries the mount)."
     },
     {
       "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
@@ -139,7 +139,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/purpose/purpose.e2e.spec.js",
       "action": "create",
-      "what": "Co-located Playwright spec + axe (scenarios listed under specs)."
+      "what": "Co-located Playwright spec + axe (scenarios listed under specs). All navigation stays under /plant-products/… — the spec starts from the plant dashboard at /plant-products and must never hit a root-mounted URL, which under co-residency is the live-animals set."
     }
   ],
   "obligations": [
@@ -182,7 +182,7 @@
     "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (edit) — Purpose row renders under the spoke-2 heading and links to about-the-consignment"
   ],
   "acceptanceCriteria": [
-    "GET /notifications/{journeyId}/about-the-consignment renders caption 'About the consignment' and the question 'What is the main reason for importing the consignment?' as the fieldset legend styled as page heading (c-014: legend-as-heading, no legendless fieldset)",
+    "GET /plant-products/notifications/{journeyId}/about-the-consignment renders caption 'About the consignment' and the question 'What is the main reason for importing the consignment?' as the fieldset legend styled as page heading (c-014: legend-as-heading, no legendless fieldset)",
     "Exactly 3 radio options in order: 'Internal market', 'Re-entry', 'For import re-conformity check'; hints (character-exact from the page spec) on the first two only; the third has no hint",
     "Radios are plain govuk-radios via the macro: unique per-item hint ids, aria-describedby wired, no govuk-radios--conditional modifier, no custom item classes, no bold-label overrides (IPAFFS defects fixed, not ported)",
     "Stored value is the normalised enum INTERNAL_MARKET | RE_ENTRY | RE_CONFORMITY_CHECK (c-006) — the IPAFFS wire values internalmarket/import/reconformity appear nowhere in the set",

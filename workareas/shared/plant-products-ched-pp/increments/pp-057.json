@@ -1,0 +1,85 @@
+{
+  "id": "pp-057",
+  "title": "P-10: per-set URL namespace — setBase(), the route-shape/link builder split, per-set journey cookie path",
+  "kind": "platform",
+  "milestone": "m0",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-056"],
+  "sourceIncrement": null,
+  "recipe": "No recipe covers platform URL namespacing. The script is SIBLING-SET-PLAN.md §4.3 (the two export families, the mount table, the 'live-animals URLs do not change' rule) and §4.2 rows 10-11 (shared/paths.js BASE and engine/journey.js cookieOptions), with the acceptance bar at §5 P-10.",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/shared/paths.js",
+      "action": "edit",
+      "what": "The whole file today is 15 lines (verified live): `export const BASE = ''` then pagePath, pageRoutePath, hubPath, hubRoutePath, createPath, dashboardPath (which returns a literal '/') and breadcrumbs. Rewrite it as TWO FAMILIES with `setBase()` in place of BASE.\n\nDELETE `export const BASE` — it is a module-load capture of a value that is now per request. Add `const setBase = () => currentSetBase()` (from shared/set-context.js). Export setBase too: pp-006's plant gateway and the live-animals entry guard both need it.\n\nFAMILY 1 — ROUTE-SHAPE BUILDERS, evaluated at MODULE LOAD when controllers build their route tables, therefore PREFIX-FREE. Hapi's plugin `routes.prefix` supplies the mount, so these must NOT call setBase():\n- `pageRoutePath(slug)` → `/notifications/{journeyId}/${slug}` (used by shared/kit.js:123,129 in pageRoutes)\n- `hubRoutePath()` → `/notifications/{journeyId}` (used by the live-animals hub controller, ~line 169)\n- `dashboardRoutePath()` [NEW] → `/` (for live-animals dashboard controller.js:114, which today calls dashboardPath())\n- `createRoutePath()` [NEW] → `/notifications` (for live-animals dashboard controller.js:126, which today calls createPath())\n\nFAMILY 2 — LINK BUILDERS, evaluated per request, therefore PREFIX-BEARING via setBase():\n- `pagePath(journeyId, slug)` → `${setBase()}/notifications/${journeyId}/${slug}`\n- `hubPath(journeyId)` → `${setBase()}/notifications/${journeyId}`\n- `createPath()` → `${setBase()}/notifications`\n- `dashboardPath()` → `setBase() || '/'` — note today it returns a bare literal '/', not `${BASE}/`; the `|| '/'` preserves that exactly for the root-mounted set while giving a prefixed set `/plant-products` with no trailing slash (which is also what Hapi serves a `/` route registered under a prefix)\n- `breadcrumbs(_journeyId, title)` unchanged in shape; its dashboardPath() call now resolves per set for free\n\nWHY THE TWO NEW EXPORTS EXIST: dashboardPath() and createPath() are currently used BOTH as route paths (at module load) and as links (at request time) in the same file. Under a prefix those two uses must produce DIFFERENT strings, so they cannot stay one function. Every OTHER link-builder call site — roughly 55 of them across sets/, flow/navigation.js and analysis/ — is UNCHANGED."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.js",
+      "action": "edit",
+      "what": "Two call-site swaps, and they are THE ONLY live-animals source change the URL work requires: line 114 `dashboardPath()` → `dashboardRoutePath()` and line 126 `createPath()` → `createRoutePath()`. Both are route-table entries evaluated at module load; every OTHER use of dashboardPath()/createPath() in this file (redirects, startAction, listAction, view-model links) is a LINK and stays on the prefix-bearing builder. Re-check the line numbers before editing — get this wrong in either direction and the route registers at the wrong path or a link drops the prefix, and with live-animals at prefix '' the mistake is INVISIBLE until a prefixed set exists. That is why the acceptance bar below is 'every existing URL assertion passes unedited' AND a dedicated prefixed-context unit test."
+    },
+    {
+      "path": "src/server/app/engine/journey.js",
+      "action": "edit",
+      "what": "§4.2 row 11. TODAY (verified live) line 2 imports BASE from shared/paths.js and lines 14-23 freeze `cookieOptions` at MODULE LOAD with `path: BASE || '/'`; registerJourneyCookie(server) then registers the three states using the module-level cookie-name accessors. AFTER: delete the BASE import; move cookieOptions INSIDE `registerJourneyCookie(server, { base, cookieNames })` so it is built per set with `path: base || '/'`, and register the three states from the passed cookieNames rather than from the accessors (the gateway holds both facts at registration time, and registration happens once per set at boot). Live-animals passes `{ base: '', cookieNames: SESSION_COOKIE_NAMES }` and therefore still gets `path: '/'` — byte-identical to today. Nothing else in journey.js changes; copyJourney's signature and the cookie-accessor call sites from pp-056 are untouched."
+    },
+    {
+      "path": "src/server/app/routes.js",
+      "action": "edit",
+      "what": "Update the single registerJourneyCookie call to the new signature: `registerJourneyCookie(server, { base: '', cookieNames: SESSION_COOKIE_NAMES })`. Nothing else — this file is still the un-split live-animals gateway at this point; the barrel and the plant gateway are pp-006."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js",
+      "action": "edit",
+      "what": "§4.2 row 10 consumer. TODAY line 1 imports BASE and line 13 is `const JOURNEY_PREFIX = `${BASE}/notifications/`` — a MODULE-LOAD capture, which is precisely the bug class co-residency cannot tolerate. AFTER: import setBase and make it a function, `const journeyPrefix = () => `${setBase()}/notifications/``, called at each use inside the guard (per request). Do not memoise it. Name this pattern in the commit message: it is the exemplar every future set's entry guard must follow, and pp-053's add-a-set.md step 9 already warns about it by name."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/flow/opening-run.test.js",
+      "action": "edit",
+      "what": "§4.2 row 10 test consumer — verified references at lines 4 and 376. Mechanical: swap the BASE import/uses for the new builder or a literal, whichever keeps the test's INTENT visible. Do not delete an assertion to make it pass; if it asserts a URL, it must still assert the same URL string."
+    },
+    {
+      "path": "src/server/app/shared/paths.test.js",
+      "action": "create",
+      "what": "The proof that the split is correct, and the only place a prefix can be exercised before a second set exists. Register two mounts via registerSetMount — 'live-animals' at '' and a fixture set at '/fixture-set' — then, IN ONE PROCESS: (1) inside withSetContext('live-animals'), assert pagePath/hubPath/createPath/dashboardPath/breadcrumbs return exactly the strings the app emits today (`/notifications/J/slug`, `/notifications/J`, `/notifications`, `/`); (2) inside withSetContext('fixture-set'), assert each is prefixed (`/fixture-set/notifications/J/slug`, `/fixture-set/notifications/J`, `/fixture-set/notifications`, `/fixture-set` with NO trailing slash); (3) assert the ROUTE-SHAPE builders are prefix-free under BOTH contexts — pageRoutePath('x') === '/notifications/{journeyId}/x', hubRoutePath() === '/notifications/{journeyId}', dashboardRoutePath() === '/', createRoutePath() === '/notifications' — because Hapi's routes.prefix supplies the mount and a doubled prefix is the failure mode this test exists to catch; (4) assert `grep`-proof of intent: BASE is not exported (importing it is a TypeError/undefined) so nothing can re-capture it at module load."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/shared/paths.test.js — link builders prefix per context, route-shape builders never prefix, live-animals strings byte-identical to today",
+    "NO new browser spec. The E2E proof is that every existing *.e2e.spec.js and the tests-repo suite pass with NO edits."
+  ],
+  "acceptanceCriteria": [
+    "shared/paths.js no longer exports BASE; setBase() (= currentSetBase()) is the only source of a mount prefix.",
+    "The exports are split into prefix-free ROUTE-SHAPE builders (pageRoutePath, hubRoutePath, dashboardRoutePath [new], createRoutePath [new]) and prefix-bearing LINK builders (pagePath, hubPath, createPath, dashboardPath, breadcrumbs), and shared/paths.test.js proves both families behave correctly under two different mounted contexts in one process.",
+    "dashboardPath() returns setBase() || '/' — '/' for the root-mounted set, '/plant-products' (no trailing slash) for a prefixed one.",
+    "The ONLY live-animals source changes are the two dashboard controller call sites (line ~114 dashboardPath→dashboardRoutePath, line ~126 createPath→createRoutePath) and the entry-guard JOURNEY_PREFIX const → journeyPrefix() function. No other set file is edited.",
+    "engine/journey.js builds cookieOptions per set INSIDE registerJourneyCookie(server, { base, cookieNames }); the module-load frozen cookieOptions and the BASE import are gone. Live-animals passes base '' and its journey cookies keep path '/'.",
+    "THE BAR: with live-animals still the only registered set, EVERY existing URL assertion in the repo passes UNEDITED — no spec edits for URL changes anywhere, in-repo or in the tests repo. That is the proof the root mount is genuinely a no-op. The one sanctioned test edit is opening-run.test.js's mechanical BASE swap, which changes no asserted string.",
+    "No existing suite's test count drops.",
+    "npm run lint:arch is green with no new dependency-cruiser rule and no baseline regeneration.",
+    "No env var is added or read by this increment."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test  # baseline BEFORE editing — red baseline = stop and report",
+    "grep -rn 'BASE' ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src/server/app/shared/paths.js  # must return nothing at the end",
+    "grep -rn \"from '.*shared/paths.js'\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src/server/app  # the authoritative call-site worklist; confirm every importer takes the right family",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "RULING R3 (Sam, 2026-08-01): co-residency in one Node process. pp-056 removed the module-level seam singletons; this increment removes the second and last blocker — shared/paths.js's hardcoded global URL namespace.\n\nWHY THE ROUTE-SHAPE / LINK SPLIT IS UNAVOIDABLE (FD-4): shared/kit.js:120-133 calls pageRoutePath(slug) at MODULE LOAD when it builds pageRoutes, long before any configure* seam runs and with no request in flight. Route paths therefore CANNOT come from request context. Hapi's plugin `routes.prefix` supplies the mount instead, so route-shape builders must stay prefix-free; only the link builders, which run per request, resolve setBase(). Get this backwards and you get doubled prefixes (`/plant-products/plant-products/notifications/...`) or unprefixed links, and with live-animals at prefix '' NEITHER shows up until a second set mounts — hence shared/paths.test.js exercising a fixture set at a real prefix.\n\nWHY LIVE-ANIMALS KEEPS THE ROOT MOUNT (FD-16): changing its URLs is a migration whose blast radius is the tests-repo E2E suite, every in-repo *.e2e.spec.js, hardcoded redirect and link assertions in controller unit tests, deployed bookmarks, and the journey cookie path. There is no benefit to symmetry that pays for it. The asymmetry is confined to one row of the mount table. If a future set makes the root mount awkward, moving live-animals is a separate, explicitly-scoped migration ticket — never smuggled into this programme.\n\nTHE MOUNT TABLE this increment makes real (§4.3): live-animals prefix '' → dashboard /, create /notifications, hub /notifications/{journeyId}, page /notifications/{journeyId}/{slug}. plant-products prefix '/plant-products' → /plant-products, /plant-products/notifications, /plant-products/notifications/{journeyId}, /plant-products/notifications/{journeyId}/{slug}. No route collides: live-animals declares only those four shapes, none of which match a /plant-products/… path. Server-wide routes (health, signout, static assets) are untouched and never enter a set context.\n\nVERIFIED LIVE THIS SESSION: shared/paths.js is 15 lines with `export const BASE = ''` at line 1 and dashboardPath() returning a bare '/' at line 10 (NOT `${BASE}/` — preserve that with `setBase() || '/'`); engine/journey.js imports BASE at line 2, freezes cookieOptions at lines 14-23 with `path: BASE || '/'`, and registerJourneyCookie(server) registers the three states at lines 25-37.\n\nSCOPE FENCES: no gateway split, no barrel, no onPreAuth, no plant file — all pp-006. No obligation-source policy work — pp-005. This increment does not register a second set; the fixture set in shared/paths.test.js is a mount-table entry only, never a real plugin.\n\nDOC RECONCILIATION (obligation carried from pp-053): re-read src/server/app/docs/add-a-set.md at the end and correct any drift between what it says about mount prefixes, setBase() and registerJourneyCookie and what actually shipped.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether any link-builder call site sits at module load (making it silently prefix-free-by-accident today and broken under a prefix tomorrow). The `grep -rn \"from '.*shared/paths.js'\"` sweep in verification is the worklist; planned resolution is that any module-load link call is a defect fixed here, and if one turns out to be genuinely unfixable it needs its own route-shape builder like dashboardRoutePath/createRoutePath.",
+    "Whether the tests repo (trade-imports-animals-tests) contains any URL assertion that would need to change. Planned as NO — live-animals URLs are byte-identical — but the increment should say so explicitly after checking rather than assuming, since 'every existing URL assertion passes unedited' is the acceptance bar and that repo is outside npm test."
+  ]
+}

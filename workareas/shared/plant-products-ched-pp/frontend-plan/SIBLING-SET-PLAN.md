@@ -12,10 +12,33 @@ per-increment planners cite sections of this document by heading. Grounded in:
 All frontend paths are relative to
 `repos/trade-imports-animals-frontend/src/server/app/` unless stated.
 
+> ## REVISION 2026-08-01 — CO-RESIDENCY REPLACES THE SET SWITCH
+>
+> Sam's ruling R3 reverses the boot-time single-set-per-process decision that the
+> 2026-07-31 draft recorded as SD-9 / FD-1 / FD-2 / FD-4. **live-animals and
+> plant-products must be servable side by side from ONE Node process.**
+>
+> Why the reversal: the L1–L4 architecture was *explicitly designed* to be
+> set-agnostic — L2 never imports a set, sets arrive only through L1 `configure*`
+> seams, and dep-cruiser enforces that at error severity. The blocker was never the
+> design. It is two implementation details: (a) every `configure*` seam stores its
+> value in a **module-level single-slot singleton**, and (b) `shared/paths.js` hardcodes
+> a **global URL namespace**. Both are fixable inside the seams that already exist.
+> So the platform work to key the seams by set is now IN SCOPE and SCHEDULED (§4, §5
+> P-3/P-9/P-10/P-11), not deferred to a hypothetical future programme.
+>
+> Also revised this round: **R6** — `docs/add-a-set.md` is authored BEFORE the m0
+> scaffold and the scaffold increments follow it (§8 G-A, §9). **R4** — copy
+> idempotency mirrors live-animals exactly on both sides, sequenced before the Copy
+> button ships (§6.2). Sections not touched by the reversal (§1 tree, §2 hub mapping,
+> §3 manifest, §6.1/§6.3) stand as written; FD-5 (set-owned records), FD-7
+> (obligation policy on the manifest), FD-8/9/11/12/13 are unaffected.
+
 **Standing decision (do not reopen):** plant-products is a sibling set under
-`sets/plant-products/`, served via a **boot-time set switch** (env-selected served set,
-precedent `LIVE_ANIMALS_MODE` in `services/mode.js:1`). One set per Node process.
-Co-residency (per-set URL BASE, keyed singletons) is out of scope.
+`sets/plant-products/`, **co-resident** with live-animals in a single Node process.
+Both L1 gateways register; every `configure*` seam is keyed by set id; the set for a
+request is resolved from the route's owning plugin realm; URLs are namespaced by a
+per-set mount prefix (live-animals stays at the root, unchanged). See §4.
 
 ---
 
@@ -23,16 +46,20 @@ Co-residency (per-set URL BASE, keyed singletons) is out of scope.
 
 | id | Decision | Rationale |
 |---|---|---|
-| FD-1 | Set switch env var is **`SERVED_SET`**, values `live-animals` (default) \| `plant-products` | Set-neutral name (a `PLANT_PRODUCTS_*` or `LIVE_ANIMALS_*` name would itself be a leak); default preserves today's behaviour for every existing deployment and test. |
-| FD-2 | L1 gateway split: current `routes.js` body moves to **`routes-live-animals.js`**; new **`routes-plant-products.js`**; `routes.js` becomes the selector exporting `servedSet` | Keeps "one file per set names the set" symmetry; the selector is the only place `SERVED_SET` is read. Static imports of both gateways are safe: `configure*` runs only inside the selected plugin's `register`, so singletons are filled exactly once (see `routes.js:47-63` — all wiring is inside `register`). |
-| FD-3 | Plugin name `'plant-products'`; session cookies `plantProductsKnownJourneys` / `plantProductsOpeningRun` / `plantProductsFlowOnlyAnswers` | Mirrors `routes.js:45` and `journeys/linear/config.js` cookie naming (`liveAnimals*` prefix per recon §1 row 9). |
-| FD-4 | `shared/paths.js` is **unchanged** in pass 1 | With one set per process the global `/notifications/{journeyId}/{slug}` namespace (`shared/paths.js:3-10`) never collides. Per-set `BASE` is a co-residency concern, explicitly out of scope. |
+| FD-1 | **REVISED (R3).** No served-set env var. **Both** gateways register in one process; the served set is a property of the REQUEST, not of the process | Sam's ruling. A boot switch would have made "which set" a deployment concern and left the singletons in place; keying them is the work the architecture was designed for. Deleting `SERVED_SET` also removes a whole class of "wrong env in CI" failure. |
+| FD-2 | **REVISED (R3).** L1 gateway split stands, but `routes.js` becomes a **barrel**, not a selector: current body → **`routes-live-animals.js`** (exports `liveAnimals`), new **`routes-plant-products.js`** (exports `plantProducts`), `routes.js` re-exports both. `src/server/router.js` registers BOTH | Keeps "one file per set names the set" symmetry and keeps `routes.js` the single dep-cruiser-whitelisted gateway name in the barrel sense; the two bodies are the real gateways and get their own whitelist entries (P-4). |
+| FD-3 | Plugin name `'plant-products'`; session cookies `plantProductsKnownJourneys` / `plantProductsOpeningRun` / `plantProductsFlowOnlyAnswers` | Mirrors `routes.js:45` and `journeys/linear/config.js` cookie naming (`liveAnimals*` prefix per recon §1 row 9). Under co-residency the set-prefixed names are now **load-bearing, not cosmetic**: both sets' cookies are live in the same browser at the same time. |
+| FD-4 | **REVISED (R3).** `shared/paths.js` gains a **per-set base**, and its exports split into *route-shape builders* (prefix-free, evaluated at module load) and *link builders* (prefix-bearing, evaluated per request) | `kit.pageRoutes` calls `pageRoutePath(slug)` at MODULE LOAD (`shared/kit.js:120-133`), long before any `configure*` runs — so route paths cannot come from request context. Hapi's plugin `routes.prefix` supplies the mount instead; only the link builders need the request-resolved base. §4.3. |
 | FD-5 | Plant-products persistence is a **set-owned records service** (`sets/plant-products/services/records/`) injected through the existing `configureRecords` seam — NOT a second L2 mapper | The L2 `services/persistence/records/` mapper is live-animals-shaped (recon §7.4); replicating plant vocabulary into L2 would repeat the wart and violate the no-display/no-set-knowledge-in-L2 principle. A set-owned impl passed by the L1 gateway breaks no dep-cruiser rule (the gateway is the whitelisted importer). `configureCommodityReference` is **not called** by the plant-products gateway — its only consumer is the L2 live-animals mapper (`services/persistence/records/notification-mapper/commodity-reference.js`, recon §1 row 3), which plant-products never executes. |
-| FD-6 | Plant-products stub/real switch: **`PLANT_PRODUCTS_MODE`** (`stub` \| `real`, default `real`) in `sets/plant-products/services/mode.js` | Mirrors `services/mode.js:1` exactly. Left set-owned rather than generic because L2 `mode.js` reading `LIVE_ANIMALS_MODE` is itself a (cosmetic) leak — noted in §5 P-8, not fixed tonight. |
+| FD-6 | Plant-products stub/real switch: **`PLANT_PRODUCTS_MODE`** (`stub` \| `real`, default `real`) in `sets/plant-products/services/mode.js` | Mirrors `services/mode.js:1` exactly. Left set-owned rather than generic because L2 `mode.js` reading `LIVE_ANIMALS_MODE` is itself a (cosmetic) leak — noted in §5 P-8, not fixed tonight. Co-residency makes per-set mode vars a FEATURE: one process can run live-animals against the real backend and plant-products against its stub. |
 | FD-7 | Obligation-source vocabulary (`SYSTEM_POPULATED`, `ENFORCED_AT_CONTINUE`, `MAX_ENTRIES_FROM`, `SYSTEM_ANSWER_KEYS`) becomes a **`policy` export on the set manifest**, injected via `configureObligationSet` | These are live-animals obligation names sitting in L2 (`bridge/obligation-source.js:29,31-34,41-43,70` — verified live). Injection through the existing manifest seam is the smallest change that lets each set own its names. §5 P-1. |
 | FD-8 | CHED-PP flow-only keys: `['importType', 'declaration']` | Direct mirror of live-animals (`flow/flow.js` per recon §3): CHED-PP's `import-type` is the pre-journey certificate-type filter (entry page, off-hub) and `declaration` is submit-time attestation persisted as `declaration{agreed,declaredAt}` at finalise. `commodity.inputMethod` is NOT flow-only — it persists on the document (SCHEMA-DESIGN §1.1), so it is an obligation. |
 | FD-9 | Commodity nesting is modelled as depth-3 `within` chains: `commodityLines` → `species` → `varieties` | Matches SCHEMA-DESIGN §1.1 (`commodityComplement[].species[].varieties[]`). Depth 3 is UNPROVEN in the engine (live exemplar `animalIdentifiers` is depth 2) — §5 P-7 mandates a characterisation test in m0 before any commodity page is built. |
-| FD-10 | Per-set app-root test strategy: **clone** singleton-touching tests as `*.plant-products.test.js` files; **parameterise in-file** the pure filesystem walkers | Vitest isolates files into separate workers, so per-set FILES sidestep the single-slot `configure*` singletons (recon §1 note); `copy-convention.test.js` / `copy-parity.test.js` are fs walks with no singleton use and can loop over both set roots in one file. §7. |
+| FD-10 | **RESTATED (R3).** Per-set app-root test strategy: still **clone** the set-composing suites as `*.plant-products.test.js`, still **parameterise in-file** the pure filesystem walkers — but the *reason* changes and one suite is ADDED | The old reason (vitest file isolation dodges the single slots) is gone: the slots are keyed now, and FD-17's sole-set fallback means a one-set test file needs no context plumbing at all. The reason to keep separate files is plain readability + independent failure attribution. ADDED: a **co-residency suite** (`co-residency.test.js`, P-3/P-9) that boots ONE server with BOTH gateways and asserts a page from each set — that suite is the thing the old plan had no way to write. §7. |
+| FD-14 | **NEW (R3).** The de-singleton mechanism is a **set-keyed registry per seam plus an `AsyncLocalStorage` request context**: new L2 module `shared/set-context.js` owns the ALS, the mount table, `withSetContext(setId, fn)`, `enterSetContext(setId)`, `currentSetId()`, `currentSetBase()`, and a `setKeyed(label)` factory that every seam uses to hold its per-set value. Every `configure*` / `build*` gains **`setId` as its first parameter**; every READ accessor keeps its existing signature and resolves through `currentSetId()` | Chosen over threading a `setId` argument through L2 call sites because *every read accessor is already a function or a delegating facade* (`obligations()`, `groups()`, `journeySections()`, `journeyLayout()`, `records.load()`, `session.knownJourneyIds()`, `pagePath()`) — ALS lets all of those keep their signatures, so the blast radius is the ~9 seam modules plus the two module-load `BASE` captures, NOT the several hundred controller/view-model call sites. Threading would touch pure model code and view-models that have no `request` in hand at all. One mechanism, applied identically to all seams. |
+| FD-15 | **NEW (R3).** Set resolution is by **route ownership, not URL string parsing**: each gateway registers a realm-scoped `server.ext('onPreAuth', …)` that calls `enterSetContext(SET_ID)` before anything else. Hapi scopes request-lifecycle extensions added inside a plugin to that plugin's own routes | Robust by construction — no prefix-matching table to keep in sync with the routes, and it works identically whatever mount prefix a set is given. It also matches the existing pattern: the live-animals entry guard is ALREADY a realm-scoped `onPreHandler` (`routes.js:65-68`), so the mechanism is proven in this codebase; `onPreAuth` simply runs earlier in the same lifecycle. **Realm scoping is a load-bearing assumption and P-3 must pin it with a test** (a request to a plant route must not run the live-animals entry guard). |
+| FD-16 | **NEW (R3).** URL namespace: **live-animals keeps the root mount (prefix `''`) — its URLs do not change at all**; plant-products mounts under **`/plant-products`**, applied via Hapi's `server.register(plantProducts, { routes: { prefix: '/plant-products' } })` | Changing live-animals' URLs is a migration with real blast radius — the tests-repo E2E suite, the in-repo `*.e2e.spec.js` specs, every hardcoded link and redirect assertion, deployed bookmarks, and the journey cookie `path`. There is no benefit to symmetry that pays for it. Asymmetry is confined to one row of the mount table. §4.3. |
+| FD-17 | **NEW (R3).** `currentSetId()` falls back to the **sole registered set** when exactly one set is mounted, and throws `No set context` when two or more are mounted and no context is active | Keeps every existing unit test, `contract.test.js`, `routes.test.js`, `indexed.test.js`, `store-ops.test.js` and each set's own suites working UNCHANGED (they compose exactly one set), while making a missing context a loud failure in the co-resident server where it actually matters. Without this the reversal would rewrite hundreds of green tests for no behavioural gain. |
 | FD-11 | Documents ride the answers tree as an `accompanyingDocuments` group obligation; the set-owned real records impl projects that group onto the backend sub-resource (`…/accompanying-documents` CRUD) at save | Keeps the frontend model uniform (one answers tree, engine-owned scope/wipe/completeness) while honouring the backend's separate-collection ruling. Naive replace-on-save (list + delete + recreate) is acceptable at pass-1 volumes; Phase D inc-025 owns the detail. |
 | FD-12 | The hub's spoke 12 (Review and submit) is a flow **section with the authored gate `scope.readyForCheckYourAnswers`**, not a task row | Exact live-animals precedent (recon §3: the `review` section carries the one authored section gate). Spokes 1–11 are task rows; readiness derives from them. |
 | FD-13 | The flow `sections` array OPENS with a `start` section `{ id: 'start', pages: [dashboardPage, importTypePage] }` — dashboard and the import-type entry filter live INSIDE `sections`, mirroring live-animals `flow/flow.js:32-36` | Round-2 verifier finding: the exemplar places both pages in a `start` FLOW section feeding `allFlowPages`/`sectionOfPage`/`answerSections` (`flow.js:89-98`); the round-1 plan wrongly kept them out of `sections`. `start` is a flow section, not a hub spoke — no task row, no GROUPS entry. `importType` stays flow-only (FD-8 unchanged); RUN_STEPS/opening-run mechanics (§1 `run.js`) are additional to, not instead of, section membership. |
@@ -178,8 +205,9 @@ sets/plant-products/
 ```
 
 **Every m0 file and its exports, flat list** (the m0 scaffold's definition of done —
-the app boots with `SERVED_SET=plant-products`, serves dashboard, empty hub and the
-import-type filter, and all boot assertions pass on the empty manifest):
+**one** app boots with BOTH sets registered, serves live-animals unchanged at the root
+AND serves the plant dashboard, empty hub and import-type filter under
+`/plant-products`, with all boot assertions passing for both manifests):
 
 1. `obligations/index.js` — `obligations` (=[]), `groups` (derived), `policy` (FD-7 shape).
 2. `obligations/coverage.test.js` — structural suite (green on empty).
@@ -302,7 +330,7 @@ work, but area shape and every group/gate is fixed here.
 | `goods-movement.js` | `commonTransitConvention` (mandatory; ADD_MRN_NOW \| ADD_MRN_LATER \| NO), `movementReferenceNumber` (`equalsGate(commonTransitConvention, 'ADD_MRN_NOW', …)`), `usingGvms` (mandatory bool) |
 | `contacts.js` | `responsiblePersonName` / `responsiblePersonEmail` / `responsiblePersonTelephone` (mandatory; entry page pass 1, POP-2 auto-pop deferred with inc-032), `nominatedContacts` **group** (optional — no floor) + members (`within: nominatedContacts`): `contactName`, `contactEmail`, `contactTelephone`, `contactIsAgent` (email-OR-telephone is a controller fieldset rule, NOT model — house D-13 parity) |
 | `documents.js` | `accompanyingDocuments` **group** (`requires: { minEntries: 1, errorCode: … }` — c-015 MANDATORY) + members (`within: accompanyingDocuments`): `documentType` (17 opts), `documentReference`, `issueDate` (file bytes deferred — no files obligation in pass 1) |
-| `parties.js` | consignor leaves: `consignorName`, `consignorAddressLine1..3`, `consignorCity`, `consignorPostcode`, `consignorCountry` (hand-entered, POP-4 — the one typed party); `destinationSameAsConsignee` (mandatory bool) + destination leaves gated `equalsGate(destinationSameAsConsignee, false, …)`; `packer*` leaves (optional — CHED-PP addition). Importer + consignee are server/stub-populated (POP-1/POP-3) — NOT obligations in pass 1. |
+| `parties.js` | consignor leaves: `consignorName`, `consignorAddressLine1..3`, `consignorCity`, `consignorPostcode`, `consignorCountry` (hand-entered, POP-4 — the one typed party); `destinationSameAsConsignee` (mandatory bool) + destination leaves gated `equalsGate(destinationSameAsConsignee, false, …)`; `packer*` leaves (optional — CHED-PP addition). Importer and consignee are **TWO SEPARATE MODEL FIELDS** (R1/SD-14 — not one party under two names), both server/stub-populated from the acting organisation (POP-1/POP-3) — NOT obligations in pass 1. Pass-1 behaviour is unchanged: both are written from `stubOrganisationOperator()`. A later planner must not collapse them into a single field. |
 | `billing.js` [m5] | `isCuc` (optional bool — c-007 provisional, trigger swappable) + billing leaves (`billingAddressLine1..4`, `billingCityOrTown`, `billingCounty`, `billingPostalCode`, `billingEmail`, `billingTelephone`) all `equalsGate(isCuc, true, …)` |
 
 ### 3.2 Group/within chains (the commodity nesting)
@@ -339,75 +367,248 @@ groups: [line, species, variety] })` — binding depth must equal the `within` c
 
 ---
 
-## 4. L1 wiring — routes, seams, and the set switch
+## 4. L1 wiring — co-residency: both gateways in one process
 
-### 4.1 File moves/creations (all at `src/server/app/` root)
+> **Sub-heading renumbering (2026-08-01).** §4 grew from three sub-sections to five.
+> Anything citing the OLD numbering should re-point: old §4.1 (file moves + gateway
+> call table) → **new §4.4**; old §4.2 (`shared/paths.js`) → **new §4.3**; old §4.3
+> (acceptance) → **new §4.5**. New §4.1 and §4.2 are the co-residency mechanism and
+> did not exist before. Top-level §1–§9 numbering is unchanged.
 
-1. **`routes-live-animals.js`** [move] — the entire current `routes.js` body
-   (`routes.js:1-77`, verified this session) moved verbatim; still exports
-   `liveAnimals`. No behavioural change.
-2. **`routes-plant-products.js`** [new] — exports `plantProducts`, plugin name
-   `'plant-products'` (FD-3). Register body mirrors `routes.js:47-73` call-for-call —
-   the ORDER IS LOAD-BEARING (config → assertions → dispatch → persistence → cookies →
-   guard → priming → routes):
+### 4.1 `shared/set-context.js` — the one new L2 module (FD-14/FD-15/FD-17)
+
+Everything else in §4 and §5 is expressed in terms of this module. It is L2
+(set-agnostic: it stores set *ids* and *prefixes* handed to it, and imports nothing
+under `sets/`), so dep-cruiser is satisfied without a new rule.
+
+```js
+import { AsyncLocalStorage } from 'node:async_hooks'
+
+const storage = new AsyncLocalStorage()
+const mounts = new Map()                       // setId -> prefix ('' for the root set)
+
+export const registerSetMount = (setId, prefix = '') => mounts.set(setId, prefix)
+export const mountedSetIds = () => [...mounts.keys()]
+
+const soleSetId = () => (mounts.size === 1 ? [...mounts.keys()][0] : undefined)
+
+export const currentSetId = () => {
+  const id = storage.getStore()?.setId ?? soleSetId()
+  if (!id) throw new Error('No set context — no active set and more than one mounted')
+  return id
+}
+export const currentSetBase = () => mounts.get(currentSetId()) ?? ''
+
+export const withSetContext = (setId, fn) => storage.run({ setId }, fn)   // boot-time
+export const enterSetContext = (setId) => storage.enterWith({ setId })    // request-time
+
+export const setKeyed = (label) => {
+  const bySet = new Map()
+  return {
+    configure: (setId, value) => bySet.set(setId, value),
+    current: () => {
+      const setId = currentSetId()
+      if (!bySet.has(setId)) throw new Error(`${label} not configured for set "${setId}"`)
+      return bySet.get(setId)
+    },
+    has: (setId) => bySet.has(setId)
+  }
+}
+```
+
+**How a request is resolved to its set.** Not by parsing the URL. Each gateway
+registers, as the FIRST thing in its `register` body, a realm-scoped extension:
+
+```js
+server.ext('onPreAuth', (request, h) => { enterSetContext(SET_ID); return h.continue })
+```
+
+Hapi scopes request-lifecycle extensions added inside a plugin to the routes that
+plugin registers, so a request routed to a plant page enters the plant context and a
+request routed to a live-animals page enters the live-animals context, with no shared
+table to drift. `enterWith` persists for the remainder of that request's async
+context, so every later lifecycle step, handler, view-model and L2 accessor resolves
+the right set without any of them taking a new argument.
+
+**Two risks the m0 platform increment must retire, not assume** (P-3 acceptance):
+1. *Realm scoping is real.* Pin it: a request to a plant route must NOT execute the
+   live-animals `onPreHandler` entry guard, and vice versa.
+2. *`enterWith` survives interleaving.* Pin it: two concurrent requests, one per set,
+   with the slower one deliberately awaiting inside its handler, must each still read
+   their own manifest/flow/records. If this fails, the contingency (flagged, NOT
+   planned) is explicit `setId` threading via `request.app` plus signature changes —
+   a materially larger increment that would have to be re-planned.
+
+**Boot-time reads.** `assertObligationPurity()`, `assertFulfilmentBindingCoverage()`
+and `buildDispatch()` read through `currentSetId()` but run outside any request, so
+each gateway wraps its whole `register` body in `await withSetContext(SET_ID, async () => { … })`.
+
+### 4.2 Per-seam de-singletoning (the exact mechanism, seam by seam)
+
+Uniform rule: **every `configure*` / `build*` gains `setId` as its first parameter and
+stores into a `setKeyed(...)` registry; every read accessor keeps its current signature
+and resolves via `currentSetId()`.** No read call site in L2, L3 or L4 changes, except
+where a value was captured as a module-load CONST (rows 8–11 below) — those become
+functions and their consumers are listed exhaustively.
+
+| # | Seam (file:line today) | Today | After |
+|---|---|---|---|
+| 1 | `model/obligations/manifest.js:1` | `let configuredSet` | `const store = setKeyed('obligation set')`. **`configureObligationSet(setId, obligationSet)`**. `obligationSet()`, `obligations()`, `groups()`, `obligationByName(name)` — signatures UNCHANGED, each reads `store.current()`. |
+| 2 | `bridge/fulfilment-registry.js:167` | `let configuredRegistry` (built lazily from the bindings) | `setKeyed('fulfilment registry')` holding `{ bindings, registry? }` per set; **`configureFulfilmentRegistry(setId, bindings)`**; the lazy build and its cache become per-set. `assertFulfilmentBindingCoverage()` and every registry reader — signatures UNCHANGED. |
+| 3 | `flow/journey-flow.js:7` | `let configured` | `setKeyed('journey flow')`. **`configureJourneyFlow(setId, journeyFlow)`**. `journeySections()`, `journeyTaskRows()`, `journeyRowStatus(...)`, `journeyNextRunTarget(...)`, `journeyFlowOnlyKeys()`, `journeyEntryGuardTarget(...)`, `journeyLayout()` — signatures UNCHANGED. |
+| 4 | `flow/dispatch.js:6-9` | three module-level `Map`s + `let dispatchBuilt`, cleared by `resetDispatchState()` | `setKeyed('dispatch')` holding one `{ pageOfObligation, collectsByPage, slugByPage, built }` record per set. **`buildDispatch(setId, pages)`** (it already resets its own state first — that reset now scopes to the set's record only). `isDispatchBuilt()`, `pageOfObligation(id)`, `collectsOf(pageId)`, `slugOfPage(pageId)` — signatures UNCHANGED. |
+| 5 | `engine/persistence/records.js:10` | `let impl` + a delegating `records` facade | `setKeyed('records')`. **`configureRecords(setId, impl)`**. The `records` facade object is UNCHANGED in shape — each of its 11 methods delegates to `store.current().<op>(...)`. Every caller (`engine/journey.js`, controllers) untouched. |
+| 6 | `engine/persistence/session.js:9` | `let impl` + a delegating `session` facade | `setKeyed('session')` holding `{ impl, cookieNames }`. **`configureSession(setId, impl, cookieNames)`**. The `session` facade is UNCHANGED in shape. |
+| 7 | `services/persistence/records/notification-mapper/commodity-reference.js:1` | `let implementation` | `setKeyed('commodity reference')`. **`configureCommodityReference(setId, impl)`** — called only by the live-animals gateway (FD-5). Under plant-products the slot is simply absent and the L2 mapper is never invoked, so the "not configured" throw is unreachable rather than suppressed. |
+| 8 | `engine/persistence/session.js:1-3` | `export let KNOWN_JOURNEYS_COOKIE / OPENING_RUN_COOKIE / FLOW_ONLY_ANSWERS_COOKIE` — **mutable exported bindings**, rewritten by `configureSession` | Become accessors **`knownJourneysCookie()` / `openingRunCookie()` / `flowOnlyAnswersCookie()`** reading the current set's `cookieNames`. Production consumers to edit: `engine/journey.js:5-7,12,26,30,34` (incl. its re-export), `services/persistence/session/real.js:2-4,11,16,21,33,42,59`, `services/persistence/session/stub.js:2-4,11,16,21,33,42,59`, `engine/test-support.js:2,59`. Test consumers to sweep: `one-load-per-request.test.js`, `engine/journey.test.js`, `engine/write/flow-only-session.test.js`, `services/persistence/session/session.test.js`, and five live-animals feature/flow specs (`cancel-amend`, `notification-actions`, `dashboard` controller + copy, `documents`, `flow/opening-run`). |
+| 9 | `bridge/obligation-source.js:29,31-34,41-43,70` | four module-load consts (`SYSTEM_POPULATED`, `ENFORCED_AT_CONTINUE`, `MAX_ENTRIES_FROM`, `SYSTEM_ANSWER_KEYS`) | Become accessor FUNCTIONS derived from the current set's manifest `policy` (FD-7). **The reversal forces P-1 option (b): the "lazily-derived view keeping the same export names" option is DEAD**, because under co-residency the value differs per request, not per process. Full consumer list in §5 P-1. |
+| 10 | `shared/paths.js:1` | `export const BASE = ''` | **DELETED** as an exported const; replaced by `setBase() = currentSetBase()` used inside the link builders. Value consumers to edit: `engine/journey.js:2,15` (row 11) and `sets/live-animals/journeys/linear/flow/entry-guard.js:1,13` (`const JOURNEY_PREFIX = \`${BASE}/notifications/\`` → `const journeyPrefix = () => \`${setBase()}/notifications/\``, called per request). Plus `sets/live-animals/journeys/linear/flow/opening-run.test.js:4,376`. |
+| 11 | `engine/journey.js:14-23` | `cookieOptions` frozen at module load with `path: BASE \|\| '/'` | Built per set inside **`registerJourneyCookie(server, { base, cookieNames })`** — the gateway passes its own mount prefix and cookie names. Live-animals gets `path: '/'` (unchanged); plant-products gets `path: '/plant-products'`, which scopes its three cookies to its own subtree. |
+
+### 4.3 The URL namespace (FD-4/FD-16)
+
+**`shared/paths.js` splits into two families.**
+
+*Route-shape builders* — evaluated at MODULE LOAD when controllers build their route
+tables, therefore **prefix-free**; Hapi's plugin `routes.prefix` supplies the mount:
+
+| Export | Returns | Used at |
+|---|---|---|
+| `pageRoutePath(slug)` | `/notifications/{journeyId}/${slug}` | `shared/kit.js:123,129` (`pageRoutes`) |
+| `hubRoutePath()` | `/notifications/{journeyId}` | live-animals `features/hub/controller.js:169` |
+| **`dashboardRoutePath()`** [NEW] | `/` | live-animals `features/dashboard/controller.js:114` (today calls `dashboardPath()`) |
+| **`createRoutePath()`** [NEW] | `/notifications` | live-animals `features/dashboard/controller.js:126` (today calls `createPath()`) |
+
+The two NEW exports exist because `dashboardPath()` and `createPath()` are currently
+used BOTH as route paths (module load) and as links (request time) in the same file —
+under a prefix those two uses must produce different strings. This is a two-line edit
+in the live-animals dashboard controller and the only live-animals source change the
+URL work requires.
+
+*Link builders* — evaluated per request, therefore **prefix-bearing** via
+`setBase()`; every one of their ~55 call sites across `sets/`, `flow/navigation.js`
+and `analysis/` is UNCHANGED:
+
+`pagePath(journeyId, slug)`, `hubPath(journeyId)`, `dashboardPath()` (returns
+`setBase() || '/'`), `createPath()`, `breadcrumbs(journeyId, title)`.
+
+**The mount table.**
+
+| Set | Prefix | Dashboard | Create | Hub | Page |
+|---|---|---|---|---|---|
+| live-animals | `''` (root) | `/` | `/notifications` | `/notifications/{journeyId}` | `/notifications/{journeyId}/{slug}` |
+| plant-products | `/plant-products` | `/plant-products` | `/plant-products/notifications` | `/plant-products/notifications/{journeyId}` | `/plant-products/notifications/{journeyId}/{slug}` |
+
+**What happens to live-animals' existing URLs: NOTHING.** They are byte-identical
+before and after. This is deliberate and is the whole reason for the asymmetry. A
+change to them would be a migration whose blast radius is the tests-repo E2E suite,
+every in-repo `*.e2e.spec.js`, hardcoded redirect/link assertions in controller unit
+tests, deployed bookmarks, and the journey cookie `path`. Nothing about co-residency
+requires paying that, so we do not: plant-products is the newcomer and takes the
+prefix. If a future set makes the root mount awkward, moving live-animals is a
+separate, explicitly-scoped migration ticket — not smuggled into this programme.
+
+Hapi's prefixing rule handles the dashboard cleanly: a route registered as `/` under
+prefix `/plant-products` is served at `/plant-products` (no trailing slash). No route
+collides: live-animals declares only `/`, `/notifications`, `/notifications/{journeyId}`
+and `/notifications/{journeyId}/{slug}`, none of which match a `/plant-products/…`
+path. Server-wide routes (`health`, `signout`, static assets) are untouched and never
+enter a set context.
+
+### 4.4 File moves/creations (all at `src/server/app/` root unless stated)
+
+1. **`shared/set-context.js`** [new, L2] — §4.1.
+2. **`routes-live-animals.js`** [move] — the current `routes.js` body
+   (`routes.js:1-77`, verified this session), with: the `withSetContext('live-animals', …)`
+   wrapper, the `onPreAuth` context extension, `setId` added to the seven `configure*`
+   / `buildDispatch` calls, `registerJourneyCookie(server, { base: '', cookieNames: SESSION_COOKIE_NAMES })`,
+   and `registerSetMount('live-animals', '')`. Still exports `liveAnimals`. **No
+   behavioural change and no URL change.**
+3. **`routes-plant-products.js`** [new] — exports `plantProducts`, plugin name
+   `'plant-products'` (FD-3). Register body mirrors `routes-live-animals.js`
+   call-for-call — the ORDER IS LOAD-BEARING (context → mount → config → assertions →
+   dispatch → persistence → cookies → guard → priming → routes):
 
    | # | Call | Argument plant-products passes |
    |---|---|---|
-   | 1 | `configureObligationSet(plantProductsObligationSet)` | `import * as plantProductsObligationSet from './sets/plant-products/obligations/index.js'` — namespace with `.obligations`, `.groups`, **`.policy`** (P-1) |
-   | 2 | `configureFulfilmentRegistry(featureEvaluationBindings)` | from `./sets/plant-products/journeys/linear/features/evaluation.js` |
-   | 3 | *(no `configureCommodityReference` call — FD-5)* | its only consumer is the L2 live-animals mapper, never executed under this set |
-   | 4 | `configureJourneyFlow({ sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT })` | all from `./sets/plant-products/journeys/linear/flow/{flow,task-rows,run,entry-guard}.js` + `config.js` |
-   | 5 | `assertObligationPurity()` | none — boot gate |
-   | 6 | `assertFulfilmentBindingCoverage()` | none — boot gate |
-   | 7 | `buildDispatch(dispatchPages)` | from `./sets/plant-products/journeys/linear/features/index.js` |
-   | 8 | `configureRecords(records)` | `records` from `./sets/plant-products/services/records/index.js` — the SET-OWNED impl (FD-5) satisfying the engine port `{create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear}` (`engine/persistence/records.js`) |
-   | 9 | `configureSession(session, SESSION_COOKIE_NAMES)` | L2 `session` from `services/persistence/session/index.js` (set-agnostic, reused) + plant cookie names from the set's `config.js` |
-   | 10 | `registerJourneyCookie(server)` | as-is |
-   | 11 | `server.ext('onPreHandler', …)` entry-guard wrapper | as-is (wraps the injected `journeyEntryGuardTarget`) |
+   | 0 | `registerSetMount('plant-products', '/plant-products')` then `server.ext('onPreAuth', …enterSetContext('plant-products')…)`, whole body inside `withSetContext('plant-products', …)` | FD-14/FD-15/FD-16 |
+   | 1 | `configureObligationSet('plant-products', plantProductsObligationSet)` | `import * as plantProductsObligationSet from './sets/plant-products/obligations/index.js'` — namespace with `.obligations`, `.groups`, **`.policy`** (P-1) |
+   | 2 | `configureFulfilmentRegistry('plant-products', featureEvaluationBindings)` | from `./sets/plant-products/journeys/linear/features/evaluation.js` |
+   | 3 | *(no `configureCommodityReference` call — FD-5)* | its only consumer is the L2 live-animals mapper, never executed under this set; with per-set keying its slot is simply never filled |
+   | 4 | `configureJourneyFlow('plant-products', { sections, taskRows, rowStatus, nextRunTarget, flowOnlyKeys: FLOW_ONLY_KEYS, entryGuardTarget, layout: LAYOUT })` | all from `./sets/plant-products/journeys/linear/flow/{flow,task-rows,run,entry-guard}.js` + `config.js` |
+   | 5 | `assertObligationPurity()` | none — boot gate, reads the active context |
+   | 6 | `assertFulfilmentBindingCoverage()` | none — boot gate, reads the active context |
+   | 7 | `buildDispatch('plant-products', dispatchPages)` | from `./sets/plant-products/journeys/linear/features/index.js` |
+   | 8 | `configureRecords('plant-products', records)` | `records` from `./sets/plant-products/services/records/index.js` — the SET-OWNED impl (FD-5) satisfying the engine port `{create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear}` (`engine/persistence/records.js`) |
+   | 9 | `configureSession('plant-products', session, SESSION_COOKIE_NAMES)` | L2 `session` from `services/persistence/session/index.js` (set-agnostic, reused) + plant cookie names from the set's `config.js` |
+   | 10 | `registerJourneyCookie(server, { base: '/plant-products', cookieNames: SESSION_COOKIE_NAMES })` | per-set cookie `path` (§4.2 row 11) |
+   | 11 | `server.ext('onPreHandler', …)` entry-guard wrapper | as-is (wraps the injected `journeyEntryGuardTarget`); realm-scoped, so it never fires on live-animals routes |
    | 12 | *(no `countries.prime()` / `ports.prime()`)* | plant-products reference data is fixture-backed (`services/reference/*`), nothing to prime; the L2 primed caches are live-animals-mode machinery |
-   | 13 | `server.route(allRoutes)` | from the set's `features/index.js` |
+   | 13 | `server.route(allRoutes)` | from the set's `features/index.js` — paths are prefix-free; the prefix comes from the registration in step 5 below |
 
-3. **`routes.js`** [rewrite → selector] — the ONLY reader of `SERVED_SET` (FD-1/FD-2):
+4. **`routes.js`** [rewrite → barrel] (FD-2):
 
    ```js
-   import { liveAnimals } from './routes-live-animals.js'
-   import { plantProducts } from './routes-plant-products.js'
-
-   const SETS = { 'live-animals': liveAnimals, 'plant-products': plantProducts }
-   export const servedSetName = () => process.env.SERVED_SET ?? 'live-animals'
-   export const servedSet = () => {
-     const set = SETS[servedSetName()]
-     if (!set) throw new Error(`Unknown SERVED_SET "${servedSetName()}"`)
-     return set
-   }
+   export { liveAnimals } from './routes-live-animals.js'
+   export { plantProducts } from './routes-plant-products.js'
    ```
 
-   (Unknown value = loud boot failure, never a silent default.)
-4. **`src/server/router.js:7,20`** [edit] — `import { servedSet } from './app/routes.js'`;
-   `const routes = [servedSet()]`.
+5. **`src/server/router.js:7,20,26`** [edit] — import both; register both, plant with
+   its mount prefix:
 
-### 4.2 What happens to `shared/paths.js`
+   ```js
+   import { liveAnimals, plantProducts } from './app/routes.js'
+   ...
+   const routes = [liveAnimals]
+   if (authEnabled) routes.push(signout)
+   await server.register(routes)
+   await server.register(plantProducts, { routes: { prefix: '/plant-products' } })
+   ```
 
-Nothing (FD-4). `BASE = ''`, `/notifications/{journeyId}/{slug}`, `dashboardPath '/'`
-(`shared/paths.js:1-10`) are safe with one served set per process. The cookie-path
-coupling (`engine/journey.js:15`, `path: BASE || '/'`) is likewise untouched. Per-set
-BASE is recorded as the first work item of any future co-residency programme, nowhere
-else.
+   (Separate `register` call because the prefix option applies to the whole call.)
 
-### 4.3 Acceptance for §4
+### 4.5 Acceptance for §4
 
-- `SERVED_SET` unset → app serves live-animals exactly as today (full existing ladder
-  green, no env changes in CI).
-- `SERVED_SET=plant-products` → app boots, `/` renders the plant dashboard,
-  `/notifications/{id}` renders the (initially empty) hub, all boot assertions pass.
-- `SERVED_SET=garbage` → boot fails with the unknown-set error.
+- **One process, both sets.** A single booted server serves `/` (live-animals
+  dashboard) and `/plant-products` (plant dashboard) in the same run — proven by the
+  co-residency test of §5 P-3, not by two separate boots.
+- **Live-animals is untouched.** The full existing ladder (`npm test`,
+  `npm run test:live-animals`, `npm run test:features`, `test:e2e`) is green with NO
+  spec edits for URL changes and NO new env vars anywhere in CI.
+- Every plant page renders under `/plant-products/…`; a plant link never emits a
+  root-mounted URL and a live-animals link never emits a prefixed one.
+- Cookies: `liveAnimals*` at path `/`, `plantProducts*` at path `/plant-products`;
+  a journey started in one set is invisible to the other.
+- Realm scoping and ALS interleaving are pinned by tests (§4.1 risks 1 and 2).
+- No `SERVED_SET` (or any other served-set env var) exists anywhere in the repo —
+  grep-verified.
 
 ---
 
 ## 5. Platform work items (each L2/L1 leak from recon §7 → concrete change)
 
 Every item names files, the change, and an acceptance check. These are m0-family
-increments; P-1..P-5 are prerequisites for the first plant page (m2).
+increments; P-1..P-5 and P-9..P-11 are prerequisites for the first plant page (m2).
+
+**Two-sided verification rule (REVISED — R3).** It is no longer "the new set works
+under its env AND the old set works under the default env". Under co-residency it is:
+**both sets must serve correctly FROM THE SAME RUNNING PROCESS.** Every
+platform-touching increment (P-1..P-6, P-9..P-11) proves this the same way — via the
+**co-residency suite** introduced by P-3:
+
+> `src/server/app/co-residency.test.js` — boots ONE Hapi server, registers BOTH
+> gateways (plant with `{ routes: { prefix: '/plant-products' } }`), then in a single
+> test file: injects `GET /` and asserts live-animals dashboard content; injects
+> `GET /plant-products` and asserts plant content that CANNOT render under
+> live-animals; injects a page from each set and asserts each resolved its OWN
+> manifest, journey flow, records impl and cookie names; and runs one interleaved
+> pair (both in flight at once, the first awaiting inside its handler) to prove the
+> ALS context did not bleed. This one file is the standing evidence that co-residency
+> holds; every platform increment must leave it green and extend it when it adds a
+> seam.
+
+The old per-set-boot checks remain as cheap smoke tests but are no longer sufficient
+on their own.
 
 **P-1 — Inject obligation-source policy via the manifest** (FD-7)
 - Files: `bridge/obligation-source.js` (lines 29, 31-34, 41-43, 70 — verified live:
@@ -440,22 +641,27 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
   - name-visible non-runtime references the increment must sweep:
     `sets/live-animals/journeys/linear/flow/flow-reachability.test.js` and
     `sets/live-animals/docs/add-a-collection.md`.
-- **Export-shape constraint:** today the exports are static module-load consts
-  (`const SYSTEM_POPULATED = new Set(...)`, obligation-source.js:29), but the
-  manifest arrives only when `configureObligationSet` runs — so the derived
-  values CANNOT be computed at module load. The P-1 increment must either (a)
-  keep the same export names as lazily-derived views resolved on first read
-  after configuration (consumers' import sites unchanged), or (b) switch to
-  accessor functions — in which case EVERY file in the list above changes and
-  is in scope of the increment. Preference: (a); the increment planner decides
-  with the full list in hand either way.
+- **Export-shape constraint — DECIDED BY THE REVERSAL (R3).** The round-1 plan
+  offered (a) same export names as lazily-derived one-shot views, or (b) accessor
+  functions, and preferred (a). **(a) is now dead.** A lazily-derived view resolves
+  ONCE per process; under co-residency the correct value differs per REQUEST, so a
+  cached view would serve live-animals' `ENFORCED_AT_CONTINUE` to a plant request.
+  P-1 therefore takes **(b): accessor functions** —
+  `systemPopulated()`, `enforcedAtContinue()`, `maxEntriesFrom()`,
+  `systemAnswerKeys()`, each deriving from `obligationSet().policy` (empty-safe
+  defaults) on every call. EVERY file in the consumer list above is in scope of the
+  increment; there is no smaller option. `flow/dispatch.js:3,77` (`SYSTEM_POPULATED.has(...)`)
+  and `sets/live-animals/journeys/linear/flow/entry-guard.js` are the two that must
+  be edited most carefully — the first runs at boot inside `buildDispatch`, the
+  second per request.
 - Acceptance addition: `grep -rn 'SYSTEM_POPULATED\|ENFORCED_AT_CONTINUE\|MAX_ENTRIES_FROM\|SYSTEM_ANSWER_KEYS' src/server/app`
-  after the change shows only obligation-source.js (definition site) plus the
-  consumers importing whatever shape (a)/(b) chose — no stragglers on the old
-  shape.
+  after the change returns NOTHING — the SCREAMING_SNAKE const names are gone
+  entirely, replaced by the four accessors. No stragglers on the old shape.
 - Acceptance: zero obligation-name literals remain in `bridge/obligation-source.js`
   (grep); full live-animals suite green unchanged (`npm test`); a unit test proves a
-  manifest with a different `policy` changes the derived sets.
+  manifest with a different `policy` changes the derived sets; **and the co-residency
+  suite proves the two sets read DIFFERENT `enforcedAtContinue` values in the same
+  process** (this is the assertion the old plan could not write).
 
 **P-2 — Records mapper containment (live-animals-shaped L2 mapper)** (FD-5)
 - Files: none in L2 change for plant-products; new
@@ -465,12 +671,30 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
   injected only by `routes-live-animals.js`.
 - Acceptance: `routes-plant-products.js` imports nothing under
   `services/persistence/records/`; `configureCommodityReference` never called on the
-  plant path; dep-cruiser clean; a follow-up note (docs/README.md) records the future
-  option of retiring the L2 mapper into `sets/live-animals/services/`.
+  plant path — and under per-set keying (§4.2 row 7) its plant slot is provably
+  ABSENT, not overwritten, so a plant request that somehow reached the L2 mapper
+  would throw loudly rather than silently map with live-animals vocabulary. Add that
+  as a negative test. dep-cruiser clean; a follow-up note (docs/README.md) records the
+  future option of retiring the L2 mapper into `sets/live-animals/services/`.
 
-**P-3 — Router registers the served set only** (§4.1.3-4)
-- Files: `routes.js` (selector rewrite), `src/server/router.js:7,20`.
-- Acceptance: §4.3 checks; `routes.test.js` still passes for live-animals (default).
+**P-3 — Both gateways register in one process** (REVISED from "gateway split +
+`SERVED_SET` selector" — R3; §4.4, §4.1)
+- Files: `routes.js` (→ two-line barrel, FD-2), new `routes-live-animals.js` (moved
+  body + context wrapper + mount registration + `setId` args), new
+  `routes-plant-products.js`, `src/server/router.js:7,20,26` (register both, plant
+  with `{ routes: { prefix: '/plant-products' } }`), new
+  `src/server/app/co-residency.test.js`.
+- Change: no served-set env var exists; `router.js` registers live-animals exactly as
+  today and additionally registers plant-products under its prefix. Each gateway
+  wraps its register body in `withSetContext(SET_ID, …)` and installs the realm-scoped
+  `onPreAuth` context entry (§4.1).
+- Acceptance: all of §4.5. Specifically — the co-residency suite is green; a request
+  to a plant route does NOT run the live-animals entry guard (realm-scoping pin); two
+  interleaved cross-set requests each resolve their own set (ALS pin); `routes.test.js`
+  still passes for live-animals unchanged; `grep -rn 'SERVED_SET' .` is empty.
+- Depends on: P-9 (the seams must be keyed before two sets can be registered) and
+  P-10 (URLs must be namespaced before two sets can both claim `/notifications/…`).
+  P-3 is the increment that PROVES the pair, so it lands immediately after them.
 
 **P-4 — Dependency-cruiser gateway + sets-not-l1 updates**
 - Files: `.dependency-cruiser.cjs:31` (`routes-is-the-gateway` `pathNot` gains
@@ -478,8 +702,16 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
   verified the current allowlist is exactly `[^app/sets/, ^app/routes\.js$,
   .test.js]`); the `sets-not-l1` rule's forbidden-target list gains the two new
   gateway files (sets must not import ANY routes-*.js).
+- **Restated for R3:** `routes.js` becomes a pure barrel (FD-2) and therefore no
+  longer imports `sets/**` itself — but it stays on the `routes-is-the-gateway`
+  `pathNot` list, because removing it would be a semantic change unrelated to this
+  work. Both real gateway files join it. The `sets-not-l1` forbidden-target regex
+  `^${APP}/(routes|obligation-purity)\.js$` widens to
+  `^${APP}/(routes|routes-live-animals|routes-plant-products|obligation-purity)\.js$`.
+  `shared/set-context.js` needs NO rule change — it is ordinary L2 that imports
+  nothing under `sets/`.
 - Acceptance: `npm run lint:arch` green with the new files in place; a deliberate
-  probe import (set → gateway) fails the rule; `.dependency-cruiser-known-violations.json`
+  probe import (set → any gateway) fails the rule; `.dependency-cruiser-known-violations.json`
   NOT regenerated to absorb anything (baseline discipline).
 
 **P-5 — App-root convention tests generalised/cloned** (FD-10 — detail in §7)
@@ -490,6 +722,10 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
   `routes.test.js:3` hardcoding verified live this session; `one-load-per-request`
   confirmed NOT set-hardcoded by grep, so it needs only a clone IF it composes a set
   at runtime — cloner verifies).
+- **Revised by R3:** each cloned file composes exactly ONE set, so FD-17's sole-set
+  fallback means the clones need no `withSetContext` plumbing — they read as the
+  live-animals originals with the set swapped. The one file that DOES need explicit
+  context is the new `co-residency.test.js` (P-3), which is not a clone.
 - Acceptance: for each cloned suite, the plant variant runs green against the m0
   skeleton; live-animals variants unchanged; test COUNT for existing suites does not
   drop (recipe §8 tripwire).
@@ -497,9 +733,13 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
 **P-6 — Boot-mode knobs audit**
 - Files: `routes-plant-products.js` step 12 (no priming); `services/mode.js`
   untouched (live-animals'). New `sets/plant-products/services/mode.js` (FD-6).
-- Acceptance: `PLANT_PRODUCTS_MODE=stub SERVED_SET=plant-products` boots with the
-  in-memory records stub (Playwright self-host mode); `real` targets the Phase-B
-  backend.
+- Acceptance: `PLANT_PRODUCTS_MODE=stub` boots the plant set on the in-memory records
+  stub (Playwright self-host mode) **while live-animals in the SAME process continues
+  to honour `LIVE_ANIMALS_MODE` independently** — the co-residency suite asserts one
+  set on a stub and the other on a fake real client simultaneously; `real` targets the
+  Phase-B backend. Also: `isRealMode()` priming (`countries.prime()`/`ports.prime()`)
+  runs once, on the live-animals gateway only, and is not re-triggered by the plant
+  registration.
 
 **P-7 — Depth-3 collection characterisation test** (FD-9)
 - Files: new L2-fixture test (pattern: the bridge characterisation tests that compose
@@ -520,6 +760,64 @@ increments; P-1..P-5 are prerequisites for the first plant page (m2).
   `app-arch.svg` opportunistically.
 - `contract.test.js:65` posts `importType: 'live-animals'` — vocabulary lives in the
   set, handled by the P-5 clone.
+
+**P-9 — NEW (R3): set-context module + key every `configure*` seam by set** (FD-14,
+FD-15, FD-17; §4.1, §4.2)
+- Files: new L2 `shared/set-context.js`; then rows 1–8 of the §4.2 table —
+  `model/obligations/manifest.js`, `bridge/fulfilment-registry.js`,
+  `flow/journey-flow.js`, `flow/dispatch.js`, `engine/persistence/records.js`,
+  `engine/persistence/session.js` (incl. the three exported mutable cookie-name
+  bindings → accessors), `services/persistence/records/notification-mapper/commodity-reference.js`;
+  plus the cookie-name consumer sweep enumerated in §4.2 row 8 (`engine/journey.js`,
+  `services/persistence/session/{real,stub}.js`, `engine/test-support.js`, and nine
+  test files).
+- Change: each seam swaps its module-level single slot for `setKeyed(label)`; each
+  `configure*`/`buildDispatch` takes `setId` first; every read accessor keeps its
+  signature. Nothing outside the seam modules and the row-8 sweep changes.
+- **This is the single largest platform increment in the programme** and it is the
+  one Sam's ruling says the architecture was designed to make possible. It lands
+  BEFORE either gateway is rewritten, with live-animals still the only registered set
+  — FD-17's sole-set fallback means the ENTIRE existing suite must stay green with
+  zero test edits beyond the mechanical cookie-accessor rename. That is the acceptance
+  bar: if a test needs a behavioural change, the keying is wrong.
+- Acceptance: `npm test` + `npm run test:live-animals` + `npm run test:features` +
+  `test:e2e` green with only mechanical edits; `npm run lint:arch` green (no new
+  dep-cruiser rule needed — `shared/set-context.js` imports nothing under `sets/`);
+  a unit test per seam proving two different `setId`s hold two different values
+  simultaneously and that `currentSetId()` throws when two sets are mounted with no
+  active context.
+
+**P-10 — NEW (R3): per-set URL namespace** (FD-4, FD-16; §4.3)
+- Files: `shared/paths.js` (delete `BASE`; add `setBase()`; split route-shape vs link
+  builders; add `dashboardRoutePath()` and `createRoutePath()`);
+  `sets/live-animals/journeys/linear/features/dashboard/controller.js:114,126` (two
+  call-site swaps to the new route-shape builders); `engine/journey.js:2,14-23`
+  (`cookieOptions` → built per set inside `registerJourneyCookie(server, { base, cookieNames })`);
+  `sets/live-animals/journeys/linear/flow/entry-guard.js:1,13` (`JOURNEY_PREFIX` const
+  → `journeyPrefix()` function); `sets/live-animals/journeys/linear/flow/opening-run.test.js:4,376`.
+- Change: as §4.3. live-animals mounts at `''` so every one of its emitted URLs is
+  byte-identical to today; plant-products mounts at `/plant-products`.
+- Acceptance: with live-animals still the only registered set, EVERY existing URL
+  assertion in the repo passes unchanged (no spec edits) — that is the proof the root
+  mount is genuinely a no-op. Cookie `path` for live-animals is still `/`. A unit test
+  proves `pagePath()` returns a prefixed URL under a plant context and an unprefixed
+  one under a live-animals context in the same process. Route-shape builders are
+  proven prefix-free by asserting `pageRoutePath('x')` has no leading set segment.
+- Depends on: P-9 (`setBase()` reads `currentSetBase()`).
+
+**P-11 — NEW (R3): sibling-safety guard rails against re-singletoning**
+- Files: new convention test `src/server/app/no-set-singletons.test.js`. (No
+  dep-cruiser rule — the constraint is about a function's parameter shape, which
+  dep-cruiser cannot express.)
+- Change: a cheap, mechanical tripwire so a future increment cannot quietly
+  reintroduce a single-slot seam. The convention test walks the L2 dirs (`model/`,
+  `bridge/`, `flow/`, `engine/`, `services/`) and fails any file that exports a
+  `configure*` function whose first parameter is not named `setId`. Allow-list is
+  empty by design. (Dep-cruiser cannot express this; the fs-walk convention test is
+  the same pattern `copy-convention.test.js` already uses, so it is idiomatic here.)
+- Acceptance: the test is red if `setId` is dropped from any seam and green on the
+  P-9 output; documented in `docs/add-a-set.md` (G-A step 4) so the next set's author
+  meets the rule before they write the gateway.
 
 ---
 
@@ -564,7 +862,7 @@ finalise, amend, cancelAmend, copy, softDelete, clear`) against SCHEMA-DESIGN §
 | `finalise` | `PUT …/{ref}/status` `{ status: 'SUBMITTED' }` |
 | `amend` | `PUT …/{ref}/status` `{ status: 'AMEND' }` |
 | `cancelAmend` | `PUT …/{ref}/status` `{ status: 'SUBMITTED', discardChanges: true }` (D-4) |
-| `copy` | `POST …/{ref}/copies` (201; new DRAFT, new ref, documentless — D-19) |
+| `copy` | `POST …/{ref}/copies` with an **`Idempotency-Key` header** (201; new DRAFT, new ref, documentless — D-19). **R4:** the engine port already carries the key — `engine/journey.js:125` `copyJourney(request, h, journeyId, idempotencyKey)` — so the frontend side is a straight transposition of live-animals: a `randomUUID()` minted per RENDERED copy action (live-animals does this in `features/dashboard/view-model/row/actions.js` and `features/check-answers/controller.js`), carried in a hidden input named `idempotencyKey`, and sent as the `Idempotency-Key` header by the set's `records/real.js` (live-animals equivalent: `services/persistence/records/real/lifecycle/create.js`). `stub.js` mirrors it with a dedupe key. Records-port contract tests pin "one new draft per idempotency key" and "copy idempotency scoped to the source reference". **NOTE the transposition:** live-animals implements idempotency on the FULFILMENT resource; the plant-products design puts `/copies` on the NOTIFICATION resource — transpose the pattern, not the code. This must be in place BEFORE the Copy button ships (m5 inc-039). |
 | `softDelete` | `PUT …/{ref}/status` `{ status: 'DELETED' }` (idempotent) |
 | `clear` | stub-only test hook (real impl: not supported, throws — mirrors the L2 precedent) |
 
@@ -608,42 +906,58 @@ and are NOT imported by anything plant (P-2 acceptance).
   plant controller adds its valid-POST case to `contract.plant-products.test.js`
   (manual table — an unlisted controller is invisible, recipe §8). The m0 scaffold
   creates the file with the harness + zero cases.
-- **T-6 per-set Playwright feature project + webServer env** (corrected this round —
-  the round-1 "scope existing test:features" step is a NO-OP: the `features` project
-  is ALREADY live-animals-scoped via
+- **T-6 per-set Playwright feature project** (REVISED for co-residency — R3). Two
+  corrections carry over from round 1: the `features` project is ALREADY
+  live-animals-scoped via
   `testDir: './src/server/app/sets/live-animals/journeys/linear/features'`
-  at `playwright.config.js:43-45`; no change to it). The real work:
+  (`playwright.config.js:43-45`), so no change to it. **What the reversal changes is
+  the project/env story: there is now ONE server serving BOTH sets, so the plant
+  project is not a different SERVER, only a different `testDir` and `baseURL`
+  path-space.** The webServer env-pass-through problem simply disappears — there is
+  no `SERVED_SET` to smuggle through. The work:
   1. NEW Playwright project in `playwright.config.js`: name
      `features-plant-products`, `testDir:
      './src/server/app/sets/plant-products/journeys/linear/features'`,
-     `testMatch: '**/*.e2e.spec.js'`, same `use` block as `features`.
+     `testMatch: '**/*.e2e.spec.js'`, same `use` block as `features`. Plant specs
+     navigate to `/plant-products/…`; live-animals specs keep navigating to `/…`
+     and need no edit.
   2. NEW npm script `"test:features:plant-products"` =
-     `SERVED_SET=plant-products PLANT_PRODUCTS_MODE=stub playwright test --project=features-plant-products`.
-  3. **webServer env pass-through (state it, don't assume):** the shared
-     `webServer` block (`playwright.config.js:54-63`) hardcodes
-     `env: { PORT, LIVE_ANIMALS_MODE: 'stub' }` with
-     `reuseExistingServer: false`. `SERVED_SET`/`PLANT_PRODUCTS_MODE` reach the
-     self-hosted server ONLY because Playwright merges the explicit `env` over
-     `process.env` (additive, not a replacement) — the config's env block is
-     NOT the complete server environment. The increment records this mechanism
-     in a config comment; the hardcoded `LIVE_ANIMALS_MODE: 'stub'` is inert
-     under the plant set; `reuseExistingServer: false` guarantees no stale
-     live-animals server is reused.
-  Same split for `test:e2e` when the whole-journey plant suite exists (m4).
+     `PLANT_PRODUCTS_MODE=stub playwright test --project=features-plant-products`.
+     `PLANT_PRODUCTS_MODE` is the ONLY new env var, and it selects the plant records
+     stub — it does not select a set.
+  3. **Shared `webServer` block (`playwright.config.js:54-63`) needs one edit, not
+     three:** add `PLANT_PRODUCTS_MODE: 'stub'` alongside the existing
+     `LIVE_ANIMALS_MODE: 'stub'`. Both sets then run on their stubs in the
+     self-hosted server, and the two projects can share one server process.
+     `reuseExistingServer: false` stays.
+  4. **Because one server now serves both, the two projects CAN be run in the same
+     Playwright invocation.** Add `"test:features:all"` = `playwright test --project=features --project=features-plant-products`
+     as the co-residency E2E proof: one webServer, specs from both sets, all green.
+     This is the E2E-level counterpart to `co-residency.test.js`.
+  Same treatment for `test:e2e` when the whole-journey plant suite exists (m4).
   Acceptance: m0's `import-type.e2e.spec.js` + `hub.e2e.spec.js` + dashboard spec
-  pass under the new script — at least one of them asserts plant-set content that
-  CANNOT render under live-animals (proves the env actually reached the webServer);
-  existing `test:features` untouched and green.
+  pass under the new script, each asserting plant-set content that CANNOT render
+  under live-animals; existing `test:features` untouched and green; and
+  `test:features:all` green in a single run against a single server.
 - **T-7 set-owned structural suites** — `obligations/coverage.test.js` (m0, empty-safe)
   and `obligations/whitelists.test.js` (m3, pins `varietyClass` + `inspectionPremises`
   allowlists against the set services with a control value).
 - **T-8 depth-3 characterisation test** — P-7 (platform-level, m0 gate for m3).
+- **T-9 NEW (R3): the co-residency suite** — `src/server/app/co-residency.test.js`,
+  created by P-3, extended by every later platform increment. Contents specified in
+  §5's two-sided verification rule. This is the ONE test that can fail for
+  "co-residency broke" and nothing else, so it must never be folded into another file.
+- **T-10 NEW (R3): the re-singletoning tripwire** — `src/server/app/no-set-singletons.test.js`,
+  P-11.
 - **Plant verification ladder** (Phase D increments cite this): baseline
   `npm run test:plant-products` BEFORE editing → after: `test:plant-products`,
   `npm test`, `npm run lint`, `PORT=3050 npm run test:features:plant-products`
-  (+ `test:e2e` split when it exists), `npm run format` before commit. PLUS the
-  sibling-safety check: `npm run test:live-animals` and default-`SERVED_SET` boot
-  must stay green on every platform-touching increment (P-1..P-6).
+  (+ `test:e2e` split when it exists), `npm run format` before commit.
+  **PLUS the sibling-safety check, REVISED (R3):** on every platform-touching
+  increment (P-1..P-6, P-9..P-11) also run `npm run test:live-animals`,
+  `npm run test:features` and `npm run test:features:all`, and leave
+  `co-residency.test.js` green. The bar is no longer "the other set still boots on
+  its own env" — it is "**both sets serve correctly from the same running process**".
 
 ---
 
@@ -656,33 +970,59 @@ recipe for those shapes are covered. The following have NO recipe; each lists wh
 recipe would need to specify (Phase D must treat these as first-class plan content,
 not recipe-verbatim steps):
 
-**G-A — No "add a set" recipe (the expected headline finding).** A recipe would need,
-step by step:
-1. Choose the set name; state the one-set-per-process rule and the `SERVED_SET`
-   contract (FD-1).
+**G-A — No "add a set" recipe. REVISED (R6): the recipe is now written FIRST.**
+
+Round 1 said "this plan IS the recipe; extracting `docs/add-a-set.md` afterwards is a
+recommended m4+ chore". Sam's ruling R6 reverses that ordering. **`docs/add-a-set.md`
+is authored BEFORE the m0 scaffold, and the m0 scaffold increments then FOLLOW it —
+recipe-verbatim, exactly as `add-a-field.md` / `add-a-page.md` / `add-a-collection.md`
+are followed by the `frontend-change` skill.** Writing the recipe first is what closes
+the gap; extracting it afterwards would only document whatever happened to be built.
+
+Location: `src/server/app/sets/live-animals/docs/add-a-set.md` is WRONG — a set-level
+doc cannot own a cross-set procedure. It goes at **`src/server/app/docs/add-a-set.md`**,
+alongside `architecture.md`, as an L1/platform-level recipe. The plant-products
+increments cite it by heading; the recipe cites THIS plan for the CHED-PP specifics.
+
+Required contents (the 10-step list stands, restated for co-residency):
+1. Choose the set name and its **mount prefix**; state the co-residency contract —
+   both gateways register in one process, every seam is keyed by set id, the request
+   resolves its set from the owning plugin realm (FD-1/FD-14/FD-15). State the
+   root-mount rule: the incumbent set keeps the root, a new set takes a prefix (FD-16).
 2. Create the L3 skeleton: `obligations/index.js` with empty `obligations`, the
    derived-`groups` formula verbatim, and the `policy` export shape (P-1).
 3. Create the L4 skeleton: `config.js` (TEMPLATES prefix, unprefixed LAYOUT, three
-   set-prefixed cookie names), `flow/{flow,task-rows,run,entry-guard}.js` minimal
-   exports, `features/{index,evaluation}.js` empty registries — naming exactly which
-   exports each file must have for `configureJourneyFlow`/`buildDispatch` to accept
-   them (§1 m0 list).
-4. Write the L1 gateway: the 13-row call table (§4.1.2) with the load-bearing order
-   and per-seam argument shapes; which seams are optional (`configureCommodityReference`)
-   and when priming applies.
-5. Register in the selector + router (§4.1.3-4); unknown-set boot failure semantics.
-6. Edit dep-cruiser (gateway whitelist + sets-not-l1) WITHOUT touching the violations
-   baseline (P-4).
-7. Add the set-scoped Vitest script, per-set Playwright script, cloned app-root
-   suites, empty contract table (T-1..T-6).
+   set-prefixed cookie names — load-bearing under co-residency, FD-3),
+   `flow/{flow,task-rows,run,entry-guard}.js` minimal exports,
+   `features/{index,evaluation}.js` empty registries — naming exactly which exports
+   each file must have for `configureJourneyFlow`/`buildDispatch` to accept them
+   (§1 m0 list).
+4. Write the L1 gateway: the call table of §4.4.3 with the load-bearing order,
+   `setId` as the first argument of every `configure*`/`buildDispatch`, the
+   `withSetContext` wrapper, the `onPreAuth` context entry, `registerSetMount`, the
+   per-set `registerJourneyCookie(server, { base, cookieNames })`; which seams are
+   optional (`configureCommodityReference`) and when priming applies. Point at the
+   P-11 tripwire so the author meets the `setId`-first rule before writing the file.
+5. Add it to the `routes.js` barrel and register it in `src/server/router.js` with
+   `{ routes: { prefix } }` (§4.4.4-5).
+6. Edit dep-cruiser (gateway whitelist + `sets-not-l1`) WITHOUT touching the
+   violations baseline (P-4).
+7. Add the set-scoped Vitest script, the per-set Playwright project, the cloned
+   app-root suites, the empty contract table, and a new case in
+   `co-residency.test.js` (T-1..T-6, T-9).
 8. Stand up set services: mode switch, records adapter against the set's backend
-   surface (port-op → HTTP table like §6.2), reference fixtures.
+   surface (port-op → HTTP table like §6.2, incl. the `Idempotency-Key` contract for
+   `copy`), reference fixtures.
 9. Minimal surfaces to be usable: dashboard, hub (+ GROUPS), entry filter,
    entry-guard policy.
-10. The two-sided verification ladder: new set green AND default set unchanged (§7
-    last bullet).
-This plan IS that recipe for plant-products; extracting it into
-`docs/add-a-set.md` afterwards is a recommended (not required) m4+ chore.
+10. **The two-sided verification ladder, co-residency form: every set already in the
+    tree AND the new set must serve correctly from ONE running process** — the
+    co-residency suite plus `test:features:all` (§7 last bullet). The old
+    "new set green AND default set unchanged under its own env" wording is retired.
+
+Sequencing consequence: authoring `docs/add-a-set.md` is the FIRST m0 increment, and
+it lands after P-9/P-10 (so it can describe the seams as they actually are) but before
+any `sets/plant-products/` file exists. See §9.
 
 **G-B — No depth-3 nested-collection recipe.** add-a-collection's nested exemplar
 (`animalIdentifiers`) is depth 2. A recipe would need: grouped-binding `groups`
@@ -737,12 +1077,55 @@ problem; flagged now so nobody expects a recipe.
 
 ## 9. Increment-order constraints handed to Phase D
 
-1. m0 = §1 m0 file list + §4 wiring + P-1..P-6 + T-1..T-8 (P-7 before any m3 work).
-2. Platform items P-1..P-5 land BEFORE the first obligation-bearing page (m2) — the
-   policy seam and cloned contract table must exist for inc-009 to register cleanly.
-3. §2.3 fixes the `sections` append order; §2.1 fixes row ids and hub GROUPS.
-4. Every page increment follows the §1–§4 recipes of the cheat-sheet with the §7
-   plant ladder substituted; every platform-touching increment adds the
-   sibling-safety check (live-animals green, default boot unchanged).
-5. inc-012 (commodity model extension) remains a HALT-FOR-REVIEW gate; P-7 evidence
-   attaches to it.
+**REVISED (R3/R6).** The order now has a distinct **platform phase that lands entirely
+against live-animals-only**, before any `sets/plant-products/` file is created. That is
+deliberate: each platform increment is then verifiable by "the existing suite is green
+with no behavioural test edits", which is a far sharper signal than "the new set also
+works".
+
+**Phase m0-a — platform, live-animals only, no plant files yet:**
+
+1. **P-9** — `shared/set-context.js` + key all seven `configure*` seams by set +
+   the cookie-name accessor sweep. Sole registered set = live-animals, so FD-17's
+   fallback keeps the whole suite green with only mechanical edits.
+2. **P-1** — obligation-source policy onto the manifest, as accessor FUNCTIONS
+   (option (b), forced by P-9). Depends on P-9 for `obligationSet()` being per-set.
+3. **P-10** — per-set URL namespace in `shared/paths.js` + the route-shape/link
+   builder split + per-set cookie `path`. live-animals mounts at `''`, so every
+   existing URL assertion must pass unedited.
+4. **P-11** — the `setId`-first convention test (tripwire), so nothing after this
+   point can re-singleton a seam.
+5. **P-4** — dep-cruiser gateway whitelist + `sets-not-l1` widening (needs the new
+   gateway filenames to exist as targets, so it lands with step 6).
+6. **P-3** — split `routes.js` into the barrel + `routes-live-animals.js`, register
+   live-animals through the new shape, and create `co-residency.test.js` with the
+   live-animals half only. The plant half is added in m0-b.
+
+**Phase m0-b — the recipe, then the set:**
+
+7. **G-A: author `src/server/app/docs/add-a-set.md`** (R6). This is the first m0-b
+   increment. It lands AFTER P-9/P-10 so it describes the seams as they actually are,
+   and BEFORE any `sets/plant-products/` file so the scaffold can follow it verbatim.
+8. **The m0 scaffold** — §1 m0 file list + `routes-plant-products.js` (§4.4.3) +
+   P-2, P-5, P-6 + T-1..T-3, T-5..T-7, T-9, T-10 — each increment citing the
+   `add-a-set.md` step it is executing. P-3's `co-residency.test.js` gains its plant
+   half here; §4.5 acceptance is met at the end of this phase.
+9. **P-7** (depth-3 characterisation) before any m3 work.
+
+**Standing constraints (unchanged in substance):**
+
+10. Platform items P-1..P-6 and P-9..P-11 all land BEFORE the first
+    obligation-bearing page (m2) — the policy seam, the URL namespace and the cloned
+    contract table must exist for inc-009 to register cleanly.
+11. §2.3 fixes the `sections` append order; §2.1 fixes row ids and hub GROUPS.
+12. Every page increment follows the §1–§4 recipes of the cheat-sheet with the §7
+    plant ladder substituted; every platform-touching increment adds the
+    sibling-safety check — **co-residency form: both sets green from one process**
+    (`co-residency.test.js` + `test:features:all`), not "default boot unchanged".
+13. inc-012 (commodity model extension) remains a HALT-FOR-REVIEW gate; P-7 evidence
+    attaches to it.
+14. R4 (copy idempotency, §6.2 `copy` row) is sequenced BEFORE the Copy button ships
+    (m5 inc-039) — the records-port contract tests land with the plant records
+    adapter, not with the button.
+15. R5: the 11 m5 increments remain unplanned stubs. Nothing in this revision plans
+    them.

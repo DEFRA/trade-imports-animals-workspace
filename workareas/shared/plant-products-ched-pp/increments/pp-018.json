@@ -34,7 +34,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.controller.js",
       "action": "create",
-      "what": "export const meta = { ...countryOfOriginPage, collects: ['countryOfOrigin'] }. GET: state.get() once, prefill select from answers.countryOfOrigin. POST: read raw payload; validate with lib/validate factories — requiredOneOf('countryOfOrigin', <selectable codes from sets/plant-products/services/reference/countries.js>, copy.errors.countryRequired) built INSIDE a fields() function (never a frozen module-level schema); invalid -> re-render raw values, status 400; valid -> state.commit(), redirect via kit.nextTarget(request, page, committed.scope); wrap the write in kit.recoverableSave() (marked failure -> re-render with recoverableError: true, status 500; other errors throw). View built with kit.base(copy.title, { backLink: hubPath(journey.journeyId), journey, ... }) — copy.title = the H1 text so the page <title> mirrors the H1 (deliberate fix of the legacy title/H1 mismatch bug recorded in the page spec). View name `${TEMPLATES}/features/origin/country-of-origin/country-of-origin`. `export const routes = kit.pageRoutes(page, { get, post })`. Exemplar: sets/live-animals/journeys/linear/features/origin/controller.js (whole file — same shape minus the region/internal-reference fields)."
+      "what": "export const meta = { ...countryOfOriginPage, collects: ['countryOfOrigin'] }. GET: state.get() once, prefill select from answers.countryOfOrigin. POST: read raw payload; validate with lib/validate factories — requiredOneOf('countryOfOrigin', <selectable codes from sets/plant-products/services/reference/countries.js>, copy.errors.countryRequired) built INSIDE a fields() function (never a frozen module-level schema); invalid -> re-render raw values, status 400; valid -> state.commit(), redirect via kit.nextTarget(request, page, committed.scope); wrap the write in kit.recoverableSave() (marked failure -> re-render with recoverableError: true, status 500; other errors throw). View built with kit.base(copy.title, { backLink: hubPath(journey.journeyId), journey, ... }) — copy.title = the H1 text so the page <title> mirrors the H1 (deliberate fix of the legacy title/H1 mismatch bug recorded in the page spec). View name `${TEMPLATES}/features/origin/country-of-origin/country-of-origin`. `export const routes = kit.pageRoutes(page, { get, post })` — kit.pageRoutes builds its path from the PREFIX-FREE route-shape builder pageRoutePath at module load and the /plant-products mount is supplied by the plugin's routes.prefix, so never hand-prefix a route path; conversely everything rendered or redirected to (backLink hubPath(...), kit.nextTarget's target) comes from the PREFIX-BEARING link builders evaluated per request and already carries the mount (§4.3). Exemplar: sets/live-animals/journeys/linear/features/origin/controller.js (whole file — same shape minus the region/internal-reference fields)."
     },
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/country-of-origin/country-of-origin.njk",
@@ -114,7 +114,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js",
       "action": "edit",
-      "what": "Hub now shows the numbered 'Origin of the import' group with the origin row: assert row present, status 'Not yet started' on a fresh notification, row link targets /notifications/{journeyId}/country-of-origin; re-run hub axe check for the changed hub state."
+      "what": "Hub now shows the numbered 'Origin of the import' group with the origin row: assert row present, status 'Not yet started' on a fresh notification, row link targets /plant-products/notifications/{journeyId}/country-of-origin (the rendered href comes from the prefix-bearing pagePath link builder, so it carries the mount); re-run hub axe check for the changed hub state."
     },
     {
       "path": "src/server/app/sets/plant-products/services/records/mapper/to-dto.js",
@@ -139,7 +139,7 @@
     {
       "path": "src/server/app/sets/plant-products/journeys/linear/features/origin/e2e/country-of-origin.e2e.spec.js",
       "action": "create",
-      "what": "Co-located Playwright feature spec + axe, group e2e/ folder per recipe §3. Scenarios listed under `specs`. Raw role/label/visible-copy locators, no page objects, each test starts its own notification via the UI (import-type first — the only entry route)."
+      "what": "Co-located Playwright feature spec + axe, group e2e/ folder per recipe §3. Scenarios listed under `specs`. Raw role/label/visible-copy locators, no page objects, each test starts its own notification via the UI from the plant dashboard at /plant-products (import-type first — the only entry route). All navigation stays under /plant-products/… — the spec must never hit a root-mounted URL, which under co-residency is the live-animals set."
     }
   ],
   "obligations": [
@@ -181,7 +181,7 @@
     "src/server/app/sets/plant-products/journeys/linear/features/hub/hub.e2e.spec.js (extended) — origin row visible under 'Origin of the import', Not yet started, links to country-of-origin"
   ],
   "acceptanceCriteria": [
-    "GET /notifications/{journeyId}/country-of-origin renders govuk-caption-xl 'About the consignment', H1 govuk-heading-xl 'Origin of the plants, plant product or other objects', one govuk-select (govuk-!-width-one-half) labelled 'Country of origin' (govuk-label--m) with first option 'Select a country', the pp-013 countries fixture options (253 selectable; GB-ENG/GB-SCT/GB-WLS/GB-NIR inside the single UK optgroup; IE labelled 'Republic of Ireland' per c-012), and exactly one submit button 'Save and continue' — no secondary actions (page spec refutation: legacy hardcodes one action here)",
+    "GET /plant-products/notifications/{journeyId}/country-of-origin renders govuk-caption-xl 'About the consignment', H1 govuk-heading-xl 'Origin of the plants, plant product or other objects', one govuk-select (govuk-!-width-one-half) labelled 'Country of origin' (govuk-label--m) with first option 'Select a country', the pp-013 countries fixture options (253 selectable; GB-ENG/GB-SCT/GB-WLS/GB-NIR inside the single UK optgroup; IE labelled 'Republic of Ireland' per c-012), and exactly one submit button 'Save and continue' — no secondary actions (page spec refutation: legacy hardcodes one action here)",
     "The page <title> mirrors the H1 (fixes the legacy title/H1 mismatch bug — legacy titled it 'Origin of the animal or product' even for CHED-PP)",
     "Back link is a real server-rendered href to the hub — no href='#', no custom navigation wrapper",
     "Valid save commits countryOfOrigin (the ISO/fixture CODE, never the label) and persists to origin.countryCode via the set-owned records service; re-entering the page (and draft resume) prefills the selection",

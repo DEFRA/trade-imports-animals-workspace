@@ -1,0 +1,152 @@
+{
+  "id": "pp-056",
+  "title": "P-9: shared/set-context.js + key every configure* seam by set (co-residency foundation, live-animals only)",
+  "kind": "platform",
+  "milestone": "m0",
+  "sizeGuess": "XL",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": [],
+  "sourceIncrement": null,
+  "recipe": "No recipe covers platform de-singletoning. The script is SIBLING-SET-PLAN.md §4.1 (the set-context module, quoted there in full) and §4.2 rows 1-8 (the per-seam table, one row per file with its today/after shape), plus §5 P-9 for the acceptance bar. Follow those two sections literally — every export name, parameter name and accessor signature below is quoted from them.",
+  "repo": "frontend",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/shared/set-context.js",
+      "action": "create",
+      "what": "The one new L2 module. It is set-AGNOSTIC — it stores set ids and prefixes handed to it and imports nothing under sets/ — so dependency-cruiser needs no new rule for it. Implement exactly the module quoted at SIBLING-SET-PLAN §4.1: an AsyncLocalStorage from node:async_hooks; a module-level `mounts = new Map()` of setId → prefix ('' for the root set); `registerSetMount(setId, prefix = '')`; `mountedSetIds()`; a private `soleSetId()` returning the only key when mounts.size === 1 and undefined otherwise; `currentSetId()` returning `storage.getStore()?.setId ?? soleSetId()` and THROWING new Error('No set context — no active set and more than one mounted') when neither yields an id; `currentSetBase()` = `mounts.get(currentSetId()) ?? ''`; `withSetContext(setId, fn)` = storage.run({ setId }, fn) for BOOT time; `enterSetContext(setId)` = storage.enterWith({ setId }) for REQUEST time; and `setKeyed(label)` returning `{ configure(setId, value), current(), has(setId) }` over a per-seam Map, where current() resolves currentSetId() and throws `${label} not configured for set \"${setId}\"` when the slot is absent. THE SOLE-SET FALLBACK IN currentSetId() IS THE LOAD-BEARING DESIGN DECISION (FD-17): it is what lets every existing unit test, contract.test.js, routes.test.js, indexed.test.js, store-ops.test.js and each set's own suites keep working unchanged, because they each compose exactly ONE set; and it is what makes a missing context a loud failure in the co-resident server where it actually matters. Do not weaken it to a silent default and do not extend it to pick a 'first' set when several are mounted."
+    },
+    {
+      "path": "src/server/app/shared/set-context.test.js",
+      "action": "create",
+      "what": "Unit-pin the module's own contract before any seam uses it: registerSetMount then currentSetBase returns the registered prefix; with ONE mount and no active context, currentSetId returns that sole set (the FD-17 fallback); with TWO mounts and no active context, currentSetId THROWS; withSetContext(setId, fn) resolves currentSetId inside fn and restores the previous state after; enterSetContext persists across an await inside the same async context; setKeyed holds two different values for two different setIds simultaneously and current() throws a message naming the label and the set when the slot is unconfigured. Add ONE interleaving test here as well as in co-residency.test.js later: two async functions entered under different set ids, the first awaiting a deferred promise, each still reading its own value after resuming — this is the ALS risk §4.1 says must be retired, not assumed, and pinning it at the module level makes a failure diagnosable."
+    },
+    {
+      "path": "src/server/app/model/obligations/manifest.js",
+      "action": "edit",
+      "what": "§4.2 row 1. TODAY (verified live) line 1 is `let configuredSet`. AFTER: `const store = setKeyed('obligation set')`; `configureObligationSet(setId, obligationSet)` — setId FIRST — calls store.configure(setId, obligationSet). Every read accessor keeps its CURRENT SIGNATURE and reads store.current(): obligationSet(), obligations(), groups(), obligationByName(name). No call site outside this file changes except the gateway that now passes setId."
+    },
+    {
+      "path": "src/server/app/bridge/fulfilment-registry.js",
+      "action": "edit",
+      "what": "§4.2 row 2. TODAY line 167 is `let configuredRegistry`, built lazily from the configured bindings and cached. AFTER: a `setKeyed('fulfilment registry')` store holding a per-set record of `{ bindings, registry }`; `configureFulfilmentRegistry(setId, bindings)` stores the bindings and clears that SET's cached registry only; the lazy build and its cache become per-set. assertFulfilmentBindingCoverage() and every registry reader keep their signatures. Watch the cache: the today-code's single `configuredRegistry` doubles as 'built yet?' — per set that becomes a per-record field, and one set's build must not mark another's as built."
+    },
+    {
+      "path": "src/server/app/flow/journey-flow.js",
+      "action": "edit",
+      "what": "§4.2 row 3. TODAY line 7 is `let configured = { … }`. AFTER: `setKeyed('journey flow')`; `configureJourneyFlow(setId, journeyFlow)`. Signatures UNCHANGED for journeySections(), journeyTaskRows(), journeyRowStatus(...), journeyNextRunTarget(...), journeyFlowOnlyKeys(), journeyEntryGuardTarget(...), journeyLayout(). If the today-code initialises `configured` to a default object rather than undefined, preserve that default per set (i.e. the store yields the same default shape for a configured set) so no reader starts seeing undefined."
+    },
+    {
+      "path": "src/server/app/flow/dispatch.js",
+      "action": "edit",
+      "what": "§4.2 row 4. TODAY lines 6-9 are three module-level Maps plus `let dispatchBuilt = false`, cleared by resetDispatchState(). AFTER: `setKeyed('dispatch')` holding ONE record per set of `{ pageOfObligation, collectsByPage, slugByPage, built }`. `buildDispatch(setId, pages)` — setId FIRST — resets THAT SET'S record only (it already resets its own state first; the reset now scopes) and builds into it. isDispatchBuilt(), pageOfObligation(id), collectsOf(pageId), slugOfPage(pageId) keep their signatures. resetDispatchState() must keep working for the tests that call it — decide and document whether it clears the current set's record or all of them; the safe reading is 'the current set's record', with an explicit all-sets variant only if a test needs it. NOTE dispatch.js also imports SYSTEM_POPULATED from bridge/obligation-source.js (line 3, used at line 77) — that import is NOT this increment's to change; pp-005 (P-1) converts it to the accessor form afterwards. Do not pre-empt it."
+    },
+    {
+      "path": "src/server/app/engine/persistence/records.js",
+      "action": "edit",
+      "what": "§4.2 row 5. TODAY line 10 is `let impl = { … }` behind a delegating `records` facade. AFTER: `setKeyed('records')`; `configureRecords(setId, impl)`. The exported `records` facade object is UNCHANGED IN SHAPE — each of its 11 methods (create, load, list, has, replaceFulfilment, finalise, amend, cancelAmend, copy, softDelete, clear) delegates to store.current().<op>(...). Every caller — engine/journey.js, every controller — is untouched. The exported status constants (DRAFT/SUBMITTED/AMEND/DELETED) are set-agnostic and stay module-level."
+    },
+    {
+      "path": "src/server/app/engine/persistence/session.js",
+      "action": "edit",
+      "what": "§4.2 rows 6 AND 8 — the hardest file in the increment, do it last. ROW 6: today line 9 is `let impl = { … }` behind a delegating `session` facade; after, a `setKeyed('session')` store holding `{ impl, cookieNames }` and `configureSession(setId, impl, cookieNames)` with setId FIRST; the session facade is unchanged in shape. ROW 8: today lines 1-3 are `export let KNOWN_JOURNEYS_COOKIE = 'knownJourneys'`, `export let OPENING_RUN_COOKIE = 'openingRun'`, `export let FLOW_ONLY_ANSWERS_COOKIE = 'flowOnlyAnswers'` — MUTABLE EXPORTED BINDINGS that configureSession rewrites in place. They become ACCESSOR FUNCTIONS `knownJourneysCookie()`, `openingRunCookie()`, `flowOnlyAnswersCookie()` reading the current set's cookieNames (falling back to the same three defaults when a set configures none). Delete the three `export let` bindings entirely — a mutable exported binding is exactly the thing co-residency cannot have, so leaving a compatibility alias would defeat the increment. The consumer sweep is enumerated in the next filesToTouch entries and MUST be exhaustive: a missed consumer fails at import, not silently."
+    },
+    {
+      "path": "src/server/app/engine/journey.js",
+      "action": "edit",
+      "what": "§4.2 row 8 consumer sweep (verified lines 5-7, 12, 26, 30, 34, including its RE-EXPORT of the cookie names). Swap the three imported constants for the three accessor calls at each use site, and convert the re-export to re-export the accessors. DO NOT touch cookieOptions or registerJourneyCookie in this increment — the per-set cookie path is pp-057 (P-10) row 11, and mixing the two makes both un-diffable. copyJourney's signature (line 125, already carrying idempotencyKey) is unaffected."
+    },
+    {
+      "path": "src/server/app/services/persistence/session/real.js",
+      "action": "edit",
+      "what": "§4.2 row 8 consumer sweep — verified lines 2-4 (the imports) and uses at 11, 16, 21, 33, 42, 59. Mechanical: import the three accessors instead of the three constants and call them at each use. No behavioural change; if a use site is inside a hot loop, call the accessor there rather than hoisting to a module const — hoisting reintroduces exactly the bug this increment removes."
+    },
+    {
+      "path": "src/server/app/services/persistence/session/stub.js",
+      "action": "edit",
+      "what": "§4.2 row 8 consumer sweep — verified lines 2-4 and uses at 11, 16, 21, 33, 42, 59, same shape as real.js. Same mechanical swap, same no-hoisting rule."
+    },
+    {
+      "path": "src/server/app/engine/test-support.js",
+      "action": "edit",
+      "what": "§4.2 row 8 consumer sweep — verified lines 2 and 59. Same mechanical swap. This file is imported by many suites, so a mistake here shows up as a broad, confusing red — change it early and run npm test before continuing."
+    },
+    {
+      "path": "src/server/app/one-load-per-request.test.js",
+      "action": "edit",
+      "what": "§4.2 row 8 test sweep. Mechanical rename of the cookie-name references only. THE ACCEPTANCE BAR APPLIES: if this file needs anything beyond the mechanical rename to pass, the keying is wrong — stop and report rather than adapting the test."
+    },
+    {
+      "path": "src/server/app/engine/journey.test.js",
+      "action": "edit",
+      "what": "§4.2 row 8 test sweep — mechanical cookie-accessor rename only."
+    },
+    {
+      "path": "src/server/app/engine/write/flow-only-session.test.js",
+      "action": "edit",
+      "what": "§4.2 row 8 test sweep — mechanical cookie-accessor rename only."
+    },
+    {
+      "path": "src/server/app/services/persistence/session/session.test.js",
+      "action": "edit",
+      "what": "§4.2 row 8 test sweep — mechanical cookie-accessor rename only."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/features/**/*.test.js and flow/opening-run.test.js",
+      "action": "edit",
+      "what": "§4.2 row 8 test sweep, the five live-animals specs that reference the cookie names: the cancel-amend spec, the notification-actions spec, the dashboard controller spec AND its copy spec, the documents spec, and journeys/linear/flow/opening-run.test.js. Locate them exactly with `grep -rn 'KNOWN_JOURNEYS_COOKIE\\|OPENING_RUN_COOKIE\\|FLOW_ONLY_ANSWERS_COOKIE' src/server/app` at the START of the increment and work the resulting list to zero — that grep, not this glob, is the authoritative worklist. Mechanical rename only."
+    },
+    {
+      "path": "src/server/app/services/persistence/records/notification-mapper/commodity-reference.js",
+      "action": "edit",
+      "what": "§4.2 row 7. TODAY line 1 is `let implementation`. AFTER: `setKeyed('commodity reference')`; `configureCommodityReference(setId, impl)` with setId FIRST. This seam is called ONLY by the live-animals gateway (FD-5): its only consumer is the L2 live-animals notification mapper, which a plant request never executes. Per-set keying means the plant slot is provably ABSENT rather than overwritten, so if a plant request ever did reach this mapper it would throw loudly instead of silently mapping with live-animals vocabulary. That is P-2's negative-test surface, so keep the throw's message specific: it must name both the seam label and the set id."
+    },
+    {
+      "path": "src/server/app/routes.js",
+      "action": "edit",
+      "what": "The ONLY caller of the seven configure*/buildDispatch functions today. Pass the setId as the first argument of each: configureObligationSet('live-animals', …), configureFulfilmentRegistry('live-animals', …), configureCommodityReference('live-animals', …), configureJourneyFlow('live-animals', …), buildDispatch('live-animals', …), configureRecords('live-animals', …), configureSession('live-animals', …, SESSION_COOKIE_NAMES). Add `registerSetMount('live-animals', '')` as the first call in the register body and wrap the whole body in `await withSetContext('live-animals', async () => { … })` — the boot gates assertObligationPurity() and assertFulfilmentBindingCoverage() and buildDispatch all read through currentSetId() and run outside any request. DO NOT split this file, DO NOT add the onPreAuth extension and DO NOT rename anything — the barrel/routes-live-animals.js/routes-plant-products.js split is pp-006 (P-3) and lands after. With live-animals the only registered set, the FD-17 sole-set fallback means even the withSetContext wrapper is belt-and-braces here; add it anyway, because pp-006 depends on it already being right."
+    },
+    {
+      "path": "src/server/app/shared/seam-keying.test.js",
+      "action": "create",
+      "what": "One suite proving the keying itself, seam by seam — the acceptance bar of §5 P-9 ('a unit test per seam proving two different setIds hold two different values simultaneously'). For each of the seven seams: register two mounts, configure the seam with a DIFFERENT value under each set id, then read the accessor inside withSetContext('a', …) and withSetContext('b', …) and assert each sees its own value; and assert that reading with two mounts and NO active context throws 'No set context'. Keep it one file rather than seven — the assertion is identical in shape and a single table-driven suite reads better and cannot drift between seams."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "src/server/app/shared/set-context.test.js — the module's own contract: mounts, the sole-set fallback, the two-mounts throw, withSetContext/enterSetContext scoping, ALS survival across an await, setKeyed holding two values at once",
+    "src/server/app/shared/seam-keying.test.js — per-seam proof that two set ids hold two values simultaneously and that a missing context throws",
+    "NO new browser spec. The E2E proof of this increment is that the EXISTING suites are untouched and green."
+  ],
+  "acceptanceCriteria": [
+    "src/server/app/shared/set-context.js exists as L2 (imports nothing under sets/) and exports registerSetMount, mountedSetIds, currentSetId, currentSetBase, withSetContext, enterSetContext and setKeyed exactly as specified in SIBLING-SET-PLAN §4.1.",
+    "currentSetId() falls back to the sole registered set when exactly one is mounted and throws 'No set context' when two or more are mounted with no active context (FD-17) — pinned by test.",
+    "All seven seams are keyed: configureObligationSet, configureFulfilmentRegistry, configureJourneyFlow, buildDispatch, configureRecords, configureSession and configureCommodityReference each take setId as their FIRST parameter and store into a setKeyed registry.",
+    "EVERY read accessor keeps its existing signature — obligationSet/obligations/groups/obligationByName, assertFulfilmentBindingCoverage and the registry readers, the seven journey* readers, isDispatchBuilt/pageOfObligation/collectsOf/slugOfPage, the 11-method records facade, the session facade — so no controller, view-model or L2 call site changes.",
+    "The three mutable exported cookie bindings are GONE: `grep -rn 'export let' src/server/app/engine/persistence/session.js` returns nothing and `grep -rn 'KNOWN_JOURNEYS_COOKIE\\|OPENING_RUN_COOKIE\\|FLOW_ONLY_ANSWERS_COOKIE' src/server/app` returns nothing. Their four production consumers (engine/journey.js incl. its re-export, services/persistence/session/real.js, services/persistence/session/stub.js, engine/test-support.js) and all nine test consumers use knownJourneysCookie()/openingRunCookie()/flowOnlyAnswersCookie(), called at the use site and never hoisted to a module const.",
+    "routes.js passes 'live-animals' as the first argument to all seven seams, calls registerSetMount('live-animals', '') and wraps its register body in withSetContext — and is otherwise unchanged (no split, no onPreAuth, no rename; those are pp-006).",
+    "THE BAR: npm test, npm run test:live-animals, npm run test:features and npm run test:e2e are green with ONLY mechanical edits — the cookie-accessor rename and nothing else. If any test needs a behavioural change to pass, the keying is wrong: stop, report, do not adapt the test.",
+    "No existing suite's test count drops.",
+    "npm run lint:arch is green with NO new dependency-cruiser rule and NO regeneration of .dependency-cruiser-known-violations.json — shared/set-context.js is ordinary L2 importing nothing under sets/.",
+    "One process still serves live-animals exactly as before: no URL, cookie name, cookie path or env var changes anywhere in this increment."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test  # baseline BEFORE editing — red baseline = stop and report",
+    "grep -rn 'KNOWN_JOURNEYS_COOKIE\\|OPENING_RUN_COOKIE\\|FLOW_ONLY_ANSWERS_COOKIE' ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src/server/app  # the authoritative row-8 worklist at the start; must return nothing at the end",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "RULING R3 (Sam, 2026-08-01) — THE BIG ONE. live-animals and plant-products must be servable side by side FROM ONE NODE PROCESS. This reverses the boot-time SERVED_SET single-set-per-process decision (SD-9 / FD-1 / FD-2). Sam's reasoning: the L1-L4 architecture was explicitly designed to be set-agnostic — L2 never imports a set, sets arrive via L1 configure* seams, dep-cruiser enforces it at error severity — so the blocker was never the design, it is two implementation details: (a) every configure* seam stores its value in a module-level single-slot singleton, and (b) shared/paths.js hardcodes a global URL namespace. This increment removes (a). pp-057 removes (b).\n\nTHIS IS THE SINGLE LARGEST PLATFORM INCREMENT IN THE PROGRAMME, and it is the one Sam's ruling says the architecture was designed to make possible. It lands with live-animals as the ONLY registered set, BEFORE either gateway is rewritten, which is what makes it verifiable: the FD-17 sole-set fallback means the entire existing suite must stay green with zero test edits beyond the mechanical cookie-accessor rename. That sharpness is the whole point of sequencing the platform phase against live-animals only (SIBLING-SET-PLAN §9, phase m0-a step 1).\n\nSEAM LINE NUMBERS VERIFIED LIVE THIS SESSION (do not re-derive, do re-check they have not moved): model/obligations/manifest.js:1 `let configuredSet`; bridge/fulfilment-registry.js:167 `let configuredRegistry`; flow/journey-flow.js:7 `let configured = {`; flow/dispatch.js:9 `let dispatchBuilt = false` (with the three Maps just above); engine/persistence/records.js:10 `let impl = {`; engine/persistence/session.js:1-3 the three `export let` cookie bindings and :9 `let impl = {`; services/persistence/records/notification-mapper/commodity-reference.js:1 `let implementation`; shared/paths.js:1 `export const BASE = ''` (pp-057's, not this increment's).\n\nWHY ALS RATHER THAN THREADING setId (FD-14): every read accessor is ALREADY a function or a delegating facade — obligations(), groups(), journeySections(), journeyLayout(), records.load(), session.knownJourneyIds(), pagePath(). AsyncLocalStorage lets all of them keep their signatures, so the blast radius is the ~9 seam modules plus the row-8 sweep, NOT the several hundred controller and view-model call sites. Threading would touch pure model code and view-models that have no `request` in hand at all. One mechanism, applied identically to every seam.\n\nORDER OF WORK (do it in this order; each step keeps the suite green): (1) shared/set-context.js + its test; (2) the four independent seams — manifest, journey-flow, records, commodity-reference; (3) fulfilment-registry (the lazy cache needs care); (4) dispatch (the reset semantics need a decision, recorded in the file); (5) session rows 6 and 8 together, then the exhaustive consumer sweep driven by the grep; (6) routes.js setId arguments + registerSetMount + withSetContext; (7) seam-keying.test.js. Run npm test after each step, not once at the end — a broad red after a session.js change is much cheaper to bisect if the earlier steps were green.\n\nSCOPE FENCES — things that look adjacent and are NOT this increment: the routes.js split into a barrel plus routes-live-animals.js and routes-plant-products.js (pp-006 / P-3); the onPreAuth realm-scoped enterSetContext extension (pp-006, because it needs the split gateway to be realm-scoped at all); shared/paths.js, setBase(), the route-shape/link builder split and the per-set cookie path in engine/journey.js's registerJourneyCookie (pp-057 / P-10); the bridge/obligation-source.js policy accessors (pp-005 / P-1, which depends on this increment for obligationSet() being per-set); the no-set-singletons.test.js tripwire (pp-058 / P-11, which goes green on this increment's output); any sets/plant-products/ file at all.\n\nDOC RECONCILIATION (obligation carried from pp-053): re-read src/server/app/docs/add-a-set.md at the end of this increment and correct any drift between what step 4 of the recipe describes and the seam shapes actually shipped. If a shape could not be built as described, the recipe is wrong and is fixed here — it is not allowed to rot into aspiration.\n\nROLLBACK: this is a large increment on a shared branch. Roll back a failed attempt with `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "resetDispatchState() semantics under keying: planned as 'clears the CURRENT set's record'. If a test turns out to depend on it clearing everything (plausible for a suite that composes two fixture sets in one file), add an explicit all-sets variant rather than widening the default — and record which test forced it.",
+    "flow/journey-flow.js today initialises `configured` to a default object. If any reader relies on that default BEFORE configureJourneyFlow runs (i.e. a read at module load), per-set keying will surface it as a 'journey flow not configured for set' throw. Planned as: preserve the default per configured set; if a pre-configure read exists, that is a latent boot-order bug and gets reported, not hidden behind a default.",
+    "Whether shared/ is the right home for set-context.js or whether it belongs beside the seams it serves. Planned as shared/ per SIBLING-SET-PLAN §4.1, which every other section cites by that path — moving it would invalidate the plan's cross-references for no gain."
+  ]
+}
