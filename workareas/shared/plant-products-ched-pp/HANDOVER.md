@@ -10,8 +10,8 @@ Read `WHEN-YOURE-BACK.md` first for the decision log (newest on top).
 
 | Artefact | What it is |
 |---|---|
-| `backlog.json` | **The plan.** 58 increments in dependency order, 2 done, 51 todo, 5 deferred. Plus `scopeDecisions`, `deviations`, `sequencingNotes`, `gaps` (G-A..G-I), `milestones` (m0..m5) and `revisions`. |
-| `increments/pp-*.json` | The 45 planner outputs, byte-identical to their entries in `backlog.json`. Edit `backlog.json`, not these — they are provenance. |
+| `backlog.json` | **The plan.** 67 increments in dependency order, 2 done, 60 todo, 5 deferred. Plus `scopeDecisions`, `deviations`, `sequencingNotes`, `gaps` (G-A..G-K), `milestones` (m0..m5) and `revisions`. |
+| `increments/pp-*.json` | The 54 planner outputs, byte-identical to their entries in `backlog.json`. Edit `backlog.json`, not these — they are provenance. |
 | `increments/MAPPING.json` | How each `pp-*` id relates to a source CHED-PP `inc-*` increment, with the planner briefs. Provenance. |
 | `frontend-plan/SIBLING-SET-PLAN.md` | How `sets/plant-products/` is stood up as a sibling of `live-animals`. Increments cite it by heading. Adversarially verified against the repo. |
 | `backend-schema/SCHEMA-DESIGN.md` + `obligation-field-map.md` | The backend design (D-1..D-20) and which schema field backs which journey area. |
@@ -68,13 +68,29 @@ one set. If plant-products proves it, extracting `docs/add-a-set.md` from it is 
 G-B (depth-3 collections) is the riskiest: it is unproven engine territory, which is why `pp-012`
 exists.
 
-## Co-residency — the shape of the platform work
+## Three repos, not two
 
-Sam ruled on 2026-08-01 that both sets must be served **from one Node process**. There is no
-`SERVED_SET` env var. Two platform increments carry it: **pp-056** keys every `configure*` seam by set
-behind an AsyncLocalStorage request context (`shared/set-context.js`), and **pp-057** splits
-`shared/paths.js` into prefix-free route-shape builders and prefix-bearing link builders. Live-animals
-keeps the root mount with **no URL changes at all**; plant-products mounts under `/plant-products`.
+This programme spans the frontend, the backend, **and `trade-imports-animals-tests`** (increments
+pp-059..pp-067, m0 through m5). The tests repo is a separate git repo with its own branch and CI — it is
+still on `spike/EUDPA-288-model-retrofit`, so cutting `spike/trace-to-requirements` there is the first
+step of the first tests-repo increment (cross-repo branches share a name — workspace rule 2). Its
+live-animals URL migration must land **in the same change as** the frontend URL move; a split landing
+breaks the E2E suite.
+
+## Co-residency and symmetric mounts — the shape of the platform work
+
+Both sets are served **from one Node process**. There is no `SERVED_SET` env var. Two platform increments
+carry it: **pp-056** keys every `configure*` seam by set behind an AsyncLocalStorage request context
+(`shared/set-context.js`), and **pp-057** splits `shared/paths.js` into prefix-free route-shape builders
+and prefix-bearing link builders.
+
+Mounts are **symmetric**: every set sits at `'/' + setId`, so live-animals moves to `/live-animals` and
+plant-products to `/plant-products`. No set owns the root and `registerSetMount` throws on an empty
+prefix; `/` is a server-wide 302 to `/live-animals`. **Live-animals URLs change**, and the tests repo is
+migrated with them. Three consequences to hold in mind while building: `/signout` must be hoisted out of
+live-animals' `server.register` array or it silently becomes `/live-animals/signout`; the entry guard's
+`request.path.startsWith(...)` now sees the prefix, which is a behavioural change rather than a rename;
+and the journey cookie path moves, invalidating existing sessions.
 
 The whole platform phase lands against live-animals-only, before any plant file exists — so the existing
 suite passing *unedited* is the proof the refactor preserved behaviour. If a platform increment needs a
@@ -83,8 +99,9 @@ correctly from the same running process, proven by `co-residency.test.js` and `t
 
 The trap to watch for when implementing: route tables are built at module load and take the prefix from
 Hapi's plugin `routes.prefix`, while links resolve per request via `setBase()`. Getting them the wrong
-way round gives you either `/plant-products/plant-products/...` or a link that silently lands on the
-live-animals page — and with live-animals at prefix `''`, neither shows up until a second set mounts.
+way round gives you either `/plant-products/plant-products/...` or a bare `/notifications/...`. Because
+no set sits at `''`, both mistakes now 404 immediately for whichever set made them — that visibility is
+precisely why the symmetric scheme replaced the asymmetric one.
 
 ## Scope of pass 1
 

@@ -1,0 +1,159 @@
+{
+  "id": "pp-060",
+  "title": "Tests repo: per-set tree + per-set Playwright projects (the symmetry half of R7)",
+  "kind": "test",
+  "milestone": "m0",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-059"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.2 (the per-layer parameterise-vs-clone ruling), §10.3 (the target tree, file by file) and §10.6 (how the two sets' suites are selected — projects, not tags).",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. Verify the branch before editing: `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements` (cut by pp-059). If it prints anything else, STOP — do not cut it here, and do not edit on `spike/EUDPA-288-model-retrofit`. CLAUDE.md rule 2: cross-repo branches share a name."
+    },
+    {
+      "path": "page-objects/notification/** → page-objects/live-animals/**",
+      "action": "move",
+      "what": "PURE MOVE — `git mv`, no content change beyond import paths. All 22 files verified live: accompanying-documents-page.ts, additional-details-page.ts, addresses-page.ts, animal-identification-page.ts, arrival-details-page.ts, commodity-selection-page.ts, consignment-details-page.ts, contact-address-page.ts, cph-number-page.ts, declaration-page.ts, import-purpose-page.ts, import-reason-page.ts, import-type-page.ts, notification-cancel-amend-page.ts, notification-dashboard-page.ts, notification-view-page.ts, origin-of-import-page.ts, overview-page.ts, party-picker-page.ts, transited-countries-page.ts, transporter-page.ts, transporter-selection-page.ts.\n\nCreate EMPTY `page-objects/plant-products/` (a `.gitkeep` or, better, land it with pp-062's first page object rather than committing an empty dir).\n\n`page-objects/base/` and `page-objects/auth/` STAY WHERE THEY ARE (shared — §10.2: one OIDC stub, one sign-in form, both sets). `page-objects/admin/` STAYS (different service).\n\nWHY MOVE AT ALL, given it is churn with no behaviour change: leaving live-animals at the root of `page-objects/` while plant-products sits in a named subdir is exactly the asymmetry R7 rejected in the mount scheme. The same argument applies here — one fact per set, no incumbent special case, and a reader can tell which set a file belongs to from its path."
+    },
+    {
+      "path": "flows/{journey,api-journey,notification-actions}.ts → flows/live-animals/",
+      "action": "move",
+      "what": "PURE MOVE. `flows/journey.ts` (verified: `:28-41` `startNotification()` checks `pages.importType.liveAnimals` and waits on `originOfImport` — irreducibly live-animals), `flows/api-journey.ts` (verified: `:63-71` `seedProjections` — the fulfilment + current-notification + proposed-notification triple that a UI save writes and `POST /fulfilments` does not), `flows/notification-actions.ts`.\n\n`flows/admin-navigation.ts` STAYS at `flows/` (admin service, set-neutral). `flows/README.md` stays and gains a two-set paragraph.\n\nCreate `flows/plant-products/` — empty until pp-061/pp-062 fill it."
+    },
+    {
+      "path": "domain/** → domain/{shared,live-animals}/",
+      "action": "move",
+      "what": "SPLIT, per §10.2 row 5. Verified live inventory:\n- `domain/constants/`: certification-purposes.ts, commodity-codes.ts, commodity-species.ts, commodity-types.ts, country-codes.ts, document-types.ts, import-reasons.ts, journey-options.ts, means-of-transport.ts, point-of-entries.ts, sort-by-values.ts, yes-no-values.ts\n- `domain/models/api/`: fulfilment.ts, notification.ts, README.md\n- `domain/models/db/`: accompanying-document.ts, notification-document.ts, outbox-event-document.ts\n- `domain/types/`: accompanying-document.ts, date-time-input.ts\n\nTO `domain/shared/` — ONLY the genuinely generic: `types/date-time-input.ts`, `constants/yes-no-values.ts`, `constants/sort-by-values.ts` (a sort direction is not set vocabulary). JUDGE each one; when in doubt put it under `live-animals/` — a later increment can promote it, whereas a wrongly-shared file quietly grows live-animals vocabulary in a set-neutral place.\n\nTO `domain/live-animals/` — everything else, including `models/db/outbox-event-document.ts` (the outbox is live-animals' event stream today; if the plant service later emits outbox events, that is a promotion decision then, not an assumption now).\n\nCreate `domain/plant-products/` — empty until pp-061.\n\nDO NOT rewrite any type. This is a move, not a modelling exercise."
+    },
+    {
+      "path": "tests/**",
+      "action": "move",
+      "what": "REORGANISE into per-set subdirs, per §10.3. Every move is `git mv`; no spec body changes except import paths.\n\n- `tests/a11y/*.spec.ts` (notification-dashboard-viewports, notification-dashboard-views, notification-journey-error-state, notification-journey-filled-state, notification-journey-initial-state, notification-view-states) → `tests/a11y/live-animals/`. `tests/a11y/admin/` already exists and STAYS. `tests/a11y/README.md` stays at the top.\n- `tests/e2e/features/*.spec.ts` (30 files, verified) → `tests/e2e/features/live-animals/`. `tests/e2e/features/admin/` already exists and STAYS.\n- `tests/e2e/pages/*.spec.ts` (17 files) → `tests/e2e/pages/live-animals/`. `tests/e2e/pages/admin/` STAYS.\n- `tests/e2e/journeys/promoted-notification.spec.ts` and `tests/e2e/journeys/persistence/` → `tests/e2e/journeys/live-animals/`.\n- `tests/e2e/visual/` → `tests/e2e/visual/live-animals/`. CAUTION: the snapshot dir `origin-of-import.visual.spec.ts-snapshots/` must move WITH its spec, and its baselines are named `<name>-<project>-<platform>.png` (verified: `origin-of-import-frontend-chromium-darwin.png`, `origin-of-import-e2e-darwin.png`, `origin-of-import-e2e-linux.png`). The project rename below CHANGES those filenames — see the shared-config row.\n- `tests/cross-browser/journey-smoke.spec.ts` — STAYS where it is (its own config and its own project set; the plant case joins it at pp-065).\n\nCreate `tests/{a11y,e2e/features,e2e/pages,e2e/journeys}/plant-products/` as pp-062 onwards need them — do not commit empty dirs."
+    },
+    {
+      "path": "page-objects/factory.ts",
+      "action": "edit",
+      "what": "Becomes PER-SET factories with the shared objects hoisted. Today (verified, 69 lines) `createPageObjects(page)` returns one flat object of 30 entries: 25 live-animals page objects, `signIn`/`signOut`, and 4 admin ones.\n\nAFTER:\n- `createSharedPageObjects(page)` → `{ page, signIn, signOut }`\n- `createAdminPageObjects(page)` → `{ ...shared, adminDashboard, adminDlqEvents, adminNotifications, adminOutboxEvents }`\n- `createLiveAnimalsPageObjects(page)` → `{ ...shared, notificationDashboard, importType, overview, originOfImport, commoditySelection, consignmentDetails, animalIdentification, importReason, importPurpose, additionalDetails, accompanyingDocuments, addresses, consignorSelection, destinationSelection, placeOfOriginSelection, consigneeSelection, importerSelection, cphNumber, arrivalDetails, transitedCountries, transporter, transporterSelection, contactAddress, notificationView, declaration, notificationCancelAmend }` — the five `PartyPickerPage` instances keep their exact constructor args (`'consignors/select', 'Consignor or exporter'` etc., `:46-50`); those are SLUGS, not URLs, and are NOT prefixed.\n- `createPlantProductsPageObjects(page)` → `{ ...shared }` for now; pp-062 fills it.\n\nExport matching types (`LiveAnimalsPageObjects`, `PlantProductsPageObjects`, `AdminPageObjects`, `SharedPageObjects`).\n\nKEEP a `createPageObjects` export ONLY if removing it would balloon this increment; prefer removing it so no spec can accidentally reach across sets. If you keep it, it must be a deprecated alias of the live-animals factory and the deprecation must be in the file."
+    },
+    {
+      "path": "page-objects/index.ts",
+      "action": "edit",
+      "what": "Today one line: `export { createPageObjects, type PageObjects } from './factory';`. Re-export the new per-set factories and their types. The `@page-objects` path alias (tsconfig `:16`) resolves to this file, and `fixtures/ui.ts:2` and `flows/journey.ts:1` both import from it — update both."
+    },
+    {
+      "path": "fixtures/ui.ts",
+      "action": "edit",
+      "what": "§10.3's key readability decision. Today (verified, `:9-42`) `PageFixtures` exposes `pages`, `journeyContext`, `journey`, `adminNavigation`, `notificationActions`, `notificationApi`, `apiJourney` — one flat set.\n\nAFTER, expose BOTH sets side by side rather than one fixture that switches on something:\n- `liveAnimalsPages` / `plantProductsPages` / `adminPages`\n- `liveAnimalsJourney` / `plantProductsJourney`\n- `liveAnimalsApiJourney` / `plantProductsApiJourney` (the plant ones land at pp-061; declare only what exists, do not stub a fixture that throws)\n- `notificationApi` (live-animals backend client) keeps its name for now; pp-061 adds `plantProductsApi`.\n- `adminNavigation`, `notificationActions`, `journeyContext` follow their flows.\n\nWHY NOT a switching fixture: a spec's IMPORTS should say which set it tests. A `pages` fixture that resolves by project name means reading the Playwright config to know what a spec covers, and it makes a cross-set spec (pp-065's co-residency spec, which needs BOTH) impossible to express. Playwright fixtures are lazy — declaring both costs nothing at runtime for a spec that uses one.\n\nUPDATE EVERY SPEC'S DESTRUCTURING accordingly (`{ pages, journey }` → `{ liveAnimalsPages, liveAnimalsJourney }`). This is the bulk of the diff and it is mechanical; `npm run typecheck` is the worklist."
+    },
+    {
+      "path": "utils/playwright/shared-config.ts",
+      "action": "edit",
+      "what": "§10.6. Verified live (`:25-42`): TWO projects — `frontend-chromium` (with `testIgnore` for the three admin paths) and `admin-chromium` (with `testMatch` for them).\n\nAFTER — THREE projects:\n- `frontend-live-animals-chromium`, `testMatch: ['**/tests/e2e/features/live-animals/**/*.spec.ts', '**/tests/e2e/pages/live-animals/**/*.spec.ts', '**/tests/e2e/journeys/live-animals/**/*.spec.ts', '**/tests/e2e/visual/live-animals/**/*.spec.ts', '**/tests/a11y/live-animals/**/*.spec.ts']`\n- `frontend-plant-products-chromium`, same shape with `plant-products`\n- `admin-chromium` UNCHANGED\n\nNote the inversion: `frontend-chromium` selected by EXCLUSION (`testIgnore` admin); both new projects select by INCLUSION (`testMatch` own subtree). Inclusion is the right default now — a new top-level spec dir would silently join the old exclusion project, whereas with `testMatch` it simply is not run, which shows up as a test-count drop and gets noticed.\n\nSET-NEUTRAL SPECS (pp-065's `tests/e2e/features/co-residency.spec.ts` exercises BOTH sets in one browser context) do not belong to either project's subtree. Decide NOW and write it in the file: they live at `tests/e2e/features/*.spec.ts` (no set dir) and are matched by the live-animals project, because both sets share one base URL and one server — the project is only a selector, not an environment. pp-065 must not have to reopen this.\n\nKEEP `viewport: { width: 1280, height: 1000 }` on both frontend projects; the visual baselines depend on it."
+    },
+    {
+      "path": "utils/playwright/with-project-base-urls.ts",
+      "action": "edit",
+      "what": "LOAD-BEARING AND NOT IN §10.6 — found live this session. `:3-6` is a HARDCODED map `PROJECT_ENV_VARS = { 'frontend-chromium': 'TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL', 'admin-chromium': 'TRADE_IMPORTS_ANIMALS_ADMIN_BASE_URL' }`, and `:39-43` THROWS `No <context> baseURL configured for project: <name>` for any project without an entry in the passed `projectBaseUrls` map.\n\nSo renaming the frontend project has TWO consequences that fail in different ways:\n1. Miss `PROJECT_ENV_VARS` → the env var is never set → `base-page.ts:6-12` `requireBaseUrl` throws `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL is not set` at the FIRST navigation, in every spec. Add BOTH new project names mapped to the SAME `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL`.\n2. Miss a `projectBaseUrls` entry in any config → the config THROWS at load, before a single test runs.\n\nBoth new names map to the same frontend env var and the same URL. One service, two mounts (§10.6). If a per-set base URL ever appears in this map, that is the failure mode §10.4 E warns about — put a comment in this file saying so."
+    },
+    {
+      "path": "playwright.config.ts",
+      "action": "edit",
+      "what": "`:10-13` `projectBaseUrls` — replace the `frontend-chromium` key with BOTH `frontend-live-animals-chromium` and `frontend-plant-products-chromium`, each mapped to the SAME `https://trade-imports-animals-frontend.${environment}.cdp-int.defra.cloud`. `admin-chromium` unchanged. Miss one and `withProjectBaseUrls` throws at config load."
+    },
+    {
+      "path": "playwright.integration.config.ts",
+      "action": "edit",
+      "what": "`:7-10` `projectBaseUrls` — same treatment; both frontend projects → `http://localhost:3100`."
+    },
+    {
+      "path": "playwright.docker-compose.config.ts",
+      "action": "edit",
+      "what": "`:7-10` `projectBaseUrls` — same treatment; both frontend projects → `http://localhost:3000`."
+    },
+    {
+      "path": "playwright.e2e.config.ts",
+      "action": "edit",
+      "what": "IMPORTANT — this config does NOT use the shared projects. Verified live (`:25-38`): it REPLACES `projects` with its own two, named `e2e` (testDir `./tests/e2e`, `testIgnore: ['**/admin/**']`, baseURL `frontendUrl`) and `admin` (testMatch `**/admin/**/*.spec.ts`, baseURL `adminUrl`). §10.6 does not mention this and a planner working from §10.6 alone would edit shared-config.ts and wonder why the workspace E2E lane was unchanged.\n\nAFTER — split `e2e` into `e2e-live-animals` (testDir `./tests/e2e`, `testMatch: ['**/live-animals/**/*.spec.ts', '**/tests/e2e/features/*.spec.ts']` — the second pattern picks up the set-neutral specs) and `e2e-plant-products` (`testMatch: ['**/plant-products/**/*.spec.ts']`), both on `baseURL: frontendUrl`. `admin` unchanged. This config sets `baseURL` directly per project, so it does NOT go through `withProjectBaseUrls`; but `_test_e2e` in package.json exports the env vars itself (`:25`), so `requireBaseUrl` is still satisfied — verify that after the rename rather than assuming.\n\nKeep `workers: process.env.CI ? '50%' : 4` and the comment above it (`:22-24`): unbounded local workers overwhelm the defra-id auth stub. Two sets means MORE specs, not more workers — do not raise it."
+    },
+    {
+      "path": "playwright.cross-browser.config.ts",
+      "action": "edit",
+      "what": "Verified live (`:17-36`): it also replaces `projects` with its own three (`frontend-chromium`, `frontend-firefox`, `frontend-webkit`), all `testMatch: ['**/tests/cross-browser/**/*.spec.ts']` and all pinned to `http://localhost:3100`. Cross-browser specs are NOT split per set (§10.3 keeps `tests/cross-browser/` flat and pp-065 adds one plant case to the existing smoke spec), so THESE PROJECT NAMES CAN STAY AS THEY ARE. Do not rename them for consistency — they do not go through `withProjectBaseUrls` (this config sets `process.env.TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL` directly at `:8`), and renaming would invalidate any cross-browser snapshot names for nothing. Record that decision in the file."
+    },
+    {
+      "path": "package.json",
+      "action": "edit",
+      "what": "Verified live at `:11-41`.\n- `:25` `_test_e2e` ends `--project=e2e --project=admin` → `--project=e2e-live-animals --project=e2e-plant-products --project=admin`. Leave the two env-var exports exactly as they are (host-only — §10.4 E).\n- ADD `\"test:live-animals\": \"npm run _reset_and_clean_and_test_integration -- --project=frontend-live-animals-chromium\"` and `\"test:plant-products\": \"npm run _reset_and_clean_and_test_integration -- --project=frontend-plant-products-chromium\"` so either set can be run alone during development. Match the existing `_`-prefixed-internals convention; do not invent a new script style.\n- `test:a11y`, `test:integration`, `test:docker-compose*`, `test:cdp` keep their `--grep` tag filters UNCHANGED. Tags stay ORTHOGONAL to sets (§10.6): `@a11y` means accessibility, not a set. Do NOT add a `@plant-products` tag — that is the design this increment is rejecting."
+    },
+    {
+      "path": ".github/workflows/check-pull-request.yml",
+      "action": "edit",
+      "what": "Verified live: `:28-30` run `npm run format:check`, `npm run lint`, `npm run typecheck`. Those script NAMES do not change, so this file probably needs NO edit — but read it end to end and confirm, because §10.6's warning is real: a workflow that pins a project or script name and is missed silently stops running a whole set, and nobody notices until a plant regression ships."
+    },
+    {
+      "path": ".github/workflows/workspace-e2e-tests.yml",
+      "action": "edit",
+      "what": "Verified live: it does not run npm scripts directly — it calls the reusable workflow `DEFRA/trade-imports-animals-workspace/.github/workflows/e2e-tests.yml@main` (`:40-41`) with inputs, and reports status via `DEFRA/trade-imports-animals-workspace/.github/actions/report-e2e-status@main` (`:31,54`). READ THE `with:` BLOCKS. If any input names a project or a script (a `--project` flag, a `test:*` script), it must be updated here AND the workspace-side reusable workflow must be checked at `~/git/defra/trade-imports-animals/.github/workflows/e2e-tests.yml`. Sam owns the workspace repo too (do not treat it as off-limits); if the change belongs there, make it there in the same increment and note the cross-repo edit."
+    },
+    {
+      "path": "tsconfig.json",
+      "action": "edit",
+      "what": "Verified live `:12-23`. The existing aliases are all wildcard-suffixed (`@page-objects/*`, `@flows/*`, `@domain/*`, `@adapters/*`, `@config/*`, `@fixtures`, `@fixtures/*`, `@resources/*`, `@utils/*`), so `@page-objects/live-animals/foo` and `@domain/plant-products/bar` RESOLVE WITH NO CHANGE. Expect this file to need no edit; verify with `npm run typecheck` rather than assuming, and only add an alias if a real resolution failure demands it. Do NOT add per-set aliases (`@live-animals/*`) — that is a second naming scheme for the same fact."
+    },
+    {
+      "path": "eslint.config.mjs",
+      "action": "edit",
+      "what": "Check for path-scoped rules or ignore patterns that name `page-objects/notification`, `tests/e2e/features` etc. If none, no edit. `npm run lint` after the move is the check."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "NO new spec. This increment is a pure move + rewiring: same specs, same assertions, same count, different paths and different project names."
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "`page-objects/live-animals/` holds all 22 former `page-objects/notification/` files; `page-objects/{base,auth,admin}/` are untouched in place.",
+    "`flows/live-animals/` holds journey.ts, api-journey.ts, notification-actions.ts; `flows/admin-navigation.ts` stays at `flows/`.",
+    "`domain/{shared,live-animals}/` split is done and every file landed somewhere deliberate — nothing left at `domain/{constants,models,types}/`.",
+    "`tests/{a11y,e2e/features,e2e/pages,e2e/journeys,e2e/visual}/live-animals/` exist and hold the moved specs; `**/admin/` subtrees are unmoved; `tests/cross-browser/` is unmoved.",
+    "`fixtures/ui.ts` exposes per-set fixtures (`liveAnimalsPages`/`plantProductsPages`, `liveAnimalsJourney`/`plantProductsJourney`) — no fixture that switches set at runtime.",
+    "`utils/playwright/shared-config.ts` declares `frontend-live-animals-chromium`, `frontend-plant-products-chromium` and `admin-chromium`; both frontend projects select by `testMatch` on their own subtree.",
+    "`utils/playwright/with-project-base-urls.ts` `PROJECT_ENV_VARS` maps BOTH new project names to `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL`, and every `projectBaseUrls` map (playwright.config.ts, integration, docker-compose) has an entry for both — no config throws at load.",
+    "BOTH frontend projects map to the SAME frontend base URL in every config. No config anywhere contains a base URL ending in a set prefix.",
+    "`playwright.e2e.config.ts` splits `e2e` into `e2e-live-animals` and `e2e-plant-products`; `package.json:25` `_test_e2e` passes all three project flags.",
+    "`test:live-animals` and `test:plant-products` scripts exist and each runs only its own set.",
+    "`@a11y` / `@integration` / `@visual` tag filters are unchanged — no set tag was introduced.",
+    "`playwright test --list` (via each config) discovers BOTH frontend projects.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "THE BAR: the full suite is green with an IDENTICAL test count to the pre-move run. A drop means a `testMatch` misses a subtree — that is the specific failure this reorganisation risks and the reason the count is the acceptance criterion rather than 'green'.",
+    "Visual baselines still match, or were regenerated deliberately with `npm run test:visual:update:macos` and the regeneration is called out in the commit message (project rename changes snapshot filenames)."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "npx --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests playwright test --config=playwright.integration.config.ts --list > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-list-before.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npx --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests playwright test --config=playwright.integration.config.ts --list > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-list-after.log 2>&1",
+    "diff ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-list-before.log ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-list-after.log > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-list-diff.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-e2e.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-integration.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:a11y > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-a11y.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp060-la-only.log 2>&1",
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests status --short"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO with its own remote, branches and CI (`.github/workflows/`). Its npm scripts are its own — there is no frontend `test:features` / `lint:arch` here. Verbatim from package.json this session: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:local\": \"npm run test:integration\"; \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"; \"test:cross-browser\"; \"test:docker-compose\".\n\nTAKE THE 'BEFORE' LIST FIRST. The acceptance bar is an identical test count, so capture `playwright test --list` BEFORE touching anything (it is the first verification command for that reason) and diff it at the end. A silent count drop from a `testMatch` that misses a subtree is the single most likely defect in this increment and it is invisible in a green run.\n\nPURE MOVE DISCIPLINE. Use `git mv` so history follows the files, and change NOTHING inside a moved file except its import paths and its fixture destructuring. If you find yourself improving a page object while moving it, stop — that is a different increment and it destroys the 'identical test count, identical assertions' proof.\n\nWHY MOVE LIVE-ANIMALS AT ALL (R7): the same argument as the mount scheme. An incumbent set sitting at the root while the newcomer sits in a named subdir is a permanent special case in every future planner's head. One fact per set, symmetric everywhere. Sam accepted the churn explicitly.\n\nTHE TWO CONFIG TRAPS, both verified live and neither in §10.6:\n1. `utils/playwright/with-project-base-urls.ts:3-6` has a HARDCODED project-name → env-var map, and `:39-43` throws for any project missing from the passed `projectBaseUrls`. Renaming a project without updating both places fails either at config load (loud, fine) or at first navigation with `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL is not set` (confusing).\n2. `playwright.e2e.config.ts:25-38` and `playwright.cross-browser.config.ts:17-36` REPLACE `projects` wholesale rather than inheriting shared-config's. Editing only shared-config.ts leaves the workspace E2E lane and the cross-browser lane running the old shape.\n\nSET-NEUTRAL SPECS: decided here so pp-065 does not have to reopen it — a spec that exercises BOTH sets (co-residency) lives at `tests/e2e/features/*.spec.ts` with no set dir, and is matched by the live-animals project. Both sets share one server and one base URL, so the project is a selector, not an environment.\n\nSCOPE FENCE: no plant-products page object, flow, spec or seed lands here. Empty per-set dirs are created only where a later increment fills them immediately; do not commit placeholder files that a reader will mistake for coverage.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the workspace-side reusable workflow `~/git/defra/trade-imports-animals/.github/workflows/e2e-tests.yml` pins a project name or a `test:*` script. Planned resolution: read it during this increment; if it does, change it here (Sam owns the workspace repo — it is not off-limits) and note the cross-repo edit in the commit body. Leaving it stale means CI runs one set and reports green.",
+    "Whether `domain/models/db/outbox-event-document.ts` and `domain/constants/sort-by-values.ts` are set vocabulary or shared. Planned resolution as written above (outbox → live-animals, sort-by → shared); if the plant dashboard turns out to reuse the same sort values at pp-062, promoting a file later is a one-line move, whereas un-sharing one that grew live-animals-specific fields is not."
+  ]
+}

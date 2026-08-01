@@ -1,0 +1,95 @@
+{
+  "id": "pp-066",
+  "title": "Tests repo: plant-products a11y suite (mirrors the live-animals specs file for file)",
+  "kind": "test",
+  "milestone": "m4",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-064"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (the a11y row: mirror the five live-animals a11y specs), §10.3 (`tests/a11y/{live-animals,plant-products,admin}/`) and §10.6 (tags stay orthogonal to sets — `@a11y` means accessibility, the SET is a project). The harness is the repo's own `fixtures/a11y.ts` + `utils/a11y-utils.ts`, both set-agnostic and reused unchanged.",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-journey-initial-state.spec.ts",
+      "action": "create",
+      "what": "NEW. Mirrors `tests/a11y/live-animals/notification-journey-initial-state.spec.ts`. Walks the plant journey with `runA11yScan()` on EACH page in its EMPTY state: dashboard → import-type filter → hub → then every one of the 12 spokes' pages before any answer is given.\n\nUse the existing harness unchanged: `import { test, expect } from '@fixtures/a11y'` and the `runA11yScan` fixture. `fixtures/a11y.ts:11-14` supplies WCAG_STANDARD (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`) as the default tag set — do not pass your own tags unless a scan genuinely needs a narrower ruleset, and say why if it does.\n\nTag the describe/test `@a11y` so `npm run test:a11y` (which greps that tag) picks it up. Do NOT invent a set tag — sets are a project-level split (pp-060).\n\nEXCLUSIONS: if a govuk-frontend upstream defect makes a scan fail, record it the way the live-animals spec does — a NAMED, SCOPED exclusion with a comment, e.g. `tests/a11y/live-animals/notification-journey-initial-state.spec.ts:6,28` declares `const conditionalRadioInput = '#regionOfOriginCodeRequirement'` and passes `runA11yScan({ exclude: conditionalRadioInput })`. Never `disableRules` globally: a rule switched off across the suite hides that rule's defects on every other page too, forever, and nobody revisits it."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-journey-filled-state.spec.ts",
+      "action": "create",
+      "what": "NEW. Mirrors the live-animals filled-state spec: complete each page (via `flows/plant-products/journey.ts`'s per-spoke `answerX` methods from pp-062/063/064) and scan each in its ANSWERED state. Filled state exposes different a11y surface from empty — populated summary lists, revealed conditional fields, the depth-3 commodity summary tree, Change links carrying visually-hidden context. Include the commodity summary with at least two lines, two species and two varieties, since that nested list is the most structurally complex thing either set renders."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-journey-error-state.spec.ts",
+      "action": "create",
+      "what": "NEW. Mirrors the live-animals error-state spec: submit each page EMPTY (or invalid) and scan the resulting error state. This catches the error-summary/field-link association, `aria-describedby` wiring and focus management that the other two states never render. Cover at least one page of each input type the plant journey uses — radios, a select/autocomplete, a date input, a numeric input and a repeating-group page."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-dashboard-views.spec.ts",
+      "action": "create",
+      "what": "NEW. Mirrors the live-animals dashboard-views spec: scan the plant dashboard in its meaningful states — empty (no notifications), populated, searched with results, searched with NO results, sorted, and paginated. The empty state and the no-results state are different pages of copy and both are easy to ship unscanned."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-dashboard-viewports.spec.ts",
+      "action": "create",
+      "what": "NEW. Mirrors the live-animals viewports spec. Re-scan the plant dashboard at the harness's declared breakpoints using `scanViewports` from `fixtures/a11y.ts:22-44` — `narrowPortrait` (320x568, the WCAG 1.4.10 Reflow width and govuk-frontend's smallest breakpoint) and `narrowLandscape` (568x320, for 1.3.4 Orientation and the other half of Reflow).\n\nUSE `waitForViewportSettle(page)` after each `setViewportSize` (`fixtures/a11y.ts:52-53`). It exists because `setViewportSize()` resolves when the browser applies the metrics, NOT when JS reacting to the change has run — scanning without it can see stale layout and produce a false pass. This is the single most likely way to write this spec wrong."
+    },
+    {
+      "path": "tests/a11y/plant-products/notification-view-states.spec.ts",
+      "action": "create",
+      "what": "NEW — the SIXTH live-animals a11y spec, which §10.5's 'five specs' line omits. Verified live: `tests/a11y/` contains notification-dashboard-viewports, notification-dashboard-views, notification-journey-error-state, notification-journey-filled-state, notification-journey-initial-state AND notification-view-states. Mirror it too: scan the read-only VIEW of a notification in each of its lifecycle states — draft, submitted, amending, and the confirmation page.\n\nThe live-animals equivalent navigates directly (`:26` `navigateToFrontend(.../confirmation)`, prefixed by pp-059); the plant one uses `flows/plant-products/api-journey.ts` (pp-061) to seed each state rather than walking the journey four times.\n\nWHY IT MATTERS HERE SPECIFICALLY: the CHED-PP trace work found that the legacy service's own a11y suite scanned its review page ONLY in the DRAFT state — it clicked Save and continue immediately after (`workareas/shared/trace-requirements/ched-pp/pages/review-notification.json`, the a11y-suite note). The submitted / checks / split states were never scanned. Do not reproduce that gap in the new service."
+    },
+    {
+      "path": "package.json",
+      "action": "edit",
+      "what": "Verified live at `:32`: `\"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"`, and `:35` `\"test:docker-compose:a11y\"`. Both select by TAG and are set-agnostic, so the new specs are picked up with NO edit as long as they carry `@a11y` and live under a path the a11y-capable projects match.\n\nCHECK THAT SECOND CONDITION rather than assuming it: pp-060 scoped `frontend-plant-products-chromium`'s `testMatch` to `**/tests/a11y/plant-products/**` among others. If the pattern list missed the a11y subtree, `npm run test:a11y` greps a tag inside a project that never collected the file and reports green having run nothing. Confirm with `playwright test --list` filtered to the a11y grep — a green a11y run with a zero test count is the failure mode."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "tests/a11y/plant-products/notification-journey-initial-state.spec.ts",
+    "tests/a11y/plant-products/notification-journey-filled-state.spec.ts",
+    "tests/a11y/plant-products/notification-journey-error-state.spec.ts",
+    "tests/a11y/plant-products/notification-dashboard-views.spec.ts",
+    "tests/a11y/plant-products/notification-dashboard-viewports.spec.ts",
+    "tests/a11y/plant-products/notification-view-states.spec.ts"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "Six plant a11y specs exist under `tests/a11y/plant-products/`, mirroring the six live-animals specs file for file (including notification-view-states, which §10.5's 'five specs' line omits).",
+    "All use the existing `fixtures/a11y.ts` + `utils/a11y-utils.ts` harness unchanged — no new scanning utility, no bespoke axe wiring.",
+    "Every spec is tagged `@a11y`; NO set tag was introduced (sets are a Playwright project split).",
+    "The viewport spec uses `scanViewports.narrowPortrait` and `scanViewports.narrowLandscape` and calls `waitForViewportSettle(page)` after every resize.",
+    "Any exclusion is NAMED, SCOPED to a selector and commented with the upstream reason (the live-animals `conditionalRadioInput` exclusion is the pattern). NO global `disableRules` anywhere in the new specs.",
+    "THE COUNT BAR: `npm run test:a11y` is green for BOTH sets AND actually collected the plant specs — verify with a `--list` under the same grep. A green a11y run with a zero plant test count is the specific failure this criterion exists for.",
+    "Scan-name collisions between the sets are resolved. `utils/a11y-utils.ts:29-35` names each scan by `new URL(url).pathname`, which now carries the set prefix (`/live-animals/...` vs `/plant-products/...`), so they are naturally distinct — CONFIRM that in the allure output rather than assuming it, since identical scan names would silently overwrite each other's attachments.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "The live-animals a11y specs are unchanged and still green in the same run."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp066-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp066-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npx --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests playwright test --grep @a11y --list > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp066-a11y-list.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:a11y > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp066-a11y.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp066-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI, own package.json. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"; \"test:docker-compose:a11y\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\". There is no frontend a11y script to borrow.\n\nSTANDING RULE — A GREEN AXE SCAN IS NOT SUFFICIENT EVIDENCE ON ITS OWN. The CHED-PP trace work recorded real defects on these very pages that axe cannot see, and this suite must not be presented as proof they are absent:\n- THREE controls sharing the accessible name 'Copy' on the review/notification surface, with nothing distinguishing which reference each one acts on, and a fourth in a state the traces never captured (`workareas/shared/trace-requirements/ched-pp/pages/review-notification.json`). Duplicate accessible names on distinct actions pass axe and defeat a screen-reader user completely.\n- A link that announces as a same-page link when it is not, plus a bespoke `--next-to-breadcrumbs` modifier reaching into a govuk component's own CSS namespace (`.../pages/csv-upload.json:115`) — custom CSS inside a component namespace also blocks clean govuk-frontend upgrades.\n- The legacy service's own a11y suite scanned its review page ONLY in the DRAFT state (`review-notification.json`), so the submitted/checks/split states were never covered.\nCONSEQUENCE FOR THIS INCREMENT: cover every STATE (that is why the initial/filled/error/view-states split exists), and when a page ships a repeated action name or a bespoke component modifier, say so in the spec as a comment naming the trace finding — an automated pass on a page with a known axe-invisible defect is a misleading green, not assurance. Where a defect is real, it belongs in a ticket, not in an exclusion.\n\nSTAY INSIDE THE GOVUK-FRONTEND TOOLBOX. If a plant page needs a visual fix to pass a scan, the fix is a govuk-* component or utility class in the frontend repo, not custom CSS — and it is a frontend increment, not a spec exclusion here.\n\nWHY THE SCAN NAMES NOW WORK OUT: `utils/a11y-utils.ts:29-35` derives each scan's name from the pathname, and under R7 both sets carry a prefix, so `/live-animals/notifications/…` and `/plant-products/notifications/…` never collide. Under the rejected asymmetric scheme the live-animals paths would have been bare and the two sets' equivalent pages could have produced confusingly similar labels. Small, but it is one more thing symmetry made free.\n\nE2E IS QUICK HERE — do not skip or hedge the a11y lane on perceived runtime. The a11y fixture already raises the per-test timeout to five minutes (`fixtures/a11y.ts:57`) because these tests click through several pages per test; that is expected, not a reason to trim coverage.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether any plant page hits the axe-core `analyze()` window-open hang documented at `utils/a11y-utils.ts:11-21` (dequelabs/axe-core-npm#707). Planned resolution: if a scan hangs, set `legacyMode: true` for THAT scan only, with the upstream issue cited inline — never suite-wide, since legacy mode drops cross-origin iframe testing.",
+    "Whether the depth-3 commodity summary needs its own dedicated a11y case rather than riding inside the filled-state walk. Planned resolution: start inside filled-state; if the nested list produces findings that are hard to attribute to a page, split it into its own spec then — attribution, not coverage, is the reason to split."
+  ]
+}

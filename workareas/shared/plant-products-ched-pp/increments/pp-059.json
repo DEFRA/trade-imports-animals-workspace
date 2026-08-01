@@ -1,0 +1,150 @@
+{
+  "id": "pp-059",
+  "title": "Tests repo: cut spike/trace-to-requirements, then migrate the URL layer to /live-animals (R7)",
+  "kind": "test",
+  "milestone": "m0",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-057"],
+  "sourceIncrement": null,
+  "recipe": "No recipe covers a cross-repo URL migration. The script is SIBLING-SET-PLAN.md §10.1 (branch prerequisite), §10.2 (the parameterise-vs-clone ruling — this increment is the PARAMETERISE half: the URL layer only), §10.4 A-F (the enumerated file:line migration, verified live), and §4.3/§4.6 for what the frontend has just done and why. CLAUDE.md rule 2 governs the branch name.",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1, BEFORE ANY EDIT. This repo is currently on `spike/EUDPA-288-model-retrofit` (verified live). CLAUDE.md rule 2 requires cross-repo branches to share the SAME name — the workspace stack's `--branch` flag probes each repo for a matching branch-tagged image and falls back to `:latest` per service, so a mismatched name silently breaks linked-branch image pickup and you end up testing a Dockerhub :latest frontend that does not have the mount work in it.\n\nRun, in this order (one command per call, no compound commands):\n1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests status --short`  — must be clean; if not, STOP and report.\n2. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current`  — expect `spike/EUDPA-288-model-retrofit`.\n3. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests checkout -b spike/trace-to-requirements`  — cut from the CURRENT head, do not rebase, do not pull.\n4. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current`  — must now print `spike/trace-to-requirements`.\n\nNOTHING lands on `spike/EUDPA-288-model-retrofit`. Every later tests-repo increment (pp-060..pp-067) re-verifies step 4 before editing."
+    },
+    {
+      "path": "page-objects/base/sets.ts",
+      "action": "create",
+      "what": "NEW — the ONE place a mount prefix is written down in this repo. Mirrors `page-objects/base/sets.ts` in SIBLING-SET-PLAN §10.3.\n\n```ts\nexport const SET_BASES = {\n  liveAnimals: '/live-animals',\n  plantProducts: '/plant-products',\n} as const;\n\nexport type SetBase = (typeof SET_BASES)[keyof typeof SET_BASES];\n```\n\nWhy a constant map and not a literal at each call site: the frontend derives its mount mechanically as `'/' + setId` (SIBLING-SET-PLAN §4.3) and pins that with a boot tripwire (pp-058). This repo cannot see that tripwire, so it needs exactly one written-down copy of the fact; a prefix scattered across 30 specs is the drift the R7 symmetry decision exists to prevent. Do NOT put the prefix in a base URL — see the config row below.\n\nplantProducts is declared NOW even though nothing uses it until pp-062, so pp-060's move does not have to touch this file again."
+    },
+    {
+      "path": "page-objects/base/base-page.ts",
+      "action": "edit",
+      "what": "The URL layer — §10.4 A. Verified live: the file is 101 lines; `BasePage` (`:14-69`) holds `navigateToFrontend` (`:33-36`), `navigateToAdminPortal` (`:38-41`) and `signInWhenRequested` (`:43-68`); `NotificationPage` (`:71-101`) holds `expectedUrl` (`:79-82`), `journeyIdFromUrl` (`:84-90`), `currentJourneyUrl` (`:92-95`) and `open` (`:97-100`).\n\nEDITS:\n\n1. `NotificationPage` constructor (`:71-77`) — today `constructor(page: Page, readonly slug: string)`. Give it a set base: `constructor(page: Page, readonly slug: string, readonly setBase: string = SET_BASES.liveAnimals)`. A DEFAULT of liveAnimals is deliberate: 22 live-animals page objects extend this and none of them should need an edit in this increment (they get their own subclass base at pp-060 when they move). Import `SET_BASES` from `@page-objects/base/sets`.\n\n2. `expectedUrl` (`:79-82`) — `return `/notifications/${journeyId}${suffix}`` becomes `return `${this.setBase}/notifications/${journeyId}${suffix}``.\n\n3. `journeyIdFromUrl` (`:85`) — today `new URL(this.page.url()).pathname.match(/^\\/notifications\\/([^/]+)/)`. It is FRONT-ANCHORED already, which is exactly why it MUST change rather than silently keep working: after the mount every notification pathname starts `/live-animals/notifications/…` and this regex stops matching, throwing `No journey id in notification URL`. Becomes `new RegExp(`^${this.setBase}/notifications/([^/]+)`)`. Build the RegExp from `this.setBase` — do not hardcode. (No regex-escaping helper is needed: set bases are `/[a-z-]+` by construction, per the frontend's `'/' + setId` rule.)\n\n4. `currentJourneyUrl` (`:92-95`) — prefix it the same way as `expectedUrl`.\n\n5. `navigateToFrontend` (`:33-36`) — LEAVE THE SIGNATURE AS IS. It stays `(path: string = '/')` joined onto the host-only base URL, because it is also the entry point for genuinely unprefixed frontend paths (`/health`, `/signout`, `${assetPath}/…`) and for the FD-18 root redirect, which pp-065's co-residency spec asserts. Callers that want a set-relative path pass `${SET_BASES.liveAnimals}/…` or go through a page object. Do NOT make it set-aware; that would leave no way to hit an unprefixed path.\n\n6. `navigateToAdminPortal` (`:38-41`) — NO EDIT. Different service, different base URL, never prefixed.\n\n7. `signInWhenRequested` (`:43-68`) — NO EDIT. One OIDC stub, one sign-in form, shared by both sets. §10.2 calls this out as the one thing that is genuinely common; cloning it would be the worst outcome of this work."
+    },
+    {
+      "path": "page-objects/notification/notification-dashboard-page.ts",
+      "action": "edit",
+      "what": "§10.4 B — the only place the frontend root is hardcoded outside base-page.ts. Four sites, all verified live:\n- `:12` `readonly expectedUrl = '/';` → `readonly expectedUrl = SET_BASES.liveAnimals;` (i.e. `/live-animals`, NO trailing slash — that is exactly what Hapi serves for a `/` route registered under prefix `/live-animals`, per SIBLING-SET-PLAN §4.3).\n- `:142` `await this.navigateToFrontend(pageNumber <= 1 ? '/' : `/?page=${pageNumber}`);` → `` `${SET_BASES.liveAnimals}` `` and `` `${SET_BASES.liveAnimals}?page=${pageNumber}` ``. WATCH THE QUERY STRING: today the second branch is `/?page=N`; the prefixed form is `/live-animals?page=N` (no slash before `?`). Writing `/live-animals/?page=N` sends a trailing-slash path Hapi did not register.\n- `:211` `await this.navigateToFrontend('/');` → `SET_BASES.liveAnimals`.\n- `:220` same as `:211`.\n\nImport `SET_BASES` from `@page-objects/base/sets`. Do not introduce a local `const ROOT = '/live-animals'` — one source of the prefix, per the sets.ts row."
+    },
+    {
+      "path": "tests/a11y/notification-view-states.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, MUST-CHANGE. `:26` — `navigateToFrontend(`/notifications/${submitted.id}/confirmation`)` becomes `navigateToFrontend(`${SET_BASES.liveAnimals}/notifications/${submitted.id}/confirmation`)`. Without this the goto 404s and the axe scan runs against an error page (which may well pass axe — that is the failure mode this edit prevents)."
+    },
+    {
+      "path": "tests/e2e/features/notification-delete.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, MUST-CHANGE. `:14` — `page.goto(`/notifications/${journeyId}/delete`)` → prefixed with `SET_BASES.liveAnimals`."
+    },
+    {
+      "path": "tests/e2e/features/notification-dashboard-search.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C. MUST-CHANGE at `:77` — `page.goto('/?referenceNumber=…&page=2')` → `` `${SET_BASES.liveAnimals}?referenceNumber=…&page=2` `` (again: no slash before `?`).\n\nFRONT-ANCHOR at `:24,40,48,56,69,70,81` — these assertions pass either way today, which is precisely why they must be re-anchored: a URL regex that survives the migration untouched proves nothing about the prefix. Every one becomes `/^\\/live-animals\\/…/` (or `new RegExp(`^${SET_BASES.liveAnimals}…`)`). Do not change what they assert, only where they anchor."
+    },
+    {
+      "path": "tests/e2e/features/headers.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, MUST-CHANGE and the subtlest one. `:6` waits for the dashboard DOCUMENT response by testing `new URL(response.url()).pathname === '/'`. After the mount the dashboard document is `/live-animals`; `/` is now a 302 (FD-18), so the old predicate would match the REDIRECT response, not the document, and the header assertions would run against a body that does not exist. Change the predicate to `=== SET_BASES.liveAnimals`. If the spec follows redirects and sees both responses, assert the 200 explicitly rather than relying on ordering."
+    },
+    {
+      "path": "tests/e2e/pages/notification-dashboard.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, MUST-CHANGE at `:7` — `toHaveURL(new RegExp(`/notifications/${journeyId}$`))` is suffix-anchored; it would survive the migration and prove nothing. Re-anchor to `new RegExp(`^${SET_BASES.liveAnimals}/notifications/${journeyId}$`)` — note the `^` AND the retained `$`.\n\n`:25` resolves through the page object (`pages.notificationDashboard.expectedUrl`) and needs NO edit — it follows the dashboard page-object change automatically. Verify that is still true after your edit rather than assuming it."
+    },
+    {
+      "path": "tests/e2e/journeys/promoted-notification.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, MUST-CHANGE at `:11` — same shape as notification-dashboard.spec.ts:7, same front-anchoring fix."
+    },
+    {
+      "path": "tests/e2e/features/auth.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C. MUST-CHANGE at `:77` — `new RegExp(`/notifications/${journeyId}/origin$`)` → front-anchored on `SET_BASES.liveAnimals`.\n\n`:15` — `toHaveURL(pages.notificationDashboard.expectedUrl)` follows the page-object change automatically, but ASSERT THE NEW VALUE: after the dashboard page object changes this now asserts `/live-animals`, and that is the single most valuable assertion in this repo for proving the OIDC leg still lands where it should.\n\nADD ONE NEW ASSERTION HERE (this is the cross-repo half of SIBLING-SET-PLAN §4.6 A row 12, and pp-057 owns the in-repo half): sign in with NO stored redirect, land on `/`, and assert the browser ends up on `/live-animals`. `src/server/auth/controller.js:11,63,73,114,122` all fall back to `'/'` as the post-sign-in target and `getSafeRedirect` only permits relative paths — the FD-18 302 is what keeps those five sites unedited, and a deliberate no-change must be PROVEN, not assumed. Without this assertion the whole 'no auth edits needed' claim is untested against a real OIDC stub."
+    },
+    {
+      "path": "tests/e2e/features/change-from-cya.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, FRONT-ANCHOR only, at `:17,21,30,34`. Passes either way; re-anchor so it proves the prefix."
+    },
+    {
+      "path": "tests/e2e/features/cancel-amend-ui.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, FRONT-ANCHOR only, at `:24,37,64`."
+    },
+    {
+      "path": "tests/e2e/pages/notification-view-states.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, FRONT-ANCHOR only, at `:40,52`."
+    },
+    {
+      "path": "tests/e2e/features/notification-dashboard-sort.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, FRONT-ANCHOR only, at `:28`."
+    },
+    {
+      "path": "tests/e2e/pages/notification-dashboard-pagination.spec.ts",
+      "action": "edit",
+      "what": "§10.4 C, FRONT-ANCHOR only, at `:17`."
+    },
+    {
+      "path": "page-objects/admin/*.ts, page-objects/auth/*.ts, adapters/http/notification-api-client.ts, flows/api-journey.ts, e2e stack helpers",
+      "action": "none",
+      "what": "§10.4 D — THE EXPLICIT NO-EDIT LIST. State it in the commit message so nobody 'helpfully' prefixes these later:\n- `page-objects/admin/admin-dashboard-page.ts:5,24,34`, `admin-notifications-page.ts:5,78,99`, `admin-outbox-events-page.ts:5`, `admin-dlq-events-page.ts:5,8` — a DIFFERENT SERVICE, reached via `TRADE_IMPORTS_ANIMALS_ADMIN_BASE_URL`. `admin-notifications-page.ts:5` `expectedUrl = '/notifications'` is the single most likely false positive in this repo: it LOOKS exactly like a frontend path and is not one.\n- `page-objects/auth/sign-in-page.ts:4`, `sign-out-page.ts:4` — OIDC provider URLs on the defra-id stub.\n- `adapters/http/notification-api-client.ts:27,32` (`/notifications/{id}`, `/proposed-notifications/{id}`) and its sibling `/fulfilments*` calls, plus `flows/api-journey.ts` (the projection-seeding comment at `:63-66`) — BACKEND API paths against `TRADE_IMPORTS_ANIMALS_BACKEND_URL`. The backend is not mounted behind any set prefix.\n\nProve the no-edit list held: `git -C … diff --name-only` must not list any file under `page-objects/admin/`, `page-objects/auth/` or `adapters/`."
+    },
+    {
+      "path": "playwright.config.ts, playwright.e2e.config.ts, playwright.integration.config.ts, playwright.docker-compose.config.ts, playwright.cross-browser.config.ts, package.json",
+      "action": "none",
+      "what": "§10.4 E — NO baseURL CHANGE, and the increment must record WHY.\n\nVerified live: `playwright.config.ts:10-13` maps project name → CDP host; `playwright.integration.config.ts:7-10` and `playwright.docker-compose.config.ts:7-10` do the same for localhost:3100 / :3000; `playwright.e2e.config.ts:7,30,36` sets `baseURL: frontendUrl` per project; `playwright.cross-browser.config.ts:5,8` pins `http://localhost:3100`; `package.json:25` (`_test_e2e`) exports `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL=\"${REWORKED_FRONTEND_URL:-http://localhost:3100}\"`. ALL STAY HOST-ONLY.\n\nWHY: a base URL ending in `/live-animals` would (a) make `/health`, `/signout` and `${assetPath}/*` unreachable — every stylesheet 404s and sign-out breaks; (b) break the OIDC callback, which is a server-wide `/auth/*` route; (c) make the SECOND set unreachable from the same project, which is the whole point of co-residency and is what pp-065's co-residency spec needs. The prefix belongs in `page-objects/base/sets.ts` and nowhere else. This is the most tempting wrong turn in the increment; it is why the rule is written down here rather than discovered."
+    },
+    {
+      "path": "utils/a11y-utils.ts",
+      "action": "none",
+      "what": "§10.4 F — INCIDENTAL, no edit expected. `:29-35` `getPathInfo` names each scan by `new URL(url).pathname || '/'`, so scan names (and therefore allure attachment labels, `fixtures/a11y.ts:83`) now carry the `/live-animals` prefix. Behaviourally fine and actually desirable — pp-066 relies on it to keep the two sets' scan names distinct without any extra work. CHECK, do not assume: if any baseline, report assertion or dashboard keys off the old unprefixed names, fix it here rather than leaving it for the a11y increment."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "No new spec file. This increment MIGRATES existing specs; the proof is that the migrated assertions are front-anchored on /live-animals and still green against a co-resident stack.",
+    "One new ASSERTION inside tests/e2e/features/auth.spec.ts: sign in with no stored redirect, land on /, end on /live-animals (the cross-repo proof of FD-18 and of the zero-edit auth claim)."
+  ],
+  "acceptanceCriteria": [
+    "`git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` prints `spike/trace-to-requirements`, and `spike/EUDPA-288-model-retrofit` has no new commits.",
+    "`page-objects/base/sets.ts` exists and is the ONLY file in the repo containing the literal string `/live-animals` outside a spec's front-anchored regex; every other site imports SET_BASES.",
+    "All six §10.4 A URL-layer edits are made: NotificationPage takes a set base (defaulting to liveAnimals), expectedUrl / currentJourneyUrl are prefixed, and journeyIdFromUrl's regex is rebuilt from the set base.",
+    "All four §10.4 B dashboard sites (`:12,142,211,220`) emit `/live-animals` with NO trailing slash, including the `?page=` form.",
+    "Every §10.4 C MUST-CHANGE spec is edited: notification-view-states.spec.ts:26, notification-delete.spec.ts:14, notification-dashboard-search.spec.ts:77, headers.spec.ts:6, notification-dashboard.spec.ts:7, promoted-notification.spec.ts:11, auth.spec.ts:77.",
+    "Every §10.4 C FRONT-ANCHOR site is re-anchored on `^/live-animals`. THE BAR: `grep -rn \"toHaveURL(new RegExp('/notifications\\|toHaveURL(/\\\\\\\\/notifications\" tests/` returns nothing — no surviving URL regex that would also pass if the prefix were dropped. A spec left on a loose suffix regex counts as UNMIGRATED, not as passing.",
+    "auth.spec.ts asserts the no-stored-redirect sign-in lands on /live-animals (FD-18 proven cross-repo, not assumed).",
+    "THE NO-EDIT LIST HELD, diff-verified: `git diff --name-only` lists no file under page-objects/admin/, page-objects/auth/ or adapters/.",
+    "NO baseURL changed in any playwright.*.config.ts and no change to package.json:25 — all frontend base URLs stay host-only.",
+    "npm run typecheck, npm run lint and npm run format:check are green.",
+    "The full workspace E2E suite is green against a co-resident stack (both sets registered, live-animals at /live-animals), with the SAME test count as before the migration — no spec silently skipped or deleted."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests status --short",
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests checkout -b spike/trace-to-requirements",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "grep -rn \"'/notifications\\|\\\"/notifications\\|(  *'/'\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/tests ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/page-objects/notification ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests/page-objects/base > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-sweep.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-e2e.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-integration.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:a11y > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-a11y.log 2>&1",
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests diff --name-only"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO. `repos/trade-imports-animals-tests` has its own remote (DEFRA/trade-imports-animals-tests), its own branches, its own GitHub Actions workflows (`.github/workflows/{check-pull-request,workspace-e2e-tests,publish,publish-branch,cleanup-e2e-reports}.yml`) and its own package.json. NOTHING about the frontend repo's npm scripts applies here: there is no vitest `npm test`, no `test:features`, no `test:live-animals`, no `lint:arch`. The real scripts, quoted verbatim from `package.json:11-41` this session, are:\n  \"typecheck\": \"tsc --noEmit\"\n  \"lint\": \"eslint .\"\n  \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"\n  \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"\n  \"test:local\": \"npm run test:integration\"  (= `_reset_and_clean_and_test_integration -- --grep '@integration'`)\n  \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"\n  \"test:cross-browser\", \"test:docker-compose\", \"database:reseed\": \"./bin/database-reseed.sh\"\nCommit in THIS repo, on ITS branch. Do not commit tests-repo changes from the workspace root.\n\nSEQUENCING — THIS IS THE LOAD-BEARING NOTE. pp-057 (frontend URL migration) and pp-059 (this) MUST land together, back to back, with nothing between them. They CANNOT be atomic — different repos, different git histories — so between the two commits the workspace E2E suite is RED BY CONSTRUCTION: the moment live-animals is registered under `/live-animals`, every URL in this repo points at a 404. That is expected, it is not a regression, and it is not a reason to stop. What IS a reason to stop: landing pp-057 and then doing anything other than pp-059 next. Do not interleave, do not park it overnight, do not open an unrelated PR against either repo in between. If the loop has to be abandoned mid-pair, roll BOTH back (`git stash push -u` in each repo — never `reset --hard` + `clean -fd`).\n\nWHY THIS EXISTS AT ALL (R7, Sam, 2026-08-01): FD-16 is reversed. Both sets mount under their own prefix — `/live-animals` and `/plant-products` — and no set owns `/`. Sam's reasoning: the service is still in development, so refactoring live-animals is fine; have the two sets match up, change URLs if that is what symmetry requires, and update the -tests repo as well. Symmetry is not merely tidiness here: with live-animals at prefix `''`, a doubled prefix and a dropped prefix produce the SAME correct-looking string for live-animals, so that whole bug class only ever surfaces on the plant side, in code this suite never runs. With both sets prefixed, both mistakes fail visibly on the first request.\n\nWHY THE URL LAYER IS CHEAP AND THE SPECS ARE NOT: §10.2's ruling is one set-aware URL layer, two of everything above it. `base-page.ts` is genuinely centralised (verified live: two `page.goto` entry points, three URL builders), so six edits there carry most of the repo. The expensive half is judgement, not mechanics — the front-anchoring sweep. A regex like `/\\/notifications\\/abc$/` passes before AND after the migration; leaving it is leaving a spec that would also pass if someone silently dropped the prefix again.\n\nWHAT `/` DOES NOW (FD-18): a server-wide 302 to `/live-animals`, declared in `src/server/router.js` outside both gateways so it never enters a set context. 302 not 301 — a 301 is cached by browsers indefinitely and would be painful to unpick when a set-picker page eventually replaces it. There is NO legacy `/notifications/*` compatibility shim: no external bookmarks to honour at this stage, and a shim would have to guess which set a bare journey id belongs to. So a stale deep link 404s, by design.\n\nSTACK: run the workspace stack in dev mode against this branch (`run-stack.sh -d -b spike/trace-to-requirements`) so you are testing the frontend source that pp-057 just changed, not a Dockerhub `:latest` image that predates the mount. `npm run test` shells `bin/assert-stack.sh` first and will refuse to run without a stack; a plain (non-`-d`) stack pulls `:latest` and will fail every migrated assertion in a way that looks like your edits are wrong.\n\nOUT OF SCOPE, deliberately: the per-set directory move (`page-objects/notification/` → `page-objects/live-animals/`), the per-set Playwright projects and any plant-products file. All pp-060 onwards. This increment changes URLs and nothing else, so that if the suite goes red the cause is unambiguous.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether `tests/e2e/journeys/persistence/*.spec.ts` and `tests/e2e/visual/origin-of-import.visual.spec.ts` contain URL assertions the §10.4 enumeration missed — they were not in the verified list. Planned resolution: the grep sweep in `verification` is the authoritative worklist; treat any hit outside the enumerated files as an addition to this increment, not a follow-up. The visual spec's snapshot names are keyed by project name, not path, so it should be unaffected by URLs but WILL be affected by pp-060's project rename — flag it there.",
+    "Whether the visual baseline `origin-of-import.visual.spec.ts-snapshots/origin-of-import-frontend-chromium-darwin.png` needs regenerating. Planned as NO for this increment (page content is unchanged; only the URL moved), but if the snapshot embeds a rendered URL, regenerate with `npm run test:visual:update:macos` and say so in the commit rather than deleting the assertion."
+  ]
+}

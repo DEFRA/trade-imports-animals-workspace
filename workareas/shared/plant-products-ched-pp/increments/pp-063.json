@@ -1,0 +1,150 @@
+{
+  "id": "pp-063",
+  "title": "Tests repo: plant-products m3 commodities coverage — the depth-3 collection end to end",
+  "kind": "test",
+  "milestone": "m3",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-062", "pp-028", "pp-012"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (Pages + Features rows, the `commodity-depth-3` entry), §2.1 spoke 3, §3.1 `commodities/*` and §3.2 (the within-chain), FD-9 (depth-3 is UNPROVEN in the engine) and P-7 (the in-repo characterisation test this is the cross-repo counterpart of). Persisted shape: backend-schema/SCHEMA-DESIGN.md §1.1 `commodityComplement[].species[].varieties[]`.",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-input-method-page.ts",
+      "action": "create",
+      "what": "NEW. Collects `commodityInputMethod` (MANUAL | CSV). FD-8 is explicit that this is NOT flow-only — it PERSISTS on the document (`commodity.inputMethod`, SCHEMA-DESIGN §1.1), which is the opposite of `importType`. The spec below must assert that difference, because it is the kind of thing a reader assumes wrongly by analogy. CSV is an m5 branch; at m3 only MANUAL continues anywhere, so the page object exposes both options and the spec asserts the CSV branch's current behaviour rather than pretending it does not exist."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-search-page.ts",
+      "action": "create",
+      "what": "NEW. The commodity-code picker. Collects `commoditySelection` — the code chosen here maps to `commodityCode` PLUS a ref-data-derived `commodityDescription` (§3.1). Locators: the search input, the result list, a `result(code)` locator, the no-results state, and the error summary. Values come from `domain/plant-products/constants/commodity-codes.ts` (pp-061) — real fixture codes, never invented."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-basic-description-page.ts",
+      "action": "create",
+      "what": "NEW. The per-line leaves: `numberOfPackages`, `packageType`, `quantity`, `quantityType`, `netWeight`, `controlledAtmosphereContainer`, `finishedOrPropagated`, `intendedForFinalUsers`, `testAndTrial` (§3.1 `commodities/lines.js`). Nine fields — expose each individually plus a `fill(values)` convenience that mirrors ONE UI submit, so the flow can drive a line without the spec listing nine calls."
+    },
+    {
+      "path": "page-objects/plant-products/variety-of-genus-and-species-page.ts",
+      "action": "create",
+      "what": "NEW. The species and variety leaves. Species (`within: commodityLines`): `eppoCode` — THE JOIN KEY (§3.1) — and `genusAndSpecies` (ref-data-derived). Varieties (`within: species`, optional): `variety` (store the ID, NOT the display label — Open Q 2 ruling) and `varietyClass` (allow-listed per species: CLASS_I | CLASS_II | EXTRA_CLASS, null when N/A).\n\nExpose an `addAnother` control and a per-entry `remove(index)` control if the built page has them — the remove path is what the depth-3 feature spec exercises."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-summary-page.ts",
+      "action": "create",
+      "what": "NEW. The add-another loop's summary. This is where the TREE is visible, so its locators are the assertion surface for the depth-3 spec: a `line(index)` locator, a `speciesOf(lineIndex)` list, a `varietiesOf(lineIndex, speciesIndex)` list, plus the per-entry Change and Remove links at EACH depth. Get the nesting of the locators right and the feature spec below becomes readable; get it wrong and it becomes a pile of nth-child selectors."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-bulk-details-page.ts",
+      "action": "create",
+      "what": "NEW. The bulk-details variant page in the spoke-3 page set (§2.1). Locate and cover whatever the built page collects; do not invent fields."
+    },
+    {
+      "path": "page-objects/plant-products/commodity-additional-details-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 4 (§2.1, `sections/additional-details.js`): `totalGrossWeight` (mandatory), `grossVolume` (optional), `grossVolumeUnit` (required IFF grossVolume is answered — a `presentGate`). That conditional is the interesting behaviour here and `additional-details.spec.ts` must pin it in both directions."
+    },
+    {
+      "path": "flows/plant-products/journey.ts",
+      "action": "edit",
+      "what": "ADD `answerCommodities(options)` and `answerAdditionalDetails(options)` to the flow created at pp-062, keeping the established fill/save/answer split.\n\n`answerCommodities()` walks: hub → spoke 3 → input method (MANUAL) → search and pick a code → basic description → species/varieties → summary → return to the hub. Parameterise it enough for the depth-3 spec to drive it (how many lines, how many species per line, how many varieties per species) WITHOUT the spec reaching into page objects itself — that is what keeps the depth-3 spec readable as a statement about the tree rather than a click script."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/commodities.spec.ts",
+      "action": "create",
+      "what": "NEW. Per-page specs for the spoke-3 pages: input method (render, both options, validation, and — the assertion that matters — `commodity.inputMethod` PERSISTS, unlike `importType`); search (results, no-results state, picking a code); basic description (nine fields, validation per field, save-and-continue); bulk details. Each with back-link and resume coverage.\n\nEvery persisted assertion goes through `plantProductsApi.load(ref)` against the real backend: `commodityCode` is the CODE and `commodityDescription` is the ref-data-derived text, not something the user typed."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/varieties.spec.ts",
+      "action": "create",
+      "what": "NEW. The species/varieties page: `eppoCode` and `genusAndSpecies` are mandatory; varieties are OPTIONAL (no minEntries — §3.1); `varietyClass` is allow-listed per species and is NULL when not applicable — assert the null case, not just the happy one, because an allow-list that silently accepts an inapplicable class is invisible in the UI.\n\nAssert `variety` persists as the ID, not the display label (Open Q 2 ruling). This is a one-line assertion that catches a whole class of ref-data mistake and cannot be made from the UI alone."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/additional-details.spec.ts",
+      "action": "create",
+      "what": "NEW. Spoke 4: `totalGrossWeight` mandatory; `grossVolumeUnit` required IFF `grossVolume` is answered, and NOT required when it is blank — both directions. Numeric validation on each. Persisted values assert as numbers, not strings."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/commodity-depth-3.spec.ts",
+      "action": "create",
+      "what": "NEW — THE MOST IMPORTANT SPEC IN THE PLANT SUITE, and the cross-repo counterpart of P-7 / pp-012's in-repo characterisation test.\n\nTHE SCENARIO, in one spec so the tree is asserted as a whole:\n1. Add commodity LINE A; under it add SPECIES A1 and SPECIES A2; under SPECIES A1 add VARIETY A1a and VARIETY A1b.\n2. Add commodity LINE B with its own species.\n3. Assert the summary page renders the full tree at all three depths, with the right entries under the right parents.\n4. REMOVE A MIDDLE ENTRY — species A1 (which has children), and separately variety A1a — and assert (a) the remaining tree is correct at every depth, (b) removing a parent removed its children and did NOT orphan them onto a sibling, (c) no other line was disturbed.\n5. Assert the PERSISTED document after every mutation: `commodity.commodityComplement[].species[].varieties[]` matches the on-screen tree exactly, with `uniqueComplementId` stable across saves for lines that were not touched.\n\nWHY THIS SPEC EXISTS (FD-9 / P-7): depth 3 is UNPROVEN in the engine — the live exemplar `animalIdentifiers` is depth 2. The frontend has an in-repo characterisation test for the engine mechanics, but this repo is the only place the whole chain (UI → engine scope/wipe → mapper → real backend → Mongo → reload) is exercised. Index-shifting on removal is the classic failure: it looks right on screen and is wrong in the document, or vice versa. Assert BOTH SIDES on EVERY mutation — a spec that checks only the DOM would have passed through the entire class of bug this is written for.\n\nTag it `@integration` if it needs the integration lane's real-mode target; otherwise leave it untagged so it runs in the default plant project. Do NOT invent a set tag (pp-060: sets are projects, tags stay orthogonal)."
+    }
+  ],
+  "obligations": [
+    "commodityInputMethod", "commodityLines", "commoditySelection", "numberOfPackages", "packageType",
+    "quantity", "quantityType", "netWeight", "controlledAtmosphereContainer", "finishedOrPropagated",
+    "intendedForFinalUsers", "testAndTrial", "species", "eppoCode", "genusAndSpecies", "speciesId",
+    "varieties", "variety", "varietyClass", "totalGrossWeight", "grossVolume", "grossVolumeUnit"
+  ],
+  "flowChanges": {
+    "sectionsExercised": ["commodities", "additional-details"],
+    "taskRowsExercised": ["commodities", "additional-details"],
+    "collections": "depth-3 within chain: commodityLines → species → varieties (add, change and remove at every depth)"
+  },
+  "schemaFields": [
+    "commodity.inputMethod",
+    "commodity.commodityComplement[].uniqueComplementId",
+    "commodity.commodityComplement[].commodityCode",
+    "commodity.commodityComplement[].commodityDescription",
+    "commodity.commodityComplement[].numberOfPackages",
+    "commodity.commodityComplement[].packageType",
+    "commodity.commodityComplement[].quantity",
+    "commodity.commodityComplement[].quantityType",
+    "commodity.commodityComplement[].netWeight",
+    "commodity.commodityComplement[].controlledAtmosphereContainer",
+    "commodity.commodityComplement[].finishedOrPropagated",
+    "commodity.commodityComplement[].intendedForFinalUsers",
+    "commodity.commodityComplement[].testAndTrial",
+    "commodity.commodityComplement[].species[].eppoCode",
+    "commodity.commodityComplement[].species[].genusAndSpecies",
+    "commodity.commodityComplement[].species[].speciesId",
+    "commodity.commodityComplement[].species[].varieties[].variety",
+    "commodity.commodityComplement[].species[].varieties[].varietyClass",
+    "additionalDetails.totalGrossWeight",
+    "additionalDetails.grossVolume",
+    "additionalDetails.grossVolumeUnit"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "tests/e2e/pages/plant-products/commodities.spec.ts",
+    "tests/e2e/pages/plant-products/varieties.spec.ts",
+    "tests/e2e/pages/plant-products/additional-details.spec.ts",
+    "tests/e2e/features/plant-products/commodity-depth-3.spec.ts"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "Seven new plant page objects exist under `page-objects/plant-products/`, all set-aware via the shared NotificationPage with base `/plant-products`.",
+    "`flows/plant-products/journey.ts` gains `answerCommodities()` and `answerAdditionalDetails()`, parameterised enough that the depth-3 spec never touches a page object directly.",
+    "`commodity.inputMethod` is asserted PERSISTED (contrast with `importType`, asserted absent at pp-062) — the FD-8 distinction is pinned by test, not by comment.",
+    "`variety` persists as the ID and not the display label; `varietyClass` is asserted null in the not-applicable case as well as set in the applicable one.",
+    "`grossVolumeUnit` is asserted required-iff-grossVolume in BOTH directions.",
+    "THE DEPTH-3 BAR: two lines, two species under one line, two varieties under one species; a middle entry removed at species level AND at variety level; after every mutation the on-screen tree AND the persisted `commodityComplement[].species[].varieties[]` both assert correct, with untouched lines keeping their `uniqueComplementId`.",
+    "Removing a parent removes its children and orphans nothing onto a sibling — asserted explicitly, not implied by a count.",
+    "Every URL assertion front-anchored on `^/plant-products`.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "Green against a co-resident stack; the live-animals suite unchanged in the same run."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp063-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp063-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp063-pp.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp063-integration.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp063-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI, own package.json. Do not assume the frontend's npm scripts. Verbatim: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\"; \"test:local\"; \"test:a11y\"; plus `test:plant-products` from pp-060.\n\nDEPTH 3 IS THE FIRST OF ITS KIND IN THIS SERVICE. FD-9 models commodities as `commodityLines → species → varieties`; the live exemplar `animalIdentifiers` is depth 2, so the engine's scope/wipe/completeness machinery has never run three levels deep in production code. P-7 / pp-012 pins the engine mechanics in the frontend repo. THIS increment is the only place the full chain runs — browser DOM, engine, set-owned mapper, real REST backend, Mongo, reload — and the only place index-shifting on removal can be caught in both representations at once.\n\nASSERT BOTH SIDES, ALWAYS. The failure that matters looks correct in exactly one representation: the summary page renders the right tree while the document has a variety hanging off the wrong species, or vice versa. A spec that asserts only the DOM, or only the API response, passes through it. Every mutation in `commodity-depth-3.spec.ts` gets a DOM assertion and an API assertion.\n\nREAL CANNED DATA ONLY: commodity codes, EPPO codes, varieties and classes come from `domain/plant-products/constants/*` (pp-061), which in turn transcribes the frontend set's real fixture services. An invented EPPO code will pass typecheck, drive the UI, and then fail an allow-listed gate in a way that reads as a service bug.\n\nDEPENDS ON pp-028 (frontend commodities build) and pp-012 (the in-repo depth-3 characterisation test). If pp-012 has not landed, do not write this spec as a substitute for it — a red engine mechanic should fail fast in a unit test, not after a five-minute browser walk.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the built commodity pages expose per-entry Remove controls at every depth or only at the summary. Planned resolution: locate what exists and cover it; if removal at species or variety level is only reachable one way, say so in the spec rather than skipping the removal case — removal is the half of the depth-3 contract most likely to be wrong.",
+    "Whether `speciesId` round-trips through the UI at all (§3.1 calls it 'optional, transient-ish'). Planned resolution: assert whatever the document actually carries after a save-reload cycle and record it; do not assert an expected value derived from the plan when the plan itself flags the field as unsettled."
+  ]
+}

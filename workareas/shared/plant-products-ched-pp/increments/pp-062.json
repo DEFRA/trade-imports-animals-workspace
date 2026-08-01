@@ -1,0 +1,150 @@
+{
+  "id": "pp-062",
+  "title": "Tests repo: plant-products m0/m2 coverage — dashboard, import-type entry filter, hub skeleton, origin, purpose",
+  "kind": "test",
+  "milestone": "m2",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-060", "pp-020"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (the Pages and Features rows), §10.2 (page objects, flows and specs are CLONED per set; the URL layer is shared), §10.3 (where the files go), §2.1/§2.3 (the 12-spoke hub and the `start` flow section) and §3.1 (the origin/purpose obligations these pages collect).",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "page-objects/plant-products/plant-notification-dashboard-page.ts",
+      "action": "create",
+      "what": "NEW. Extends `NotificationPage` (from `@page-objects/base/base-page`) with the PLANT set base: pass `SET_BASES.plantProducts` as the third constructor argument that pp-059 added. `expectedUrl = SET_BASES.plantProducts` — i.e. `/plant-products`, NO trailing slash, which is exactly what Hapi serves for a `/` route registered under that prefix (SIBLING-SET-PLAN §4.3).\n\nLocators mirror the live-animals dashboard page object in ROLE (heading, create-new button, search input, sort control, pagination, results table, row actions) but NOT in copy — read the plant dashboard's rendered page and locate by its own accessible names. Do not import or subclass `page-objects/live-animals/notification-dashboard-page.ts`: §10.2 rules page objects CLONE per set precisely because a shared one becomes a switch statement per locator.\n\nPaginate the same way the live-animals object does (`:142`): `navigateToFrontend(`${SET_BASES.plantProducts}`)` for page 1 and `` `${SET_BASES.plantProducts}?page=${n}` `` beyond — note again NO slash before `?`."
+    },
+    {
+      "path": "page-objects/plant-products/import-type-page.ts",
+      "action": "create",
+      "what": "NEW. The pre-journey certificate-type entry filter (SIBLING-SET-PLAN §2.2 'off-hub', FD-8 — `importType` is FLOW-ONLY, never persisted). Slug per the frontend's `features/import-type/page.js`. Exposes the CHED-PP radio option, the continue button, and the error summary. `journeyIdFromUrl()` is inherited and — because pp-059 rebuilt it from the set base — resolves `/plant-products/notifications/{id}` correctly with no extra work here; assert that once in the import-type spec so the inheritance is pinned rather than assumed."
+    },
+    {
+      "path": "page-objects/plant-products/hub-page.ts",
+      "action": "create",
+      "what": "NEW. The notification hub (task list). Locators: the page heading, a `task(name)` locator returning the row link by its accessible name, a `rowStatus(name)` locator returning that row's status tag, and the group headings. Mirrors the live-animals `overview-page.ts` in role.\n\nAt m0/m2 only a few rows exist; the page object must NOT hardcode the 12-row list — pp-064's `hub-groups-and-cya-rows` spec is where the full spoke mapping is asserted, and a page object that enumerates rows would have to be edited by every milestone."
+    },
+    {
+      "path": "page-objects/plant-products/country-of-origin-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 1, page 1 (§2.1). Collects `countryOfOrigin` and `countryOfConsignment` per §3.1 — note there are TWO country answers here and the live-animals origin page has a different pair; locate by the plant page's own labels. Include the error-summary and field-level error locators: the per-page validation specs below assert on them."
+    },
+    {
+      "path": "page-objects/plant-products/origin-of-import-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 1, page 2. Collects `internalReference` (optional, max 30 — frontend-enforced per SCHEMA-DESIGN §1.1). Deliberately named to match the frontend slug, NOT to match the live-animals page object of the same name — they are different pages in different sets and the paths (`page-objects/live-animals/` vs `page-objects/plant-products/`) are what disambiguate them."
+    },
+    {
+      "path": "page-objects/plant-products/about-the-consignment-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 2 (§2.1). Collects `reasonForImport` — a radio set over the normalised enum INTERNAL_MARKET | RE_ENTRY | RE_CONFORMITY_CHECK (§3.1). Expose a `reason(label)` locator keyed by the RENDERED label, and keep the enum values in `domain/plant-products/constants/import-purposes.ts` (pp-061) so the spec asserts the persisted enum while the page object drives the label."
+    },
+    {
+      "path": "flows/plant-products/journey.ts",
+      "action": "create",
+      "what": "NEW. The plant analogue of `flows/live-animals/journey.ts` (verified live: `:23-26` `toNotificationDashboard()`, `:28-41` `startNotification()`, `:43-70` the per-section fill/save/answer trio).\n\nMETHODS at this increment:\n- `toNotificationDashboard()` — open the plant dashboard, wait for its heading\n- `startNotification()` — dashboard → create → land on the IMPORT-TYPE filter → capture the journey id from the URL → pick the CHED-PP certificate type → continue → land on the HUB. Returns the journey id and records it on the shared `JourneyContext`. NOTE THE DIFFERENCE from live-animals, whose `startNotification()` continues into `originOfImport` before opening the overview (`journey.ts:35-39`): the plant flow lands on the hub, because §2.3's `start` section is `[dashboardPage, importTypePage]` and the hub is the spine. Do not transpose the live-animals sequencing.\n- `answerOrigin(options)` — hub → spoke 1 → fill both country answers (+ optional internal reference) → save → back on the hub\n- `answerPurpose(options)` — hub → spoke 2 → pick a reason → save → back on the hub\n\nEach fill/save pair stays split (`fillX` / `saveX` / `answerX`) exactly as the live-animals flow does, so a validation spec can fill without saving and a happy-path spec can call the one-liner."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/origin.spec.ts",
+      "action": "create",
+      "what": "NEW. Per-page spec for spoke 1: renders with the right heading and fields; save-and-continue with valid answers returns to the hub and marks the row Completed; each mandatory field missing produces an error summary entry linked to the field; the back link returns to the hub; a saved answer is shown on re-entry (draft resume through the real backend, not a stub — that is what this repo adds over the frontend's in-repo specs).\n\nAssert the persisted document too, via `plantProductsApi.load(ref)`: `origin.countryCode` and `origin.countryOfConsignmentCode` carry the picked CODES, not the display labels. A UI-only assertion would pass with the label persisted, which is the exact defect class SCHEMA-DESIGN's 'store the ID not the label' rulings exist to prevent."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/purpose.spec.ts",
+      "action": "create",
+      "what": "NEW. Per-page spec for spoke 2: render, radio selection, validation on empty submit, back link, resume. Assert `reasonForImport` persists as the normalised ENUM value (INTERNAL_MARKET | RE_ENTRY | RE_CONFORMITY_CHECK), not the rendered label."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/import-type-routing.spec.ts",
+      "action": "create",
+      "what": "NEW. The entry filter's routing behaviour: creating a notification lands on the import-type page under `/plant-products/notifications/{id}`; choosing CHED-PP continues to the hub; submitting nothing shows the error summary; `importType` is FLOW-ONLY (FD-8) so it must NOT appear in the persisted document — assert its absence via the API client, which is the only place that rule can be checked end to end.\n\nMirrors `tests/e2e/features/live-animals/import-type-routing.spec.ts` in intent; write it fresh against the plant copy."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/entry-guard-deep-link.spec.ts",
+      "action": "create",
+      "what": "NEW AND LOAD-BEARING — this is the spec that proves per-set request isolation from the outside.\n\nCASES:\n1. A FRESH deep link (new browser context, no session) to a post-filter plant page — e.g. `/plant-products/notifications/{ref}/about-the-consignment` — redirects to the plant IMPORT-TYPE filter, not to the hub and not to live-animals.\n2. It does NOT run the live-animals guard: the redirect target is under `/plant-products`, never `/live-animals` and never `/`.\n3. The mirror case: a fresh deep link to a live-animals page still redirects to the LIVE-ANIMALS filter under `/live-animals`. Both halves in one spec, because the whole risk here is cross-talk.\n\nWHY IT MATTERS: FD-15 resolves the set by ROUTE OWNERSHIP (a realm-scoped `onPreAuth` per gateway), and the plant entry guard builds its journey prefix from `setBase()` per request while `request.path` INCLUDES the mount prefix (§4.6 A row 6). Getting that wrong silently DISABLES the deep-link guard — the page renders, nothing errors, and only a spec that deep-links from a cold context notices. The frontend's own specs run one set on stubs; this is the first place both guards exist at once."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/dashboard-search.spec.ts",
+      "action": "create",
+      "what": "NEW. Search by reference number narrows the list; a no-match search shows the empty state; search survives pagination (the `?page=` form on the prefixed path — the exact shape pp-059 had to get right for live-animals). Seeded rows come from pp-061's `30-seed-plant-products-notifications.js`.\n\nAssert the DELETED seeded row never appears — that is a server-side filter (§6.2 `list`) and the seed exists to prove it."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/dashboard-sort.spec.ts",
+      "action": "create",
+      "what": "NEW. Sort controls reorder the list and the choice survives a page change. Mirrors `tests/e2e/features/live-animals/notification-dashboard-sort.spec.ts` in intent."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/dashboard-pagination.spec.ts",
+      "action": "create",
+      "what": "NEW. Page 1 → 2 → back; the page parameter is 1-BASED (§6.2 `list`); every emitted pagination link is prefixed `/plant-products` and NONE is a bare `/` or `/?page=n`. Front-anchor every URL assertion on `^/plant-products` — the same rule pp-059 applied to live-animals, for the same reason: a suffix-anchored regex would pass even if the prefix were dropped."
+    },
+    {
+      "path": "fixtures/ui.ts",
+      "action": "edit",
+      "what": "Point `plantProductsPages` at the real factory now that plant page objects exist, and add `plantProductsJourney` (constructed from `plantProductsPages` + the shared `journeyContext`, mirroring the live-animals fixture at `:27-29`). Keep both sets' fixtures declared side by side."
+    },
+    {
+      "path": "page-objects/factory.ts",
+      "action": "edit",
+      "what": "Fill `createPlantProductsPageObjects(page)` with the six new page objects: `plantNotificationDashboard`, `importType`, `hub`, `countryOfOrigin`, `originOfImport`, `aboutTheConsignment` — plus the shared `signIn`/`signOut` it already spreads in. Naming stays per-set-local: `importType` here and `importType` in the live-animals factory is fine and desirable, because a spec reaches them through DIFFERENT fixtures."
+    }
+  ],
+  "obligations": [
+    "countryOfOrigin", "countryOfConsignment", "internalReference", "reasonForImport"
+  ],
+  "flowChanges": {
+    "sectionsExercised": ["start", "origin", "purpose"],
+    "taskRowsExercised": ["origin", "purpose"],
+    "entryGuard": "fresh deep link to a post-filter plant page redirects to the plant import-type filter"
+  },
+  "schemaFields": [
+    "origin.countryCode", "origin.countryOfConsignmentCode", "origin.internalReference", "reasonForImport"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "tests/e2e/pages/plant-products/origin.spec.ts",
+    "tests/e2e/pages/plant-products/purpose.spec.ts",
+    "tests/e2e/features/plant-products/import-type-routing.spec.ts",
+    "tests/e2e/features/plant-products/entry-guard-deep-link.spec.ts",
+    "tests/e2e/features/plant-products/dashboard-search.spec.ts",
+    "tests/e2e/features/plant-products/dashboard-sort.spec.ts",
+    "tests/e2e/features/plant-products/dashboard-pagination.spec.ts"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "Six plant page objects exist under `page-objects/plant-products/`, all extending the shared set-aware `NotificationPage` with base `/plant-products`; none imports a `page-objects/live-animals/` file.",
+    "`flows/plant-products/journey.ts` exposes toNotificationDashboard, startNotification, answerOrigin, answerPurpose, with fill/save split; `startNotification()` lands on the HUB (not on the first question page — that is the live-animals sequencing and must not be transposed).",
+    "All seven specs exist under `tests/{e2e/pages,e2e/features}/plant-products/` and are picked up by the `frontend-plant-products-chromium` / `e2e-plant-products` projects — confirm with `playwright test --list`, not by assumption.",
+    "The entry-guard spec asserts BOTH halves: a cold plant deep link goes to the plant filter under `/plant-products`, and a cold live-animals deep link goes to the live-animals filter under `/live-animals`. Neither crosses.",
+    "`importType` is asserted ABSENT from the persisted plant document (FD-8 flow-only).",
+    "Origin and purpose assert PERSISTED CODES/ENUMS via `plantProductsApi.load(ref)`, not just rendered labels.",
+    "Every URL assertion in these specs is FRONT-anchored on `^/plant-products` — no suffix-anchored regex that would also pass with the prefix dropped.",
+    "The DELETED seeded row never appears in a dashboard list.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "THE BAR: green against a workspace stack running BOTH sets co-resident, and the live-animals suite's test count and result are unchanged in the same run."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp062-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp062-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npx --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests playwright test --config=playwright.integration.config.ts --list > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp062-list.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp062-pp.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp062-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI, own package.json. There is no frontend `test:features` here. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:local\": \"npm run test:integration\"; \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"; plus `test:plant-products` from pp-060.\n\nWHAT THIS REPO ADDS OVER THE FRONTEND'S OWN SPECS: the frontend's in-repo `*.e2e.spec.js` run against a self-hosted server on the records STUB. These run the same journeys against the REAL workspace stack — real backend, real Mongo, real OIDC. Only the second proves a set actually works (§10 preamble). So every spec here should assert something the stub cannot prove: persisted codes, draft resume across a real save, dashboard scoping, cross-set isolation.\n\nWHY THE ENTRY-GUARD SPEC IS THE MOST VALUABLE FILE IN THIS INCREMENT: co-residency puts two entry guards in one process, each realm-scoped by FD-15. Under a mount prefix `request.path` includes the prefix, so a guard whose journey prefix was captured at module load (or built without `setBase()`) silently stops matching — the page renders, nothing throws, and the deep-link protection is simply gone. No unit test in the frontend catches it because each in-repo suite composes one set. A cold-context deep link from outside is the only proof.\n\nDO NOT SHARE PAGE OBJECTS ACROSS SETS. §10.2's ruling: the URL layer is parameterised, everything above it is cloned. Two files named `import-type-page.ts` under different set dirs is the intended outcome, not duplication to be refactored away — the plant page has different copy, different options and a different next page.\n\nDEPENDS ON pp-020 (the frontend hub increment) because these specs walk to and from the hub. If pp-020 has not landed, the hub is not there to return to and every `answerX` fails at its last step.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the plant dashboard is scoped to the stubbed acting organisation at this milestone (the auth stub is m5/inc-042). Planned resolution: seed every fixture document with the SAME ownership organisation the frontend's pass-1 stub writes, so the specs are scope-agnostic today and stay green when real scoping lands. If the frontend has no organisation on the dashboard query yet, say so in the spec rather than asserting a scope that is not implemented.",
+    "Whether `countryOfConsignment` and `countryOfOrigin` overlap on one page or two (Open Q 9, noted at frontend inc-010). Planned resolution: locate whatever the built page renders and follow it; do not encode a guess in the page object's structure — keep both field locators on `country-of-origin-page.ts` and split only if the built journey actually splits them."
+  ]
+}

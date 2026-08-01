@@ -1,0 +1,181 @@
+{
+  "id": "pp-064",
+  "title": "Tests repo: plant-products m4 pages + hub/CYA feature specs (the 12-spoke assurance)",
+  "kind": "test",
+  "milestone": "m4",
+  "sizeGuess": "XL",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-063", "pp-040"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (Pages + Features rows), §2.1 (the 12-spoke → section → row → pages → obligations table, which this increment is the assurance for), §2.2 (39 pages accounted for), §3.1 (transport / goods-movement / contacts / documents / parties obligations) and FD-12 (the review section's authored gate).",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "page-objects/plant-products/transport-before-bip-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 5. Collects `borderControlPost` (144 BCPs), `inspectionPremises` (ALLOW-LISTED against the per-BCP control points — the options change when the BCP changes, and the page object must expose that as a re-read rather than a cached list), `meansOfTransport`, `transportIdentification`, `transportDocumentReference`, `arrivalDate`, `arrivalTime` (HH:mm 24h — D-14, a CHED-PP addition with no live-animals equivalent), `usesContainers` (bool), and the `containers` group entries (`containerNumber`, `sealNumber`, `officialSeal`) gated on `usesContainers === true`."
+    },
+    {
+      "path": "page-objects/plant-products/goods-movement-services-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 6. `commonTransitConvention` (ADD_MRN_NOW | ADD_MRN_LATER | NO), `movementReferenceNumber` (an 18-char MRN, revealed and required only when ADD_MRN_NOW — an `equalsGate`), `usingGvms` (bool)."
+    },
+    {
+      "path": "page-objects/plant-products/contact-details-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 7. `responsiblePersonName`, `responsiblePersonEmail`, `responsiblePersonTelephone` — all mandatory, entry-page at pass 1 (auto-population is deferred with inc-032, so do NOT write a spec that expects them pre-filled)."
+    },
+    {
+      "path": "page-objects/plant-products/nominated-contact-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 8 — a single-page add-another loop over the `nominatedContacts` group: `contactName`, `contactEmail`, `contactTelephone`, `contactIsAgent`. The group is OPTIONAL (no minEntries) and the spoke NEVER gates readiness (§2.1 note, an `optional`-status row). Expose the add-another and remove controls plus the summary list."
+    },
+    {
+      "path": "page-objects/plant-products/accompanying-documents-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 9 — single-page loop over the `accompanyingDocuments` group: `documentType` (17 codes), `documentReference`, `issueDate`. MANDATORY ≥1 document (`requires: { minEntries: 1 }`, c-015). File bytes and AV scanning are DEFERRED (inc-037) — metadata only; do not locate an upload control that does not exist."
+    },
+    {
+      "path": "page-objects/plant-products/traders-addresses-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 10 entry page. Also covers `destinationSameAsConsignee` (mandatory bool) with the destination leaves gated on `false`, and the optional `packer*` leaves (a CHED-PP addition the house has no equivalent for)."
+    },
+    {
+      "path": "page-objects/plant-products/consignor-create-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 10 — the ONE typed party (POP-4): `consignorName`, `consignorAddressLine1..3`, `consignorCity`, `consignorPostcode`, `consignorCountry`. NOTE `addressLine3`, not the live-animals `county` — deliberate (SCHEMA-DESIGN §1.1) and a copy-paste from the live-animals address page object would silently mis-locate."
+    },
+    {
+      "path": "page-objects/plant-products/consignor-confirmation-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 10 confirmation step: shows the entered consignor and confirms it onto the notification."
+    },
+    {
+      "path": "page-objects/plant-products/review-notification-page.ts",
+      "action": "create",
+      "what": "NEW. Spoke 12 (the review section, which is a FLOW SECTION with the authored gate `scope.readyForCheckYourAnswers`, NOT a task row — FD-12). Expose the CYA cards, a `row(cardName, rowName)` locator, its value cell and its Change link. The Change-link targets are what `hub-groups-and-cya-rows` asserts, so make them addressable."
+    },
+    {
+      "path": "page-objects/plant-products/declaration-page.ts",
+      "action": "create",
+      "what": "NEW. The submit trigger. `declaration` is FLOW-ONLY (FD-8) but is persisted at finalise as `declaration { agreed, declaredAt }` (SCHEMA-DESIGN §1.1) — that distinction is worth an assertion, since 'flow-only' does not mean 'never stored' here."
+    },
+    {
+      "path": "page-objects/plant-products/confirmation-page.ts",
+      "action": "create",
+      "what": "NEW. The post-submit confirmation panel (`govuk-panel`; the c-014/inc-031 H1 fix applies). Expose the reference number so pp-065's whole-journey spec can assert the minted `GBN-PP-…` value."
+    },
+    {
+      "path": "flows/plant-products/journey.ts",
+      "action": "edit",
+      "what": "EXTEND the flow to a COMPLETE, SUBMITTABLE notification: add `answerTransport`, `answerGoodsMovement`, `answerContact`, `answerNominatedContacts`, `answerDocuments`, `answerTraders`, `reviewAndSubmit`, plus a `completeMandatorySpokes()` convenience that walks every mandatory spoke and returns to the hub ready for review. Keep the fill/save/answer split.\n\n`completeMandatorySpokes()` is what pp-065 and pp-066 both build on — get its granularity right here (each spoke independently callable, plus one call for all of them) and neither of those increments needs to reopen this file."
+    },
+    {
+      "path": "tests/e2e/pages/plant-products/*.spec.ts",
+      "action": "create",
+      "what": "NEW — one spec per page landed above: `transport.spec.ts`, `goods-movement.spec.ts`, `contact.spec.ts`, `nominated-contacts.spec.ts`, `documents.spec.ts`, `traders.spec.ts`, `consignor.spec.ts`, `review.spec.ts`, `declaration.spec.ts`, `confirmation.spec.ts`.\n\nEACH covers the same five things: renders with the right heading and fields; valid save returns to the hub and updates the row status; each mandatory field missing produces an error-summary entry LINKED to its field; the back link returns to the hub; a saved answer is present on re-entry (real backend resume). Persisted values assert through `plantProductsApi.load(ref)` as CODES/ENUMS, not labels.\n\nPer-page specifics worth naming: `transport.spec.ts` must assert that changing the BCP CHANGES the available inspection premises (the allow-list is lazily resolved per gate execution — a cached option list is the defect); `goods-movement.spec.ts` must assert the MRN field is required only under ADD_MRN_NOW and NOT under the other two."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/hub-groups-and-cya-rows.spec.ts",
+      "action": "create",
+      "what": "NEW — THE ASSURANCE FOR §2.1's 12-SPOKE MAPPING, and the direct mirror of the live-animals spec of the same name (`tests/e2e/features/live-animals/hub-groups-and-cya-rows.spec.ts`).\n\nASSERT:\n1. Every spoke appears under the right numbered GROUP heading, in the order §2.1 gives: 1 Origin of the import, 2 Purpose, 3 Commodity, 4 Additional details, 5 Transport to the BCP, 6 Goods movement services, 7 Contact details, 8 Nominated contacts, 9 Accompanying documents, 10 Traders, 11 Billing, 12 Review and submit.\n2. Each row's STATUS changes as its section is completed (Not started → In progress → Completed).\n3. Spoke 8 (Nominated contacts) is OPTIONAL and does NOT gate readiness — leave it empty and still reach review.\n4. Spoke 11 (Billing) is CONDITIONAL (`conditional: true`, c-007) and is HIDDEN at m4 — assert it is absent, and note in the spec that m5 flips this.\n5. Spoke 12 (Review and submit) is NOT a task row (FD-12) — it is the authored gate `scope.readyForCheckYourAnswers` — and it unlocks ONLY when every mandatory row is Completed. Assert both states: locked with one mandatory row outstanding, unlocked when none is.\n6. Every CYA row on the review page maps to a spoke, and its Change link returns to the page that owns the answer and then back to the review page.\n\nASSERT THE FULL RENDERED LIST, dividers and separators included — do not filter visual elements out of the option/row assertions to make them tidy."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/documents-min-entries.spec.ts",
+      "action": "create",
+      "what": "NEW. Pins the c-015 floor: with ZERO accompanying documents the spoke-9 row is not Completed and review does not unlock; with ONE it is and it does. Also assert removing the last document takes it back to incomplete — a minEntries floor that only works on the way up is a common half-implementation."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/containers-conditional.spec.ts",
+      "action": "create",
+      "what": "NEW. Pins the `usesContainers` gate: false hides the containers group and no container data persists; true reveals it and requires at least the container number; flipping true→false after entering containers WIPES them from the persisted document (engine-owned scope/wipe). That last case is the one worth having — it is invisible in the UI and only shows in `plantProductsApi.load(ref)`."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/nominated-contacts-optional.spec.ts",
+      "action": "create",
+      "what": "NEW. The whole journey completes and submits with ZERO nominated contacts; adding one, then two, then removing one leaves the rest intact and the row still non-gating. Complements spoke 8's row-status case in `hub-groups-and-cya-rows` by proving the optional group across a full submit."
+    }
+  ],
+  "obligations": [
+    "borderControlPost", "inspectionPremises", "meansOfTransport", "transportIdentification",
+    "transportDocumentReference", "arrivalDate", "arrivalTime", "usesContainers", "containers",
+    "containerNumber", "sealNumber", "officialSeal", "commonTransitConvention", "movementReferenceNumber",
+    "usingGvms", "responsiblePersonName", "responsiblePersonEmail", "responsiblePersonTelephone",
+    "nominatedContacts", "contactName", "contactEmail", "contactTelephone", "contactIsAgent",
+    "accompanyingDocuments", "documentType", "documentReference", "issueDate",
+    "consignorName", "consignorAddressLine1", "consignorAddressLine2", "consignorAddressLine3",
+    "consignorCity", "consignorPostcode", "consignorCountry", "destinationSameAsConsignee"
+  ],
+  "flowChanges": {
+    "sectionsExercised": ["transport", "goods-movement", "contact", "nominated-contacts", "documents", "traders", "review"],
+    "taskRowsExercised": ["transport", "goods-movement", "contact", "nominated-contacts", "documents", "traders"],
+    "gates": "review section unlocks only when every mandatory row is Completed (FD-12); billing spoke hidden (conditional, m5)"
+  },
+  "schemaFields": [
+    "transport.borderControlPost", "transport.inspectionPremises", "transport.meansOfTransport",
+    "transport.transportIdentification", "transport.transportDocumentReference", "transport.arrivalDate",
+    "transport.arrivalTime", "transport.usesContainers", "transport.containers[].containerNumber",
+    "transport.containers[].sealNumber", "transport.containers[].officialSeal",
+    "goodsMovementServices.commonTransitConvention", "goodsMovementServices.movementReferenceNumber",
+    "goodsMovementServices.usingGvms", "responsiblePerson.name", "responsiblePerson.email",
+    "responsiblePerson.telephone", "nominatedContacts[].name", "nominatedContacts[].email",
+    "nominatedContacts[].telephone", "nominatedContacts[].isAgent", "consignor.name", "consignor.address.addressLine1",
+    "consignor.address.addressLine2", "consignor.address.addressLine3", "consignor.address.city",
+    "consignor.address.postcode", "consignor.address.country", "destination", "packer",
+    "declaration.agreed", "declaration.declaredAt"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "tests/e2e/pages/plant-products/transport.spec.ts",
+    "tests/e2e/pages/plant-products/goods-movement.spec.ts",
+    "tests/e2e/pages/plant-products/contact.spec.ts",
+    "tests/e2e/pages/plant-products/nominated-contacts.spec.ts",
+    "tests/e2e/pages/plant-products/documents.spec.ts",
+    "tests/e2e/pages/plant-products/traders.spec.ts",
+    "tests/e2e/pages/plant-products/consignor.spec.ts",
+    "tests/e2e/pages/plant-products/review.spec.ts",
+    "tests/e2e/pages/plant-products/declaration.spec.ts",
+    "tests/e2e/pages/plant-products/confirmation.spec.ts",
+    "tests/e2e/features/plant-products/hub-groups-and-cya-rows.spec.ts",
+    "tests/e2e/features/plant-products/documents-min-entries.spec.ts",
+    "tests/e2e/features/plant-products/containers-conditional.spec.ts",
+    "tests/e2e/features/plant-products/nominated-contacts-optional.spec.ts"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "Eleven new plant page objects exist, all set-aware with base `/plant-products`; the consignor address uses addressLine3 (not the live-animals `county`).",
+    "`flows/plant-products/journey.ts` completes a submittable notification and exposes `completeMandatorySpokes()` plus each spoke individually.",
+    "One per-page spec per page landed, each covering render / valid save / per-field validation / back link / resume, with persisted values asserted as codes and enums via the API client.",
+    "`transport.spec.ts` asserts the inspection-premises options CHANGE when the BCP changes (lazy allow-list, not a cached list).",
+    "`goods-movement.spec.ts` asserts the MRN is required under ADD_MRN_NOW and not required under ADD_MRN_LATER or NO.",
+    "THE 12-SPOKE BAR: `hub-groups-and-cya-rows.spec.ts` asserts every spoke under its numbered group in §2.1 order, every row status transition, spoke 8 optional and non-gating, spoke 11 hidden at m4, spoke 12 as a gate rather than a row — locked with a mandatory row outstanding and unlocked without — and every CYA row's Change link round-tripping.",
+    "Hub and option-list assertions include dividers and separators — no filtering out of visual elements.",
+    "`documents-min-entries.spec.ts` pins the c-015 ≥1 floor in BOTH directions (adding the first unlocks; removing the last re-locks).",
+    "`containers-conditional.spec.ts` asserts that flipping usesContainers true→false WIPES the persisted containers, not just that the fields disappear.",
+    "`nominated-contacts-optional.spec.ts` submits a complete notification with zero nominated contacts.",
+    "Every URL assertion front-anchored on `^/plant-products`.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "Green against a co-resident stack; the live-animals suite unchanged in the same run."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp064-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp064-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp064-pp.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp064-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI, own package.json. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:local\"; \"test:a11y\"; plus `test:plant-products` from pp-060.\n\nTHIS IS THE BIGGEST INCREMENT IN THE TESTS-REPO SET and it is deliberately not split: eleven pages, one flow completion and four feature specs. Splitting it would leave the flow half-complete, and a half-complete flow means pp-065's whole-journey spec, pp-066's a11y walks and pp-067's lifecycle seeds all block on a partial `completeMandatorySpokes()`. If it has to be broken up under time pressure, break it PAGE-WISE (pages + their per-page specs first, the four feature specs second) and never leave `journey.ts` unable to reach the review page.\n\nWHY `hub-groups-and-cya-rows` IS THE ASSURANCE FOR §2.1: the 12-spoke mapping is a PLAN artefact — spoke → flow section → task row → pages → obligations file. Nothing in the frontend enforces that the built hub matches it; GROUPS is authored by hand in the hub controller. This spec is the only executable statement of the mapping, which is why it asserts order, grouping, status transitions, the optional row, the conditional row and the gate rather than just 'twelve rows are present'.\n\nEVIDENCE STANDARD: assert the full rendered list including dividers and separators. Filtering visual elements out of an option or row assertion to make it read nicely hides exactly the regressions these specs exist to catch.\n\nWHAT THIS REPO ADDS OVER THE FRONTEND'S OWN SPECS: real backend, real Mongo, real OIDC. So the wipe-on-gate-flip case in `containers-conditional`, the resume-after-save cases, and every persisted-code assertion are the point — the frontend's stub-backed specs cannot prove any of them.\n\nDEPENDS ON pp-040 (the frontend m4 close). Do not start writing page objects against pages that have not landed; locate against the built pages.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether spoke 11 (Billing) is genuinely absent from the m4 hub or present-but-Not-applicable. Planned resolution: assert what the built hub renders and say which it is in the spec; the plan says `conditional: true` hides a Not-applicable row (§2.1, recipe §3.6), so absent is expected — but assert the observed behaviour, not the expected one, and flag a mismatch rather than accommodating it.",
+    "Whether `responsiblePerson*` is pre-populated at m4. Planned as NO (POP-2 auto-population is deferred with inc-032), so the specs enter the values by hand; if the built page arrives pre-filled, that is a plan/implementation divergence to flag, not to absorb into the spec."
+  ]
+}

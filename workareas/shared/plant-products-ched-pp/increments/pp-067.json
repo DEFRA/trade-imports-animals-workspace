@@ -1,0 +1,99 @@
+{
+  "id": "pp-067",
+  "title": "Tests repo: plant-products lifecycle coverage via API seed — draft resume, view, amend, cancel-amend, copy, delete",
+  "kind": "test",
+  "milestone": "m5",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-061", "pp-045", "pp-055"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (the Features row's `notification-lifecycle` entry and the API/persistence row), §6.2 (the records-port → REST table: the four `PUT …/{ref}/status` transitions and `POST …/{ref}/copies` with an Idempotency-Key), FD-18 (what `/` does now, and why a bare `'/'` redirect would cross set boundaries) and R4 (copy idempotency mirrors live-animals on both sides).",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "flows/plant-products/notification-actions.ts",
+      "action": "create",
+      "what": "NEW. The plant analogue of `flows/live-animals/notification-actions.ts`. Drives the dashboard row actions and the action pages: `view(ref)`, `amend(ref)`, `cancelAmend(ref)`, `copy(ref)`, `delete(ref)`, plus the confirm/cancel steps each of them lands on.\n\nEvery method returns to a KNOWN place and the caller asserts where — do not bake the post-action assertion into the flow, because 'where does it land' is the R7 boundary this increment exists to pin."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/notification-lifecycle.spec.ts",
+      "action": "create",
+      "what": "NEW. The state machine, end to end against the real backend, seeded through `flows/plant-products/api-journey.ts` (pp-061) so no case re-walks 12 spokes.\n\nCASES, each asserting BOTH the rendered state and `plantProductsApi.load(ref)`:\n1. DRAFT resume — an API-seeded draft opens at `/plant-products/notifications/{ref}`, the hub shows the seeded rows' statuses, and continuing from a spoke saves onto the same document.\n2. SUBMIT — a complete seeded draft submits; `status: 'SUBMITTED'` (`PUT …/{ref}/status`, §6.2 `finalise`).\n3. AMEND — a submitted notification enters amend; `status: 'AMEND'`; edits are visible in the working document.\n4. CANCEL-AMEND — discards the edits and returns to `status: 'SUBMITTED'` with the SUBMITTED BASELINE restored (§6.2: `{ status: 'SUBMITTED', discardChanges: true }`, D-4). Assert the edit is GONE, not merely that the status flipped — a status-only assertion passes on a cancel that forgot to restore.\n5. VIEW — the read-only view of a submitted notification renders its values and offers no edit affordance.\n\nMirrors `tests/e2e/features/live-animals/promoted-lifecycle.spec.ts` in intent; write it fresh against the plant document."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/cancel-amend-ui.spec.ts",
+      "action": "create",
+      "what": "NEW. The UI half of cancel-amend — the confirm page, its copy, the No/Cancel path leaving the amend in progress, and the Yes path discarding.\n\nTHE R7 ASSERTION THAT MATTERS: after confirming, the redirect lands under `/plant-products`, front-anchored. The live-animals equivalent redirects to a literal `'/'` (`sets/live-animals/.../features/cancel-amend/controller.test.js:104`), and pp-045 changes the PLANT equivalents to `dashboardPath()`. A plant controller that kept a bare `'/'` would now hit the FD-18 302 and drop the user into the LIVE-ANIMALS dashboard — a silent cross-set leak that renders a perfectly normal-looking page. Assert `^/plant-products`, never just 'not an error'."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/notification-delete.spec.ts",
+      "action": "create",
+      "what": "NEW. Delete from the dashboard row action and from the notification itself: the confirm page renders with the right reference; No returns to where you were; Yes soft-deletes (`PUT …/{ref}/status` `{ status: 'DELETED' }`, idempotent per §6.2) and the row disappears from the list.\n\nASSERT: (a) the post-delete redirect is `^/plant-products`, NOT `'/'` (see the cancel-amend note — same leak); (b) `plantProductsApi.load(ref)` still returns the document with `status: 'DELETED'` — it is a SOFT delete, and a spec that asserts a 404 would be asserting the wrong contract; (c) the deleted notification is absent from `list` (server-side filter); (d) deleting twice is idempotent and does not error.\n\nThe live-animals equivalents to mirror in intent: `delete-notification/controller.test.js:56,80,83` (`noHref: '/'`, two `redirect: '/'`) and `tests/e2e/features/live-animals/notification-delete.spec.ts`."
+    },
+    {
+      "path": "tests/e2e/features/plant-products/copy-as-new.spec.ts",
+      "action": "create",
+      "what": "NEW — and the ONLY end-to-end proof of the copy idempotency contract (R4, §6.2 `copy` row).\n\nCASES:\n1. Copy a submitted notification → a NEW DRAFT with a NEW `GBN-PP-…` reference, DOCUMENTLESS (accompanying documents are deliberately not copied — D-19), content otherwise carried over.\n2. IDEMPOTENCY: the Copy button carries a `randomUUID()` minted per RENDERED action in a hidden input named `idempotencyKey`, sent as the `Idempotency-Key` header. Submitting the SAME rendered form twice (double-click, or a re-POST of the captured form) yields ONE new draft, not two. This is the assertion the whole R4 sequencing exists for and it cannot be made anywhere else — the frontend's stub records the key, but only the real backend enforces it.\n3. SCOPED TO THE SOURCE REFERENCE: the same idempotency key against a DIFFERENT source reference DOES create a new draft. A backend that dedupes on the key alone passes case 2 and fails here.\n4. RE-RENDER MINTS A NEW KEY: reloading the page and copying again DOES create a second draft — otherwise the button is dead after one use.\n5. THE R7 BOUNDARY: after copying, the redirect lands under `^/plant-products` and the new draft opens at `/plant-products/notifications/{newRef}`. Never `'/'`, never live-animals.\n\nNOTE THE TRANSPOSITION (§6.2): live-animals implements idempotency on the FULFILMENT resource (`POST /fulfilments/{id}/copy`, `adapters/http/notification-api-client.ts:51-55`); plant-products puts `/copies` on the NOTIFICATION resource (`POST /plant-products/notifications/{ref}/copies`). Transpose the pattern, not the path."
+    },
+    {
+      "path": "fixtures/ui.ts",
+      "action": "edit",
+      "what": "Add `plantProductsNotificationActions`, constructed from `plantProductsPages` (mirroring the live-animals `notificationActions` fixture at `:33-35`). Keep it beside the live-animals one; do not collapse them."
+    },
+    {
+      "path": "page-objects/plant-products/*.ts",
+      "action": "edit",
+      "what": "Add whatever action-surface locators these specs need and pp-064 did not: the dashboard row's action menu (View / Amend / Copy / Delete), the delete-confirmation page, the cancel-amend confirmation page, and — importantly — the Copy form's HIDDEN `idempotencyKey` input, which `copy-as-new.spec.ts` must read and re-submit to prove case 2.\n\nThe Copy button's form action and post-copy redirect are PREFIX-BEARING LINKS (built from `pagePath` / `hubPath` / `dashboardPath`), not route shapes — pp-055 says the same thing on the frontend side. So the form's `action` attribute should read `/plant-products/notifications/…`; assert that attribute directly in the spec. A bare `/notifications/…` action would post into nothing (or, worse, into whatever the other set serves)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "lifecycle": "DRAFT → SUBMITTED → AMEND → SUBMITTED (cancel-amend, baseline restored); DELETED (soft); copy → new DRAFT with a new reference"
+  },
+  "schemaFields": [
+    "referenceNumber", "status", "submittedBaseline", "declaration.agreed", "declaration.declaredAt"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "tests/e2e/features/plant-products/notification-lifecycle.spec.ts",
+    "tests/e2e/features/plant-products/cancel-amend-ui.spec.ts",
+    "tests/e2e/features/plant-products/notification-delete.spec.ts",
+    "tests/e2e/features/plant-products/copy-as-new.spec.ts"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "`flows/plant-products/notification-actions.ts` drives view / amend / cancel-amend / copy / delete and does NOT bake in the post-action assertion.",
+    "Every lifecycle case is seeded through `flows/plant-products/api-journey.ts` — no spec re-walks the 12-spoke journey to reach a state.",
+    "All five states are covered with BOTH a rendered assertion and a `plantProductsApi.load(ref)` assertion: draft resume, submit, amend, cancel-amend, view.",
+    "Cancel-amend asserts the EDIT IS GONE (submitted baseline restored), not merely that the status flipped back.",
+    "Delete asserts a SOFT delete: the document still loads with `status: 'DELETED'`, is absent from `list`, and a second delete is idempotent.",
+    "THE R7 BOUNDARY BAR: every post-action redirect in every one of these specs is asserted FRONT-ANCHORED on `^/plant-products`. No spec accepts a bare `/` — which would now 302 into live-animals via FD-18 and render a perfectly normal-looking wrong page.",
+    "THE IDEMPOTENCY BAR: re-submitting the SAME rendered Copy form yields ONE draft; the same key against a DIFFERENT source reference yields a NEW draft; a re-rendered form mints a fresh key and copies again successfully. All three, or the contract is not pinned.",
+    "The copied draft is documentless (D-19) and carries a new `GBN-PP-…` reference.",
+    "The Copy form's `action` attribute is asserted to be prefix-bearing (`/plant-products/notifications/…`).",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "Green against a co-resident stack; the live-animals suite unchanged in the same run."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp067-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp067-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp067-pp.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:local > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp067-integration.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp067-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI, own package.json. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:local\": \"npm run test:integration\"; plus `test:plant-products` from pp-060. Do not assume the frontend's scripts.\n\nWHY THE R7 BOUNDARY ASSERTIONS ARE THE HEART OF THIS INCREMENT. Live-animals redirects to a literal `'/'` after delete, cancel-amend and copy — verified in the frontend at `delete-notification/controller.test.js:56,80,83`, `cancel-amend/controller.test.js:104`, `notification-actions/controller.test.js:132` and `dashboard/controller.test.js:403`. pp-045 changes the PLANT equivalents to `dashboardPath()`. If any plant controller keeps a bare `'/'`, FD-18's server-wide 302 forwards the user to `/live-animals` and they land in a fully-rendered, entirely wrong set's dashboard. Nothing errors. No log line. The only thing that catches it is a front-anchored URL assertion on every post-action redirect — which is why every one of these specs carries one, and why 'the page loaded' is never an acceptable assertion here.\n\nWHY API-SEEDED, NOT UI-WALKED: reaching AMEND through the UI means completing 12 spokes and submitting, per case. `flows/plant-products/api-journey.ts` (pp-061) exists so lifecycle coverage costs seconds rather than minutes and so a lifecycle failure is attributable to the lifecycle, not to some unrelated page's validation.\n\nCOPY IDEMPOTENCY IS ONLY PROVABLE HERE. The engine port already carries the key (`engine/journey.js:125` `copyJourney(request, h, journeyId, idempotencyKey)`), the frontend mints a `randomUUID()` per rendered action into a hidden `idempotencyKey` input, and the set's `records/real.js` sends it as the `Idempotency-Key` header. The frontend's stub mirrors it with a dedupe key — but a stub proves the frontend sends the key, not that the SERVICE honours it. Only a real POST to `POST /plant-products/notifications/{ref}/copies` does. The three-case bar (same form twice = one draft; same key + different source = new draft; re-render = new key = new draft) is what distinguishes a real idempotency implementation from a backend that dedupes on the key alone or a frontend that reuses one key forever.\n\nSOFT DELETE, NOT HARD. §6.2: `softDelete` is `PUT …/{ref}/status` `{ status: 'DELETED' }` and is idempotent; `list` hides DELETED server-side. A spec that asserts a 404 after delete is asserting a contract the service does not have and will fail for the right-looking wrong reason.\n\nDEPENDS ON pp-045 (the frontend draft-lifecycle build) and pp-055 (copy idempotency on the plant records port). Both must have landed — R4 sequences the idempotency work BEFORE the Copy button ships, and this is the increment that proves the sequencing worked.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the plant Copy action is reachable from the dashboard row, the check-answers page, or both (live-animals renders it in `features/dashboard/view-model/row/actions.js` AND `features/check-answers/controller.js`). Planned resolution: cover every place the built UI renders it, since each render site mints its own key and a missed site is an untested key path.",
+    "Whether amend on a plant notification is blocked while another amend is in progress. Planned resolution: assert whatever the service does and record it; do not encode an expectation the backend design has not stated (SCHEMA-DESIGN §1.2's `submittedBaseline` implies one baseline, hence one amend at a time, but that is an inference)."
+  ]
+}

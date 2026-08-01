@@ -7,6 +7,42 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-01, R7] Symmetric mounts — live-animals moves to /live-animals, URLs change
+Sam rejected the asymmetry: "this stuff is still in development, refactoring live-animals is fine — have
+them match up; changing URLs if required, just make sure to update the -tests repo as well." So every set
+now mounts at `'/' + setId` and `registerSetMount` THROWS on an empty prefix — no set owns the root, and
+`/` becomes a server-wide 302 to `/live-animals`. That last bit is forced by OIDC: `auth/controller.js`
+falls back to `'/'` in five places, so a 404 there would break sign-in for anyone without a stored
+redirect. Symmetry is also safer, not just tidier — with live-animals at `''`, a doubled prefix and a
+dropped prefix produce the SAME correct-looking string for that set, so the fault could only ever surface
+on the plant side; with both prefixed, either mistake fails visibly on the first request.
+**Two traps the re-plan found by reading the code:** `/signout` currently sits in the same
+`server.register` array as live-animals (`router.js:20-24`), so prefixing that call silently moves it to
+`/live-animals/signout` and breaks OIDC sign-out; and the entry guard does
+`request.path.startsWith(JOURNEY_PREFIX)`, where `request.path` INCLUDES the Hapi prefix — today it only
+works because `BASE === ''`, so this is a behavioural change, not a rename. Also flagged: the journey
+cookie path moves, invalidating existing browser sessions.
+
+## [2026-08-01, R8] The tests repo was MISSING from the plan — now 9 increments
+Sam asked whether updating `trade-imports-animals-tests` was in the plan. It was not. Across all 58
+increments the repo appeared exactly twice, both times only asserting it should not break — zero
+increments added plant-products coverage. That was my omission, not a deferral: I planned two repos and
+treated the third as a constraint rather than a deliverable. It now has 9 increments (pp-059..pp-067)
+spanning m0–m5, so coverage grows with the journey instead of arriving in one lump: the branch
+prerequisite first (the repo is on `spike/EUDPA-288-model-retrofit` and the cross-repo naming rule needs
+`spike/trace-to-requirements`), then the live-animals URL migration landing IN LOCKSTEP with the frontend
+change (a split landing breaks the E2E suite), then plant-products page objects, flows, journey and a11y
+suites. URL construction there is centralised in `page-objects/base/base-page.ts:81,94` plus four
+constants in the dashboard page object, which is what made the migration affordable enough to say yes to.
+
+## [2026-08-01, PATTERN WORTH KNOWING] Amend passes under-scope — sweep after every reversal
+Twice now a workflow that applied a decision reversal amended only the increments it had itself listed as
+affected, leaving the rest asserting the old model: 19 stale after the co-residency reversal, and 16 more
+after the symmetry reversal (pp-021, pp-028, pp-035, pp-041 among them still saying "live-animals at the
+root"). Both were caught by validating the artefact myself rather than trusting the workflow's success
+report. **If another ruling reverses something, budget a full sweep across every increment plus a final
+audit that must JUSTIFY each remaining match — not a targeted edit list.**
+
 ## [2026-08-01, SAM'S RULINGS APPLIED] Co-residency replaces the set switch — backlog now 58 increments
 Sam walked the open decisions and reversed the biggest one: live-animals and plant-products must be
 served **from one Node process**, because the L1–L4 architecture was designed set-agnostic and the

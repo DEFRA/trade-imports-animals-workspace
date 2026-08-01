@@ -1,0 +1,122 @@
+{
+  "id": "pp-061",
+  "title": "Tests repo: plant-products API client, domain models and Mongo seed fixtures",
+  "kind": "test",
+  "milestone": "m1",
+  "sizeGuess": "M",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-060", "pp-001", "pp-007"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (the 'API / persistence' row), §10.2 (adapters SHARE-and-extend; domain CLONE per set), §6.2 (the records port → REST call table, base `/plant-products/notifications`) and backend-schema/SCHEMA-DESIGN.md §1.1 (the document shape) + §1.3 (accompanying documents as a separate aggregate).",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "adapters/http/plant-products-api-client.ts",
+      "action": "create",
+      "what": "NEW. Mirrors `adapters/http/notification-api-client.ts` (verified live, 60 lines) in SHAPE, not in endpoints. It reuses the shared transport unchanged: `import { RestClient } from '@adapters/http/rest-client'`, `getBackendBaseUrl()` / `getDeveloperApiKey()` from `@config/service-base-urls`, and the same `constructor(request: APIRequestContext, baseUrl = getBackendBaseUrl(), apiKey = getDeveloperApiKey())` signature.\n\nMETHODS, straight from SIBLING-SET-PLAN §6.2's call table (base `/plant-products/notifications`):\n- `create()` → `POST /plant-products/notifications` with a blank referenceNumber; 201 body carries the server-minted `GBN-PP-…` ref\n- `load(ref)` → `GET /plant-products/notifications/{ref}` (response EMBEDS `accompanyingDocuments`)\n- `list(params)` → `GET /plant-products/notifications?page&sort&referenceNumber` — page is 1-BASED, DELETED hidden server-side\n- `has(ref)` → the same GET, 200 → true / 404 → false\n- `replace(ref, body)` → `PUT /plant-products/notifications/{ref}` (whole-document, last-write-wins)\n- `setStatus(ref, body)` → `PUT …/{ref}/status`; `{ status: 'SUBMITTED' }` = finalise, `{ status: 'AMEND' }` = amend, `{ status: 'SUBMITTED', discardChanges: true }` = cancel-amend, `{ status: 'DELETED' }` = soft delete (idempotent)\n- `copy(ref, idempotencyKey)` → `POST …/{ref}/copies` with an `Idempotency-Key` HEADER (201; new DRAFT, new ref, documentless)\n- accompanying documents (SCHEMA-DESIGN §1.3 — SEPARATE aggregate, separate collection): `listDocuments(ref)`, `addDocument(ref, body)`, `replaceDocument(ref, id, body)`, `deleteDocument(ref, id)` against `…/{ref}/accompanying-documents[/{id}]`\n\nTHE ONE STRUCTURAL DIFFERENCE FROM LIVE-ANIMALS, and it must be in a comment in the file: live-animals has TWO resources — `/fulfilments` (the answers tree) and `/notifications` + `/proposed-notifications` (two projections). Plant-products has ONE notification resource plus a documents sub-resource. So there is NO plant equivalent of `replaceNotification`/`replaceProposedNotification`, and no projection-seeding step. Do not transpose `notification-api-client.ts:26-33` — copying that pattern would invent two endpoints the backend does not have.\n\nALSO IN A COMMENT: live-animals implements copy idempotency on the FULFILMENT resource (`/fulfilments/{id}/copy`, `:51-55`); plant-products puts `/copies` on the NOTIFICATION resource. Transpose the pattern, not the path (§6.2 R4 note)."
+    },
+    {
+      "path": "flows/plant-products/api-journey.ts",
+      "action": "create",
+      "what": "NEW. The plant analogue of `flows/live-animals/api-journey.ts` — API-seeded drafts so lifecycle specs (pp-067) need not walk 12 spokes of UI to reach a state.\n\nCLASS `PlantProductsApiJourney`, constructed with `(pages: PlantProductsPageObjects, api: PlantProductsApiClient, context: JourneyContext)` — same shape as the live-animals class (`api-journey.ts:50-55`), same `remember(created)` helper writing `context.journeyId` / `context.referenceNumber`.\n\nMETHODS: `createEmptyNotification()`, `createFullNotification()` (a complete, submittable document built from the pp-062/063/064 constants), `createSubmittedNotification()` (create → replace → `setStatus SUBMITTED`), `createNotificationWithDocuments(n)` (exercises the separate documents aggregate).\n\nTHE CAVEAT THAT DOES **NOT** CARRY OVER — read `flows/live-animals/api-journey.ts:63-71` before writing this. Live-animals' `seedProjections()` exists because a UI save persists THREE shapes and `POST /fulfilments` creates only one, so an API seed must also `PUT /notifications/{id}` and `PUT /proposed-notifications/{id}` or the UI's next GET 404s. Plant-products has ONE resource (SCHEMA-DESIGN §3), so there is nothing to seed alongside. Write the ABSENCE down in a comment — a reader who knows the live-animals file will look for the equivalent and must find out why there isn't one, rather than adding a projection call against an endpoint that does not exist.\n\nDO check the inverse though, and record the answer: `accompanyingDocuments` IS a separate aggregate, so an API-seeded draft that a spec expects to have documents needs explicit `addDocument` calls — the whole-document PUT does not create them."
+    },
+    {
+      "path": "domain/plant-products/models/api/notification.ts",
+      "action": "create",
+      "what": "NEW TypeScript types for `PlantProductsNotificationDto`, transcribed from SCHEMA-DESIGN §1.1 (camelCase, D-10). Top level: `referenceNumber`, `chedType` ('CHEDPP'), `status` ('DRAFT'|'SUBMITTED'|'AMEND'|'DELETED'), `ownership { assignedOrganisationId, assignedOrganisationName }`, `origin { countryCode, countryOfConsignmentCode, internalReference }`, `reasonForImport` ('INTERNAL_MARKET'|'RE_ENTRY'|'RE_CONFORMITY_CHECK'), `commodity { name, inputMethod: 'MANUAL'|'CSV', commodityComplement: CommodityLine[] }`, `additionalDetails { totalGrossWeight, grossVolume, grossVolumeUnit: 'LITRES'|'METRES_CUBED' }`, `consignor`/`consignee`/`importer`/`destination`/`packer` (all `PlantProductsOperator`), `responsiblePerson`, `nominatedContacts[]`, `transport`, `goodsMovementServices`, `isCuc`, `billing`, `declaration { agreed, declaredAt }`, `created`, `updated`.\n\nTHE DEPTH-3 NESTING IS THE POINT — get it exactly right, pp-063 asserts against it:\n`CommodityLine { uniqueComplementId, commodityCode, commodityDescription, numberOfPackages, packageType, quantity, quantityType, netWeight, controlledAtmosphereContainer, finishedOrPropagated: 'FINISHED'|'PROPAGATED', intendedForFinalUsers, testAndTrial, species: PlantSpecies[] }`\n`PlantSpecies { eppoCode, genusAndSpecies, speciesId, varieties: SpeciesVariety[] }`\n`SpeciesVariety { variety, varietyClass: 'CLASS_I'|'CLASS_II'|'EXTRA_CLASS'|null }`\n\n`PlantProductsOperator { operatorId, name, telephone, email, address: { addressLine1, addressLine2, addressLine3, city, postcode, country } }` — note `addressLine3`, NOT the live-animals `county`; that difference is deliberate (SCHEMA-DESIGN §1.1) and copying the live-animals address type would silently mis-assert.\n`PlantProductsContact { name, email, telephone, isAgent }`.\n`transport { borderControlPost, inspectionPremises, meansOfTransport: 'AIRPLANE'|'RAILWAY'|'ROAD_VEHICLE'|'VESSEL', transportIdentification, transportDocumentReference, arrivalDate, arrivalTime, usesContainers, containers: { containerNumber, sealNumber, officialSeal }[] }`.\n`goodsMovementServices { commonTransitConvention: 'ADD_MRN_NOW'|'ADD_MRN_LATER'|'NO', movementReferenceNumber, usingGvms }`.\n\nDO NOT reuse `domain/live-animals/models/api/notification.ts` or extend from it. The two documents share a silhouette and differ in most leaves; SCHEMA-DESIGN §1.1's 'omitted vs house' list (placeOfOrigin, consignment, cphNumber, transitedCountries, transporter, Origin.requiresRegionCode) is exactly what a shared base type would smuggle back in."
+    },
+    {
+      "path": "domain/plant-products/models/db/notification-document.ts",
+      "action": "create",
+      "what": "NEW. The Mongo-side shape for direct DB assertions and seeds, mirroring `domain/live-animals/models/db/notification-document.ts`. Collection `plant_products_notification` (SCHEMA-DESIGN §1.2). Extends the API shape with `_id` and the fields the API hides: `submittedBaseline` (the 16-field amend restore point) and `expireAt` (a PLAIN index, NOT a Mongo TTL — the sweep cascades to documents). Both are `@JsonIgnore` server-side, so they appear in DB reads and never in API bodies; type them optional and say why in a comment."
+    },
+    {
+      "path": "domain/plant-products/models/db/accompanying-document.ts",
+      "action": "create",
+      "what": "NEW. SCHEMA-DESIGN §1.3 — accompanying documents are a SEPARATE aggregate in a separate collection, keyed to the notification reference. Fields per the plan's obligations (`documentType` (17 codes), `documentReference`, `issueDate`) plus its own id and the notification back-reference. File bytes and AV scanning are DEFERRED (inc-037, metadata only in pass 1) — do NOT model a file/scan-status field; a type that promises a field the service never sets produces specs that assert nothing."
+    },
+    {
+      "path": "domain/plant-products/constants/*.ts",
+      "action": "create",
+      "what": "NEW constant modules, one per vocabulary, mirroring `domain/live-animals/constants/`: `commodity-codes.ts` (~10 CHED-PP CN/HS codes), `eppo-species.ts` (EPPO code + genus/species per commodity code — eppoCode is THE join key), `varieties.ts` (varieties per species, plus which classes apply), `import-purposes.ts` (the 3 reasons for import), `document-types.ts` (17 codes), `package-types.ts` (24 codes), `quantity-types.ts` (8 codes), `bcps.ts` (border control posts + per-BCP control points), `country-codes.ts` (incl. GB-ENG/SCT/WLS/NIR), `gross-volume-units.ts`, `means-of-transport.ts`.\n\nSOURCE THE VALUES FROM THE SET'S REAL FIXTURE SERVICES, never invented lookalikes. The frontend's `src/server/app/sets/plant-products/services/reference/*.js` and `services/commodities/` (built by pp-004..pp-007) are the origin of truth; read them and transcribe. A plausible-looking made-up EPPO code passes typecheck, renders in a dropdown-free assertion, and then fails against the real service in a way that looks like a service bug.\n\nDO NOT re-export or extend `domain/live-animals/constants/*` — `commodity-codes.ts` and `document-types.ts` exist on both sides with DIFFERENT contents, which is the strongest possible reason to keep them apart."
+    },
+    {
+      "path": "seeds/mongodb/30-seed-plant-products-notifications.js",
+      "action": "create",
+      "what": "NEW seed fixture. READ `seeds/README.md` FIRST — two hard constraints verified live: (1) files must stay FLAT in `seeds/mongodb/` because the mongo image only executes top-level files in its init dir; (2) keep the numeric prefix, which sets execution order after the workspace's `10-database-setup.js`. The existing live-animals fixture is `20-seed-notifications.js.example` (an EXAMPLE, not active), so `30-` for the plant one and follow whatever activation convention the live-animals file documents — if the `.example` suffix means 'opt in by copying', mirror it exactly rather than shipping an always-on seed that changes every existing spec's dashboard contents.\n\nCONTENT: a small set of `plant_products_notification` documents covering the states the dashboard specs need — DRAFT, SUBMITTED, AMEND, and one DELETED (which must NOT appear in a list response; that is a server-side filter and the seed is how pp-062's dashboard spec proves it). Every document must carry `ownership.assignedOrganisationId` matching the auth stub's organisation, or the dashboard scopes them all out and the spec sees an empty list for the wrong reason.\n\nThe seed is staged into the mongo container by the WORKSPACE stack (`scripts/stack/run-stack.sh`), not by this repo, and re-run by `npm run database:reseed` → `bin/database-reseed.sh` → the workspace's `scripts/stack/bounce-mongo.sh`. A new file therefore only takes effect after a reseed; a spec that fails 'because the seed is missing' is usually a spec run without one."
+    },
+    {
+      "path": "bin/database-reseed.sh",
+      "action": "edit",
+      "what": "Verified live: this script does NOT enumerate seed files — it wipes mongo's volume and recreates the container so every init script re-runs, delegating to the workspace's `scripts/stack/bounce-mongo.sh`, and errors out if no stack is up. So a new flat file under `seeds/mongodb/` is picked up with NO edit here. VERIFY that rather than assuming (run a reseed and query the new collection); edit only if the staging actually filters by filename."
+    },
+    {
+      "path": "fixtures/ui.ts",
+      "action": "edit",
+      "what": "Add the plant fixtures now that they have something to point at: `plantProductsApi` (the new client, constructed from Playwright's `request` like `notificationApi` at `:36-38`) and `plantProductsApiJourney` (constructed from `plantProductsPages`, `plantProductsApi`, `journeyContext` — mirroring `:39-41`). Keep them beside the live-animals pair; do not collapse the two into one switching fixture (pp-060's ruling)."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [
+    "referenceNumber", "chedType", "status", "ownership.assignedOrganisationId", "ownership.assignedOrganisationName",
+    "origin.countryCode", "origin.countryOfConsignmentCode", "origin.internalReference", "reasonForImport",
+    "commodity.name", "commodity.inputMethod", "commodity.commodityComplement[].uniqueComplementId",
+    "commodity.commodityComplement[].commodityCode", "commodity.commodityComplement[].commodityDescription",
+    "commodity.commodityComplement[].numberOfPackages", "commodity.commodityComplement[].packageType",
+    "commodity.commodityComplement[].quantity", "commodity.commodityComplement[].quantityType",
+    "commodity.commodityComplement[].netWeight", "commodity.commodityComplement[].controlledAtmosphereContainer",
+    "commodity.commodityComplement[].finishedOrPropagated", "commodity.commodityComplement[].intendedForFinalUsers",
+    "commodity.commodityComplement[].testAndTrial", "commodity.commodityComplement[].species[].eppoCode",
+    "commodity.commodityComplement[].species[].genusAndSpecies", "commodity.commodityComplement[].species[].speciesId",
+    "commodity.commodityComplement[].species[].varieties[].variety",
+    "commodity.commodityComplement[].species[].varieties[].varietyClass",
+    "additionalDetails.totalGrossWeight", "additionalDetails.grossVolume", "additionalDetails.grossVolumeUnit",
+    "consignor", "consignee", "importer", "destination", "packer", "responsiblePerson", "nominatedContacts[]",
+    "transport.borderControlPost", "transport.inspectionPremises", "transport.meansOfTransport",
+    "transport.transportIdentification", "transport.transportDocumentReference", "transport.arrivalDate",
+    "transport.arrivalTime", "transport.usesContainers", "transport.containers[]",
+    "goodsMovementServices.commonTransitConvention", "goodsMovementServices.movementReferenceNumber",
+    "goodsMovementServices.usingGvms", "isCuc", "billing", "declaration.agreed", "declaration.declaredAt",
+    "created", "updated"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "No user-facing spec. The proof is one integration-level check: an API-seeded plant draft is loadable through the frontend at /plant-products/notifications/{ref} — put it in the smallest spec that can hold it (tests/e2e/features/plant-products/api-seed-loads.spec.ts) rather than leaving the client unexercised until pp-067."
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "`adapters/http/plant-products-api-client.ts` exists, reuses `RestClient` / `getBackendBaseUrl` / `getDeveloperApiKey` unchanged, and covers create / load / list / has / replace / setStatus (all four transitions) / copy-with-Idempotency-Key / the four accompanying-document operations.",
+    "The client has NO projection-seeding methods and a comment saying why (one plant notification resource, not live-animals' fulfilment + two projections).",
+    "`flows/plant-products/api-journey.ts` seeds empty, full, submitted and with-documents drafts, and records in a comment that live-animals' `seedProjections()` has no plant equivalent.",
+    "`domain/plant-products/models/api/notification.ts` types the depth-3 chain exactly as SCHEMA-DESIGN §1.1: commodityComplement[] → species[] → varieties[].",
+    "`domain/plant-products/models/db/{notification-document,accompanying-document}.ts` exist; the notification document types `submittedBaseline` and `expireAt` as DB-only, and the document type has NO file/scan field (deferred, inc-037).",
+    "No plant domain file imports from or extends `domain/live-animals/**` — the two `commodity-codes.ts` / `document-types.ts` pairs are genuinely separate.",
+    "Every constant value traces to the frontend set's real fixture service — nothing invented. Spot-check at least the EPPO codes and document types against `src/server/app/sets/plant-products/services/` and say so in the commit body.",
+    "`seeds/mongodb/30-seed-plant-products-notifications.js` is FLAT in that directory, numerically prefixed, and follows the live-animals fixture's activation convention. Every seeded document carries an ownership organisation matching the auth stub, and one is DELETED.",
+    "THE BAR: after a reseed, an API-seeded plant draft is loadable through the frontend at `/plant-products/notifications/{ref}` and renders the hub — proving the client, the seed and the frontend mount agree.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "The existing live-animals suite is unaffected: same test count, still green."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp061-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp061-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp061-pp.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp061-e2e.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`, cut at pp-059), own CI workflows, own package.json. Do not assume the frontend's scripts. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"database:reseed\": \"./bin/database-reseed.sh\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:local\": \"npm run test:integration\"; plus `test:plant-products` / `test:live-animals` added at pp-060.\n\nWHY THIS COMES BEFORE ANY UI SPEC: every later plant suite needs a way to reach a state without walking 12 spokes. pp-067's lifecycle specs are impossible without it, pp-062's dashboard specs need seeded rows in known states, and pp-063's depth-3 assertions need a typed document to assert against. Building it first also means the first plant UI spec is debugging the UI, not the harness.\n\nTHE TRANSPOSITION TRAP — read this before copying anything from the live-animals client. Live-animals persists to `/fulfilments` and maintains TWO projections (`/notifications/{id}`, `/proposed-notifications/{id}`); `flows/live-animals/api-journey.ts:63-71` documents that a UI save writes all three and an API seed must too. Plant-products has ONE notification resource plus an accompanying-documents sub-resource (SCHEMA-DESIGN §3). Copying `seedProjections()` invents endpoints. Conversely, copying nothing loses the lesson: the plant analogue of that caveat is that documents are a SEPARATE aggregate, so a whole-document PUT does not create them.\n\nCOPY IDEMPOTENCY (R4 / §6.2 `copy` row) is modelled here and PROVEN at pp-067: `POST /plant-products/notifications/{ref}/copies` with an `Idempotency-Key` header, one new draft per key, scoped to the source reference. Live-animals puts the same contract on the fulfilment resource — transpose the pattern, not the path.\n\nCONSTANTS: real canned data only. The house rule is that test-data builders mirror per-page UI submits and take their values from real canned data, never invented lookalikes. For plant that means reading `src/server/app/sets/plant-products/services/reference/*.js` and `services/commodities/` in the frontend repo and transcribing.\n\nSCOPE FENCE: no page object, no UI flow, no journey spec. pp-062 onwards.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the plant seed should ship active or as a `.example` like `20-seed-notifications.js.example`. Planned resolution: mirror whatever the live-animals fixture does, decided by reading that file's header during the increment. Shipping an always-on seed when the convention is opt-in changes every existing dashboard spec's row counts.",
+    "Whether `config/service-base-urls.ts`'s `getDeveloperApiKey()` covers the plant endpoints or the backend gates them separately. Planned as the same key (one backend service, one API-key scheme); if a 401 says otherwise, extend `config/` here rather than hardcoding a key in the client."
+  ]
+}

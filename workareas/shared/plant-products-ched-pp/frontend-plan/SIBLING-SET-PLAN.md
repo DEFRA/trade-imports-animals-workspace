@@ -12,6 +12,37 @@ per-increment planners cite sections of this document by heading. Grounded in:
 All frontend paths are relative to
 `repos/trade-imports-animals-frontend/src/server/app/` unless stated.
 
+> ## REVISION 2 — 2026-08-01 — SYMMETRIC MOUNTS (R7) + TESTS-REPO COVERAGE (R8)
+>
+> Two further rulings, later the same day. Both are decided; do not reopen.
+>
+> **R7 — SYMMETRIC MOUNTS. FD-16 IS REVERSED.** Sam does not accept the asymmetry
+> where live-animals keeps the root mount and only plant-products is prefixed. His
+> reasoning: this stuff is still in development, so refactoring live-animals is fine —
+> have the two sets match up; change URLs if that is what symmetry requires, and make
+> sure the `-tests` repo is updated as well. **Both sets therefore mount under their own
+> prefix: `/live-animals` and `/plant-products`.** Live-animals' URLs WILL change and
+> that is accepted. See the rewritten FD-16, the new §4.3 mount table, the enumerated
+> migration list in the new **§4.6**, and the rewritten P-10.
+>
+> Consequence for the round-2 acceptance bars: any increment whose proof is "every
+> existing URL assertion passes UNEDITED — that is the proof the root mount is a no-op"
+> is now asserting the wrong thing. That bar is replaced everywhere by an explicit,
+> enumerated URL migration whose correctness is proven by UPDATED assertions. P-10 /
+> pp-057 is the increment this bites hardest; §4.5 and §9 are restated to match.
+>
+> **R8 — TESTS-REPO COVERAGE WAS MISSING FROM THE PLAN.** Sam asked whether updating
+> `repos/trade-imports-animals-tests` with the plant-products work was in the plan. The
+> honest answer was no: across all 58 increments only pp-053 and pp-057 mentioned that
+> repo, and only to assert it should not break. There were ZERO increments adding
+> plant-products coverage to it. That gap is closed by the new **§10 — Tests-repo
+> strategy**, which owns the branch prerequisite, the parameterise-vs-clone ruling, the
+> suites plant-products needs, how the two sets' suites are selected, and the named
+> files to create or change.
+>
+> Nothing else in this document is reversed by R7/R8. Co-residency (R3), the recipe-first
+> ordering (R6), copy idempotency (R4) and every FD other than FD-16 stand as written.
+
 > ## REVISION 2026-08-01 — CO-RESIDENCY REPLACES THE SET SWITCH
 >
 > Sam's ruling R3 reverses the boot-time single-set-per-process decision that the
@@ -38,7 +69,8 @@ All frontend paths are relative to
 `sets/plant-products/`, **co-resident** with live-animals in a single Node process.
 Both L1 gateways register; every `configure*` seam is keyed by set id; the set for a
 request is resolved from the route's owning plugin realm; URLs are namespaced by a
-per-set mount prefix (live-animals stays at the root, unchanged). See §4.
+per-set mount prefix, and **every set takes a prefix — no set owns the root** (R7).
+`/` is a redirect to the default set. See §4, and §10 for the tests-repo half.
 
 ---
 
@@ -58,8 +90,10 @@ per-set mount prefix (live-animals stays at the root, unchanged). See §4.
 | FD-10 | **RESTATED (R3).** Per-set app-root test strategy: still **clone** the set-composing suites as `*.plant-products.test.js`, still **parameterise in-file** the pure filesystem walkers — but the *reason* changes and one suite is ADDED | The old reason (vitest file isolation dodges the single slots) is gone: the slots are keyed now, and FD-17's sole-set fallback means a one-set test file needs no context plumbing at all. The reason to keep separate files is plain readability + independent failure attribution. ADDED: a **co-residency suite** (`co-residency.test.js`, P-3/P-9) that boots ONE server with BOTH gateways and asserts a page from each set — that suite is the thing the old plan had no way to write. §7. |
 | FD-14 | **NEW (R3).** The de-singleton mechanism is a **set-keyed registry per seam plus an `AsyncLocalStorage` request context**: new L2 module `shared/set-context.js` owns the ALS, the mount table, `withSetContext(setId, fn)`, `enterSetContext(setId)`, `currentSetId()`, `currentSetBase()`, and a `setKeyed(label)` factory that every seam uses to hold its per-set value. Every `configure*` / `build*` gains **`setId` as its first parameter**; every READ accessor keeps its existing signature and resolves through `currentSetId()` | Chosen over threading a `setId` argument through L2 call sites because *every read accessor is already a function or a delegating facade* (`obligations()`, `groups()`, `journeySections()`, `journeyLayout()`, `records.load()`, `session.knownJourneyIds()`, `pagePath()`) — ALS lets all of those keep their signatures, so the blast radius is the ~9 seam modules plus the two module-load `BASE` captures, NOT the several hundred controller/view-model call sites. Threading would touch pure model code and view-models that have no `request` in hand at all. One mechanism, applied identically to all seams. |
 | FD-15 | **NEW (R3).** Set resolution is by **route ownership, not URL string parsing**: each gateway registers a realm-scoped `server.ext('onPreAuth', …)` that calls `enterSetContext(SET_ID)` before anything else. Hapi scopes request-lifecycle extensions added inside a plugin to that plugin's own routes | Robust by construction — no prefix-matching table to keep in sync with the routes, and it works identically whatever mount prefix a set is given. It also matches the existing pattern: the live-animals entry guard is ALREADY a realm-scoped `onPreHandler` (`routes.js:65-68`), so the mechanism is proven in this codebase; `onPreAuth` simply runs earlier in the same lifecycle. **Realm scoping is a load-bearing assumption and P-3 must pin it with a test** (a request to a plant route must not run the live-animals entry guard). |
-| FD-16 | **NEW (R3).** URL namespace: **live-animals keeps the root mount (prefix `''`) — its URLs do not change at all**; plant-products mounts under **`/plant-products`**, applied via Hapi's `server.register(plantProducts, { routes: { prefix: '/plant-products' } })` | Changing live-animals' URLs is a migration with real blast radius — the tests-repo E2E suite, the in-repo `*.e2e.spec.js` specs, every hardcoded link and redirect assertion, deployed bookmarks, and the journey cookie `path`. There is no benefit to symmetry that pays for it. Asymmetry is confined to one row of the mount table. §4.3. |
+| FD-16 | **REVERSED (R7).** ~~live-animals keeps the root mount~~ — **SYMMETRIC MOUNTS. Every set mounts under `/<setId>`: live-animals at `/live-animals`, plant-products at `/plant-products`. No set is registered at prefix `''`.** Both are applied identically via `server.register(gateway, { routes: { prefix: '/<setId>' } })`. `/` is served by a server-wide 302 redirect to the default set's dashboard (`/live-animals`), registered in `src/server/router.js` OUTSIDE both gateways so it never enters a set context. Live-animals' URLs change; that is accepted and its migration is enumerated in §4.6, including `repos/trade-imports-animals-tests` (§10) | Sam's ruling. The service is still in development, so refactoring live-animals is fine and the two sets should match up. The round-1 rationale for asymmetry (avoiding a migration) is exactly the debt Sam is declining to take on: an asymmetric scheme puts a permanent special case in `shared/paths.js`, in `registerSetMount`, in `add-a-set.md` ("the incumbent keeps the root, newcomers take a prefix") and in every future set's planning. It also HIDES the class of bug the prefix work can introduce — see the trap note in P-10. Symmetry costs one enumerated migration once; asymmetry costs a special case forever. §4.3, §4.6, §10. |
 | FD-17 | **NEW (R3).** `currentSetId()` falls back to the **sole registered set** when exactly one set is mounted, and throws `No set context` when two or more are mounted and no context is active | Keeps every existing unit test, `contract.test.js`, `routes.test.js`, `indexed.test.js`, `store-ops.test.js` and each set's own suites working UNCHANGED (they compose exactly one set), while making a missing context a loud failure in the co-resident server where it actually matters. Without this the reversal would rewrite hundreds of green tests for no behavioural gain. |
+| FD-18 | **NEW (R7).** What serves `/` once neither set owns it: a **server-wide 302 redirect to `/live-animals`** (the default set), declared in `src/server/router.js` next to `health` and `signout` — NOT inside either gateway, so it never enters a set context and never appears in either set's `allRoutes`. Explicitly **302, never 301** | Chosen over a set-picker landing page and over a 404. It is the only option that keeps the OIDC dance working with ZERO auth edits: `src/server/auth/controller.js:11,63,73,114,122` all fall back to `'/'` as the post-sign-in / post-sign-out target and `getSafeRedirect` only permits relative paths, so a 404 at `/` would break sign-in for any user arriving without a stored `redirect`. A picker page needs new copy in two locales, a11y baselines and a design decision nobody has made — gold-plating for a two-set service still in development. 302 because a 301 is cached by browsers indefinitely and would be painful to unpick when a picker page eventually replaces the redirect. Recorded upgrade path: swap the redirect for a picker page when a third set lands or when product asks for a landing page. **No legacy `/notifications/*` compatibility shim** — no external bookmarks to honour at this stage, and a shim would have to guess which set a bare journey id belongs to. |
+| FD-19 | **NEW (R7).** `signout` **must be hoisted out of the prefixed registration**. Today `src/server/router.js:20-24` pushes `signout` into the same `routes` array as `liveAnimals` and registers them in one `server.register(routes)` call. Under R7 that call gains `{ routes: { prefix: '/live-animals' } }`, which would silently move `/signout` to `/live-animals/signout` and break the OIDC sign-out leg | This is a defect the symmetric mount INTRODUCES if it is not planned for, and it is invisible in unit tests (the route registers fine, just at the wrong path). `signout` gets its own unprefixed `server.register([signout])`. Same reasoning check applied and cleared for `health` (already its own register, `router.js:16`) and `serveStaticFiles` (own register after the routes, `router.js:29` → `serve-static-files.js:32` `${config.get('assetPath')}/{param*}`) — both stay server-wide and unprefixed. P-3/pp-006 must assert all three. |
 | FD-11 | Documents ride the answers tree as an `accompanyingDocuments` group obligation; the set-owned real records impl projects that group onto the backend sub-resource (`…/accompanying-documents` CRUD) at save | Keeps the frontend model uniform (one answers tree, engine-owned scope/wipe/completeness) while honouring the backend's separate-collection ruling. Naive replace-on-save (list + delete + recreate) is acceptable at pass-1 volumes; Phase D inc-025 owns the detail. |
 | FD-12 | The hub's spoke 12 (Review and submit) is a flow **section with the authored gate `scope.readyForCheckYourAnswers`**, not a task row | Exact live-animals precedent (recon §3: the `review` section carries the one authored section gate). Spokes 1–11 are task rows; readiness derives from them. |
 | FD-13 | The flow `sections` array OPENS with a `start` section `{ id: 'start', pages: [dashboardPage, importTypePage] }` — dashboard and the import-type entry filter live INSIDE `sections`, mirroring live-animals `flow/flow.js:32-36` | Round-2 verifier finding: the exemplar places both pages in a `start` FLOW section feeding `allFlowPages`/`sectionOfPage`/`answerSections` (`flow.js:89-98`); the round-1 plan wrongly kept them out of `sections`. `start` is a flow section, not a hub spoke — no task row, no GROUPS entry. `importType` stays flow-only (FD-8 unchanged); RUN_STEPS/opening-run mechanics (§1 `run.js`) are additional to, not instead of, section membership. |
@@ -205,9 +239,11 @@ sets/plant-products/
 ```
 
 **Every m0 file and its exports, flat list** (the m0 scaffold's definition of done —
-**one** app boots with BOTH sets registered, serves live-animals unchanged at the root
+**one** app boots with BOTH sets registered, serves live-animals under `/live-animals`
 AND serves the plant dashboard, empty hub and import-type filter under
-`/plant-products`, with all boot assertions passing for both manifests):
+`/plant-products`, with `/` 302ing to `/live-animals` and all boot assertions passing
+for both manifests — REVISED by R7, the old wording "live-animals unchanged at the
+root" is retired):
 
 1. `obligations/index.js` — `obligations` (=[]), `groups` (derived), `policy` (FD-7 shape).
 2. `obligations/coverage.test.js` — structural suite (green on empty).
@@ -369,11 +405,14 @@ groups: [line, species, variety] })` — binding depth must equal the `within` c
 
 ## 4. L1 wiring — co-residency: both gateways in one process
 
-> **Sub-heading renumbering (2026-08-01).** §4 grew from three sub-sections to five.
-> Anything citing the OLD numbering should re-point: old §4.1 (file moves + gateway
-> call table) → **new §4.4**; old §4.2 (`shared/paths.js`) → **new §4.3**; old §4.3
-> (acceptance) → **new §4.5**. New §4.1 and §4.2 are the co-residency mechanism and
-> did not exist before. Top-level §1–§9 numbering is unchanged.
+> **Sub-heading renumbering (2026-08-01).** §4 grew from three sub-sections to five,
+> and REVISION 2 adds a sixth. Anything citing the OLD numbering should re-point: old
+> §4.1 (file moves + gateway call table) → **new §4.4**; old §4.2 (`shared/paths.js`) →
+> **new §4.3**; old §4.3 (acceptance) → **new §4.5**. New §4.1 and §4.2 are the
+> co-residency mechanism and did not exist before. **New §4.6 (R7) is the enumerated
+> live-animals URL migration**, sequenced in the document immediately after §4.3
+> because it is that section's consequence — §4.4 and §4.5 follow it. Top-level §1–§9
+> numbering is unchanged; REVISION 2 adds a new top-level **§10** (tests-repo strategy).
 
 ### 4.1 `shared/set-context.js` — the one new L2 module (FD-14/FD-15/FD-17)
 
@@ -385,9 +424,12 @@ under `sets/`), so dep-cruiser is satisfied without a new rule.
 import { AsyncLocalStorage } from 'node:async_hooks'
 
 const storage = new AsyncLocalStorage()
-const mounts = new Map()                       // setId -> prefix ('' for the root set)
+const mounts = new Map()                       // setId -> prefix, always '/<setId>' (R7)
 
-export const registerSetMount = (setId, prefix = '') => mounts.set(setId, prefix)
+export const registerSetMount = (setId, prefix) => {
+  if (!prefix?.startsWith('/')) throw new Error(`Set "${setId}" needs a mount prefix`)
+  mounts.set(setId, prefix)
+}
 export const mountedSetIds = () => [...mounts.keys()]
 
 const soleSetId = () => (mounts.size === 1 ? [...mounts.keys()][0] : undefined)
@@ -398,6 +440,8 @@ export const currentSetId = () => {
   return id
 }
 export const currentSetBase = () => mounts.get(currentSetId()) ?? ''
+// R7: the `?? ''` is a defensive default only — no registered set has an empty prefix.
+// `registerSetMount` rejects one, and P-11's tripwire asserts none exists at boot.
 
 export const withSetContext = (setId, fn) => storage.run({ setId }, fn)   // boot-time
 export const enterSetContext = (setId) => storage.enterWith({ setId })    // request-time
@@ -482,38 +526,151 @@ tables, therefore **prefix-free**; Hapi's plugin `routes.prefix` supplies the mo
 The two NEW exports exist because `dashboardPath()` and `createPath()` are currently
 used BOTH as route paths (module load) and as links (request time) in the same file —
 under a prefix those two uses must produce different strings. This is a two-line edit
-in the live-animals dashboard controller and the only live-animals source change the
-URL work requires.
+in the live-animals dashboard controller. **REVISED (R7): it is no longer "the only
+live-animals source change the URL work requires"** — that claim was true only while
+live-animals sat at prefix `''`. The full live-animals change list is §4.6.
 
 *Link builders* — evaluated per request, therefore **prefix-bearing** via
 `setBase()`; every one of their ~55 call sites across `sets/`, `flow/navigation.js`
 and `analysis/` is UNCHANGED:
 
 `pagePath(journeyId, slug)`, `hubPath(journeyId)`, `dashboardPath()` (returns
-`setBase() || '/'`), `createPath()`, `breadcrumbs(journeyId, title)`.
+`setBase()` — under R7 that is never `''`, so the `|| '/'` fallback the asymmetric plan
+needed is gone), `createPath()`, `breadcrumbs(journeyId, title)`.
+
+**The mount scheme (REWRITTEN — R7): `prefix = '/' + setId`.**
+
+Every set mounts under a prefix derived mechanically from its set id. No set is
+registered at prefix `''`, and `registerSetMount` is never called with an empty string.
+
+Why this scheme and not the alternatives:
+
+- **`/<setId>` (CHOSEN).** The set id is *already* the key for everything else in this
+  design — `setKeyed()`, `withSetContext(setId, …)`, `enterSetContext(setId)`, the Hapi
+  plugin name (FD-3), the cookie-name prefix (`liveAnimals*` / `plantProducts*`), the
+  `sets/<setId>/` directory, the Nunjucks `TEMPLATES` root, the dep-cruiser path regexes,
+  the npm scripts (`test:live-animals` / `test:plant-products`) and the Playwright project
+  names. Making the mount prefix one more derivation of the same id means there is ONE
+  fact per set and no mount table to keep in sync with the routes. It also reads as what
+  the user is doing ("live animals", "plant products").
+- **`/ched-a` and `/ched-pp` (rejected).** CHED type is a *certificate* type, not a set
+  identity — a set can carry more than one CHED type later (the live-animals set already
+  fronts a filter that could route to CHED-D). Pinning the URL to a certificate code
+  would force a URL migration the first time that happens.
+- **`/sets/<setId>` (rejected).** `sets/` is an internal source-tree layer name (L3/L4);
+  leaking it into a public URL buys nothing and dates badly.
+- **Asymmetric (`''` + `/plant-products`) — REVERSED by R7.** See FD-16.
 
 **The mount table.**
 
 | Set | Prefix | Dashboard | Create | Hub | Page |
 |---|---|---|---|---|---|
-| live-animals | `''` (root) | `/` | `/notifications` | `/notifications/{journeyId}` | `/notifications/{journeyId}/{slug}` |
+| live-animals | `/live-animals` | `/live-animals` | `/live-animals/notifications` | `/live-animals/notifications/{journeyId}` | `/live-animals/notifications/{journeyId}/{slug}` |
 | plant-products | `/plant-products` | `/plant-products` | `/plant-products/notifications` | `/plant-products/notifications/{journeyId}` | `/plant-products/notifications/{journeyId}/{slug}` |
 
-**What happens to live-animals' existing URLs: NOTHING.** They are byte-identical
-before and after. This is deliberate and is the whole reason for the asymmetry. A
-change to them would be a migration whose blast radius is the tests-repo E2E suite,
-every in-repo `*.e2e.spec.js`, hardcoded redirect/link assertions in controller unit
-tests, deployed bookmarks, and the journey cookie `path`. Nothing about co-residency
-requires paying that, so we do not: plant-products is the newcomer and takes the
-prefix. If a future set makes the root mount awkward, moving live-animals is a
-separate, explicitly-scoped migration ticket — not smuggled into this programme.
+Route shapes are declared prefix-free and identical for both sets (`/`,
+`/notifications`, `/notifications/{journeyId}`, `/notifications/{journeyId}/{slug}`);
+Hapi's `routes.prefix` supplies the mount. Hapi's prefixing rule handles the dashboard
+cleanly: a route registered as `/` under prefix `/live-animals` is served at
+`/live-animals` (no trailing slash).
 
-Hapi's prefixing rule handles the dashboard cleanly: a route registered as `/` under
-prefix `/plant-products` is served at `/plant-products` (no trailing slash). No route
-collides: live-animals declares only `/`, `/notifications`, `/notifications/{journeyId}`
-and `/notifications/{journeyId}/{slug}`, none of which match a `/plant-products/…`
-path. Server-wide routes (`health`, `signout`, static assets) are untouched and never
-enter a set context.
+**What is NOT prefixed** (server-wide, registered outside both gateways, never enters a
+set context): `/health` (`src/server/router.js:16`), `/signout`
+(`src/server/signout/index.js:14` — see FD-19, it must be HOISTED out of the array that
+now carries a prefix), the static-asset route
+(`src/server/common/helpers/serve-static-files.js:32`,
+`${config.get('assetPath')}/{param*}`), the `/auth/*` OIDC routes, and the new `/`
+redirect (FD-18).
+
+**What happens to live-animals' existing URLs: THEY MOVE.** Every live-animals URL gains
+the `/live-animals` prefix. This is a real migration and it is enumerated call site by
+call site in **§4.6** (in-repo) and **§10** (tests repo). It is not a side effect to be
+discovered during implementation — every item in those lists is planned work.
+
+### 4.6 Migration blast radius — moving live-animals off the root (R7)
+
+Enumerated so P-10 / pp-057 can be executed as a checklist rather than a hunt. Every
+row was verified live this session at the file:line given. **In-repo** items land inside
+pp-057 (they must, or the repo is red between increments); **tests-repo** items land in
+pp-059 immediately after (a different repo cannot be atomic with the frontend anyway).
+
+**A. Frontend production source**
+
+| # | File:line | Today | After |
+|---|---|---|---|
+| 1 | `src/server/app/shared/paths.js:1` | `export const BASE = ''` | deleted; `setBase() = currentSetBase()` used inside the link builders (§4.2 row 10) |
+| 2 | `src/server/app/shared/paths.js:10` | `dashboardPath = () => '/'` | `dashboardPath = () => setBase()` — under R7 `setBase()` is never `''`, so the `|| '/'` fallback that FD-16 needed is GONE |
+| 3 | `src/server/app/shared/paths.js:3-9` | `pagePath`/`hubPath`/`createPath` interpolate `BASE` | interpolate `setBase()` per request; route-shape twins (`pageRoutePath`, `hubRoutePath`, new `dashboardRoutePath`, new `createRoutePath`) stay prefix-free |
+| 4 | `src/server/app/engine/journey.js:14-23` | `cookieOptions` frozen at module load with `path: BASE \|\| '/'` | built per set inside `registerJourneyCookie(server, { base, cookieNames })`. **live-animals' journey cookie path CHANGES from `/` to `/live-animals`** — under FD-16 it did not. Existing browser sessions are invalidated; acceptable at this stage, but the increment must say so |
+| 5 | `src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js:1,13` | `const JOURNEY_PREFIX = \`${BASE}/notifications/\`` (module load) | `const journeyPrefix = () => \`${setBase()}/notifications/\`` (per request) |
+| 6 | `src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js:16,18` | `path.startsWith(JOURNEY_PREFIX)`, `path.slice(JOURNEY_PREFIX.length)` | **behavioural, not cosmetic.** `request.path` under a Hapi prefix INCLUDES the prefix. Today `BASE === ''` makes the guard's prefix and the request path agree by accident; once mounted, both the `startsWith` test and the `slice` length must use the prefixed `journeyPrefix()`. Getting this wrong silently disables the deep-link guard |
+| 7 | `src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js:16` | `path === createPath()` | `createPath()` is now prefixed too — consistent, but pin it with a test |
+| 8 | `src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.js:114,126` | route table calls `dashboardPath()` / `createPath()` (link builders) at module load | call the new prefix-free `dashboardRoutePath()` / `createRoutePath()`. Unchanged from the FD-16 plan; what changes is that the LINK builders now emit a different string from the ROUTE builders for BOTH sets, so a mix-up fails loudly on both (see the P-10 trap note) |
+| 9 | `src/server/router.js:7` | `import { liveAnimals } from './app/routes.js'` | `import { liveAnimals, plantProducts } from './app/routes.js'` |
+| 10 | `src/server/router.js:20-24` | `const routes = [liveAnimals]; if (authEnabled) routes.push(signout); await server.register(routes)` | **FD-19.** `await server.register(liveAnimals, { routes: { prefix: '/live-animals' } })`; `await server.register(plantProducts, { routes: { prefix: '/plant-products' } })`; `if (authEnabled) await server.register([signout])` as its own UNPREFIXED call |
+| 11 | `src/server/router.js` (new) | — | the `/` → `/live-animals` 302 (FD-18), registered server-wide |
+| 12 | `src/server/auth/controller.js:11,63,73,114,122` | `'/'` post-auth fallbacks, via `getSafeRedirect` | **NO EDIT** — the FD-18 redirect forwards them. This is a deliberate no-change and must be PROVEN, not assumed: an e2e leg that signs in with no stored `redirect` and lands on `/live-animals` |
+| 13 | `src/server/common/helpers/serve-static-files.js:32` | `${config.get('assetPath')}/{param*}` | **NO EDIT** — registered in its own `server.register([serveStaticFiles])` (`router.js:29`), outside the prefixed calls. Assert it: a prefixed registration would silently move `/public/*` and every stylesheet would 404 |
+| 14 | `src/server/signout/index.js:14` | `/signout` | **NO EDIT to the file** — but see row 10; the fix is in `router.js` |
+
+**B. Frontend unit / controller tests asserting redirects or links**
+
+| File:line | Value today | After |
+|---|---|---|
+| `sets/live-animals/.../features/dashboard/controller.test.js:403` | `expect(h.captured.redirect).toBe('/')` | `'/live-animals'` |
+| `sets/live-animals/.../features/dashboard/controller.test.js:33` | `handlerOf('GET', '/')` | UNCHANGED (route shape, prefix-free) — verify, do not blanket-replace |
+| `sets/live-animals/.../features/dashboard/copy/copy.test.js:56` | `route.path === '/'` | UNCHANGED (route shape) |
+| `sets/live-animals/.../features/dashboard/notification-helper.test.js:64,75` | `buildPaginationLinks(page, '/', …)` | `'/live-animals'` (the argument is the emitted base path) |
+| `sets/live-animals/.../features/delete-notification/controller.test.js:56,80,83` | `noHref: '/'`, `redirect: '/'` ×2 | `'/live-animals'` |
+| `sets/live-animals/.../features/cancel-amend/controller.test.js:104` | `redirect: '/'` | `'/live-animals'` |
+| `sets/live-animals/.../features/notification-actions/controller.test.js:132` | `expect(response.redirect).toBe('/')` | `'/live-animals'` |
+| `sets/live-animals/.../features/hub/copy/copy.test.js:85,86` | `backLink` / `dashboardHref` `=== '/'` | `'/live-animals'` |
+| `sets/live-animals/journeys/linear/flow/opening-run.test.js:4,376-377` | imports `BASE`; `guardedJourneyPath('/')` | import `setBase`; the guard cases become prefixed |
+| `src/server/app/routes.test.js` | auth walk over `allRoutes` | route shapes are prefix-free → expected UNCHANGED; verify rather than assume |
+| `src/server/common/helpers/content-security-policy.test.js:25` | `url: '/'` | UNCHANGED (server-wide route) |
+
+**C. Frontend in-repo `*.e2e.spec.js` — the enumerated spec migration**
+
+Three mechanical edits, applied file by file: `page.goto('/')` → `page.goto('/live-animals')`;
+`form[action="/notifications"]` → `form[action="/live-animals/notifications"]`;
+`toHaveURL('/')` / `toHaveAttribute('href', '/')` → `'/live-animals'`. Plus one
+JUDGEMENT edit: the `/\/notifications\/[^/]+…/` regexes are unanchored at the front, so
+they keep passing after the move **without proving anything about the prefix** — every
+one must be re-anchored to `/^\/live-animals\/notifications\/…/`. That re-anchoring is
+the actual proof of the migration; a spec left on the loose regex is a spec that would
+also pass if the prefix were dropped.
+
+Files and lines (all under `src/server/app/sets/live-animals/journeys/linear/`):
+
+- `features/dashboard/dashboard.e2e.spec.js:26,43,50,56,79,122,159,167,186,208,234,255,279,282`
+- `features/import-type-filter/import-type-filter.e2e.spec.js:7,9,41,67,85,99,110`
+- `features/declaration/declaration.e2e.spec.js:11,13,18,87,124,126`
+- `features/exit-date/exit-date.e2e.spec.js:7,9,14,28,129,167`
+- `features/cph-number/cph-number.e2e.spec.js:7,9,14,20,101`
+- `features/contact/contact.e2e.spec.js:8,10,15,57,95`
+- `features/import-purpose/import-purpose.e2e.spec.js:9,11,16,26,90`
+- `features/notification-actions/notification-actions.e2e.spec.js:18,40,62,70,86`
+- `features/delete-notification/delete-notification.e2e.spec.js:16,34,37,47`
+- `features/import-reason/import-reason.e2e.spec.js:9,11,16,81`
+- `features/port-of-exit/port-of-exit.e2e.spec.js:8,10,15,81`
+- `features/destination-country/destination-country.e2e.spec.js:8,10,15,74`
+- `features/origin/origin.e2e.spec.js:11,13,19,199`
+- `features/hub/hub.e2e.spec.js:54,57,61,102`
+- `features/confirmation/confirmation.e2e.spec.js:37,92,96`
+- `features/cancel-amend/cancel-amend.e2e.spec.js:26,55`
+- `features/check-answers/check-answers.e2e.spec.js:100,111`
+- `features/additional-details/additional-details.e2e.spec.js:142`
+
+**D. Frontend repo-root E2E harness (`e2e/`) — missed by the round-2 plan**
+
+- `e2e/live-animals-journey.js:11` — `new URL(page.url()).pathname.match(/\/notifications\/([^/]+)/)` (journey-id extraction; re-anchor).
+- `e2e/live-animals-journey.js:17` — `` `${BASE}/notifications/${journeyIdFromPage(page)}…` `` — this file has its own `BASE`; it must become `/live-animals`.
+- `e2e/live-animals-journey.js:76,88` — `page.goto('/')`, `page.goto(journeyUrl(page))`.
+- `e2e/journey-smoke.spec.js:20,25,27,68,78,84` — `page.goto('/')` and `journeyUrl(...)` calls.
+- `e2e/check-workspace-stack.js:14` — `fetch(\`${backendUrl}/notifications\`)` is the **BACKEND** API, not the frontend. **NO EDIT.** Called out explicitly so the sweep does not "helpfully" prefix it.
+- `playwright.config.js:20-24` (`journeys` project `baseURL`), `:43-50` (`features` project `testDir`/`baseURL`), `:53-63` (`webServer`) — `baseURL` is host-only (`http://localhost:${port}`) and stays host-only; the prefix lives in the specs, not the base URL. **NO EDIT** to baseURL, and the increment must say why (a baseURL ending in `/live-animals` would break `/health`, `/signout` and `/public/*`).
+
+**E. Tests repo** — see §10.4 for the same treatment with file:line detail.
 
 ### 4.4 File moves/creations (all at `src/server/app/` root unless stated)
 
@@ -521,9 +678,11 @@ enter a set context.
 2. **`routes-live-animals.js`** [move] — the current `routes.js` body
    (`routes.js:1-77`, verified this session), with: the `withSetContext('live-animals', …)`
    wrapper, the `onPreAuth` context extension, `setId` added to the seven `configure*`
-   / `buildDispatch` calls, `registerJourneyCookie(server, { base: '', cookieNames: SESSION_COOKIE_NAMES })`,
-   and `registerSetMount('live-animals', '')`. Still exports `liveAnimals`. **No
-   behavioural change and no URL change.**
+   / `buildDispatch` calls, `registerJourneyCookie(server, { base: '/live-animals', cookieNames: SESSION_COOKIE_NAMES })`,
+   and `registerSetMount('live-animals', '/live-animals')`. Still exports `liveAnimals`.
+   **REVISED (R7): this is no longer a no-op.** The gateway body is call-for-call
+   identical to today, but live-animals' emitted URLs and its journey cookie `path` both
+   move to `/live-animals` — the migration of §4.6 lands in the same increment.
 3. **`routes-plant-products.js`** [new] — exports `plantProducts`, plugin name
    `'plant-products'` (FD-3). Register body mirrors `routes-live-animals.js`
    call-for-call — the ORDER IS LOAD-BEARING (context → mount → config → assertions →
@@ -553,32 +712,63 @@ enter a set context.
    export { plantProducts } from './routes-plant-products.js'
    ```
 
-5. **`src/server/router.js:7,20,26`** [edit] — import both; register both, plant with
-   its mount prefix:
+5. **`src/server/router.js:7,20-26`** [edit] — **REWRITTEN (R7/FD-18/FD-19).** Import
+   both; register each set under its OWN prefix in its OWN call; hoist `signout` out of
+   the prefixed array; add the root redirect:
 
    ```js
    import { liveAnimals, plantProducts } from './app/routes.js'
    ...
-   const routes = [liveAnimals]
-   if (authEnabled) routes.push(signout)
-   await server.register(routes)
+   await server.register(liveAnimals, { routes: { prefix: '/live-animals' } })
    await server.register(plantProducts, { routes: { prefix: '/plant-products' } })
+
+   if (authEnabled) {
+     await server.register([signout])          // FD-19 — MUST stay unprefixed
+   }
+
+   server.route({
+     method: 'GET',
+     path: '/',
+     handler: (_request, h) => h.redirect(DEFAULT_SET_BASE)   // '/live-animals', 302
+   })
    ```
 
-   (Separate `register` call because the prefix option applies to the whole call.)
+   Three things are load-bearing here and each needs its own assertion in P-3:
+   (a) one `register` call per set, because `routes.prefix` applies to the whole call;
+   (b) `signout` is no longer in the same array as a set gateway (FD-19) — otherwise
+   `/signout` silently becomes `/live-animals/signout`;
+   (c) the `/` route is declared with `server.route`, not inside a gateway, so it never
+   enters a set context and never appears in either set's `allRoutes`.
+   `DEFAULT_SET_BASE` is a single named constant in `router.js` (or `config`), not a
+   literal repeated anywhere — changing the default set must be a one-line edit.
 
 ### 4.5 Acceptance for §4
 
-- **One process, both sets.** A single booted server serves `/` (live-animals
+- **One process, both sets.** A single booted server serves `/live-animals` (live-animals
   dashboard) and `/plant-products` (plant dashboard) in the same run — proven by the
   co-residency test of §5 P-3, not by two separate boots.
-- **Live-animals is untouched.** The full existing ladder (`npm test`,
-  `npm run test:live-animals`, `npm run test:features`, `test:e2e`) is green with NO
-  spec edits for URL changes and NO new env vars anywhere in CI.
-- Every plant page renders under `/plant-products/…`; a plant link never emits a
-  root-mounted URL and a live-animals link never emits a prefixed one.
-- Cookies: `liveAnimals*` at path `/`, `plantProducts*` at path `/plant-products`;
-  a journey started in one set is invisible to the other.
+- **REVISED (R7): live-animals is MIGRATED, not untouched.** The old bar ("green with NO
+  spec edits for URL changes") is retired — it is now the wrong bar, because zero spec
+  edits would mean the mount did nothing. The replacement bar: every call site
+  enumerated in §4.6 A–D has been updated, the full existing ladder (`npm test`,
+  `npm run test:live-animals`, `npm run test:features`, `test:e2e`) is green AFTER those
+  edits, and `grep -rn "goto('/')\|toHaveURL('/')\|action=\"/notifications\"" src/server e2e`
+  returns nothing. No new env vars anywhere in CI.
+- **Symmetry check.** No entry of the `shared/set-context.js` mount registry has an
+  empty or non-`'/' + setId` prefix (P-11 asserts this mechanically); every set's
+  dashboard, create, hub and page URL begins with its own `/<setId>` segment; the two
+  sets' route SHAPES are byte-identical to each other.
+- `/` returns a 302 to `/live-animals` (FD-18). `/health`, `/signout` and the static
+  asset route are reachable at their unprefixed paths with a set registered (FD-19).
+- Sign-in with no stored `redirect` lands on `/live-animals`, with no edit to
+  `src/server/auth/controller.js`.
+- Every plant page renders under `/plant-products/…` and every live-animals page under
+  `/live-animals/…`; neither set ever emits the other's prefix, and neither ever emits
+  a bare `/notifications/…`.
+- Cookies: `liveAnimals*` at path `/live-animals`, `plantProducts*` at path
+  `/plant-products`; a journey started in one set is invisible to the other. Note the
+  live-animals cookie path CHANGES (was `/`), invalidating existing browser sessions —
+  acceptable at this stage, but stated in the increment rather than discovered.
 - Realm scoping and ALS interleaving are pinned by tests (§4.1 risks 1 and 2).
 - No `SERVED_SET` (or any other served-set env var) exists anywhere in the repo —
   grep-verified.
@@ -597,10 +787,13 @@ platform-touching increment (P-1..P-6, P-9..P-11) proves this the same way — v
 **co-residency suite** introduced by P-3:
 
 > `src/server/app/co-residency.test.js` — boots ONE Hapi server, registers BOTH
-> gateways (plant with `{ routes: { prefix: '/plant-products' } }`), then in a single
-> test file: injects `GET /` and asserts live-animals dashboard content; injects
-> `GET /plant-products` and asserts plant content that CANNOT render under
-> live-animals; injects a page from each set and asserts each resolved its OWN
+> gateways, each under its own prefix (`{ routes: { prefix: '/live-animals' } }` and
+> `{ routes: { prefix: '/plant-products' } }` — R7), then in a single
+> test file: injects `GET /live-animals` and asserts live-animals dashboard content;
+> injects `GET /plant-products` and asserts plant content that CANNOT render under
+> live-animals; injects `GET /` and asserts a 302 to `/live-animals` (FD-18); injects
+> `GET /signout` and the static-asset path and asserts both resolve UNPREFIXED (FD-19);
+> injects a page from each set and asserts each resolved its OWN
 > manifest, journey flow, records impl and cookie names; and runs one interleaved
 > pair (both in flight at once, the first awaiting inside its handler) to prove the
 > ALS context did not bleed. This one file is the standing evidence that co-residency
@@ -681,17 +874,22 @@ on their own.
 `SERVED_SET` selector" — R3; §4.4, §4.1)
 - Files: `routes.js` (→ two-line barrel, FD-2), new `routes-live-animals.js` (moved
   body + context wrapper + mount registration + `setId` args), new
-  `routes-plant-products.js`, `src/server/router.js:7,20,26` (register both, plant
-  with `{ routes: { prefix: '/plant-products' } }`), new
+  `routes-plant-products.js`, `src/server/router.js:7,20-26` (register EACH set under
+  its own prefix, hoist `signout`, add the `/` redirect — §4.4.5), new
   `src/server/app/co-residency.test.js`.
-- Change: no served-set env var exists; `router.js` registers live-animals exactly as
-  today and additionally registers plant-products under its prefix. Each gateway
-  wraps its register body in `withSetContext(SET_ID, …)` and installs the realm-scoped
-  `onPreAuth` context entry (§4.1).
+- Change: no served-set env var exists; `router.js` registers live-animals under
+  `/live-animals` and plant-products under `/plant-products` (R7 — the round-2 wording
+  "registers live-animals exactly as today" is retired). Each gateway wraps its register
+  body in `withSetContext(SET_ID, …)` and installs the realm-scoped `onPreAuth` context
+  entry (§4.1).
 - Acceptance: all of §4.5. Specifically — the co-residency suite is green; a request
   to a plant route does NOT run the live-animals entry guard (realm-scoping pin); two
   interleaved cross-set requests each resolve their own set (ALS pin); `routes.test.js`
-  still passes for live-animals unchanged; `grep -rn 'SERVED_SET' .` is empty.
+  still passes for live-animals (route SHAPES are prefix-free, so this suite is expected
+  unchanged — verify, do not assume); `grep -rn 'SERVED_SET' .` is empty.
+- **Added by R7** — three assertions that only exist because no set owns the root:
+  `GET /` 302s to `/live-animals` (FD-18); `GET /signout` resolves (FD-19 — this fails
+  loudly if `signout` was left in the prefixed array); `GET ${assetPath}/…` resolves.
 - Depends on: P-9 (the seams must be keyed before two sets can be registered) and
   P-10 (URLs must be namespaced before two sets can both claim `/notifications/…`).
   P-3 is the increment that PROVES the pair, so it lands immediately after them.
@@ -787,23 +985,58 @@ FD-15, FD-17; §4.1, §4.2)
   simultaneously and that `currentSetId()` throws when two sets are mounted with no
   active context.
 
-**P-10 — NEW (R3): per-set URL namespace** (FD-4, FD-16; §4.3)
-- Files: `shared/paths.js` (delete `BASE`; add `setBase()`; split route-shape vs link
-  builders; add `dashboardRoutePath()` and `createRoutePath()`);
-  `sets/live-animals/journeys/linear/features/dashboard/controller.js:114,126` (two
-  call-site swaps to the new route-shape builders); `engine/journey.js:2,14-23`
-  (`cookieOptions` → built per set inside `registerJourneyCookie(server, { base, cookieNames })`);
-  `sets/live-animals/journeys/linear/flow/entry-guard.js:1,13` (`JOURNEY_PREFIX` const
-  → `journeyPrefix()` function); `sets/live-animals/journeys/linear/flow/opening-run.test.js:4,376`.
-- Change: as §4.3. live-animals mounts at `''` so every one of its emitted URLs is
-  byte-identical to today; plant-products mounts at `/plant-products`.
-- Acceptance: with live-animals still the only registered set, EVERY existing URL
-  assertion in the repo passes unchanged (no spec edits) — that is the proof the root
-  mount is genuinely a no-op. Cookie `path` for live-animals is still `/`. A unit test
-  proves `pagePath()` returns a prefixed URL under a plant context and an unprefixed
-  one under a live-animals context in the same process. Route-shape builders are
-  proven prefix-free by asserting `pageRoutePath('x')` has no leading set segment.
+**P-10 — REWRITTEN (R7): symmetric per-set URL namespace + the live-animals URL
+migration** (FD-4, FD-16, FD-18, FD-19; §4.3, §4.6)
+
+This is no longer a no-op dressed as a platform change. It is a **URL migration**, and
+it is ATOMIC — it cannot be split, because the moment live-animals is registered under
+a prefix, every unmigrated call site is broken. All of §4.6 A–D lands in this one
+increment (pp-057); the tests-repo half lands in pp-059 immediately after (§10).
+
+- Files — platform: `shared/paths.js` (delete `BASE`; add `setBase()`; split route-shape
+  vs link builders; add `dashboardRoutePath()` and `createRoutePath()`); `engine/journey.js:2,14-23`
+  (`cookieOptions` → per set inside `registerJourneyCookie(server, { base, cookieNames })`);
+  `src/server/router.js:7,20-26` (per-set prefixed registers, `signout` hoisted, the `/`
+  redirect — §4.4.5).
+- Files — live-animals set: `features/dashboard/controller.js:114,126`;
+  `flow/entry-guard.js:1,13,16,18` (the `startsWith`/`slice` pair is BEHAVIOURAL —
+  §4.6 A row 6).
+- Files — tests: the 11 unit/controller/copy files of §4.6 B, the 18 `*.e2e.spec.js`
+  files of §4.6 C, and the `e2e/` harness of §4.6 D.
+- Change: as §4.3. **Both** sets mount under `/<setId>`; no set is at `''`.
+- **Acceptance — REPLACED. The old bar was "EVERY existing URL assertion in the repo
+  passes unchanged (no spec edits)". That bar is now WRONG**: under symmetric mounts,
+  an unchanged assertion is either an assertion that never proved anything about the
+  prefix, or a bug. The new bar is an explicit migration proven by UPDATED assertions:
+  1. Every call site in §4.6 A–D is updated (checklist, ticked file by file).
+  2. `grep -rn "goto('/')\|toHaveURL('/')\|action=\"/notifications\"\|'/notifications/" src/server e2e`
+     returns nothing outside the deliberate exclusions (§4.6 D `check-workspace-stack.js`,
+     which is the backend API).
+  3. Every migrated regex is **front-anchored** on the set prefix
+     (`/^\/live-animals\/notifications\//`). A spec still matching the loose
+     `/\/notifications\/[^/]+/` is a spec that would pass with the prefix dropped, and
+     counts as unmigrated.
+  4. A unit test proves `pagePath()` returns `/live-animals/…` under a live-animals
+     context and `/plant-products/…` under a plant context IN THE SAME PROCESS.
+  5. Route-shape builders proven prefix-free: `pageRoutePath('x')` has no leading set
+     segment, and `dashboardRoutePath()` is exactly `/`.
+  6. `/` 302s to `/live-animals`; `/health`, `/signout` and `${assetPath}/{param*}`
+     resolve unprefixed (FD-18/FD-19).
+  7. The journey cookie `path` is `/live-animals` for live-animals and
+     `/plant-products` for plant-products.
+  8. Full ladder green AFTER the edits: `npm test`, `npm run test:live-animals`,
+     `npm run test:features`, `test:e2e`.
+- **The trap this REMOVES — and it is the strongest argument for R7.** Under the
+  asymmetric plan, live-animals sat at prefix `''`, which means a *doubled* prefix
+  (`setBase()` used where a route shape was wanted) and a *dropped* prefix (a route
+  shape used where a link was wanted) both produced the SAME correct-looking string for
+  live-animals — `'' + '/notifications'` is `/notifications` either way. The bug would
+  only ever surface on the plant side, in code the live-animals suite never exercises,
+  and the "every live-animals assertion passes unedited" bar would actively certify it
+  as fine. With neither set at `''`, both mistakes fail visibly for BOTH sets on the
+  first request. Symmetric mounts are strictly safer here, not merely tidier.
 - Depends on: P-9 (`setBase()` reads `currentSetBase()`).
+- Followed by: pp-059 (§10) — the tests repo must be migrated in the same branch.
 
 **P-11 — NEW (R3): sibling-safety guard rails against re-singletoning**
 - Files: new convention test `src/server/app/no-set-singletons.test.js`. (No
@@ -815,9 +1048,16 @@ FD-15, FD-17; §4.1, §4.2)
   `configure*` function whose first parameter is not named `setId`. Allow-list is
   empty by design. (Dep-cruiser cannot express this; the fs-walk convention test is
   the same pattern `copy-convention.test.js` already uses, so it is idiomatic here.)
-- Acceptance: the test is red if `setId` is dropped from any seam and green on the
-  P-9 output; documented in `docs/add-a-set.md` (G-A step 4) so the next set's author
-  meets the rule before they write the gateway.
+- **Added by R7 — the symmetry tripwire.** The same file also asserts that **no set is
+  mounted at prefix `''`**: with both gateways registered, every entry of the mount
+  registry has a prefix matching `/^\/[a-z][a-z0-9-]*$/` and equal to `'/' + setId`.
+  This is what stops a later increment quietly reinstating the asymmetry FD-16 reversed,
+  and it is what keeps the doubled/dropped-prefix bug class visible (see the P-10 trap
+  note).
+- Acceptance: the test is red if `setId` is dropped from any seam, red if any set is
+  registered at `''` or at a prefix that is not `'/' + setId`, and green on the
+  P-9/P-10 output; documented in `docs/add-a-set.md` (G-A steps 1 and 4) so the next
+  set's author meets both rules before they write the gateway.
 
 ---
 
@@ -919,8 +1159,11 @@ and are NOT imported by anything plant (P-2 acceptance).
      `features-plant-products`, `testDir:
      './src/server/app/sets/plant-products/journeys/linear/features'`,
      `testMatch: '**/*.e2e.spec.js'`, same `use` block as `features`. Plant specs
-     navigate to `/plant-products/…`; live-animals specs keep navigating to `/…`
-     and need no edit.
+     navigate to `/plant-products/…`. **REVISED (R7): live-animals specs do NOT keep
+     navigating to `/…`** — all 18 of them move to `/live-animals/…` under P-10/pp-057
+     (§4.6 C). By the time this project is added, both sets' specs are prefixed and
+     symmetric, which is what makes one shared `webServer` and one `baseURL` work for
+     both. `baseURL` stays host-only for both projects; the prefix lives in the specs.
   2. NEW npm script `"test:features:plant-products"` =
      `PLANT_PRODUCTS_MODE=stub playwright test --project=features-plant-products`.
      `PLANT_PRODUCTS_MODE` is the ONLY new env var, and it selects the plant records
@@ -948,7 +1191,15 @@ and are NOT imported by anything plant (P-2 acceptance).
   §5's two-sided verification rule. This is the ONE test that can fail for
   "co-residency broke" and nothing else, so it must never be folded into another file.
 - **T-10 NEW (R3): the re-singletoning tripwire** — `src/server/app/no-set-singletons.test.js`,
-  P-11.
+  P-11. **Extended by R7** to also assert no set is mounted at `''` and every prefix is
+  `'/' + setId`.
+- **T-11 NEW (R7/R8): the cross-repo E2E suite in `repos/trade-imports-animals-tests`.**
+  Everything above is IN-repo (frontend) testing. The workspace's real end-to-end suite
+  lives in a different repo and was absent from this plan entirely — see **§10**, which
+  owns its branch prerequisite, its URL migration, and the plant-products coverage it
+  must gain. Nothing in §7 substitutes for it: the in-repo `*.e2e.spec.js` specs run
+  against a self-hosted stub server, whereas the tests repo runs against the real
+  workspace stack with the real backend, Mongo and OIDC.
 - **Plant verification ladder** (Phase D increments cite this): baseline
   `npm run test:plant-products` BEFORE editing → after: `test:plant-products`,
   `npm test`, `npm run lint`, `PORT=3050 npm run test:features:plant-products`
@@ -985,10 +1236,14 @@ alongside `architecture.md`, as an L1/platform-level recipe. The plant-products
 increments cite it by heading; the recipe cites THIS plan for the CHED-PP specifics.
 
 Required contents (the 10-step list stands, restated for co-residency):
-1. Choose the set name and its **mount prefix**; state the co-residency contract —
-   both gateways register in one process, every seam is keyed by set id, the request
-   resolves its set from the owning plugin realm (FD-1/FD-14/FD-15). State the
-   root-mount rule: the incumbent set keeps the root, a new set takes a prefix (FD-16).
+1. Choose the set name; the **mount prefix is then not a choice — it is `'/' + setId`**
+   (FD-16 as reversed by R7). State the co-residency contract — every gateway registers
+   in one process, every seam is keyed by set id, the request resolves its set from the
+   owning plugin realm (FD-1/FD-14/FD-15). State the symmetry rule plainly: **no set
+   owns `/`**; `/` is a server-wide 302 to the default set (FD-18); `/health`,
+   `/signout`, `/auth/*` and the static-asset route are server-wide and must NEVER be
+   inside a prefixed `server.register` call (FD-19). The round-1 wording "the incumbent
+   set keeps the root, a new set takes a prefix" is RETIRED and must not appear.
 2. Create the L3 skeleton: `obligations/index.js` with empty `obligations`, the
    derived-`groups` formula verbatim, and the `policy` export shape (P-1).
 3. Create the L4 skeleton: `config.js` (TEMPLATES prefix, unprefixed LAYOUT, three
@@ -1009,7 +1264,10 @@ Required contents (the 10-step list stands, restated for co-residency):
    violations baseline (P-4).
 7. Add the set-scoped Vitest script, the per-set Playwright project, the cloned
    app-root suites, the empty contract table, and a new case in
-   `co-residency.test.js` (T-1..T-6, T-9).
+   `co-residency.test.js` (T-1..T-6, T-9). **Then cross the repo boundary (R8):** add
+   the set to `repos/trade-imports-animals-tests` — a per-set page-object tree, a per-set
+   flow, and a Playwright project selecting it (§10). A set with no cross-repo E2E
+   coverage is not done.
 8. Stand up set services: mode switch, records adapter against the set's backend
    surface (port-op → HTTP table like §6.2, incl. the `Idempotency-Key` contract for
    `copy`), reference fixtures.
@@ -1073,15 +1331,47 @@ features.
 obligations, alternate collection surface) has no live-animals analogue at all. m5
 problem; flagged now so nobody expects a recipe.
 
+**G-J — NEW (R7). No URL-migration procedure.** The recipe corpus has nothing about
+moving a live service's URLs. Round 2 did not need one because FD-16 avoided the
+migration; R7 requires it. What a recipe would need to specify: how to tell a ROUTE
+shape from a LINK (the only distinction that matters, and the one `dashboardPath()` /
+`createPath()` currently blur by serving both roles in
+`features/dashboard/controller.js:114,126`); the front-anchoring rule for URL regexes
+in specs (a suffix-anchored regex survives the migration while proving nothing); which
+routes are server-wide and must be hoisted out of a prefixed `server.register`
+(FD-19 — the `/signout` trap); the cookie-`path` consequence; and the cross-repo order
+(frontend first, tests repo in the same branch, §10.1). **§4.6 IS that procedure for
+this migration** — pp-057 follows it as a checklist. Extracting a general
+`docs/moving-a-set-mount.md` is NOT planned tonight; flagged so nobody expects one.
+
+**G-K — NEW (R8). No cross-repo E2E authoring recipe.** Every recipe in the corpus
+stops at the frontend repo boundary. Adding a set's coverage to
+`repos/trade-imports-animals-tests` — page objects, flows, fixtures, API seeds,
+Playwright projects, the cross-repo branch rule — has no recipe at all. §10 is the
+plan-level substitute; a `-tests` repo recipe is a candidate chore once the plant tree
+exists and its shape has been proven by use, not before.
+
 ---
 
 ## 9. Increment-order constraints handed to Phase D
 
-**REVISED (R3/R6).** The order now has a distinct **platform phase that lands entirely
-against live-animals-only**, before any `sets/plant-products/` file is created. That is
-deliberate: each platform increment is then verifiable by "the existing suite is green
-with no behavioural test edits", which is a far sharper signal than "the new set also
-works".
+**REVISED (R3/R6), AMENDED (R7/R8).** The order has a distinct **platform phase that
+lands entirely against live-animals-only**, before any `sets/plant-products/` file is
+created. That is deliberate: most platform increments are then verifiable by "the
+existing suite is green with no behavioural test edits", which is a far sharper signal
+than "the new set also works".
+
+**R7 carves out ONE exception, and it must be stated rather than left to bite.** P-10 /
+pp-057 is a URL migration, so "green with no test edits" is precisely the WRONG signal
+for it — no edits would mean the mount did nothing. pp-057's signal is instead "green
+after the enumerated §4.6 edits, with every URL regex front-anchored on the set prefix".
+Every other platform increment keeps the original bar.
+
+**R8 adds a second repo to the sequence.** `repos/trade-imports-animals-tests` is now
+in the plan (§10), on the same branch name (`spike/trace-to-requirements`, which must be
+CUT there first — that repo is currently on `spike/EUDPA-288-model-retrofit`). Its
+migration increment (pp-059) is pinned immediately after pp-057, and its plant-products
+coverage increments trail the frontend milestones they cover (§10.6).
 
 **Phase m0-a — platform, live-animals only, no plant files yet:**
 
@@ -1090,11 +1380,22 @@ works".
    fallback keeps the whole suite green with only mechanical edits.
 2. **P-1** — obligation-source policy onto the manifest, as accessor FUNCTIONS
    (option (b), forced by P-9). Depends on P-9 for `obligationSet()` being per-set.
-3. **P-10** — per-set URL namespace in `shared/paths.js` + the route-shape/link
-   builder split + per-set cookie `path`. live-animals mounts at `''`, so every
-   existing URL assertion must pass unedited.
+3. **P-10 (pp-057) — REWRITTEN (R7).** Symmetric per-set URL namespace in
+   `shared/paths.js` + the route-shape/link builder split + per-set cookie `path` +
+   `router.js` per-set prefixed registers + the `/` redirect (FD-18) + the `signout`
+   hoist (FD-19) + **the full enumerated live-animals URL migration of §4.6 A–D**.
+   live-animals mounts at `/live-animals`, NOT `''`. Atomic — cannot be split without
+   leaving the repo red. The old bar ("every existing URL assertion must pass unedited")
+   is retired.
+3a. **pp-059 (tests repo) — NEW (R7/R8).** Cut `spike/trace-to-requirements` in
+   `repos/trade-imports-animals-tests`, then migrate its URL layer to `/live-animals`
+   (§10.4). Pinned to land immediately after pp-057 and before anything else in that
+   repo — between the two, the workspace E2E suite is red, and that window must be as
+   short as possible.
 4. **P-11** — the `setId`-first convention test (tripwire), so nothing after this
-   point can re-singleton a seam.
+   point can re-singleton a seam. **R7 extends it** to assert no set is mounted at `''`
+   and every prefix is `'/' + setId`, so nothing after this point can reinstate the
+   asymmetry either.
 5. **P-4** — dep-cruiser gateway whitelist + `sets-not-l1` widening (needs the new
    gateway filenames to exist as targets, so it lands with step 6).
 6. **P-3** — split `routes.js` into the barrel + `routes-live-animals.js`, register
@@ -1129,3 +1430,224 @@ works".
     adapter, not with the button.
 15. R5: the 11 m5 increments remain unplanned stubs. Nothing in this revision plans
     them.
+16. **NEW (R7).** pp-057 and pp-059 are a PAIR across two repos. They share the branch
+    name `spike/trace-to-requirements` (CLAUDE.md rule 2) and must not be separated by
+    other work: between them the workspace E2E suite is red by construction.
+17. **NEW (R8).** Every tests-repo plant increment trails the frontend increment that
+    builds the pages it covers — there is nothing to drive until the pages exist. The
+    trailing map is §10.6. The corollary is a standing rule: a frontend milestone is
+    not complete until its tests-repo increment has landed.
+
+---
+
+## 10. Tests-repo strategy — `repos/trade-imports-animals-tests` (R8)
+
+**Why this section exists.** Sam asked whether updating the `-tests` repo with the
+plant-products work was in the plan. It was not. Across all 58 increments only pp-053
+and pp-057 mentioned that repo, and only to assert it should not break. There were ZERO
+increments adding plant-products coverage to it. Two distinct bodies of work were
+missing and are planned here: (A) migrating the repo's live-animals URLs for R7, and
+(B) giving plant-products real coverage there.
+
+This repo is not optional extra assurance. The frontend's in-repo `*.e2e.spec.js` specs
+run against a self-hosted server on the records STUB; the `-tests` repo runs the same
+journeys against the real workspace stack — real backend, real Mongo, real OIDC. Only
+the second proves a set actually works.
+
+### 10.1 Branch prerequisite (do this first, in every tests-repo increment's step 1)
+
+The tests repo is currently on **`spike/EUDPA-288-model-retrofit`**, not
+`spike/trace-to-requirements`. CLAUDE.md rule 2 requires cross-repo branches to share
+the same name — the workspace stack's `--branch` flag probes each repo for a matching
+branch-tagged image and falls back to `:latest` per service, so a mismatched name breaks
+the linked-branch pickup.
+
+**Step 1 of pp-059 (the first tests-repo increment) is to cut
+`spike/trace-to-requirements` in `repos/trade-imports-animals-tests` from its current
+head.** Every later tests-repo increment verifies it is on that branch before editing.
+Nothing lands on `spike/EUDPA-288-model-retrofit`.
+
+### 10.2 Parameterise or clone? — the ruling
+
+**Neither, wholesale. It is a LAYER question, and the answer differs per layer.** The
+one-word answers ("clone everything" / "parameterise everything") are both wrong here.
+
+| Layer | Ruling | Why |
+|---|---|---|
+| **URL construction + auth** (`page-objects/base/base-page.ts`) | **PARAMETERISE** | Already fully centralised — verified live: `:33-41` `navigateToFrontend`/`navigateToAdminPortal` are the only two `page.goto` entry points, and `:79-95` `expectedUrl` / `journeyIdFromUrl` / `currentJourneyUrl` are the only three URL builders. Adding a set base to `BasePage`/`NotificationPage` makes the WHOLE page-object tree set-aware in one small edit. `signInWhenRequested` (`:43-68`) is genuinely shared — one OIDC stub, one sign-in form, both sets. Cloning this layer would duplicate the single thing that is actually common. |
+| **Page objects** (`page-objects/notification/**`) | **CLONE (per set)** | Nothing is shared. `origin-of-import-page.ts` locates "Where is this consignment coming from?"; the CHED-PP equivalent locates different headings, different fields, different copy. CHED-PP has 39 pages of its own (§2.2). A parameterised page object would be a switch statement per locator — the worst of both. |
+| **Flows** (`flows/journey.ts`) | **CLONE (per set)** | `flows/journey.ts:29-41` `startNotification()` checks `pages.importType.liveAnimals` and waits on `originOfImport`; the plant flow picks a CHED-PP certificate type and walks a 12-spoke hub. Different journeys, not one journey with options. |
+| **Specs** (`tests/**`) | **CLONE (per set)** | Follows the page objects. |
+| **Domain constants + API/db models** (`domain/**`) | **CLONE into a per-set subtree** | `commodity-species.ts`, `import-reasons.ts` etc. are live-animals vocabulary. Plant needs EPPO codes, CHED-PP purposes, plant document types. `domain/types/date-time-input.ts` and similar genuinely-generic types stay shared. |
+| **Adapters, config, utils, fixtures** (`adapters/**`, `config/**`, `utils/**`, `fixtures/**`) | **SHARE, extend where needed** | `rest-client.ts`, `mongodb-client.ts`, `a11y-utils.ts`, `with-project-base-urls.ts` are transport/harness, set-agnostic. `notification-api-client.ts` gains a plant sibling because the base path differs (`/plant-products/notifications`, §6.2). |
+
+The short form for a planner: **one set-aware URL layer, two of everything above it.**
+
+### 10.3 Target tree
+
+Symmetric with the mount decision — the tests repo grows the same two-sided shape the
+frontend has. The live-animals side MOVES (pp-060), which is churn, but leaving one set
+at the root of `page-objects/` while the other sits in a named subdir is exactly the
+asymmetry R7 rejected.
+
+```text
+page-objects/
+├── base/
+│   ├── base-page.ts            [CHANGE] set-aware: BasePage takes a set base;
+│   │                                    NotificationPage builds prefixed URLs
+│   └── sets.ts                 [NEW]    SET_BASES = { liveAnimals: '/live-animals',
+│                                        plantProducts: '/plant-products' } — ONE place
+│                                        the prefixes are written down in this repo
+├── auth/                       [KEEP]   sign-in / sign-out — shared, unprefixed
+├── admin/                      [KEEP]   different SERVICE; never prefixed (see 10.4 D)
+├── live-animals/               [MOVE]   ← everything in today's page-objects/notification/
+└── plant-products/             [NEW]    the CHED-PP page objects (10.5)
+flows/
+├── live-animals/               [MOVE]   ← journey.ts, api-journey.ts, notification-actions.ts
+├── plant-products/             [NEW]    journey.ts, api-journey.ts, notification-actions.ts
+└── admin-navigation.ts         [KEEP]
+domain/
+├── shared/                     [MOVE]   genuinely generic types
+├── live-animals/               [MOVE]   ← today's constants + api/db models
+└── plant-products/             [NEW]
+adapters/http/
+├── notification-api-client.ts  [KEEP]   live-animals (/notifications)
+└── plant-products-api-client.ts[NEW]    /plant-products/notifications
+tests/
+├── a11y/{live-animals,plant-products,admin}/
+├── e2e/features/{live-animals,plant-products,admin}/
+├── e2e/pages/{live-animals,plant-products,admin}/
+├── e2e/journeys/{live-animals,plant-products}/
+└── cross-browser/              [CHANGE] journey-smoke gains a plant case
+page-objects/{factory.ts,index.ts}  [CHANGE] per-set factories
+seeds/mongodb/                  [NEW]    plant notification seed fixtures
+```
+
+`fixtures/ui.ts` (verified: `:19-42`) exposes `pages`, `journey`, `apiJourney` etc. as
+Playwright fixtures. Under two sets it exposes both — `liveAnimalsPages` /
+`plantProductsPages`, `liveAnimalsJourney` / `plantProductsJourney` — rather than one
+fixture that switches, so a spec's imports say which set it is testing.
+
+### 10.4 The R7 URL migration in this repo (pp-059) — enumerated
+
+Verified live this session at every file:line below.
+
+**A. The URL layer — 6 edits, and they cover most of the repo**
+
+| File:line | Today | After |
+|---|---|---|
+| `page-objects/base/base-page.ts:33-36` | `navigateToFrontend(path = '/')` → `page.goto(\`${baseUrl}${path}\`)` | takes the set base into account; `path` becomes set-relative so callers stop writing prefixes by hand |
+| `page-objects/base/base-page.ts:79-82` | `expectedUrl(journeyId)` → `` `/notifications/${journeyId}${suffix}` `` | `` `${this.setBase}/notifications/${journeyId}${suffix}` `` |
+| `page-objects/base/base-page.ts:85` | `pathname.match(/^\/notifications\/([^/]+)/)` | front-anchored on the set base: `` new RegExp(`^${setBase}/notifications/([^/]+)`) `` — the `^` is why this MUST change rather than silently keep working |
+| `page-objects/base/base-page.ts:92-95` | `currentJourneyUrl()` → `` `/notifications/${…}${suffix}` `` | prefixed, same as `expectedUrl` |
+| `page-objects/base/base-page.ts:71-77` | `NotificationPage` constructor takes `(page, slug)` | takes the set base too (or reads it from a per-set subclass) |
+| `page-objects/base/sets.ts` | — | NEW: the one place `/live-animals` and `/plant-products` are written in this repo |
+
+**B. The dashboard page object — the hardcoded root, 4 sites**
+
+`page-objects/notification/notification-dashboard-page.ts` (→ `page-objects/live-animals/`
+at pp-060): `:12` `readonly expectedUrl = '/'` → `'/live-animals'`; `:142`
+`navigateToFrontend(pageNumber <= 1 ? '/' : \`/?page=${pageNumber}\`)`; `:211` and `:220`
+`navigateToFrontend('/')`. These four are the only places the frontend root is written
+outside `base-page.ts`.
+
+**C. Specs asserting a bare path**
+
+MUST change (they name the root or a bare `/notifications` path):
+- `tests/a11y/notification-view-states.spec.ts:26` — `` navigateToFrontend(`/notifications/${submitted.id}/confirmation`) ``
+- `tests/e2e/features/notification-delete.spec.ts:14` — `` page.goto(`/notifications/${journeyId}/delete`) ``
+- `tests/e2e/features/notification-dashboard-search.spec.ts:77` — `page.goto('/?referenceNumber=…&page=2')`
+- `tests/e2e/features/headers.spec.ts:6` — `new URL(response.url()).pathname === '/'` (waits for the dashboard document response; becomes `/live-animals`)
+- `tests/e2e/pages/notification-dashboard.spec.ts:7` — `` toHaveURL(new RegExp(`/notifications/${journeyId}$`)) `` (also front-anchor)
+- `tests/e2e/journeys/promoted-notification.spec.ts:11` — same shape
+- `tests/e2e/features/auth.spec.ts:77` — `` new RegExp(`/notifications/${journeyId}/origin$`) ``
+
+PASS EITHER WAY but must be **front-anchored** so they prove the prefix (same rule as
+§4.6 C — a suffix-anchored regex that survives the migration proved nothing):
+- `tests/e2e/features/change-from-cya.spec.ts:17,21,30,34`
+- `tests/e2e/features/cancel-amend-ui.spec.ts:24,37,64`
+- `tests/e2e/pages/notification-view-states.spec.ts:40,52`
+- `tests/e2e/features/notification-dashboard-sort.spec.ts:28`
+- `tests/e2e/pages/notification-dashboard-pagination.spec.ts:17`
+- `tests/e2e/features/notification-dashboard-search.spec.ts:24,40,48,56,69,70,81`
+- `tests/e2e/features/auth.spec.ts:15` (`toHaveURL(pages.notificationDashboard.expectedUrl)` — follows B automatically, but assert the new value)
+
+Resolve via the page object, no edit needed: `tests/e2e/pages/notification-dashboard.spec.ts:25`.
+
+**D. Explicitly NOT in the sweep** — call these out in the increment so nobody
+"helpfully" prefixes them:
+- `page-objects/admin/admin-dashboard-page.ts:5,24,34`, `admin-notifications-page.ts:5,78,99`,
+  `admin-outbox-events-page.ts:5`, `admin-dlq-events-page.ts:5,8` — a DIFFERENT SERVICE
+  (`TRADE_IMPORTS_ANIMALS_ADMIN_BASE_URL`). `admin-notifications-page.ts:5`
+  `expectedUrl = '/notifications'` is the single most likely false positive in the repo.
+- `page-objects/auth/sign-in-page.ts:4`, `sign-out-page.ts:4` — OIDC provider URLs.
+- `adapters/http/notification-api-client.ts:27,32` and `flows/api-journey.ts:65` —
+  BACKEND API paths (`/notifications/{id}`, `/proposed-notifications/{id}`), not frontend.
+
+**E. Config — no baseURL change, and the increment must say why**
+
+`playwright.config.ts:10-13` maps project name → base URL; `utils/playwright/shared-config.ts:25-42`
+defines `frontend-chromium` / `admin-chromium`; `playwright.e2e.config.ts` and
+`package.json:25` supply `TRADE_IMPORTS_ANIMALS_FRONTEND_BASE_URL`. **All stay
+host-only.** A base URL ending in `/live-animals` would break `/signout`, `/health`,
+`${assetPath}/*` and the OIDC callback, and would make the second set unreachable from
+the same project. The prefix belongs in `page-objects/base/sets.ts`, nowhere else.
+
+**F. Incidental**
+
+`utils/a11y-utils.ts:31` — `new URL(url).pathname || '/'` names a11y scan results by
+path; those names now carry the prefix, so allure labels change. Behaviourally fine,
+but if any baseline or report assertion keys off the old names it must be updated.
+
+### 10.5 Plant-products coverage — the suites it needs
+
+Mirroring what live-animals has, since a sibling set needs sibling assurance:
+
+| Suite | Files (new) | Covers |
+|---|---|---|
+| **Journey smoke / whole journey** | `tests/e2e/journeys/plant-products/plant-products-notification.spec.ts`, `flows/plant-products/journey.ts` | dashboard → import-type filter → 12 spokes → review → declaration → confirmation, against the real stack |
+| **Pages** | `tests/e2e/pages/plant-products/{origin,purpose,commodities,varieties,additional-details,transport,goods-movement,contact,nominated-contacts,documents,traders,review,declaration,confirmation}.spec.ts` | per-page render, validation, save-and-continue, back link — one spec per page as the page lands |
+| **Features** | `tests/e2e/features/plant-products/{hub-groups-and-cya-rows,import-type-routing,entry-guard-deep-link,commodity-depth-3,documents-min-entries,containers-conditional,dashboard-search,dashboard-sort,dashboard-pagination,notification-lifecycle}.spec.ts` | the cross-cutting behaviours: the 12-spoke hub + CYA row parity, the conditional Billing spoke (m5), the mandatory ≥1 document floor (c-015), the depth-3 commodity add/remove (FD-9), `usesContainers` gating |
+| **a11y** (`@a11y`) | `tests/a11y/plant-products/{initial-state,filled-state,error-state,dashboard-views,dashboard-viewports}.spec.ts` | mirrors the five live-animals a11y specs |
+| **Cross-browser** | extend `tests/cross-browser/journey-smoke.spec.ts` | one plant happy path |
+| **API / persistence** | `adapters/http/plant-products-api-client.ts`, `flows/plant-products/api-journey.ts`, `domain/plant-products/models/api/*`, `domain/plant-products/models/db/*`, `seeds/mongodb/*` plant fixtures | API-seeded drafts for resume/view/amend/copy/delete specs without walking the whole UI (the live-animals `api-journey.ts` pattern) |
+| **Co-residency** | `tests/e2e/features/co-residency.spec.ts` (set-neutral) | the cross-repo counterpart of `co-residency.test.js`: one deployed service, a live-animals journey and a plant journey in the SAME browser context, each with its own cookies, neither seeing the other's drafts. This is the one spec that can only exist here — the in-repo suites run on stubs |
+
+### 10.6 How the two sets' suites are selected
+
+**Playwright projects, not grep tags.** The repo already selects by project
+(`utils/playwright/shared-config.ts:25-42`) and by tag for orthogonal concerns
+(`@a11y`, `@integration`, `@visual` — `package.json:28-36`). Sets are a project-level
+split; tags stay orthogonal so `@a11y` still means "accessibility", not "a set".
+
+- `utils/playwright/shared-config.ts` — replace the single `frontend-chromium` with
+  **`frontend-live-animals-chromium`** and **`frontend-plant-products-chromium`**, each
+  with `testMatch` scoped to its own `tests/**/live-animals/**` or
+  `tests/**/plant-products/**` paths. `admin-chromium` is unchanged.
+- `playwright.config.ts:10-13` `projectBaseUrls` — **both** frontend projects map to the
+  SAME frontend base URL. One service, two mounts. Getting this wrong (a per-set base
+  URL) is the failure mode §10.4 E warns about.
+- `playwright.e2e.config.ts`, `playwright.integration.config.ts`,
+  `playwright.docker-compose.config.ts`, `playwright.cross-browser.config.ts` — each
+  lists projects; all gain the plant project.
+- `package.json:25` `_test_e2e` runs `--project=e2e --project=admin`; the per-set
+  projects join that list. Add `test:plant-products` and `test:live-animals` convenience
+  scripts so either set can be run alone during development.
+- `.github/workflows/workspace-e2e-tests.yml` and `check-pull-request.yml` — whatever
+  project/script names they pin must be updated in the same increment, or CI silently
+  stops running a whole set.
+
+**Trailing map** (each tests-repo increment lands after the frontend increment that
+builds what it covers):
+
+| Tests-repo increment | Lands after |
+|---|---|
+| pp-059 URL migration | pp-057 (immediately — see §9 constraint 16) |
+| pp-060 per-set tree + projects | pp-059 |
+| pp-061 plant API client + seeds | pp-060, pp-001, pp-007 |
+| pp-062 plant m0/m2 coverage | pp-060, pp-020 |
+| pp-063 plant m3 commodities | pp-062, pp-028 |
+| pp-064 plant m4 pages + hub/CYA | pp-063, pp-040 |
+| pp-065 plant whole journey + cross-browser | pp-064, pp-041 |
+| pp-066 plant a11y | pp-064 |
+| pp-067 plant lifecycle via API seed | pp-061, pp-045 |

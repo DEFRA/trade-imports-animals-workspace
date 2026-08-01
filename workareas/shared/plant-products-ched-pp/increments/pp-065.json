@@ -1,0 +1,87 @@
+{
+  "id": "pp-065",
+  "title": "Tests repo: plant-products whole-journey E2E + cross-browser smoke + the co-residency spec",
+  "kind": "test",
+  "milestone": "m4",
+  "sizeGuess": "L",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": ["pp-064", "pp-041"],
+  "sourceIncrement": null,
+  "recipe": "No recipe. The script is SIBLING-SET-PLAN.md §10.5 (the 'Journey smoke / whole journey', 'Cross-browser' and 'Co-residency' rows), §10 preamble (why this repo exists at all — real backend, real Mongo, real OIDC), FD-3 (per-set cookie names, load-bearing under co-residency), FD-18 (the `/` 302) and §4.5's co-residency acceptance.",
+  "repo": "tests",
+  "filesToTouch": [
+    {
+      "path": "(git) repos/trade-imports-animals-tests",
+      "action": "branch",
+      "what": "STEP 1. `git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current` must print `spike/trace-to-requirements`. If not, STOP."
+    },
+    {
+      "path": "tests/e2e/journeys/plant-products/plant-products-notification.spec.ts",
+      "action": "create",
+      "what": "NEW — the whole-journey spec, and the only place the plant set is proven end to end against the REAL stack.\n\nTHE WALK: sign in → plant dashboard at `/plant-products` → create → import-type filter (pick CHED-PP) → hub → all 12 spokes via `flows/plant-products/journey.ts`'s `completeMandatorySpokes()` → review → declaration → confirmation.\n\nASSERT AT THE END, not just 'the confirmation page rendered':\n1. The confirmation panel shows a reference number matching the `GBN-PP-…` shape (server-minted, §6.2 `create`).\n2. `plantProductsApi.load(ref)` returns a document with `status: 'SUBMITTED'`, `chedType: 'CHEDPP'`, `declaration.agreed === true` and a `declaration.declaredAt` timestamp.\n3. Every answer given during the walk appears in the persisted document at its SCHEMA-DESIGN §1.1 path, as a code/enum rather than a display label — including the depth-3 commodity tree.\n4. The submitted notification then appears on the dashboard list in its submitted state.\n\nMirror `tests/e2e/journeys/live-animals/promoted-notification.spec.ts` in structure so the two read alike; write the assertions fresh against the plant document.\n\nThis is the cross-repo counterpart of the frontend's own whole-journey fixture work (pp-041). The frontend spec runs on the records STUB; this one is the proof the set actually works."
+    },
+    {
+      "path": "tests/cross-browser/journey-smoke.spec.ts",
+      "action": "edit",
+      "what": "EXTEND with ONE plant happy path — deliberately thin, matching the file's own stated purpose (verified live in `playwright.cross-browser.config.ts:10-16`: a thin happy-path smoke across Chromium, Firefox and WebKit to catch browser-specific rendering and sign-in regressions; the deterministic journey net lives elsewhere).\n\nSo: dashboard → create → import-type → one or two spokes → NOT the full 12. Do not transplant the whole-journey spec here; three browsers times a full journey is a slow suite that catches nothing the single-browser run did not.\n\nNOTE the config: this lane keeps its existing project names (`frontend-chromium` / `frontend-firefox` / `frontend-webkit`, all `testMatch: ['**/tests/cross-browser/**/*.spec.ts']`) — pp-060 deliberately did NOT rename them, and `tests/cross-browser/` is NOT split per set. Both sets' smoke cases live in this one file."
+    },
+    {
+      "path": "tests/e2e/features/co-residency.spec.ts",
+      "action": "create",
+      "what": "NEW, SET-NEUTRAL — the one spec that can ONLY exist in this repo, and the cross-repo counterpart of the frontend's in-repo `co-residency.test.js` (pp-006/P-3). The in-repo suites boot a server on stubs; this one exercises ONE DEPLOYED SERVICE.\n\nIt lives at `tests/e2e/features/co-residency.spec.ts` with NO set subdirectory — pp-060 ruled that set-neutral specs sit at the features root and are matched by the live-animals project, because both sets share one base URL and one server, so the project is a selector rather than an environment.\n\nASSERT, all in ONE browser context:\n1. `GET /` responds 302 (NOT 301 — FD-18 is explicit: a 301 is cached indefinitely and would be painful to unpick when a picker page replaces the redirect) and lands the browser on `/live-animals`.\n2. Start a LIVE-ANIMALS journey and a PLANT-PRODUCTS journey in the SAME context. Both drafts progress independently.\n3. Neither set sees the other's drafts: the live-animals dashboard lists only live-animals notifications, the plant dashboard only plant ones. This is the observable consequence of per-set records services (FD-5).\n4. COOKIES: inspect the browser context's cookies and assert the two sets' journey cookies are distinct BY NAME (`liveAnimals*` vs `plantProducts*` — FD-3) and scoped BY PATH (`/live-animals` vs `/plant-products` — §4.6 A row 4). Under co-residency both are live in the same browser at the same time, which is what makes the naming load-bearing rather than cosmetic. A single shared cookie name, or a cookie still scoped to `/`, means one set can clobber the other's session — invisible in every other spec.\n5. SERVER-WIDE ROUTES resolve UNPREFIXED (FD-19): `GET /health` 200s; `GET /signout` resolves (this is the one that fails loudly if `signout` was left inside the prefixed `server.register` array and silently became `/live-animals/signout`); a static asset under the configured asset path 200s.\n6. Neither set's URL is reachable under the other's prefix: `/live-animals/notifications/{plantRef}` does not render the plant journey and vice versa.\n\nWHY EACH ASSERTION EARNS ITS PLACE: 1 and 5 are the FD-18/FD-19 consequences of no set owning the root, and both are the kind of defect that unit tests miss because the route registers fine, just at the wrong path. 4 is the co-residency risk in its purest form. 2, 3 and 6 are the isolation guarantee the whole sibling-set design rests on."
+    },
+    {
+      "path": "fixtures/ui.ts",
+      "action": "edit",
+      "what": "The co-residency spec needs BOTH sets' fixtures in ONE test. That is exactly why pp-060 exposed `liveAnimalsPages`/`plantProductsPages` and `liveAnimalsJourney`/`plantProductsJourney` side by side rather than one fixture that switches — a switching fixture makes this spec impossible to write. Verify both are destructurable in a single test signature; if anything about the fixture wiring assumes one set per test, fix it HERE and record it, because the assumption would resurface in every future cross-set spec."
+    },
+    {
+      "path": ".github/workflows/workspace-e2e-tests.yml",
+      "action": "edit",
+      "what": "Confirm the plant journey project actually RUNS in the workspace E2E CI lane. This workflow calls the workspace-side reusable workflow `DEFRA/trade-imports-animals-workspace/.github/workflows/e2e-tests.yml@main` (verified at `:40-41`) rather than running npm scripts directly, so check the `with:` inputs and, if a project or script name is pinned, follow it into the workspace repo (`~/git/defra/trade-imports-animals/.github/workflows/e2e-tests.yml`) and update it there too. pp-060 already changed the project list; this increment ADDS the journeys and co-residency specs, so a lane that filters by project or testDir may need widening. A whole-journey spec that exists but never runs in CI is the failure mode §10.6 warns about."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {
+    "sectionsExercised": ["start", "origin", "purpose", "commodities", "additional-details", "transport", "goods-movement", "contact", "nominated-contacts", "documents", "traders", "review"],
+    "submits": true
+  },
+  "schemaFields": [
+    "referenceNumber", "chedType", "status", "declaration.agreed", "declaration.declaredAt"
+  ],
+  "copyKeys": [],
+  "specs": [
+    "tests/e2e/journeys/plant-products/plant-products-notification.spec.ts",
+    "tests/cross-browser/journey-smoke.spec.ts (extended with one plant happy path)",
+    "tests/e2e/features/co-residency.spec.ts (set-neutral)"
+  ],
+  "acceptanceCriteria": [
+    "Branch verified as `spike/trace-to-requirements` before the first edit.",
+    "The whole-journey spec walks dashboard → import-type → all 12 spokes → review → declaration → confirmation against the real stack and SUBMITS.",
+    "It asserts the minted `GBN-PP-…` reference, `status: SUBMITTED`, `chedType: CHEDPP`, `declaration.agreed`/`declaredAt`, every answer at its SCHEMA-DESIGN §1.1 path as codes/enums (including the depth-3 commodity tree), and the submitted row on the dashboard.",
+    "`tests/cross-browser/journey-smoke.spec.ts` gains ONE thin plant happy path and stays thin — no full 12-spoke walk across three browsers.",
+    "`tests/e2e/features/co-residency.spec.ts` exists at the features ROOT (no set subdir) and asserts all six cases: the `/` 302 (302, not 301) to `/live-animals`; two journeys in one context; no cross-set draft visibility; distinct cookie NAMES and PATHS per set; `/health`, `/signout` and a static asset resolving UNPREFIXED; and neither set reachable under the other's prefix.",
+    "The co-residency spec uses BOTH sets' fixtures in a single test — proving the fixture design does not assume one set per test.",
+    "The workspace E2E CI lane actually runs the new journeys and co-residency specs — verified by reading the workflow inputs and the workspace-side reusable workflow, not assumed.",
+    "Every URL assertion front-anchored on its set prefix.",
+    "npm run typecheck, npm run lint, npm run format:check green.",
+    "THE BAR: green in the workspace stack CI workflow, with both sets co-resident, plus a green local `npm run test` and `npm run test:cross-browser`."
+  ],
+  "verification": [
+    "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests branch --show-current",
+    "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d -b spike/trace-to-requirements > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp065-stack.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run database:reseed > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp065-reseed.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run format:check",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp065-e2e.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:cross-browser > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp065-xbrowser.log 2>&1",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:plant-products > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp065-pp.log 2>&1"
+  ],
+  "notes": "THE TESTS REPO IS A SEPARATE GIT REPO — own remote, own branch (`spike/trace-to-requirements`), own CI workflows, own package.json. Verbatim scripts: \"typecheck\": \"tsc --noEmit\"; \"lint\": \"eslint .\"; \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"; \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"; \"test:cross-browser\": \"npm run _clean && playwright test --config=playwright.cross-browser.config.ts\"; \"test:local\"; \"test:a11y\"; plus `test:plant-products` from pp-060.\n\nTHE CO-RESIDENCY SPEC IS THE POINT OF THIS INCREMENT. The frontend has an in-repo `co-residency.test.js` that boots one server with both gateways — but on STUBS, in-process, with no browser, no cookie jar and no OIDC. Everything that co-residency actually risks in production is browser-shaped: two cookie jars in one context, two mount prefixes on one origin, server-wide routes that must not have drifted under a prefix. Only this repo can assert any of it.\n\nTHE COOKIE ASSERTION IS THE ONE PEOPLE WILL WANT TO DROP because it reaches into the browser context rather than the DOM. Keep it. FD-3 made per-set cookie names load-bearing rather than cosmetic precisely because both sets' sessions are live in the same browser at the same time, and §4.6 A row 4 records that live-animals' journey cookie path MOVES from `/` to `/live-animals` under R7 (invalidating existing sessions — accepted). A cookie left at path `/` still works in every single-set spec and silently lets one set clobber the other's session.\n\n302, NOT 301 — assert the status code, not just the destination. FD-18 chose 302 deliberately: a 301 is cached by browsers indefinitely and would be painful to unpick when a set-picker page eventually replaces the redirect. A spec that only asserts 'ends up on /live-animals' passes with a 301 and lets the wrong one ship.\n\n`/signout` IS THE TRIPWIRE FOR FD-19. Today `src/server/router.js:20-24` pushes `signout` into the SAME `server.register` array as the live-animals gateway; under R7 that call carries `{ routes: { prefix: '/live-animals' } }`, which would silently move `/signout` to `/live-animals/signout`. The route registers fine either way — unit tests are happy — and only an unprefixed `GET /signout` catches it.\n\nJOURNEY SPECS ARE FLAKY ON A FRESH STACK. Transient 500s in `beforeEach` that recover on retry are a known characteristic here; `shared-config.ts:17` already sets `retries: 1`. A run that is green with flaky journey specs is a PASS. Do not chase it by weakening assertions, and do not raise the worker count — `playwright.e2e.config.ts:22-24` caps local workers at 4 because unbounded workers overwhelm the defra-id auth stub.\n\nDEPENDS ON pp-041 (the frontend whole-journey close). The in-repo `e2e/` harness (`e2e/live-animals-journey.js`, `e2e/journey-smoke.spec.js`) was already migrated to the prefix by pp-057, so the plant equivalent on that side was written prefixed from the start — nothing to reconcile here.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Whether the static-asset assertion in the co-residency spec can read the asset path from config or must hardcode `/public/...`. Planned resolution: hit whatever path the rendered page's stylesheet link actually uses (read it from the DOM) rather than hardcoding — that also proves the served page and the served asset agree, which is the real risk if the static route were accidentally prefixed.",
+    "Whether the cross-browser lane's WebKit run can complete a plant happy path within the existing timeouts. Planned resolution: keep the plant smoke case to the same depth as the live-animals one and, if WebKit is slow, trim the case rather than raising the timeout — this lane is deliberately thin and its job is rendering/sign-in regressions, not coverage."
+  ]
+}
