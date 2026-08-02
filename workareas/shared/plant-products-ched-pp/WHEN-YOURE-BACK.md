@@ -7,6 +7,30 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-011 → frontend `12849d3c` — E2E co-residency PROVEN, and pp-007 had dead specs (22 of 74, 30%)
+**`test:features:all` runs 272 tests in ONE Playwright invocation against ONE webServer** — I ran it myself:
+one command, two projects, plant tests numbered 263–272 interleaving after live-animals' 262, and test 263
+literally asserts both set dashboards plus the unowned root redirect in the same run. That is the
+browser-level co-residency proof, and it is the thing a human can check in one command. Counts reported as
+numbers because a project whose glob selects nothing reports success having run nothing: live-animals
+exactly **262 in 27 files** (unchanged by the split), plant **10 in 3 files**.
+**⚠ pp-007's PLANT E2E SPECS HAD NEVER RUN.** vitest excludes
+`sets/*/journeys/linear/features/**/*.e2e.spec.js` by glob and no Playwright project collected them, so ten
+tests — including three axe scans — sat in a gap between the two runners. pp-007 landed green having
+authored **dead specs**, and the plant hub shipped an accessibility defect (footer links with empty
+accessible names, from a missing `sharedCopy`) that its own axe test caught on its FIRST EVER execution.
+**Scope was widened by one production file to fix it, deliberately**: normally that would be its own
+increment, but the test that catches it can only run inside the project this increment creates, so a
+separate increment could not verify itself. Swept rather than spot-fixed — dashboard and import-type are
+genuinely fine because `kit.base(...)` already supplies `sharedCopy`; the hub was the only omission.
+**pp-074 raised** to make the gap impossible: a tripwire case asserting every set's existing e2e specs have
+a covering project, with removing the plant project as its acceptance mutation. Note the deliberate
+subtlety — a set with NO e2e specs must not fail it, or the guard blocks the next set's first commit.
+**Plan defect fixed:** pp-011's acceptance text was self-contradictory — one criterion forbade any
+`/live-animals` reference in plant specs, the next required a plant spec to assert `/live-animals` still
+serves its dashboard in the same run. Resolved: plant specs must have a `/plant-products` page as their
+SUBJECT, with the cross-set co-residency assertions as the named exception.
+
 ## ⚠ [2026-08-02, LANDED] pp-010 → frontend `d48bce36` — and the PLAN itself was wrong twice (21 of 73, 29%)
 **The increment is unremarkable; what it disproved is not.** Per-set app-root clones (contract, routes,
 indexed, store-ops), copy-convention/copy-parity parameterised across both sets, `sets-not-l1` widened to

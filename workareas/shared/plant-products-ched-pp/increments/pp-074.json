@@ -1,0 +1,51 @@
+{
+  "id": "pp-074",
+  "title": "Guard against dead specs: every set's e2e specs must be collected by a Playwright project",
+  "kind": "platform",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": [
+    "pp-011"
+  ],
+  "sourceIncrement": null,
+  "recipe": "No recipe. Raised from pp-011, which discovered that pp-007's plant e2e specs had never executed.",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/no-set-singletons.test.js",
+      "action": "edit",
+      "what": "Add a fifth concern to the convention tripwire: EVERY SET'S E2E SPECS MUST HAVE A RUNNER. The gap, proven by pp-011: `vitest.config.js` excludes `src/server/app/sets/*/journeys/linear/features/**/*.e2e.spec.js`, so a set's e2e specs never run under the unit runner; and until pp-011 no Playwright project collected the plant ones. They sat between the two runners — pp-007 landed green with dead specs, and the accessibility defect one of them would have caught (the plant hub's missing sharedCopy) shipped alongside them. Nothing currently stops a third set repeating this exactly. Discover sets from the real filesystem (`src/server/app/sets/*`) the way the file already discovers gateways from the routes.js barrel, read the real `playwright.config.js` projects, and assert that for every set directory containing at least one `*.e2e.spec.js` there is a project whose `testDir` covers it. Follow the file's established idiom: discover rather than hand-maintain, and keep any new allow-list EMPTY and assert it stays empty. THE pp-058 BAR APPLIES: construct the violation — a set directory with e2e specs and no covering project — and assert it is rejected. A test that only confirms today's two sets are covered would not have caught pp-007 and is therefore worthless for the purpose."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "No new spec file. This extends the existing convention tripwire; the diff is one test file."
+  ],
+  "acceptanceCriteria": [
+    "THE MUTATION IS THE ACCEPTANCE: temporarily remove the `features-plant-products` project from `playwright.config.js` and the tripwire MUST go red naming the uncovered set. Restore it and the suite is green. Report the observed failure message. A guard that stays green with the project removed is exactly the failure this increment exists to prevent.",
+    "The violating arrangement is CONSTRUCTED in the test — a set directory carrying e2e specs with no covering project — and asserted rejected, not merely asserted absent from today's config.",
+    "Sets are discovered from the filesystem and projects from the real playwright.config.js; neither is a hand-maintained list. Any new allow-list is empty and asserted empty.",
+    "A set with NO e2e specs at all does not fail the guard — the rule is 'specs that exist must have a runner', not 'every set must have e2e specs'. Prove this case too, or the guard blocks the next set's first commit.",
+    "No production file changes. The diff is exactly one test file.",
+    "npm test green with the new cases; the count rises. lint and lint:arch green. `.dependency-cruiser-known-violations.json` byte-identical (SHA-1 0762285ef5bfdd1f06af6fbea491e5e69b53e19a). test:features:all stays at 272 and test:e2e at 3 — this increment adds no behaviour."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test   # BASELINE before editing — expect 1,598 passed / 8 skipped",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:arch",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features:all",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "WHY THIS EXISTS. pp-011 wired the first plant-products Playwright project and immediately found that pp-007's plant e2e specs — dashboard, hub and import-type, ten tests including three axe scans — had NEVER RUN. Vitest excludes them by glob; no Playwright project collected them. So pp-007 reported green having authored dead specs, and the plant hub shipped with an accessibility defect (footer links with empty accessible names, from a missing `sharedCopy`) that its own axe test would have caught on the first execution. pp-011 fixed the defect and the wiring; this increment stops the gap recurring.\n\nWHY A GUARD RATHER THAN A NOTE IN THE RECIPE. The recipe was updated by pp-011 to warn about it, and that is worth having, but a recipe warning is only as strong as the next author's attention. The same argument applied to pp-058 and pp-073: the fast in-repo tripwire is what actually shapes the next gateway someone writes, and it makes the mistake impossible to commit rather than merely detectable later. This programme has now had TWO defects reach a commit specifically because a check existed but ran nothing (pp-007's dead specs here; and see pp-066's `--list` count criterion, written for the same failure mode in the tests repo).\n\nSCOPE DISCIPLINE. One test file. Do not touch `playwright.config.js` or `vitest.config.js` — the mutation on the former is a temporary probe and must be reverted. If the guard cannot be written without a production or config change, STOP and report; that would be a different increment with its own argument.\n\nRELATED, NOT IN SCOPE: the same class of question applies to the tests repo, where pp-066 already carries an explicit `--list`-count criterion for exactly this hazard. No cross-repo work here.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Should the guard also assert a NON-ZERO collected count per set rather than only that a covering project exists? A project can exist and still collect nothing if its testMatch is wrong. Stronger, but it may need to invoke Playwright's own discovery from inside Vitest, which could be slow or awkward — decide from what the config actually allows.",
+    "Does the same dead-spec risk apply to the a11y specs and any future per-set suite the repo adds? If the answer is yes generally, the guard should be phrased over 'spec kinds' rather than hard-coding e2e."
+  ]
+}
