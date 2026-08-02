@@ -3,9 +3,13 @@
   "title": "Set scaffold: sets/plant-products/ m0 skeleton + routes-plant-products.js gateway + boot CO-RESIDENT (one process serves live-animals under /live-animals and plant-products under /plant-products, with / 302ing to /live-animals)",
   "kind": "scaffold",
   "milestone": "m0",
-  "status": "todo",
+  "status": "done",
   "gate": null,
-  "dependsOn": ["pp-005", "pp-006", "pp-053"],
+  "dependsOn": [
+    "pp-005",
+    "pp-006",
+    "pp-053"
+  ],
   "sourceIncrement": "inc-001",
   "recipe": "src/server/app/docs/add-a-set.md — AUTHORED BY pp-053 AND FOLLOWED VERBATIM HERE (ruling R6). This increment executes add-a-set steps 2, 3, 4, 5, 8, 9 and the m0 slice of step 10; steps 6 and 7 are pp-010/pp-011. Every file below cites the add-a-set step it is executing. The recipe in turn cites SIBLING-SET-PLAN.md §1 (m0 file list), §4.4.3 (the gateway call table) and §4.5 (acceptance) for the CHED-PP specifics.",
   "repo": "frontend",
@@ -275,15 +279,15 @@
     "The three co-located e2e specs + axe checks exist and are syntactically complete; they execute under pp-011's features-plant-products project (pp-011's acceptance runs them — record as its obligation, do not delete or skip them here)."
   ],
   "verification": [
-    "BASELINE (before editing; red = stop and report): npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:live-animals",
-    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:live-animals",
-    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend test",
-    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint",
-    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run lint:arch",
-    "grep -rn \"SERVED_SET\" ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend   # expect: NO matches (exit 1)",
-    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:features",
-    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:e2e",
-    "npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run format"
+    "BASELINE (before editing; red = stop and report): npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:arch",
+    "grep -rn \"SERVED_SET\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend   # expect: NO matches (exit 1)",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
   ],
   "notes": "AMENDED FOR RULING R7 (Sam, 2026-08-01, later session) — SYMMETRIC MOUNTS, FD-16 reversed. The definition of done RESTATED: one process serves live-animals under /live-animals AND plant-products under /plant-products, with / 302ing to /live-animals (FD-18). The round-2 wording 'live-animals at / and plant-products under /plant-products' is retired everywhere in this increment, and §1's m0 definition-of-done paragraph has been amended in the plan to match. The plant gateway's §4.4.3 call table is UNCHANGED by R7 — it always passed '/plant-products' — but this increment now carries a SYMMETRY ASSERTION: routes-live-animals.js and routes-plant-products.js must be call-for-call identical apart from the set id and the set-owned modules, and neither may pass an empty prefix. Diff them and justify any difference. Two more things move under R7: co-residency.test.js asserts GET /live-animals (not GET /) for the live-animals half and re-asserts the /, /signout, /health and static-asset cases now that a SECOND prefixed register exists; and the plant cookies' sibling is liveAnimals* at path /live-animals, not at /.\n\nAMENDED 2026-08-01 for Sam's rulings R3 (co-residency) and R6 (recipe first) — RETITLED, which reflects a genuine scope change. 'Boot under SERVED_SET=plant-products' is now wrong in fact: there is no served-set env var. The definition of done is CO-RESIDENT — one Node process serves live-animals under /live-animals AND plant-products under /plant-products (R7), proven by co-residency.test.js in a single boot. R6 also changes this increment's RELATIONSHIP TO THE RECIPE: docs/add-a-set.md is authored FIRST, by pp-053, and this increment FOLLOWS it verbatim the way add-a-field.md / add-a-page.md / add-a-collection.md are followed, citing the step each file executes. It is no longer the source from which a recipe is later extracted; that ordering was what left gap G-A open. Hence the new dependsOn pp-053. ID CONVENTION for the reversal's new increments: pp-056 = P-9 set-context; pp-057 = P-10 URL namespace; pp-058 = P-11 setId-first tripwire; pp-053 = G-A/R6 add-a-set.md. WHAT THE REVERSAL ADDED TO THIS INCREMENT'S FILE LIST: routes-plant-products.js now carries registerSetMount + the realm-scoped onPreAuth context entry + the withSetContext wrapper + setId as the first argument of every configure*/buildDispatch call + a per-set registerJourneyCookie(server, { base: '/plant-products', cookieNames }) — the 14-row call table of §4.4.3, not the old 13-row one; routes.js gains the barrel's SECOND line; src/server/router.js is a NEW file to touch (the separate prefixed register call, which pp-006 deliberately left to this increment because the plant gateway did not exist then); co-residency.test.js is EDITED (the plant half) rather than created. WHAT IT REMOVED: all SERVED_SET selector-map wiring and the selector test cases in routes-plant-products.test.js. FD-17 keeps the per-set skeleton suites simple — each composes exactly one set, so the sole-registered-set fallback resolves them with no context plumbing; co-residency.test.js is the only file that needs explicit context. TRAPS THIS INCREMENT MUST NOT FALL INTO, each closed above: (1) the dashboard controller's dual-use of dashboardPath()/createPath() as BOTH route paths and links — under a prefix those must be different builders, which is exactly why pp-057 adds dashboardRoutePath()/createRoutePath(); (2) a module-load journey-prefix const in entry-guard.js (the live-animals JOURNEY_PREFIX bug class) — it must be a setBase()-derived function called per request; (3) hoisting pp-005's policy accessors out of their call sites. Retained decisions from round 1: real-mode records throws until pp-008; the review flow section ships with pages: [] and the hub controller guards it set-side; boot verification is a Vitest inject suite because test:plant-products (pp-010) and the plant Playwright project (pp-011) do not exist yet; import-type m0 copy follows the trace page spec with the deliberate GDS fixes (legend-as-heading, 'There is a problem', no overdue-debtor gate). Exemplars pinned: src/server/app/routes-live-animals.js as pp-006 landed it (the call-for-call model for the plant gateway), sets/live-animals/journeys/linear/flow/flow.js:30-98, flow/task-rows.js:61-67, flow/run.js, flow/entry-guard.js, features/import-type-filter/controller.js, features/dashboard/controller.js:114,126 (the two route-shape call sites pp-057 swapped), features/hub/controller.js:33-49, features/index.js:33-55, engine/persistence/records.js (the 11-op port), shared/set-context.js and shared/paths.js as pp-056/pp-057 landed them.",
   "openQuestions": [
@@ -292,5 +296,6 @@
     "contract.plant-products.test.js does not exist until pp-010 (T-5 creates the harness) — the import-type valid-POST contract case created here must be added by pp-010; flagged so the standing every-collecting-controller rule is not silently violated for the first controller.",
     "Import-type option VALUES for the three non-plant types ('live-animals', 'poao', 'hrfnao') are internal vocabulary transposed from the live-animals set, not IPAFFS wire codes (CVEDA/CVEDP/CED) — pp-017 confirms the canonical values against the page spec when it completes the page.",
     "pp-056/pp-057/pp-058/pp-053 are working ids for the reversal's four new increments (P-9, P-10, P-11, G-A). If the backlog assigns different ids, sweep the dependsOn arrays of pp-005, pp-006, pp-007, pp-009 and pp-010."
-  ]
+  ],
+  "commit": "9d7ec01f"
 }

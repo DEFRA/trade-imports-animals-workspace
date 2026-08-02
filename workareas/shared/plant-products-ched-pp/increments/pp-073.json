@@ -1,0 +1,57 @@
+{
+  "id": "pp-073",
+  "title": "Close the async-boundary blind spot: extend the convention tripwire to un-contexted route handlers, and make co-residency catch it",
+  "kind": "platform",
+  "milestone": "m0",
+  "status": "todo",
+  "gate": null,
+  "dependsOn": [
+    "pp-007"
+  ],
+  "sourceIncrement": null,
+  "recipe": "No recipe. Raised from pp-007's verification round, which proved a real Hapi async-boundary defect AND proved that neither the pp-058 tripwire nor the co-residency suite catches it.",
+  "repo": "frontend",
+  "sizeGuess": "M",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/no-set-singletons.test.js",
+      "action": "edit",
+      "what": "Add a fourth concern to the tripwire alongside the existing three (set seams, symmetric mounts, server-wide routes): SET-OWNED LIFECYCLE CODE MUST RUN IN ITS SET CONTEXT. The defect class: a set gateway that calls `server.route(allRoutes)` raw, rather than mapping through `routeWithSetContext(SET_ID, route)`, produces handlers that execute outside any set context — because `enterSetContext` uses `storage.enterWith()` in an `onPreAuth` extension and that does not reliably propagate into a lifecycle step Hapi resumes from an earlier async context. With one set mounted this is invisible (the single registered set resolves by default); with two it serves the wrong set's config or 500s. Follow the file's existing idiom exactly — it discovers what it guards from the real source rather than hand-maintaining a list, and it keeps its allow-list empty. Cover three shapes: (1) a set gateway registering routes without the context mapping; (2) a route-level `options.ext` method that is not context-wrapped; (3) the plugin-level entry-guard extension not wrapped in `withSetContext`. THE pp-058 BAR APPLIES IN FULL: for each shape, CONSTRUCT the violating arrangement in the test and assert it is REJECTED. A case that only asserts today's gateways look right is worthless — pp-058's own value came from six of its nineteen cases building the violation."
+    },
+    {
+      "path": "src/server/app/co-residency.test.js",
+      "action": "edit",
+      "what": "Add a case that FAILS when route handlers run outside their set context. This is the gap pp-007's verification exposed: with `routeWithSetContext` removed from both gateways, `test:features` went to 261 failed / 1 passed and `router.test.js` failed 500-vs-200, but the ENTIRE co-residency suite — including the interleaving pin that reads currentSetId(), the cookie name and the policy from inside a handler — stayed GREEN. Work out why it is insensitive before writing the fix: the likely cause is that other cases in the file establish an ambient context in the vitest worker (withSetContext/enterSetContext are called freely elsewhere), so a handler that resolves no context of its own still finds a usable one. If that is the cause, the new case must be isolated from that ambient state rather than merely asserting harder. Do NOT weaken or delete the existing interleaving pin — it still proves cross-request isolation, which is a different property; add alongside it and say in the file what each one covers."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "No Playwright spec. Both halves are Vitest; the feature suite already catches this defect and is not the gap being closed."
+  ],
+  "acceptanceCriteria": [
+    "THE MUTATION IS THE ACCEPTANCE, both halves. Remove the `routeWithSetContext` mapping from `server.route(...)` in BOTH `routes-live-animals.js` and `routes-plant-products.js`, and remove the `withSetContext` wrapper around `journeyEntryGuardTarget` in the live-animals `onPreHandler`. With that mutation in place: at least one case in no-set-singletons.test.js MUST go red, AND at least one case in co-residency.test.js MUST go red. Restore the mutation and the whole suite is green. Report the observed failure message for each. Neither half is done until its own mutation turns it red — a green tripwire under the violation it names is the exact failure this increment exists to fix.",
+    "The three violating shapes in the tripwire (raw server.route in a gateway, an un-wrapped route-level ext method, an un-wrapped entry-guard extension) are each CONSTRUCTED in the test and asserted rejected, not merely asserted absent from today's code.",
+    "The tripwire's allow-list stays empty, and what it guards is still discovered from the real source rather than a hand-maintained list — the two properties pp-058 established.",
+    "The existing co-residency interleaving pin is unchanged and still passes; the new case sits alongside it, and the file states which property each covers.",
+    "No production file is modified. The diff is exactly the two test files. If closing the gap appears to need a production change, STOP and report — that would be a different increment.",
+    "npm test green with the new cases; the count rises. lint and lint:arch green. `.dependency-cruiser-known-violations.json` byte-identical (SHA-1 0762285ef5bfdd1f06af6fbea491e5e69b53e19a).",
+    "test:features stays at 262 passed and test:e2e at 3 passed — this increment adds no behaviour."
+  ],
+  "verification": [
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test   # BASELINE before editing — expect 1,573 passed / 8 skipped",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:arch",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "WHY THIS EXISTS. pp-007 changed shipped live-animals code from inside a scaffold increment — wrapping every route handler and route-level extension in `withSetContext` — justified as a Hapi async-boundary defect. I refused to land that on a plausible argument and required a mutation. The mutation PROVED the defect: without the wrappers `test:features` is 261 failed / 1 passed (the dashboard 500s and specs time out waiting for it) and `router.test.js` fails 500-vs-200. So the fix is forced, not opportunistic, and it landed with pp-007.\n\nTHE PART THAT MATTERS MORE IS WHAT STAYED GREEN. Under that same mutation the whole co-residency suite passed, including the interleaving pin that reads currentSetId(), the cookie name and the policy from INSIDE a route handler — the case the orchestrator had specifically singled out as strong evidence. And pp-058's convention tripwire, whose entire job is catching seams that are not set-keyed, said nothing. So the two artefacts this programme relies on to prove co-residency both have a blind spot exactly where the first real co-residency defect appeared. That is the seventh instance in this build of a confident-looking test proving less than it claimed.\n\nWHY A STATIC TRIPWIRE IS THE RIGHT SECOND LINE. The feature suite DID catch it, loudly. But the feature suite is slow, needs a server on PORT=3050, and is not what an implementor runs while working. pp-058 exists because the fast in-repo guard is what actually shapes the next gateway someone writes — and every future set added via docs/add-a-set.md will register routes. A tripwire that rejects raw `server.route(allRoutes)` in a gateway makes the mistake impossible to commit rather than merely detectable later.\n\nSHAPE OF THE FIX, from pp-007's verifier: 'A basic version could reject raw `server.route(allRoutes)` calls in set gateways. A stronger version would mark context-wrapped handlers/extensions and inspect captured route registrations, failing any set-owned handler or lifecycle extension without that marker; it should also cover the entry guard.' Prefer the stronger version if it can be done without adding production API purely for testability; if marking requires a production change, take the basic version and say why in notes — a production change to serve a test belongs in its own increment with its own argument.\n\nALSO WORTH RECORDING: docs/add-a-set.md was corrected by pp-007 (the first increment to execute it end to end) to describe the real gateway/barrel shape and the context boundaries. If this increment changes what a gateway must do, the recipe needs the same treatment — check it and correct it here rather than leaving it describing a weaker rule than the tripwire enforces.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+  "openQuestions": [
+    "Does the same async-boundary hazard apply to any OTHER lifecycle point a set owns — server-level onPreResponse, auth schemes, validation failActions? pp-007 wrapped handlers, route-level ext and the entry guard. If other points exist, they are the same defect class and the tripwire should cover them too.",
+    "Should `enterSetContext`/`enterWith` remain at all now that handlers and extensions are explicitly wrapped, or is it redundant belt-and-braces? Removing it is a simplification but only if nothing between onPreAuth and the wrapped points reads the context. Not urgent; decide before m1."
+  ]
+}

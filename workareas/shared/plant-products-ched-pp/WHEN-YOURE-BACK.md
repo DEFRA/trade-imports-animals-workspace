@@ -7,6 +7,34 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-007 → frontend `9d7ec01f` — TWO SETS NOW SERVE FROM ONE PROCESS (19 of 73, 26%)
+**The architecture is real.** live-animals at `/live-animals`, plant-products at `/plant-products`, `/` a
+server-wide 302 — one Node process, proven by a co-residency suite that now asserts both dashboards with
+cross-contamination checks, divergent `enforcedAtContinue` with both manifests loaded, per-set cookie names
+AND mount-scoped paths, each entry guard running exactly once and never the other's, and an interleaving
+pin upgraded to a real cross-set pair. 51 files, npm test **1,573** (up from 1,532), live-animals unchanged
+at 559, features 262, e2e 3.
+**It breached scope, and I made it prove the breach was forced.** It changed SHIPPED live-animals code —
+every route handler and route-level extension now wrapped via `routeWithSetContext`, the entry guard in
+`withSetContext` — arguing a Hapi async-boundary defect: `enterSetContext` uses `storage.enterWith()` in an
+`onPreAuth` extension, which does not reliably propagate into a lifecycle step Hapi resumes from an earlier
+async context. **Invisible with one set** (the sole registered set resolves by default), wrong-set-or-500
+with two. I refused it on argument and demanded a mutation. Without the wrappers: **features 261 failed / 1
+passed**, `router.test.js` 500-vs-200. So it is forced, not opportunistic, and it landed.
+**⚠ THE RESULT THAT MATTERS IS WHAT STAYED GREEN.** Under that same mutation the **entire co-residency
+suite passed** — including the interleaving pin reading `currentSetId()`, the cookie name and the policy
+from inside a handler, which I had singled out as strong evidence — and **pp-058's convention tripwire said
+nothing**. Both artefacts this programme relies on to prove co-residency are blind exactly where the first
+real co-residency defect appeared. **Seventh instance of the lesson, and I vouched for one of them.**
+Raised as **pp-073** (next up), which takes that mutation as its acceptance: the tripwire and co-residency
+must EACH go red under it. Likely cause of the co-residency blindness, to be tested not assumed: other
+cases in the file establish an ambient context in the vitest worker, so a handler that resolves none of its
+own still finds one.
+**Two smaller forced changes:** the vitest e2e exclude generalised to `sets/*` (or plant e2e specs run
+under unit tests), and `base()`/`catchAll()` take an explicit layout because the server-wide error renderer
+runs outside any set context. **`docs/add-a-set.md` was corrected by its first end-to-end execution** —
+real gateway/barrel shape, context boundaries, vitest discovery, dep-cruiser staging.
+
 ## [2026-08-02, LANDED] pp-006 → frontend `a29cacf9` — and the review earned its keep twice over
 **The milestone is in: one process, gateway split, co-residency pinned.** `routes.js` is a one-line barrel;
 `routes-live-animals.js` is the old body moved — I diffed it against HEAD's `routes.js` and it is
