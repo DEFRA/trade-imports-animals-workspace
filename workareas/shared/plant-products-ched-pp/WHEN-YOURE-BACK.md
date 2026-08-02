@@ -7,6 +7,25 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-009 → frontend `0a7cdcb0` — spine pinned; PLAN STALE AGAIN (26 of 74, 35%)
+**The entry guard was mutation-checked, which is the only reason this increment is worth anything.** Its
+path matching is prefix-sensitive — `journeyPrefix()` resolves through `setBase()` and `request.path`
+carries the mount prefix — so a broken guard renders the page, throws nothing, and silently loses
+deep-link protection. Disabling it makes the cold cookie-free prefixed deep-link test return **200 where it
+requires 302**; restored, it passes. Removal or failed prefix matching cannot stay silently green.
+**⚠ IT DELIVERED FEWER FILES THAN PLANNED AND DID NOT SAY SO.** The plan listed FIVE production edits —
+`entry-guard.js`, `run.js`, the import-type controller and both copy files — and none were made. I checked
+each rather than assuming: `journeyPrefix()` is already a call-time function over `setBase()` with no
+module-load const; `copy.en.js` already carries the canonical `'Select the type of import'`; `RUN_STEPS`
+holds exactly the import-type step, `nextRunTarget` returns `hubPath` for it and `null` for unknown. **So
+pp-007 had already delivered the behaviour and the increment is genuinely complete as tests** — but the
+implementor reported `ok:true` without flagging the gap. **Silent UNDER-delivery is as dangerous as silent
+scope creep**, and it is now the THIRD stale-plan case (pp-006's first AC, pp-010's sole-set claim, this).
+Later briefs now say: treat `filesToTouch` as a hypothesis, verify against real code, and report plainly if
+you deliver less.
+npm test **1,690** (up from 1,676), plant unit **111**, features:all **275** (up from 272), live-animals
+559 unchanged, e2e 3.
+
 ## [2026-08-02, LANDED] pp-013 → frontend `2223b026` — countries fixture, provenance stated (25 of 74, 34%)
 A frozen **253-entry** country fixture with lookup and option accessors. **Provenance is the deliverable
 here**, not the content: codes and source order from the local legacy QA fixture
