@@ -70,10 +70,19 @@ raw role/label locators, no page objects where the repo does not already use the
 
 - Implement **exactly** the increment's scope. Do not fix adjacent things you notice — put them in
   `notes` and let a later increment or the judge deal with them.
+- **Never edit `backlog.json`.** It is the orchestrator's artefact and the plan of record. If your work
+  reveals that a new increment is needed — a defect you must not fix here, a missing dependency edge, a
+  step the plan omitted — describe it fully in `notes`, including what it should depend on and what its
+  acceptance criteria would be. The orchestrator writes it in. Editing the plan from inside an increment
+  puts a planning change inside a diff nobody is reviewing as a planning change.
 - Every user-facing string goes in `copy.en.js` **and** `copy.cy.js` with identical structure. No display
   logic in obligations or in the model — no labels, titleKeys or hints there.
 - Write the specs the increment lists (co-located Playwright spec, axe test). They are part of the
   increment, not optional extras.
+- **Frontend work: run `npm run format` before you report.** The repo's pre-commit hook runs
+  `format:check && lint && test`, so a formatting miss blocks the commit even when your ladder was green.
+  Watch for it after edits that change a line's length — shortening `it.fails(` to `it(`, for example,
+  lets Prettier collapse a call that was previously wrapped.
 - Run test suites **to a file** under `<workarea>/logs/` and read that file once. Do not re-run a suite
   just to see its output again. For Playwright failures read `test-results/*/error-context.md`, not the
   tail of the run.

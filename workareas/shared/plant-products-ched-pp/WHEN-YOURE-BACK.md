@@ -7,6 +7,15 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## 🎫 TICKETS TO RAISE
+
+Shipped-code defects found during this build now have paste-ready drafts in
+**[`TICKETS-TO-RAISE.md`](TICKETS-TO-RAISE.md)** — Jira wiki markup, not markdown, since
+`create-ticket.sh` passes the description raw. **Nothing has been raised; they need you.** Currently two:
+the concurrent-copy idempotency failure (T-1 / pp-069) and the `RuntimeException` catch-all downgrading
+malformed bodies to 500 across the API (T-2 / pp-071). Both are also increments so the build can fix the
+code, but both are product defects in their own right. I add to that file as things surface.
+
 ## QUESTIONS FOR SAM — open, nothing blocked on them
 
 Live list. I made a call on each and kept going; each says what I did so you can just confirm or reverse.
@@ -23,6 +32,50 @@ Live list. I made a call on each and kept going; each says what I did so you can
    20 calls (see CALIBRATION below), so I have not tightened it. First time I disagree, I'll say so here.
 
 ---
+
+## [2026-08-02, LANDED] pp-069 → backend `c4c8eb6` — the shipped concurrency bug is fixed and PROVED
+**Red-then-green on a real race, which is the strongest evidence available for a concurrency fix.** The new
+integration test fires two genuinely overlapping copy requests sharing an `Idempotency-Key`; against the
+unfixed service it fails with `expected:<201 CREATED> but was:<500 INTERNAL_SERVER_ERROR>`
+(`logs/pp-069-race-before-fix.log:1056`), and after the fix both return 201 with identical body and
+Location with exactly one copy persisted. `mvn verify` green at 550 unit + 214 ITs, no pre-existing
+assertion edited — the regression bar for shipped code.
+**The premise was checked before the transaction came off, not after.** I verified it myself:
+`FulfilmentService.copy` is now the only method in that class without `@Transactional`, and its sole write
+is one `fulfilmentRepository.insert(copy)` into one collection — so single-document atomicity already
+guarantees what the transaction was supposed to. The other four write paths keep theirs because they
+genuinely span more than one write. **That asymmetry is the tell that the change was reasoned rather than
+blanket**, and it is the same shape as the plant-products fix, so the two are aligned again and R4 holds.
+**One open question closed:** a scan found no other `@Transactional` method in the animals package that
+catches `DuplicateKeyException` and then reads. So this is an instance, not a bug class. The equivalent
+question for pp-071's catch-all is still open and is the more worrying one.
+
+## [2026-08-01, ⚠⚠ SECOND SHIPPED-CODE DEFECT] pp-068 explained the false-confidence slice — and animals has the bug too
+**The mechanism is now proved, not guessed.** pp-003's slice omitted `GlobalExceptionHandler`, so Spring's
+*default* resolver turned `HttpMessageNotReadableException` into 400 and the test passed. Production loads
+that advice, whose **`RuntimeException` catch-all** intercepts the same exception and returns 500. The
+implementor demonstrated it rather than asserting it: loading the advice into the slice made the
+previously-green test fail exactly as production does (`expected:<400> but was:<500>`,
+`logs/pp-068-representative-slice-before-fix.log:119`).
+**Blast radius, measured:** the 500 was general — malformed bodies 500'd on plant-products POST
+/notifications, PUT /{ref}, PUT /{ref}/status and both document writes — so the fix went in ONCE in
+`PlantProductsExceptionHandler` rather than per endpoint. And **~68 MockMvc assertions across the two
+plant-products slices were running on the incomplete stack**; the missing-status one was the only
+demonstrably false assertion, but the others were green for a reason unrelated to production being right.
+**LIVE-ANIMALS HAS THE SAME PRODUCTION DEFECT** — a malformed `POST /notifications` returns 500 there too.
+Raised as **pp-071** with a review gate, not fixed here. Note that pp-068's own increment text claimed
+animals already handled this correctly; **it was wrong**, which is worth remembering whenever a plan
+asserts the incumbent implementation is sound.
+**The catch-all is the real defect, not the 400.** `HttpMessageNotReadableException` is just the instance
+that surfaced — any Spring framework exception extending `RuntimeException` (unsupported media type, method
+not allowed, missing parameter, type mismatch) is liable to the same downgrade. So on shipped API surface a
+client currently cannot distinguish "your request was malformed" from "the server broke". pp-071 asks for
+the class to be enumerated and fixed, not just the one case.
+**That is now TWO shipped live-animals defects found by transposition tonight** (pp-069 concurrency,
+pp-071 exception handling). Both were invisible until a second implementation was built beside the first
+and reviewed harder than the original ever was. pp-071's openQuestions ask whether the two share a house
+pattern worth fixing once, and — again — **whether these belong in Jira rather than this backlog. My view
+is yes for both; I have raised nothing.**
 
 ## [2026-08-01, ⚠ GATE RESULT] pp-012: depth-3 mostly WORKS — but four real engine defects found
 The second big known risk is answered, and the answer is mixed in a useful way. **Most of depth 3 works**:

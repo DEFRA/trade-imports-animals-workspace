@@ -3992,7 +3992,7 @@
       "kind": "platform",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": "Raised by pp-012's red depth-3 characterisation. This must land and flip all four pp-012 it.fails cases before pp-021 or any m3 commodity page proceeds.",
       "dependsOn": [
         "pp-012"
@@ -4051,7 +4051,8 @@
         "shasum ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/.dependency-cruiser-known-violations.json"
       ],
       "notes": "pp-012 proved the failure is generic L2 behavior, not plant-products modeling. The evaluator enumerates depth-3 paths correctly, but checkMinEntries/checkMaxEntries count the whole nested group globally and emit no parent identity. collection-complete only consults per-instance anyOf errors, so it cannot see a nested collection floor. The write path calls setAt before validating either ancestor; replaceJourneyFulfilment persists line5/species0/variety0 or line0/species9/variety0, then projectAnswers rejects the sparse indices, leaving storage already replaced. Fix all three layers together so the test can flip without weakening it. Status derivation already performs a parent-scoped recursive walk and must remain unchanged.",
-      "openQuestions": []
+      "openQuestions": [],
+      "commit": "8a835d15"
     },
     {
       "id": "pp-021",
@@ -9586,7 +9587,7 @@
       "kind": "fix",
       "milestone": "m0",
       "sizeGuess": "S",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-003",
@@ -9636,7 +9637,8 @@
       "openQuestions": [
         "Does the same malformed-body path return 500 on the OTHER plant-products endpoints (POST /notifications, PUT /{ref}, the document sub-resource)? The implementor should check before fixing — if it is general, the fix belongs at the handler level once rather than per-endpoint, and this increment's title understates it.",
         "Whether the animals package has the same defect. If it does, that is a separate ticket against animals, not scope for this increment — but it should be raised rather than silently left."
-      ]
+      ],
+      "commit": "e2fbdaf"
     },
     {
       "id": "pp-069",
@@ -9644,7 +9646,7 @@
       "kind": "fix",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": "HALT-FOR-REVIEW",
       "dependsOn": [
         "pp-054"
@@ -9686,6 +9688,64 @@
       "openQuestions": [
         "Is the same aborted-transaction recovery pattern used anywhere else in the animals package — any other @Transactional method that catches DuplicateKeyException and then reads? If so this is a class of bug rather than one instance, and the fix should sweep them together.",
         "Does this need a Jira ticket in its own right, given it is a defect in shipped code rather than programme work? The orchestrator's view is yes, but that is Sam's call and no ticket has been raised."
+      ],
+      "commit": "c4c8eb6"
+    },
+    {
+      "id": "pp-071",
+      "title": "Backend (live-animals): malformed request bodies return 500 instead of 400 — GlobalExceptionHandler's RuntimeException catch-all swallows framework exceptions",
+      "kind": "fix",
+      "milestone": "m0",
+      "sizeGuess": "M",
+      "status": "todo",
+      "gate": "HALT-FOR-REVIEW",
+      "dependsOn": [
+        "pp-068"
+      ],
+      "sourceIncrement": null,
+      "recipe": "No recipe. pp-068 fixed the identical defect in the plant-products package — read PlantProductsExceptionHandler and its commit e2fbdaf first and transpose that shape, so the two handlers stay aligned.",
+      "repo": "backend",
+      "filesToTouch": [
+        {
+          "path": "src/main/java/uk/gov/defra/trade/imports/animals/exceptions/GlobalExceptionHandler.java",
+          "action": "edit",
+          "what": "A malformed JSON body returns 500 instead of 400. Proved against the real HTTP stack during pp-068: a malformed POST /notifications returns 500. ROOT CAUSE, established in pp-068 and expected to be the same here: the handler carries a RuntimeException catch-all that intercepts Spring's own HttpMessageNotReadableException — which the framework would otherwise resolve to 400 — and maps it to 500. Handle unreadable bodies explicitly, ahead of the catch-all, returning the house problem-style 400 with no stack-trace content. THE CATCH-ALL ITSELF IS THE REAL QUESTION: HttpMessageNotReadableException is not special, it is merely the instance we caught. Any Spring framework exception that extends RuntimeException — unsupported media type, method not allowed, missing parameter, type mismatch — is liable to the same downgrade to 500. Enumerate which ones the catch-all currently swallows and fix the class of problem, not only the one instance."
+        },
+        {
+          "path": "src/test/java/uk/gov/defra/trade/imports/animals/integration/**",
+          "action": "edit",
+          "what": "Prove the corrected behaviour over the real HTTP stack for every endpoint family that accepts a body — notifications, fulfilment and the document sub-resource: a malformed body, a literal-null body and a missing body each return 400 with the problem-style shape. Assert at the integration layer, NOT only in a @WebMvcTest slice — the whole reason this defect survived is that a slice proved the opposite."
+        },
+        {
+          "path": "src/test/java/uk/gov/defra/trade/imports/animals/**",
+          "action": "edit",
+          "what": "Audit the animals @WebMvcTest slices for the same incomplete-context defect pp-068 found in plant-products: a slice that omits GlobalExceptionHandler exercises Spring's default exception resolution rather than production's, so its status-code assertions can be green while production is broken. Report how many assertions run on the incomplete stack and make the slices representative. Do not delete assertions to resolve a contradiction — a slice and an IT disagreeing means production is wrong, or the slice is."
+        }
+      ],
+      "obligations": [],
+      "flowChanges": {},
+      "schemaFields": [],
+      "copyKeys": [],
+      "specs": [
+        "IT: a malformed JSON body returns 400 with the problem-style shape and no stack-trace content, on every animals endpoint family that accepts a body.",
+        "IT: a literal-null body and a missing body each return 400 rather than 500.",
+        "Any other Spring framework RuntimeException the catch-all was downgrading now maps to its correct status."
+      ],
+      "acceptanceCriteria": [
+        "A malformed request body returns 400, not 500, proved by integration tests over the real HTTP stack for every animals endpoint family that accepts a body.",
+        "The GlobalExceptionHandler RuntimeException catch-all no longer downgrades framework exceptions that have a correct status of their own. The set of exceptions it was swallowing is enumerated in the commit message.",
+        "The animals @WebMvcTest slices load the same exception-handling stack as production, so a slice can no longer be green where the application is broken. The number of assertions previously running on the incomplete stack is reported.",
+        "No existing behaviour changes for well-formed requests: every pre-existing animals unit test and IT still passes without its assertions being edited.",
+        "mvn verify is green end to end."
+      ],
+      "verification": [
+        "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify"
+      ],
+      "notes": "RAISED DURING THE BUILD (orchestrator, 2026-08-01) — a defect in ALREADY-SHIPPED live-animals code, found by transposition for the second time tonight. pp-068 fixed the identical bug in the plant-products package and, while proving the root cause, probed the animals endpoints and found a malformed POST /notifications returns 500 there too. The pp-068 increment's own text asserted that animals already handled this case correctly; that assertion was wrong, which is worth remembering when a plan claims the incumbent implementation is sound.\n\nWHY IT CARRIES A GATE: it changes exception handling on shipped API surface, and the fix's blast radius is deliberately wider than one endpoint — narrowing a catch-all changes the status code of anything it was previously absorbing. That is exactly the change a human should look at before it lands.\n\nWHY THIS MATTERS MORE THAN THE 400: the catch-all is the defect. HttpMessageNotReadableException is just the instance that surfaced, and any framework RuntimeException with a meaningful status of its own is liable to the same downgrade. A client currently cannot distinguish 'your request was malformed' from 'the server broke', on shipped API surface.\n\nSEE ALSO pp-069, the other shipped-animals defect found the same way. Both were invisible until a second implementation was built beside the first and reviewed harder than the original ever was.",
+      "openQuestions": [
+        "Does the animals handler downgrade other framework exceptions too — unsupported media type, method not allowed, missing request parameter, argument type mismatch? The implementor should enumerate before fixing; if several are affected the increment is larger than 'malformed body' and the title should be corrected.",
+        "Do pp-069 and this increment share a root cause worth addressing once — i.e. is there a house pattern for exception handling and transactional boundaries that both packages copied? Worth a look before fixing them independently.",
+        "Should these two shipped-code defects be raised as Jira tickets rather than carried in this programme's backlog? The orchestrator's view is yes for both; no ticket has been raised."
       ]
     }
   ],
