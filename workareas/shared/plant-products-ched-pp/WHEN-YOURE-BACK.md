@@ -7,6 +7,22 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-02, LANDED] pp-055 → frontend `95719fe8` — the brief fix worked (27 of 74, 36%)
+**The under-delivery instruction I added after pp-009 did its job.** This implementor opened by stating
+what pp-008 had already delivered — real/stub idempotency, network-boundary tests, stub dedupe — declined
+to redo it, and listed the existing evidence it was relying on. That is the behaviour I want; pp-009 did
+the same work silently.
+**FOURTH stale-plan case, caught and reported:** the increment proposed a SOURCE-SCOPED stub for copy
+idempotency. The shipped backend keys it GLOBALLY. Implementation and tests now follow the verified
+contract. (Whether global keying is right at all is the open question for you in TICKETS-TO-RAISE.md — not
+this increment's to change.)
+Production change is two symmetric lines — `String(idempotencyKey).trim()` in real and stub, so a
+non-string key raises the intended blank-key error rather than a TypeError. **No Copy UI exists yet**, so
+no copy files changed; the set README now carries the charter for pp-045: bilingual strings and
+**reference-distinguishing accessible names**, because the trace work found THREE controls sharing the
+accessible name "Copy" in the legacy service — axe-invisible, and fatal for a screen-reader user.
+npm test **1,698**, plant unit **119**, live-animals 559 unchanged, features:all 275, e2e 3.
+
 ## ⚠ [2026-08-02, LANDED] pp-009 → frontend `0a7cdcb0` — spine pinned; PLAN STALE AGAIN (26 of 74, 35%)
 **The entry guard was mutation-checked, which is the only reason this increment is worth anything.** Its
 path matching is prefix-sensitive — `journeyPrefix()` resolves through `setBase()` and `request.path`
