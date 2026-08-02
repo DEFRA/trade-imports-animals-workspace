@@ -7,6 +7,29 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-014 → frontend `ec039ae0` — it REFUSED to invent data, and was right (28 of 74, 38%)
+**The best outcome of the session, and it came from a STOP.** The implementor halted at `ok:false` rather
+than invent an EPPO association for commodity `09081100`. It was correct, and I verified independently:
+that code is **nutmeg**, and every reference to it in `ipaffs-qa-automation` is **CHED-D** — the CUC spec,
+the amendment spec, `ched-d-workflows.ts`. No CHED-PP usage exists. Correspondingly the real service's
+`v_chedpp_species` join on certification requirement 851 returns a CHED-PP requirement row but **ZERO
+species rows**, while the other proposed codes have real rows. **This was not missing data — the plan named
+the wrong commodity** (fifth stale-plan case, and the first caught by refusal rather than by my checking
+afterwards).
+**Ruling: replace, not drop**, so the fixture keeps its breadth. It selected `09103000` Turmeric — same
+chapter 09 breadth, and the requirement-851 join returns *Curcuma longa* (species ID 1402229), which the
+species export maps to EPPO **CURLO**. I checked that myself: CURLO is an Active EPPO code for *Curcuma
+longa* in `ipaffs-files/commoditycode/species-IMTA-7868.datgs`.
+**Provenance is file-by-file in the commit body** — chapter codes from the CHED-PP trace, leaf codes and
+order from `vw_CommNom_CommodityNomenclature`, associations from `vw_CertNom_CertificationRequirement`,
+species from `vw_CertNom_CertificationNomenclature` joined exactly as `chedpp_species_view` specifies,
+EPPO matched by exact species name, varieties from the commodity service's own
+`commodity_eppo_variety.csv`. Nothing from memory or the web.
+**Worth generalising:** an invented identifier passes typecheck, renders, drives a whole journey, then
+fails a downstream allow-listed gate looking like a service bug. A missing one fails loudly and
+immediately. Briefs now say stopping twice carries no penalty; inventing one row does.
+npm test **1,707**, plant unit **128**, live-animals 559 unchanged, features:all 275, e2e 3.
+
 ## [2026-08-02, LANDED] pp-055 → frontend `95719fe8` — the brief fix worked (27 of 74, 36%)
 **The under-delivery instruction I added after pp-009 did its job.** This implementor opened by stating
 what pp-008 had already delivered — real/stub idempotency, network-boundary tests, stub dedupe — declined
