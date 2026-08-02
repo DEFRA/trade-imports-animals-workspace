@@ -7,6 +7,21 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-02, LANDED] pp-013 → frontend `2223b026` — countries fixture, provenance stated (25 of 74, 34%)
+A frozen **253-entry** country fixture with lookup and option accessors. **Provenance is the deliverable
+here**, not the content: codes and source order from the local legacy QA fixture
+`ipaffs-qa-automation/types/country.ts`, names matched BY CODE against the real countries service
+(`ipaffs-countries-microservice/.../countries.tab`), UK subdivisions from the rendered trace. Nothing from
+memory. The live-animals capture could not be the source — it holds only a **30-country subset**, a
+stub-mode artefact.
+**The copy boundary held**: country names are reference data; control labels, headings, hints and
+region-code display labels are bilingual copy and were deliberately NOT added to the data module. No label
+leaked into the model.
+**Note for the next reader:** `lint:arch` now emits ONE ADVISORY ORPHAN WARNING for `countries.js`
+(0 errors, so still green) because no page consumes it yet. It clears when the consuming page increments
+land — do not "fix" it by deleting or force-importing the fixture.
+npm test **1,676** (up from 1,657), plant unit **99**, live-animals 559 unchanged, features:all 272, e2e 3.
+
 ## ⚠ [2026-08-02, LANDED] pp-008 → frontend `ccac31fc` — first real-data increment; a shared design question for you (24 of 74, 32%)
 **The plant records adapter is real**: REST adapter, DTO mappers both ways, backend-faithful stub, copy
 idempotency, port contracts. npm test **1,657** (up from 1,603), plant unit **80** (up from 28),
