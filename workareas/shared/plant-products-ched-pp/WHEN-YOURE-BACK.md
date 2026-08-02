@@ -7,6 +7,33 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-010 → frontend `d48bce36` — and the PLAN itself was wrong twice (21 of 73, 29%)
+**The increment is unremarkable; what it disproved is not.** Per-set app-root clones (contract, routes,
+indexed, store-ops), copy-convention/copy-parity parameterised across both sets, `sets-not-l1` widened to
+name both gateways, and `test:plant-products`. All three change-types had a silent failure mode and each
+was PROVED rather than assumed: deliberate imports were rejected by the widened dep-cruiser rules (probes
+then removed); copy-convention went 69→79 with every original count unchanged and a temporary identical
+Welsh/English plant leaf made copy-parity fail at exactly `plant-products:dashboard:title`; and
+`test:plant-products` selects **28 tests across 8 files**, not a glob matching nothing.
+**⚠ THE PLAN'S OWN NOTES CONTAINED A FALSE, LOAD-BEARING CLAIM.** pp-010's notes asserted that each clone
+composes exactly one set, so a "sole-set fallback" resolves `currentSetId()` with **no context plumbing**,
+and that a clone needing explicit context is wrong. It is false: **the global setup file mounts
+live-animals**, so a clone without plumbing reads the LIVE-ANIMALS manifest — **49 obligations where
+plant's is empty**. Green and silently wrong. Clones now enter their own set context in hooks.
+**It had already propagated into `docs/add-a-set.md`** — the recipe every future set follows — so the third
+set would have inherited the defect. Corrected there in the same commit, along with making the
+`one-load-per-request` cloning condition concrete (that suite is deliberately NOT cloned: it network-mocks
+the L2 real records adapter against live-animals-only endpoints the plant path never executes; the plant
+analogue is pp-008's).
+**Second plan defect:** the notes ordered `buildDispatch` before `configureObligationSet` for store-ops,
+but dispatch reads the manifest immediately, so the manifest must come first. Both corrections are written
+back into `backlog.json` so a future planner cannot reinstate them.
+**The pattern worth carrying:** a plan note can be plausible, load-bearing and false, and it propagates
+into recipes. This one surfaced only because the implementor hit the real behaviour — 49 obligations where
+there should have been none — rather than reasoning from the plan. Third time a plan claim about the
+incumbent implementation has turned out to be wrong (see pp-068).
+npm test **1,598** (up from 1,581), live-animals 559 unchanged, features 262, e2e 3.
+
 ## [2026-08-02, LANDED] pp-073 → frontend `1cd06769` — the blind spot is closed (20 of 73, 27%)
 **I verified the mutation myself rather than take the report, because this increment's entire value IS the
 mutation.** Replacing the live-animals `server.route(...)` mapping with `server.route(allRoutes)` — one
