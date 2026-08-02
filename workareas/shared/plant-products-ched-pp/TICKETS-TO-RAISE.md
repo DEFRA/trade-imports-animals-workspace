@@ -12,7 +12,22 @@ right because it is a defect in the product rather than in this programme.
 | Draft | Increment | Severity | Code fixed? | One line |
 |---|---|---|---|---|
 | T-1 | pp-069 | High | **Yes — `c4c8eb6`** | Concurrent copy replay can error instead of returning the existing copy |
-| T-2 | pp-071 | High | Not yet | Malformed request bodies return 500 instead of 400 across the API |
+| T-2 | pp-071 | High | **Yes — `1f77efc`** | Malformed request bodies return 500 instead of 400 across the API |
+
+**T-2 grew when it was investigated — update the draft below before raising.** The catch-all was not
+downgrading one exception but a whole class. Under Spring 6.2.10 it swallowed `TypeMismatchException` and
+`MethodArgumentTypeMismatchException` (400), `ConversionNotSupportedException` (500),
+`HttpMessageNotReadableException` (400), `HttpMessageNotWritableException` (500),
+`MethodValidationException` (500), `HandlerMethodValidationException` (400 input / 500 return-value),
+`AsyncRequestTimeoutException` (503), `ErrorResponseException` and `ResponseStatusException` with their
+declared status (covering 405, 406, 413, 415, 400, 500), and any `RuntimeException` carrying
+`@ResponseStatus`. **Two of this ticket's own assumptions were wrong:** the Servlet-side exceptions
+(`HttpRequestMethodNotSupported`, `HttpMediaTypeNotSupported`, `MissingServletRequestParameter` and
+friends) are *checked* exceptions and were never caught by a `RuntimeException` catch-all at all; and the
+predicted `@WebMvcTest` slice defect **does not exist in animals** — all four slice classes already
+discover `GlobalExceptionHandler`, 0 assertions ran on an incomplete stack, all 84 passed unchanged. So
+**drop the slice-audit half of this ticket**: that gap was specific to the plant-products slices and is
+already fixed by `e2fbdaf`.
 
 **The fix landing does not remove the need for the ticket.** These are defects that reached shipped code
 and were live in whatever environments run this branch's predecessor; they want a record with a cause and

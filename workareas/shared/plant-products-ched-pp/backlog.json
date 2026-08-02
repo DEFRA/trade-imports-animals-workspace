@@ -997,7 +997,7 @@
       "kind": "platform",
       "milestone": "m0",
       "sizeGuess": "XL",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-056"
@@ -1184,7 +1184,8 @@
         "Whether any link-builder call site sits at module load (making it silently prefix-free-by-accident today and broken under a prefix now). The `grep -rn \"from '.*shared/paths.js'\"` sweep in verification is the worklist; planned resolution is that any module-load link call is a defect fixed here, and if one turns out to be genuinely unfixable it needs its own route-shape builder like dashboardRoutePath/createRoutePath. Under R7 these now fail LOUDLY on the first request rather than lurking, which is the point.",
         "Whether any deployed environment has running sessions that the journey-cookie path change would strand mid-journey. Planned as ACCEPTED (development-stage service, Sam's ruling) — but the increment states it in the log rather than discovering it, and if a demo is imminent the answer is to schedule the landing, not to keep the cookie at '/'.",
         "Whether a router-level test suite already exists (src/server/router.test.js or a server-boot suite under src/server/). Planned as: locate it first and extend it; create src/server/router.test.js only if nothing suitable exists. Either way the six FD-18/FD-19 cases must live at server-boot level, not inside a set suite."
-      ]
+      ],
+      "commit": "492b7ace"
     },
     {
       "id": "pp-059",
@@ -1192,7 +1193,7 @@
       "kind": "test",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-057"
@@ -1332,11 +1333,12 @@
         "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:a11y > ~/git/defra/trade-imports-animals/workareas/shared/plant-products-ched-pp/scratch-pp059-a11y.log 2>&1",
         "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests diff --name-only"
       ],
-      "notes": "THE TESTS REPO IS A SEPARATE GIT REPO. `repos/trade-imports-animals-tests` has its own remote (DEFRA/trade-imports-animals-tests), its own branches, its own GitHub Actions workflows (`.github/workflows/{check-pull-request,workspace-e2e-tests,publish,publish-branch,cleanup-e2e-reports}.yml`) and its own package.json. NOTHING about the frontend repo's npm scripts applies here: there is no vitest `npm test`, no `test:features`, no `test:live-animals`, no `lint:arch`. The real scripts, quoted verbatim from `package.json:11-41` this session, are:\n  \"typecheck\": \"tsc --noEmit\"\n  \"lint\": \"eslint .\"\n  \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"\n  \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"\n  \"test:local\": \"npm run test:integration\"  (= `_reset_and_clean_and_test_integration -- --grep '@integration'`)\n  \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"\n  \"test:cross-browser\", \"test:docker-compose\", \"database:reseed\": \"./bin/database-reseed.sh\"\nCommit in THIS repo, on ITS branch. Do not commit tests-repo changes from the workspace root.\n\nSEQUENCING — THIS IS THE LOAD-BEARING NOTE. pp-057 (frontend URL migration) and pp-059 (this) MUST land together, back to back, with nothing between them. They CANNOT be atomic — different repos, different git histories — so between the two commits the workspace E2E suite is RED BY CONSTRUCTION: the moment live-animals is registered under `/live-animals`, every URL in this repo points at a 404. That is expected, it is not a regression, and it is not a reason to stop. What IS a reason to stop: landing pp-057 and then doing anything other than pp-059 next. Do not interleave, do not park it overnight, do not open an unrelated PR against either repo in between. If the loop has to be abandoned mid-pair, roll BOTH back (`git stash push -u` in each repo — never `reset --hard` + `clean -fd`).\n\nWHY THIS EXISTS AT ALL (R7, Sam, 2026-08-01): FD-16 is reversed. Both sets mount under their own prefix — `/live-animals` and `/plant-products` — and no set owns `/`. Sam's reasoning: the service is still in development, so refactoring live-animals is fine; have the two sets match up, change URLs if that is what symmetry requires, and update the -tests repo as well. Symmetry is not merely tidiness here: with live-animals at prefix `''`, a doubled prefix and a dropped prefix produce the SAME correct-looking string for live-animals, so that whole bug class only ever surfaces on the plant side, in code this suite never runs. With both sets prefixed, both mistakes fail visibly on the first request.\n\nWHY THE URL LAYER IS CHEAP AND THE SPECS ARE NOT: §10.2's ruling is one set-aware URL layer, two of everything above it. `base-page.ts` is genuinely centralised (verified live: two `page.goto` entry points, three URL builders), so six edits there carry most of the repo. The expensive half is judgement, not mechanics — the front-anchoring sweep. A regex like `/\\/notifications\\/abc$/` passes before AND after the migration; leaving it is leaving a spec that would also pass if someone silently dropped the prefix again.\n\nWHAT `/` DOES NOW (FD-18): a server-wide 302 to `/live-animals`, declared in `src/server/router.js` outside both gateways so it never enters a set context. 302 not 301 — a 301 is cached by browsers indefinitely and would be painful to unpick when a set-picker page eventually replaces it. There is NO legacy `/notifications/*` compatibility shim: no external bookmarks to honour at this stage, and a shim would have to guess which set a bare journey id belongs to. So a stale deep link 404s, by design.\n\nSTACK: run the workspace stack in dev mode against this branch (`run-stack.sh -d -b spike/trace-to-requirements`) so you are testing the frontend source that pp-057 just changed, not a Dockerhub `:latest` image that predates the mount. `npm run test` shells `bin/assert-stack.sh` first and will refuse to run without a stack; a plain (non-`-d`) stack pulls `:latest` and will fail every migrated assertion in a way that looks like your edits are wrong.\n\nOUT OF SCOPE, deliberately: the per-set directory move (`page-objects/notification/` → `page-objects/live-animals/`), the per-set Playwright projects and any plant-products file. All pp-060 onwards. This increment changes URLs and nothing else, so that if the suite goes red the cause is unambiguous.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.",
+      "notes": "THE TESTS REPO IS A SEPARATE GIT REPO. `repos/trade-imports-animals-tests` has its own remote (DEFRA/trade-imports-animals-tests), its own branches, its own GitHub Actions workflows (`.github/workflows/{check-pull-request,workspace-e2e-tests,publish,publish-branch,cleanup-e2e-reports}.yml`) and its own package.json. NOTHING about the frontend repo's npm scripts applies here: there is no vitest `npm test`, no `test:features`, no `test:live-animals`, no `lint:arch`. The real scripts, quoted verbatim from `package.json:11-41` this session, are:\n  \"typecheck\": \"tsc --noEmit\"\n  \"lint\": \"eslint .\"\n  \"format:check\": \"prettier --check '**/*.{ts,js,mjs,md,json,yml,yaml}'\"\n  \"test\": \"npm run _assert_stack && npm run _clean && npm run database:reseed && npm run _test_e2e\"\n  \"test:local\": \"npm run test:integration\"  (= `_reset_and_clean_and_test_integration -- --grep '@integration'`)\n  \"test:a11y\": \"npm run _clean_and_test -- --grep '@a11y'\"\n  \"test:cross-browser\", \"test:docker-compose\", \"database:reseed\": \"./bin/database-reseed.sh\"\nCommit in THIS repo, on ITS branch. Do not commit tests-repo changes from the workspace root.\n\nSEQUENCING — THIS IS THE LOAD-BEARING NOTE. pp-057 (frontend URL migration) and pp-059 (this) MUST land together, back to back, with nothing between them. They CANNOT be atomic — different repos, different git histories — so between the two commits the workspace E2E suite is RED BY CONSTRUCTION: the moment live-animals is registered under `/live-animals`, every URL in this repo points at a 404. That is expected, it is not a regression, and it is not a reason to stop. What IS a reason to stop: landing pp-057 and then doing anything other than pp-059 next. Do not interleave, do not park it overnight, do not open an unrelated PR against either repo in between. If the loop has to be abandoned mid-pair, roll BOTH back (`git stash push -u` in each repo — never `reset --hard` + `clean -fd`).\n\nWHY THIS EXISTS AT ALL (R7, Sam, 2026-08-01): FD-16 is reversed. Both sets mount under their own prefix — `/live-animals` and `/plant-products` — and no set owns `/`. Sam's reasoning: the service is still in development, so refactoring live-animals is fine; have the two sets match up, change URLs if that is what symmetry requires, and update the -tests repo as well. Symmetry is not merely tidiness here: with live-animals at prefix `''`, a doubled prefix and a dropped prefix produce the SAME correct-looking string for live-animals, so that whole bug class only ever surfaces on the plant side, in code this suite never runs. With both sets prefixed, both mistakes fail visibly on the first request.\n\nWHY THE URL LAYER IS CHEAP AND THE SPECS ARE NOT: §10.2's ruling is one set-aware URL layer, two of everything above it. `base-page.ts` is genuinely centralised (verified live: two `page.goto` entry points, three URL builders), so six edits there carry most of the repo. The expensive half is judgement, not mechanics — the front-anchoring sweep. A regex like `/\\/notifications\\/abc$/` passes before AND after the migration; leaving it is leaving a spec that would also pass if someone silently dropped the prefix again.\n\nWHAT `/` DOES NOW (FD-18): a server-wide 302 to `/live-animals`, declared in `src/server/router.js` outside both gateways so it never enters a set context. 302 not 301 — a 301 is cached by browsers indefinitely and would be painful to unpick when a set-picker page eventually replaces it. There is NO legacy `/notifications/*` compatibility shim: no external bookmarks to honour at this stage, and a shim would have to guess which set a bare journey id belongs to. So a stale deep link 404s, by design.\n\nSTACK: run the workspace stack in dev mode against this branch (`run-stack.sh -d -b spike/trace-to-requirements`) so you are testing the frontend source that pp-057 just changed, not a Dockerhub `:latest` image that predates the mount. `npm run test` shells `bin/assert-stack.sh` first and will refuse to run without a stack; a plain (non-`-d`) stack pulls `:latest` and will fail every migrated assertion in a way that looks like your edits are wrong.\n\nOUT OF SCOPE, deliberately: the per-set directory move (`page-objects/notification/` → `page-objects/live-animals/`), the per-set Playwright projects and any plant-products file. All pp-060 onwards. This increment changes URLs and nothing else, so that if the suite goes red the cause is unambiguous.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`.\n\nORCHESTRATOR PREP (2026-08-02, read before starting). The plan says the tests-repo URL surface is centralised in page-objects/base/base-page.ts:81,94 plus four constants in the dashboard page object, and that is what made this migration cheap enough to say yes to. A read of the repo found TWO things that estimate missed.\n\n1. THERE IS A THIRD URL-SHAPE DEPENDENCY, and it is not a builder: base-page.ts:85 does `new URL(this.page.url()).pathname.match(/^\\/notifications\\/([^/]+)/)` to recover the journey id from the current URL. It is ANCHORED to ^, so once the prefix exists it matches nothing and journeyIdFromUrl() returns undefined — which surfaces as a confusing downstream failure rather than an obvious 404. Migrate it with the two builders.\n\n2. NOT EVERY /notifications IS LIVE-ANIMALS: page-objects/admin/admin-notifications-page.ts:5 has expectedUrl = \"/notifications\" and belongs to the ADMIN application, which has its own base URL (TRADE_IMPORTS_ANIMALS_ADMIN_BASE_URL, see base-page.ts:39). It must NOT be prefixed. A find-and-replace migration across page-objects/ breaks the admin suite silently. Verify the admin specs still pass as part of this increment.\n\n3. The plan-cited \"four constants in the dashboard page object\" did not show up in a grep for /notifications — locate them before assuming they exist in that form, and correct this note if the shape differs.",
       "openQuestions": [
         "Whether `tests/e2e/journeys/persistence/*.spec.ts` and `tests/e2e/visual/origin-of-import.visual.spec.ts` contain URL assertions the §10.4 enumeration missed — they were not in the verified list. Planned resolution: the grep sweep in `verification` is the authoritative worklist; treat any hit outside the enumerated files as an addition to this increment, not a follow-up. The visual spec's snapshot names are keyed by project name, not path, so it should be unaffected by URLs but WILL be affected by pp-060's project rename — flag it there.",
         "Whether the visual baseline `origin-of-import.visual.spec.ts-snapshots/origin-of-import-frontend-chromium-darwin.png` needs regenerating. Planned as NO for this increment (page content is unchanged; only the URL moved), but if the snapshot embeds a rendered URL, regenerate with `npm run test:visual:update:macos` and say so in the commit rather than deleting the assertion."
-      ]
+      ],
+      "commit": "ac9e1b9"
     },
     {
       "id": "pp-060",
@@ -1505,7 +1507,7 @@
       "kind": "platform",
       "milestone": "m0",
       "sizeGuess": "S",
-      "status": "todo",
+      "status": "done",
       "gate": null,
       "dependsOn": [
         "pp-056",
@@ -1558,7 +1560,8 @@
       "openQuestions": [
         "Whether to also assert the mirror-image rule — that no L2 file declares a module-level mutable binding intended as a seam slot (`let configured…`, `export let …`). It would catch a re-singletoning that avoided the configure* name entirely. Planned as NOT in scope: the regex would be noisy against legitimate module state (caches, memos) and a noisy tripwire gets disabled. Raise it again only if a real regression slips through the parameter-shape rule.",
         "Whether services/ is too broad a walk root — it contains set-agnostic session/records implementations that have no configure* exports, so it costs only walk time today. If it ever produces a false positive, narrow the root rather than adding an allow-list entry; an allow-list entry means a seam was exempted from co-residency, which is a decision for Sam."
-      ]
+      ],
+      "commit": "39eea24b"
     },
     {
       "id": "pp-005",
@@ -9697,7 +9700,7 @@
       "kind": "fix",
       "milestone": "m0",
       "sizeGuess": "M",
-      "status": "todo",
+      "status": "done",
       "gate": "HALT-FOR-REVIEW",
       "dependsOn": [
         "pp-068"
@@ -9746,7 +9749,8 @@
         "Does the animals handler downgrade other framework exceptions too — unsupported media type, method not allowed, missing request parameter, argument type mismatch? The implementor should enumerate before fixing; if several are affected the increment is larger than 'malformed body' and the title should be corrected.",
         "Do pp-069 and this increment share a root cause worth addressing once — i.e. is there a house pattern for exception handling and transactional boundaries that both packages copied? Worth a look before fixing them independently.",
         "Should these two shipped-code defects be raised as Jira tickets rather than carried in this programme's backlog? The orchestrator's view is yes for both; no ticket has been raised."
-      ]
+      ],
+      "commit": "1f77efc"
     }
   ],
   "revisions": [

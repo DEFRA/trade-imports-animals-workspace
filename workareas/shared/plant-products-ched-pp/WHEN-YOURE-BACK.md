@@ -7,6 +7,68 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## 👋 [2026-08-02] HANDOVER WRITTEN — start a fresh orchestrator from `BUILD-ORCHESTRATOR-PROMPT-V2.md`
+The original `BUILD-ORCHESTRATOR-PROMPT.md` describes a Claude `Workflow` loop the build no longer uses,
+so **v2 supersedes it** and is self-contained for a clean-context agent. It carries the current state, the
+`codex exec` per-stage pattern with the two operational gotchas that cost real time (every schema property
+must appear in `required`; long runs get killed and `resume --last` recovers them), the verification
+recipes that actually caught things, what is owed, and the standing rules. **16 of 71 done, 50 todo, 5
+deferred; backlog validates clean on all four checks.**
+
+## [2026-08-02, LANDED] pp-058 → frontend `39eea24b` — the tripwire actually bites
+The convention guard is in, and it is adversarial rather than decorative: **six of its nineteen cases
+construct the violation and assert it is rejected** — a seam dropping `setId`, an accessor captured at
+first boot, another captured at module load, empty/nested/mismatched prefixes, a fixture gateway calling
+`registerSetMount(id, '')`, a gateway silently prefixing signout, and a 301 at the root. That was the bar I
+set, because a tripwire that only asserts today's arrangement looks right is worthless. Two further
+touches worth knowing: the seam list is **discovered from the real `setKeyed` implementation** rather than
+hand-maintained, and a test asserts the **allow-list stays empty** — an exemption list is how the next
+violation would hide. npm test 1,523 (up from 1,507), live-animals 559, lint and lint:arch green, baseline
+untouched.
+
+## ✅ [2026-08-02, RESOLVED + VERIFIED] The URL migration landed as a pair AND was proved on a real stack
+**The cross-repo E2E debt I flagged is paid.** You fixed the network, `tim docker dev` came up, and pp-059
+ran the suite against the real stack rather than type-checking and hoping: **full E2E 152 passed** (3
+recovered on retry after transient 500s — the known fresh-stack pattern — plus 1 configured skip),
+`test:local` 127 passed with 1 flaky, and the docker-compose a11y suite 11 passed. 156 tests discovered
+across 61 files. So the pair — frontend `492b7ace` + tests `ac9e1b9` — is verified end to end, not merely
+mutually consistent.
+**Both traps I found in prep were real and are handled.** `base-page.ts` was not only building URLs, it was
+parsing the journey id back out of one with a regex anchored to `^/notifications/`; under a prefix that
+matches nothing, so `journeyIdFromUrl()` would have returned undefined and failed somewhere confusing
+rather than 404ing honestly. It is now anchored to the set base. And the admin page object's
+`/notifications` — a different application on its own base URL — is deliberately untouched, so the blanket
+find-and-replace that would have silently broken the admin suite did not happen.
+**Three plan inaccuracies worth knowing**, none blocking: the dashboard has four *sites*, not four
+constants (one property, one conditional navigation expression, two root calls); `--dev` and `--branch` are
+mutually exclusive so the stack ran as plain `tim docker dev`; and bare `npm run test:a11y` targets an
+undefined CDP environment locally — `npm run test:docker-compose:a11y` is the one that works. Also, the
+increment's "same test count" criterion is now wrong by one: it mandated a new test proving the post-auth
+redirect when no redirect is stored, which is exactly the case the new server-wide 302 at `/` serves.
+**Correction to something I told you earlier:** I reported the spike branches as "behind main" after
+`fetch origin main:main` moved a stale local ref. That was wrong — `main` is a strict ancestor of
+model-retrofit in every repo (frontend 476/0, backend 15/0, workspace 72/0, tests 38/0), and model-retrofit
+is a strict ancestor of trace-to-requirements. **There was no merge to do**, so the careful merge task you
+asked for was unnecessary. I should have run the ancestry check before raising it.
+
+## 🚧 [2026-08-02, SUPERSEDED] BLOCKED: the stack would not start — github.com was unreachable
+You said to use `tim docker dev`, so I did. It fails during init-script staging:
+`fatal: unable to access 'https://github.com/DEFRA/trade-imports-dynamics-gateway.git/': Failed to
+connect to github.com port 443`. **This is not a sandbox limitation** — Codex has network access and
+cannot reach github.com either, while its own API calls work fine. So it looks machine-level: VPN, DNS or
+a proxy. **Probably one command from you to fix.**
+Root cause of the staging failure itself: `repos/trade-imports-dynamics-gateway` is present but **7 commits
+behind `origin/main`**, and `servicebus/setup-notification-pipeline.sh` landed in one of those commits.
+`stage_init_scripts` runs before any service exclusion is applied and stages the gateway's files
+unconditionally, so `-e gateway` does not dodge it. I did not hack the staging script to skip a service,
+and I did not fabricate the ASB emulator config — either would have produced a stack that boots while
+being quietly not the stack.
+**Consequence, stated plainly: the pp-057/pp-059 URL migration will land WITHOUT cross-repo E2E
+verification.** Both repos change together so the suites stay mutually consistent, but "consistent" is not
+"proven against a real stack". **This is the one thing tonight I could not verify to the bar I set**, and
+it is owed as soon as the machine can reach github. In-repo verification still applies in full: the
+frontend's own e2e specs run against a self-hosted server and are part of pp-057's ladder.
+
 ## 🎫 TICKETS TO RAISE
 
 Shipped-code defects found during this build now have paste-ready drafts in
