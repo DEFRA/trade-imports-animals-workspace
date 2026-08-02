@@ -145,6 +145,21 @@ out to be large.
 
 ## Also worth a conversation, not yet a ticket
 
+- **Copy idempotency keys are GLOBAL, not scoped to the source resource — in BOTH packages.** Found while
+  building the plant-products frontend adapter (pp-008), which had to model the real backend contract.
+  `FulfilmentService.copy(id, idempotencyKey)` looks up `findByCopyIdempotencyKey(key)` and returns the
+  existing copy BEFORE it ever resolves `findById(id)`
+  (`animals/fulfilment/FulfilmentService.java:114` vs `:121`). So a client that copies notification X with
+  key `abc`, then later copies notification **Y** with the same key, gets **X's copy** back — silently the
+  wrong resource, with a 201 and no error. Plant-products behaves identically, so **R4 holds and nothing
+  has diverged**; this is a shared design question, not a transposition defect, which is why it is here and
+  not a ticket draft.
+  **The judgement call is yours.** Strict idempotency semantics ("same key, same result") are satisfied.
+  But the common practice (Stripe, the IETF idempotency-key draft) is to also compare the request
+  fingerprint and reject a reused key carrying a different body with 422, precisely so a client's
+  key-reuse bug surfaces as an error rather than as the wrong resource. Doing nothing is defensible; if you
+  want it changed it is one ticket covering both packages, and the frontend adapter would need no change.
+
 - **Do T-1 and T-2 share a house pattern?** Both are cases where a defensive construct (a transaction, a
   catch-all) is applied broadly enough to break the narrower case it encloses. If the same shapes were
   copied across packages, fixing the pattern once beats fixing instances.

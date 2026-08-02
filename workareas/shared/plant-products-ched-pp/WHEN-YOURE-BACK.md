@@ -7,6 +7,26 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## ⚠ [2026-08-02, LANDED] pp-008 → frontend `ccac31fc` — first real-data increment; a shared design question for you (24 of 74, 32%)
+**The plant records adapter is real**: REST adapter, DTO mappers both ways, backend-faithful stub, copy
+idempotency, port contracts. npm test **1,657** (up from 1,603), plant unit **80** (up from 28),
+live-animals 559 unchanged, features:all 272, e2e 3.
+**Two places where the plan disagreed with the shipped Java contract, and reality won** (both now in
+`docs/add-a-set.md`): PUT requires `referenceNumber` in the body matching the path; and copy idempotency
+is keyed **globally**, not scoped to the source.
+**⚠ THE SECOND ONE IS A QUESTION FOR YOU, in TICKETS-TO-RAISE.md.** I checked whether plant had diverged
+from live-animals and it has NOT — `animals/fulfilment/FulfilmentService.java` does the same thing:
+`findByCopyIdempotencyKey(key)` at `:114` returns the existing copy BEFORE `findById(id)` at `:121`, so the
+source is never consulted. **A client copying notification Y with a key it previously used for X gets X's
+copy back, 201, no error.** R4 holds and nothing is broken by this build — it is a shared design question
+across both packages. Strict idempotency semantics are satisfied; common practice (Stripe, the IETF
+idempotency-key draft) also compares the request fingerprint and rejects a reused key carrying a different
+body with 422, so a client's key-reuse bug surfaces as an error rather than the wrong resource. **Doing
+nothing is defensible. Your call** — if you want it changed it is one ticket covering both packages and the
+frontend adapter needs no change.
+**One forced config line:** `vitest.config.js` gains `PLANT_PRODUCTS_MODE: 'stub'` beside the existing
+live-animals flag, or the new adapter attempts real mode under the unit suite.
+
 ## [2026-08-02, LANDED] pp-074 → frontend `95437474` — dead specs are now impossible (23 of 74, 31%)
 **m0's platform phase is COMPLETE.** The tripwire's fifth concern: every set's existing e2e specs must have
 a covering Playwright project. Sets discovered from the filesystem, projects from the real
