@@ -1,0 +1,58 @@
+{
+  "id": "pp-072",
+  "title": "Repair the four root-relative URL assertions and one unsupported matcher that pp-057's sweep left behind",
+  "kind": "platform",
+  "milestone": "m0",
+  "status": "done",
+  "gate": null,
+  "dependsOn": [
+    "pp-057"
+  ],
+  "sourceIncrement": null,
+  "recipe": "No recipe. This is remediation of escaped debt from pp-057 (492b7ace), scoped to two spec files and five assertion sites, all identified and read by the orchestrator before this increment was written.",
+  "repo": "frontend",
+  "sizeGuess": "S",
+  "filesToTouch": [
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js",
+      "action": "edit",
+      "what": "FOUR toHaveURL sites still assert the pre-migration root. Each gains the /live-animals prefix and NOTHING else changes — same query strings, same encoding, same order of parameters. The sites, verified by reading the file at HEAD: `:219-221` `toHaveURL(`/?sort=createdAt%2Casc&referenceNumber=${firstReference}`)` (a TEMPLATE LITERAL spanning three lines — this is the one a single-line grep misses); `:266` `toHaveURL('/?sort=createdAt%2Casc&referenceNumber=')`; `:299` `toHaveURL('/?page=2')`; `:316` `toHaveURL('/?page=2&sort=createdAt%2Casc')`. Target values are `/live-animals?sort=...`, `/live-animals?page=2` and so on. Note `:316` sits inside the SAME test as `:299` so it never reported as a separate failure — fix it too or the test goes red one assertion later. Every `page.goto` in this file is ALREADY migrated (verified: 13 sites, all '/live-animals'); do not touch them. Do not touch `:50-51`, whose predicate form is already correct and already front-anchored."
+    },
+    {
+      "path": "src/server/app/sets/live-animals/journeys/linear/features/contact/contact.e2e.spec.js",
+      "action": "edit",
+      "what": "`:57-62` passes a CALLBACK to `toHaveAttribute`, which does not support one — its value parameter is `string | RegExp` only. pp-057 appears to have copied the predicate form that `toHaveURL` genuinely does accept (and which dashboard.e2e.spec.js:50 uses correctly) onto a matcher that does not. Replace the callback with the equivalent RegExp so the assertion INTENT is preserved exactly — same front anchor, same `[^/]+` journey-id segment, same `?for=contactAddress` tail: `toHaveAttribute('href', /^\\/live-animals\\/notifications\\/[^/]+\\/addresses\\/create\\?for=contactAddress$/)`. Do NOT weaken it to a substring match or drop the anchor; the anchor is the whole point of pp-057's sweep. Do NOT convert it to a toHaveURL-style predicate on a different locator — the assertion is about the href ATTRIBUTE, not about navigation."
+    }
+  ],
+  "obligations": [],
+  "flowChanges": {},
+  "schemaFields": [],
+  "copyKeys": [],
+  "specs": [
+    "NO new spec. This increment repairs existing assertions; it adds none and removes none. The test count must be identical before and after."
+  ],
+  "acceptanceCriteria": [
+    "PORT=3050 npm run test:features is GREEN — 262 passed, 0 failed. The pre-change baseline is 4 failed / 258 passed (logs/pp-006-baseline-features.log:420), so the delta is exactly those four tests going green and nothing else changing state.",
+    "The test COUNT is unchanged at 262. No test is added, deleted, renamed or skipped. If the count moves, the increment is wrong.",
+    "All five assertion sites keep their original INTENT: the four dashboard URLs assert the same query strings with the same encoding and only gain the /live-animals prefix; the contact href assertion keeps its front anchor, its [^/]+ journey-id segment and its ?for=contactAddress tail. Weakening any of them to a substring or unanchored match fails this criterion even if the suite is green.",
+    "`grep -rn \"toHaveURL(['\\`]/\" src e2e` returns ONLY /live-animals paths — no bare-root survivor remains, with or without a query string.",
+    "The four dashboard fixes include :316, which shares a test with :299 and therefore never surfaced as its own failure.",
+    "PORT=3050 npm run test:e2e is green — it was never run for pp-057 or pp-006 and is the leg this increment finally clears.",
+    "npm test and npm run lint stay green and no non-spec file is touched. The diff is exactly two spec files."
+  ],
+  "verification": [
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features   # BASELINE — expect 4 failed / 258 passed, matching logs/pp-006-baseline-features.log",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+    "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+    "grep -rn \"toHaveURL(['\\`]/\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/src ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/e2e   # every hit must be /live-animals",
+    "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run format"
+  ],
+  "notes": "WHY THIS INCREMENT EXISTS, stated plainly: pp-057 (492b7ace) was landed and reported as verified while its own final test:features run was RED at 8 failed / 254 passed (logs/pp-057-test-features-2.log:620). Four of those eight were the real defects repaired here; the other four were the transporter journey specs, which are flaky and pass at HEAD. The orchestrator's landing report for pp-057 quoted the TESTS-repo suite numbers (E2E 152 passed, test:local 127, a11y 11) and never mentioned the frontend's own features leg, so a red ladder step was reported as a green increment. That is a verification failure by the orchestrator, not by the implementor, and it is the SIXTH instance in this build of a green-looking report proving less than it claimed.\n\nHOW THE SWEEP MISSED THEM — this is the reusable lesson. pp-057's acceptance greps were `grep -rn \"goto('/')\"` and `grep -rn \"toHaveURL('/')\"`: EXACT matches on the bare root. Every root URL carrying a QUERY STRING — `toHaveURL('/?page=2')` — fails to match those patterns while being exactly the thing the sweep existed to find. One of the four is additionally a multi-line template literal, which no single-line grep catches at all. Generalise: an acceptance grep written as an exact literal proves only that the literal is absent, not that the CLASS is. Anchor on the prefix (`toHaveURL(['\\`]/`) and read the hits.\n\nTHE CONTACT DEFECT IS A DIFFERENT SHAPE and worth separating: `toHaveAttribute('href', callback)` is not a URL-migration miss, it is a matcher misuse. Playwright's `toHaveAttribute` accepts `string | RegExp`; `toHaveURL` also accepts a `(url: URL) => boolean` predicate. pp-057 used the predicate form on both, so dashboard.e2e.spec.js:50 is correct and contact.e2e.spec.js:57 is not. Anyone repeating the migration on another set should know the two matchers differ.\n\nSCOPE FENCE: two spec files, five assertion sites, nothing else. No production file. No new test. No renamed test. If making the suite green appears to require touching anything outside these two files, STOP and report ok:false — that would mean the diagnosis was wrong.\n\nSEQUENCING: pp-006 is implemented and STASHED (`git stash list` — 'pp-006 staged work — baseline check') because its ladder cannot go green until this lands. Land pp-072 on a clean tree first, then restore the stash and run pp-006's full ladder. pp-006's dependsOn was amended to include pp-072 so the plan records the real ordering.\n\nROLLBACK: `git stash push -u`, never `reset --hard` + `clean -fd`. NOTE there is already a stash entry holding pp-006 — do not drop, pop or clear it.",
+  "openQuestions": [
+    "pp-057's landing is recorded in WHEN-YOURE-BACK.md as verified. That entry now needs a correction noting the features leg was red at landing. The orchestrator owns that edit, not this increment.",
+    "Are there other increments whose acceptance greps are exact literals where a class was intended? pp-057's were the ones that bit. A sweep of the remaining todo increments' verification arrays for the same shape is worth doing before the next migration-flavoured increment."
+  ],
+  "commit": "0446024d"
+}

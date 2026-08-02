@@ -7,6 +7,67 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-02, LANDED] pp-006 → frontend `a29cacf9` — and the review earned its keep twice over
+**The milestone is in: one process, gateway split, co-residency pinned.** `routes.js` is a one-line barrel;
+`routes-live-animals.js` is the old body moved — I diffed it against HEAD's `routes.js` and it is
+**byte-identical**, which is correct, because every wiring addition the increment's prose claims as its own
+(registerSetMount, the sandboxed `enterSetContext`, `withSetContext`, setId-first calls,
+`registerJourneyCookie`) had ALREADY been delivered by pp-056/pp-057. I corrected that acceptance criterion
+in the plan — read literally it was unsatisfiable, and it would have driven either a false review finding or
+a duplicated wiring. `router.js` and `routes.test.js` are untouched, as intended.
+**The review found that two of the test's most load-bearing groups did not discriminate, and I had missed
+both on my own read.** First, `bootServer` hand-rolled the composition `router.js` performs, so the four
+server-wide cases were asserting against the TEST's own wiring — prefixing signout in production would have
+left them green, and the implementor's own mutation probe had mutated `bootServer` rather than production.
+It now registers the real `router` plugin, proved by mutating `router.js` three ways (prefixed signout 404s,
+a 301 root fails the 302 assertion, prefixed static assets 404). Second, the ALS pin ran BOTH requests as
+live-animals and asserted all four observations were `'live-animals'` — a process-global clobbered by the
+second request passes that. It now interleaves against a foreign-realm context, proved by swapping the
+AsyncLocalStorage for a module-level `let`.
+**One thing I got wrong, recorded because the reasoning is instructive.** I suspected the second fix had
+gutted the realm-scoping pin by moving the foreign route off a guard-matching path, and briefed a third fix
+framed so that disproving me was an acceptable answer. It was disproven: removing `{ sandbox: 'plugin' }`
+fails **5 of the 9 cases** including that one (`expected 500 to be 200`), so the pin bites. Worth knowing
+that it also 500s `/health` and the static assets — the same server-wide-guard defect class pp-056 fixed.
+Ladder: live-animals 559, npm test **1,532** (up from 1,523), lint + lint:arch, features 262, e2e 3.
+
+## ⚠ [2026-08-02, CORRECTION] pp-057 was landed and reported verified while its features suite was RED
+**This is the sixth instance of the lesson, and this time it was the orchestrator, not a test.** pp-006's
+implementor stopped at `ok:false` on four failing feature specs. I did not take its "pre-existing" claim on
+trust — I stashed its work and ran `test:features` at HEAD, and the baseline is identical (4 failed / 258
+passed, `logs/pp-006-baseline-features.log:420`). So **pp-006 introduced no regression**; the four are
+inherited. Going back to the source, pp-057's own final features run was **8 failed / 254 passed**
+(`logs/pp-057-test-features-2.log:620`) and it was landed anyway. Four of those eight are the real defects;
+the other four were the flaky transporter journey specs and pass now. **The landing report quoted the
+TESTS-repo numbers — E2E 152, test:local 127, a11y 11 — and never mentioned the frontend's own features
+leg**, so a red ladder step was written up as a green increment.
+**The mechanism is worth more than the fix.** pp-057's acceptance greps were `toHaveURL('/')` and
+`goto('/')` — exact matches on the bare root. Every root URL carrying a **query string**
+(`toHaveURL('/?page=2')`) fails to match those patterns while being exactly what the sweep existed to
+catch; one of the four is additionally a multi-line template literal no single-line grep can see. **An
+acceptance grep written as an exact literal proves the literal is absent, not that the class is.** A fifth
+site (`:316`) never even failed because it shares a test with `:299` and dies one assertion earlier.
+**pp-072 LANDED → frontend `0446024d`** — two spec files, five sites, intent preserved at every one (the
+four URLs gain the prefix and change in no other way; the contact assertion keeps its front anchor,
+`[^/]+` segment and `?for=contactAddress` tail). I verified the counts from the logs rather than the
+report: features 4 failed/258 passed → **262 passed**, count unchanged; **test:e2e 3 passed**, a leg that
+had not run since before pp-057; `npm test` 1,523 passed / 8 skipped, byte-for-byte the baseline. **pp-006
+depends on it** so the plan records the real ordering.
+**The contact case was a second, different defect** worth knowing if anyone repeats this migration on
+another set: `toHaveAttribute` accepts `string | RegExp` only, while `toHaveURL` also accepts a
+`(url: URL) => boolean` predicate. pp-057 used the predicate form on both — so `dashboard:50` is correct
+and `contact:57` was never really asserting anything.
+
+## [2026-08-02, PLAN FIX] Three tests-repo ladders called an a11y script that cannot run locally
+Last session found in passing that bare `npm run test:a11y` targets an undefined CDP environment; I checked
+the mechanism rather than the symptom before editing — `test:a11y` resolves to `_clean_and_test`, i.e.
+`playwright test` on the DEFAULT config, whereas `test:docker-compose:a11y` resolves to
+`_reset_and_clean_and_test_docker_compose` and targets the workspace stack. **Three verification ladders
+(pp-059, pp-060, pp-066) named the unrunnable one**, so pp-060 and pp-066 would each have hit it mid-build
+and looked like a broken increment. Swept and fixed, plus pp-066's "count bar" acceptance criterion, which
+mandated the wrong script by name; the diff is exactly those four strings and the backlog revalidates clean
+on all four checks. `test:a11y` is not wrong in CI — it is CI-only, and the ladders are local.
+
 ## 👋 [2026-08-02] HANDOVER WRITTEN — start a fresh orchestrator from `BUILD-ORCHESTRATOR-PROMPT-V2.md`
 The original `BUILD-ORCHESTRATOR-PROMPT.md` describes a Claude `Workflow` loop the build no longer uses,
 so **v2 supersedes it** and is self-contained for a clean-context agent. It carries the current state, the

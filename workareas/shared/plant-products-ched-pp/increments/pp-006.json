@@ -3,9 +3,13 @@
   "title": "P-3: both gateways register in one process — routes.js becomes a barrel, routes-live-animals.js gains the set-context wiring, co-residency.test.js is born",
   "kind": "platform",
   "milestone": "m0",
-  "status": "todo",
+  "status": "done",
   "gate": null,
-  "dependsOn": ["pp-056", "pp-057"],
+  "dependsOn": [
+    "pp-056",
+    "pp-057",
+    "pp-072"
+  ],
   "sourceIncrement": null,
   "recipe": "SIBLING-SET-PLAN.md §4.1 / §4.4 / §4.5 + §5 P-3, all as REVISED 2026-08-01 by ruling R3 (co-residency). FD-1/FD-2 are REVISED: there is no served-set env var and routes.js is a BARREL, not a selector. No recipe doc exists yet (docs/add-a-set.md is pp-053, which lands after this increment and describes the shape this increment creates) — the plan sections are the script.",
   "repo": "frontend",
@@ -51,7 +55,7 @@
     "NO Playwright spec — zero UI/behaviour change; the existing features + journeys suites are the regression net and both run in the ladder"
   ],
   "acceptanceCriteria": [
-    "src/server/app/routes-live-animals.js exports `liveAnimals` and the git diff reads as a pure move PLUS exactly the §4.4.2 additions: registerSetMount('live-animals','/live-animals'), the realm-scoped onPreAuth enterSetContext extension, the withSetContext('live-animals', …) wrapper around the register body, setId as the first argument of all seven configure*/buildDispatch calls, and registerJourneyCookie(server, { base: '/live-animals', cookieNames: SESSION_COOKIE_NAMES }). Nothing else inside the plugin body changes.",
+    "src/server/app/routes-live-animals.js exports `liveAnimals` and the git diff reads as a PURE MOVE of the routes.js body — nothing added, nothing removed, nothing reordered. CORRECTED 2026-08-02: this criterion previously demanded the move PLUS the §4.4.2 additions (registerSetMount, the sandboxed onPreAuth enterSetContext extension, the withSetContext wrapper, setId as the first argument of all seven configure*/buildDispatch calls, registerJourneyCookie with base /live-animals). Every one of those was ALREADY DELIVERED by pp-056 and pp-057 and verified present in routes.js at HEAD before this increment ran: SET_ID = live-animals and SET_BASE at :48-49, registerSetMount(SET_ID, SET_BASE) at :55, withSetContext at :56, enterSetContext with sandbox plugin at :60-63, the seven setId-first calls at :65-81, registerJourneyCookie at :82. So the bar is that routes-live-animals.js CARRIES all of them byte-for-byte and introduces none of them — a diff that ADDS any of these is a defect, because it means the wiring was duplicated.",
     "src/server/app/routes.js is a barrel — one re-export line at this increment. It contains no env read, no SETS map and no selector functions.",
     "`grep -rn 'SERVED_SET' .` across the whole repo returns EMPTY. No served-set env var exists anywhere: not in src/, not in package.json scripts, not in playwright.config.js, not in CI config, not in docs.",
     "Live-animals URLs are byte-identical TO THE POST-pp-057 STATE — i.e. everything is served under /live-animals and the journey cookie path is /live-animals. This increment moves NO URL: it is a gateway-file split, not a mount change. Every URL assertion in the repo (all of them migrated by pp-057) passes unedited HERE, and that is a meaningful bar for THIS increment precisely because pp-057 already did the migration.",
@@ -81,5 +85,6 @@
   "openQuestions": [
     "~10 markdown docs (src/server/app/docs/{architecture,README,persistence,decisions}.md + sets/live-animals/docs/*.md) describe routes.js as the sole gateway/composition point; after the barrel split that role belongs to routes-<set>.js. The doc sweep is NOT in this increment — pp-053 (G-A/R6) authors docs/add-a-set.md with the correct picture and is the natural home for reconciling the neighbouring docs. Decide there, not here.",
     "pp-056/pp-057/pp-058/pp-053 are working ids for the reversal's four new increments (P-9, P-10, P-11, G-A). If the backlog assigns different ids, sweep the dependsOn arrays of pp-005, pp-006, pp-007, pp-009 and pp-010."
-  ]
+  ],
+  "commit": "a29cacf9"
 }
