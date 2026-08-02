@@ -7,6 +7,22 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## 🛑 [2026-08-02, SESSION END] pp-015 → frontend `5a65d46c` — STOPPING HERE for a fresh orchestrator (29 of 74, 39%)
+**Sam asked me to stop after this one and hand over.** Nothing is in flight, every repo is clean and
+committed, nothing is pushed. A fresh agent should start from `BUILD-ORCHESTRATOR-PROMPT-V2.md` plus this
+file; the handover prompt was given in chat.
+pp-015 is the BCP/inspection-premises fixture, **deliberately partial** — every entry from one real source
+(the CHED-PP trace `transport-before-bip.json`), and no unverified BCP or premises identifier added to
+round the list out.
+**One deliberate deviation from the source, pre-ruled by the trace itself:** IPAFFS renders
+`Folkstone - GBFOL4PP` for a port actually spelled **Folkestone**. The trace records this as a live IPAFFS
+reference-data defect the rebuild should not carry over, so the fixture ships the correct spelling with the
+code unchanged. Added to TICKETS-TO-RAISE.md as an **upstream report** — nothing is broken here, but our
+fixture now knowingly differs from the live service on that one string.
+**Two orphan advisories now** (`countries.js`, `bcps.js`) — 0 errors, expected, and they clear when pages
+consume the fixtures. Do not "fix" them by deleting or force-importing.
+npm test **1,713**, plant unit **134**, live-animals 559 unchanged, features:all 275, e2e 3.
+
 ## ⚠ [2026-08-02, LANDED] pp-014 → frontend `ec039ae0` — it REFUSED to invent data, and was right (28 of 74, 38%)
 **The best outcome of the session, and it came from a STOP.** The implementor halted at `ok:false` rather
 than invent an EPPO association for commodity `09081100`. It was correct, and I verified independently:

@@ -143,6 +143,17 @@ out to be large.
 
 ---
 
+## Upstream report, not a ticket for this programme
+
+- **IPAFFS renders a misspelled port name: "Folkstone - GBFOL4PP".** The English port is **Folkestone**.
+  This is live, user-visible reference-data copy naming a real port, confirmed in the rendered DOM (the
+  CHED-PP trace `pages/transport-before-bip.json`, and `ched-pp-cuc.spec.ts:19` selects by that literal
+  label, so it matches real rendered text). The trace work ruled that the rebuild should NOT carry the
+  misspelling over, and pp-015 (`5a65d46c`) accordingly ships the correct spelling with the code
+  `GBFOL4PP` unchanged. **Nothing is broken here and no ticket is needed against this programme** — but the
+  defect is real in IPAFFS and worth reporting to whoever owns that reference data, since our fixture now
+  deliberately differs from the live service on that one string.
+
 ## Also worth a conversation, not yet a ticket
 
 - **Copy idempotency keys are GLOBAL, not scoped to the source resource — in BOTH packages.** Found while
