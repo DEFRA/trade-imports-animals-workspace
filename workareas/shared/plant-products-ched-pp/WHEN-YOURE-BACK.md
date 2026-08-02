@@ -7,6 +7,31 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-02, LANDED] pp-073 → frontend `1cd06769` — the blind spot is closed (20 of 73, 27%)
+**I verified the mutation myself rather than take the report, because this increment's entire value IS the
+mutation.** Replacing the live-animals `server.route(...)` mapping with `server.route(allRoutes)` — one
+minimal change, live-animals only — now turns BOTH suites red: `co-residency > establishes route context
+after application async boundaries` (`expected 500 to be 200`) and `no-set-singletons > requires every
+discovered gateway to context-wrap its routes and entry guard`, the latter with an actionable message
+naming the file and the required call. Restored, suite green.
+**Why co-residency was blind is worth more than the fix.** Its `bootServer` registered the router plugin
+onto a bare Hapi instance, so it never reproduced the application's real async request pipeline — the
+boundaries where context is lost did not exist in the test. (Ambient ALS context from other cases could
+mask it too, which was my hypothesis, but it was the second cause, not the first.) The new case boots the
+real `createServer()` after `vi.resetModules()`. **A test can be insensitive because of how it BOOTS, not
+only because of what it asserts** — worth remembering for the next pin.
+**The tripwire keeps pp-058's two load-bearing properties**: gateways discovered from the real `routes.js`
+barrel, not a hand-maintained list; second allow-list empty and asserted empty. All three violations are
+CONSTRUCTED and rejected. The route-extension check is behavioural rather than textual — it sets an
+ambient `tripwire-ambient` context and requires the method to observe its OWN set, which is the
+discriminator that was missing. Two test files, no production change; npm test **1,581**, features 262,
+e2e 3.
+**Two open questions answered, neither acted on.** The hazard class extends to any set-owned callback Hapi
+may resume across an async boundary, but server-level onPreResponse and auth are server-wide, no set-owned
+functional failActions exist, and `routeWithSetContext` already covers every route ext point. And
+`enterSetContext` looks redundant now — no reader found between onPreAuth and the wrapped points — but
+removal is unproven and needs its own mutation across the full pipeline before touching production.
+
 ## ⚠ [2026-08-02, LANDED] pp-007 → frontend `9d7ec01f` — TWO SETS NOW SERVE FROM ONE PROCESS (19 of 73, 26%)
 **The architecture is real.** live-animals at `/live-animals`, plant-products at `/plant-products`, `/` a
 server-wide 302 — one Node process, proven by a co-residency suite that now asserts both dashboards with
