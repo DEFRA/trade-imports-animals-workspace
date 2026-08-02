@@ -7,6 +7,22 @@ Newest at the top. Each item is 3–4 sentences: what, why, what to check.
 
 ---
 
+## [2026-08-02, LANDED] pp-074 → frontend `95437474` — dead specs are now impossible (23 of 74, 31%)
+**m0's platform phase is COMPLETE.** The tripwire's fifth concern: every set's existing e2e specs must have
+a covering Playwright project. Sets discovered from the filesystem, projects from the real
+`playwright.config.js`, violation constructed and rejected, allow-list empty and asserted empty. **I ran the
+mutation myself** — repointing the plant project's `testDir` at live-animals so nothing covers plant fails
+with `Set "plant-products" has e2e specs but no Playwright project testDir covers them`. Config restored
+byte-identical. npm test **1,603**.
+**The deliberate subtlety:** a set with NO e2e specs must not fail, or the guard blocks the next set's first
+commit. Pinned as its own case.
+**⚠ KNOWN RESIDUAL GAP, left open on purpose.** The guard checks a project's `testDir` COVERS a set's specs,
+not that its `testMatch` actually COLLECTS them — so a covering testDir with a wrong testMatch would still
+collect zero and pass. That is narrower than the fault that bit pp-007 (no project at all), and closing it
+likely needs Playwright's own discovery invoked from inside Vitest. **I chose not to stack a third guard
+increment ahead of journey work**; it is recorded in pp-074's notes, and the tests repo already carries an
+explicit `--list` count criterion for the same hazard at pp-066. Say if you want it closed sooner.
+
 ## ⚠ [2026-08-02, LANDED] pp-011 → frontend `12849d3c` — E2E co-residency PROVEN, and pp-007 had dead specs (22 of 74, 30%)
 **`test:features:all` runs 272 tests in ONE Playwright invocation against ONE webServer** — I ran it myself:
 one command, two projects, plant tests numbered 263–272 interleaving after live-animals' 262, and test 263
