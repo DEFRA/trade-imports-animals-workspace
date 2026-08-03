@@ -13,17 +13,10 @@ for the full set.
 ## Summary
 
 Refresh of tip `6ae0c82` → `bbf547c` on
-[DEFRA/trade-imports-address-book#1](https://github.com/DEFRA/trade-imports-address-book/pull/1)
-(4 fix commits addressing the prior open Majors).
+[DEFRA/trade-imports-address-book#1](https://github.com/DEFRA/trade-imports-address-book/pull/1).
 
-**Strong progress:** 8 prior open items Auto-Resolved this pass (locked
-`minLength` / Problem `required`, 409 contract + unit coverage, `updateEntity`
-test, town/postcode search ITs, compliance generate early-return + schema
-fail-open). No Criticals remain open.
-
-**Still open:** 4 Majors (#188 Location relative, #189 AddressRequest Javadoc,
-#193 springdoc comment, #199 EMF NaN-skip assertion) and 2 new Minors
-(#200 ProxySelector cleanup, #201 addressLine1 search exclusion IT).
+The live items table now lists **open findings only** (6). Closed history is
+in `items.trade-imports-address-book.closed-archive.json`.
 
 ## Repositories Analyzed
 
@@ -31,16 +24,7 @@ fail-open). No Criticals remain open.
 |------------|-----|--------|---------|--------|
 | trade-imports-address-book | [#1](https://github.com/DEFRA/trade-imports-address-book/pull/1) | bbf547c | NEEDS MORE WORK | [review.trade-imports-address-book.md](review.trade-imports-address-book.md) |
 
-## Findings (current disposition)
-
-| Bucket | Count |
-|---|---|
-| Fix \| Done | 103 |
-| Auto-Resolved | 92 |
-| Still open | **6** (4 Major, 2 Minor) |
-| **Total items** | **201** |
-
-### Remaining open
+## Open findings (6)
 
 | # | Sev | File | Issue |
 |---|-----|------|-------|
@@ -51,15 +35,6 @@ fail-open). No Criticals remain open.
 | 200 | Minor | `ProxyConfigTest.java` | `@AfterEach` ProxySelector restore is a no-op |
 | 201 | Minor | `AddressSearchIT.java` | No IT that `q` excludes addressLine1-only hits |
 
-### Auto-Resolved this refresh
-
-| # | Notes |
-|---|---|
-| 185–186 | Locked AddressRequest `minLength: 1`; Problem/ValidationProblem `required` restored |
-| 190 | `updateEntity` unit test added |
-| 191–192 | 409 optimistic-lock unit test + locked/OpenAPI 409 on update |
-| 196–198 | Town/postcode search ITs; compliance generate early-return removed; schema assert fails closed |
-
 ## Acceptance Criteria Check
 
 | # | Criterion | Met? | Notes |
@@ -68,6 +43,5 @@ fail-open). No Criticals remain open.
 
 ## Next steps
 
-1. Drain the 4 remaining Majors (#188, #189, #193, #199) — mostly docs/test assertion.
+1. Drain the 4 Majors (#188, #189, #193, #199).
 2. Optional Minors #200–#201.
-3. Re-share or walk only the open set when ready.
