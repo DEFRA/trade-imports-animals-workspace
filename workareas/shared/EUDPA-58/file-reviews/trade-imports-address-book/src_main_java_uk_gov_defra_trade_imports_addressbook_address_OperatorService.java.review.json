@@ -4,36 +4,14 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T14:15:28Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Organisation scoping is complete and correct on every read and write, and the PUT hand-copy misses no field today, but the copy has no compile-time guard, phone is untested on the PUT path, and the list timer's name defeats the EMF publisher's meter reset.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 172,
-      "severity": "Major",
-      "category": "maintainability",
-      "issue": "update() hand-copies the nine client fields with setters instead of a MapStruct @MappingTarget method, so the mapper's unmappedTargetPolicy=ERROR guard (which protects toEntity/toResponse) does not cover the PUT path: add a field to AddressRequest+Address and toEntity fails the build while update() silently keeps compiling and PUT retains stale data for the new field.",
-      "fix": "Add 'void updateEntity(AddressRequest request, @MappingTarget Address address)' to OperatorMapper with the same @Mapping(ignore) set for id/organisationId/status/createdAt/modifiedAt and ignoreUnmappedSourceProperties {type, role}, and call it from update() in place of the nine setters, so a future field addition is a compile-time failure rather than a silent stale-data bug."
-    },
-    {
-      "id": 2,
-      "line": 180,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "The PUT full-replace of 'phone' is asserted nowhere: OperatorServiceTest.updateAppliesTheNewFieldValues... checks name/addressLine1/townOrCity/postcode/email only, AddressUpdateIT.putReplacesAllFieldsAndClearsOmittedOptionals checks name plus the cleared addressLine2/county, and OperatorCrudIT checks name/addressLine1/townOrCity/countryCode - so deleting 'existing.setPhone(request.phone())' leaves the stale telephone number on the document and the whole suite still passes.",
-      "fix": "Assert the replaced phone value in OperatorServiceTest.updateAppliesTheNewFieldValuesBumpsModifiedAtAndPreservesTheServerOwnedFields (assertThat(updated.getPhone()).isEqualTo(\"+44 1738 111222\")) and in AddressUpdateIT.putReplacesAllFieldsAndClearsOmittedOptionals, and while there add the missing addressLine2 set-to-a-new-value case so every one of the nine replaced fields has at least one assertion.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 3,
-      "line": 72,
-      "severity": "Major",
-      "category": "observability",
-      "issue": "The list timer is registered as 'OperatorListQuery' - PascalCase, breaking the dot-delimited Micrometer convention used everywhere else in the service ('controller.listOperators.time', best-practice 'notification.save'), and more importantly EmfMetricsPublisher.publishMetrics() only removes meters whose name startsWith(\"controller\"), so this meter is never reset and its cumulative COUNT and TOTAL_TIME are re-emitted to CloudWatch on every 60s publish cycle - the metric grows monotonically instead of reporting the interval's activity.",
-      "fix": "Rename the timer to a dot-delimited, controller-prefix-consistent name that EmfMetricsPublisher's reset filter picks up (e.g. meterRegistry.timer(\"controller.listOperators.query.time\")), or widen the reset filter in EmfMetricsPublisher to cover service meters; also wrap the query in try/finally so the sample is stopped when queryPage throws.",
-      "best_practice": "java/spring-boot.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T13:40:29Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Prior items 50-52 are fixed (MapStruct updateEntity, phone assertions, controller-prefixed timer with try/finally); remaining deltas (ACTIVE status on search, secondary id sort) introduce no new issues.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    50,
+    51,
+    52
+  ]
 }

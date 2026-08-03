@@ -4,46 +4,13 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T08:58:52Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Solid coverage of the reject path and problem+json body, but the no-PII-in-logs assertion is vacuous and the filter's MDC-cleanup finally block is untested.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 170,
-      "severity": "Major",
-      "category": "vacuous-assertion",
-      "issue": "The no-PII-in-logs assertion is vacuous: IdentityHeaderFilter only logs inside reject(), so on this happy path appender.list is empty and allSatisfy() passes over zero events — the test would stay green if the filter logged the request body verbatim.",
-      "fix": "Exercise the path that actually logs (omit the org header so log.warn in reject() fires) and add assertThat(appender.list).isNotEmpty() before the allSatisfy, so the PII guard has real events to inspect.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 113,
-      "severity": "Major",
-      "category": "missing-test",
-      "issue": "No test pins the filter's finally { MDC.remove(organisationId) } — RecordingChain only snapshots the MDC during the chain, and nothing asserts the key is gone after doFilter returns or when the chain throws, so an MDC leak onto a pooled servlet thread (org A's id tagging org B's log lines) would go undetected.",
-      "fix": "After the doFilter call assert MDC.get(\"organisationId\") is null, and add a test where the chain throws (FilterChain that throws ServletException) asserting the key is still removed.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 3,
-      "line": 145,
-      "severity": "Minor",
-      "category": "tautological-assertion",
-      "issue": "In nonOrganisationPathsBypassTheFilterEntirely the status-200 assertion is self-fulfilling — RecordingChain.doFilter sets 200 itself and MockHttpServletResponse already defaults to 200, so the assertion cannot fail regardless of what the filter does.",
-      "fix": "Drop the status assertion (chain.wasCalled() is the real bypass proof) or assert the negative that actually matters: response.getStatus() is not 400 and the body is empty.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 4,
-      "line": 58,
-      "severity": "Minor",
-      "category": "test-conventions",
-      "issue": "None of the seven test methods use the mandated explicit // Given, // When, // Then comment blocks that every other unit test in the codebase follows.",
-      "fix": "Add // Given, // When, // Then (or // When & Then for the short ones) to each test method.",
-      "best_practice": "java/testing/unit.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T13:34:13Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Prior Major findings (vacuous PII-log assertion #124, missing MDC-removal coverage #125) are both fixed by new tests in this commit; remaining prior Minor items (#126 tautological status assertion, #127 missing Given/When/Then) are unchanged and already tracked, and no new violations were introduced.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:39Z",
+  "resolved_item_ids": [
+    124,
+    125
+  ]
 }

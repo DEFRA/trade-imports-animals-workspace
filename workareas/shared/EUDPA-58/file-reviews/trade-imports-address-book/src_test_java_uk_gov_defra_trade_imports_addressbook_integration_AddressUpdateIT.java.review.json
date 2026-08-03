@@ -4,46 +4,9 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T19:20:27Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "The tests are correct and pass, but the full-replace test asserts only 4 of 9 copied fields (phone is unasserted on the update path anywhere), concurrency on an unversioned read-modify-write is untested, and three of five tests duplicate OperatorCrudIT's PUT coverage.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 84,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "putReplacesAllFieldsAndClearsOmittedOptionals asserts only 4 of the 9 fields OperatorService.update() hand-copies (name, addressLine1, townOrCity, countryCode); postcode, phone and email are never asserted on the PUT path here, and phone is asserted nowhere in the whole suite on the update path (OperatorServiceTest lines 178-182 cover postcode/email but not phone), so deleting existing.setPhone(request.phone()) from OperatorService.update() passes every test",
-      "fix": "Add jsonPath assertions for $.postcode, $.phone and $.email to the 200 response chain and to the repository.findById satisfies() block, so all nine hand-copied setters are covered",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 2,
-      "line": 23,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "No test covers concurrent access to PUT: Address has no @Version field, so OperatorService.update() is an unguarded read-modify-write (findByIdAndOrganisationId then repository.save of the whole document). Two overlapping PUTs silently lose one writer's fields, and a DELETE landing between the update read and its save resurrects the tombstone back to ACTIVE - neither path is exercised here or anywhere in the repo (no @Execution parallel, no CountDownLatch/ExecutorService test)",
-      "fix": "Add an IT that runs two overlapping PUTs (and a PUT interleaved with a DELETE) via an ExecutorService against the shared Mongo container and asserts the intended outcome; if last-write-wins and tombstone resurrection are accepted, encode that as an explicit documented test, otherwise add @Version to Address and assert the 409/retry",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 3,
-      "line": 70,
-      "severity": "Major",
-      "category": "test-duplication",
-      "issue": "Three of the five tests duplicate PUT tests added by the same PR in OperatorCrudIT: putReplacesAllFieldsAndClearsOmittedOptionals overlaps putReplacesTheMutableFieldsReturns200AndBumpsModifiedAt (line 327) plus putClearsAnOmittedOptionalFieldBecauseItIsAFullReplace (line 358); putBumpsModifiedAtAndPreservesCreatedAt re-covers the same modifiedAt bump; putOnSoftDeletedTombstoneReturns404 duplicates putOnADeletedTombstoneReturns404 (line 377) but asserts strictly less (no Content-Type, no status, no errors-absent check) - two ITs must now be kept in step for one endpoint",
-      "fix": "Keep the genuinely new cases (per-field 400 errors map, unknown-id 404, createdAt preservation) in AddressUpdateIT and delete the PUT tests from OperatorCrudIT, or fold these into OperatorCrudIT and drop this class - PUT should be owned by exactly one IT",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 4,
-      "line": 97,
-      "severity": "Minor",
-      "category": "test-coverage",
-      "issue": "putWithInvalidFieldsReturns400PerFieldErrorsMap saves an ACTIVE address first but never asserts the stored document is untouched after the 400, so a regression that partially applied the body before validation rejected it would go unnoticed",
-      "fix": "After the 400 assertion add a repository.findById(saved.getId()) check that name/addressLine1/email still hold the pre-request values",
-      "best_practice": "java/testing/integration.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T13:33:38Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Diff only adds postcode/phone/email jsonPath and repository assertions to putReplacesAllFieldsAndClearsOmittedOptionals (resolving prior item 147) and switches to findByIdAndOrganisationId consistent with the rest of the suite; no new issues introduced.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:39Z"
 }

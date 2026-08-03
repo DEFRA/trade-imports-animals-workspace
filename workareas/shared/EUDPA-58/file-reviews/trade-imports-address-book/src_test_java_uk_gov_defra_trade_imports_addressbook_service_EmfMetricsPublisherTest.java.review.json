@@ -4,19 +4,19 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T09:02:11Z",
-  "verdict": "SAFE",
-  "verdict_reason": "The only diff-scope change is the package declaration rename from uk.gov.defra.trade.imports.address.book.service to uk.gov.defra.trade.imports.addressbook.service, which matches the source class's identical rename and keeps the same-package access the test needs for the package-private constructor.",
+  "reviewed_at": "2026-08-03T13:34:34Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Test file was substantially rewritten (resolving the prior fixture-testing finding on publishMetrics_shouldIterateOverAllMeters), but the new shouldSkipNonFiniteValues test's only assertion is unrelated to the NaN-skip behaviour it names.",
   "todos": [
     {
       "id": 1,
-      "line": 69,
-      "severity": "Minor",
+      "line": 50,
+      "severity": "Major",
       "category": "test-quality",
-      "issue": "publishMetrics_shouldIterateOverAllMeters asserts only on the SimpleMeterRegistry the test itself populated (isNotEmpty/hasSize(2)) — it would pass unchanged if publishMetrics() had an empty body, so it tests the fixture, not the production code",
-      "fix": "Assert an observable effect of publishMetrics: register a meter named controller.foo alongside test.counter and assert that after publish the registry no longer contains controller.foo (the removal branch at EmfMetricsPublisher.java:43-46), which is the one side effect visible without mocking MetricsLogger",
+      "issue": "publishMetrics_shouldSkipNonFiniteValues sets up one finite and one NaN measurement but its only assertion is verify(mockMeter).measure() — this passes identically even if the isFinite check in EmfMetricsPublisher.publishMetrics is deleted, so the test does not actually verify that NaN values are skipped",
+      "fix": "Assert the skip behaviour directly, e.g. extract the finite-value filter into a small package-visible/static method (or inject a mockable metrics sink so putMetric can be verified as called once with the finite metric key and never with the NaN one)",
       "best_practice": "java/testing/unit.md"
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:40Z"
 }

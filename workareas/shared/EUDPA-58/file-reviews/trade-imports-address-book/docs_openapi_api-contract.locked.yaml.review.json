@@ -4,73 +4,35 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T09:17:28Z",
-  "verdict": "RISKY",
-  "verdict_reason": "This new file is published as the authoritative locked API contract but describes a different API from the one shipped in the same PR — snake_case fields, a Trade-Imports-Crn identity model and operator_type/status fields that do not exist — and the compliance IT only checks paths, methods and operationIds, so nothing catches the drift.",
+  "reviewed_at": "2026-08-03T10:33:56Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "All 7 prior Criticals/Majors (snake_case, phantom fields, wrong CRN header, missing orgId param, false CI claim, D1/D2 misdirection, stale narrative) are genuinely fixed by the rewrite, but the rewrite introduces two new schema-drift regressions: minLength: 0 on required @NotBlank fields, and dropped required arrays on Problem/ValidationProblem.",
   "todos": [
     {
       "id": 1,
-      "line": 490,
-      "severity": "Critical",
-      "category": "contract-drift",
-      "issue": "The 'locked' contract's whole payload surface contradicts the shipped API: it declares snake_case wire names (address_line_1, town, county, postcode, country, telephone, trace_id, page_size) plus fields that do not exist at all (operator_type, status ACTIVE/DELETED, crn, approval_number, transporter_category), while OperatorResponse/AddressRequest and the generated docs/openapi/operators.yml emit camelCase addressLine1/townOrCity/countryCode/phone/traceId/pageSize and a derived 'deleted' boolean, with no typed operator fields (OperatorComplianceIT explicitly asserts operatorType/transporterCategory/status are absent).",
-      "fix": "Regenerate this file from the implemented model — camelCase properties, townOrCity/countryCode/phone, deleted boolean, no operator_type/status/crn/approval_number/transporter_category — and delete the PUT operator_type-immutability rule and TypeChangeProblemExample that reference a field the service does not have.",
-      "best_practice": "java/openapi-springdoc.md"
+      "line": 257,
+      "severity": "Major",
+      "category": "schema-drift",
+      "issue": "AddressRequest's rewrite sets minLength: 0 on the required, @NotBlank fields (name, addressLine1, townOrCity, postcode, phone, email) — previously (6f1134b) they correctly declared minLength: 1; AddressRequest.java rejects blank values on all six with a 400. countryCode, also @NotBlank, was left at minLength: 1, showing the drop on the other six was accidental. assertSchemaPropertyNamesMatch only diffs property key sets, so this is invisible to OperatorComplianceIT.",
+      "fix": "Set minLength: 1 on name, addressLine1, townOrCity, postcode, phone and email (matching @NotBlank and the pre-rewrite value); leave addressLine2/county (no @NotBlank) at minLength: 0."
     },
     {
       "id": 2,
-      "line": 375,
-      "severity": "Critical",
-      "category": "security-doc-drift",
-      "issue": "The documented identity/scoping contract is wrong in a security-relevant way: CrnHeader (Trade-Imports-Crn, 'required on every request') is $ref'd into all five operations and the 400 examples say 'Missing required header Trade-Imports-Crn', but no CRN header exists anywhere in the service — IdentityHeaderFilter enforces Trade-Imports-Organisation-Id on every /organisation/** request and OperatorController.authoriseOrg compares it to the path orgId. The contract also states organisation-id is 'Required on POST only' and 'NOT used for read filtering today', the exact opposite of the implemented org-scoped reads.",
-      "fix": "Replace CrnHeader with the Trade-Imports-Organisation-Id header as required on every operation, document the path-orgId vs session-org authorisation guard and its 404-on-mismatch behaviour, and update the BadRequestProblemExample detail to 'Missing required header Trade-Imports-Organisation-Id'.",
-      "best_practice": "rest-api/rest-api.md"
-    },
-    {
-      "id": 3,
-      "line": 87,
+      "line": 305,
       "severity": "Major",
-      "category": "invalid-spec",
-      "issue": "Both path items use the template variable {orgId} but neither declares an orgId path parameter (only operator-id is declared, at line 234), so the document is an invalid OpenAPI 3.0 file — swagger-parser/spectral/openapi-generator all fail it with 'Declared path parameter orgId needs to be defined as a path parameter at either the path or operation level'. The generated operators.yml does declare it, so the two disagree.",
-      "fix": "Add an orgId path parameter (in: path, required: true, type: string) to the path-level parameters of both /organisation/{orgId}/addresses and /organisation/{orgId}/addresses/{operator-id}.",
-      "best_practice": "java/openapi-springdoc.md"
-    },
-    {
-      "id": 4,
-      "line": 18,
-      "severity": "Major",
-      "category": "false-guarantee",
-      "issue": "The preamble claims 'OperatorComplianceIT plus a CI diff check keep it honest' and that the generated operators.yml 'must stay equivalent to' this file, but OperatorComplianceIT.apiDocsMatchTheCommittedArtifactAndTheLockedContract only compares the path key set, the HTTP-method set, operationIds and the 400 anyOf — no schemas, parameters, headers or status codes. That is exactly why every divergence in this file is invisible to a green CI run.",
-      "fix": "Either widen the divergence gate to compare parameters, response status codes and the referenced schema names, or downgrade the preamble claim to state precisely what is enforced (paths, methods, operationIds, anyOf 400).",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 5,
-      "line": 48,
-      "severity": "Major",
-      "category": "misleading-directive",
-      "issue": "Deviation D1 states 'country is an MDM display-name string, NOT ISO 3166-1 alpha-2' and instructs reviewers not to 'fix' it, but the shipped AddressRequest/OperatorResponse field is countryCode carrying ISO alpha-2 ('GB' in OperatorComplianceIT and the list filter is ?countryCode=). The directive actively tells the next developer to revert the implemented behaviour. D2's page_size query parameter is likewise contradicted — page size is a server-side config, not a request parameter.",
-      "fix": "Rewrite D1 to describe countryCode/ISO alpha-2 as implemented (or delete it), and drop page_size from D2 and from the list-operators parameter list.",
-      "best_practice": "rest-api/rest-api.md"
-    },
-    {
-      "id": 6,
-      "line": 110,
-      "severity": "Major",
-      "category": "param-drift",
-      "issue": "The list-operators parameter set does not match the implementation: the contract declares operator_type (enum filter) and page_size (min 1, max 100, default 25), while OperatorController.list accepts page, q and countryCode only; the contract also declares a 500 InternalError response on all five operations that no handler produces. A client generated from this file sends ?operator_type=&page_size= and silently gets unfiltered, server-sized pages.",
-      "fix": "Replace operator_type with countryCode, drop page_size, and either remove the 500 responses or document them as the framework default.",
-      "best_practice": "rest-api/rest-api.md"
-    },
-    {
-      "id": 7,
-      "line": 13,
-      "severity": "Minor",
-      "category": "stale-narrative",
-      "issue": "Stale pre-rename narrative survives the move to /organisation/{orgId}/addresses: line 13 says 'This file lives under workareas/, which is gitignored and absent from a clean CI checkout' while the file is committed at docs/openapi/; line 181 documents the 201 Location header as '/operators/{operator-id}' when the controller returns '/organisation/{orgId}/addresses/{id}'; the tag is 'operators' where the controller declares 'addresses'; and operationIds mix list-operators/create-operator with get-address/update-address/delete-address.",
-      "fix": "Rewrite the preamble for the in-repo location, correct the Location header example and its schema example, rename the tag to 'addresses', and settle on one operationId noun.",
-      "best_practice": "java/openapi-springdoc.md"
+      "category": "schema-drift",
+      "issue": "Problem and ValidationProblem schemas lost their required arrays in the rewrite. Prior (6f1134b) Problem declared required: [type, title, status] and ValidationProblem additionally required errors, matching Problem.java/ValidationProblem.java's @Schema(requiredMode = REQUIRED) annotations on type/title/status(/errors) — and the committed docs/openapi/operators.yml still carries required: [status, title, type] / required: [errors, status, title, type] for these exact schemas. The locked contract now declares neither, silently contradicting both the implementation and the file's own claimed equivalence to operators.yml. assertSchemaPropertyNamesMatch only diffs property key sets, so this drift is invisible to OperatorComplianceIT.",
+      "fix": "Restore required: [type, title, status] on Problem and required: [type, title, status, errors] on ValidationProblem, matching operators.yml and the @Schema(requiredMode = REQUIRED) annotations."
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20
+  ]
 }

@@ -4,53 +4,14 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T14:16:08Z",
+  "reviewed_at": "2026-08-03T10:32:12Z",
   "verdict": "SAFE",
-  "verdict_reason": "Multi-tenant scoping is sound on all five endpoints - every handler authorises the path orgId against the trusted Trade-Imports-Organisation-Id header before any store access and the org id is enforced inside every repository query - with only Minor OpenAPI-contract and defence-in-depth findings.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 137,
-      "severity": "Minor",
-      "category": "error-handling",
-      "issue": "create() builds the Location header by raw string concatenation into URI.create(); an orgId containing a URI-illegal character (e.g. a space, legal in an HTTP header value and reachable via a %20-encoded path segment that authoriseOrg accepts) throws IllegalArgumentException AFTER operatorService.create has persisted the address, so the caller gets a 500 and a retry creates a duplicate",
-      "fix": "Build the URI with ServletUriComponentsBuilder.fromCurrentRequest().path(\"/{id}\").buildAndExpand(created.getId()).toUri() (or UriComponentsBuilder with buildAndExpand) so the segments are encoded rather than concatenated; note OperatorCrudIT asserts Location startsWith a relative path, so keep the relative form or update that assertion"
-    },
-    {
-      "id": 2,
-      "line": 84,
-      "severity": "Minor",
-      "category": "api-contract",
-      "issue": "list() and create() can return 404 (authoriseOrg on an org mismatch, proven by AddressScopingIT.forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404) but their @ApiResponses declare only 200/201 and 400, so the generated docs/openapi/operators.yml omits 404 for both operations and the published contract does not describe the actual behaviour",
-      "fix": "Add @ApiResponse(responseCode = \"404\", content = @Content(mediaType = \"application/problem+json\", schema = @Schema(implementation = Problem.class))) to the list and create operations and regenerate docs/openapi/operators.yml with -Dopenapi.generate=true",
-      "best_practice": "java/openapi-springdoc.md"
-    },
-    {
-      "id": 3,
-      "line": 120,
-      "severity": "Minor",
-      "category": "api-contract",
-      "issue": "The 201 @ApiResponse on create() declares no Location header, so the generated spec documents no Location on POST even though the response sets one and consumers (AddressScopingIT, the frontend) parse it to obtain the new address id; the committed api-contract.locked.yaml does declare it, so the generated doc under-describes the agreed contract",
-      "fix": "Add headers = @Header(name = \"Location\", description = \"/organisation/{orgId}/addresses/{operator-id} of the created address\", schema = @Schema(type = \"string\")) to the 201 @ApiResponse and regenerate the OpenAPI artifact",
-      "best_practice": "java/openapi-springdoc.md"
-    },
-    {
-      "id": 4,
-      "line": 59,
-      "severity": "Minor",
-      "category": "security",
-      "issue": "Tenant scoping is correct today but structurally fragile: every handler passes the client-controlled path variable orgId (not the trusted sessionOrg header) to the service, and the authoriseOrg guard is hand-repeated in all five handlers, so a future handler that omits the one-line call would scope reads and writes to a value the caller controls with no compile-time or test-time signal",
-      "fix": "Pass sessionOrg (the trusted forwarded header) to operatorService instead of orgId so the tenant id downstream is never client-controlled even if the guard is missed, and/or hoist the path-vs-header equality check into IdentityHeaderFilter or a HandlerInterceptor mapped to /organisation/{orgId}/** so it cannot be forgotten"
-    },
-    {
-      "id": 5,
-      "line": 38,
-      "severity": "Minor",
-      "category": "api-contract",
-      "issue": "The published contract surface is internally inconsistent: the path template mixes camelCase {orgId} with kebab-case {operator-id} in the same mapping (Zalando requires kebab-case path segments), and the operationIds mix resource names for one resource - list-operators/create-operator versus get-address/update-address/delete-address - which generates clients with mismatched method names; OperatorComplianceIT locks these ids so the inconsistency becomes permanent once shipped",
-      "fix": "Rename the path variable to {org-id} and settle on one noun for the operationIds (e.g. list-addresses/create-address/get-address/update-address/delete-address), then regenerate docs/openapi/operators.yml and update api-contract.locked.yaml",
-      "best_practice": "rest-api/rest-api.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "verdict_reason": "Fix commits correctly resolve items 36/37/38 (404 docs, Location header doc, sessionOrg tenant scoping), verified against regenerated operators.yml/api-contract.locked.yaml and OperatorComplianceIT/AddressScopingIT; no regressions or new violations introduced.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    36,
+    37,
+    38
+  ]
 }

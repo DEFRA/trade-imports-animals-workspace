@@ -4,73 +4,16 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T00:27:30Z",
-  "verdict": "RISKY",
-  "verdict_reason": "This PR only rewrites the package declaration (rename address.book -> addressbook), but the body it carries over is never invoked - '@EnableScheduling' is absent from the whole repo so the EMF publisher is dead code - and it also drops meter tags/statistics, aborts the whole cycle on a NaN gauge, and destructively mutates the shared MeterRegistry; namespace and dimension cardinality are fine (no per-organisation or per-address dimension) and there is no thread-safety or request-path risk since MetricsLogger is per-invocation on a scheduler thread",
-  "todos": [
-    {
-      "id": 1,
-      "line": 27,
-      "severity": "Critical",
-      "category": "wiring",
-      "issue": "publishMetrics() never runs: '@EnableScheduling' appears nowhere in the repo (grep across all of src returns nothing) and no production code calls publishMetrics() - only tests do - so Spring never registers a ScheduledAnnotationBeanPostProcessor and the whole EMF publication path is dead code despite the aws.emf.* config and CDP CloudWatch endpoint being wired up",
-      "fix": "Add '@EnableScheduling' to Application (or a SchedulingConfig '@Configuration' class as per spring-boot.md section 11) and back it with an integration test that asserts the scheduled task is actually registered, not just that the annotation is present",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 2,
-      "line": 38,
-      "severity": "Major",
-      "category": "emf-correctness",
-      "issue": "Every measurement is published under the bare meter name - both Meter.Id tags and Measurement.getStatistic() are discarded - so a Timer's COUNT, TOTAL_TIME and MAX all collapse into one metric key, and the ~8 differently-tagged jvm.memory.used meters (area x pool) merge into a single unusable series; unit is also lost (defaults to Unit.NONE) even though timers are in nanoseconds",
-      "fix": "Qualify the EMF key with the statistic (e.g. name + '.' + measurement.getStatistic().getTagValueRepresentation()), pass the correct Unit, and emit the meter's low-cardinality tags as EMF dimensions via putDimensions(DimensionSet) so series stay distinguishable",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 3,
-      "line": 41,
-      "severity": "Major",
-      "category": "error-handling",
-      "issue": "putMetric() is called with no guard: aws-embedded-metrics 4.2.0 Validator.validateMetric throws the unchecked InvalidMetricException when !Double.isFinite(value), and Micrometer gauges legitimately report NaN (e.g. a gauge whose weak reference has been collected), so one NaN aborts the forEach before flush() at line 47 and silently drops every metric for that cycle - recurring every 60s while the bad meter exists",
-      "fix": "Skip non-finite measurements (if (!Double.isFinite(value)) return;) and wrap the publish body in try/catch logging at WARN so metric publication is best-effort and flush() still runs; add a unit test covering a NaN gauge",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 4,
-      "line": 43,
-      "severity": "Major",
-      "category": "side-effects",
-      "issue": "The publisher destructively mutates the shared application MeterRegistry every 60s, removing every meter whose name startsWith the undocumented magic string 'controller' - this wipes those series from the exposed actuator /metrics endpoint and leaves mixed semantics, since controller.* is published as a per-minute delta while all other meters (jvm.*, http.server.requests.active) are published as cumulative totals",
-      "fix": "Drop the removal and let CloudWatch derive rates from cumulative counters, or publish into a dedicated per-window registry that is not the shared bean; if the reset must stay, extract the prefix to a named constant and document the delta-vs-cumulative split. Also reuse the single getMeters() result instead of calling it twice",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 5,
-      "line": 29,
-      "severity": "Minor",
-      "category": "testability",
-      "issue": "MetricsLogger is constructed inline inside publishMetrics(), so nothing published to EMF can be asserted - EmfMetricsPublisherTest can only verify(meterRegistry, times(2)).getMeters(), which asserts implementation detail rather than any published namespace, metric name or value",
-      "fix": "Inject a Supplier<MetricsLogger> (or a thin MetricsLoggerFactory bean) so tests can capture the logger and assert the namespace, metric keys and values actually emitted",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 6,
-      "line": 15,
-      "severity": "Minor",
-      "category": "configuration",
-      "issue": "The bean is gated on management.metrics.enabled, but application.yml defines a dedicated aws.emf.enabled flag (line 42) that no code reads - so EMF publication cannot be switched off independently of Micrometer, and the dedicated flag is dead configuration",
-      "fix": "Gate on the purpose-built flag: '@ConditionalOnProperty(name = \"aws.emf.enabled\", havingValue = \"true\", matchIfMissing = false)', and update MetricsConfigurationPropertiesTest accordingly - or delete aws.emf.enabled from application.yml if the coarser gate is intended",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 7,
-      "line": 4,
-      "severity": "Minor",
-      "category": "unused-code",
-      "issue": "Unused imports carried into the renamed package: io.micrometer.core.instrument.composite.CompositeMeterRegistry (line 4) and java.util.List (line 5) are never referenced (Sonar java:S1128)",
-      "fix": "Delete both import statements",
-      "best_practice": "java/modern-java.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T10:34:43Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Fix commits genuinely resolve 5 prior items (scheduling now wired via MetricsConfig's @EnableScheduling, NaN guard + try/catch around publish, destructive meter removal deleted, dedicated aws.emf.enabled flag read, unused imports removed); no regressions or net-new issues in this file's delta.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:39Z",
+  "resolved_item_ids": [
+    95,
+    97,
+    98,
+    100,
+    101
+  ]
 }

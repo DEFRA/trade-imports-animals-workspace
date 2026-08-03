@@ -4,28 +4,13 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T14:16:04Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "The errors map shape is correct and matches the handler, but the record's camelCase wire names contradict the in-repo locked contract and no required-mode annotations make errors optional in the published spec.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 33,
-      "severity": "Major",
-      "category": "contract-divergence",
-      "issue": "errors map SHAPE (Map<field,List<message>>) matches the handler and the contract, but the CASING contradicts the in-repo docs/openapi/api-contract.locked.yaml added by this same PR: the locked ValidationProblem says keys are 'ALWAYS the wire names (address_line_1, never addressLine1)' and Problem declares trace_id, while this record declares traceId and its Javadoc mandates camelCase keys; camelCase is not in the contract's 'Declared deviations' list and OperatorComplianceIT's divergence gate compares only path sets, HTTP methods, operationIds and the 400 anyOf, so the schema-level drift ships silently",
-      "fix": "Re-copy the locked contract with camelCase Problem/ValidationProblem schemas, examples and prose (traceId, errors keyed addressLine1) recorded as a cv-001 deviation — the code, ITs and ins-frontend (errors.addressLine1) are all camelCase — and extend the divergence gate to compare schema property names so this cannot drift again",
-      "best_practice": "rest-api/rest-api.md"
-    },
-    {
-      "id": 2,
-      "line": 27,
-      "severity": "Major",
-      "category": "openapi-contract",
-      "issue": "No @Schema(requiredMode = REQUIRED) on any component, so springdoc emits ValidationProblem (and Problem) with no required list at all — see the committed docs/openapi/operators.yml ValidationProblem schema, which has properties but no 'required'. The locked contract declares ValidationProblem as allOf [Problem, {required: [errors]}] with Problem requiring type/title/status; the published spec therefore makes 'errors' — the one field that distinguishes the validation-error branch from the bad-request branch — optional, and generated clients get a nullable map on the commonest 400",
-      "fix": "Annotate the record components with @Schema(requiredMode = Schema.RequiredMode.REQUIRED) on type, title, status and errors (leave detail/traceId optional) and regenerate docs/openapi/operators.yml with -Dopenapi.generate=true",
-      "best_practice": "java/openapi-springdoc.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T10:33:45Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Both prior findings resolved: requiredMode=REQUIRED now matches operators.yml's required list, and the record's camelCase traceId/errors now aligns with the locked contract (also updated to camelCase) plus a new IT property-name divergence gate; no regressions or new issues introduced.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:38Z",
+  "resolved_item_ids": [
+    84,
+    85
+  ]
 }

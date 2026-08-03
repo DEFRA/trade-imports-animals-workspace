@@ -4,27 +4,18 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T08:59:09Z",
+  "reviewed_at": "2026-08-03T13:34:28Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Port move to 8089 and the primaryPreferred read preference are correct and consistent across Dockerfile/compose/README/IT, but the package-key fix silently turns on DEBUG logging by default in deployed environments and springdoc api-docs is left exposed.",
+  "verdict_reason": "Both prior findings (stale DEBUG log default, disabled-swagger-but-enabled-api-docs) are resolved, but the new springdoc block's comment now contradicts its own code and should be corrected.",
   "todos": [
     {
       "id": 1,
-      "line": 53,
+      "line": 104,
       "severity": "Major",
-      "category": "logging-config",
-      "issue": "Correcting the logger key from the non-existent package 'uk.gov.defra.trade.imports.address.book' to the real 'uk.gov.defra.trade.imports.addressbook' activates a previously-inert DEBUG default, so every deployed environment that does not set LOG_LEVEL now logs the whole application package at DEBUG (root is only ${LOG_LEVEL:info}, and application-integration-test.yml deliberately uses ${LOG_LEVEL:INFO}).",
-      "fix": "Change the default to ${LOG_LEVEL:INFO} in application.yml; application-local.yml already sets this package to DEBUG for local work, so nothing is lost."
-    },
-    {
-      "id": 2,
-      "line": 107,
-      "severity": "Minor",
-      "category": "security-exposure",
-      "issue": "swagger-ui is correctly disabled, but springdoc.api-docs is left at its default (enabled) in every deployed environment; the justifying comment cites the committed contract artifact and OperatorComplianceIT, both of which only read /v3/api-docs at build/test time (OperatorComplianceIT hits http://localhost:{port}/v3/api-docs on a locally booted context), and it cites a 'design §1.6' document that does not exist in the repo.",
-      "fix": "Add 'api-docs: enabled: false' alongside the swagger-ui key in application.yml and re-enable it in application-local.yml and src/test/resources/application-integration-test.yml, then correct or drop the design-doc citation.",
-      "best_practice": "java/openapi-springdoc.md"
+      "category": "stale-comment",
+      "issue": "The comment above the new springdoc block says '/v3/api-docs stays enabled everywhere', but the code directly below it sets api-docs.enabled: false in the base config (it's now only re-enabled via application-local.yml and application-integration-test.yml overrides) -- the comment now says the opposite of what the code does.",
+      "fix": "Rewrite the comment to describe the actual behaviour: api-docs and swagger-ui are both disabled by default in application.yml and explicitly re-enabled per-profile in application-local.yml (local dev) and application-integration-test.yml (OperatorComplianceIT)."
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:39Z"
 }

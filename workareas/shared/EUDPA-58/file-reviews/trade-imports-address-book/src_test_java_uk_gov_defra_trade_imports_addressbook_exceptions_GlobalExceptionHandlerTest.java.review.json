@@ -4,55 +4,18 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T08:59:24Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Solid coverage of the two distinct 400 shapes and the traceId extension, but one test's only assertion sits behind a null guard that is always taken, so it passes without asserting anything.",
+  "reviewed_at": "2026-08-03T13:34:39Z",
+  "verdict": "SAFE",
+  "verdict_reason": "New commit resolves the malformed-JSON, handleTypeMismatch coverage, and flaky-conditional-assertion findings (items 119-121); only a new Minor duplicate of the setUp-reflection fragility (item 122) was introduced",
   "todos": [
     {
       "id": 1,
-      "line": 152,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "No case covers a malformed JSON request body: HttpMessageNotReadableException extends RuntimeException, so GlobalExceptionHandler's @ExceptionHandler(RuntimeException.class) catch-all swallows it and returns 500 internal-error instead of a 400 bad-request problem - this missing case is exactly why that Critical shipped green",
-      "fix": "Add malformedJsonBody_returns400BadRequestProblem: build a MockMvc standaloneSetup with a stub controller taking @RequestBody, POST content(\"{not json\") with APPLICATION_JSON, and assert status 400, content type application/problem+json, $.type = https://api.cdp.defra.cloud/problems/bad-request and no $.errors key (the Problem, not ValidationProblem, branch) - it must fail until an @ExceptionHandler(HttpMessageNotReadableException.class) is added",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 171,
-      "severity": "Major",
-      "category": "test-quality",
-      "issue": "traceId_isOmittedWhenAbsentFromMdc guards its only assertion behind 'if (properties != null)'; with no MDC trace id and no errors map the handler never calls setProperty, so ProblemDetail.getProperties() is null and the test executes zero assertions while still passing green.",
-      "fix": "Drop the conditional and assert deterministically, e.g. assertThat(response.getBody().getProperties()).isNull(); (or isNullOrEmpty()), so the test actually pins the omit-traceId contract.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 3,
-      "line": 24,
-      "severity": "Minor",
-      "category": "test-coverage",
-      "issue": "handleTypeMismatch is the only one of the five handler methods in GlobalExceptionHandler with no unit test here; OperatorListIT.listWithANonNumericPageReturns400BadRequestProblem pins status/type/absent-errors but nothing pins the detail string \"Invalid value for parameter '<name>'\" that embeds ex.getName().",
-      "fix": "Add a test calling exceptionHandler.handleTypeMismatch(new MethodArgumentTypeMismatchException(\"abc\", Integer.class, \"page\", methodParameter, cause)) and assert the 400 bad-request type, the detail naming 'page', and doesNotContainKey(\"errors\").",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 4,
-      "line": 178,
+      "line": 169,
       "severity": "Minor",
       "category": "maintainability",
-      "issue": "The validationException helper builds its MethodParameter from getDeclaredMethod(\"setUp\"), coupling all four validation tests to the name of an unrelated @BeforeEach lifecycle method; renaming setUp makes them fail with 'Failed to build MethodArgumentNotValidException', which points nowhere near the real cause.",
-      "fix": "Reflect on a dedicated private placeholder (e.g. 'private void validationTarget(Object body) {}') declared next to the helper, so the reflected name exists only to serve the helper.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 5,
-      "line": 40,
-      "severity": "Minor",
-      "category": "convention",
-      "issue": "None of the seven tests carry the // Given / // When / // Then blocks the Java unit-testing guide states all tests use, and the names use an outcome-first subject (validationError_, badRequest_, notFound_) rather than the documented {method}_{shouldDoWhat} form used across the sibling repos (handleValidationException_shouldReturnBadRequestWithFieldErrors).",
-      "fix": "Rename to handleValidationException_shouldReturn400WithCamelCaseErrorsMap etc. and add the Given/When/Then comment blocks.",
-      "best_practice": "java/testing/unit.md"
+      "issue": "New test typeMismatch_returns400BadRequestProblemNamingTheParameter duplicates the reflection-on-setUp MethodParameter-building anti-pattern already flagged for the validationException helper (item 122) - it calls GlobalExceptionHandlerTest.class.getDeclaredMethod(\"setUp\") inline, a second place that breaks with an unrelated NoSuchMethodException if the @BeforeEach is renamed",
+      "fix": "Reflect on a dedicated placeholder method (e.g. a private no-op declared next to validationException) instead of getDeclaredMethod(\"setUp\") directly in this test"
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:39Z"
 }

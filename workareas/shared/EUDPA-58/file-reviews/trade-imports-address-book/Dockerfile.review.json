@@ -4,26 +4,12 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T08:58:45Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Port renumber to 8089 is consistent with application.yml and compose.yml, but the new dev-run stage has no build path or src bind mount so its advertised hot-reload usage does not work.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 66,
-      "severity": "Major",
-      "category": "dead-config",
-      "issue": "New dev-run stage is unreachable: compose.yml uses 'build: ./' with no 'target: dev-run' and no ./src:/app/src bind mount, and the workspace stack has no address-book service, so the advertised hot-reload loop never runs and the stage/docker/dev-run.sh are dead weight",
-      "fix": "Add a dev override (or compose 'target: dev-run' plus a './src:/app/src' volume) and register address-book in scripts/stack/run-stack.sh, or drop the stage until the stack wiring lands"
-    },
-    {
-      "id": 2,
-      "line": 52,
-      "severity": "Minor",
-      "category": "config",
-      "issue": "HEALTHCHECK hardcodes port 8089 in all three runtime stages (lines 52, 86, 117) while the adjacent comment and application.yml declare the port configurable via PORT; setting PORT to anything else makes the container permanently unhealthy and blocks any depends_on: service_healthy",
-      "fix": "Use the shell-form expansion already available: CMD curl -f http://localhost:${PORT:-8089}/health || exit 1"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T10:29:49Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Only delta since last review is the PORT env-var HEALTHCHECK fix (item 4), applied correctly in all three stages; no regressions or new issues introduced.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    4
+  ]
 }

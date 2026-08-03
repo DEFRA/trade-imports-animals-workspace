@@ -4,27 +4,13 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T14:15:23Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "RFC 9457 member set is correct and matches the runtime ProblemDetail body, but the record diverges from docs/openapi/api-contract.locked.yaml on traceId vs trace_id and, lacking any @Schema annotations, drops the contract's required list, descriptions and examples from the generated spec.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 11,
-      "severity": "Major",
-      "category": "contract-conformance",
-      "issue": "The record's traceId member contradicts docs/openapi/api-contract.locked.yaml, which declares Problem.trace_id in snake_case and documents it as 'a deliberate divergence from the animals-backend's camelCase traceId' — the exact opposite of this Javadoc's cv-001 rationale; OperatorComplianceIT's divergence gate only compares path sets and operationIds, so the drift passes CI unnoticed.",
-      "fix": "Pick one source of truth and make the other follow: if cv-001 camelCase stands (as the IT and generated operators.yml assert), update the locked contract's Problem/ValidationProblem schemas to traceId and drop the snake_case rationale text; otherwise rename the record member. Consider extending the IT's divergence gate to compare component schema property names, not just paths and operationIds."
-    },
-    {
-      "id": 2,
-      "line": 19,
-      "severity": "Major",
-      "category": "openapi-schema",
-      "issue": "The record carries no @Schema annotations, so the generated docs/openapi/operators.yml Problem schema has no description, no examples and — critically — no required list, while the locked contract declares required: [type, title, status]; every 400/404/500 response in the published contract therefore advertises all five members as optional to generated clients.",
-      "fix": "Annotate the record type with @Schema(description = \"RFC 9457 problem details\") and each component with @Schema(description = ..., example = ...), adding requiredMode = Schema.RequiredMode.REQUIRED on type, title and status (leave detail and traceId optional). Apply the same to ValidationProblem so its errors member is marked required as the contract's allOf branch requires.",
-      "best_practice": "java/openapi-springdoc.md"
-    }
-  ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reviewed_at": "2026-08-03T13:42:17Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Both prior findings resolved: @Schema requiredMode annotations added and locked contract now declares camelCase traceId matching the record.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T13:43:38Z",
+  "resolved_item_ids": [
+    82,
+    83
+  ]
 }

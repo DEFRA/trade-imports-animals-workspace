@@ -4,44 +4,23 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T14:14:40Z",
+  "reviewed_at": "2026-08-03T13:34:20Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Field set and validation matrix are correct and every mappable component is copied by OperatorService.update, but the hand-copy has no compile-time link to this record and the new public request contract carries no @Schema documentation.",
+  "verdict_reason": "The new countryCode @Size(max=2) correctly closes prior finding #34 but leaves the record's Javadoc stating no length check exists, contradicting cv-011 as documented in Address.java.",
   "todos": [
     {
       "id": 1,
-      "line": 32,
+      "line": 28,
       "severity": "Major",
-      "category": "maintainability",
-      "issue": "The record's 11 components are the source of truth for the PUT full-replace body, but OperatorService.update hand-copies the 9 mappable ones with no compile-time link; OperatorMapper's unmappedSourcePolicy=ERROR forces a new component to be wired into toEntity (so POST keeps working) while update silently keeps ignoring it, so PUT quietly stops being a full replace",
-      "fix": "Add a MapStruct in-place method to OperatorMapper - void updateEntity(AddressRequest request, @MappingTarget Address address) with the same id/organisationId/status/createdAt/modifiedAt ignores and type/role ignoreUnmappedSourceProperties - and call it from OperatorService.update instead of the nine setters, so an unmapped new field is a compile error on both paths"
-    },
-    {
-      "id": 2,
-      "line": 32,
-      "severity": "Major",
-      "category": "openapi-docs",
-      "issue": "New public API request record carries no @Schema on the record or any of its 11 components, so the generated OpenAPI contract has no descriptions, no examples, no requiredMode on the @NotBlank fields, and advertises the unsupported type/role as ordinary free-form Object properties",
-      "fix": "Add @Schema(description=...) to the record and each component, set requiredMode = REQUIRED on the @NotBlank ones to match Bean Validation, and mark type/role @Schema(hidden = true) so the contract does not advertise fields the service rejects",
-      "best_practice": "java/openapi-springdoc.md"
-    },
-    {
-      "id": 3,
-      "line": 51,
-      "severity": "Minor",
-      "category": "test-coverage",
-      "issue": "phone is the only component copied by OperatorService.update that no update test asserts - OperatorServiceTest.updateAppliesTheNewFieldValues checks name/addressLine1/townOrCity/postcode/email and AddressUpdateIT checks name/addressLine1/townOrCity/countryCode plus the cleared optionals, so deleting existing.setPhone(request.phone()) leaves the whole suite green",
-      "fix": "Assert the replaced phone (and email) in AddressUpdateIT.putReplacesAllFieldsAndClearsOmittedOptionals so every one of the nine copied fields is pinned by at least one update test"
-    },
-    {
-      "id": 4,
-      "line": 48,
-      "severity": "Minor",
-      "category": "input-validation",
-      "issue": "countryCode is the only client-supplied string with no upper bound - every other component is @Size-capped - and it is persisted verbatim, so a caller can store an arbitrarily long value (AddressRequestValidationTest pins a 300-char value as valid); it is also indexed-adjacent via searchByCountryCode",
-      "fix": "Add a generous defensive @Size(max = ...) alongside the @NotBlank - it caps abuse without introducing the ISO list check or the value transformation cv-011 rules out - and update the presence-only test to assert the cap rather than unlimited length",
-      "best_practice": "java/spring-boot.md"
+      "category": "documentation",
+      "issue": "The class Javadoc still claims countryCode has 'no length ... check' (cv-011) but this diff adds @Size(max = 2), so the documented contract is now false and contradicts Address.java's correct cv-011 description (ISO 3166-1 alpha-2)",
+      "fix": "Update the Javadoc to state countryCode is capped at 2 characters (ISO 3166-1 alpha-2, cv-011) with no list check, matching Address.java's wording"
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    31,
+    33,
+    34
+  ]
 }

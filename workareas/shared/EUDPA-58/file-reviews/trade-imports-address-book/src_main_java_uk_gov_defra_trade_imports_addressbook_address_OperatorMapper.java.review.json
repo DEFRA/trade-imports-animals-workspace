@@ -4,18 +4,21 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-01T08:58:55Z",
+  "reviewed_at": "2026-08-03T10:32:09Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "The two mapping methods are correct and their ignore/unmapped policies are complete against Address, AddressRequest and OperatorResponse, but the mapper stops short of the update path so OperatorService.update duplicates the field copy by hand and escapes the compile-time drift guard this file advertises.",
+  "verdict_reason": "The updateEntity fix correctly closes the prior update-path gap (item 40 resolved) and the new version-field ignores are consistent, but the new updateEntity method itself ships with no test coverage.",
   "todos": [
     {
       "id": 1,
-      "line": 36,
+      "line": 51,
       "severity": "Major",
-      "category": "maintainability",
-      "issue": "The mapper covers create (toEntity) and read (toResponse) but has no @MappingTarget update method, so OperatorService.update copies the 9 mutable fields by hand; the compile-time guard this mapper advertises (unmappedTarget/SourcePolicy = ERROR) does not reach the PUT path, and a future field added to AddressRequest+Address will compile clean while PUT silently fails to replace it (stale value persists on a full-replace endpoint).",
-      "fix": "Add 'void updateEntity(@MappingTarget Address entity, AddressRequest request)' with the same ignores as toEntity (id, organisationId, status, createdAt, modifiedAt; ignoreUnmappedSourceProperties type/role) and have OperatorService.update call it instead of the nine manual setters."
+      "category": "test-coverage",
+      "issue": "New updateEntity(AddressRequest, @MappingTarget Address) method (added this window to close the prior toEntity/toResponse update-path gap, item 40) has zero test coverage - OperatorMapperTest.java was not touched in this window, so nothing asserts it copies the 9 mutable fields onto an existing entity or leaves id/organisationId/status/createdAt/modifiedAt/version untouched.",
+      "fix": "Add a test that maps a populated AddressRequest onto a pre-existing Address via updateEntity, asserting the 9 client fields are overwritten and id/organisationId/status/createdAt/modifiedAt/version keep their original entity values."
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:37Z",
+  "resolved_item_ids": [
+    40
+  ]
 }

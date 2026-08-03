@@ -1,9 +1,10 @@
 # Repository Review: trade-imports-address-book
 
 **PR:** #1
-**Commit:** 6f1134b712913e55a648fd5f1228b46f6ed5551d
+**Commit:** 87f2f7bd9630f9fdab4ad44d93ff0a44c36728cf
 **Files Changed:** 82
 **Reviewed:** 2026-08-01
+**Refreshed:** 2026-08-03
 
 ## Summary
 
@@ -387,18 +388,53 @@ from the non-existent `…address.book` package to the real `…addressbook`
 `LOG_LEVEL` now logs the whole application package at DEBUG. It reads as a
 harmless rename fix.
 
+## Refresh Summary (2026-08-03)
+
+Re-reviewed the developer fix window `6f1134b` → `87f2f7b` (42 changed files
+in List A; List D ghost `address/book` paths skipped — package rename only).
+
+**Files refreshed:** 42 (+ earlier batch from this window)
+**New items added:** 17 (#183–#199)
+**Auto-resolved:** 78 (including 10 of 11 prior Criticals)
+**Spot-check (Fix+Done regressions):** 0
+
+| # | Change | File:Line | Severity | Issue |
+|---|--------|-----------|----------|-------|
+| 1 | ➕ New | `README.md:44` | Major | bounce-backend fix now documents recreate of a non-existent stack service (#184) |
+| 2 | ➕ New | `api-contract.locked.yaml:257` | Major | required @NotBlank fields dropped to minLength:0 (#185) |
+| 3 | ➕ New | `api-contract.locked.yaml:305` | Major | Problem/ValidationProblem lost `required` arrays (#186) |
+| 4 | ➕ New | `operators.yml:209` | Major | Location documented as relative URI (#188) |
+| 5 | ➕ New | `AddressRequest.java:28` | Major | Javadoc still claims no countryCode length check (#189) |
+| 6 | ➕ New | `OperatorMapper.java:51` | Major | new updateEntity untested (#190) |
+| 7 | ➕ New | `GlobalExceptionHandler.java:109` | Major | new 409 OptimisticLocking handler untested (#191) |
+| 8 | ➕ New | `GlobalExceptionHandler.java:108` | Major | 409 not in locked contract (#192) |
+| 9 | ➕ New | `application.yml:104` | Major | springdoc comment contradicts api-docs.enabled:false (#193) |
+| 10 | ➕ New | `AddressRequestValidationTest.java:23` | Major | stale countryCode Javadoc (#194) |
+| 11 | ➕ New | `AddressSearchIT.java:66` | Major | town/postcode search coverage removed (#196) |
+| 12 | ➕ New | `OperatorComplianceIT.java:213` | Major | generate flag still skips assertion gates (#197) |
+| 13 | ➕ New | `OperatorComplianceIT.java:274` | Major | schema gate fails open (#198) |
+| 14 | ➕ New | `EmfMetricsPublisherTest.java:50` | Major | NaN-skip test doesn't assert skip (#199) |
+
+Prior Criticals resolved in this window: #14, #15, #21, #22, #46, #53, #63, #80,
+#95, #154. Remaining Critical: **#86** (header trust boundary — documented in
+README, still not enforced in code).
+
+Snyk: skipped (`snyk auth` not available in this environment).
+
 ## Repository Verdict
 
-**Status:** RISKY
+**Status:** NEEDS MORE WORK
 
-Three things should be settled before merge, in this order:
+Substantial progress on the first review — the locked/generated contract
+divergence, EMF scheduling, malformed-JSON 400, and most filter hardening are
+fixed. Still blocking merge:
 
-1. **Own the trust boundary for `Trade-Imports-Organisation-Id`** (#86). Record
-   what strips inbound copies of the header, or add enforcement.
-2. **Rule on which document is the contract** (T1/T2). This is one decision, not
-   fifteen fixes — patching the fourteen sites individually without the ruling
-   just creates a fifteenth inconsistency. Then widen `OperatorComplianceIT` to
-   compare schemas, parameters, headers and status codes, or downgrade the three
-   Javadoc claims that overstate it.
-3. **Decide `Operator*` vs `Address*` now** (T3), because `OperatorComplianceIT`
-   locks the operationIds — shipping makes it a contract-breaking change to fix.
+1. **Own the trust boundary for `Trade-Imports-Organisation-Id`** (#86) —
+   README now documents CDP ingress/BFF expectation, but nothing in-repo
+   enforces it.
+2. **New Major deltas from the fix commits** (#184–#199) — notably the
+   optimistic-locking 409 without tests/contract coverage, schema-gate fail-open,
+   and stale Javadoc after the countryCode `@Size` fix.
+3. **Remaining prior Majors** not touched by this window (still open for walker
+   triage) — e.g. workspace-stack docs (#5), OpenAPI description gaps, ProxyConfig
+   coverage.

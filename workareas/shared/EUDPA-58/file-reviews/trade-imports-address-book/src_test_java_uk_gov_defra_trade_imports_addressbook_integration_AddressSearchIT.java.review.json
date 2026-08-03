@@ -4,59 +4,27 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T19:21:56Z",
+  "reviewed_at": "2026-08-03T13:43:14Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "The search ITs are well-structured and correctly assert the camelCase wire contract, but the org-scoping and ACTIVE-only guards are pinned on only one of the three raw-@Query search paths, the combined q+countryCode test never exercises the text arm of its $or, regex quoting is untested, and the pagination test cannot detect duplicate or skipped rows across pages.",
+  "verdict_reason": "Prior six findings resolved by the rewrite, but removing searchMatchesTownOrCityAndPostcodeButNotAddressLineFields leaves town/postcode/addressLine1 search coverage unguarded.",
   "todos": [
     {
       "id": 1,
-      "line": 122,
+      "line": 66,
       "severity": "Major",
       "category": "test-coverage",
-      "issue": "Cross-org exclusion is asserted on only ONE of the three search query paths: searchIsOrgScopedAndExcludesSoftDeleted (line 184) seeds OTHER_ORG and covers searchByQuery (q-only). countryCodeParamMatchesStoredAlpha2Code (122), combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode (153) and searchResultsPaginateAt25PreservingQueryAndCountryCode (222) seed ORG rows only, so deleting 'organisationId': ?0 from the raw @Query on searchByCountryCode or searchByQueryAndCountryCode leaves the whole suite green — org scoping in a @Query string is compiler-invisible and no other IT covers it (OperatorRepositoryIT only covers findByIdAndOrganisationId; OperatorServiceTest mocks the repository so it cannot see the query string).",
-      "fix": "Seed an OTHER_ORG ACTIVE row that WOULD match in each of the two countryCode-path tests (e.g. an FR row for OTHER_ORG in countryCodeParamMatchesStoredAlpha2Code and in combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode) and assert jsonPath($.items[*].id, not(hasItem(otherOrg.getId()))) plus the exact totalItems, so all three repository query paths carry a cross-org guard."
-    },
-    {
-      "id": 2,
-      "line": 152,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "ACTIVE-only tombstone exclusion has the same one-path-of-three gap as the org guard. Only searchIsOrgScopedAndExcludesSoftDeleted (line 184) seeds a DELETED row, and it queries the q-only path. Neither countryCodeParamMatchesStoredAlpha2Code nor combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode seeds a tombstone, so losing the literal 'status': 'ACTIVE' from the searchByCountryCode or searchByQueryAndCountryCode @Query string would resurface soft-deleted addresses in country-filtered search results with no test failing.",
-      "fix": "Seed an ORG-owned AddressStatus.DELETED row that matches the country filter in each countryCode-path test and assert it is absent — jsonPath($.items[*].id, not(hasItem(deleted.getId()))) and jsonPath($.items[*].deleted, everyItem(is(false))) — mirroring the assertions already used at lines 217-218."
-    },
-    {
-      "id": 3,
-      "line": 153,
-      "severity": "Major",
-      "category": "test-quality",
-      "issue": "combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode does not test what its name claims. It sends q=France + countryCode=FR, but no seeded row matches 'France' in name/townOrCity/postcode ('Paris Depot'/'Paris'/'75001' and 'London Depot'/'London'/'SW1A 1AA'), so only the countryCode arm of the $or in searchByQueryAndCountryCode is ever exercised — deleting the three regex clauses from that @Query leaves the test green, and the test is behaviourally identical to countryCodeParamMatchesStoredAlpha2Code above it. It also silently pins the (questionable) OR semantics whereby adding a countryCode WIDENS results rather than filtering them, without any row that proves the OR.",
-      "fix": "Seed a third ORG row that matches by text only and NOT by country (e.g. name 'France Freight', countryCode 'GB'), then assert totalItems 2 and hasItem on both the text-only and the country-only ids. If the intended product behaviour is a filter (AND) rather than a widening (OR), confirm with the BA and change the @Query and this test together."
-    },
-    {
-      "id": 4,
-      "line": 222,
-      "severity": "Major",
-      "category": "test-quality",
-      "issue": "searchResultsPaginateAt25PreservingQueryAndCountryCode asserts only page sizes (25 / 5) and counts, never that page 1 and page 2 are disjoint or that together they cover all 30 saved ids. The sort key is createdAt DESC only (OperatorService line 68) and is not unique: @EnableMongoAuditing + @CreatedDate stamp all 30 rows with Instant.now() at save time, persisted to Mongo at millisecond precision, so ties are expected. MongoDB skip/limit over a non-unique sort has no stable ordering, so a document can appear on both pages or on neither — the test would still pass, masking both a latent flake and a real pagination defect.",
-      "fix": "Collect the 30 saved ids, read the id lists from both pages, and assert containsExactlyInAnyOrderElementsOf(allIds) on their union (and no intersection). If that goes red, add a unique tiebreaker to the sort in OperatorService — Sort.by(DESC, \"createdAt\").and(Sort.by(DESC, \"id\")) — and extend the org_status_created compound index accordingly.",
-      "best_practice": "java/spring-data-mongodb.md"
-    },
-    {
-      "id": 5,
-      "line": 63,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "No test proves the search term is treated as a literal. OperatorService.toPartialMatchRegex wraps q in Pattern.quote (\\\\Q...\\\\E) precisely so a user-supplied regex metacharacter cannot become an operator — the ReDoS-safety claim in the OperatorRepository javadoc. That is compiler-invisible: replacing Pattern.quote(q.trim()) with q.trim() leaves every test in this file green, silently turning q into an attacker-controlled regex evaluated server-side against the whole org collection.",
-      "fix": "Add a test that seeds e.g. 'Green Farm' and 'Blue Barn' and asserts q='.*' (or 'Gr(e)+n' / 'a+b') returns totalItems 0, and a positive case that a literal metacharacter in a stored value (e.g. postcode 'IV2 3JH' searched as 'V2 3') still matches — pinning that q is quoted, not compiled."
-    },
-    {
-      "id": 6,
-      "line": 57,
-      "severity": "Minor",
-      "category": "dead-code",
-      "issue": "The save() helper sets .createdAt(Instant.parse(\"2026-07-14T09:15:27Z\")) and .modifiedAt(...) on every seeded Address, but Address.createdAt/modifiedAt carry @CreatedDate/@LastModifiedDate and MongoConfig has @EnableMongoAuditing, so Spring Data's auditing handler overwrites both with Instant.now() on insert. The two builder lines have no effect and mislead a reader into thinking the test controls the createdAt sort key used by the newest-first pagination.",
-      "fix": "Drop the two timestamp builder calls, or — if a controlled sort key is actually wanted (see the pagination finding) — set createdAt to distinct values via repository/MongoTemplate after save so the ordering under test is deterministic."
+      "issue": "Refresh removed searchMatchesTownOrCityAndPostcodeButNotAddressLineFields; no remaining IT proves q matches townOrCity/postcode or that addressLine1 is excluded — dropping those $regex clauses from searchByQuery / searchByQueryAndCountryCode leaves only the name-based partialWordSearchMatchesNameCaseInsensitively green.",
+      "fix": "Restore a test that seeds distinct town-, postcode-, and addressLine1-only hits (e.g. town Greenwich, postcode GREEN1 2AB, addressLine1 'Green Lane…') and asserts totalItems 2 with hasItem on the town and postcode ids only.",
+      "best_practice": "java/testing/integration.md"
     }
   ],
-  "reconciled_at": "2026-08-01T13:56:20Z"
+  "reconciled_at": "2026-08-03T13:43:39Z",
+  "resolved_item_ids": [
+    141,
+    142,
+    143,
+    144,
+    145,
+    146
+  ]
 }
