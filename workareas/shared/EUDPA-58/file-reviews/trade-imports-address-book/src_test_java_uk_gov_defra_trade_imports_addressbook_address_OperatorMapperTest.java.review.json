@@ -4,37 +4,12 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T19:21:36Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Field-copy and deleted-derivation coverage is solid, but the camelCase test is a tautology against a self-configured ObjectMapper, the organisationId/status 'ignored' assertions are unfalsifiable because the body never carries those keys, and OperatorResponse's 11 null guards plus the optional-field path are wholly untested.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 20,
-      "severity": "Major",
-      "category": "test-tautology",
-      "issue": "The camelCase 'contract lock' test builds its own ObjectMapper and sets LOWER_CAMEL_CASE + failOnUnknownProperties(false) itself, so it asserts the strategy the test just configured, not the production JacksonConfig — deleting JacksonConfig entirely leaves this test green; the assertions are also presence-only (json.has) so a field serialising as null still passes",
-      "fix": "Drop the hand-built mapper: either move this method into a @JsonTest/@SpringBootTest slice that injects the Spring-managed ObjectMapper (or applies JacksonConfig's Jackson2ObjectMapperBuilderCustomizer to a builder), and assert values not just key presence (json.get(\"addressLine1\").asText() etc.); if the real-stack coverage in OperatorComplianceIT is deemed sufficient, delete this method rather than keep a tautology named as a contract lock",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 135,
-      "severity": "Major",
-      "category": "vacuous-assertion",
-      "issue": "request_deserialisesFromCamelCaseAndMapsOntoAnEntityIgnoringServerFields asserts entity.getOrganisationId() and entity.getStatus() are null under the comment 'Server-assigned fields in the body are ignored', but the JSON body carries neither an organisationId nor a status key — only id and deleted — so both assertions are unfalsifiable; no test in the repo posts an organisationId in a body, leaving the cv-010 tenant-smuggling guard entirely unexercised",
-      "fix": "Add \"organisationId\": \"OTHER-ORG\", \"status\": \"DELETED\", \"createdAt\"/\"modifiedAt\" values to the body so the null assertions can actually fail, and add a matching AddressScopingIT case posting organisationId=ORG_B as ORG_A and asserting the persisted row is still ORG_A",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 3,
-      "line": 23,
-      "severity": "Major",
-      "category": "test-coverage",
-      "issue": "sampleEntity always populates all 14 fields, so no test ever maps an entity with the genuinely optional addressLine2/county absent, and none of OperatorResponse's 11 Objects.requireNonNull guards (id, name, addressLine1, townOrCity, postcode, countryCode, phone, email, organisationId, createdAt, modifiedAt) is exercised — a repo-wide grep for requireNonNull/NullPointerException/assertThatThrownBy/assertThrows in src/test returns nothing, so the deliberate fail-loud behaviour on a legacy or partially-written Mongo row is unpinned",
-      "fix": "Add two cases: toResponse on an entity with null addressLine2 and null county maps cleanly (guards stay off the optional fields), and assertThatThrownBy(() -> operatorMapper.toResponse(entityWithNullPhone)).isInstanceOf(NullPointerException.class).hasMessage(\"phone\") to pin at least one required-field guard",
-      "best_practice": "java/testing/unit.md"
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:39Z"
+  "reviewed_at": "2026-08-03T16:32:52Z",
+  "verdict": "SAFE",
+  "verdict_reason": "updateEntity coverage added; closes prior item 190.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z",
+  "resolved_item_ids": [
+    190
+  ]
 }

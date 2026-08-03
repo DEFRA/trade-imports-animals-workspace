@@ -7,40 +7,6 @@
   "reviewed_at": "2026-07-31T14:15:37Z",
   "verdict": "RISKY",
   "verdict_reason": "No tenant data is leaked - every exposed field is the caller's own org-scoped data and the internal status enum is correctly reduced to a derived deleted boolean - but the record's field set and names contradict the in-repo api-contract.locked.yaml on every property, and the compliance IT's divergence gate does not compare schemas so the mismatch ships unnoticed.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 20,
-      "severity": "Critical",
-      "category": "contract-divergence",
-      "issue": "Response shape contradicts docs/openapi/api-contract.locked.yaml (committed in this same PR) on every property: locked Operator is snake_case with required crn, status enum and operator_type plus address_line_1/town/country/telephone; OperatorResponse emits camelCase addressLine1/townOrCity/countryCode/phone, a derived deleted boolean, and drops crn and operator_type entirely - so the PR ships two committed contract documents that disagree field-for-field",
-      "fix": "Re-issue api-contract.locked.yaml to the ruled untyped camelCase model (or revert the record to the locked shape), and extend OperatorComplianceIT.apiDocsMatchTheCommittedArtifactAndTheLockedContract to diff components.schemas property names - today it only compares path set, HTTP methods and operationIds, so the schema divergence passes the gate the Javadoc claims it enforces"
-    },
-    {
-      "id": 2,
-      "line": 28,
-      "severity": "Major",
-      "category": "contract-divergence",
-      "issue": "countryCode reverses declared deviation D1 of the locked contract, which rules country is an MDM display-name string (e.g. 'United Kingdom'), NOT ISO 3166-1 alpha-2, and states reviewers must not silently 'fix' it; Address.java documents countryCode as ISO alpha-2 (cv-011), so this is a value-semantics change not just a rename - a consumer rendering the address gets 'GB' where the contract promises 'United Kingdom' and D1 records that no code-to-name conversion exists anywhere in the epic",
-      "fix": "Either emit the MDM display name as country, or record the superseding ruling in api-contract.locked.yaml (replacing D1) and confirm the frontend/animals-backend consumers resolve alpha-2 to a display name before render"
-    },
-    {
-      "id": 3,
-      "line": 19,
-      "severity": "Major",
-      "category": "openapi-annotations",
-      "issue": "No @Schema on the record or any component, so the committed docs/openapi/operators.yml renders OperatorResponse with zero field descriptions and no required list - all 14 fields generate as optional in consumer client SDKs even though 11 are guaranteed non-null by the compact constructor",
-      "fix": "Add a class-level @Schema(description=...) and per-component @Schema(description=..., example=..., requiredMode=Schema.RequiredMode.REQUIRED) for the 11 guarded fields (leave addressLine2/county default), then regenerate the artifact with mvn verify -Dopenapi.generate=true",
-      "best_practice": "java/openapi-springdoc.md"
-    },
-    {
-      "id": 4,
-      "line": 36,
-      "severity": "Minor",
-      "category": "test-coverage",
-      "issue": "The 11 compact-constructor null guards are new behaviour with no test: OperatorMapperTest covers field-by-field mapping, the derived deleted boolean and camelCase serialisation, but nothing asserts a null id/name/countryCode/organisationId/createdAt throws, so the documented 'fails loud' contract is unverified and a guard could be dropped silently",
-      "fix": "Add a parameterised OperatorResponseTest asserting NullPointerException with the field name as message for each guarded component, and that addressLine2/county accept null"
-    }
-  ],
+  "todos": [],
   "reconciled_at": "2026-08-03T13:43:37Z"
 }

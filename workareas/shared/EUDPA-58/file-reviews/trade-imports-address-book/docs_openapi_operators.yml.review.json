@@ -4,30 +4,11 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-03T10:33:16Z",
+  "reviewed_at": "2026-08-03T16:32:44Z",
   "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Both prior Criticals (400 schema type mismatch, contract divergence from api-contract.locked.yaml) are genuinely fixed, but the fix commits introduced a new Major RFC 9110 Location-header defect and a Minor countryCode validation regression.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 264,
-      "severity": "Minor",
-      "category": "validation-mismatch",
-      "issue": "Fix commits weakened countryCode from minLength:1 to maxLength:2/minLength:0, newly making it disagree with AddressRequest's @NotBlank (which rejects an empty string with a 400) - the opposite of the direction item 27 asked for on the sibling fields",
-      "fix": "Restore minLength: 1 on countryCode (keep the new maxLength: 2), matching @NotBlank + @Size(max=2), then regenerate with -Dopenapi.generate=true",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 2,
-      "line": 209,
-      "severity": "Major",
-      "category": "location-header",
-      "issue": "New Location header block (POST 201) documents the header as a 'Relative URI', but a relative URI in Location on 201 Created is non-conformant with RFC 9110; the doc now faithfully exposes a real defect in OperatorController.create, which builds the header via URI.create(...) instead of an absolute URI",
-      "fix": "Fix OperatorController.create to build an absolute Location URI via ServletUriComponentsBuilder.fromCurrentRequest(), then update the header description here to 'Absolute URI of the created address' and regenerate with -Dopenapi.generate=true",
-      "best_practice": "java/spring-boot.md"
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:37Z",
+  "verdict_reason": "Location header still documented as Relative URI (prior item 188); no new deltas beyond that.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z",
   "resolved_item_ids": [
     21,
     22,

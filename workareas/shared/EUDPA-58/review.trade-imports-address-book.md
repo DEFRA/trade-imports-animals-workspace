@@ -1,28 +1,27 @@
 # Repository Review: trade-imports-address-book
 
 **PR:** #1
-**Commit:** 87f2f7bd9630f9fdab4ad44d93ff0a44c36728cf
-**Files Changed:** 82
+**Commit:** bbf547c
 **Reviewed:** 2026-08-01
-**Refreshed:** 2026-08-03
+**Refreshed:** 2026-08-03 (`6ae0c82` → `bbf547c`)
+**Verdict:** NEEDS MORE WORK
 
 ## Summary
 
-Initial build-out of a new Spring Boot service: a per-organisation address book
-backed by MongoDB, exposing five `/organisation/{orgId}/...` endpoints with
-soft-delete, paged/filtered listing, an org-scoped identity header, RFC 7807
-problem responses, EMF metrics and a committed OpenAPI contract. The engineering
-scaffolding is strong — Testcontainers integration tests per endpoint, a
-compliance IT, a mapper-level smuggling guard, and consistent problem+json.
+Tip `bbf547c` closed most of the prior open Majors: locked contract minLength /
+Problem `required`, 409 coverage (unit + IT + OpenAPI), `updateEntity` test,
+town/postcode search ITs, and compliance-gate hardening.
 
-The dominant issue is not a bug list but a single unresolved decision: the PR
-commits **two contract documents that disagree with each other and with the
-code** on casing, identity header, soft-delete representation, field names,
-country semantics and list parameters — and the compliance gate meant to catch
-that compares only paths, methods and operationIds. Alongside it sits a genuine
-security question (nothing establishes the trust boundary for the
-`Trade-Imports-Organisation-Id` header) and two features that are wired up but
-never run (`@EnableScheduling` absent, `TraceIdPropagationInterceptor` unwired).
+**Still open (4 Major + 2 Minor):** Relative Location (#188 — create now uses
+`UriComponentsBuilder.fromPath`), stale AddressRequest countryCode Javadoc (#189),
+springdoc comment vs `enabled: false` (#193), EMF NaN-skip assertion (#199), plus
+new Minors #200 (ProxySelector cleanup) and #201 (addressLine1 search exclusion).
+
+## Refresh Summary (2026-08-03)
+
+**Files refreshed:** 14 (List A) + 3 real List D coverage gaps  
+**New items added:** 2 (#200, #201)  
+**Auto-resolved this pass:** 8 (#185–186, #190–192, #196–198)
 
 ## File Analysis Summary
 

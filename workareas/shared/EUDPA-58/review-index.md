@@ -7,65 +7,67 @@
 **Verdict:** NEEDS MORE WORK
 
 **Scope:** `trade-imports-address-book` PR #1 **only**. The other five repos in
-the epic's PR set (`animals-frontend`, `ins-frontend`, `animals-backend`,
-`animals-tests`, `animals-workspace`) were excluded by instruction — see
-`.review-meta.full.json` for the full set.
+the epic's PR set were excluded by instruction — see `.review-meta.full.json`
+for the full set.
 
 ## Summary
 
-Refresh of the developer fix commits (`6f1134b` → `87f2f7b`) on
-[DEFRA/trade-imports-address-book#1](https://github.com/DEFRA/trade-imports-address-book/pull/1).
+Refresh of tip `6ae0c82` → `bbf547c` on
+[DEFRA/trade-imports-address-book#1](https://github.com/DEFRA/trade-imports-address-book/pull/1)
+(4 fix commits addressing the prior open Majors).
 
-**Good progress:** 10 of 11 prior Criticals are gone — locked contract aligned to
-camelCase, schema property-name gate added, malformed JSON → 400, EMF scheduling
-enabled, IdentityHeaderFilter rewritten (`OncePerRequestFilter`, path/header
-match, regex validation), repository unscoped CRUD removed.
+**Strong progress:** 8 prior open items Auto-Resolved this pass (locked
+`minLength` / Problem `required`, 409 contract + unit coverage, `updateEntity`
+test, town/postcode search ITs, compliance generate early-return + schema
+fail-open). No Criticals remain open.
 
-**Still blocking:** Critical #86 (header trust boundary documented but not
-enforced) plus 14 new Major findings from the fix window (409 optimistic-lock
-coverage/contract, schema-gate fail-open, stale countryCode Javadoc, README
-recreate of a non-existent stack service, and related).
+**Still open:** 4 Majors (#188 Location relative, #189 AddressRequest Javadoc,
+#193 springdoc comment, #199 EMF NaN-skip assertion) and 2 new Minors
+(#200 ProxySelector cleanup, #201 addressLine1 search exclusion IT).
 
 ## Repositories Analyzed
 
-| Repository | PR | Commit | Files Changed | Verdict | Review |
-|------------|-----|--------------|---------------|---------|--------|
-| trade-imports-address-book | [#1](https://github.com/DEFRA/trade-imports-address-book/pull/1) | 87f2f7b | 82 | NEEDS MORE WORK | [review.trade-imports-address-book.md](review.trade-imports-address-book.md) |
+| Repository | PR | Commit | Verdict | Review |
+|------------|-----|--------|---------|--------|
+| trade-imports-address-book | [#1](https://github.com/DEFRA/trade-imports-address-book/pull/1) | bbf547c | NEEDS MORE WORK | [review.trade-imports-address-book.md](review.trade-imports-address-book.md) |
 
-## Findings
+## Findings (current disposition)
 
-| Severity | Open | Auto-Resolved (this refresh) |
-|---|---|---|
-| Critical | 1 | 10 |
-| Major | 67 | — |
-| Minor | 53 | — |
-| **Total open** | **121** | **78 auto-resolved** |
-| **Total items** | **199** | (182 prior + 17 new) |
+| Bucket | Count |
+|---|---|
+| Fix \| Done | 103 |
+| Auto-Resolved | 92 |
+| Still open | **6** (4 Major, 2 Minor) |
+| **Total items** | **201** |
 
-### Remaining Critical
+### Remaining open
 
-| # | File:Line | Issue |
-|---|---|---|
-| 86 | `IdentityHeaderFilter.java` | `Trade-Imports-Organisation-Id` is still a client-supplied header with no in-repo trust boundary (gateway/auth). README now documents the CDP/BFF expectation; enforcement is still outstanding. |
+| # | Sev | File | Issue |
+|---|-----|------|-------|
+| 188 | Major | `operators.yml` / controller | Location still Relative; create now uses `UriComponentsBuilder.fromPath` |
+| 189 | Major | `AddressRequest.java` | Javadoc still says countryCode has no length check |
+| 193 | Major | `application.yml` | Comment still claims api-docs stays enabled everywhere |
+| 199 | Major | `EmfMetricsPublisherTest.java` | NaN-skip test does not assert skip behaviour |
+| 200 | Minor | `ProxyConfigTest.java` | `@AfterEach` ProxySelector restore is a no-op |
+| 201 | Minor | `AddressSearchIT.java` | No IT that `q` excludes addressLine1-only hits |
 
-### Notable new Majors from this refresh (#183–#199)
+### Auto-Resolved this refresh
 
-| # | File | Issue |
-|---|---|---|
-| 184 | README.md | bounce fix points at a workspace-stack service that does not exist |
-| 185–186 | api-contract.locked.yaml | minLength:0 on @NotBlank fields; Problem `required` arrays dropped |
-| 191–192 | GlobalExceptionHandler.java | new 409 OptimisticLocking handler — no tests, not in locked contract |
-| 197–198 | OperatorComplianceIT.java | generate flag still skips gates; schema assert fails open |
-| 199 | EmfMetricsPublisherTest.java | NaN-skip test does not assert skip behaviour |
+| # | Notes |
+|---|---|
+| 185–186 | Locked AddressRequest `minLength: 1`; Problem/ValidationProblem `required` restored |
+| 190 | `updateEntity` unit test added |
+| 191–192 | 409 optimistic-lock unit test + locked/OpenAPI 409 on update |
+| 196–198 | Town/postcode search ITs; compliance generate early-return removed; schema assert fails closed |
 
 ## Acceptance Criteria Check
 
 | # | Criterion | Met? | Notes |
 |---|-----------|------|-------|
-| — | — | N/A | EUDPA-58 is an **Epic** with an empty Acceptance Criteria section. No AC exist to check this PR against. |
+| — | — | N/A | EUDPA-58 is an **Epic** with an empty Acceptance Criteria section. |
 
 ## Next steps
 
-1. Address Critical #86 (enforce or formally Won't-Fix with an ADR/runbook).
-2. Walk the new Majors (#183–#199) via `walk review EUDPA-58`.
-3. Drain remaining prior Majors that the fix window did not touch.
+1. Drain the 4 remaining Majors (#188, #189, #193, #199) — mostly docs/test assertion.
+2. Optional Minors #200–#201.
+3. Re-share or walk only the open set when ready.

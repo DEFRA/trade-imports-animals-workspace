@@ -7,49 +7,6 @@
   "reviewed_at": "2026-08-01T00:24:58Z",
   "verdict": "NEEDS_ATTENTION",
   "verdict_reason": "No trust-all, no hostname-verification bypass, no insecure fallback and no global javax.net.ssl mutation - the CDP CA is correctly ADDED alongside the default JVM trust store - but an unparseable configured certificate silently degrades to default-only trust instead of failing fast, and the success log misreports the certificate count; the PR's own diff for this file is only the package rename.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 94,
-      "severity": "Major",
-      "category": "security",
-      "issue": "cert == null conflates 'no CDP cert configured' with 'cert configured but unparseable' (CertificateLoader.loadCustomCertificate swallows CertificateException and returns null), so a corrupt TRUSTSTORE_CDP_ROOT_CA boots successfully with the default JVM trust store only and fails later at Mongo/CDP TLS connect time instead of at startup",
-      "fix": "Make CertificateLoader rethrow (e.g. IllegalStateException) when the cdp.certificate property is non-empty but fails to parse, or have it return an Optional plus a 'configured' flag so customSslContext() can fail fast; keep the silent path only for the genuinely-unset case"
-    },
-    {
-      "id": 2,
-      "line": 65,
-      "severity": "Minor",
-      "category": "logging",
-      "issue": "log.info hardcodes 'initialized successfully with 1 custom certificate' on every path, including when createCombinedTrustManager returned the default-only trust manager because cert was null - operations see '1 custom certificate' precisely when zero were loaded, masking the degradation above",
-      "fix": "Log the real outcome, e.g. move the message inside the branches or log 'custom certificates loaded: {}' with (cert == null ? 0 : 1)"
-    },
-    {
-      "id": 3,
-      "line": 33,
-      "severity": "Minor",
-      "category": "correctness",
-      "issue": "@Order(Ordered.HIGHEST_PRECEDENCE) plus the class javadoc claim that it 'ensures the SSLContext is available before other beans (like MongoClient) are created' is untrue - @Order on a @Configuration class affects configuration-class ordering, not bean instantiation timing; ordering here is actually guaranteed by MongoConfig injecting TrustStoreConfiguration",
-      "fix": "Drop the @Order annotation and the Ordered import, and correct the javadoc to say ordering comes from dependency injection",
-      "best_practice": "java/spring-boot.md"
-    },
-    {
-      "id": 4,
-      "line": 159,
-      "severity": "Minor",
-      "category": "error-handling",
-      "issue": "CombinedTrustManager.checkServerTrusted/checkClientTrusted discard the default trust manager's CertificateException when falling through to the custom trust manager, so when both reject a chain only the custom CDP trust manager's (usually less informative) error surfaces and the real public-CA failure reason is lost",
-      "fix": "Capture the first exception and attach it via addSuppressed on the exception thrown by the custom trust manager (or log it at debug) before rethrowing"
-    },
-    {
-      "id": 5,
-      "line": 79,
-      "severity": "Minor",
-      "category": "exception-handling",
-      "issue": "createCombinedTrustManager declares 'throws Exception' and customSslContext catches bare Exception, which trips Sonar java:S112 and also swallows unrelated runtime faults (NPE, bean-wiring errors) behind the misleading 'Cannot initialize SSL context' message",
-      "fix": "Narrow to 'throws GeneralSecurityException, IOException' on the helper and catch the same specific types in customSslContext",
-      "best_practice": "java/modern-java.md"
-    }
-  ],
+  "todos": [],
   "reconciled_at": "2026-08-03T13:43:38Z"
 }

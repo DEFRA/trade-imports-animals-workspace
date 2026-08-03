@@ -4,62 +4,9 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-07-31T19:21:46Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Solid breadth over org scoping, tombstone exclusion and 400 problem shapes, but the file pins two divergences from the in-repo locked OpenAPI contract (camelCase page metadata, page_size ignored rather than honoured) and never asserts the newest-first ordering or page-1/page-2 disjointness its own javadoc claims to pin.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 133,
-      "severity": "Major",
-      "category": "contract-drift",
-      "issue": "aPageSizeRequestParamIsNotHonouredTheServerConfigSizeApplies pins page_size as an ignored unknown query param, but the in-repo locked contract (docs/openapi/api-contract.locked.yaml lines 124-132, 144) declares page_size as a supported query param (integer, min 1, max 100, default 25) and specifies 400 when it is out of range; the cited ruling 'cv-025' appears nowhere in the repo except this test and the two javadocs that assert it, so the only in-repo authority contradicts the test. A contract-conformant client sending page_size=50 silently gets 25 back with no error, and this test locks that in.",
-      "fix": "Resolve the conflict before merge: either implement page_size as a bound @RequestParam (default 25, 1..100, 400 outside) and rewrite this test to assert page_size=5 returns 5 items, or amend the locked contract to drop the page_size parameter under a recorded ruling and cite that ruling in the test comment. Note the current test only exercises Spring MVC's default 'ignore unknown params' behaviour, not any code in this repo."
-    },
-    {
-      "id": 2,
-      "line": 75,
-      "severity": "Major",
-      "category": "contract-drift",
-      "issue": "Page metadata is asserted camelCase ($.pageSize, $.totalItems, $.totalPages at lines 75-77, 89-90, 101, 115, 146-147) but the in-repo locked contract's OperatorPage schema (docs/openapi/api-contract.locked.yaml lines 589-614) requires page_size, total_items and total_pages, and the contract header calls itself LOCKED with 'nothing in M1/M2/M3 may change this file'. OperatorComplianceIT's divergence gate only compares paths, HTTP methods and operationIds, so nothing detects this property-name drift - this IT is one of the places that cements it.",
-      "fix": "Get the camelCase-vs-snake_case ruling recorded, then make the two sides agree: either regenerate api-contract.locked.yaml to camelCase and re-assert here, or serialise the page record snake_case and change these assertions. Whichever way it goes, extend OperatorComplianceIT's divergence gate to compare schema property names so drift fails the build instead of being pinned by tests."
-    },
-    {
-      "id": 3,
-      "line": 81,
-      "severity": "Major",
-      "category": "weak-assertion",
-      "issue": "The class javadoc says the IT pins a 'newest-first' listing, but no test asserts ordering, and listPageTwoReturnsTheRemaining5 only asserts items.length()==5 - never that page 2 holds the 5 addresses page 1 did not. Pagination could return an overlapping or entirely wrong 5-item window, or the createdAt DESC sort could be lost, and every assertion in this class still passes. OperatorServiceTest only captures the Pageable sort spec against a mocked repository, so nothing proves Mongo actually serves newest-first via the org_status_created index.",
-      "fix": "Give the seeds distinct, controlled createdAt values, then assert the concrete order (e.g. items[0].name is the newest) and collect the ids from page 1 and page 2 and assert the two sets are disjoint and together cover all 30.",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 4,
-      "line": 54,
-      "severity": "Minor",
-      "category": "misleading-fixture",
-      "issue": "save() sets .createdAt(Instant.parse(\"2026-07-14T09:15:27Z\")) and the same .modifiedAt on every seeded Address, but Address carries @CreatedDate/@LastModifiedDate and MongoConfig is annotated @EnableMongoAuditing, so on insert (id null, entity is new) Spring Data's auditing handler overwrites both with now(). The fixture values are inert; a maintainer reading them will believe the sort key is controlled and identical across all 30 rows when in fact it is wall-clock insert time.",
-      "fix": "Drop the .createdAt/.modifiedAt builder calls, or - if the fix for the ordering gap needs controlled timestamps - set them by re-saving the persisted entity (auditing does not re-stamp @CreatedDate on an existing document) or by writing through MongoTemplate, and add a comment stating why.",
-      "best_practice": "java/spring-data-mongodb.md"
-    },
-    {
-      "id": 5,
-      "line": 121,
-      "severity": "Major",
-      "category": "missing-test",
-      "issue": "Page-boundary coverage stops at page 0. There is no test for a page beyond the last (e.g. page=3 with 30 seeded addresses) - the boundary a paginated UI hits first via a stale bookmark, a browser back button, or a delete that shrinks the result set under a user sitting on the last page. Neither the locked contract nor OperatorService.list defines that behaviour (page >= 1 passes the guard, so Mongo returns an empty page: 200 with items [] but page 3 and totalPages 2), and a negative page is likewise untested. The frontend has no pinned answer to build against.",
-      "fix": "Add a test for page beyond the last asserting the agreed shape (200 with empty items, page echoed, totalItems 30, totalPages 2 - or a 400 if that is the ruling), and add a negative page case to the existing page-0 test as a parameterised @ValueSource of \"0\" and \"-1\".",
-      "best_practice": "java/testing/integration.md"
-    },
-    {
-      "id": 6,
-      "line": 67,
-      "severity": "Minor",
-      "category": "test-conventions",
-      "issue": "Test method names do not follow the prescribed {subject}_{shouldDoWhat}[_{whenContext}] convention (e.g. listDefaultsToPage1Size25AndReportsTotalPages2For30Addresses instead of list_shouldReturn25ItemsAcross2Pages_when30Addresses), and no test carries the required explicit // Given, // When, // Then comment blocks, which integration.md states must be present even when When and Then are combined in a fluent chain.",
-      "fix": "Rename the eight test methods to the subject_shouldDoWhat_whenContext form and add the Given/When/Then comment blocks, applying the same change across the sibling ITs added in this PR so the repo lands on one convention.",
-      "best_practice": "java/testing/integration.md"
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:40Z"
+  "reviewed_at": "2026-08-03T16:32:56Z",
+  "verdict": "SAFE",
+  "verdict_reason": "Seed createdAt ordering tweak only.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z"
 }

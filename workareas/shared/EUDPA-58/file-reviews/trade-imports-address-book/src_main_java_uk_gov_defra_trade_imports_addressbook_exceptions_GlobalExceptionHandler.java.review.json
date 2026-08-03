@@ -4,32 +4,15 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-03T13:42:15Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Malformed-JSON 400 and locked-contract camelCase drift are resolved, but the new OptimisticLockingFailureException 409 handler has no unit or IT coverage.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 109,
-      "severity": "Major",
-      "category": "missing-test",
-      "issue": "New handleOptimisticLocking (@ExceptionHandler OptimisticLockingFailureException → 409 conflict) has no unit test, unlike the sibling HttpMessageNotReadable handler added in the same delta; without coverage a regression can silently fall through the RuntimeException catch-all to 500.",
-      "fix": "Add a GlobalExceptionHandlerTest case asserting handleOptimisticLocking returns 409 application/problem+json with type .../conflict, fixed detail, camelCase traceId and no errors map.",
-      "best_practice": "java/testing/unit.md"
-    },
-    {
-      "id": 2,
-      "line": 108,
-      "severity": "Major",
-      "category": "contract-drift",
-      "issue": "New OptimisticLockingFailureException handler emits 409 conflict (type https://api.cdp.defra.cloud/problems/conflict) but docs/openapi/api-contract.locked.yaml declares no 409 on update-address (or delete-address), so concurrent @Version save conflicts are a live wire status absent from the locked contract.",
-      "fix": "Add a 409 Problem response to update-address (and any other mutating op that saves an @Version Address) in api-contract.locked.yaml, documenting the conflict problem type and detail.",
-      "best_practice": "java/openapi-springdoc.md"
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:38Z",
+  "reviewed_at": "2026-08-03T16:32:50Z",
+  "verdict": "SAFE",
+  "verdict_reason": "409 handler present; unit coverage added in companion test this window.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z",
   "resolved_item_ids": [
     80,
-    81
+    81,
+    191,
+    192
   ]
 }

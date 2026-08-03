@@ -36,9 +36,9 @@
       "issue": "New dev-run stage is unreachable: compose.yml uses 'build: ./' with no 'target: dev-run' and no ./src:/app/src bind mount, and the workspace stack has no address-book service, so the advertised hot-reload loop never runs and the stage/docker/dev-run.sh are dead weight",
       "fix": "Add a dev override (or compose 'target: dev-run' plus a './src:/app/src' volume) and register address-book in scripts/stack/run-stack.sh, or drop the stage until the stack wiring lands",
       "file": "Dockerfile",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -49,9 +49,9 @@
       "issue": "HEALTHCHECK hardcodes port 8089 in all three runtime stages (lines 52, 86, 117) while the adjacent comment and application.yml declare the port configurable via PORT; setting PORT to anything else makes the container permanently unhealthy and blocks any depends_on: service_healthy",
       "fix": "Use the shell-form expansion already available: CMD curl -f http://localhost:${PORT:-8089}/health || exit 1",
       "file": "Dockerfile",
-      "disposition": "Auto-Resolved",
-      "status": "—",
-      "notes": "refresh: violation no longer present",
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -62,9 +62,9 @@
       "issue": "The whole 'Workspace stack (recommended)' section documents an integration that does not exist: trade-imports-address-book appears nowhere in the workspace repo (no match in docker/stack/*.compose.yml, scripts/stack/, or any workspace file), so run-stack.sh will not start this service, -b/-d/-e will not pick it up, and 'This service runs on port 8089 in the stack' is false.",
       "fix": "Either add the service to the workspace stack compose files first, or demote this section to a clearly-labelled 'Planned' note and make 'Repo Docker Compose' the recommended local path until the workspace integration lands.",
       "file": "README.md",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -166,9 +166,9 @@
       "issue": "The hot-reload compile runs offline ('mvn -o') while the foreground 'mvn spring-boot:run' (line 45) runs online — an inconsistency with a concrete failure mode: 'dependency:go-offline' (Dockerfile line 75) is well known to miss plugin artefacts, so if anything needed by the process-classes lifecycle was not pre-fetched, every recompile fails offline, the guarded 'if' swallows it, the trigger is never touched, and hot reload is permanently and silently dead while the container stays healthy.",
       "fix": "Drop '-o' so the watcher can fetch anything go-offline missed (the container already has network for spring-boot:run), and surface a failure explicitly, e.g. 'mvn -q compile || echo \"dev-run: recompile failed\" >&2'.",
       "file": "docker/dev-run.sh",
-      "disposition": "Auto-Resolved",
-      "status": "—",
-      "notes": "refresh: violation no longer present",
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -319,9 +319,9 @@
       "fix": "Annotate both fields @Schema(hidden = true), or keep them visible with @Schema(description = \"Not supported - omit; any value is rejected with a 400\") plus an explicit constraint, then regenerate the artifact",
       "best_practice": "java/openapi-springdoc.md",
       "file": "docs/openapi/operators.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -333,9 +333,9 @@
       "fix": "Add @Schema(requiredMode = Schema.RequiredMode.REQUIRED) to the non-nullable components of OperatorResponse, OperatorPageResponse, Problem (type/title/status) and ValidationProblem (plus errors), regenerate, and assert the ValidationProblem 'required: [errors]' in OperatorComplianceIT",
       "best_practice": "java/openapi-springdoc.md",
       "file": "docs/openapi/operators.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -347,9 +347,9 @@
       "fix": "Add @Schema(description = ...) to AddressRequest, OperatorResponse, OperatorPageResponse, Problem and ValidationProblem and their fields, and add an @OpenAPIDefinition(info = @Info(title = \"trade-imports-address-book\", version = ...)) to OpenApiConfig, then regenerate",
       "best_practice": "java/openapi-springdoc.md",
       "file": "docs/openapi/operators.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -361,9 +361,9 @@
       "fix": "Use @Size(min = 1, max = ...) on the @NotBlank string components of AddressRequest and add @Min(1) (or @Schema(minimum = \"1\")) to the page parameter, then regenerate",
       "best_practice": "java/openapi-springdoc.md",
       "file": "docs/openapi/operators.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -375,9 +375,9 @@
       "fix": "Add headers = @Header(name = \"Location\", ...) to the 201 @ApiResponse and a shared 500 @ApiResponse (mediaType application/problem+json, schema Problem) - via an OperationCustomizer if you do not want it repeated on all five operations - then regenerate",
       "best_practice": "java/openapi-springdoc.md",
       "file": "docs/openapi/operators.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -430,9 +430,9 @@
       "fix": "Add @Schema(description=...) to the record and each component, set requiredMode = REQUIRED on the @NotBlank ones to match Bean Validation, and mark type/role @Schema(hidden = true) so the contract does not advertise fields the service rejects",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/AddressRequest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -470,9 +470,9 @@
       "issue": "create() builds the Location header by raw string concatenation into URI.create(); an orgId containing a URI-illegal character (e.g. a space, legal in an HTTP header value and reachable via a %20-encoded path segment that authoriseOrg accepts) throws IllegalArgumentException AFTER operatorService.create has persisted the address, so the caller gets a 500 and a retry creates a duplicate",
       "fix": "Build the URI with ServletUriComponentsBuilder.fromCurrentRequest().path(\"/{id}\").buildAndExpand(created.getId()).toUri() (or UriComponentsBuilder with buildAndExpand) so the segments are encoded rather than concatenated; note OperatorCrudIT asserts Location startsWith a relative path, so keep the relative form or update that assertion",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorController.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -525,9 +525,9 @@
       "fix": "Rename the path variable to {org-id} and settle on one noun for the operationIds (e.g. list-addresses/create-address/get-address/update-address/delete-address), then regenerate docs/openapi/operators.yml and update api-contract.locked.yaml",
       "best_practice": "rest-api/rest-api.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorController.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -552,9 +552,9 @@
       "fix": "Add @Schema(description=...) on the record and @Schema(description=..., requiredMode = Schema.RequiredMode.REQUIRED, minimum=...) on each of items/page/pageSize/totalItems/totalPages, matching the locked contract's minimums (page>=1, pageSize>=1, totalItems>=0, totalPages>=0).",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorPageResponse.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -594,9 +594,9 @@
       "fix": "In AddressSearchIT, add an OTHER_ORG (and a DELETED) row to countryCodeParamMatchesStoredAlpha2Code and combinedQueryAndCountryCodeMatchesEitherTextOrCountryCode, asserting totalItems excludes them",
       "best_practice": "java/testing/integration.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorRepository.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -634,9 +634,9 @@
       "issue": "countryCode reverses declared deviation D1 of the locked contract, which rules country is an MDM display-name string (e.g. 'United Kingdom'), NOT ISO 3166-1 alpha-2, and states reviewers must not silently 'fix' it; Address.java documents countryCode as ISO alpha-2 (cv-011), so this is a value-semantics change not just a rename - a consumer rendering the address gets 'GB' where the contract promises 'United Kingdom' and D1 records that no code-to-name conversion exists anywhere in the epic",
       "fix": "Either emit the MDM display name as country, or record the superseding ruling in api-contract.locked.yaml (replacing D1) and confirm the frontend/animals-backend consumers resolve alpha-2 to a display name before render",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorResponse.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -648,9 +648,9 @@
       "fix": "Add a class-level @Schema(description=...) and per-component @Schema(description=..., example=..., requiredMode=Schema.RequiredMode.REQUIRED) for the 11 guarded fields (leave addressLine2/county default), then regenerate the artifact with mvn verify -Dopenapi.generate=true",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorResponse.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -661,9 +661,9 @@
       "issue": "The 11 compact-constructor null guards are new behaviour with no test: OperatorMapperTest covers field-by-field mapping, the derived deleted boolean and camelCase serialisation, but nothing asserts a null id/name/countryCode/organisationId/createdAt throws, so the documented 'fails loud' contract is unverified and a guard could be dropped silently",
       "fix": "Add a parameterised OperatorResponseTest asserting NullPointerException with the field name as message for each guarded component, and that addressLine2/county accept null",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorResponse.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -840,9 +840,9 @@
       "fix": "Add a @Version Long field to Address so Spring Data emits a version-predicated update, and map the resulting OptimisticLockingFailureException to 409 in GlobalExceptionHandler (or switch update/delete to a targeted findAndModify with a status/version predicate instead of save()).",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/MongoConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -867,9 +867,9 @@
       "fix": "Add @OpenAPIDefinition(info = @Info(title = \"trade-imports-address-book\", version = \"1.0.0\", description = ...)) to this class and an @Bean OpenAPI declaring the deployed servers, so the generated document carries real identity and matches api-contract.locked.yaml lines 2-4 and 76",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/OpenApiConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -881,9 +881,9 @@
       "fix": "Declare a single apiKey-in-header SecurityScheme for Trade-Imports-Organisation-Id in an @Bean OpenAPI here plus a matching @SecurityRequirement, and delete the Trade-Imports-Crn scheme and its narrative from api-contract.locked.yaml since no code enforces it",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/OpenApiConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -894,9 +894,9 @@
       "issue": "new ModelResolver(objectMapper) hands swagger-core the application's singleton ObjectMapper; swagger-core's AbstractModelConverter constructor calls mapper.registerModule(...) which inserts SwaggerAnnotationIntrospector into that mapper, so swagger annotations begin influencing real HTTP serialisation (hasRequiredMarker, findSubtypes, findTypeName) and not just the generated document",
       "fix": "Pass a copy - new ModelResolver(objectMapper.copy()) - which keeps the JacksonConfig LOWER_CAMEL_CASE strategy the Javadoc relies on while leaving the runtime mapper unmutated",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/OpenApiConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "9525e4e",
       "repo": "trade-imports-address-book"
     },
     {
@@ -907,9 +907,9 @@
       "issue": "Both the invalid-format warn (line 59) and the parse-failure error (line 77) log the raw httpProxy value; CDP proxy URLs are of the form http://user:password@host:port, so a malformed value (e.g. missing scheme) leaks proxy credentials into CloudWatch logs",
       "fix": "Log a redacted form only - strip userinfo before logging (e.g. httpProxy.replaceAll(\"//[^@/]+@\", \"//***@\")), or log just the fact that parsing failed plus proxyUri.getHost()",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -920,9 +920,9 @@
       "issue": "ProxySelector.of() builds a selector with no bypass list and http.nonProxyHosts/https.nonProxyHosts are never set, so once HTTP_PROXY is present every outbound HTTP call - including localhost targets such as the cdp.cloudwatch.endpoint default http://localhost:4566, actuator self-calls and any in-test WireMock stub - is forced through the proxy and will fail; the class Javadoc's claim that no bypass is needed only covers *.cdp-int.defra.cloud routing by the squid proxy, not loopback",
       "fix": "Set System.setProperty(\"http.nonProxyHosts\", \"localhost|127.*|[::1]|*.cdp-int.defra.cloud\") (and the https equivalent) and use a ProxySelector implementation that honours it rather than the unconditional ProxySelector.of(...)",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -933,9 +933,9 @@
       "issue": "configureProxy() has no effective test coverage: ProxyConfigIT gates every meaningful assertion on System.getenv(\"HTTP_PROXY\") being set, which it never is in CI, so the tests degrade to assertThat(proxyConfig).isNotNull() and a literal assertThat(true).isTrue() - none of the four branches (blank, invalid host/port, parse failure, happy path) is exercised",
       "fix": "Extract the parsing into a package-private method taking the proxy URL as an argument and unit-test it directly, or drive the Spring context with @TestPropertySource(properties = \"cdp.proxyUrl=http://localhost:3128\") plus negative cases, so the branches are asserted without depending on the OS environment",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -946,9 +946,9 @@
       "issue": "configureProxy() mutates JVM-global state (four System properties plus ProxySelector.setDefault) from @PostConstruct and never restores it; ProxyConfigIT's @AfterAll clears the system properties but not the default ProxySelector, so once any test context sets a proxy it stays set for every later test class in the same Surefire/Failsafe JVM",
       "fix": "Prefer configuring a ProxyConfiguration on the specific RestClient/HttpClient builder the service uses; if the global approach is kept for CDP parity, capture and restore the previous ProxySelector in the test and document the global mutation as a deliberate CDP requirement",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -959,9 +959,9 @@
       "issue": "Any userinfo in the proxy URL (http://user:pass@host:port) is silently discarded - only host and port are propagated and no java.net.Authenticator is installed - so against an authenticated proxy every request fails with 407 and the logs say the proxy was configured successfully",
       "fix": "Read proxyUri.getUserInfo(); if present, install an Authenticator (and set jdk.http.auth.tunneling.disabledSchemes=\"\" for HTTPS CONNECT), or log a warn that credentials in HTTP_PROXY are not supported so the failure mode is visible",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -973,9 +973,9 @@
       "fix": "Use if (httpProxy == null || httpProxy.isBlank()) and strip() the value before URI.create - modern-java.md prefers isBlank()/strip() over isEmpty()/trim()",
       "best_practice": "java/modern-java.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -987,9 +987,9 @@
       "fix": "Take the value as a constructor parameter - public ProxyConfig(@Value(\"${cdp.proxyUrl}\") String httpProxy) - and assign to a final field",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfig.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1000,9 +1000,9 @@
       "issue": "cert == null conflates 'no CDP cert configured' with 'cert configured but unparseable' (CertificateLoader.loadCustomCertificate swallows CertificateException and returns null), so a corrupt TRUSTSTORE_CDP_ROOT_CA boots successfully with the default JVM trust store only and fails later at Mongo/CDP TLS connect time instead of at startup",
       "fix": "Make CertificateLoader rethrow (e.g. IllegalStateException) when the cdp.certificate property is non-empty but fails to parse, or have it return an Optional plus a 'configured' flag so customSslContext() can fail fast; keep the silent path only for the genuinely-unset case",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/tls/TrustStoreConfiguration.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1013,9 +1013,9 @@
       "issue": "log.info hardcodes 'initialized successfully with 1 custom certificate' on every path, including when createCombinedTrustManager returned the default-only trust manager because cert was null - operations see '1 custom certificate' precisely when zero were loaded, masking the degradation above",
       "fix": "Log the real outcome, e.g. move the message inside the branches or log 'custom certificates loaded: {}' with (cert == null ? 0 : 1)",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/tls/TrustStoreConfiguration.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1027,9 +1027,9 @@
       "fix": "Drop the @Order annotation and the Ordered import, and correct the javadoc to say ordering comes from dependency injection",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/tls/TrustStoreConfiguration.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1040,9 +1040,9 @@
       "issue": "CombinedTrustManager.checkServerTrusted/checkClientTrusted discard the default trust manager's CertificateException when falling through to the custom trust manager, so when both reject a chain only the custom CDP trust manager's (usually less informative) error surfaces and the real public-CA failure reason is lost",
       "fix": "Capture the first exception and attach it via addSuppressed on the exception thrown by the custom trust manager (or log it at debug) before rethrowing",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/tls/TrustStoreConfiguration.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1054,9 +1054,9 @@
       "fix": "Narrow to 'throws GeneralSecurityException, IOException' on the helper and catch the same specific types in customSslContext",
       "best_practice": "java/modern-java.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/configuration/tls/TrustStoreConfiguration.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1067,9 +1067,9 @@
       "issue": "Class Javadoc names two triggers that never throw this exception: a missing identity header is rejected inside IdentityHeaderFilter (which writes problem+json itself because @RestControllerAdvice cannot see filter exceptions) and a malformed query parameter surfaces as MethodArgumentTypeMismatchException with its own handler; the sole production throw site is OperatorService.list for an out-of-range page (< 1).",
       "fix": "Reword the Javadoc to describe the real trigger (a request parameter that is syntactically valid but out of range, e.g. page < 1) and drop the missing-identity-header and malformed-query-param examples, so nobody throws this from a servlet filter expecting the advice to map it.",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/exceptions/BadRequestException.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1163,9 +1163,9 @@
       "issue": "The 'trusted forwarded header' Trade-Imports-Organisation-Id is read straight off the client request with nothing establishing the trust: the repo has no Spring Security (no starter in pom.xml, no SecurityFilterChain), no gateway/ingress config and no documented requirement that an upstream strips inbound copies of the header, so any caller able to reach the service can read, create, amend or delete any organisation's address PII by setting one header",
       "fix": "Establish and document the trust boundary before this ships: strip/overwrite Trade-Imports-Organisation-Id at the CDP ingress or the calling BFF, and add either an authenticated principal check (JWT resource server) or an explicit allowlist of the forwarding hop in this filter; at minimum record the boundary and its owner in README plus an IT that proves a direct caller cannot self-assert an org id",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/filter/IdentityHeaderFilter.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1299,9 +1299,9 @@
       "fix": "Qualify the EMF key with the statistic (e.g. name + '.' + measurement.getStatistic().getTagValueRepresentation()), pass the correct Unit, and emit the meter's low-cardinality tags as EMF dimensions via putDimensions(DimensionSet) so series stay distinguishable",
       "best_practice": "java/spring-boot.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/service/EmfMetricsPublisher.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1341,9 +1341,9 @@
       "fix": "Inject a Supplier<MetricsLogger> (or a thin MetricsLoggerFactory bean) so tests can capture the logger and assert the namespace, metric keys and values actually emitted",
       "best_practice": "java/testing/unit.md",
       "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/service/EmfMetricsPublisher.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "954247a",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1382,9 +1382,9 @@
       "issue": "Correcting the logger key from the non-existent package 'uk.gov.defra.trade.imports.address.book' to the real 'uk.gov.defra.trade.imports.addressbook' activates a previously-inert DEBUG default, so every deployed environment that does not set LOG_LEVEL now logs the whole application package at DEBUG (root is only ${LOG_LEVEL:info}, and application-integration-test.yml deliberately uses ${LOG_LEVEL:INFO}).",
       "fix": "Change the default to ${LOG_LEVEL:INFO} in application.yml; application-local.yml already sets this package to DEBUG for local work, so nothing is lost.",
       "file": "src/main/resources/application.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1396,9 +1396,9 @@
       "fix": "Add 'api-docs: enabled: false' alongside the swagger-ui key in application.yml and re-enable it in application-local.yml and src/test/resources/application-integration-test.yml, then correct or drop the design-doc citation.",
       "best_practice": "java/openapi-springdoc.md",
       "file": "src/main/resources/application.yml",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "8bb4343",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1409,9 +1409,9 @@
       "issue": "The 'over-length email' case (repeat(243) + \"@example.com\") also violates @Email — Hibernate Validator 8 caps the local part at 64 chars — so with the assertion checking only the property path, @Size(max = 254) on email is never independently exercised and would survive deletion, contradicting the class Javadoc claim to pin 'every max-length'.",
       "fix": "Use a format-valid 255-character address (local part <= 64 chars plus a long multi-label domain) so only @Size can fire, or assert the violated constraint annotation rather than just the path.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/AddressRequestValidationTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1436,9 +1436,9 @@
       "issue": "invalidFieldProducesAViolationOnThatField asserts only the violated property path, so none of the ten bespoke user-facing messages declared on AddressRequest ('Enter a name', 'Postcode must be 12 characters or less', ...) is asserted anywhere in the repo — the ITs assert only errors.<field> exists and GlobalExceptionHandlerTest hand-builds FieldError copies rather than reading the record's declared messages.",
       "fix": "Add the expected message as a fourth column of the invalidFields Arguments and assert that a violation exists with that property path AND that message (e.g. extracting propertyPath/message tuples), so the GDS error copy is pinned where the constraints are declared.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/AddressRequestValidationTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1449,9 +1449,9 @@
       "issue": "The @Size matrix is one-sided: every sized field is probed at max+1 only, and the valid fixture values are short, so tightening any limit (e.g. name to @Size(max = 10)) leaves the whole suite green even though the field table and the error copy promise 255/100/12/20/254.",
       "fix": "Add a companion parameterized case per sized field at exactly the maximum (255/255/255/100/100/12/20/254) asserting no violations, so both edges of each declared max are pinned.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/AddressRequestValidationTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1463,9 +1463,9 @@
       "fix": "Drop the hand-built mapper: either move this method into a @JsonTest/@SpringBootTest slice that injects the Spring-managed ObjectMapper (or applies JacksonConfig's Jackson2ObjectMapperBuilderCustomizer to a builder), and assert values not just key presence (json.get(\"addressLine1\").asText() etc.); if the real-stack coverage in OperatorComplianceIT is deemed sufficient, delete this method rather than keep a tautology named as a contract lock",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorMapperTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1477,9 +1477,9 @@
       "fix": "Add \"organisationId\": \"OTHER-ORG\", \"status\": \"DELETED\", \"createdAt\"/\"modifiedAt\" values to the body so the null assertions can actually fail, and add a matching AddressScopingIT case posting organisationId=ORG_B as ORG_A and asserting the persisted row is still ORG_A",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorMapperTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1491,9 +1491,9 @@
       "fix": "Add two cases: toResponse on an entity with null addressLine2 and null county maps cleanly (guards stay off the optional fields), and assertThatThrownBy(() -> operatorMapper.toResponse(entityWithNullPhone)).isInstanceOf(NullPointerException.class).hasMessage(\"phone\") to pin at least one required-field guard",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorMapperTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1505,9 +1505,9 @@
       "fix": "Assert all nine copied fields on the update test (or switch update() to an @MappingTarget mapper so the compile guard covers it); at minimum add assertThat(updated.getPhone()).isEqualTo(\"+44 1738 111222\"), plus countryCode, addressLine2 and county",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1519,9 +1519,9 @@
       "fix": "Add verify(repository, never()).save(any()) so removing the idempotency guard fails the test",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1533,9 +1533,9 @@
       "fix": "Drop the modifiedAt assertions and the 'BumpsModifiedAt' clause from both test names — AddressUpdateIT.putBumpsModifiedAtAndPreservesCreatedAt already covers the bump against a real Mongo",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1547,9 +1547,9 @@
       "fix": "Assert against a literal expected regex (eq(\".*\\\\Qfarm\\\\E.*\")) instead of a mirrored helper, and add cases for a whitespace-padded q, a blank q and a blank countryCode so the trim and isBlank branches are covered",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1561,9 +1561,9 @@
       "fix": "Drop the redundant verify and assert on the returned response (e.g. items()/totalItems()); if a verify is kept, static-import it like every other Mockito member in this file",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1575,9 +1575,9 @@
       "fix": "Rename to the subject-prefixed form (create_stampsOrganisationIdFromTheHeader, update_appliesTheNewFieldValues, delete_isIdempotentForATombstone, list_...) and add the Given/When/Then blocks",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/address/OperatorServiceTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1589,9 +1589,9 @@
       "fix": "Assert observable behaviour instead — e.g. exercise the aspect against a @Timed/@Counted proxy and assert the SimpleMeterRegistry records the meter, or drop the trivial tests and cover the beans via a @SpringBootTest/ApplicationContextRunner context assertion.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/configuration/MetricsConfigTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1603,9 +1603,9 @@
       "fix": "Rename the file to EmfMetricsPublisherAnnotationsTest.java and move it to src/test/java/uk/gov/defra/trade/imports/addressbook/service/ alongside EmfMetricsPublisherTest, or fold the three reflection tests into EmfMetricsPublisherTest and delete this class",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/configuration/MetricsConfigurationPropertiesTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1617,9 +1617,9 @@
       "fix": "Add malformedJsonBody_returns400BadRequestProblem: build a MockMvc standaloneSetup with a stub controller taking @RequestBody, POST content(\"{not json\") with APPLICATION_JSON, and assert status 400, content type application/problem+json, $.type = https://api.cdp.defra.cloud/problems/bad-request and no $.errors key (the Problem, not ValidationProblem, branch) - it must fail until an @ExceptionHandler(HttpMessageNotReadableException.class) is added",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1631,9 +1631,9 @@
       "fix": "Drop the conditional and assert deterministically, e.g. assertThat(response.getBody().getProperties()).isNull(); (or isNullOrEmpty()), so the test actually pins the omit-traceId contract.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1645,9 +1645,9 @@
       "fix": "Add a test calling exceptionHandler.handleTypeMismatch(new MethodArgumentTypeMismatchException(\"abc\", Integer.class, \"page\", methodParameter, cause)) and assert the 400 bad-request type, the detail naming 'page', and doesNotContainKey(\"errors\").",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1659,9 +1659,9 @@
       "fix": "Reflect on a dedicated private placeholder (e.g. 'private void validationTarget(Object body) {}') declared next to the helper, so the reflected name exists only to serve the helper.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1673,9 +1673,9 @@
       "fix": "Rename to handleValidationException_shouldReturn400WithCamelCaseErrorsMap etc. and add the Given/When/Then comment blocks.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/exceptions/GlobalExceptionHandlerTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1715,9 +1715,9 @@
       "fix": "Drop the status assertion (chain.wasCalled() is the real bypass proof) or assert the negative that actually matters: response.getStatus() is not 400 and the body is empty.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/filter/IdentityHeaderFilterTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1729,9 +1729,9 @@
       "fix": "Add // Given, // When, // Then (or // When & Then for the short ones) to each test method.",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/filter/IdentityHeaderFilterTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1743,9 +1743,9 @@
       "fix": "Add an IT that interleaves the two read-modify-writes deterministically (load the entity, DELETE via mockMvc, then have the PUT save its stale copy) and assert the row stays DELETED; if it resurrects, add @Version to Address (or make delete/update partial @Query updates) so the losing write fails with OptimisticLockingFailureException.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1757,9 +1757,9 @@
       "fix": "Add a case with path=ORG and header=OTHER_ORG (and its mirror) asserting 404 plus the row still ACTIVE, or extend AddressScopingIT.forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404 with the DELETE verb.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1771,9 +1771,9 @@
       "fix": "Assert the write itself rather than its timestamp side effect - e.g. wrap OperatorRepository in a @SpyBean and verify(repository, times(1)).save(any()) across the two calls, or drive auditing from a controllable DateTimeProvider bean so the second save would produce a provably different modifiedAt.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1785,9 +1785,9 @@
       "fix": "Drop the .createdAt/.modifiedAt builder calls and read the audited values back from the entity returned by repository.save() where a baseline is needed.",
       "best_practice": "java/spring-data-mongodb.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1799,9 +1799,9 @@
       "fix": "In deleteLiveAddressReturns204AndKeepsRowWithDeletedStatus, capture the saved entity's createdAt/modifiedAt before the DELETE and assert modifiedAt isAfter the baseline and createdAt unchanged, mirroring AddressUpdateIT.putBumpsModifiedAtAndPreservesCreatedAt.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1813,9 +1813,9 @@
       "fix": "Rename the five tests to the subject-prefixed form and add the Given/When/Then comment blocks, or - if this new repo is deliberately adopting a different convention - record that decision so the address-book best-practices bundle stops contradicting the code.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressDeleteIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1827,9 +1827,9 @@
       "fix": "Pick one authority: either regenerate/delete api-contract.locked.yaml so it matches the camelCase implementation, or move the implementation to snake_case; then extend the OperatorComplianceIT divergence gate to compare component schema property names, not just operationIds.",
       "best_practice": "rest-api/rest-api.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1841,9 +1841,9 @@
       "fix": "Delete the duplicate test from AddressGetIT and leave the cv-040 non-disclosure assertion in AddressScopingIT, which is the class that owns org scoping; or hoist the problem-body comparison helper into IntegrationBase and keep a single test.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1855,9 +1855,9 @@
       "fix": "Assert the remaining mapped fields on getLiveAddressReturns200WithDeletedFalse (addressLine1, townOrCity, postcode, phone, email, and createdAt/modifiedAt as exists()), or compare the whole body against an expected JSON document with content().json(...).",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1869,9 +1869,9 @@
       "fix": "Drop the createdAt/modifiedAt builder calls from save(), or assert the auditing behaviour explicitly (e.g. read the saved entity back and assert the timestamps are non-null and were set by auditing rather than by the fixture).",
       "best_practice": "java/spring-data-mongodb.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1883,9 +1883,9 @@
       "fix": "Reword the javadoc to 'identical problem bodies apart from the RFC 9457 instance, which echoes the caller own request URI', matching the comment already written in AddressScopingIT.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressGetIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1897,9 +1897,9 @@
       "fix": "Add a DELETE leg to forwardedOrgHeaderDisagreeingWithThePathOrgIdIs404: perform delete(/organisation/{orgId}/addresses/{operator-id}, ORG_A, id).header(ORG_HEADER, ORG_B), expect 404, then assert the stored address is still AddressStatus.ACTIVE via repository.findById(id)",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressScopingIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -1911,9 +1911,9 @@
       "fix": "Drop problemWithoutInstance and compare the two parsed bodies directly, adding an explicit assertion that neither body contains an 'instance' key; if instance is later populated per-URI, reinstate the exclusion with a comment that matches the actual handler",
       "best_practice": "rest-api/rest-api.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressScopingIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2004,9 +2004,9 @@
       "fix": "Add jsonPath assertions for $.postcode, $.phone and $.email to the 200 response chain and to the repository.findById satisfies() block, so all nine hand-copied setters are covered",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressUpdateIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2018,9 +2018,9 @@
       "fix": "Add an IT that runs two overlapping PUTs (and a PUT interleaved with a DELETE) via an ExecutorService against the shared Mongo container and asserts the intended outcome; if last-write-wins and tombstone resurrection are accepted, encode that as an explicit documented test, otherwise add @Version to Address and assert the 409/retry",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressUpdateIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2032,9 +2032,9 @@
       "fix": "Keep the genuinely new cases (per-field 400 errors map, unknown-id 404, createdAt preservation) in AddressUpdateIT and delete the PUT tests from OperatorCrudIT, or fold these into OperatorCrudIT and drop this class - PUT should be owned by exactly one IT",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressUpdateIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2046,9 +2046,9 @@
       "fix": "After the 400 assertion add a repository.findById(saved.getId()) check that name/addressLine1/email still hold the pre-request values",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressUpdateIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2060,9 +2060,9 @@
       "fix": "Add the documented base-class hook: @BeforeEach void cleanDatabase(@Autowired MongoTemplate mongoTemplate) { mongoTemplate.getDb().listCollectionNames().forEach(mongoTemplate::dropCollection); } and drop the duplicated deleteAll() calls from the subclasses.",
       "best_practice": "java/spring-data-mongodb.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/IntegrationBase.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2074,9 +2074,9 @@
       "fix": "Hoist protected static final String ORG_HEADER (and the shared sample organisation id) into IntegrationBase and have the ITs reference them — as constants only, never as a header applied by default.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/IntegrationBase.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2088,9 +2088,9 @@
       "fix": "Delete the read-preference key from application-integration-test.yml so the integration-test profile inherits the main application.yml value, making this assertion a real regression guard on the production default.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/MongoConfigIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2114,9 +2114,9 @@
       "issue": "Class Javadoc line 38 claims the live doc is asserted 'surface-equivalent to the in-repo docs/openapi/api-contract.locked.yaml (the lock)' and line 30-31 claims 'real requests prove the boundary is camelCase' - neither is true: surface equivalence covers only paths/methods/operationIds (no schemas, no parameters, no request bodies, no response refs), and the wire tests use MockMvc (mock servlet layer), not real HTTP over the RANDOM_PORT server",
       "fix": "Either widen the assertions to match the claim, or reword the Javadoc (and README 'OpenAPI contract' section) to say exactly 'paths, HTTP methods and operationIds only'; replace 'real requests' with 'MockMvc requests'",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorComplianceIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2127,9 +2127,9 @@
       "issue": "apiDocsCarryTheWholeCamelCaseAndAnyOfContractSurface enumerates components.schemas from the LIVE doc and asserts its own property names match [a-z][a-zA-Z0-9]* - the live doc is generated from the implementation's Jackson naming, so the check is self-referential and can only fail if someone adds an explicit snake_case @JsonProperty; it makes the implementation the de-facto contract and directly contradicts the locked file's stated convention 'snake_case JSON properties and query params ... errors map of snake_case field name -> [messages]'",
       "fix": "Drive the expected property names from api-contract.locked.yaml (assert live property keys equal locked property keys per schema) rather than from a regex over the live doc, so the locked file - not the implementation - decides the naming convention",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorComplianceIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2140,9 +2140,9 @@
       "issue": "The divergence gate never compares operation 'parameters', so the locked contract's required query params operator_type and page_size (locked lines 110-132) are absent from the live spec entirely (live GET list exposes only page, q, countryCode - no page-size param at all, despite the runtime test asserting a pageSize=25 field in the response body) and the build stays green",
       "fix": "Extend the per-operation comparison to the parameters list - assert the set of (name, in) pairs on each live operation equals the locked operation's, resolving $ref'd component parameters first",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorComplianceIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2153,9 +2153,9 @@
       "issue": "assertAnyOfProblem(locked, ...) asserts the committed static YAML file against itself - it exercises no production code and can only fail if someone edits api-contract.locked.yaml, yet the comment calls it 'the pin the whole design leans on'",
       "fix": "Compare the live 400 schema's anyOf branch $refs against the locked file's branch $refs (live-vs-locked), instead of asserting the locked file in isolation",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorComplianceIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2180,9 +2180,9 @@
       "fix": "Add two tests here — POST with content(\"{\\\"name\\\":\") and PUT with content(\"\") — asserting 400, application/problem+json, type .../problems/bad-request and $.errors doesNotExist; then add an @ExceptionHandler(HttpMessageNotReadableException.class) to GlobalExceptionHandler so they pass.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2194,9 +2194,9 @@
       "fix": "Cut this class down to what only it covers — the create leg (201 + Location + stamped organisationId, the type/role rejection, the unknown-field drop, countryCode/phone pass-through) and fullCrudRoundTrip... — and delete the get/put/delete/org-header tests that AddressGetIT, AddressUpdateIT, AddressDeleteIT and AddressScopingIT already own.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2208,9 +2208,9 @@
       "fix": "Drop the .createdAt/.modifiedAt builder calls from saveAddress (auditing owns them), and re-read the persisted modifiedAt after the seed save as the baseline, or assert the bump via isAfterOrEqualTo plus an explicit not-equal-to-createdAt check.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2222,9 +2222,9 @@
       "fix": "Add .andExpect(jsonPath(\"$.createdAt\").value(org.hamcrest.Matchers.not(startsWith(\"2020\")))) and assert repository.findAll() single element getCreatedAt() isAfter Instant.parse(\"2020-01-01T00:00:00Z\").",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2236,9 +2236,9 @@
       "fix": "Correct the Javadoc to name /organisation/{orgId}/addresses and rename the class to AddressCrudIT to match its siblings.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2250,9 +2250,9 @@
       "fix": "Assert the header first — .andExpect(header().exists(\"Location\")) on the chain, or assertThat(location).isNotNull() before the substring.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2264,9 +2264,9 @@
       "fix": "Rename to the documented pattern (post_shouldReturn201WithLocationAndStampedOrganisation, put_shouldReturn404_whenTargetIsATombstone) and add the // Given // When // Then blocks.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorCrudIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2278,9 +2278,9 @@
       "fix": "Add a behavioural assertion alongside the metadata one: run an explain (e.g. mongoTemplate.execute(db -> db.runCommand(new Document(\"explain\", findCommand))) or Query with a real page+sort) for findByOrganisationIdAndStatus and assert winningPlan reaches an IXSCAN on indexName 'org_status_created' with no SORT stage.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2292,9 +2292,9 @@
       "fix": "Move the deleteAll() into a @BeforeEach setUp() per the repo convention, and drop the save() entirely - auto-index-creation:true already creates the collection and index at context startup, so no document is needed to observe listIndexes.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2305,9 +2305,9 @@
       "issue": "assertThat(indexNames).doesNotContain(\"crn_status_type_created\", \"org_status\") is vacuous: neither name appears anywhere in the codebase (grep confirms only this line), the Mongo container is created fresh per run, and Spring's auto-index-creation only creates indexes declared on @Document classes - so no mechanism can ever put those names in the list and the assertion cannot fail. It reads as a migration guard against a stale deployed index, which a throwaway container structurally cannot see.",
       "fix": "Replace it with an exhaustive assertion that actually bites - assertThat(indexNames).containsExactlyInAnyOrder(\"_id_\", \"org_status_created\") - which catches index bloat, renames and accidental extra @Indexed fields.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2318,9 +2318,9 @@
       "issue": "The pin covers key names and key order but not sort directions: extracting(IndexField::getKey).containsExactly(...) passes unchanged if createdAt flips from -1 to 1 (or organisationId/status flip to -1), even though the class javadoc and Address.java both make 'newest-first' load-bearing. Flipping the whole def to descending would silently break Pageable sorts that the equality-prefix reverse scan cannot rescue.",
       "fix": "Extract the pair, e.g. .extracting(IndexField::getKey, IndexField::getDirection).containsExactly(tuple(\"organisationId\", ASC), tuple(\"status\", ASC), tuple(\"createdAt\", DESC)), so the assertion matches the @CompoundIndex def exactly.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2332,9 +2332,9 @@
       "fix": "Add the // Given // When // Then blocks per the repo IT convention, and use mongoTemplate.indexOps(Address.class) so the collection name is resolved from the @Document annotation.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorIndexIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2345,9 +2345,9 @@
       "issue": "aPageSizeRequestParamIsNotHonouredTheServerConfigSizeApplies pins page_size as an ignored unknown query param, but the in-repo locked contract (docs/openapi/api-contract.locked.yaml lines 124-132, 144) declares page_size as a supported query param (integer, min 1, max 100, default 25) and specifies 400 when it is out of range; the cited ruling 'cv-025' appears nowhere in the repo except this test and the two javadocs that assert it, so the only in-repo authority contradicts the test. A contract-conformant client sending page_size=50 silently gets 25 back with no error, and this test locks that in.",
       "fix": "Resolve the conflict before merge: either implement page_size as a bound @RequestParam (default 25, 1..100, 400 outside) and rewrite this test to assert page_size=5 returns 5 items, or amend the locked contract to drop the page_size parameter under a recorded ruling and cite that ruling in the test comment. Note the current test only exercises Spring MVC's default 'ignore unknown params' behaviour, not any code in this repo.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2358,9 +2358,9 @@
       "issue": "Page metadata is asserted camelCase ($.pageSize, $.totalItems, $.totalPages at lines 75-77, 89-90, 101, 115, 146-147) but the in-repo locked contract's OperatorPage schema (docs/openapi/api-contract.locked.yaml lines 589-614) requires page_size, total_items and total_pages, and the contract header calls itself LOCKED with 'nothing in M1/M2/M3 may change this file'. OperatorComplianceIT's divergence gate only compares paths, HTTP methods and operationIds, so nothing detects this property-name drift - this IT is one of the places that cements it.",
       "fix": "Get the camelCase-vs-snake_case ruling recorded, then make the two sides agree: either regenerate api-contract.locked.yaml to camelCase and re-assert here, or serialise the page record snake_case and change these assertions. Whichever way it goes, extend OperatorComplianceIT's divergence gate to compare schema property names so drift fails the build instead of being pinned by tests.",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2372,9 +2372,9 @@
       "fix": "Give the seeds distinct, controlled createdAt values, then assert the concrete order (e.g. items[0].name is the newest) and collect the ids from page 1 and page 2 and assert the two sets are disjoint and together cover all 30.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2386,9 +2386,9 @@
       "fix": "Drop the .createdAt/.modifiedAt builder calls, or - if the fix for the ordering gap needs controlled timestamps - set them by re-saving the persisted entity (auditing does not re-stamp @CreatedDate on an existing document) or by writing through MongoTemplate, and add a comment stating why.",
       "best_practice": "java/spring-data-mongodb.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2400,9 +2400,9 @@
       "fix": "Add a test for page beyond the last asserting the agreed shape (200 with empty items, page echoed, totalItems 30, totalPages 2 - or a 400 if that is the ruling), and add a negative page case to the existing page-0 test as a parameterised @ValueSource of \"0\" and \"-1\".",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2414,9 +2414,9 @@
       "fix": "Rename the eight test methods to the subject_shouldDoWhat_whenContext form and add the Given/When/Then comment blocks, applying the same change across the sibling ITs added in this PR so the repo lands on one convention.",
       "best_practice": "java/testing/integration.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/OperatorListIT.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "6ae0c82",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2484,9 +2484,9 @@
       "fix": "Assert an observable effect of publishMetrics: register a meter named controller.foo alongside test.counter and assert that after publish the registry no longer contains controller.foo (the removal branch at EmfMetricsPublisher.java:43-46), which is the one side effect visible without mocking MetricsLogger",
       "best_practice": "java/testing/unit.md",
       "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/service/EmfMetricsPublisherTest.java",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Fix",
+      "status": "Done",
+      "notes": "e4e3e67",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2497,9 +2497,9 @@
       "category": "docs-completeness",
       "issue": "The new 'Identity and trust boundary' ## heading (line 83) is not listed in the table of contents, which still jumps from Running natively to API overview.",
       "fix": "Add '* [Identity and trust boundary](#identity-and-trust-boundary)' between the Running natively and API overview TOC entries.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh 6ae0c82: TOC lists Security and trust boundary between Running natively and API overview",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2510,9 +2510,9 @@
       "category": "docs-accuracy",
       "issue": "Fix for the prior bounce-backend.sh finding (item 6) replaced it with 'docker compose -f docker/stack/dev.compose.yml up -d --force-recreate trade-imports-address-book', but trade-imports-address-book is not a service in any docker/stack/*.compose.yml — the command will fail with 'no such service'.",
       "fix": "Until the workspace stack integration lands (see item 5), drop this command or point it at the repo's own compose.yml / mvn spring-boot:run restart instead.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh 6ae0c82: README Workspace stack (planned) — no force-recreate of a non-existent stack service; uses run-stack.sh recipes",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2523,9 +2523,9 @@
       "category": "schema-drift",
       "issue": "AddressRequest's rewrite sets minLength: 0 on the required, @NotBlank fields (name, addressLine1, townOrCity, postcode, phone, email) — previously (6f1134b) they correctly declared minLength: 1; AddressRequest.java rejects blank values on all six with a 400. countryCode, also @NotBlank, was left at minLength: 1, showing the drop on the other six was accidental. assertSchemaPropertyNamesMatch only diffs property key sets, so this is invisible to OperatorComplianceIT.",
       "fix": "Set minLength: 1 on name, addressLine1, townOrCity, postcode, phone and email (matching @NotBlank and the pre-rewrite value); leave addressLine2/county (no @NotBlank) at minLength: 0.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2536,9 +2536,9 @@
       "category": "schema-drift",
       "issue": "Problem and ValidationProblem schemas lost their required arrays in the rewrite. Prior (6f1134b) Problem declared required: [type, title, status] and ValidationProblem additionally required errors, matching Problem.java/ValidationProblem.java's @Schema(requiredMode = REQUIRED) annotations on type/title/status(/errors) — and the committed docs/openapi/operators.yml still carries required: [status, title, type] / required: [errors, status, title, type] for these exact schemas. The locked contract now declares neither, silently contradicting both the implementation and the file's own claimed equivalence to operators.yml. assertSchemaPropertyNamesMatch only diffs property key sets, so this drift is invisible to OperatorComplianceIT.",
       "fix": "Restore required: [type, title, status] on Problem and required: [type, title, status, errors] on ValidationProblem, matching operators.yml and the @Schema(requiredMode = REQUIRED) annotations.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2549,9 +2549,9 @@
       "category": "validation-mismatch",
       "issue": "Fix commits weakened countryCode from minLength:1 to maxLength:2/minLength:0, newly making it disagree with AddressRequest's @NotBlank (which rejects an empty string with a 400) - the opposite of the direction item 27 asked for on the sibling fields",
       "fix": "Restore minLength: 1 on countryCode (keep the new maxLength: 2), matching @NotBlank + @Size(max=2), then regenerate with -Dopenapi.generate=true",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh 6ae0c82: operators.yml countryCode has minLength: 1 and maxLength: 2",
       "best_practice": "java/spring-boot.md",
       "repo": "trade-imports-address-book"
     },
@@ -2590,9 +2590,9 @@
       "category": "test-coverage",
       "issue": "New updateEntity(AddressRequest, @MappingTarget Address) method (added this window to close the prior toEntity/toResponse update-path gap, item 40) has zero test coverage - OperatorMapperTest.java was not touched in this window, so nothing asserts it copies the 9 mutable fields onto an existing entity or leaves id/organisationId/status/createdAt/modifiedAt/version untouched.",
       "fix": "Add a test that maps a populated AddressRequest onto a pre-existing Address via updateEntity, asserting the 9 client fields are overwritten and id/organisationId/status/createdAt/modifiedAt/version keep their original entity values.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2603,9 +2603,9 @@
       "category": "missing-test",
       "issue": "New handleOptimisticLocking (@ExceptionHandler OptimisticLockingFailureException → 409 conflict) has no unit test, unlike the sibling HttpMessageNotReadable handler added in the same delta; without coverage a regression can silently fall through the RuntimeException catch-all to 500.",
       "fix": "Add a GlobalExceptionHandlerTest case asserting handleOptimisticLocking returns 409 application/problem+json with type .../conflict, fixed detail, camelCase traceId and no errors map.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "best_practice": "java/testing/unit.md",
       "repo": "trade-imports-address-book"
     },
@@ -2617,9 +2617,9 @@
       "category": "contract-drift",
       "issue": "New OptimisticLockingFailureException handler emits 409 conflict (type https://api.cdp.defra.cloud/problems/conflict) but docs/openapi/api-contract.locked.yaml declares no 409 on update-address (or delete-address), so concurrent @Version save conflicts are a live wire status absent from the locked contract.",
       "fix": "Add a 409 Problem response to update-address (and any other mutating op that saves an @Version Address) in api-contract.locked.yaml, documenting the conflict problem type and detail.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "best_practice": "java/openapi-springdoc.md",
       "repo": "trade-imports-address-book"
     },
@@ -2644,9 +2644,9 @@
       "category": "stale-documentation",
       "issue": "The class Javadoc still claims countryCode is 'presence-only (@NotBlank, no length or list check — cv-011), so there is no over-length country case', but this commit added countryCodeRejectsValuesLongerThanTwoCharacters (line 114) which proves the opposite — AddressRequest.countryCode now carries @Size(max = 2) and a 3-char value is rejected.",
       "fix": "Update the class Javadoc to describe the current @Size(max = 2) contract (matching the sibling type/role paragraph style) instead of the stale presence-only claim.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh 6ae0c82: AddressRequestValidationTest class Javadoc now describes @Size(max = 2)",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2657,9 +2657,9 @@
       "category": "maintainability",
       "issue": "New test typeMismatch_returns400BadRequestProblemNamingTheParameter duplicates the reflection-on-setUp MethodParameter-building anti-pattern already flagged for the validationException helper (item 122) - it calls GlobalExceptionHandlerTest.class.getDeclaredMethod(\"setUp\") inline, a second place that breaks with an unrelated NoSuchMethodException if the @BeforeEach is renamed",
       "fix": "Reflect on a dedicated placeholder method (e.g. a private no-op declared next to validationException) instead of getDeclaredMethod(\"setUp\") directly in this test",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh 6ae0c82: typeMismatch reflection uses validationTarget, not setUp",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2670,9 +2670,9 @@
       "category": "test-coverage",
       "issue": "Refresh removed searchMatchesTownOrCityAndPostcodeButNotAddressLineFields; no remaining IT proves q matches townOrCity/postcode or that addressLine1 is excluded — dropping those $regex clauses from searchByQuery / searchByQueryAndCountryCode leaves only the name-based partialWordSearchMatchesNameCaseInsensitively green.",
       "fix": "Restore a test that seeds distinct town-, postcode-, and addressLine1-only hits (e.g. town Greenwich, postcode GREEN1 2AB, addressLine1 'Green Lane…') and asserts totalItems 2 with hasItem on the town and postcode ids only.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "best_practice": "java/testing/integration.md",
       "repo": "trade-imports-address-book"
     },
@@ -2684,9 +2684,9 @@
       "category": "test-escape-hatch",
       "issue": "Regeneration was moved to a separate @EnabledIfSystemProperty test (partial fix for item 159), but apiDocsMatchTheCommittedArtifactAndTheLockedContract still early-returns when -Dopenapi.generate=true — now without writing the artifact — so the staleness and divergence gates still silently disappear on that flag.",
       "fix": "Remove the early-return branch entirely from the assertion test; regeneration already lives in regenerateCommittedOpenApiArtifact.",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "repo": "trade-imports-address-book"
     },
     {
@@ -2697,9 +2697,9 @@
       "category": "test-escape-hatch",
       "issue": "New assertSchemaPropertyNamesMatch fails open: returns without asserting when either doc lacks components (lines 274-276), and skips a schema's property-key check unless BOTH sides expose a Map 'properties' node (lines 286-291) — so components missing, or locked-with-properties vs live-without, leaves the new Critical schema gate green",
       "fix": "Assert components/schemas are non-null (AssertJ), and treat a missing/non-Map properties node as an empty map so property-key-set equality always runs",
-      "disposition": null,
-      "status": null,
-      "notes": null,
+      "disposition": "Auto-Resolved",
+      "status": "—",
+      "notes": "refresh: violation no longer present",
       "best_practice": "java/testing/unit.md",
       "repo": "trade-imports-address-book"
     },
@@ -2716,6 +2716,30 @@
       "notes": null,
       "best_practice": "java/testing/unit.md",
       "repo": "trade-imports-address-book"
+    },
+    {
+      "id": 200,
+      "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/configuration/ProxyConfigTest.java",
+      "line": "21",
+      "severity": "Minor",
+      "category": "test-isolation",
+      "issue": "@AfterEach cleanup calls ProxySelector.setDefault(ProxySelector.getDefault()), which is a no-op and leaves the selector installed by configureProxy_validUrl / proxySelector_bypassesLocalhost in place for later tests in the JVM.",
+      "fix": "Capture ProxySelector.getDefault() in a field before configureProxy mutates it, and restore that saved selector in @AfterEach.",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 201,
+      "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressSearchIT.java",
+      "line": "66",
+      "severity": "Minor",
+      "category": "test-coverage",
+      "issue": "Town/postcode q-match ITs were restored, but nothing still asserts that q does not match addressLine1-only hits (the exclusion half of prior item 196).",
+      "fix": "Seed an addressLine1-only hit (e.g. addressLine1 'Green Lane') alongside town/postcode matches and assert it is absent from q=green results.",
+      "disposition": null,
+      "status": null,
+      "notes": null
     }
   ]
 }

@@ -4,31 +4,15 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-03T13:43:28Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "Critical schema gate is fixed, but two new Majors remain: openapi.generate still early-returns past all assertions, and assertSchemaPropertyNamesMatch fails open on missing components/properties.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 213,
-      "severity": "Major",
-      "category": "test-escape-hatch",
-      "issue": "Regeneration was moved to a separate @EnabledIfSystemProperty test (partial fix for item 159), but apiDocsMatchTheCommittedArtifactAndTheLockedContract still early-returns when -Dopenapi.generate=true — now without writing the artifact — so the staleness and divergence gates still silently disappear on that flag.",
-      "fix": "Remove the early-return branch entirely from the assertion test; regeneration already lives in regenerateCommittedOpenApiArtifact."
-    },
-    {
-      "id": 2,
-      "line": 274,
-      "severity": "Major",
-      "category": "test-escape-hatch",
-      "issue": "New assertSchemaPropertyNamesMatch fails open: returns without asserting when either doc lacks components (lines 274-276), and skips a schema's property-key check unless BOTH sides expose a Map 'properties' node (lines 286-291) — so components missing, or locked-with-properties vs live-without, leaves the new Critical schema gate green",
-      "fix": "Assert components/schemas are non-null (AssertJ), and treat a missing/non-Map properties node as an empty map so property-key-set equality always runs",
-      "best_practice": "java/testing/unit.md"
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:40Z",
+  "reviewed_at": "2026-08-03T16:32:56Z",
+  "verdict": "SAFE",
+  "verdict_reason": "generate early-return removed; schema assert no longer fails open.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z",
   "resolved_item_ids": [
     154,
-    159
+    159,
+    197,
+    198
   ]
 }

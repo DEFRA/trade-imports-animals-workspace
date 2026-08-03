@@ -4,28 +4,11 @@
   "commit": "6f1134b712913e55a648fd5f1228b46f6ed5551d",
   "pr": 1,
   "mode": "FRESH",
-  "reviewed_at": "2026-08-03T10:33:56Z",
-  "verdict": "NEEDS_ATTENTION",
-  "verdict_reason": "All 7 prior Criticals/Majors (snake_case, phantom fields, wrong CRN header, missing orgId param, false CI claim, D1/D2 misdirection, stale narrative) are genuinely fixed by the rewrite, but the rewrite introduces two new schema-drift regressions: minLength: 0 on required @NotBlank fields, and dropped required arrays on Problem/ValidationProblem.",
-  "todos": [
-    {
-      "id": 1,
-      "line": 257,
-      "severity": "Major",
-      "category": "schema-drift",
-      "issue": "AddressRequest's rewrite sets minLength: 0 on the required, @NotBlank fields (name, addressLine1, townOrCity, postcode, phone, email) — previously (6f1134b) they correctly declared minLength: 1; AddressRequest.java rejects blank values on all six with a 400. countryCode, also @NotBlank, was left at minLength: 1, showing the drop on the other six was accidental. assertSchemaPropertyNamesMatch only diffs property key sets, so this is invisible to OperatorComplianceIT.",
-      "fix": "Set minLength: 1 on name, addressLine1, townOrCity, postcode, phone and email (matching @NotBlank and the pre-rewrite value); leave addressLine2/county (no @NotBlank) at minLength: 0."
-    },
-    {
-      "id": 2,
-      "line": 305,
-      "severity": "Major",
-      "category": "schema-drift",
-      "issue": "Problem and ValidationProblem schemas lost their required arrays in the rewrite. Prior (6f1134b) Problem declared required: [type, title, status] and ValidationProblem additionally required errors, matching Problem.java/ValidationProblem.java's @Schema(requiredMode = REQUIRED) annotations on type/title/status(/errors) — and the committed docs/openapi/operators.yml still carries required: [status, title, type] / required: [errors, status, title, type] for these exact schemas. The locked contract now declares neither, silently contradicting both the implementation and the file's own claimed equivalence to operators.yml. assertSchemaPropertyNamesMatch only diffs property key sets, so this drift is invisible to OperatorComplianceIT.",
-      "fix": "Restore required: [type, title, status] on Problem and required: [type, title, status, errors] on ValidationProblem, matching operators.yml and the @Schema(requiredMode = REQUIRED) annotations."
-    }
-  ],
-  "reconciled_at": "2026-08-03T13:43:37Z",
+  "reviewed_at": "2026-08-03T16:32:44Z",
+  "verdict": "SAFE",
+  "verdict_reason": "minLength:1 and Problem required arrays restored; 409 conflict documented on update.",
+  "todos": [],
+  "reconciled_at": "2026-08-03T16:33:54Z",
   "resolved_item_ids": [
     14,
     15,
@@ -33,6 +16,9 @@
     17,
     18,
     19,
-    20
+    20,
+    185,
+    186,
+    192
   ]
 }
