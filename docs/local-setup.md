@@ -163,12 +163,6 @@ The OIDC discovery URL is:
 http://localhost:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
 ```
 
-Everything browser-facing is on `localhost` — the stub advertises localhost
-endpoints in its discovery document (`WELL_KNOWN_HOST_OVERRIDE`) and the
-frontend/admin redirect URLs match. `host.docker.internal` is used only for
-container→host hops, and each compose file maps it via `extra_hosts`, so no
-host-side DNS or `/etc/hosts` entry is needed.
-
 ---
 
 ## Ports summary
