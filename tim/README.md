@@ -40,6 +40,7 @@ Arrow keys navigate, Enter selects, Enter on an empty input goes back. Every top
 | Menu path                                                    | CLI equivalent                    |
 | ------------------------------------------------------------ | --------------------------------- |
 | Workspace → Status                                           | `tim workspace status`            |
+| Workspace → Branch                                           | `tim workspace branch [name]`     |
 | Workspace → Install                                          | `tim workspace install`           |
 | Workspace → Lint                                             | `tim workspace lint`              |
 | Workspace → Test                                             | `tim workspace test`              |

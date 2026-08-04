@@ -1,4 +1,7 @@
 import { describe, test, expect } from 'vitest'
+import { mkdtempSync, mkdirSync, symlinkSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
   REPOS,
   NODE_REPOS,
@@ -6,6 +9,7 @@ import {
   UNIT_TEST_EXEMPT_REPOS,
   REPOS_DIR,
   repoPath,
+  realRepoPath,
   isNodeRepo,
   isJavaRepo,
   GITHUB_ORG,
@@ -82,6 +86,34 @@ describe('repo constants', () => {
     expect(repoUrl('trade-imports-animals-frontend')).toBe(
       'https://github.com/DEFRA/trade-imports-animals-frontend.git'
     )
+  })
+
+  test('realRepoPath resolves a workspace root reached through a symlink', () => {
+    const base = mkdtempSync(join(tmpdir(), 'tim-symlink-'))
+    const real = join(base, 'real-workspace')
+    const link = join(base, 'linked-workspace')
+    mkdirSync(join(real, REPOS_DIR, NODE_REPOS[0]), { recursive: true })
+    symlinkSync(real, link)
+
+    try {
+      expect(realRepoPath(link, NODE_REPOS[0])).toBe(
+        realRepoPath(real, NODE_REPOS[0])
+      )
+    } finally {
+      rmSync(base, { recursive: true, force: true })
+    }
+  })
+
+  test('realRepoPath falls back to the plain path when the repo is not cloned', () => {
+    const workspaceRoot = mkdtempSync(join(tmpdir(), 'tim-uncloned-'))
+
+    try {
+      expect(realRepoPath(workspaceRoot, NODE_REPOS[0])).toBe(
+        repoPath(workspaceRoot, NODE_REPOS[0])
+      )
+    } finally {
+      rmSync(workspaceRoot, { recursive: true, force: true })
+    }
   })
 
   test('repoUrl honours the TIM_GITHUB_BASE_URL override', () => {

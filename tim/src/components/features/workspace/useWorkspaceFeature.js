@@ -7,14 +7,21 @@ import { cleanAll } from '../../../commands/workspace/clean.js'
 import { buildSetupTasks } from '../../../commands/workspace/setup.js'
 import { buildUpdateTasks } from '../../../commands/workspace/update.js'
 import { buildResetTasks } from '../../../commands/workspace/reset.js'
+import {
+  runBranch,
+  renderOutcomeText
+} from '../../../commands/workspace/branch.js'
 import { resolveWorkspaceRoot } from '../../../env/workspace-root.js'
 import MenuScreen from '../../common/screens/MenuScreen.js'
+import InputScreen from '../../common/screens/InputScreen.js'
 import TaskResultsScreen from '../../common/screens/TaskResultsScreen.js'
 import ParallelProgressScreen from '../../common/screens/ParallelProgressScreen.js'
 import StatusOutputScreen from './screens/StatusOutputScreen.js'
+import BranchOutcomeScreen from './screens/BranchOutcomeScreen.js'
 
 const WORKSPACE_ITEMS = [
   { label: 'Status', value: 'status' },
+  { label: 'Branch', value: 'branch' },
   { label: 'Install', value: 'install' },
   { label: 'Lint', value: 'lint' },
   { label: 'Test', value: 'test' },
@@ -57,8 +64,28 @@ export const useWorkspaceFeature = ({
   workspaceRoot,
   runners = DEFAULT_BUILDERS,
   cleanRunner = DEFAULT_CLEAN_RUNNER,
-  statusCollector = collectStatuses
+  statusCollector = collectStatuses,
+  branchRunner = runBranch
 }) => {
+  const runBranchSwitch = async (input) => {
+    setLoadingMessage(`Looking for ${input} in every repo…`)
+    setScreen(SCREENS.LOADING)
+    try {
+      const root = resolveWorkspaceRoot({ explicit: workspaceRoot })
+      const outcome = await branchRunner(root, { input })
+      if (outcome.kind !== 'applied') {
+        setScreenData({ error: renderOutcomeText(outcome) })
+        setScreen(SCREENS.ERROR)
+        return
+      }
+      setScreenData({ outcome })
+      setScreen(SCREENS.WORKSPACE_BRANCH_OUTCOME)
+    } catch (error) {
+      setScreenData({ error: error.message ?? String(error) })
+      setScreen(SCREENS.ERROR)
+    }
+  }
+
   const runStatus = async () => {
     setLoadingMessage('Reading git status for every repo…')
     setScreen(SCREENS.LOADING)
@@ -103,6 +130,9 @@ export const useWorkspaceFeature = ({
   const handleWorkspaceSelect = (item) => {
     if (item.value === 'back') return navigateToMain()
     if (item.value === 'status') return runStatus()
+    if (item.value === 'branch') {
+      return setScreen(SCREENS.WORKSPACE_BRANCH_INPUT)
+    }
     if (item.value === 'clean') return runClean()
     if (VERB_LABELS[item.value]) return runVerb(item.value)
   }
@@ -123,6 +153,24 @@ export const useWorkspaceFeature = ({
       component: StatusOutputScreen,
       props: (screenData) => ({
         statuses: screenData.statuses ?? [],
+        onReturn: navigateToMain
+      })
+    },
+    [SCREENS.WORKSPACE_BRANCH_INPUT]: {
+      component: InputScreen,
+      props: {
+        title: 'Workspace',
+        subtitle: 'Check out a branch in every repo',
+        label: 'Branch name or ticket',
+        placeholder: 'EUDPA-200',
+        onSubmit: runBranchSwitch,
+        onCancel: navigateToMain
+      }
+    },
+    [SCREENS.WORKSPACE_BRANCH_OUTCOME]: {
+      component: BranchOutcomeScreen,
+      props: (screenData) => ({
+        outcome: screenData.outcome,
         onReturn: navigateToMain
       })
     },

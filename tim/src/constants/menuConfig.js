@@ -6,6 +6,8 @@ export const SCREENS = Object.freeze({
   WORKSPACE_STATUS_OUTPUT: 'workspace-status-output',
   WORKSPACE_TASK_RESULTS: 'workspace-task-results',
   WORKSPACE_TASK_PROGRESS: 'workspace-task-progress',
+  WORKSPACE_BRANCH_INPUT: 'workspace-branch-input',
+  WORKSPACE_BRANCH_OUTCOME: 'workspace-branch-outcome',
   AUTH_RESULTS: 'auth-results',
   JIRA_MENU: 'jira-menu',
   JIRA_TICKET_INPUT: 'jira-ticket-input',
