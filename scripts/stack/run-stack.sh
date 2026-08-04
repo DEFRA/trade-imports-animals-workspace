@@ -10,9 +10,11 @@ services=(
   "frontend|trade-imports-animals-frontend|TRADE_IMPORTS_ANIMALS_FRONTEND"
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
   "admin|trade-imports-animals-admin|TRADE_IMPORTS_ANIMALS_ADMIN"
+  "ins-frontend|trade-imports-ins-frontend|TRADE_IMPORTS_INS_FRONTEND"
   "stub|trade-imports-stub|TRADE_IMPORTS_STUB"
   "defra-id-stub|trade-imports-defra-id-stub|TRADE_IMPORTS_DEFRA_ID_STUB"
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
+  "address-book|trade-imports-address-book|TRADE_IMPORTS_ADDRESS_BOOK"
   "gateway|trade-imports-dynamics-gateway|TRADE_IMPORTS_DYNAMICS_GATEWAY"
 )
 
@@ -126,7 +128,7 @@ if [ -n "$branch" ]; then
 fi
 
 # Fan out the branch-tag probes concurrently. docker manifest inspect is a
-# network round-trip per service; running them in parallel turns 7 sequential
+# network round-trip per service; running them in parallel turns 9 sequential
 # round-trips into one wall-clock round-trip. Each job touches a marker file on
 # success; the print loop below reads the markers so all env-var exports still
 # happen in this (parent) shell. bash-3.2 safe (macOS default) and Linux-CI safe:

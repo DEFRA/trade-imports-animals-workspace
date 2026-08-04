@@ -17,17 +17,19 @@ describe('repo constants', () => {
     expect(REPOS_DIR).toBe('repos')
   })
 
-  test('NODE_REPOS lists the four Node.js repos', () => {
+  test('NODE_REPOS lists the five Node.js repos', () => {
     expect([...NODE_REPOS].sort()).toEqual([
       'trade-imports-animals-admin',
       'trade-imports-animals-frontend',
       'trade-imports-animals-tests',
-      'trade-imports-defra-id-stub'
+      'trade-imports-defra-id-stub',
+      'trade-imports-ins-frontend'
     ])
   })
 
-  test('JAVA_REPOS lists the four Java repos', () => {
+  test('JAVA_REPOS lists the five Java repos', () => {
     expect([...JAVA_REPOS].sort()).toEqual([
+      'trade-imports-address-book',
       'trade-imports-animals-backend',
       'trade-imports-dynamics-gateway',
       'trade-imports-reference-data',
