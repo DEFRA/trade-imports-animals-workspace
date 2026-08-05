@@ -186,11 +186,38 @@ done
 up_args=(up --wait --detach --pull always)
 [ "$dev" -eq 1 ] && up_args+=(--build)
 
+# The app tier starts in its own pass, after everything else reports healthy.
+# Naming every service on the command line is what makes --exclude work, but it
+# also makes compose drop the frontend's `trade-imports-reference-data:
+# condition: service_healthy` edge — it starts reference-data first and then
+# never waits, so in real mode the frontend's boot-time prime() fetch hits a
+# container still inside its 30s start_period and the process exits 1. Both
+# passes read from up_services, so exclusions already applied still hold; a
+# frontend-only selection falls through to the single pass, where compose
+# resolves the dependencies itself and does honour the health conditions.
+app_tier=()
+base_tier=()
+for svc in "${up_services[@]}"; do
+  case "$svc" in
+    trade-imports-animals-frontend | trade-imports-animals-admin)
+      app_tier+=("$svc")
+      ;;
+    *)
+      base_tier+=("$svc")
+      ;;
+  esac
+done
+
 # Bring the stack up and block until healthy. This used to `exec`; it no longer
 # does so the script can run one post-healthy re-check below. A failure here
 # still aborts under `set -e` with the compose exit code, preserving the old
 # signal/exit-code propagation.
-docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+if [ ${#app_tier[@]} -gt 0 ] && [ ${#base_tier[@]} -gt 0 ]; then
+  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${base_tier[@]}"
+  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${app_tier[@]}"
+else
+  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
+fi
 
 # Post-healthy re-check (branch mode only; --dev never probes Dockerhub).
 # Stack startup takes 1-2 minutes to reach healthy — long enough for a slower
