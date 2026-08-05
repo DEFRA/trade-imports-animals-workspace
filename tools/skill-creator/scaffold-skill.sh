@@ -59,7 +59,7 @@ missing=$(jq -r '
         (if ($a | has("prebake")) then empty else "prebake" end),
         (if ($a.fanout | type) == "object" and ($a.fanout | has("enabled")) then empty else "fanout.enabled" end),
         (if ($a | has("walker")) then empty else "walker" end),
-        (if (($a.helpers // []) | length) > 0 then empty else "helpers" end),
+        (if (($a.helpers | type) == "array") then empty else "helpers" end),
         (if (($a.triggers.phrases // []) | length) > 0 then empty else "triggers.phrases" end),
         (if ($a.triggers.disambiguation // "") != "" then empty else "triggers.disambiguation" end)
     ] | join(",")

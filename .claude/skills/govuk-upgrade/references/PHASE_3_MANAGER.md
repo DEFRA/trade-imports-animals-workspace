@@ -142,8 +142,8 @@ cleans, then runs Playwright against the dockerised stack):
 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:docker-compose
 ```
 
-(There is no `test:local` script — the local E2E entry point is
-`test:docker-compose`.)
+(`test:docker-compose` is the local E2E entry point — the same script CI
+runs as `test:docker-compose:ci`.)
 
 On E2E failure, halt and prompt the user — don't auto-revert across N
 commits.

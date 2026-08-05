@@ -298,7 +298,7 @@ function heading(slide, label, title) {
     const cards = [
       { step: "1 · Set up (once)", cmds: [["make setup", "clone all eight repos"], ["make install", "npm deps across Node repos"]] },
       { step: "2 · Run from source", cmds: [["scripts/stack/run-stack.sh --dev", "build & run all services"], ["scripts/stack/bounce-backend.sh", "pick up edited Java source"]] },
-      { step: "3 · Verify", cmds: [["cd …-tests", "the E2E suite lives here"], ["npm run test:local", "exercise the running stack"]] },
+      { step: "3 · Verify", cmds: [["cd …-tests", "the E2E suite lives here"], ["npm run test:docker-compose", "exercise the running stack"]] },
     ];
     cards.forEach((c, ci) => {
       const x = M + ci * (cW + cGap);
@@ -333,7 +333,7 @@ function heading(slide, label, title) {
   const steps = [
     ["1", "Clone & set up", "Clone to ~/git/defra/trade-imports-animals-workspace (symlink if elsewhere), then make setup && make install."],
     ["2", "Bring the stack up", "scripts/stack/run-stack.sh --dev to build from source, then watch the logs."],
-    ["3", "Run the E2E suite", "npm run test:local in the tests repo. Skim make help and CLAUDE.md while it runs."],
+    ["3", "Run the E2E suite", "npm run test:docker-compose in the tests repo. Skim make help and CLAUDE.md while it runs."],
   ];
   let ty = 2.0;
   steps.forEach((st) => {

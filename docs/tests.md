@@ -24,14 +24,15 @@ Requires a running instance of the full stack (frontend + backend + dependencies
 npm install
 npx playwright install chromium    # first time only
 
-npm run test:local                 # run against the local workspace stack
+npm run test:docker-compose        # run against the local workspace stack (reseeds the DB first)
+npm run test:docker-compose:a11y   # the accessibility suite against the same stack
 npm test                           # CDP Portal config
 ```
 
 Headed / debug mode:
 ```bash
-npm run test:local -- --headed
-npm run test:local -- --debug
+npm run test:docker-compose -- --headed
+npm run test:docker-compose -- --debug
 ```
 
 Reports:

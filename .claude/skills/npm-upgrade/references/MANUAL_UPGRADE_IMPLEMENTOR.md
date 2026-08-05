@@ -51,8 +51,8 @@ If non-empty: stop. Return `CANNOT START: uncommitted changes`.
 
 **Skip the baseline `npm test` when `{repo}` is
 `trade-imports-animals-tests`.** That repo has no unit-test suite —
-it IS the E2E suite. The WALKER runs `npm run test:local` once at
-end of batch as the integration gate.
+it IS the E2E suite. The WALKER runs `npm run test:docker-compose` once
+at end of batch as the integration gate.
 
 For every other repo:
 
@@ -111,7 +111,7 @@ failures:
 
 **Skip this entire step when `{repo}` is `trade-imports-animals-tests`** —
 no unit-test suite exists. Commit straight through to Step 7; the
-WALKER runs `npm run test:local` once at end of batch and reports
+WALKER runs `npm run test:docker-compose` once at end of batch and reports
 any regression there.
 
 For every other repo:

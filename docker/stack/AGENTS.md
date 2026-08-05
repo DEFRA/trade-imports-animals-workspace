@@ -1,7 +1,7 @@
 # Workspace docker stack — agent index
 
 The wrapper-managed stack (this folder + `scripts/stack/`) is the **only**
-compose stack in the workspace and all eight repos — the
+compose stack in the workspace and all ten repos — the
 `make docker-compose-*` targets delegate to these wrappers.
 
 ## Stand up / tear down
@@ -111,10 +111,10 @@ queue once ASB is reachable again.
 ```bash
 ./scripts/stack/run-stack.sh
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
-`database:reseed` (called inside `test:local`) delegates to
+`database:reseed` (called inside `test:docker-compose`) delegates to
 `scripts/stack/bounce-mongo.sh`. Errors out if the stack isn't up.
 
 ## Lifecycle scripts live in `scripts/stack/`
