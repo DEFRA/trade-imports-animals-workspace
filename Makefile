@@ -1,13 +1,13 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway trade-imports-address-book trade-imports-ins-frontend
 REPOS_DIR     := repos
-NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub
-JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway
+NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub trade-imports-ins-frontend
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway trade-imports-address-book
 CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 
 .PHONY: setup link update reset status install lint test \
-        start-frontend start-backend start-admin start-gateway \
+        start-frontend start-backend start-admin start-gateway start-address-book \
         docker-local-branches docker-compose-up docker-compose-dev docker-compose-down docker-compose-bounce docker-logs docker-restart-backend clean help
 
 # --- Help ---
@@ -204,4 +204,7 @@ start-admin: ## Start admin dev server from source
 
 start-gateway: ## Start dynamics gateway from source
 	SPRING_PROFILES_ACTIVE=local mvn -f $(REPOS_DIR)/trade-imports-dynamics-gateway/pom.xml spring-boot:run
+
+start-address-book: ## Start address book API from source (requires Java 25 + MongoDB on :27017)
+	SPRING_PROFILES_ACTIVE=local PORT=8089 mvn -f $(REPOS_DIR)/trade-imports-address-book/pom.xml spring-boot:run
 

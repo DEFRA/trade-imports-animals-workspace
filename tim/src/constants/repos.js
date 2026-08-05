@@ -7,14 +7,16 @@ export const NODE_REPOS = Object.freeze([
   'trade-imports-animals-frontend',
   'trade-imports-animals-admin',
   'trade-imports-animals-tests',
-  'trade-imports-defra-id-stub'
+  'trade-imports-defra-id-stub',
+  'trade-imports-ins-frontend'
 ])
 
 export const JAVA_REPOS = Object.freeze([
   'trade-imports-animals-backend',
   'trade-imports-stub',
   'trade-imports-reference-data',
-  'trade-imports-dynamics-gateway'
+  'trade-imports-dynamics-gateway',
+  'trade-imports-address-book'
 ])
 
 export const REPOS = Object.freeze([...NODE_REPOS, ...JAVA_REPOS])
