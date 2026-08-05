@@ -90,7 +90,7 @@ If `applicable_items` is empty (every item is already fixed):
 > Note: the `npm` test commands below are for the Node repos
 > (frontend/admin/tests). For a `.java` file in a Java repo, substitute
 > the repo's Maven test (`mvn -f ~/git/defra/trade-imports-animals-workspace/repos/{repo} test`)
-> and skip the E2E `test:local` step unless the change is behavioural.
+> and skip the E2E `test:docker-compose` step unless the change is behavioural.
 
 Run unit tests in the relevant repo:
 
@@ -101,7 +101,7 @@ npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tm
 Run E2E tests:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:local > /tmp/style-pre-e2e.log 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:docker-compose > /tmp/style-pre-e2e.log 2>&1
 ```
 
 Read each log file once.
@@ -157,7 +157,7 @@ npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/{repo} test > /tm
 Run E2E tests:
 
 ```bash
-npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:local > /tmp/style-post-e2e.log 2>&1
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-tests run test:docker-compose > /tmp/style-post-e2e.log 2>&1
 ```
 
 **If unit tests fail:**

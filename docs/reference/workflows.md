@@ -30,7 +30,7 @@ make docker-compose-dev
 **Run the E2E tests:**
 ```bash
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
 **Run unit tests:**

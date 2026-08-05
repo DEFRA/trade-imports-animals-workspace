@@ -111,10 +111,10 @@ queue once ASB is reachable again.
 ```bash
 ./scripts/stack/run-stack.sh
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
-`database:reseed` (called inside `test:local`) delegates to
+`database:reseed` (called inside `test:docker-compose`) delegates to
 `scripts/stack/bounce-mongo.sh`. Errors out if the stack isn't up.
 
 ## Lifecycle scripts live in `scripts/stack/`

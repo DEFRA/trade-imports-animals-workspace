@@ -569,9 +569,9 @@ npx playwright show-trace trace.zip
 npm install
 npx playwright install chromium    # first time — install browser binary
 
-npm run test:local    # against the local workspace stack
-npm run test:local-fast  # local without Allure (faster feedback)
-npm test              # CDP Portal config
+npm run test:docker-compose       # against the local workspace stack (reseeds the DB first)
+npm run test:docker-compose:a11y  # the accessibility suite against the same stack
+npm test                          # CDP Portal config
 ```
 
 Environment variables:
@@ -588,7 +588,7 @@ For `@compose` tagged tests, the full workspace stack must be running first:
 cd /path/to/workspace
 ./scripts/stack/run-stack.sh
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
 ---

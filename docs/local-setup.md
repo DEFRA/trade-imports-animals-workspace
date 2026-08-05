@@ -84,7 +84,7 @@ After the stack is up, run the E2E tests against it:
 
 ```bash
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
 ### Frontend / admin changes
