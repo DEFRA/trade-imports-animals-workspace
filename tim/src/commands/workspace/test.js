@@ -4,7 +4,8 @@ import {
   NODE_REPOS,
   JAVA_REPOS,
   UNIT_TEST_EXEMPT_REPOS,
-  repoPath
+  repoPath,
+  realRepoPath
 } from '../../constants/repos.js'
 import { run } from '../../exec/exec.js'
 import { runSerial } from '../../exec/parallel.js'
@@ -25,7 +26,7 @@ export const buildTestTasks = (workspaceRoot) => {
   const tasks = []
   for (const repo of NODE_REPOS) {
     if (UNIT_TEST_EXEMPT_REPOS.includes(repo)) continue
-    const dir = repoPath(workspaceRoot, repo)
+    const dir = realRepoPath(workspaceRoot, repo)
     if (!hasTestScript(dir)) continue
     const task = { id: repo, repo, label: `${repo} — npm test` }
     task.run = async () =>

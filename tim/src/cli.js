@@ -12,6 +12,7 @@ import { register as registerWorkspaceTest } from './commands/workspace/test.js'
 import { register as registerWorkspaceSetup } from './commands/workspace/setup.js'
 import { register as registerWorkspaceUpdate } from './commands/workspace/update.js'
 import { register as registerWorkspaceReset } from './commands/workspace/reset.js'
+import { register as registerWorkspaceBranch } from './commands/workspace/branch.js'
 import { register as registerLink } from './commands/link.js'
 import { register as registerDocker } from './commands/docker/index.js'
 import { register as registerStart } from './commands/start.js'
@@ -117,6 +118,7 @@ export const buildProgram = () => {
   registerWorkspaceSetup(workspace, { timVersion: pkg.version })
   registerWorkspaceUpdate(workspace, { timVersion: pkg.version })
   registerWorkspaceReset(workspace, { timVersion: pkg.version })
+  registerWorkspaceBranch(workspace, { timVersion: pkg.version })
 
   registerLink(program, { timVersion: pkg.version })
   registerDocker(program, { timVersion: pkg.version })

@@ -163,11 +163,6 @@ The OIDC discovery URL is:
 http://localhost:3007/idphub/b2c/b2c_1a_cui_cpdev_signupsigninsfi/.well-known/openid-configuration
 ```
 
-If running services inside Docker and the auth redirect needs to hit `localhost:3007` from the browser, add to `/etc/hosts`:
-```
-127.0.0.1 host.docker.internal
-```
-
 ---
 
 ## Ports summary

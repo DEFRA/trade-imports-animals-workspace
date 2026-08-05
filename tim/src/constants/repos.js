@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { existsSync, realpathSync } from 'node:fs'
 
 export const REPOS_DIR = 'repos'
 
@@ -6,14 +7,16 @@ export const NODE_REPOS = Object.freeze([
   'trade-imports-animals-frontend',
   'trade-imports-animals-admin',
   'trade-imports-animals-tests',
-  'trade-imports-defra-id-stub'
+  'trade-imports-defra-id-stub',
+  'trade-imports-ins-frontend'
 ])
 
 export const JAVA_REPOS = Object.freeze([
   'trade-imports-animals-backend',
   'trade-imports-stub',
   'trade-imports-reference-data',
-  'trade-imports-dynamics-gateway'
+  'trade-imports-dynamics-gateway',
+  'trade-imports-address-book'
 ])
 
 export const REPOS = Object.freeze([...NODE_REPOS, ...JAVA_REPOS])
@@ -28,6 +31,18 @@ export const UNIT_TEST_EXEMPT_REPOS = Object.freeze([
 
 export const repoPath = (workspaceRoot, repoName) =>
   join(workspaceRoot, REPOS_DIR, repoName)
+
+/**
+ * Repo path with every symlink resolved. `npm --prefix` walks up from the
+ * path it is given, so a path through a symlink lands npm on the wrong
+ * package root and it rejects the lockfile. The workspace is mandated to
+ * live behind a symlink, so npm invocations must use this, not `repoPath`.
+ * Falls back to the plain path when the repo is not cloned yet.
+ */
+export const realRepoPath = (workspaceRoot, repoName) => {
+  const path = repoPath(workspaceRoot, repoName)
+  return existsSync(path) ? realpathSync(path) : path
+}
 
 export const isNodeRepo = (repoName) => NODE_REPOS.includes(repoName)
 

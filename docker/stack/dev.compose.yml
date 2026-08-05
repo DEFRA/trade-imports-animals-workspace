@@ -65,3 +65,29 @@ services:
       - ../../repos/trade-imports-reference-data/src:/app/src
     healthcheck:
       start_period: 60s
+
+  trade-imports-address-book:
+    build:
+      context: ../../repos/trade-imports-address-book
+      target: dev-run
+    image: ''
+    volumes:
+      - ../../repos/trade-imports-address-book/src:/app/src
+    healthcheck:
+      start_period: 60s
+
+  trade-imports-ins-frontend:
+    build:
+      context: ../../repos/trade-imports-ins-frontend
+      target: development
+    platform: ${DEV_BUILD_PLATFORM:-linux/amd64}
+    image: ''
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ../../repos/trade-imports-ins-frontend/src:/home/node/src
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3002/health']
+      interval: 5s
+      start_period: 30s
+      retries: 10

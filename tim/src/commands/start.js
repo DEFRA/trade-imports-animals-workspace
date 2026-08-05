@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { repoPath } from '../constants/repos.js'
+import { repoPath, realRepoPath } from '../constants/repos.js'
 import { resolveWorkspaceRoot } from '../env/workspace-root.js'
 import { runStreamed } from '../exec/exec.js'
 import { OK, USAGE, ERROR } from '../constants/exitCodes.js'
@@ -15,7 +15,7 @@ const SERVICES = {
       command: 'npm',
       args: [
         '--prefix',
-        repoPath(workspaceRoot, 'trade-imports-animals-frontend'),
+        realRepoPath(workspaceRoot, 'trade-imports-animals-frontend'),
         'run',
         'dev'
       ],
@@ -43,7 +43,7 @@ const SERVICES = {
       command: 'npm',
       args: [
         '--prefix',
-        repoPath(workspaceRoot, 'trade-imports-animals-admin'),
+        realRepoPath(workspaceRoot, 'trade-imports-animals-admin'),
         'run',
         'dev'
       ],

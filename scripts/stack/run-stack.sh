@@ -10,9 +10,11 @@ services=(
   "frontend|trade-imports-animals-frontend|TRADE_IMPORTS_ANIMALS_FRONTEND"
   "backend|trade-imports-animals-backend|TRADE_IMPORTS_ANIMALS_BACKEND"
   "admin|trade-imports-animals-admin|TRADE_IMPORTS_ANIMALS_ADMIN"
+  "ins-frontend|trade-imports-ins-frontend|TRADE_IMPORTS_INS_FRONTEND"
   "stub|trade-imports-stub|TRADE_IMPORTS_STUB"
   "defra-id-stub|trade-imports-defra-id-stub|TRADE_IMPORTS_DEFRA_ID_STUB"
   "reference-data|trade-imports-reference-data|TRADE_IMPORTS_REFERENCE_DATA"
+  "address-book|trade-imports-address-book|TRADE_IMPORTS_ADDRESS_BOOK"
   "gateway|trade-imports-dynamics-gateway|TRADE_IMPORTS_DYNAMICS_GATEWAY"
 )
 
@@ -126,7 +128,7 @@ if [ -n "$branch" ]; then
 fi
 
 # Fan out the branch-tag probes concurrently. docker manifest inspect is a
-# network round-trip per service; running them in parallel turns 7 sequential
+# network round-trip per service; running them in parallel turns 9 sequential
 # round-trips into one wall-clock round-trip. Each job touches a marker file on
 # success; the print loop below reads the markers so all env-var exports still
 # happen in this (parent) shell. bash-3.2 safe (macOS default) and Linux-CI safe:
@@ -195,11 +197,14 @@ up_args=(up --wait --detach --pull always)
 # passes read from up_services, so exclusions already applied still hold; a
 # frontend-only selection falls through to the single pass, where compose
 # resolves the dependencies itself and does honour the health conditions.
+# The app tier is the browser-facing services only; every API they fetch from at
+# boot (backend, reference-data, address-book) must be in the base tier so it is
+# already healthy by the time the second pass starts.
 app_tier=()
 base_tier=()
 for svc in "${up_services[@]}"; do
   case "$svc" in
-    trade-imports-animals-frontend | trade-imports-animals-admin)
+    trade-imports-animals-frontend | trade-imports-animals-admin | trade-imports-ins-frontend)
       app_tier+=("$svc")
       ;;
     *)

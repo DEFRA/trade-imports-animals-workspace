@@ -425,6 +425,116 @@ describe('useWorkspaceFeature', () => {
     )
   })
 
+  const BranchHarness = ({ workspaceRoot, branchRunner, input }) => {
+    const [screen, setScreen] = useState(SCREENS.WORKSPACE_MENU)
+    const [screenData, setScreenData] = useState({})
+    const [, setLoadingMessage] = useState('')
+    const feature = useWorkspaceFeature({
+      setScreen,
+      setScreenData,
+      setLoadingMessage,
+      navigateToMain: () => {},
+      workspaceRoot,
+      branchRunner
+    })
+    useEffect(() => {
+      feature.routes[SCREENS.WORKSPACE_BRANCH_INPUT].props.onSubmit(input)
+    }, [])
+    if (screen === SCREENS.ERROR) {
+      return createElement(Text, null, `error:${screenData.error}`)
+    }
+    if (screen === SCREENS.LOADING) return createElement(Text, null, 'loading')
+    const route = feature.routes[screen]
+    if (!route) return createElement(Text, null, `unknown:${screen}`)
+    const props =
+      typeof route.props === 'function' ? route.props(screenData) : route.props
+    return createElement(route.component, props)
+  }
+
+  const appliedOutcome = {
+    kind: 'applied',
+    branch: 'feat/EUDPA-1-alpha',
+    ticket: 'EUDPA-1',
+    dryRun: false,
+    repos: [
+      {
+        repo: 'trade-imports-animals-frontend',
+        from: 'main',
+        target: 'feat/EUDPA-1-alpha',
+        action: 'switched',
+        fetchFailed: false,
+        uncommitted: 2,
+        stashed: true,
+        worktreePath: null,
+        exitCode: 0,
+        stderrTail: null,
+        ok: true
+      }
+    ]
+  }
+
+  test('the workspace menu offers a Branch action', () => {
+    const { lastFrame } = render(
+      createElement(Harness, { workspaceRoot: fakeRoot })
+    )
+
+    expect(lastFrame()).toContain('Branch')
+  })
+
+  test('submitting a branch renders the per-repo outcome and the stash warning', async () => {
+    const { lastFrame } = render(
+      createElement(BranchHarness, {
+        workspaceRoot: fakeRoot,
+        branchRunner: async () => appliedOutcome,
+        input: 'EUDPA-1'
+      })
+    )
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toContain('Switched to feat/EUDPA-1-alpha (EUDPA-1)')
+    )
+    const frame = lastFrame()
+    expect(frame).toContain('switched from main (work stashed)')
+    expect(frame).toContain('Work stashed in: trade-imports-animals-frontend')
+  })
+
+  test('an ambiguous ticket lands on the error screen listing the candidates', async () => {
+    const { lastFrame } = render(
+      createElement(BranchHarness, {
+        workspaceRoot: fakeRoot,
+        branchRunner: async () => ({
+          kind: 'ambiguous',
+          input: 'EUDPA-2',
+          ticket: 'EUDPA-2',
+          candidates: [
+            { branch: 'feat/EUDPA-2-beta', repos: ['trade-imports-stub'] },
+            { branch: 'feat/EUDPA-2-gamma', repos: ['trade-imports-stub'] }
+          ]
+        }),
+        input: 'EUDPA-2'
+      })
+    )
+
+    await vi.waitFor(() =>
+      expect(lastFrame()).toMatch(/EUDPA-2 matches 2 branches/)
+    )
+    expect(lastFrame()).toContain('Run again with the full branch name.')
+  })
+
+  test('a throwing branch runner surfaces the message on the error screen', async () => {
+    const { lastFrame } = render(
+      createElement(BranchHarness, {
+        workspaceRoot: fakeRoot,
+        branchRunner: async () => {
+          throw new Error('git exploded')
+        },
+        input: 'EUDPA-1'
+      })
+    )
+
+    await vi.waitFor(() => expect(lastFrame()).toMatch(/error:git exploded/))
+  })
+
   test('a non-Error throw from statusCollector falls back to String(error)', async () => {
     const statusCollector = async () => {
       // eslint-disable-next-line no-throw-literal
