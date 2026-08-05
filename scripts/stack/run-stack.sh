@@ -188,52 +188,11 @@ done
 up_args=(up --wait --detach --pull always)
 [ "$dev" -eq 1 ] && up_args+=(--build)
 
-# The app tier starts in its own pass, after everything else reports healthy.
-# Naming every service on the command line is what makes --exclude work, but it
-# also makes compose drop the frontend's `trade-imports-reference-data:
-# condition: service_healthy` edge — it starts reference-data first and then
-# never waits, so in real mode the frontend's boot-time prime() fetch hits a
-# container still inside its 30s start_period and the process exits 1. Both
-# passes read from up_services, so exclusions already applied still hold; a
-# frontend-only selection falls through to the single pass, where compose
-# resolves the dependencies itself and does honour the health conditions.
-# The app tier is whatever frontend.compose.yml defines. That file already draws
-# the line this needs — browser-facing services live there, the APIs they fetch
-# at boot live in the other compose files — so deriving the split keeps a new
-# frontend correct without editing this script.
-app_tier_names=()
-while IFS= read -r name; do
-  [ -n "$name" ] && app_tier_names+=("$name")
-done < <(grep -E '^  [a-z0-9-]+:$' "$STACK_DIR/frontend.compose.yml" | tr -d ' :')
-[ ${#app_tier_names[@]} -gt 0 ] || {
-  print_error "error: no services found in frontend.compose.yml — cannot stage the app tier"
-  exit 1
-}
-
-app_tier=()
-base_tier=()
-for svc in "${up_services[@]}"; do
-  is_app=0
-  for name in ${app_tier_names[@]+"${app_tier_names[@]}"}; do
-    [ "$svc" = "$name" ] && { is_app=1; break; }
-  done
-  if [ "$is_app" -eq 1 ]; then
-    app_tier+=("$svc")
-  else
-    base_tier+=("$svc")
-  fi
-done
-
 # Bring the stack up and block until healthy. This used to `exec`; it no longer
 # does so the script can run one post-healthy re-check below. A failure here
 # still aborts under `set -e` with the compose exit code, preserving the old
 # signal/exit-code propagation.
-if [ ${#app_tier[@]} -gt 0 ] && [ ${#base_tier[@]} -gt 0 ]; then
-  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${base_tier[@]}"
-  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${app_tier[@]}"
-else
-  docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
-fi
+docker compose "${COMPOSE_FILES[@]}" "${profile_args[@]}" "${up_args[@]}" ${extra[@]+"${extra[@]}"} "${up_services[@]}"
 
 # Post-healthy re-check (branch mode only; --dev never probes Dockerhub).
 # Stack startup takes 1-2 minutes to reach healthy — long enough for a slower
