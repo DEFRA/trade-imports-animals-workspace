@@ -197,20 +197,31 @@ up_args=(up --wait --detach --pull always)
 # passes read from up_services, so exclusions already applied still hold; a
 # frontend-only selection falls through to the single pass, where compose
 # resolves the dependencies itself and does honour the health conditions.
-# The app tier is the browser-facing services only; every API they fetch from at
-# boot (backend, reference-data, address-book) must be in the base tier so it is
-# already healthy by the time the second pass starts.
+# The app tier is whatever frontend.compose.yml defines. That file already draws
+# the line this needs — browser-facing services live there, the APIs they fetch
+# at boot live in the other compose files — so deriving the split keeps a new
+# frontend correct without editing this script.
+app_tier_names=()
+while IFS= read -r name; do
+  [ -n "$name" ] && app_tier_names+=("$name")
+done < <(grep -E '^  [a-z0-9-]+:$' "$STACK_DIR/frontend.compose.yml" | tr -d ' :')
+[ ${#app_tier_names[@]} -gt 0 ] || {
+  print_error "error: no services found in frontend.compose.yml — cannot stage the app tier"
+  exit 1
+}
+
 app_tier=()
 base_tier=()
 for svc in "${up_services[@]}"; do
-  case "$svc" in
-    trade-imports-animals-frontend | trade-imports-animals-admin | trade-imports-ins-frontend)
-      app_tier+=("$svc")
-      ;;
-    *)
-      base_tier+=("$svc")
-      ;;
-  esac
+  is_app=0
+  for name in ${app_tier_names[@]+"${app_tier_names[@]}"}; do
+    [ "$svc" = "$name" ] && { is_app=1; break; }
+  done
+  if [ "$is_app" -eq 1 ]; then
+    app_tier+=("$svc")
+  else
+    base_tier+=("$svc")
+  fi
 done
 
 # Bring the stack up and block until healthy. This used to `exec`; it no longer
