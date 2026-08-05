@@ -31,9 +31,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DEFRA/trade-imports-animals-workspace
-          # Workspace PRs must exercise their own stack changes; callers via
-          # workflow_call surface the caller's event name, so they get main
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          # Workspace PRs and dispatches must exercise their own stack changes.
+          # A caller's event name surfaces here as its own (a frontend PR reads
+          # as pull_request), so branch is the discriminator instead: it is
+          # required on workflow_call and empty otherwise, and callers get main.
+          ref: ${{ inputs.branch && 'main' || (github.event_name == 'pull_request' && github.head_ref || github.ref_name) }}
 
       - name: Resolve branch tag
         id: branch-tag
