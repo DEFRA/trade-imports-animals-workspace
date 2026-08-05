@@ -25,7 +25,7 @@
 #      escape hatch for a genuine one-off. These carry no security weight — worst
 #      case is a missed redirect, never a missed deny:
 #        - a literal /Users/<user>/ path (use ~/ — the matcher treats them differently)
-#        - raw `npx playwright test` (use `npm run test:local`)
+#        - raw `npx playwright test` (use `npm run test:docker-compose`)
 #        - `npm --prefix` over the workspace symlink (canonicalize with cd && pwd -P)
 #        - `&&` command chaining (one command per Bash call)
 #      Force-push to main, chmod and rm -rf are already handled by settings.json's
@@ -161,7 +161,7 @@ fi
 
 # Raw `npx playwright test` — skips the project wrapper's setup.
 if printf '%s' "$CMD" | grep -Eq 'npx[[:space:]].*playwright[[:space:]]+test'; then
-  deny "Use the project wrapper 'npm run test:local' rather than raw 'npx playwright test' — the wrapper does setup the raw invocation skips."
+  deny "Use the project wrapper 'npm run test:docker-compose' rather than raw 'npx playwright test' — the wrapper does setup the raw invocation skips."
 fi
 
 # npm --prefix over the workspace symlink — can corrupt the lockfile.
