@@ -1,0 +1,31 @@
+{
+  "file": "src/server/address-book/list/controller.test.js",
+  "repo": "trade-imports-ins-frontend",
+  "commit": "2e759fe7efb3e20e55b34da206243640c6735121",
+  "pr": 17,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-06T17:25:40Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "The two new tests correctly pin the clear-search link's presence/absence, but neither asserts where the link goes, and the data-testid contract they introduce is left untested on the no-results branch where the template omits it.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 181,
+      "severity": "Major",
+      "category": "test-assertion-strength",
+      "issue": "The new 'shows clear search when search results are returned' test never asserts the clear-search link's href — 'toContain(\"Clear search</a>\")' and the data-testid string match regardless of destination, so AC1's 'clear the search and return to the full list' is unpinned (changing href to /address-book?q=green would keep the test green).",
+      "fix": "Parse with Cheerio and assert the destination, e.g. expect(load(result)('[data-testid=\"address-book-clear-search\"]').attr('href')).toBe('/address-book'), replacing the raw 'Clear search</a>' string match.",
+      "best_practice": "node/testing/frontend.md"
+    },
+    {
+      "id": 2,
+      "line": 184,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "The PR introduces a data-testid contract for the clear-search link but only tests the has-results branch; the no-results branch (index.njk:65) renders a 'Clear search' link with no data-testid, and the pre-existing no-results test at line 238 only asserts toContain('Clear search'), so the two branches expose different selectors and nothing catches it.",
+      "fix": "Add expect(result).toContain('data-testid=\"address-book-clear-search\"') to the 'shows no-results state...' test at line 221 (it will fail), then add the same data-testid to the no-results Clear search link in index.njk so both branches share one selector.",
+      "best_practice": "node/testing/frontend.md"
+    }
+  ],
+  "reconciled_at": "2026-08-06T17:30:50Z"
+}

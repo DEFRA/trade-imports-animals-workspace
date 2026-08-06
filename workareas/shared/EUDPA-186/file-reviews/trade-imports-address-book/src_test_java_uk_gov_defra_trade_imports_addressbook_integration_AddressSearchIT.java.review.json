@@ -1,0 +1,21 @@
+{
+  "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressSearchIT.java",
+  "repo": "trade-imports-address-book",
+  "commit": "73113b260e0a676211a2c749122168afaf094e8c",
+  "pr": 2,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-06T17:25:44Z",
+  "verdict": "SAFE",
+  "verdict_reason": "The added multi-word/uppercase search IT correctly encodes AC3 against the implemented regex search and is properly isolated by IntegrationBase's per-test DB clean; the one Minor is that its control data does not discriminate phrase matching from token matching.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 84,
+      "severity": "Minor",
+      "category": "test-quality",
+      "issue": "multiWordSearchMatchesNameCaseInsensitively does not discriminate the search semantics it claims to pin: the only non-matching row is 'Blue Barn', which contains neither 'green' nor 'valley', so the test passes equally under the implemented contiguous-substring regex (.*\\Qgreen valley\\E.*) and under a token-OR or token-AND implementation — the very semantics AC3 is about.",
+      "fix": "Add a discriminating control row that matches one token but not the phrase (e.g. save(ORGANISATION_ID, ACTIVE, \"Green Barn\", \"Perth\", ...)) and keep the totalItems 1 / items[0].id assertion; token-OR would then return 2 and the test fails, pinning contiguous-phrase matching."
+    }
+  ],
+  "reconciled_at": "2026-08-06T17:30:50Z"
+}

@@ -1,0 +1,22 @@
+{
+  "file": "src/server/address-book/list/index.njk",
+  "repo": "trade-imports-ins-frontend",
+  "commit": "2e759fe7efb3e20e55b34da206243640c6735121",
+  "pr": 17,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-06T17:25:09Z",
+  "verdict": "SAFE",
+  "verdict_reason": "The six added lines correctly render a govuk-link 'Clear search' for AC1 and are covered by both a positive and a negative unit test; the only issue is a duplicated, branch-scoped clear-search link with an inconsistent test hook.",
+  "todos": [
+    {
+      "id": 1,
+      "line": 74,
+      "severity": "Minor",
+      "category": "template-structure",
+      "issue": "The new {% if hasSearch %} 'Clear search' link duplicates the identical link already rendered in the noSearchResults branch (line 65), but only the new copy carries data-testid=\"address-book-clear-search\" — so the AC4 no-results screen has a clear link that no test hook can select, and the two copies can drift; being nested inside {% elif tableRows.length %} it also disappears entirely on an out-of-range page (e.g. ?q=green&page=99), leaving a searched user with no way back to the full list",
+      "fix": "Hoist one {% if hasSearch %} clear-search paragraph (with the data-testid) above the isEmpty / noSearchResults / tableRows.length chain and delete the duplicate at line 65, so a single link with a single test hook renders in every searched state",
+      "best_practice": "node/nunjucks.md"
+    }
+  ],
+  "reconciled_at": "2026-08-06T17:30:50Z"
+}

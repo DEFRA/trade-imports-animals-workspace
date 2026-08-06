@@ -1,0 +1,69 @@
+{
+  "ticket": "EUDPA-186",
+  "repo": "trade-imports-ins-frontend",
+  "items": [
+    {
+      "id": 1,
+      "line": 181,
+      "severity": "Major",
+      "category": "test-assertion-strength",
+      "issue": "The new 'shows clear search when search results are returned' test never asserts the clear-search link's href — 'toContain(\"Clear search</a>\")' and the data-testid string match regardless of destination, so AC1's 'clear the search and return to the full list' is unpinned (changing href to /address-book?q=green would keep the test green).",
+      "fix": "Parse with Cheerio and assert the destination, e.g. expect(load(result)('[data-testid=\"address-book-clear-search\"]').attr('href')).toBe('/address-book'), replacing the raw 'Clear search</a>' string match.",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/address-book/list/controller.test.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "line": 184,
+      "severity": "Major",
+      "category": "test-coverage",
+      "issue": "The PR introduces a data-testid contract for the clear-search link but only tests the has-results branch; the no-results branch (index.njk:65) renders a 'Clear search' link with no data-testid, and the pre-existing no-results test at line 238 only asserts toContain('Clear search'), so the two branches expose different selectors and nothing catches it.",
+      "fix": "Add expect(result).toContain('data-testid=\"address-book-clear-search\"') to the 'shows no-results state...' test at line 221 (it will fail), then add the same data-testid to the no-results Clear search link in index.njk so both branches share one selector.",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/address-book/list/controller.test.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "line": 74,
+      "severity": "Minor",
+      "category": "template-structure",
+      "issue": "The new {% if hasSearch %} 'Clear search' link duplicates the identical link already rendered in the noSearchResults branch (line 65), but only the new copy carries data-testid=\"address-book-clear-search\" — so the AC4 no-results screen has a clear link that no test hook can select, and the two copies can drift; being nested inside {% elif tableRows.length %} it also disappears entirely on an out-of-range page (e.g. ?q=green&page=99), leaving a searched user with no way back to the full list",
+      "fix": "Hoist one {% if hasSearch %} clear-search paragraph (with the data-testid) above the isEmpty / noSearchResults / tableRows.length chain and delete the duplicate at line 65, so a single link with a single test hook renders in every searched state",
+      "best_practice": "node/nunjucks.md",
+      "file": "src/server/address-book/list/index.njk",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "file": "src/server/address-book/list/controller.js",
+      "line": "59",
+      "severity": "Major",
+      "category": "consistency",
+      "issue": "hasSearch is Boolean(q) only, but the controller also accepts an explicit countryCode filter (line 69) and pagination round-trips it, so /address-book?countryCode=FR is a reachable filtered state. This PR's new {% if hasSearch %} Clear-search block therefore does not render there — a filtered list with no way back to the full one. The same gate drives isEmpty (line 87), so a countryCode-only search returning nothing renders 'You have no addresses yet' instead of the no-results state. The backend's OperatorService.queryPage treats q and countryCode as equal filters across four branches.",
+      "fix": "Widen the gate to hasSearch = Boolean(q || resolvedCountryCode) (computed after country resolution), so the Clear-search affordance and the no-results state both follow any filtered request; add a controller test for /address-book?countryCode=FR asserting the clear-search testid renders.",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "file": "src/server/address-book/address-countries.test.js",
+      "line": "85",
+      "severity": "Minor",
+      "category": "test-coverage",
+      "issue": "The added assertion resolveCountryCodeFromSearchTerm('United Kingdom', countries) === 'GB' is exact-case only, yet it sits inside the test named 'returns alpha-2 code for a case-insensitive country name match' whose existing lines assert both 'France' and 'france'. The multi-word LOWERCASE form is the case that actually exercises toLowerCase() on a multi-token name, and it is untested — so the frontend only half-mirrors AC3, which the backend IT proves in full ('green valley' AND 'GREEN').",
+      "fix": "Add one more assertion: expect(resolveCountryCodeFromSearchTerm('united kingdom', countries)).toBe('GB').",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}

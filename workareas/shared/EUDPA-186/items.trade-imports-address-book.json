@@ -1,0 +1,42 @@
+{
+  "ticket": "EUDPA-186",
+  "repo": "trade-imports-address-book",
+  "items": [
+    {
+      "id": 1,
+      "line": 84,
+      "severity": "Minor",
+      "category": "test-quality",
+      "issue": "multiWordSearchMatchesNameCaseInsensitively does not discriminate the search semantics it claims to pin: the only non-matching row is 'Blue Barn', which contains neither 'green' nor 'valley', so the test passes equally under the implemented contiguous-substring regex (.*\\Qgreen valley\\E.*) and under a token-OR or token-AND implementation — the very semantics AC3 is about.",
+      "fix": "Add a discriminating control row that matches one token but not the phrase (e.g. save(ORGANISATION_ID, ACTIVE, \"Green Barn\", \"Perth\", ...)) and keep the totalItems 1 / items[0].id assertion; token-OR would then return 2 and the test fails, pinning contiguous-phrase matching.",
+      "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressSearchIT.java",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "file": "src/test/java/uk/gov/defra/trade/imports/addressbook/integration/AddressSearchIT.java",
+      "line": "83",
+      "severity": "Minor",
+      "category": "test-structure",
+      "issue": "The new test packs two acceptance criteria (multi-word phrase match, and case-insensitivity) into a single @Test with two mockMvc.perform calls, whereas every other test in AddressSearchIT is one request per test. A failure will not name which half broke, and the second perform never runs if the first assertion fails.",
+      "fix": "Split into two tests — multiWordSearchMatchesName (q='green valley') and multiWordSearchIsCaseInsensitive (q='GREEN') — sharing the same save() fixture setup, matching the file's one-scenario-per-test convention.",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "file": "src/main/java/uk/gov/defra/trade/imports/addressbook/address/OperatorRepository.java",
+      "line": "25",
+      "severity": "Major",
+      "category": "acceptance-criteria",
+      "issue": "AC2 lists country as a searchable field and AC3 requires partial-word, case-insensitive matching, but searchByQuery regexes only name, townOrCity and postcode. Country matches only when the whole trimmed term is an EXACT country name the frontend can resolve to an alpha-2 code (cv-048), so 'Fran' or 'french' returns nothing while the frontend hint (ins-frontend list/index.njk:39) promises 'Search by name, town or city, postcode or country'. The ticket's tech notes call for countryCode to be in the searched field set. Pre-existing from EUDPA-287, but EUDPA-186 is the ticket that owns AC2/AC3 and this PR pair is its AC-coverage top-up — the gap is proven in neither direction.",
+      "fix": "Either (a) add countryCode to the searchByQuery $or so a partial term can match it, or (b) confirm with UX that exact-country-name resolution is the agreed behaviour and amend AC2 plus the frontend hint copy to say so. Add an IT pinning whichever is chosen.",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}
