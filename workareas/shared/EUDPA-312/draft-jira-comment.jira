@@ -1,0 +1,16 @@
+*Additional context from prior EUDPA-288 sign-off material*
+
+Two artefacts on disk already carry material that bears on this spike:
+* [prior follow-up draft|~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/eudpa-followup-fulfilment-persistence/draft.md] — 8 concerns enumerated during EUDPA-288 sign-off.
+* [notification-shape persistence analysis|~/git/defra/trade-imports-animals-workspace/workareas/shared/EUDPA-288/notification-shape-persistence-analysis.md] (2026-07-29) — separate open decision on whether to keep persisting the notification shape.
+
+*Origin framing*
+The current dual-write is not a mistake — it is a spike-scope pragmatism from the 2026-08-03 rollback decision. On merge of EUDPA-288 the team agreed to leave the notification API untouched from {{main}} and stripped the {{PUT /notifications/{ref}}} projection endpoint and the fulfilment → notification cascade in {{FulfilmentService}}. Dual-write from the frontend is the load-bearing consequence. EUDPA-312 is the *next decision*, not a reversal of the previous one.
+
+*Additional in-scope concerns (from the prior draft)*
+
+# *Shared-id mint location.* The two aggregates share a reference number (that's what makes them one journey). The ref is a domain-specific short code — {{GBN-AG-{YY}-{XXXXXX}}} — minted server-side by {{ReferenceNumberGenerator}} with a caller-side collision loop. Currently the mint lives on the notification side; the fulfilment is bootstrapped at that same id. Sharing the id is the load-bearing bit, not the ordering per se. Any option that wants to invert or eliminate the notification side needs to decide *where* the collision-safe mint runs.
+# *Lifecycle-transition idempotency and concurrent-edit safety.* Spun out to EUDPA-314 (Analyse versioning and idempotency for notification aggregates). Scoring of Option 1 (keep and mitigate) will depend on EUDPA-314's outcome — specifically, whether the recommended posture is "invest in retry safety consistently via {{@Version}}" or "don't invest anywhere". EUDPA-312 preserves current last-save-wins behaviour unless EUDPA-314 says otherwise.
+
+*Follow-up-ticket duplicate check*
+Confirmed 2026-08-05: the prior follow-up draft has not been raised as a Jira ticket. EUDPA-312 is not a duplicate.
