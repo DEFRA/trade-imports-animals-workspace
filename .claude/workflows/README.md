@@ -14,10 +14,15 @@ backlog in that shape — `snag-triage.js` below writes one.
 **Which programme** — `workarea` and `scope` in the `FALLBACK` const. Left alone they point at
 plant-products, so an invocation that names only increments behaves as it always did.
 
-**Which branch** — if an increment carries a `branch` field, the baseline guard checks that branch
-out before implementing, so each increment lands on its own branch off its own base rather than on
-top of its predecessor. With no `branch` field the loop keeps the old single-branch behaviour and
-asserts `spike/trace-to-requirements`.
+**Which branch** — if an increment carries a `branch` field, the baseline guard runs
+`tim workspace branch <branch>` before implementing, so each increment lands on its own branch off its own
+base rather than on top of its predecessor. With no `branch` field the loop keeps the old single-branch
+behaviour and asserts `spike/trace-to-requirements`.
+
+**Which repos** — an increment's `repos` array can name more than one, and the loop treats them as a unit:
+baseline checks all of them clean and on-branch, the implementor does every one, rollback stashes every one,
+and landing commits in each that has changes. Changed-file paths are repo-qualified as `repo:path` throughout.
+A `repo` singular field still works.
 
 **Which increments** — edit the `FALLBACK` const at the top (`{ increments: ['pp-053'] }`),
 or pass `args`. It defaults to the fallback because `args` plumbing has proved unreliable
@@ -69,9 +74,20 @@ A snag as reported ("the hint under the radios is gone") is not buildable; this 
 makes it buildable, and it is deliberately separate from building so a wrong diagnosis is caught
 before an implementor acts on it.
 
-**Input** — `workareas/shared/<workarea>/snags.txt`, one complaint per line, `#` for comments.
+**Input** — `workareas/shared/<workarea>/snags.txt`, one complaint per line, `#` for comments. Claude
+maintains that file: snags get reported in chat and appended verbatim, typos and all, because the wording is
+evidence about what someone saw. Lines are only ever appended — the loader matches them byte-for-byte to
+decide what has already been triaged, so rewording a line after its subtask exists raises a second one.
+
 **Output** — `backlog.json` in that workarea, plus a Jira subtask and a `fix/EUDPA-X-<slug>` branch
 per snag worth building.
+
+**Which repo** — the `repos` config is the *search set*, not the answer. Which repo owns a defect is a
+finding: a complaint about a screen can turn out to be a backend field, and a failing axe check in `-tests` is
+usually a real frontend defect that the suite surfaced. An increment's `repos` therefore routinely holds two,
+because a frontend fix whose regression spec belongs in `-tests` is one piece of work. The branch name is
+byte-identical across every repo it touches — that is the workspace's cross-repo branch-parity rule, and the
+stack's `--branch` image probe breaks silently without it.
 
 ### The stages, per snag
 

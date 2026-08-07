@@ -1,7 +1,7 @@
 export const meta = {
   name: 'snag-triage',
   description:
-    'Turn one-line snagging comments into a runnable backlog: investigate each snag, adversarially refute the diagnosis, raise a Jira subtask, cut its fix branch, then write backlog.json for increment-build-loop',
+    'Turn one-line snagging comments into a runnable backlog: investigate each snag across every repo, adversarially refute the diagnosis, raise a Jira subtask, cut its fix branch, then write backlog.json for increment-build-loop',
   whenToUse:
     'A snagging ticket has landed with a list of one-line complaints and none of them are specified well enough to build. Run this once per batch of new snags; it is idempotent, so re-running skips snags that already have a subtask.',
   phases: [
@@ -16,10 +16,14 @@ export const meta = {
 // ---------------------------------------------------------------------------
 // Configuration. `args` plumbing is unreliable in this runtime, so FALLBACK is
 // the real switch: edit it, or pass the same shape as args.
+//
+// `repos` is the SEARCH SET, not the answer — a snag is reported against a
+// screen, and which repo owns the defect is a finding, not an input. A single
+// snag routinely spans two (a frontend fix and the -tests spec that pins it).
 // ---------------------------------------------------------------------------
 const FALLBACK = {
   parent: 'EUDPA-315',
-  repo: 'frontend',
+  repos: ['frontend', 'tests', 'backend'],
   workarea: 'frontend-snagging-eudpa315',
   base: 'main',
 }
@@ -43,14 +47,21 @@ const REPO_PATH = {
   tests: 'repos/trade-imports-animals-tests',
 }
 
+const REPO_KEYS = CFG.repos.filter((r) => REPO_PATH[r])
+const repoRoster = REPO_KEYS.map((r) => `  - \`${r}\` → ${REPO_NAME[r]}, at \`${TILDE}/${REPO_PATH[r]}\``).join('\n')
+
 const GUARDRAILS = `
 GUARD RAILS (mandatory, every step):
 - NEVER use the Grep or Glob TOOLS — they are not allowlisted and will prompt the user. Use Bash \`grep -rn\` / \`find\` / \`ls\` / \`jq\`.
 - Bash hygiene: ONE command per Bash call. No \`&&\`, no \`;\`, no \`|\`, no \`cd\`, no trailing \`echo $?\`. Use \`git -C\`, \`npm --prefix\`, \`mvn -f\`. Output redirection (\`> file 2>&1\`) IS allowed.
 - In Bash ALWAYS use tilde paths \`${TILDE}/...\` — a literal /Users/... path in Bash is DENIED.
 - For the Read/Write/Edit TOOLS use absolute paths \`${ABS}/...\`.
+- The local build is driven by the \`tim\` CLI: \`tim workspace status\` for branch/dirty state across every repo,
+  \`tim workspace branch <name>\` to put every repo on one branch, \`tim docker dev\` for the stack. Prefer it over
+  hand-rolling the equivalent git/compose commands. \`tim <cmd> --json\` gives a stable envelope when you need to parse.
 - Never bare \`node\` / \`node -e\` (denied — wrap in an npm script). NEVER run \`sonar\` (not allowlisted; it is a milestone gate the human runs).
 - Tests go TO A FILE under \`${WORKAREA_TILDE}/logs/\` and you read that file ONCE. Never grep streaming output, never re-run a suite to see it again.
+- For Playwright failures read \`test-results/*/error-context.md\`, do not grep the tail of the run.
 - Rollback is ALWAYS \`git stash push -u\` — NEVER \`reset --hard\` or \`clean -fd\`.
 - Headless: never ask a question. Decide, record the decision, keep going.
 `
@@ -79,7 +90,7 @@ const SNAG_LIST_SCHEMA = {
 
 const DIAGNOSIS_SCHEMA = {
   type: 'object',
-  required: ['verdict', 'title', 'slug', 'diagnosis', 'confidence', 'summary'],
+  required: ['verdict', 'title', 'slug', 'repos', 'diagnosis', 'confidence', 'summary'],
   properties: {
     verdict: {
       type: 'string',
@@ -88,15 +99,21 @@ const DIAGNOSIS_SCHEMA = {
     },
     title: { type: 'string', description: 'Imperative one-liner for the Jira subtask summary, max ~80 chars' },
     slug: { type: 'string', description: 'kebab-case, max 5 words, for the branch name' },
-    diagnosis: { type: 'string', description: 'What is actually wrong, citing file:line. This is the evidence the refuter will attack.' },
-    rootCauseFiles: { type: 'array', items: { type: 'string' }, description: 'Repo-relative paths where the defect lives' },
+    repos: {
+      type: 'array',
+      items: { type: 'string', enum: ['frontend', 'tests', 'backend'] },
+      description: 'Every repo the fix touches. A frontend defect whose regression test lives in the -tests suite is ["frontend","tests"], not ["frontend"].',
+    },
+    diagnosis: { type: 'string', description: 'What is actually wrong, citing repo and file:line. This is the evidence the refuter will attack.' },
+    rootCauseFiles: { type: 'array', items: { type: 'string' }, description: 'Paths where the defect lives, each prefixed with its repo key, e.g. frontend:src/server/app/...' },
     filesToTouch: {
       type: 'array',
       items: {
         type: 'object',
-        required: ['path', 'action', 'what'],
+        required: ['repo', 'path', 'action', 'what'],
         properties: {
-          path: { type: 'string' },
+          repo: { type: 'string', enum: ['frontend', 'tests', 'backend'] },
+          path: { type: 'string', description: 'Repo-relative path' },
           action: { type: 'string', enum: ['create', 'edit', 'delete'] },
           what: { type: 'string' },
         },
@@ -105,7 +122,7 @@ const DIAGNOSIS_SCHEMA = {
     },
     acceptanceCriteria: { type: 'array', items: { type: 'string' } },
     verification: { type: 'array', items: { type: 'string' }, description: 'Ordered ladder of concrete commands/checks the build loop runs' },
-    specs: { type: 'array', items: { type: 'string' }, description: 'Test files to write or extend' },
+    specs: { type: 'array', items: { type: 'string' }, description: 'Test files to write or extend, repo-prefixed' },
     copyKeys: { type: 'array', items: { type: 'string' } },
     obligations: { type: 'array', items: { type: 'string' } },
     openQuestions: { type: 'array', items: { type: 'string' } },
@@ -121,9 +138,10 @@ const REFUTATION_SCHEMA = {
   required: ['diagnosisHolds', 'reasoning'],
   properties: {
     diagnosisHolds: { type: 'boolean' },
-    reasoning: { type: 'string', description: 'Evidence for or against, citing file:line' },
+    reasoning: { type: 'string', description: 'Evidence for or against, citing repo and file:line' },
     correctedVerdict: { type: 'string', enum: ['actionable', 'needs-decision', 'already-fixed', 'cannot-reproduce'] },
     correctedDiagnosis: { type: 'string', description: 'If the original diagnosis was wrong but you found the real cause, state it here' },
+    missingRepos: { type: 'array', items: { type: 'string', enum: ['frontend', 'tests', 'backend'] }, description: 'Repos the fix must also touch that the investigator did not list' },
     missingFromLadder: { type: 'array', items: { type: 'string' }, description: 'Verification steps the investigator should have listed but did not' },
   },
   additionalProperties: false,
@@ -135,7 +153,8 @@ const TICKET_SCHEMA = {
   properties: {
     ok: { type: 'boolean' },
     subtaskKey: { type: 'string', description: 'e.g. EUDPA-316' },
-    branch: { type: 'string', description: 'e.g. fix/EUDPA-316-radio-hint-missing' },
+    branch: { type: 'string', description: 'e.g. fix/EUDPA-316-copy-as-new-broken' },
+    branchedRepos: { type: 'array', items: { type: 'string' }, description: 'Repo keys where the branch was actually created' },
     summary: { type: 'string' },
   },
   additionalProperties: false,
@@ -147,16 +166,13 @@ const ASSEMBLE_SCHEMA = {
   properties: {
     ok: { type: 'boolean' },
     written: { type: 'number', description: 'Total increments in backlog.json after the write' },
-    runnable: { type: 'array', items: { type: 'string' }, description: 'Increment ids with status todo, in dependency order' },
+    runnable: { type: 'array', items: { type: 'string' }, description: 'Increment ids with status todo' },
     blocked: { type: 'array', items: { type: 'string' } },
     overlaps: { type: 'array', items: { type: 'string' }, description: 'Pairs of increments whose filesToTouch intersect' },
     summary: { type: 'string' },
   },
   additionalProperties: false,
 }
-
-const repoPath = REPO_PATH[CFG.repo]
-const repoName = REPO_NAME[CFG.repo]
 
 // ---------------------------------------------------------------------------
 // Load — the script has no filesystem access, so an agent reads the snag list
@@ -206,24 +222,32 @@ const triaged = await pipeline(
   // --- Stage 1: investigate -------------------------------------------------
   (snag) =>
     agent(
-      `You are the SNAG INVESTIGATOR for ${snag.id}. You are given a ONE-LINE complaint about the ${CFG.repo}
-and nothing else. Your job is to turn it into a specification precise enough that another agent can fix it
-without ever seeing the original complaint. You do NOT fix anything and you do NOT edit any file in the repo.
+      `You are the SNAG INVESTIGATOR for ${snag.id}. You are given a ONE-LINE complaint and nothing else. Your
+job is to turn it into a specification precise enough that another agent can fix it without ever seeing the
+original complaint. You do NOT fix anything and you do NOT edit any file in any repo.
 
 THE SNAG, verbatim:
   "${snag.text}"
 
 ${GUARDRAILS}
 
-WHERE TO LOOK
-- Repo: \`${TILDE}/${repoPath}\` (currently on \`${CFG.base}\`). The application is \`src/server/app\`.
+WHERE TO LOOK — these repos are the SEARCH SET, all currently on \`${CFG.base}\`:
+${repoRoster}
+Which of them the defect lives in is something you work out, not something you are told. Do not assume the
+frontend just because the complaint describes a screen: a broken date picker could be a frontend template, and
+a failing accessibility check is usually a real frontend defect surfaced BY the -tests suite rather than a
+defect in the suite. Follow the evidence into whichever repo holds it.
+
+- The frontend application is \`src/server/app\`. READ ${SKILLS}/frontend-change/SKILL.md IN FULL before
+  specifying any frontend change. It routes you to the repo's own recipe docs under
+  \`src/server/app/sets/<set>/docs/add-a-*.md\` and to the obligation/flow maintenance guard rails. Your
+  filesToTouch MUST match the recipe's touch-list for the kind of change you are proposing — a fix that skips a
+  registration step the recipe lists is a fix that silently half-lands.
+- For -tests work follow ${TILDE}/docs/best-practices/playwright/; for backend work
+  ${TILDE}/docs/best-practices/java/.
 - This snagging batch is against the frontend re-write that just landed (the EUDPA-288 model retrofit,
   commit 23f2fdb4 "Spike/eudpa 288 model retrofit"). If a snag reads like a regression, \`git -C\` log/show
   against that commit is the fastest way to see what changed underneath it.
-- READ ${SKILLS}/frontend-change/SKILL.md IN FULL before specifying any frontend change. It routes you to the
-  repo's own recipe docs under \`src/server/app/sets/<set>/docs/add-a-*.md\` and to the obligation/flow
-  maintenance guard rails. Your filesToTouch MUST match the recipe's touch-list for the kind of change you are
-  proposing — a fix that skips a registration step the recipe lists is a fix that silently half-lands.
 
 HOW TO INVESTIGATE
 1. Work out what the complaint is actually about — which page, component, field, journey step or copy string.
@@ -232,25 +256,31 @@ HOW TO INVESTIGATE
 3. Establish the root cause, not the symptom. If a hint is missing from a radio, the cause may be a missing
    copy key, or a macro not passing \`hint\`, or an obligation the page does not collect — those are three
    different fixes and only one of them is right.
-4. Decide the verdict HONESTLY:
+4. Decide which repos the FIX touches and put them in \`repos\`. Be honest about the second one: a frontend
+   defect that a Playwright or axe spec in the -tests repo should have caught is a two-repo fix, because the
+   missing spec is part of the defect. Every path in filesToTouch carries its own \`repo\` key.
+5. Decide the verdict HONESTLY:
    - **actionable** — you found the cause, you can name the files, and the fix needs no judgement call.
    - **needs-decision** — the defect is real but what "fixed" looks like is a design or product question
-     (wording, which of two behaviours is correct, whether a field should exist at all). Set \`gate\` to the
-     exact question. Do NOT invent an answer and mark it actionable.
+     (wording, which of two behaviours is correct, which dates a picker should actually allow, whether a
+     component should be replaced outright). Set \`gate\` to the exact question. Do NOT invent an answer and
+     mark it actionable — a snag that says something is "ugly" or "clunky" almost always needs a design call
+     about what right looks like, and guessing produces churn.
    - **already-fixed** — the code already does what the snag asks. Cite the file:line that proves it.
    - **cannot-reproduce** — you could not find anything matching the complaint. Say what you searched.
    A wrong "actionable" is the expensive outcome: it sends an implementor to edit working code. When the
    evidence is thin, say so in \`confidence\` rather than dressing a guess as a diagnosis.
-5. Write the specification. \`acceptanceCriteria\` must be observable behaviour, not implementation. The
+6. Write the specification. \`acceptanceCriteria\` must be observable behaviour, not implementation. The
    \`verification\` ladder must be real commands, in the order they should run, ending with the narrowest test
    that would have caught this snag — e.g.
-   \`npm --prefix ${TILDE}/${repoPath} test -- <path/to/spec>\` then the full unit suite. Include a Playwright
-   leg ONLY if the defect is genuinely only observable in a browser; note that journey E2E specs on a fresh
-   stack are known-flaky with transient 500s that recover on retry.
-6. \`specs\` lists the test file(s) that must be written or extended so this snag cannot come back. Every
-   actionable snag gets at least one. A fix with no test is not a fix.
+   \`npm --prefix ${TILDE}/${REPO_PATH.frontend} test -- <path/to/spec>\` then the full unit suite. Include a
+   Playwright leg ONLY if the defect is genuinely only observable in a browser; the stack comes up with
+   \`tim docker dev\`, and journey E2E specs on a fresh stack are known-flaky with transient 500s that recover
+   on retry.
+7. \`specs\` lists the test file(s) that must be written or extended so this snag cannot come back, each
+   repo-prefixed. Every actionable snag gets at least one. A fix with no test is not a fix.
 
-Keep \`slug\` short and kebab-case — it becomes a git branch name.
+Keep \`slug\` short and kebab-case — it becomes a git branch name shared across every repo the fix touches.
 Return the structured output only.`,
       { label: `${snag.id} investigate`, phase: 'Investigate', schema: DIAGNOSIS_SCHEMA }
     ),
@@ -269,44 +299,56 @@ THE ORIGINAL SNAG, verbatim:
 
 THE INVESTIGATOR'S VERDICT: ${diag.verdict} (confidence: ${diag.confidence})
 PROPOSED TITLE: ${diag.title}
+REPOS THE FIX TOUCHES: ${(diag.repos ?? []).join(', ') || '(none given)'}
 THE DIAGNOSIS:
 ${diag.diagnosis}
 ROOT-CAUSE FILES: ${(diag.rootCauseFiles ?? []).join(', ') || '(none given)'}
 PROPOSED CHANGES:
-${(diag.filesToTouch ?? []).map((f) => `  - [${f.action}] ${f.path} — ${f.what}`).join('\n') || '  (none given)'}
+${(diag.filesToTouch ?? []).map((f) => `  - [${f.action}] ${f.repo}:${f.path} — ${f.what}`).join('\n') || '  (none given)'}
 PROPOSED VERIFICATION LADDER:
 ${(diag.verification ?? []).map((v, i) => `  ${i + 1}. ${v}`).join('\n') || '  (none given)'}
 
 ${GUARDRAILS}
 
-ATTACK IT ON FOUR FRONTS — read the ACTUAL code in \`${TILDE}/${repoPath}\`, do not reason from the summary:
+REPOS AVAILABLE TO YOU:
+${repoRoster}
+
+ATTACK IT ON FIVE FRONTS — read the ACTUAL code, do not reason from the summary:
 1. **Does the defect exist?** Read the cited file:line. If the code already behaves correctly, the verdict
    should be already-fixed. If you cannot find the thing the snag describes at all, cannot-reproduce.
 2. **Is this the root cause or a symptom?** Look one level up and one level down from the cited code. A fix
    applied at the wrong level leaves the bug reachable by another path.
 3. **Does the diagnosis actually match the snag's words?** The investigator may have found *a* defect that is
    not *the* defect the reporter meant. Re-read the one-liner against the diagnosis.
-4. **Is the ladder honest?** A verification step that cannot fail does not verify anything. If the ladder
+4. **Is the repo list complete?** This is the easiest thing to get wrong. If the fix changes rendered output
+   that a -tests spec asserts on, the -tests repo is in scope too; if a spec in -tests is failing, the fix may
+   belong in the frontend rather than the spec. List anything missing in missingRepos.
+5. **Is the ladder honest?** A verification step that cannot fail does not verify anything. If the ladder
    would pass on the UNFIXED code, list what is missing in missingFromLadder.
 
 Also challenge the verdict itself: an \`actionable\` that quietly picks one of two defensible behaviours is
-really \`needs-decision\`, and should be corrected to it.
+really \`needs-decision\`, and should be corrected to it. Aesthetic complaints ("ugly", "clunky", "off") are
+the usual offenders — if the investigator has invented a target design rather than found one in the repo or in
+a cited Figma reference, that is a needs-decision dressed as a fix.
 
 If you break the diagnosis, set diagnosisHolds:false and give correctedVerdict; add correctedDiagnosis if you
-found the real cause. Cite file:line in your reasoning either way.
+found the real cause. Cite repo and file:line in your reasoning either way.
 Return the structured output only.`,
       { label: `${snag.id} refute`, phase: 'Refute', schema: REFUTATION_SCHEMA }
     )
 
     // A dead refuter must not silently promote a diagnosis to verified.
     if (!refutation) {
-      return { snag, diag, verdict: diag.verdict, refuted: false, refuterFailed: true, reasoning: 'REFUTER FAILED — diagnosis unchallenged, treat with caution' }
+      return { snag, diag, repos: diag.repos ?? [], verdict: diag.verdict, refuted: false, refuterFailed: true, reasoning: 'REFUTER FAILED — diagnosis unchallenged, treat with caution' }
     }
 
     const verdict = refutation.diagnosisHolds ? diag.verdict : refutation.correctedVerdict ?? 'needs-decision'
+    const repos = [...new Set([...(diag.repos ?? []), ...(refutation.missingRepos ?? [])])]
+
     return {
       snag,
       diag,
+      repos,
       verdict,
       refuted: !refutation.diagnosisHolds,
       reasoning: refutation.reasoning,
@@ -326,14 +368,18 @@ Return the structured output only.`,
       return { ...checked, subtaskKey: null, branch: null }
     }
 
+    const targetRepos = checked.repos.length > 0 ? checked.repos : ['frontend']
+
     const ticket = await agent(
-      `You are the TICKETER for ${snag.id}. Raise ONE Jira subtask and cut ONE branch for it. You write no code.
+      `You are the TICKETER for ${snag.id}. Raise ONE Jira subtask and cut its branch in every repo the fix
+touches. You write no code.
 ${GUARDRAILS}
 
 THE SNAG, verbatim: "${snag.text}"
 VERDICT: ${checked.verdict}
 TITLE TO USE: ${checked.diag.title}
 SLUG TO USE: ${checked.diag.slug}
+REPOS THE FIX TOUCHES: ${targetRepos.join(', ')}
 
 STEP 1 — write the description to a file FIRST. A wiki-markup description is long and multi-line, and
 inlining it as a shell argument is how quoting bugs get into Jira. Use the Write tool (it creates parent
@@ -346,7 +392,7 @@ square brackets). It must contain, in this order:
   h2. Diagnosis
   ${checked.refuted ? 'the CORRECTED diagnosis below' : 'the diagnosis below'}, with the file:line citations kept
   h2. Fix
-  the files to touch and what changes in each
+  the files to touch and what changes in each, grouped by repo
   h2. Acceptance criteria
   one bullet per criterion
 ${checked.verdict === 'needs-decision' ? `  h2. Decision needed\n  ${checked.diag.gate ?? 'a design or product call is required before this can be built'}\n` : ''}
@@ -356,7 +402,7 @@ description records findings, the acceptance criteria stay forward-looking.
 DIAGNOSIS TEXT:
 ${checked.correctedDiagnosis ?? checked.diag.diagnosis}
 FILES:
-${(checked.diag.filesToTouch ?? []).map((f) => `  - [${f.action}] ${f.path} — ${f.what}`).join('\n') || '  (none)'}
+${(checked.diag.filesToTouch ?? []).map((f) => `  - [${f.action}] ${f.repo}:${f.path} — ${f.what}`).join('\n') || '  (none)'}
 ACCEPTANCE CRITERIA:
 ${(checked.diag.acceptanceCriteria ?? []).map((a) => `  - ${a}`).join('\n') || '  (none)'}
 
@@ -365,11 +411,17 @@ STEP 2 — raise the subtask under ${CFG.parent}. Run exactly this one command, 
 The script prints \`EUDPA-XXX - <summary>\` on success. Read the key off that line. If it prints an error
 instead, STOP and report ok:false — do not retry, and do not invent a key.
 
-STEP 3 — cut the branch (skip this entirely if step 2 failed):
-\`${TOOLS_TILDE}/ticket/setup-branch.sh <THE-KEY-FROM-STEP-2> --repo ${repoName} --slug ${checked.diag.slug} --prefix fix --base ${CFG.base} --json\`
-That helper is idempotent and handles the already-pushed case; do not hand-roll git checkout. It leaves the
-repo ON the new branch, which is expected — the build loop checks the branch out again per increment.
-Read \`branch\` out of its JSON output and report it.
+STEP 3 — cut the branch (skip this entirely if step 2 failed). Run the helper ONCE PER REPO, one Bash call
+each, passing the SAME ticket, slug and prefix every time:
+${targetRepos.map((r) => `\`${TOOLS_TILDE}/ticket/setup-branch.sh <THE-KEY-FROM-STEP-2> --repo ${REPO_NAME[r]} --slug ${checked.diag.slug} --prefix fix --base ${CFG.base} --json\``).join('\n')}
+The branch NAME must be byte-identical in every repo. That is a hard workspace rule, not a tidiness
+preference: the stack's \`--branch\` flag probes each repo for a matching branch-tagged image and falls back to
+\`:latest\` per service, so a mismatched name silently breaks the linked-branch pickup. Passing the same
+ticket/slug/prefix to the helper is what guarantees it — do not hand-roll \`git checkout -b\`, and do not let
+the slug drift between repos.
+The helper is idempotent and handles the already-pushed case. It leaves each repo ON the new branch, which is
+expected — the build loop puts them there again per increment with \`tim workspace branch\`.
+Read \`branch\` out of the JSON output and report it, plus which repos you branched.
 
 Report the subtask key and the branch name exactly as the tools gave them to you.
 Return the structured output only.`,
@@ -381,8 +433,8 @@ Return the structured output only.`,
       return { ...checked, subtaskKey: null, branch: null, ticketError: ticket?.summary ?? 'agent failed' }
     }
 
-    log(`${snag.id}: ${ticket.subtaskKey} on ${ticket.branch}`)
-    return { ...checked, subtaskKey: ticket.subtaskKey, branch: ticket.branch }
+    log(`${snag.id}: ${ticket.subtaskKey} on ${ticket.branch} (${targetRepos.join('+')})`)
+    return { ...checked, repos: targetRepos, subtaskKey: ticket.subtaskKey, branch: ticket.branch, branchedRepos: ticket.branchedRepos ?? targetRepos }
   }
 )
 
@@ -397,11 +449,11 @@ if (done.length === 0) {
 // ---------------------------------------------------------------------------
 phase('Assemble')
 
-const increments = done.map((r, i) => ({
+const increments = done.map((r) => ({
   id: r.snag.id,
   snagText: r.snag.text,
   title: r.diag.title,
-  repo: CFG.repo,
+  repos: r.repos,
   parent: CFG.parent,
   subtask: r.subtaskKey,
   branch: r.branch,
@@ -441,10 +493,11 @@ TASK:
    {"schema_version": 1, "programme": "${CFG.workarea}", "parent": "${CFG.parent}", "increments": []}
 2. Append the increments in the JSON below, in the order given, to the \`increments\` array. Write them
    VERBATIM — do not reword a diagnosis, do not re-order a verification ladder, do not drop a null field.
-3. Then compute \`conflictsWith\` for each NEW increment: the ids of any other increment in the file whose
-   \`filesToTouch\` paths intersect this one's. Each fix lands on its own branch off ${CFG.base}, so two
-   increments touching the same file will conflict when they merge — recording it now is what makes that
-   visible before both are built. Add the field to every new increment (empty array when there is no overlap).
+3. Then compute \`conflictsWith\` for each NEW increment: the ids of any other increment in the file that
+   touches the same repo AND the same path in \`filesToTouch\`. Each fix lands on its own branch off
+   ${CFG.base}, so two increments touching one file will conflict when they merge — recording it now is what
+   makes that visible before both are built. Add the field to every new increment (empty array when there is
+   no overlap).
 4. Validate: \`jq empty ${WORKAREA_TILDE}/backlog.json\`. If it errors, fix the file and re-check.
 5. Report the counts by reading the file back:
    \`jq -r '.increments[] | .id + " " + .status' ${WORKAREA_TILDE}/backlog.json\`
@@ -470,7 +523,7 @@ return {
   refutedDiagnoses: done.filter((r) => r.refuted).map((r) => `${r.snag.id}: ${r.reasoning}`),
   refuterFailures: done.filter((r) => r.refuterFailed).map((r) => r.snag.id),
   ticketErrors: done.filter((r) => r.ticketError).map((r) => `${r.snag.id}: ${r.ticketError}`),
-  subtasks: done.filter((r) => r.subtaskKey).map((r) => `${r.snag.id} → ${r.subtaskKey} → ${r.branch}`),
+  subtasks: done.filter((r) => r.subtaskKey).map((r) => `${r.snag.id} → ${r.subtaskKey} → ${r.branch} [${r.repos.join('+')}]`),
   overlaps: assembled?.overlaps ?? [],
   runnable: assembled?.runnable ?? [],
   summary: assembled?.summary ?? 'Backlog write failed — the triage results above are not persisted.',

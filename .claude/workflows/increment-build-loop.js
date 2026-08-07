@@ -45,6 +45,14 @@ GUARD RAILS (mandatory, every step):
 - Bash hygiene: ONE command per Bash call. No \`&&\`, no \`;\`, no \`|\`, no \`cd\`, no trailing \`echo $?\`. Use \`git -C\`, \`npm --prefix\`, \`mvn -f\`. Output redirection (\`> file 2>&1\`) IS allowed.
 - In Bash ALWAYS use tilde paths \`${TILDE}/...\` — a literal /Users/... path in Bash is DENIED.
 - For the Read/Write/Edit TOOLS use absolute paths \`${ABS}/...\`.
+- Changed-file paths in this loop are REPO-QUALIFIED as \`repo:path\`, e.g. \`frontend:src/server/app/x.js\`,
+  because one increment can span two repos. Split on the FIRST colon: the key selects the repo
+  (frontend=${REPO_PATH.frontend}, backend=${REPO_PATH.backend}, tests=${REPO_PATH.tests}) and the remainder is
+  the repo-relative path to hand to \`git -C\` or Read. A path with no \`repo:\` prefix belongs to the
+  increment's first repo.
+- The local build is driven by the \`tim\` CLI: \`tim workspace status\` for branch and dirty state across every
+  repo at once, \`tim workspace branch <name>\` to put every repo on one branch, \`tim docker dev\` for the
+  stack. Prefer it over hand-rolling the equivalent git or compose commands.
 - Never bare \`node\` / \`node -e\` (denied — wrap in an npm script). NEVER run \`sonar\` (not allowlisted; it is a milestone gate the human runs).
 - Tests go TO A FILE under \`${WORKAREA_TILDE}/logs/\` and you read that file ONCE. Never grep streaming output, never re-run a suite to see it again.
 - For Playwright failures read \`test-results/*/error-context.md\`, do not grep the tail of the run.
@@ -153,6 +161,7 @@ const LAND_SCHEMA = {
   properties: {
     landed: { type: 'boolean' },
     commit: { type: 'string' },
+    commits: { type: 'array', items: { type: 'string' }, description: 'One `repo:shortSha` per repo committed — a cross-repo increment lands more than one' },
     summary: { type: 'string' }
   },
   additionalProperties: false
@@ -183,25 +192,32 @@ failure later in this increment is unambiguously ours.
 ${GUARDRAILS}
 ${readIncrement(id)}
 TASK:
-1. Determine the increment's repo from its "repo" field and confirm that repo is clean:
-   \`git -C ${TILDE}/<repoPath> status --short\` (repo paths: frontend=${REPO_PATH.frontend}, backend=${REPO_PATH.backend}, tests=${REPO_PATH.tests}).
-   If it is DIRTY, stop and report ok:false — an unclean tree makes commit-or-rollback unsafe.
-2. Get the increment's branch:
+1. Read the increment's repo list:
+   \`jq -r '.increments[] | select(.id=="${id}") | (.repos // [.repo])[]' ${WORKAREA_TILDE}/backlog.json\`
+   EVERY step below applies to EVERY repo it names. One increment can span two — a frontend defect whose
+   regression spec lives in the -tests suite is a single increment, on a single branch, in two repos.
+   Repo keys map to paths: frontend=${REPO_PATH.frontend}, backend=${REPO_PATH.backend}, tests=${REPO_PATH.tests}.
+2. Confirm every one of those repos is clean. \`tim workspace status\` reports branch and dirty state for all
+   of them in one call. If ANY repo in the increment's list is dirty, stop and report ok:false — an unclean
+   tree makes commit-or-rollback unsafe.
+3. Get the increment's branch:
    \`jq -r '.increments[] | select(.id=="${id}") | .branch' ${WORKAREA_TILDE}/backlog.json\`
-   - If it prints a BRANCH NAME, check it out now — \`git -C ${TILDE}/<repoPath> checkout <branch>\` — before
-     anything else runs. Increments in this shape each land on their own branch off their own base, so without
-     this the loop would build increment N on top of increment N-1's unmerged work. If the checkout fails
-     because the branch does not exist, stop and report ok:false: the triage step that was supposed to cut it
-     did not, and building on the wrong branch is worse than not building.
+   - If it prints a BRANCH NAME, put every repo on it with ONE command: \`tim workspace branch <branch>\`.
+     Repos that do not carry that branch move to their own default branch, which is exactly right for the ones
+     this increment does not touch. Increments in this shape each land on their own branch off their own base,
+     so without this the loop would build increment N on top of increment N-1's unmerged work.
+     Then re-run \`tim workspace status\` and CONFIRM each repo in the increment's list actually sits on that
+     branch. If one does not, the triage step never cut it there — report ok:false rather than building on the
+     wrong branch, which is worse than not building at all.
    - If it prints \`null\` or the field is absent, this is a single-branch programme: confirm the repo is on
      \`spike/trace-to-requirements\` instead. For the TESTS repo that branch may not exist yet (it is on
      spike/EUDPA-288-model-retrofit); if your increment is the one that creates it, that is expected — say so
      and pass.
-3. Run the FASTEST meaningful suite for that repo, to a log, and read it once:
-   frontend: \`npm --prefix ${TILDE}/${REPO_PATH.frontend} test > ${WORKAREA_TILDE}/logs/${id}-baseline.log 2>&1\`
-   backend:  \`mvn -q -f ${TILDE}/${REPO_PATH.backend}/pom.xml test > ${WORKAREA_TILDE}/logs/${id}-baseline.log 2>&1\`
+4. Run the FASTEST meaningful suite for EACH repo in the list, to its own log, and read each log once:
+   frontend: \`npm --prefix ${TILDE}/${REPO_PATH.frontend} test > ${WORKAREA_TILDE}/logs/${id}-baseline-frontend.log 2>&1\`
+   backend:  \`mvn -q -f ${TILDE}/${REPO_PATH.backend}/pom.xml test > ${WORKAREA_TILDE}/logs/${id}-baseline-backend.log 2>&1\`
    tests:    read package.json and run its unit/lint script if one exists; if the suite needs a running stack, SKIP it and say so.
-4. Report ok:true only if the tree is clean and the suite is green.
+5. Report ok:true only if EVERY repo in the list is clean, on the right branch, and green.
 Return the structured output only.`,
     { label: `${id} baseline`, phase: 'Baseline', schema: incrementSchema }
   )
@@ -223,7 +239,9 @@ and you do not commit it.
 ${GUARDRAILS}
 ${readIncrement(id)}
 
-HOW TO BUILD IT — route on the increment's "repo" field:
+HOW TO BUILD IT — route on EACH entry in the increment's "repos" list. An increment can span two repos, and a
+half-applied cross-repo fix is worse than none: if the frontend change lands without the -tests spec that pins
+it, nothing stops the snag coming straight back. Do every repo the increment names.
 - **frontend** → the workspace frontend-change skill is your script. READ ${SKILLS}/frontend-change/SKILL.md IN
   FULL and follow it verbatim. It routes you to the repo's own recipe under
   \`src/server/app/sets/<set>/docs/add-a-*.md\` (or the obligation/flow maintenance guard rails) — read that recipe
@@ -250,7 +268,8 @@ RULES:
 - If you get stuck on a red step, you get at most 3 self-repair attempts. If still red, stop and report ok:false
   with exactly what is red and what you tried — do NOT thrash, and do NOT weaken a test to make it pass.
 
-Return ok, a summary, changedFiles (repo-relative paths you created or edited), and notes (anything the reviewers
+Return ok, a summary, changedFiles (each prefixed with its repo key — \`frontend:src/server/app/...\`,
+\`tests:test/...\` — so the reviewers know which repo to diff), and notes (anything the reviewers
 or the judge should know, including anything the increment got wrong).`,
     { label: `${id} implement`, phase: 'Implement', schema: incrementSchema }
   )
@@ -260,9 +279,12 @@ or the judge should know, including anything the increment got wrong).`,
     await agent(
       `Roll back the failed increment ${id} NON-DESTRUCTIVELY.
 ${GUARDRAILS}
-Run exactly: \`git -C ${TILDE}/<repoPath> stash push -u -m "failed-${id}"\` for the increment's repo (look up its
-"repo" field with jq against ${WORKAREA_TILDE}/backlog.json). NEVER \`reset --hard\`, NEVER \`clean -fd\` — the stash
-is recoverable and that is the point. Confirm with \`git -C ... status --short\` that the tree is clean, and report
+Look up EVERY repo the increment touches —
+\`jq -r '.increments[] | select(.id=="${id}") | (.repos // [.repo])[]' ${WORKAREA_TILDE}/backlog.json\` — and run
+\`git -C ${TILDE}/<repoPath> stash push -u -m "failed-${id}"\` in each one, one Bash call per repo. A cross-repo
+increment that is only half rolled back leaves the other repo dirty, and the next increment's baseline guard
+will refuse to start. NEVER \`reset --hard\`, NEVER \`clean -fd\` — the stash
+is recoverable and that is the point. Confirm with \`tim workspace status\` that every tree is clean, and report
 the stash ref so a human can recover the work.
 Return the structured output only.`,
       { label: `${id} rollback`, phase: 'Implement', schema: incrementSchema }
@@ -511,9 +533,12 @@ Return the structured output only.`,
 ${GUARDRAILS}
 FAILURES: ${ladder ? (ladder.failures ?? []).join(' | ') : 'verifier agent failed'}
 TASK:
-1. Look up the increment's repo: \`jq -r '.increments[] | select(.id=="${id}") | .repo' ${WORKAREA_TILDE}/backlog.json\`.
-2. \`git -C ${TILDE}/<repoPath> stash push -u -m "failed-${id}"\` — NEVER reset --hard, NEVER clean -fd.
-3. Confirm the tree is clean with \`git -C ... status --short\`.
+1. Look up EVERY repo the increment touches:
+   \`jq -r '.increments[] | select(.id=="${id}") | (.repos // [.repo])[]' ${WORKAREA_TILDE}/backlog.json\`.
+2. \`git -C ${TILDE}/<repoPath> stash push -u -m "failed-${id}"\` in EACH of them, one Bash call per repo —
+   NEVER reset --hard, NEVER clean -fd. Half a rollback leaves the other repo dirty and blocks the next
+   increment's baseline guard.
+3. Confirm every tree is clean with \`tim workspace status\`.
 4. Append a short "ATTEMPT FAILED" note to that increment's notes field in ${WORKAREA}/backlog.json recording what
    went red and the stash ref, so the next attempt starts informed. Keep the JSON valid
    (\`jq empty ${WORKAREA_TILDE}/backlog.json\`).
@@ -530,17 +555,22 @@ Return the structured output only.`,
     `Increment ${id} is implemented, reviewed, judged and verified green. LAND IT.
 ${GUARDRAILS}
 TASK:
-1. Look up its repo: \`jq -r '.increments[] | select(.id=="${id}") | .repo' ${WORKAREA_TILDE}/backlog.json\`, and its
+1. Look up EVERY repo it touches:
+   \`jq -r '.increments[] | select(.id=="${id}") | (.repos // [.repo])[]' ${WORKAREA_TILDE}/backlog.json\`, and its
    title for the commit subject.
-2. Confirm what is staged with \`git -C ${TILDE}/<repoPath> status --short\`. Stage anything the increment produced
-   that is still untracked — but NOTHING under logs/, no coverage output, no test-results/, no .playwright artefacts.
-3. Commit with a conventional message: \`<type>(${CFG.scope}): <increment title>\`, a body saying what changed and
+2. Confirm what is staged in each with \`git -C ${TILDE}/<repoPath> status --short\`. Stage anything the increment
+   produced that is still untracked — but NOTHING under logs/, no coverage output, no test-results/, no
+   .playwright artefacts.
+3. Commit in EACH repo that has changes, one commit per repo, same conventional message:
+   \`<type>(${CFG.scope}): <increment title>\`, a body saying what changed and
    naming the increment id (and its Jira subtask key, if the increment carries a "subtask" field), and the trailer:
    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+   A repo the increment named but that ended up with no changes is fine — say so; do not manufacture a commit.
 4. Do NOT push — pushing is the human's call.
-5. Update ${WORKAREA}/backlog.json: set this increment's "status" to "done" and add a "commit" field with the short
-   SHA. Keep the JSON valid (\`jq empty ${WORKAREA_TILDE}/backlog.json\`).
-Report the commit SHA.
+5. Update ${WORKAREA}/backlog.json: set this increment's "status" to "done" and record the short SHAs in a
+   "commits" array as \`repo:shortSha\` (also set "commit" to the primary repo's SHA, so older readers of this
+   file still work). Keep the JSON valid (\`jq empty ${WORKAREA_TILDE}/backlog.json\`).
+Report every commit SHA you made.
 Return the structured output only.`,
     { label: `${id} land`, phase: 'Land', schema: LAND_SCHEMA }
   )
