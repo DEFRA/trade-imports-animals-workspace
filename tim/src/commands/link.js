@@ -5,20 +5,15 @@ import {
   readlinkSync,
   symlinkSync
 } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { homedir } from 'node:os'
-import { resolveWorkspaceRoot } from '../env/workspace-root.js'
+import { dirname } from 'node:path'
+import {
+  resolveWorkspaceRoot,
+  CANONICAL_WORKSPACE_PATH
+} from '../env/workspace-root.js'
 import { OK, USAGE, ERROR } from '../constants/exitCodes.js'
 import { isTimError } from '../errors.js'
 
 const SCHEMA_VERSION = 1
-
-const CANONICAL_PATH = resolve(
-  homedir(),
-  'git',
-  'defra',
-  'trade-imports-animals-workspace'
-)
 
 const isSymlink = (path) => {
   try {
@@ -28,7 +23,10 @@ const isSymlink = (path) => {
   }
 }
 
-export const planLink = (workspaceRoot, canonical = CANONICAL_PATH) => {
+export const planLink = (
+  workspaceRoot,
+  canonical = CANONICAL_WORKSPACE_PATH
+) => {
   if (workspaceRoot === canonical) {
     return {
       ok: true,
@@ -111,7 +109,7 @@ export const register = (program, { timVersion }) => {
   program
     .command('link')
     .description(
-      `Symlink ${CANONICAL_PATH} -> this checkout (required by tools/)`
+      `Symlink ${CANONICAL_WORKSPACE_PATH} -> this checkout (required by tools/)`
     )
     .action(async function linkAction() {
       const globalOpts = this.optsWithGlobals()

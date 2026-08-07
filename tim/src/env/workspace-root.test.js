@@ -1,8 +1,11 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import { resolveWorkspaceRoot } from './workspace-root.js'
+import { tmpdir, homedir } from 'node:os'
+import {
+  resolveWorkspaceRoot,
+  CANONICAL_WORKSPACE_PATH
+} from './workspace-root.js'
 
 const makeFakeWorkspace = () => {
   const root = mkdtempSync(join(tmpdir(), 'tim-ws-'))
@@ -62,8 +65,45 @@ describe('resolveWorkspaceRoot', () => {
   })
 
   test('throws USAGE when no workspace can be located', () => {
-    expect(() =>
-      resolveWorkspaceRoot({ cwd: tmpdir(), env: undefined })
-    ).toThrow(/Cannot find the workspace root/)
+    const empty = mkdtempSync(join(tmpdir(), 'tim-no-canonical-'))
+    try {
+      expect(() =>
+        resolveWorkspaceRoot({
+          cwd: tmpdir(),
+          env: undefined,
+          canonical: empty
+        })
+      ).toThrow(/Cannot find the workspace root/)
+    } finally {
+      rmSync(empty, { recursive: true, force: true })
+    }
+  })
+
+  test('falls back to the canonical path when the walk-up finds nothing', () => {
+    const resolved = resolveWorkspaceRoot({
+      cwd: tmpdir(),
+      env: undefined,
+      canonical: workspace
+    })
+
+    expect(resolved).toBe(workspace)
+  })
+
+  test('prefers a workspace found by walking up over the canonical path', () => {
+    const other = makeFakeWorkspace()
+
+    try {
+      expect(
+        resolveWorkspaceRoot({ cwd: inside, env: undefined, canonical: other })
+      ).toBe(workspace)
+    } finally {
+      rmSync(other, { recursive: true, force: true })
+    }
+  })
+
+  test('CANONICAL_WORKSPACE_PATH is the location tools/ scripts hardcode', () => {
+    expect(CANONICAL_WORKSPACE_PATH).toBe(
+      join(homedir(), 'git', 'defra', 'trade-imports-animals-workspace')
+    )
   })
 })

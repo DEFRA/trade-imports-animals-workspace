@@ -1,8 +1,20 @@
 import { existsSync, statSync } from 'node:fs'
 import { dirname, resolve, join } from 'node:path'
+import { homedir } from 'node:os'
 import { TimError } from '../errors.js'
 
 const MARKER_FILES = ['Makefile', '.git', 'docs/best-practices']
+
+/**
+ * Where CLAUDE.md rule 1 mandates the workspace lives. `tools/*.sh` hardcode
+ * this path, so a checkout elsewhere is expected to be symlinked here.
+ */
+export const CANONICAL_WORKSPACE_PATH = resolve(
+  homedir(),
+  'git',
+  'defra',
+  'trade-imports-animals-workspace'
+)
 
 const looksLikeWorkspaceRoot = (path) =>
   MARKER_FILES.some((marker) => existsSync(join(path, marker))) &&
@@ -28,19 +40,24 @@ const isDirectory = (path) => {
 
 /**
  * Resolves the workspace root with precedence: explicit option, TIM_WORKSPACE
- * env var, then walking up from cwd looking for the workspace marker files.
+ * env var, walking up from cwd looking for the workspace marker files, then
+ * the canonical path. The canonical fallback is what lets tim run from
+ * anywhere on a machine set up per CLAUDE.md rule 1; it comes last so a
+ * checkout you are standing in always wins over it.
  *
  * @param {object} [opts]
  * @param {string} [opts.explicit] - Explicit path passed via --workspace
  * @param {string} [opts.env] - Value of TIM_WORKSPACE env var
  * @param {string} [opts.cwd] - Working directory to walk up from
+ * @param {string} [opts.canonical] - Path to fall back on when the walk-up finds nothing
  * @returns {string} Absolute path to the workspace root
  * @throws {TimError} When no valid workspace root is found
  */
 export const resolveWorkspaceRoot = ({
   explicit,
   env = process.env.TIM_WORKSPACE,
-  cwd = process.cwd()
+  cwd = process.cwd(),
+  canonical = CANONICAL_WORKSPACE_PATH
 } = {}) => {
   const candidate = explicit ?? env
   if (candidate) {
@@ -60,11 +77,10 @@ export const resolveWorkspaceRoot = ({
     return resolved
   }
   const found = walkUp(cwd)
-  if (!found) {
-    throw new TimError(
-      'USAGE',
-      'Cannot find the workspace root. Run from inside the trade-imports-animals checkout, or set TIM_WORKSPACE.'
-    )
-  }
-  return found
+  if (found) return found
+  if (looksLikeWorkspaceRoot(canonical)) return canonical
+  throw new TimError(
+    'USAGE',
+    `Cannot find the workspace root. Run from inside the trade-imports-animals checkout, set TIM_WORKSPACE, or symlink your checkout to ${canonical}.`
+  )
 }
