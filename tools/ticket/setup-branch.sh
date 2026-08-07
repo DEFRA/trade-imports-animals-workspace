@@ -1,11 +1,13 @@
 #!/bin/bash
 # Idempotent branch setup for one repo.
 #
-# Usage: setup-branch.sh EUDPA-XXXXX --repo REPO --slug SLUG [--base BRANCH] [--json]
+# Usage: setup-branch.sh EUDPA-XXXXX --repo REPO --slug SLUG [--base BRANCH]
+#                        [--prefix PREFIX] [--json]
 #
 # Does the four-step branch dance (fetch / checkout base / pull / checkout
-# -b feature/EUDPA-X-<slug>) in one allowlisted dispatch so the parent
-# session doesn't type four sequential `git -C` calls.
+# -b <prefix>/EUDPA-X-<slug>) in one allowlisted dispatch so the parent
+# session doesn't type four sequential `git -C` calls. PREFIX defaults to
+# `feature`; pass `fix` or `chore` to match the workspace branch-naming rule.
 #
 # Per feedback_keep_ticket_prefix_on_split_branches.md the EUDPA-* prefix
 # is preserved verbatim — the helper never strips it.
@@ -16,6 +18,7 @@ TICKET=""
 REPO=""
 SLUG=""
 BASE="main"
+PREFIX="feature"
 JSON_OUTPUT=false
 
 while [[ $# -gt 0 ]]; do
@@ -32,12 +35,16 @@ while [[ $# -gt 0 ]]; do
             BASE="$2"
             shift 2
             ;;
+        --prefix)
+            PREFIX="${2%/}"
+            shift 2
+            ;;
         --json)
             JSON_OUTPUT=true
             shift
             ;;
         -h|--help)
-            sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         EUDPA-*)
@@ -62,7 +69,7 @@ if [[ ! -d "$REPO_DIR/.git" ]]; then
     exit 1
 fi
 
-BRANCH="feature/${TICKET}-${SLUG}"
+BRANCH="${PREFIX}/${TICKET}-${SLUG}"
 
 log() {
     if [[ "$JSON_OUTPUT" == "false" ]]; then
