@@ -76,6 +76,83 @@ describe('tim docker subcommands', () => {
     expect(exitCode).toBe(0)
   })
 
+  test('up forwards a branch flag and its value to run-stack.sh', async () => {
+    writeStackScript(
+      'run-stack.sh',
+      '[ "$1" = "-b" ] && [ "$2" = "spike/my-branch" ] && exit 0 || exit 1'
+    )
+    const { exitCode } = await execa(
+      'node',
+      [
+        cliPath,
+        'docker',
+        'up',
+        '--workspace',
+        workspace,
+        '-b',
+        'spike/my-branch'
+      ],
+      { reject: false }
+    )
+    expect(exitCode).toBe(0)
+  })
+
+  test('dev forwards extra flags after its own -d', async () => {
+    writeStackScript(
+      'run-stack.sh',
+      '[ "$1" = "-d" ] && [ "$2" = "-e" ] && [ "$3" = "frontend" ] && exit 0 || exit 1'
+    )
+    const { exitCode } = await execa(
+      'node',
+      [cliPath, 'docker', 'dev', '--workspace', workspace, '-e', 'frontend'],
+      { reject: false }
+    )
+    expect(exitCode).toBe(0)
+  })
+
+  test('up forwards repeated flags in the order given', async () => {
+    writeStackScript(
+      'run-stack.sh',
+      '[ "$*" = "--profile database --profile frontend" ] && exit 0 || exit 1'
+    )
+    const { exitCode } = await execa(
+      'node',
+      [
+        cliPath,
+        'docker',
+        'up',
+        '--workspace',
+        workspace,
+        '--profile',
+        'database',
+        '--profile',
+        'frontend'
+      ],
+      { reject: false }
+    )
+    expect(exitCode).toBe(0)
+  })
+
+  test('reports the forwarded args in the --json envelope', async () => {
+    writeStackScript('run-stack.sh', 'exit 0')
+    const { stdout } = await execa(
+      'node',
+      [
+        cliPath,
+        'docker',
+        'up',
+        '--workspace',
+        workspace,
+        '--json',
+        '-b',
+        'spike/my-branch'
+      ],
+      { reject: false }
+    )
+    const payload = JSON.parse(stdout.trim())
+    expect(payload.result.args).toEqual(['-b', 'spike/my-branch'])
+  })
+
   test('propagates a non-zero exit code from the script', async () => {
     writeStackScript('run-stack.sh', 'exit 5')
     const { exitCode } = await execa(

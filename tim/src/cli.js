@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { Command, Option } from 'commander'
 import { z } from 'zod'
+import { resolveWorkspaceRoot } from './env/workspace-root.js'
+import { autoPullWorkspace } from './exec/auto-pull.js'
 import { register as registerWorkspaceStatus } from './commands/workspace/status.js'
 import { register as registerWorkspaceClean } from './commands/workspace/clean.js'
 import { register as registerWorkspaceInstall } from './commands/workspace/install.js'
@@ -12,6 +14,7 @@ import { register as registerWorkspaceTest } from './commands/workspace/test.js'
 import { register as registerWorkspaceSetup } from './commands/workspace/setup.js'
 import { register as registerWorkspaceUpdate } from './commands/workspace/update.js'
 import { register as registerWorkspaceReset } from './commands/workspace/reset.js'
+import { register as registerWorkspaceBranch } from './commands/workspace/branch.js'
 import { register as registerLink } from './commands/link.js'
 import { register as registerDocker } from './commands/docker/index.js'
 import { register as registerStart } from './commands/start.js'
@@ -71,9 +74,31 @@ const launchInteractive = async ({ workspaceRoot }) => {
   mount(createElement(MainMenu, { workspaceRoot }))
 }
 
+// Keep the workspace current for anyone who reaches for tim, without them
+// having to remember to pull. Never blocks the command: if the workspace
+// cannot be resolved (jira, github and friends do not need one) or git is
+// unavailable, the command runs regardless. Notes go to stderr so a --json
+// stdout stays a single parseable line.
+const syncWorkspace = async (actionCommand) => {
+  try {
+    const workspaceRoot = resolveWorkspaceRoot({
+      explicit: actionCommand.optsWithGlobals().workspace
+    })
+    await autoPullWorkspace({
+      workspaceRoot,
+      warn: (message) => process.stderr.write(`${message}\n`)
+    })
+  } catch {
+    // No workspace, or git missing. The command reports whatever matters.
+  }
+}
+
 export const buildProgram = () => {
   const program = new Command()
   program
+    .hook('preAction', (_thisCommand, actionCommand) =>
+      syncWorkspace(actionCommand)
+    )
     .name('tim')
     .description(
       'Trade Imports CLI — dual-runs alongside the bash tooling in ../tools/'
@@ -117,6 +142,7 @@ export const buildProgram = () => {
   registerWorkspaceSetup(workspace, { timVersion: pkg.version })
   registerWorkspaceUpdate(workspace, { timVersion: pkg.version })
   registerWorkspaceReset(workspace, { timVersion: pkg.version })
+  registerWorkspaceBranch(workspace, { timVersion: pkg.version })
 
   registerLink(program, { timVersion: pkg.version })
   registerDocker(program, { timVersion: pkg.version })

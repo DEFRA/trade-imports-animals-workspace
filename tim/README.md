@@ -40,6 +40,7 @@ Arrow keys navigate, Enter selects, Enter on an empty input goes back. Every top
 | Menu path                                                    | CLI equivalent                    |
 | ------------------------------------------------------------ | --------------------------------- |
 | Workspace → Status                                           | `tim workspace status`            |
+| Workspace → Branch                                           | `tim workspace branch [name]`     |
 | Workspace → Install                                          | `tim workspace install`           |
 | Workspace → Lint                                             | `tim workspace lint`              |
 | Workspace → Test                                             | `tim workspace test`              |
@@ -106,8 +107,24 @@ The menu only opens when stdout is a TTY and the user has not asked for plain te
 | `GITHUB_TOKEN`                             | GitHub and GitHub Actions. If unset, `tim` falls back to one `gh auth token` call at startup                                                      |
 | `TIM_WORKSPACE`                            | Workspace root override (same as `--workspace`)                                                                                                   |
 | `TIM_GITHUB_BASE_URL`                      | Clone URL prefix override for `workspace setup` (default `https://github.com/DEFRA`) — used by the behavioural tests to clone from local fixtures |
+| `TIM_NO_AUTO_PULL`                         | Set to any value to turn off the automatic workspace pull described below                                                                         |
 
 Run [`../tools/auth.sh`](../tools/auth.sh) to verify your setup against the bash side. `tim auth` (when it lands) does the same via library clients.
+
+## Staying up to date
+
+Every `tim` command fast-forwards the workspace repo before it runs, so using tim keeps you current without having to remember to pull.
+
+It is deliberately narrow:
+
+- **Only on `main`.** On any other branch it does nothing. Merging or rebasing your feature branch is your call, not the CLI's.
+- **`--ff-only`.** It either fast-forwards cleanly or does nothing. It cannot leave a half-finished merge or a rebase stopped on a conflict, and it will not touch a branch that has diverged from its upstream.
+- **Never blocks the command.** No network, no remote, a diverged branch — it says so on stderr and carries on.
+- **stdout stays clean.** Notes go to stderr, so `--json` output remains one parseable line.
+
+This updates the workspace repo only. Use `tim workspace update` for the repos under `repos/`.
+
+Turn it off with `TIM_NO_AUTO_PULL=1` — worth doing when working offline or on a slow link, since each run makes a network call (bounded to a 10 second timeout).
 
 ## Smoke checklist
 

@@ -66,6 +66,58 @@ const makeStackAction = ({ script, extraArgs = [], timVersion }) =>
     }
   }
 
+// The stack scripts own their flag surface (-b, -e, --profile). tim forwards
+// whatever it does not recognise instead of mirroring those flags, so the
+// scripts stay the single source of truth — including `--help`, which
+// helpOption(false) hands to the script rather than answering itself.
+// allowUnknownOption covers the flags; allowExcessArguments covers their
+// values, which arrive as positional operands.
+const registerStackCommand = (
+  docker,
+  { name, description, script, extraArgs, timVersion }
+) =>
+  docker
+    .command(name)
+    .description(description)
+    .allowUnknownOption(true)
+    .allowExcessArguments(true)
+    .helpOption(false)
+    .action(makeStackAction({ script, extraArgs, timVersion }))
+
+const STACK_COMMANDS = [
+  {
+    name: 'up',
+    description: 'Start the workspace stack from Dockerhub images',
+    script: 'run-stack.sh'
+  },
+  {
+    name: 'dev',
+    description: 'Start the stack built from local source (run-stack.sh -d)',
+    script: 'run-stack.sh',
+    extraArgs: ['-d']
+  },
+  {
+    name: 'down',
+    description: 'Stop the stack and clean up volumes (stop-stack.sh)',
+    script: 'stop-stack.sh'
+  },
+  {
+    name: 'restart',
+    description: 'Restart the whole stack (restart-stack.sh)',
+    script: 'restart-stack.sh'
+  },
+  {
+    name: 'bounce-backend',
+    description: 'Restart just the backend container (bounce-backend.sh)',
+    script: 'bounce-backend.sh'
+  },
+  {
+    name: 'bounce-mongo',
+    description: 'Restart just the mongo container (bounce-mongo.sh)',
+    script: 'bounce-mongo.sh'
+  }
+]
+
 export const register = (program, { timVersion }) => {
   const docker = program
     .command('docker')
@@ -73,47 +125,7 @@ export const register = (program, { timVersion }) => {
       'Workspace Docker stack — wraps scripts/stack/ (run-stack.sh, stop-stack.sh, etc.)'
     )
 
-  docker
-    .command('up')
-    .description('Start the workspace stack from Dockerhub images')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(makeStackAction({ script: 'run-stack.sh', timVersion }))
-
-  docker
-    .command('dev')
-    .description('Start the stack built from local source (run-stack.sh -d)')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(
-      makeStackAction({ script: 'run-stack.sh', extraArgs: ['-d'], timVersion })
-    )
-
-  docker
-    .command('down')
-    .description('Stop the stack and clean up volumes (stop-stack.sh)')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(makeStackAction({ script: 'stop-stack.sh', timVersion }))
-
-  docker
-    .command('restart')
-    .description('Restart the whole stack (restart-stack.sh)')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(makeStackAction({ script: 'restart-stack.sh', timVersion }))
-
-  docker
-    .command('bounce-backend')
-    .description('Restart just the backend container (bounce-backend.sh)')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(makeStackAction({ script: 'bounce-backend.sh', timVersion }))
-
-  docker
-    .command('bounce-mongo')
-    .description('Restart just the mongo container (bounce-mongo.sh)')
-    .allowUnknownOption(true)
-    .helpOption(false)
-    .action(makeStackAction({ script: 'bounce-mongo.sh', timVersion }))
+  for (const command of STACK_COMMANDS) {
+    registerStackCommand(docker, { ...command, timVersion })
+  }
 }

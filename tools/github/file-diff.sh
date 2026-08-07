@@ -11,8 +11,9 @@
 # Without --ticket (or if the cache is missing), falls back to
 # `gh pr diff` over the network.
 #
-# Filters output to only the `diff --git a/FILE b/FILE` block for the
-# requested file. Exit 0 with empty output if the file is not in the
+# Filters output to the `diff --git` block for the requested file,
+# matching either side of the header so renamed files resolve by their
+# old or new path. Exit 0 with empty output if the file is not in the
 # diff.
 
 set -e
@@ -55,7 +56,11 @@ fi
 
 "${source_cmd[@]}" | awk -v f="$FILE_PATH" '
     /^diff --git / {
-        in_block = ($0 ~ ("a/" f "[[:space:]]") && $0 ~ ("b/" f "$"))
+        # A rename carries a different path each side, so match either one.
+        if (NF == 4)
+            in_block = (substr($3, 3) == f || substr($4, 3) == f)
+        else
+            in_block = ($0 ~ ("a/" f "[[:space:]]") && $0 ~ ("b/" f "$"))
     }
     in_block { print }
 '

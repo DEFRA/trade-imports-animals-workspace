@@ -16,7 +16,10 @@ on:
         value: ${{ jobs.deploy-report.outputs.report-url }}
 
 jobs:
-  sharded_e2e:
+  # Single suite, sharded three ways for wall-clock. Each shard stands up its
+  # own stack and reseeds it, then emits a blob report; merge-reports stitches
+  # the blobs back into one HTML report.
+  e2e:
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call' ||
@@ -34,9 +37,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DEFRA/trade-imports-animals-workspace
-          # Workspace PRs must exercise their own stack changes; callers via
-          # workflow_call surface the caller's event name, so they get main
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
+          # Workspace PRs and dispatches must exercise their own stack changes.
+          # A caller's event name surfaces here as its own (a frontend PR reads
+          # as pull_request), so branch is the discriminator instead: it is
+          # required on workflow_call and empty otherwise, and callers get main.
+          ref: ${{ inputs.branch && 'main' || (github.event_name == 'pull_request' && github.head_ref || github.ref_name) }}
 
       - name: Resolve branch tag
         id: branch-tag
@@ -59,6 +64,22 @@ jobs:
 
       - name: Start stack
         run: ./scripts/stack/run-stack.sh --branch "${{ inputs.branch || github.head_ref || github.ref_name }}"
+
+      - name: Assert E2E stack
+        run: |
+          docker run --rm \
+            --network host \
+            --user root \
+            --entrypoint npm \
+            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
+            run _assert_stack
+
+      - name: Reseed database
+        # STACK_BRANCH keeps the reseed's staged init fixtures on the PR
+        # branch — unset, bounce-mongo.sh sparse-fetches the default branch.
+        env:
+          STACK_BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
+        run: ./scripts/stack/bounce-mongo.sh
 
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: |
@@ -102,105 +123,9 @@ jobs:
         if: always()
         run: docker compose -p trade-imports-animals down
 
-  # Single-suite branch frontend gate. This mirrors the tests repository's
-  # `npm test` chain, with reseeding run from the workspace checkout because
-  # database-reseed.sh needs access to Docker and the stack scripts.
-  # Lean gate: raw test-results artifacts only, no blob/allure merging.
-  e2e:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call' ||
-      !github.event.pull_request.draft
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          repository: DEFRA/trade-imports-animals-workspace
-          # Workspace PRs must exercise their own stack changes; callers via
-          # workflow_call surface the caller's event name, so they get main
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || 'main' }}
-
-      - name: Resolve branch tag
-        id: branch-tag
-        run: |
-          raw="${{ inputs.branch || github.head_ref || github.ref_name }}"
-          tag="${raw//\//-}"
-          tag="$(printf '%s' "$tag" | tr -cd 'a-zA-Z0-9_.-')"
-          tag="$(printf '%s' "$tag" | tr '[:upper:]' '[:lower:]')"
-          while [[ "$tag" == [.-]* ]]; do tag="${tag:1}"; done
-          tag="${tag:0:128}"
-          echo "sanitised=$tag" >> "$GITHUB_OUTPUT"
-
-          if docker manifest inspect "defradigital/trade-imports-animals-tests:${tag}" >/dev/null 2>&1; then
-            echo "tests-tag=$tag" >> "$GITHUB_OUTPUT"
-            echo "Tests image: branch ($tag)"
-          else
-            echo "tests-tag=latest" >> "$GITHUB_OUTPUT"
-            echo "Tests image: latest (no branch tag)"
-          fi
-
-      - name: Start stack with E2E frontend
-        run: >
-          ./scripts/stack/run-stack.sh
-          --branch "${{ inputs.branch || github.head_ref || github.ref_name }}"
-          --profile database --profile infrastructure --profile servicebus
-          --profile stubs --profile backend --profile frontend
-
-      - name: Assert E2E stack
-        run: |
-          docker run --rm \
-            --network host \
-            --user root \
-            --entrypoint npm \
-            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
-            run _assert_stack
-
-      - name: Reseed database
-        # STACK_BRANCH keeps the reseed's staged init fixtures on the PR
-        # branch — unset, bounce-mongo.sh sparse-fetches the default branch.
-        env:
-          STACK_BRANCH: ${{ inputs.branch || github.head_ref || github.ref_name }}
-        run: ./scripts/stack/bounce-mongo.sh
-
-      - name: Run E2E suite against branch frontend
-        run: |
-          docker run --rm \
-            --network host \
-            --user root \
-            -v ${{ github.workspace }}/artifacts/test-results-e2e:/app/test-results \
-            --entrypoint npm \
-            defradigital/trade-imports-animals-tests:${{ steps.branch-tag.outputs.tests-tag }} \
-            run _test_e2e
-
-      - name: Upload E2E artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-results
-          path: artifacts/
-          retention-days: 14
-
-      - name: Capture stack logs
-        if: failure()
-        run: docker compose -p trade-imports-animals logs --no-color --timestamps > e2e-stack-logs.txt 2>&1 || true
-
-      - name: Upload stack logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-stack-logs
-          path: e2e-stack-logs.txt
-          retention-days: 14
-
-      - name: Tear down stack
-        if: always()
-        run: docker compose -p trade-imports-animals down
-
   merge-reports:
-    if: always() && needs.sharded_e2e.result != 'skipped'
-    needs: sharded_e2e
+    if: always() && needs.e2e.result != 'skipped'
+    needs: e2e
     runs-on: ubuntu-latest
     steps:
       - name: Download shard artifacts
@@ -219,11 +144,18 @@ jobs:
       - name: Combine allure and test results
         run: |
           mkdir -p combined-allure-results combined-test-results
-          for dir in all-shards/*/artifacts/allure-results; do
-            [ -d "$dir" ] && cp -r "$dir"/* combined-allure-results/ 2>/dev/null || true
-          done
-          for dir in all-shards/*/artifacts/test-results; do
-            [ -d "$dir" ] && cp -r "$dir"/* combined-test-results/ 2>/dev/null || true
+          # upload-artifact roots each artifact at the least common ancestor of
+          # its paths, so the `artifacts/` level is stripped: shard content
+          # arrives at all-shards/shard-N/{blob-report,test-results,allure-results}.
+          for shard in all-shards/*/; do
+            name="$(basename "$shard")"
+            if [ -d "${shard}allure-results" ]; then
+              cp -r "${shard}allure-results/." combined-allure-results/
+            fi
+            if [ -d "${shard}test-results" ]; then
+              mkdir -p "combined-test-results/$name"
+              cp -r "${shard}test-results/." "combined-test-results/$name/"
+            fi
           done
 
       - name: Upload merged reports

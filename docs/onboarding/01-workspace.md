@@ -142,7 +142,7 @@ Finally, exercise the running stack with the end-to-end suite:
 
 ```
 cd repos/trade-imports-animals-tests
-npm run test:local
+npm run test:docker-compose
 ```
 
 That's the whole inner loop — set up once, bring the stack up from source,
@@ -161,7 +161,7 @@ Before the next session, get the stack running end to end:
    and `make install`.
 2. Bring the stack up from source with `scripts/stack/run-stack.sh --dev`,
    and tail the logs to watch it come up.
-3. Run the E2E suite against it (`npm run test:local` in the tests repo),
-   and have a skim of `make help` and `CLAUDE.md` while it runs.
+3. Run the E2E suite against it (`npm run test:docker-compose` in the tests
+   repo), and have a skim of `make help` and `CLAUDE.md` while it runs.
 
 Next: [Session 2 — the `ticket` skill](02-ticket.md).
