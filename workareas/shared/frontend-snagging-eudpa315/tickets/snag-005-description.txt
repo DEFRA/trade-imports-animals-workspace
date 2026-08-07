@@ -1,0 +1,87 @@
+h2. Snag as reported
+
+The autocomplete/search stuff is clunky af
+
+h2. Diagnosis
+
+The snag is about search UI that EXISTS and behaves badly, not about its absence. Two shipped surfaces are the likely referents, and the investigator missed both.
+
+*A. Notification dashboard search* — {{frontend:.../features/dashboard/template.njk:40-54}} — a Search box that only matches a complete reference number, case-sensitively. Stub: {{frontend:src/server/app/services/persistence/records/stub/lifecycle/read.js:25}} ({{journey.id === referenceNumber}}). Real: {{backend:.../notification/NotificationService.java:130-140}} via {{NotificationRepository.findByReferenceNumberAndStatusIn}} ({{NotificationRepository.java:17}}), documented as exact match at {{NotificationController.java:139}}. Typing part of a reference returns "No notifications found" — pinned at {{tests:tests/e2e/features/notification-dashboard-search.spec.ts:45-60}}. Fixing this reaches into the backend.
+
+*B. Address-book party picker* — {{frontend:.../features/addresses/party-picker/_address-picker.njk:77-91}} — free-text {{q}} plus a secondary Search submit and a radio table paginated at {{PAGE_SIZE = 5}} over ~40 records ({{frontend:src/server/app/services/address-book/index.js:26}}), i.e. 8 pages. Every search and every page turn is a full page reload with selection smuggled through hidden fields and query strings ({{party-picker.controller.js:94-97}}, {{view-model/pagination/results-href.js}}). Shared by all five parties plus contact ({{addresses/parties.js:15-63}}). Pinned at {{tests:page-objects/notification/party-picker-page.ts:21-26}} and {{tests:tests/e2e/features/addresses-picker.spec.ts}}.
+
+*C. Long selects have no type-ahead* — the investigator's original finding. It is real and verified, but it is a separate concern that re-opens the deliberate EUDPA-288 ruling in {{bc285d71}} ("Enhanced search returns as a later round"). It is the third item on the decision list, not the whole diagnosis.
+
+The gate question for Sam is which surface — dashboard search matching, party-picker round-tripping, or long-select type-ahead — and only the third one is a reversal of a settled decision.
+
+h2. Fix
+
+h3. trade-imports-animals-frontend
+
+* {{package.json}} — add the chosen search/autocomplete dependency (pre-288 was {{accessible-autocomplete@3.0.1}}). Skipped entirely if the gate picks mechanism (3) server-rendered search or (4) restructure.
+* {{webpack.config.js}} — re-add the client-JS entry (pre-288 name: {{selectAutocomplete}}). LOAD-BEARING: the frontend-change recipe warns that browser JS without a webpack entry makes the script include 404 silently and the enhancement never mounts, with no test failure.
+* {{src/client/javascripts/select-autocomplete.js}} (create) — mount the enhancement over every opted-in select. Restore from {{git show 7edced0d:src/client/javascripts/select-autocomplete.js}} rather than re-inventing.
+* {{src/client/stylesheets/application.scss}} — import the component stylesheet so the mounted control is styled (its absence was one of the four things {{bc285d71}} deleted).
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk}} — opt the {{portOfEntry}} select in and ship the bundle via a {{bodyEnd}} block with {{ super() }} plus {{getAssetPath}}. Placeholder and disabled divider rows must carry {{value:''}} or they leak into the suggestion list. Option text is already {{Name (CODE)}}, which gives search-by-name-or-code for free.
+* {{src/server/app/sets/live-animals/journeys/linear/features/origin/template.njk}} — same opt-in for {{countryOfOrigin}}. In scope for gate options (b) and (d).
+* {{src/server/app/sets/live-animals/journeys/linear/features/port-of-exit/template.njk}} — same opt-in for {{portOfExit}}. Never enhanced pre-288 — new scope, only if the gate picks (b) or (d).
+* {{src/server/app/sets/live-animals/journeys/linear/features/destination-country/template.njk}} — same opt-in for {{destinationCountry}}. Never enhanced pre-288 — new scope, only if the gate picks (b) or (d).
+* {{src/server/app/sets/live-animals/journeys/linear/features/addresses/create-address/create-address.njk}} — address country select. Only if the gate picks (b) or (d).
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/_identification-card.njk}} — permanent-address country select inside the identification card. Only if the gate picks (b) or (d). Note this is a repeated partial — ids must stay unique per card.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.njk}} — transporter address country select. Only if the gate picks (b) or (d).
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.njk}} — add the chosen filter affordance to the commodity/species selection page. Only if the gate picks (c) or (d). {{git show bc285d71^:src/server/live-animals/features/commodities/search/search.njk}} is the pre-288 shape for reference — do not restore it wholesale, it round-trips the page per search, per filter and per remove.
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.controller.js}} — handle the search/filter action and carry the in-flight selection across round-trips, if the commodity page gains server-rendered search. Selection must still commit only on Save and continue — never a half-created entry in the store.
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js}} — reinstate the search copy keys under {{search.*}} (label, hint, button, noMatches, selectedCount, remove, removeAria and the typeFilter block if the per-commodity type filter returns). GDS plain English.
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.cy.js}} — structure-identical Welsh copy. The copy-parity convention test fails if en and cy diverge in shape.
+* {{src/server/app/sets/live-animals/docs/features.md}} — replace the 'Server-rendered selection controls' section (written by {{bc285d71}}) with an accurate description of whatever lands. If client JS returns, restore the progressive-enhancement rules it deleted — reuse one webpack entry across templates, {{value:''}} on placeholder/divider rows, and the E2E rule that an enhanced select must be targeted via {{input#<id>}} because {{getByRole('combobox')}} races hydration against the raw select.
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/e2e/search.e2e.spec.js}} — lines 54 and 57-58 assert the ABSENCE of any textbox and of a Search button. Replace with assertions on the new affordance, keeping the existing intent: eight pairs render, canonical selection order persists, error summary links to and focuses the first checkbox, no serious/critical axe violations.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js}} — retype every port-of-entry interaction for the new control and add legs for name search and code search, plus a {{javaScriptEnabled:false}} leg proving the no-JS select still submits.
+* {{src/server/app/sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js}} — retype country-of-origin interactions if origin is in the chosen scope.
+* {{e2e/live-animals-journey.js}} — shared journey helpers ({{answerCountryOfOrigin}}, {{selectSpecies}}, port selection) used across every co-located spec — retype them once here rather than per spec.
+
+h3. trade-imports-animals-tests
+
+* {{tests/e2e/features/port-of-entry-select.spec.ts}} — titled 'Port of entry plain select'; asserts {{toHaveRole('combobox')}} on {{select#portOfEntry}} and exactly 80 options. Rewrite for the new control, preserving the intent: correct options render, the CODE is what gets submitted, and it persists across a save and reopen.
+* {{tests/e2e/features/country-of-origin-select.spec.ts}} — titled 'Country of origin plain select'; asserts 33 options and that selecting France submits 'FR'. Same rewrite, same preserved intent.
+* {{page-objects/notification/arrival-details-page.ts}} — line 14 locates {{select#portOfEntry}} and line 18 calls {{selectOption(\{label\})}}. Under the pre-288 enhancement the hidden select is renamed {{#portOfEntry-select}} and the visible control is {{input#portOfEntry}}, so both break. Fix here once so every consuming spec follows.
+* {{page-objects/notification/origin-of-import-page.ts}} — same treatment for {{countryOfOrigin}} / {{selectCountry}}.
+* {{page-objects/notification/commodity-selection-page.ts}} — add a locator for the commodity filter/search control if the commodity page is in scope; the existing {{species(name)}} checkbox locator stays.
+* {{tests/a11y/notification-journey-initial-state.spec.ts}} — axe sweep over the journey in its initial state — must cover the new control, not the select it replaced.
+* {{tests/a11y/notification-journey-filled-state.spec.ts}} — axe sweep with answers filled in — same.
+
+h3. trade-imports-animals-backend
+
+Only in scope if the gate picks surface A (dashboard search matching). Reference-number lookup is exact-match at {{NotificationService.java:130-140}} / {{NotificationRepository.java:17}}; partial or case-insensitive matching is a repository and service change plus its contract documentation at {{NotificationController.java:139}}.
+
+h2. Acceptance criteria
+
+* On the arrival-details page a user can reach 'Aberdeen Harbour' by typing part of its NAME ('aberdeen') without scrolling an 80-item list, and can equally reach it by typing its CODE ('GB ABD').
+* The value submitted and persisted for port of entry is still the code 'GB ABD' — reopening the page after a save shows Aberdeen Harbour selected, exactly as {{tests/e2e/features/port-of-entry-select.spec.ts}} asserts today.
+* With JavaScript disabled, every enhanced control still renders as a working server-rendered govuk control and still submits and persists its value — the journey completes end to end with no client JS.
+* The placeholder row ('Select port of entry' / 'Select a country') and any disabled divider row never appear as selectable suggestions in the filtered list.
+* On the commodity selection page a user can narrow the visible species without leaving the page or losing species already ticked; ticking a species, narrowing again, then clearing the filter shows the earlier tick still set.
+* Commodity selection still writes to the store only on 'Save and continue' — narrowing or clearing the filter never creates, removes or reorders a commodity line.
+* Submitting the commodity page with nothing selected still renders the 'Select a commodity' error summary, and clicking that link focuses the first species control.
+* Every changed page has no serious or critical axe violations under wcag2a plus wcag2aa, in both the empty and the error state.
+* Each enhanced control still exposes an accessible name matching its visible label ('Port of entry', 'Country of origin') to assistive technology.
+* No spec anywhere asserts the ABSENCE of a search affordance — the two assertions at {{commodities/e2e/search.e2e.spec.js:54}} and {{:57}} are gone, and the two tests-repo specs are no longer named 'plain select'.
+
+h2. Decision needed
+
+Which long-list controls get a search affordance, and which mechanism?
+
+Pick a *scope*:
+
+* (a) port of entry only (80 options, the worst offender)
+* (b) all six ports/countries selects
+* (c) the commodity selection page only
+* (d) all of the above
+
+AND a *mechanism*:
+
+* (1) restore the pre-288 {{accessible-autocomplete@3.0.1}} progressive enhancement exactly as built in {{7edced0d}}/{{b79c1379}} — proven here, works with JS off, but is a third-party control outside the govuk toolbox and was ruled out once already. If this is the pick, what changed?
+* (2) a different client-side component, e.g. MOJ Frontend's {{multi-select}}/{{filter}}, already a dependency
+* (3) a server-rendered search page with no client JS — what the commodity page was pre-288: a Search button and a full round-trip per keystroke-batch
+* (4) restructure instead of enhance — e.g. split ports by region, or add a commodity-category step before the species checkboxes, so no list is ever long enough to need searching
+
+Also needed: does {{AUTOCOMPLETE-ASSESSMENT.md}} still stand, and if it ruled the enhancement out on accessibility grounds, does that ruling now apply to whatever replaces it?

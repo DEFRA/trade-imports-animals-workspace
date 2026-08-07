@@ -1,0 +1,98 @@
+h2. Snag as reported
+
+MoJ date picker is used but doesn't have restricted dates
+
+h2. Diagnosis
+
+Confirmed real, and it is not an EUDPA-288 regression — the restriction has never existed ({{git -C repos/trade-imports-animals-frontend log --all -S minDate}} returns nothing; a grep for {{minDate}} / {{maxDate}} / {{excludedDates}} / {{excludedDays}} / {{weekStartDay}} over {{src/}} and {{prototypes/}} returns nothing).
+
+There are exactly three MoJ date pickers in the live-animals journey, all rendered through one shared helper:
+
+* {{frontend:src/server/app/sets/live-animals/journeys/linear/features/exit-date/template.njk:13}} → {{mojDatePicker(exitDate)}}, params built at {{.../exit-date/controller.js:34-39}}
+* {{frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk:16}} → {{mojDatePicker(arrivalDate)}}, params built at {{.../port-of-entry/port-of-entry.controller.js:86-91}}
+* {{frontend:src/server/app/sets/live-animals/journeys/linear/features/documents/template.njk:41}} → {{mojDatePicker(dateOfIssue)}}, params built at {{.../documents/view-model/render.js:58-63}}
+
+h3. Root cause, layer 1 (client)
+
+Every one of those calls {{kit.dateField}} at {{frontend:src/server/app/shared/kit.js:158-168}}, which returns only \{ id, name, classes, label, hint, errorMessage, value \}. The MoJ 10.0.1 component reads its restrictions from {{params.minDate}}, {{params.maxDate}}, {{params.excludedDates}}, {{params.excludedDays}} and emits them as {{data-min-date}} / {{data-max-date}} / {{data-excluded-dates}} / {{data-excluded-days}} ({{node_modules/@ministryofjustice/frontend/moj/components/date-picker/template.njk:10-36}}). {{dateField}} has no parameter for any of them and no caller passes one, so every calendar renders fully open — any past or far-future date is selectable.
+
+h3. Root cause, layer 2 (server)
+
+The only date rule enforced on POST is calendar validity. {{dateText}} ({{frontend:src/server/app/lib/validate/validators.js:190-203}}) matches {{^(\d\{1,2\})/(\d\{1,2\})/(\d\{4\})$}} and calls {{isRealDate}} ({{frontend:src/server/app/lib/validate/calendar.js:8-24}}); there is no bounded-date validator in {{validators.js}} at all (the exported set is compose/requiredText/requiredExactDigits/optionalText/maxText/pattern/postcode/vehicleReg/ukPhone/requiredOneOf/oneOf/integerInRange/dateParts/dateText). All three controllers use it unbounded: {{exit-date/controller.js:21}}, {{port-of-entry.controller.js:51}}, {{documents/form/payload.js:23}}. So even once {{data-min-date}} lands, a JS-off user or a direct POST still saves an out-of-range date — the fix has to be both layers or it is cosmetic.
+
+h3. Why this is needs-decision and not actionable
+
+Nothing in the repo or the requirement source states what "restricted" means for these fields. The mined Confluence source of truth ({{workareas/journey-builder/EUDPA-249/extract.confluence-v4.json:426-436}} for {{arrivalDateAtPort}}, {{:662-675}} for {{accompanyingDocumentDateOfIssue}}) records {{conditionsRaw: "Must be a valid date in DD/MM/YYYY format"}} and nothing more; {{exitDate}} does not appear in the extract at all. The obligations carry no constraint either ({{frontend:src/server/app/sets/live-animals/obligations/sections/arrival.js:5-9}} is \{id, name, status: 'mandatory'\}). The three fields plainly want different rules — an expected exit date and an expected arrival at port are forward-looking, a document date of issue is backward-looking — and picking those bounds is a policy call, not a mechanical one. Guessing would also silently change validation of already-saved notifications.
+
+h3. Blast radius that makes this a two-repo fix
+
+Absolute dates are hard-coded either side of any future-only rule, and today is 2026-08-07 so some are already in the past. {{frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js:68}} fills {{03/01/2026}}; {{tests:flows/journey.ts:143}} fills {{12/12/2026}}; {{tests:tests/e2e/journeys/persistence/persistence-accompanying-document.spec.ts:29}} pins \{day:'3', month:'1', year:'2026'\}. Any min-date rule turns those into fixtures that rot with the calendar, so they must move to dates computed relative to now as part of the same change.
+
+h2. Fix
+
+h3. trade-imports-animals-frontend
+
+* {{src/server/app/shared/kit.js}} — extend {{dateField(name, \{...\})}} (currently lines 158-168) to accept and forward {{minDate}}, {{maxDate}}, {{excludedDates}}, {{excludedDays}} onto the returned mojDatePicker params, omitting each when not supplied so unrestricted callers render byte-identical markup. This is L2 shared plumbing — it must stay set-agnostic: it forwards bounds, it does not know what live-animals bounds are.
+* {{src/server/app/lib/validate/validators.js}} — add a bounded date validator beside {{dateText}} (line 190) — e.g. {{dateTextInRange(name, \{min, max, messages\})}} — that reuses the existing regex + {{isRealDate}} check then applies the agreed bounds, emitting a distinct error code per out-of-range direction so copy can differ. Server-side enforcement is mandatory: the MoJ data-* attributes are client-only and bypassable.
+* {{src/server/app/sets/live-animals/journeys/linear/features/exit-date/controller.js}} — pass the agreed exit-date bounds into {{kit.dateField('exitDate', ...)}} (line 34) and swap {{dateText('exitDate', ...)}} (line 21) for the bounded validator with the new copy keys.
+* {{src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.en.js}} — add the out-of-range error message(s) under {{errors}}, and revise {{date.hint}} if the ruling means the current example date (27/3/2026) or wording no longer describes the allowed range.
+* {{src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.cy.js}} — Welsh counterpart, structure-identical to copy.en.js — the copy-parity convention test enforces this.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js}} — pass the agreed arrival-date bounds into {{kit.dateField('arrivalDateAtPort', ...)}} (line 86) and swap {{dateText('arrivalDateAtPort', ...)}} (line 51) for the bounded validator.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js}} — add out-of-range error message(s) under {{portOfEntry.errors}} alongside {{arrivalDateInvalid}}; revise {{portOfEntry.arrivalDate.hint}} if the ruling changes what the field accepts.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.cy.js}} — Welsh counterpart, structure-identical.
+* {{src/server/app/sets/live-animals/journeys/linear/features/documents/view-model/render.js}} — pass the agreed date-of-issue bounds into {{kit.dateField('accompanyingDocumentDateOfIssue', ...)}} (line 58).
+* {{src/server/app/sets/live-animals/journeys/linear/features/documents/form/payload.js}} — swap {{dateText('accompanyingDocumentDateOfIssue', copy.errors.dateInvalid)}} (line 23) for the bounded validator.
+* {{src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js}} — add out-of-range error message(s) under {{errors}}; revise {{dateOfIssue.hint}} if the ruling changes what the field accepts.
+* {{src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.cy.js}} — Welsh counterpart, structure-identical.
+* {{src/server/app/lib/validate/validate.test.js}} — extend beside the existing {{#dateText — optional dd/mm/yyyy input}} block (line 246) with a {{#dateTextInRange}} describe: in-range accepted, below-min rejected with the min message, above-max rejected with the max message, empty still allowed, invalid calendar date still reported as invalid rather than out-of-range.
+* {{src/server/app/shared/date-field.test.js}} (new) — unit test pinning {{kit.dateField}} output: with no bounds the returned params contain none of minDate/maxDate/excludedDates/excludedDays; with bounds supplied they appear verbatim so the MoJ template emits data-min-date/data-max-date.
+* {{src/server/app/sets/live-animals/journeys/linear/features/exit-date/exit-date.e2e.spec.js}} — add a case asserting the rendered picker carries the agreed data-min-date/data-max-date, and that submitting an out-of-range date re-renders with the new error in the error summary and links to the input (proves the server-side bound, not just the attribute).
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js}} — same two assertions for arrival date; also replace the hard-coded {{03/01/2026}} at line 68 with a date computed relative to today so the spec cannot rot past the new bound.
+* {{src/server/app/sets/live-animals/journeys/linear/features/documents/e2e/upload.e2e.spec.js}} — same two assertions for date of issue; replace any hard-coded absolute issue dates with relative ones.
+
+h3. trade-imports-animals-tests
+
+* {{flows/journey.ts}} — replace the hard-coded {{fillArrivalDate('12/12/2026')}} at line 143 with a date derived from the current date inside the agreed window, so the shared happy-path flow stays valid as the calendar moves.
+* {{tests/e2e/journeys/persistence/persistence-accompanying-document.spec.ts}} — replace the fixed {{persistedIssueDate = \{ day: '3', month: '1', year: '2026' \}}} at line 29 with a relative in-range date; the round-trip assertion at line 55 keeps working unchanged.
+* {{tests/e2e/features/date-restrictions.spec.ts}} (new) — spec that would have caught this snag against the deployed stack: for each of the three pickers assert the input carries the expected data-min-date/data-max-date, and that a POST of an out-of-range date is rejected with the agreed GDS error rather than saved.
+
+h2. Acceptance criteria
+
+* On the exit date page, the date picker calendar does not offer any date outside the agreed exit-date range — out-of-range days are not selectable and cannot be reached by paging the calendar.
+* On the arrival details page, the arrival date picker calendar does not offer any date outside the agreed arrival-date range.
+* On the upload documents page, the date of issue picker calendar does not offer any date outside the agreed date-of-issue range.
+* Typing an out-of-range date directly into any of the three inputs and submitting the form re-renders the page with a GOV.UK error summary at the top, the agreed error message, a summary link that moves focus to that input, and the typed value preserved in the field.
+* The out-of-range rejection happens with JavaScript disabled and on a direct POST — the restriction is not achievable by bypassing the client-side picker.
+* An in-range date still saves and the journey advances exactly as it does today; no existing valid answer is newly rejected.
+* A date that is inside the allowed range but not a real calendar date (for example 31/2/2026) still produces the existing 'Enter a real …' message, not the new out-of-range message.
+* Every new error message exists in both English and Welsh copy files with identical structure.
+* Leaving any of the three date fields blank behaves exactly as it does today — the bound does not make an optional field mandatory or a mandatory field pass early.
+
+h2. Decision needed
+
+The requirement source (Confluence "Live Animals Data Fields V4") says only "Must be a valid date in DD/MM/YYYY format" for the two documented fields, and does not mention {{exitDate}} at all, so no bound can be derived from it. For each of the three pickers we need a ruling on (a) earliest allowed date, (b) latest allowed date — both expressed relative to today, e.g. "today", "today + 1 day", "today + 12 months", "no upper bound" — (c) whether any days or specific dates are excluded (weekends, bank holidays — MoJ supports {{excludedDays}} / {{excludedDates}}), and (d) the exact GDS error message for each out-of-range case, in English and Welsh.
+
+h3. 1. Exit date ({{exitDate}})
+
+* (a) Earliest date a user may enter — relative to today?
+* (b) Latest date a user may enter — relative to today, or no upper bound?
+* (c) Any excluded days or specific excluded dates (weekends, bank holidays)?
+* (d) Exact GDS error message for too-early, and for too-late — English and Welsh.
+
+h3. 2. Arrival date at port of entry ({{arrivalDateAtPort}})
+
+* (a) Earliest date a user may enter — relative to today?
+* (b) Latest date a user may enter — relative to today, or no upper bound?
+* (c) Any excluded days or specific excluded dates?
+* (d) Exact GDS error message for too-early, and for too-late — English and Welsh.
+
+h3. 3. Accompanying-document date of issue ({{accompanyingDocumentDateOfIssue}})
+
+* (a) Earliest date a user may enter — relative to today, or no lower bound?
+* (b) Latest date a user may enter — relative to today?
+* (c) Any excluded days or specific excluded dates?
+* (d) Exact GDS error message for too-early, and for too-late — English and Welsh.
+
+h3. 4. Amend behaviour
+
+Confirm whether each bound is enforced when amending an already-submitted notification, or only on first entry. A date that was in range when the notification was created can fall out of range later as the calendar moves; the ruling decides whether re-saving an untouched answer is then rejected.

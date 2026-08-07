@@ -1,0 +1,70 @@
+h2. Snag as reported
+
+Copy as new is broken
+
+h2. Diagnosis
+
+"Copy as new" produces a half-created notification in real mode (the mode the workspace stack runs — {{docker/stack/frontend.compose.yml:52}} sets {{LIVE_ANIMALS_MODE=real}}, and {{frontend:src/server/app/services/mode.js:1}} defaults to {{real}}).
+
+The backend keeps two independent aggregates per reference number: {{Notification}} and {{NotificationFulfilments}}. {{backend:src/main/java/.../notificationfulfilments/NotificationFulfilmentsService.java:24-31}} shows the fulfilments service has no dependency on the notification side at all — nothing links them except the frontend writing to both.
+
+Every other lifecycle operation in the frontend's real adapter dual-writes, and the code says so explicitly: {{frontend:src/server/app/services/persistence/records/real/lifecycle/transition.js:6-10}} ("Every lifecycle transition dual-writes: one call to the canonical fulfilment endpoint, one to the notification endpoint"), and {{frontend:.../real/lifecycle/create.js:7-10}} documents the ordering rule ("Notification mints the reference number ... then the notification-fulfilments aggregate is bootstrapped at that same ref via PUT /notification-fulfilments/\{ref\}").
+
+{{copy}} is the one operation that does not. {{frontend:src/server/app/services/persistence/records/real/lifecycle/create.js:31-46}} makes a single call — {{POST /notification-fulfilments/\{sourceRef\}/copy}}. The backend handler {{backend:.../notificationfulfilments/NotificationFulfilmentsService.java:106-113}} mints its OWN new reference number for the copy and inserts only a {{NotificationFulfilments}} document. No {{Notification}} document is ever created at the copy's reference.
+
+Three user-visible consequences follow, all confirmed by reading the code paths end to end:
+
+* *The copy never appears on "Your notifications".* {{frontend:.../real/lifecycle/read.js:16-31}} lists the dashboard from {{GET /notifications}} (the comment at :16-21 says so deliberately). The copy has no notification document, so it is absent from the list — permanently.
+* *Every page save on a copy fails with the service-error page.* {{frontend:.../real/lifecycle/mutate.js:36-46}} writes the notification projection with {{POST /notifications}} carrying {{referenceNumber}}. {{backend:.../notification/NotificationService.java:86-92}} routes a non-blank reference to {{updateNotification}}, which at {{:381-384}} throws {{NotFoundException}}. {{frontend:.../real/projections/put-projection.js:17-38}} retries three times then throws, and {{.../real/projections/failure.js:4-19}} converts that into the recoverable backend error — i.e. "Sorry, there is a problem with the service".
+* *A copy can never be submitted.* {{finalise}}/{{amend}}/{{softDelete}} all {{POST /notifications/\{ref\}/...}} ({{transition.js:23-83}}), which 404s for the copy's reference.
+
+Note the frontend already _believes_ {{POST /notifications}} is an upsert — {{put-projection.js:6-8}} states "Both projection variants — canonical PUT and main's POST /notifications — are idempotent whole-record writes on the backend". It is not: it 404s for an unknown reference. That mismatch is masked for journeys born through {{create}} (which mints the notification first) and is exposed only by copy.
+
+This is new code: {{git -C repos/trade-imports-animals-frontend log -- src/server/app/services/persistence/records/real/lifecycle/create.js}} returns only {{23f2fdb4}} (the EUDPA-288 model retrofit). The frontend unit test at {{frontend:src/server/app/services/persistence/records/real/real.requests.test.js:358-374}} currently _pins_ the single-sided write — every neighbouring test asserts a two-request dual write; the copy test asserts one. The shared port contract test ({{records-port.test.js:209-236}}) runs against the stub only ({{records-port.test.js:2}} imports {{./stub/index.js}}), and the stub's copy ({{.../stub/lifecycle/create.js:22-51}}) is a single in-memory store, so no unit test can see the split. The -tests E2E specs stop one assertion short: {{tests:tests/e2e/pages/notification-dashboard.spec.ts:88-106}} and {{tests:tests/e2e/pages/notification-view-states.spec.ts:63-73}} both click Copy as new, land on the hub, check the new reference differs — and stop, never returning to the dashboard and never saving a page on the copy.
+
+Why this needs a ruling rather than a mechanical fix: there are two coherent repairs with different blast radius and a real trade-off between them.
+
+(A) *Frontend-only, follows the documented {{create}} idiom.* Call {{POST /notifications/\{sourceRef\}/copy}} (already implemented — {{backend:.../notification/NotificationController.java:55-66}}, {{NotificationService.java:95-106}}) to mint the new reference and copy the notification content, then {{GET /notification-fulfilments/\{sourceRef\}}} and {{PUT /notification-fulfilments/\{newRef\}}} to bootstrap canonical (the PUT creates-if-absent — {{NotificationFulfilmentsService.java:54-76}}). Costs nothing in the backend, but abandons the fulfilments-side {{Idempotency-Key}} dedupe that was deliberately built (backend dedupe store, the hidden {{idempotencyKey}} form field in {{dashboard/template.njk:94-96}}, the per-row {{randomUUID()}} in {{dashboard/view-model/row/actions.js:22}}, and the stub's {{copiesBySourceAndKey}} map). A double-click would then yield two drafts.
+
+(B) *Keep the idempotent fulfilments copy as the reference minter, add the missing backend capability.* After the fulfilments copy returns the new reference, the frontend eagerly writes the notification projection for it via {{fulfilmentToNotification}}; this requires {{POST /notifications}} to create-at-supplied-reference when the reference is absent (i.e. make it the upsert {{put-projection.js:6-8}} already claims it is), which is a backend change plus a Java test. Preserves double-submit dedupe and makes the copy dashboard-visible immediately.
+
+Both are defensible; picking one silently is how the idempotency machinery gets thrown away without anyone noticing. Hence the gate.
+
+h2. Fix
+
+*trade-imports-animals-frontend*
+
+* {{src/server/app/services/persistence/records/real/lifecycle/create.js}} — the defect. {{copy}} (lines 31-46) makes one call to {{POST /notification-fulfilments/\{id\}/copy}} and returns. It must leave BOTH aggregates present at the copy's reference number, following whichever ordering the gate rules. Under option A: {{POST /notifications/\{sourceRef\}/copy}} to mint the reference, then GET the source fulfilment and {{PUT /notification-fulfilments/\{newRef\}}} with {{\{ id: newRef, fulfilments: [...] \}}}. Under option B: keep the idempotent fulfilments copy, then {{POST /notifications}} with the copy's {{referenceNumber}} and the projection derived from its fulfilments.
+* {{src/server/app/services/persistence/records/real/real.requests.test.js}} — rewrite the copy test at lines 358-374; it currently pins the single-request behaviour that IS the bug. Assert the full request sequence copy now issues (URLs, methods, headers, bodies) exactly as the neighbouring finalise/amend/cancel-amend/soft-delete tests do, so a future single-sided copy goes red.
+* {{src/server/app/services/persistence/records/stub/lifecycle/create.js}} — only if the ruling changes the port's observable contract (e.g. option A drops idempotent dedupe). The stub must stay behaviourally equivalent to real — it is what every unit and colocated Playwright test runs against.
+* {{src/server/app/services/persistence/records/records-port.test.js}} — the shared port contract test. Lines 209-236 pin copy idempotency against the stub; update them to match the ruled contract. Also add a case asserting a copy is returned by {{records.list()}} — the property that is broken for real and silently true for the stub.
+* {{src/server/app/docs/persistence.md}} — state the copy dual-write explicitly in the 'Notification projections' section (lines 52-57): which aggregate mints the copy's reference number and which is bootstrapped at it. The invariant is currently only in a code comment in {{transition.js}}, which is exactly why copy diverged from it.
+
+*trade-imports-animals-tests*
+
+* {{tests/e2e/pages/notification-dashboard.spec.ts}} — extend the copy spec at lines 86-106. After landing on the copy's hub, return to the dashboard, search for the copied reference and assert it is listed as a Draft; then open the copy, answer and save a page, and assert no service-error page. This is the assertion whose absence let the snag ship.
+* {{tests/e2e/pages/notification-view-states.spec.ts}} — extend the SUBMITTED copy spec at lines 63-73 the same way: after copying from the read-only view, assert the copy is listed on the dashboard and that a page save on the copy succeeds.
+* {{page-objects/notification/notification-dashboard-page.ts}} — add whatever locator the new dashboard-listing assertion needs (e.g. a card-by-reference locator) if one is not already exposed. Follow {{docs/best-practices/playwright/}}.
+
+*trade-imports-animals-backend* (option B only)
+
+* {{src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java}} — {{saveOriginOfImport}} (lines 86-92) routes any non-blank {{referenceNumber}} to {{updateNotification}}, which throws {{NotFoundException}} at 381-384. Under option B it must create a DRAFT notification at the supplied reference when none exists, making {{POST /notifications}} the idempotent whole-record upsert the frontend already documents it as ({{put-projection.js:6-8}}). Not touched under option A.
+* {{src/test/java/uk/gov/defra/trade/imports/animals/notification/NotificationServiceTest.java}} — pin that {{POST /notifications}} with a reference that does not yet exist creates a DRAFT at that reference rather than throwing NotFound, and that an existing reference still updates in place.
+
+h2. Acceptance criteria
+
+* After using Copy as new on a submitted notification from the dashboard, returning to 'Your notifications' and searching for the copy's reference number lists it as a Draft.
+* After using Copy as new from the read-only notification view, the copy is listed on 'Your notifications' as a Draft with a reference number distinct from the source.
+* Opening a copied notification, changing an answer and choosing 'Save and continue' succeeds — the user never sees 'Sorry, there is a problem with the service'.
+* A copied notification can be taken through to submission and shows as Submitted on the dashboard afterwards.
+* A copied notification can be deleted, and disappears from the dashboard, exactly as a notification created from scratch does.
+* The copy carries over the source notification's answers, and the source notification is left untouched — same reference number, same status, same answers.
+* Copy as new is still refused for a deleted notification (existing status guard preserved).
+* Double-submitting the Copy as new form behaves as ruled by the gate: under option A, two independent editable drafts are created and both are usable; under option B, one draft is created and the retry returns the same one.
+
+h2. Decision needed
+
+Which fix shape?
+
+* *(A) Frontend-only* — let the notification side mint the copy's reference ({{POST /notifications/\{ref\}/copy}}) and bootstrap canonical with {{PUT /notification-fulfilments/\{newRef\}}}, mirroring {{create}} — accepting that the fulfilments-side {{Idempotency-Key}} dedupe is dropped and a double-submitted Copy as new produces two drafts.
+* *(B) Frontend + backend* — keep the idempotent {{POST /notification-fulfilments/\{ref\}/copy}} as the reference minter and make {{POST /notifications}} create-at-supplied-reference when the reference does not exist, so the frontend can immediately write the copy's notification projection — preserving double-submit dedupe at the cost of a backend change.

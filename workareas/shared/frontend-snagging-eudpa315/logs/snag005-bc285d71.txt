@@ -1,0 +1,61 @@
+commit bc285d715d0dc9ccaef27d7650f35d9b7bafe398
+Author: samfarrington <sam@torviewconsulting.com>
+Date:   Fri Jul 31 08:47:19 2026 +0100
+
+    refactor(EUDPA-288): drop accessible-autocomplete for plain selects; commodity checkboxes (p-236)
+    
+    Per the published assessment (AUTOCOMPLETE-ASSESSMENT.md) and Sam's
+    ruling: origin country and port of entry keep their server-rendered
+    govukSelects with the enhancement stripped; transit countries becomes a
+    single 31-country govuk checkboxes group (dedupe, membership and the
+    12-country cap retained; canonical list order replaces entry order);
+    commodity selection renders all eight commodity-species pairs as grouped
+    checkboxes with the whole search/filter/carry/summary apparatus removed.
+    accessible-autocomplete dependency, bundle entry, scss import and all
+    data attributes deleted. en+cy copy updated; docs describe current state.
+    Enhanced search returns as a later round.
+    
+    Verified: suite 1450 passed/0 failed; features 94 passed; journey smoke
+    2 passed; parity gate reworked lane 138 passed/0 failed, main lane 253
+    passed clean.
+    
+    Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+ e2e/journey-smoke.spec.js                          |   4 +-
+ e2e/live-animals-journey.js                        |  34 ++---
+ package-lock.json                                  |  16 ---
+ package.json                                       |   1 -
+ src/client/javascripts/select-autocomplete.js      |  12 --
+ src/client/stylesheets/application.scss            |   2 -
+ src/server/live-animals/docs/features.md           |  52 ++------
+ src/server/live-animals/docs/testing.md            |   2 +-
+ .../additional-details.e2e.spec.js                 |   4 +-
+ .../features/commodities/copy/copy.cy.js           |  15 ---
+ .../features/commodities/copy/copy.en.js           |  15 ---
+ .../features/commodities/copy/copy.test.js         |   4 -
+ .../e2e/consignment-details.e2e.spec.js            |  11 +-
+ .../commodities/e2e/identification.e2e.spec.js     |   8 +-
+ .../features/commodities/e2e/search.e2e.spec.js    | 137 +++++++++----------
+ .../commodities/search/actions/commit-selection.js |   5 +-
+ .../features/commodities/search/actions/payload.js |  25 ----
+ .../features/commodities/search/actions/render.js  |  31 -----
+ .../commodities/search/search.controller.js        |  53 ++------
+ .../commodities/search/search.controller.test.js   | 145 ++++++++++-----------
+ .../features/commodities/search/search.njk         |  79 ++---------
+ .../commodities/search/selection/selected-keys.js  |  11 +-
+ .../search/view-model/commodity-groups.js          |  14 ++
+ .../commodities/search/view-model/result-groups.js |  37 ------
+ .../search/view-model/selected-summary.js          |  10 --
+ .../features/cph-number/cph-number.e2e.spec.js     |   4 -
+ .../features/origin/origin.e2e.spec.js             |  10 +-
+ .../live-animals/features/origin/template.njk      |   8 +-
+ .../features/transport/copy/copy.cy.js             |   9 +-
+ .../features/transport/copy/copy.en.js             |   9 +-
+ .../transport/e2e/arrival-transit.e2e.spec.js      |  53 ++++----
+ .../transport/port-of-entry/port-of-entry.njk      |   8 +-
+ .../transit-countries.controller.js                |  40 ++----
+ .../transit-countries.controller.test.js           |  39 ++++--
+ .../transit-countries/transit-countries.njk        |  46 ++-----
+ .../live-animals/services/commodities/index.js     |  45 -------
+ webpack.config.js                                  |   3 -
+ 37 files changed, 284 insertions(+), 717 deletions(-)

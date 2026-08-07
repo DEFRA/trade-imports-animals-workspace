@@ -1,0 +1,43 @@
+h2. Snag as reported
+
+Your commodities boxes at the task list page is ugly, bad text wrapping and doesn't have the styling from figma
+
+h2. Diagnosis
+
+{{frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk:9-35}} substitutes {{govukSummaryList({card:...})}} for the design's custom stat tile. That promotes the design's _description_ line into the summary-list KEY, where govuk-frontend's 30% key column inside a half-width grid column leaves roughly 100px of usable text for a 42/43-character sentence. The fix is to replace both cards with the design's app-card structure and add a registered SCSS partial.
+
+Corrections carried into the fix:
+
+* Do NOT change {{govuk-heading-l}} to {{govuk-heading-m}} on {{template.njk:10}}. That line already matches the design (design HTML line 116). If heading hierarchy is in scope at all, the divergence is the opposite one — shipped task groups are h2 / {{govuk-heading-m}} where the design has h3 / {{govuk-heading-s}} under a {{govuk-heading-l}} "Notification tasklist" h2 the implementation omits. That is out of scope for this snag (the reporter scoped it to the boxes). Leave every heading untouched, which also keeps the count-exact six-h2 assertion in {{tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts:8-15}} green.
+* Build the tile in the design's order and tokens: number (2.25rem, {{govuk-colour("blue")}}, line-height 1), then label (bold, {{govuk-colour("blue")}}), then description ({{govuk-colour("black")}}), on {{govuk-colour("light-grey")}} with {{govuk-spacing(4)}} padding. Do not reuse {{$app-light-grey}} (#f8f8f8 is not #f3f2f1).
+* Copy keys keep their existing text — the design uses the same two sentences verbatim as {{app-card__desc}}. So {{copy.en.js}} / {{copy.cy.js}} need at most a rename of {{animalsRow}} / {{packagesRow}} to a description-shaped key, not a rewrite. That removes most of the proposed copy churn and the Welsh risk.
+* The new e2e assertion goes into the existing filled-state flow in {{hub.e2e.spec.js:84-102}}, which already renders the block, not into a new seeded test.
+
+h2. Fix
+
+h3. trade-imports-animals-frontend
+
+* {{src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk}} — replace the two half-column single-row {{govukSummaryList}} cards at lines 9-35 with the design's app-card stat tile structure. Leave the headings at lines 10 and 38 untouched.
+* {{src/client/stylesheets/components/_stat-card.scss}} (new) — the stat tile partial: {{govuk-colour("light-grey")}} background, {{govuk-spacing(4)}} padding, number at 2.25rem / {{govuk-colour("blue")}} / line-height 1, bold blue label, black description.
+* {{src/client/stylesheets/components/_index.scss}} — add {{@use "stat-card";}} alongside the existing task-list / notification-list entries at lines 3-5. A partial that is not registered here never reaches the bundle.
+* {{src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js}} — rename the {{animalsRow}} / {{packagesRow}} keys (lines 3-9) to description-shaped keys matching the tile structure. Text stays as-is.
+* {{src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.cy.js}} — mirror the English change key-for-key; the copy-parity convention test requires structurally identical en/cy modules. Keep the MACHINE-DRAFT banner at line 1.
+* {{src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js}} — extend the commodityTotals view-model tests at lines 221-246 to cover the new copy shape.
+* {{src/server/app/sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js}} — extend the existing filled-state flow at lines 84-102 to assert the labels and counts, assert each label renders on no more than two lines at 1280x800 (boundingBox height against line-height), and run the axe check against that filled state. The current axe test at lines 104-120 runs on a fresh notification where the block is absent.
+
+h3. trade-imports-animals-tests
+
+* {{tests/e2e/features/hub-groups-and-cya-rows.spec.ts}} — add an integration-level assertion that a notification with commodity lines renders the "Your commodities" block with both labels and the correct aggregate counts. Today this spec pins the six group headings and six task lists only, and never sees the totals block.
+
+h2. Acceptance criteria
+
+* On a notification with at least one commodity line, the hub shows a "Your commodities" block giving the total number of animals and the total number of packages across every commodity line.
+* At a 1280x800 desktop viewport, every label in the "Your commodities" block renders on no more than two lines — no label wraps into a narrow column beside its number.
+* At a 360x740 mobile viewport the block still reads as label-then-number, with no horizontal overflow of the page body.
+* The rendered tiles match the Figma stat card: number above the label, the label bold in {{govuk-colour("blue")}}, the explanatory sentence beneath in {{govuk-colour("black")}}, on a {{govuk-colour("light-grey")}} background with {{govuk-spacing(4)}} padding.
+* The stat card SCSS partial is registered in {{src/client/stylesheets/components/_index.scss}} so the styles reach the built bundle.
+* Every heading on the hub page keeps its current level and type size — the page still renders exactly six h2 task-group headings.
+* A notification with no commodity lines shows no "Your commodities" block at all (unchanged behaviour).
+* The block's counts treat blank animal or package entries as zero and sum across all lines (unchanged behaviour).
+* The hub page with the totals block present has no serious or critical axe violations under wcag2a / wcag2aa.
+* English and Welsh copy modules for the hub remain structurally identical.

@@ -8,6 +8,7 @@ export const meta = {
     { title: 'Load' },
     { title: 'Investigate' },
     { title: 'Refute' },
+    { title: 'Re-spec' },
     { title: 'Ticket' },
     { title: 'Assemble' },
   ],
@@ -261,6 +262,10 @@ HOW TO INVESTIGATE
    missing spec is part of the defect. Every path in filesToTouch carries its own \`repo\` key.
 5. Decide the verdict HONESTLY:
    - **actionable** — you found the cause, you can name the files, and the fix needs no judgement call.
+     Test yourself on the spec you are about to write: if any entry in filesToTouch has to say "whichever",
+     "depending on", "only if the gate answers X" or similar, it is NOT actionable. Hedged wording is the tell
+     that a design question is still open, and an implementor cannot act on a conditional — that is
+     needs-decision with the question in \`gate\`.
    - **needs-decision** — the defect is real but what "fixed" looks like is a design or product question
      (wording, which of two behaviours is correct, which dates a picker should actually allow, whether a
      component should be replaced outright). Set \`gate\` to the exact question. Do NOT invent an answer and
@@ -357,7 +362,91 @@ Return the structured output only.`,
     }
   },
 
-  // --- Stage 3: Jira subtask + fix branch -----------------------------------
+  // --- Stage 3: re-spec -----------------------------------------------------
+  // A refuter returns prose, not a specification. Without this stage the
+  // increment keeps the investigator's REFUTED filesToTouch and acceptance
+  // criteria while carrying the corrected diagnosis — an internally
+  // contradictory increment that reads as buildable and sends an implementor
+  // at the wrong files. The spec has to be rewritten from the corrected
+  // finding, not annotated with it.
+  async (checked, snag) => {
+    if (!checked) return null
+    if (!checked.refuted) return checked
+
+    const respec = await agent(
+      `You are the RE-SPECIFIER for ${snag.id}. An investigator specified a fix, and a refuter then broke the
+diagnosis it rested on. The specification is now stale: its files, acceptance criteria and verification ladder
+describe a fix for a defect that turned out not to be the defect. Your job is to write the specification the
+corrected diagnosis actually implies. You do NOT re-litigate the refutation and you do NOT edit any repo.
+
+THE SNAG, verbatim:
+  "${snag.text}"
+
+THE ORIGINAL (NOW SUSPECT) SPECIFICATION:
+  title: ${checked.diag.title}
+  repos: ${(checked.diag.repos ?? []).join(', ')}
+  files:
+${(checked.diag.filesToTouch ?? []).map((f) => `    - [${f.action}] ${f.repo}:${f.path} — ${f.what}`).join('\n') || '    (none)'}
+  acceptance criteria:
+${(checked.diag.acceptanceCriteria ?? []).map((a) => `    - ${a}`).join('\n') || '    (none)'}
+
+WHAT THE REFUTER ESTABLISHED:
+${checked.reasoning}
+${checked.correctedDiagnosis ? `\nTHE CORRECTED DIAGNOSIS:\n${checked.correctedDiagnosis}` : ''}
+${(checked.missingFromLadder ?? []).length > 0 ? `\nMISSING FROM THE LADDER:\n${checked.missingFromLadder.map((m) => `  - ${m}`).join('\n')}` : ''}
+${(checked.repos ?? []).length > 0 ? `\nREPOS THE FIX TOUCHES (refuter-corrected): ${checked.repos.join(', ')}` : ''}
+
+${GUARDRAILS}
+
+REPOS AVAILABLE TO YOU:
+${repoRoster}
+
+RULES:
+- Start from the CORRECTED diagnosis. Verify it yourself against the code before you specify anything — read
+  the files the refuter cites. You are writing a spec an implementor will follow literally.
+- Carry nothing over from the original specification just because it was there. A file survives only if the
+  corrected diagnosis genuinely needs it changed. Dropping four files and adding one is a normal outcome.
+- Re-derive the verdict; do not inherit it. In particular:
+  - If the corrected diagnosis means the code is already right, say **already-fixed**.
+  - If the fix requires choosing between defensible designs — what the component should look like, which
+    dates are valid, which of two behaviours is correct — say **needs-decision** and put the exact question in
+    \`gate\`. This is the common case after a refutation of an aesthetic snag.
+  - Say **actionable** ONLY if you can write a spec with no unanswered questions in it. If any entry in
+    filesToTouch has to say "whichever", "depending on", "only if X is decided" or similar, the increment is
+    NOT actionable — it is needs-decision, and hedged wording in a spec is the tell. An implementor cannot act
+    on a conditional.
+- The title must describe the corrected fix, not the original one.
+- The verification ladder must end with a check that would FAIL on today's code and pass after the fix.
+
+Return the structured output only — a complete, self-consistent replacement specification.`,
+      { label: `${snag.id} re-spec`, phase: 'Re-spec', schema: DIAGNOSIS_SCHEMA }
+    )
+
+    if (!respec) {
+      // Never let a stale spec through as buildable just because the repair failed.
+      log(`${snag.id}: RE-SPEC FAILED — holding as needs-decision`)
+      return {
+        ...checked,
+        verdict: 'needs-decision',
+        respecFailed: true,
+        diag: {
+          ...checked.diag,
+          gate: `The original diagnosis was refuted and the re-specification step failed, so this increment has no trustworthy file list. Re-run triage for ${snag.id} before building. Refutation: ${checked.reasoning}`,
+        },
+      }
+    }
+
+    log(`${snag.id}: re-specified after refutation → ${respec.verdict}`)
+    return {
+      ...checked,
+      diag: respec,
+      verdict: respec.verdict,
+      repos: respec.repos ?? checked.repos,
+      respecced: true,
+    }
+  },
+
+  // --- Stage 4: Jira subtask + fix branch -----------------------------------
   async (checked, snag) => {
     if (!checked) return null
 
@@ -463,7 +552,9 @@ const increments = done.map((r) => ({
   confidence: r.diag.confidence,
   refuted: r.refuted,
   refuterFailed: r.refuterFailed ?? false,
-  diagnosis: r.correctedDiagnosis ?? r.diag.diagnosis,
+  respecced: r.respecced ?? false,
+  respecFailed: r.respecFailed ?? false,
+  diagnosis: r.respecced ? r.diag.diagnosis : r.correctedDiagnosis ?? r.diag.diagnosis,
   refutation: r.reasoning,
   rootCauseFiles: r.diag.rootCauseFiles ?? [],
   filesToTouch: r.diag.filesToTouch ?? [],
@@ -522,6 +613,8 @@ return {
   cannotReproduce: byVerdict('cannot-reproduce'),
   refutedDiagnoses: done.filter((r) => r.refuted).map((r) => `${r.snag.id}: ${r.reasoning}`),
   refuterFailures: done.filter((r) => r.refuterFailed).map((r) => r.snag.id),
+  respecified: done.filter((r) => r.respecced).map((r) => `${r.snag.id} → ${r.verdict}: ${r.diag.title}`),
+  respecFailures: done.filter((r) => r.respecFailed).map((r) => r.snag.id),
   ticketErrors: done.filter((r) => r.ticketError).map((r) => `${r.snag.id}: ${r.ticketError}`),
   subtasks: done.filter((r) => r.subtaskKey).map((r) => `${r.snag.id} → ${r.subtaskKey} → ${r.branch} [${r.repos.join('+')}]`),
   overlaps: assembled?.overlaps ?? [],
