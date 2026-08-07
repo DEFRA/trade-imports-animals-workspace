@@ -1,9 +1,9 @@
 export const meta = {
   name: 'snag-triage',
   description:
-    'Turn one-line snagging comments into a runnable backlog: investigate each snag across every repo, adversarially refute the diagnosis, raise a Jira subtask, cut its fix branch, then write backlog.json for increment-build-loop',
+    'Turn one-line snagging comments into a runnable backlog: investigate each snag across every repo, adversarially refute the diagnosis, raise a Jira ticket, cut its fix branch, then write backlog.json for increment-build-loop',
   whenToUse:
-    'A snagging ticket has landed with a list of one-line complaints and none of them are specified well enough to build. Run this once per batch of new snags; it is idempotent, so re-running skips snags that already have a subtask.',
+    'A snagging ticket has landed with a list of one-line complaints and none of them are specified well enough to build. Run this once per batch of new snags; it is idempotent, so re-running skips snags that already have a ticket.',
   phases: [
     { title: 'Load' },
     { title: 'Investigate' },
@@ -22,8 +22,14 @@ export const meta = {
 // screen, and which repo owns the defect is a finding, not an input. A single
 // snag routinely spans two (a frontend fix and the -tests spec that pins it).
 // ---------------------------------------------------------------------------
+// EUDPA does not use sub-tasks — the project has none, and every parented issue
+// in it is a Task under an Epic. So each snag becomes a Task under `epic` and is
+// linked back to `parent`, which stays the human-facing home of the snagging effort.
 const FALLBACK = {
   parent: 'EUDPA-315',
+  epic: 'EUDPA-144',
+  priority: 'Lowest',
+  label: 'snagging',
   repos: ['frontend', 'tests', 'backend'],
   workarea: 'frontend-snagging-eudpa315',
   base: 'main',
@@ -98,7 +104,7 @@ const DIAGNOSIS_SCHEMA = {
       enum: ['actionable', 'needs-decision', 'already-fixed', 'cannot-reproduce'],
       description: 'actionable = root cause found and the fix is mechanical; needs-decision = real but needs a design/product call; already-fixed = the code already does the right thing; cannot-reproduce = could not find anything matching the complaint',
     },
-    title: { type: 'string', description: 'Imperative one-liner for the Jira subtask summary, max ~80 chars' },
+    title: { type: 'string', description: 'Imperative one-liner for the Jira ticket summary, max ~80 chars' },
     slug: { type: 'string', description: 'kebab-case, max 5 words, for the branch name' },
     repos: {
       type: 'array',
@@ -153,7 +159,7 @@ const TICKET_SCHEMA = {
   required: ['ok', 'summary'],
   properties: {
     ok: { type: 'boolean' },
-    subtaskKey: { type: 'string', description: 'e.g. EUDPA-316' },
+    ticketKey: { type: 'string', description: 'e.g. EUDPA-316' },
     branch: { type: 'string', description: 'e.g. fix/EUDPA-316-copy-as-new-broken' },
     branchedRepos: { type: 'array', items: { type: 'string' }, description: 'Repo keys where the branch was actually created' },
     summary: { type: 'string' },
@@ -178,7 +184,7 @@ const ASSEMBLE_SCHEMA = {
 // ---------------------------------------------------------------------------
 // Load — the script has no filesystem access, so an agent reads the snag list
 // and filters out anything already triaged. That filter is what makes a
-// re-run safe: without it, every run raises a fresh set of Jira subtasks.
+// re-run safe: without it, every run raises a fresh set of Jira tickets.
 // ---------------------------------------------------------------------------
 phase('Load')
 
@@ -214,7 +220,7 @@ log(`${loaded.snags.length} new snag(s) to triage${loaded.alreadyTriaged?.length
 
 // ---------------------------------------------------------------------------
 // Investigate → Refute → Ticket, pipelined per snag. No barrier between the
-// stages: a snag that diagnoses fast gets its subtask while a harder one is
+// stages: a snag that diagnoses fast gets its ticket while a harder one is
 // still being read.
 // ---------------------------------------------------------------------------
 const triaged = await pipeline(
@@ -446,21 +452,21 @@ Return the structured output only — a complete, self-consistent replacement sp
     }
   },
 
-  // --- Stage 4: Jira subtask + fix branch -----------------------------------
+  // --- Stage 4: Jira ticket + fix branch -----------------------------------
   async (checked, snag) => {
     if (!checked) return null
 
-    // Nothing to build and nothing to decide — no subtask, no branch. These
+    // Nothing to build and nothing to decide — no ticket, no branch. These
     // still reach the backlog as a record of what was looked at and ruled out.
     if (checked.verdict === 'already-fixed' || checked.verdict === 'cannot-reproduce') {
-      log(`${snag.id}: ${checked.verdict} — no subtask raised`)
-      return { ...checked, subtaskKey: null, branch: null }
+      log(`${snag.id}: ${checked.verdict} — no ticket raised`)
+      return { ...checked, ticketKey: null, branch: null }
     }
 
     const targetRepos = checked.repos.length > 0 ? checked.repos : ['frontend']
 
     const ticket = await agent(
-      `You are the TICKETER for ${snag.id}. Raise ONE Jira subtask and cut its branch in every repo the fix
+      `You are the TICKETER for ${snag.id}. Raise ONE Jira ticket and cut its branch in every repo the fix
 touches. You write no code.
 ${GUARDRAILS}
 
@@ -495,12 +501,19 @@ ${(checked.diag.filesToTouch ?? []).map((f) => `  - [${f.action}] ${f.repo}:${f.
 ACCEPTANCE CRITERIA:
 ${(checked.diag.acceptanceCriteria ?? []).map((a) => `  - ${a}`).join('\n') || '  (none)'}
 
-STEP 2 — raise the subtask under ${CFG.parent}. Run exactly this one command, substituting the file in:
-\`${TOOLS_TILDE}/jira/add-subtask.sh ${CFG.parent} -a "${checked.diag.title.replace(/"/g, "'")}" "$(cat ${WORKAREA_TILDE}/tickets/${snag.id}-description.txt)"\`
-The script prints \`EUDPA-XXX - <summary>\` on success. Read the key off that line. If it prints an error
-instead, STOP and report ok:false — do not retry, and do not invent a key.
+STEP 2 — raise the ticket as a TASK UNDER THE EPIC, not as a sub-task. EUDPA has no sub-task type in use:
+every parented issue in the project is a Task under an Epic, and \`add-subtask.sh\` fails on the issuetype
+field. Run exactly this one command:
+\`${TOOLS_TILDE}/jira/create-ticket.sh -t Task -p ${CFG.epic} -P ${CFG.priority} -a -l ${CFG.label} -D ${WORKAREA_TILDE}/tickets/${snag.id}-description.txt "${checked.diag.title.replace(/"/g, "'")}"\`
+It prints the new key on its OWN LINE, then a \`Created: <url>\` line. Read the key off the first line. If it
+prints \`Error creating ticket:\` instead, STOP and report ok:false — do not retry, and do not invent a key.
 
-STEP 3 — cut the branch (skip this entirely if step 2 failed). Run the helper ONCE PER REPO, one Bash call
+STEP 3 — link it back to the snagging ticket so the batch stays findable from ${CFG.parent}:
+\`${TOOLS_TILDE}/jira/link-tickets.sh <THE-KEY-FROM-STEP-2> Relates ${CFG.parent}\`
+If ONLY this step fails the ticket still exists and is still usable — report ok:true, carry on to the branch,
+and say in your summary that the link needs adding by hand. Losing the key would be the worse outcome.
+
+STEP 4 — cut the branch (skip this entirely if step 2 failed). Run the helper ONCE PER REPO, one Bash call
 each, passing the SAME ticket, slug and prefix every time:
 ${targetRepos.map((r) => `\`${TOOLS_TILDE}/ticket/setup-branch.sh <THE-KEY-FROM-STEP-2> --repo ${REPO_NAME[r]} --slug ${checked.diag.slug} --prefix fix --base ${CFG.base} --json\``).join('\n')}
 The branch NAME must be byte-identical in every repo. That is a hard workspace rule, not a tidiness
@@ -512,18 +525,18 @@ The helper is idempotent and handles the already-pushed case. It leaves each rep
 expected — the build loop puts them there again per increment with \`tim workspace branch\`.
 Read \`branch\` out of the JSON output and report it, plus which repos you branched.
 
-Report the subtask key and the branch name exactly as the tools gave them to you.
+Report the ticket key and the branch name exactly as the tools gave them to you.
 Return the structured output only.`,
       { label: `${snag.id} ticket`, phase: 'Ticket', schema: TICKET_SCHEMA }
     )
 
     if (!ticket || !ticket.ok) {
       log(`${snag.id}: TICKETING FAILED — ${ticket?.summary ?? 'agent failed'}`)
-      return { ...checked, subtaskKey: null, branch: null, ticketError: ticket?.summary ?? 'agent failed' }
+      return { ...checked, ticketKey: null, branch: null, ticketError: ticket?.summary ?? 'agent failed' }
     }
 
-    log(`${snag.id}: ${ticket.subtaskKey} on ${ticket.branch} (${targetRepos.join('+')})`)
-    return { ...checked, repos: targetRepos, subtaskKey: ticket.subtaskKey, branch: ticket.branch, branchedRepos: ticket.branchedRepos ?? targetRepos }
+    log(`${snag.id}: ${ticket.ticketKey} on ${ticket.branch} (${targetRepos.join('+')})`)
+    return { ...checked, repos: targetRepos, ticketKey: ticket.ticketKey, branch: ticket.branch, branchedRepos: ticket.branchedRepos ?? targetRepos }
   }
 )
 
@@ -544,7 +557,7 @@ const increments = done.map((r) => ({
   title: r.diag.title,
   repos: r.repos,
   parent: CFG.parent,
-  subtask: r.subtaskKey,
+  ticket: r.ticketKey,
   branch: r.branch,
   base: CFG.base,
   status: r.verdict === 'actionable' ? 'todo' : 'blocked',
@@ -563,7 +576,7 @@ const increments = done.map((r) => ({
   specs: r.diag.specs ?? [],
   acceptanceCriteria: r.diag.acceptanceCriteria ?? [],
   verification: [...(r.diag.verification ?? []), ...(r.missingFromLadder ?? [])],
-  gate: r.verdict === 'needs-decision' ? r.diag.gate ?? 'Design decision required — see the subtask.' : null,
+  gate: r.verdict === 'needs-decision' ? r.diag.gate ?? 'Design decision required — see the ticket.' : null,
   notes: r.diag.summary,
   openQuestions: r.diag.openQuestions ?? [],
   dependsOn: [],
@@ -616,7 +629,7 @@ return {
   respecified: done.filter((r) => r.respecced).map((r) => `${r.snag.id} → ${r.verdict}: ${r.diag.title}`),
   respecFailures: done.filter((r) => r.respecFailed).map((r) => r.snag.id),
   ticketErrors: done.filter((r) => r.ticketError).map((r) => `${r.snag.id}: ${r.ticketError}`),
-  subtasks: done.filter((r) => r.subtaskKey).map((r) => `${r.snag.id} → ${r.subtaskKey} → ${r.branch} [${r.repos.join('+')}]`),
+  tickets: done.filter((r) => r.ticketKey).map((r) => `${r.snag.id} → ${r.ticketKey} → ${r.branch} [${r.repos.join('+')}]`),
   overlaps: assembled?.overlaps ?? [],
   runnable: assembled?.runnable ?? [],
   summary: assembled?.summary ?? 'Backlog write failed — the triage results above are not persisted.',

@@ -563,7 +563,7 @@ TASK:
    .playwright artefacts.
 3. Commit in EACH repo that has changes, one commit per repo, same conventional message:
    \`<type>(${CFG.scope}): <increment title>\`, a body saying what changed and
-   naming the increment id (and its Jira subtask key, if the increment carries a "subtask" field), and the trailer:
+   naming the increment id (and its Jira key, if the increment carries a "ticket" field), and the trailer:
    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
    A repo the increment named but that ended up with no changes is fine — say so; do not manufacture a commit.
 4. Do NOT push — pushing is the human's call.
