@@ -82,6 +82,12 @@ git -C "$REPO_DIR" pull --quiet --ff-only
 if git -C "$REPO_DIR" show-ref --verify --quiet "refs/heads/$BRANCH"; then
     log "→ checkout existing $BRANCH"
     git -C "$REPO_DIR" checkout --quiet "$BRANCH"
+elif git -C "$REPO_DIR" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    # Someone already pushed this branch. Without an explicit start point,
+    # `checkout -b` would branch from $BASE and silently diverge from the
+    # remote branch of the same name.
+    log "→ checkout $BRANCH tracking origin/$BRANCH"
+    git -C "$REPO_DIR" checkout --quiet -b "$BRANCH" --track "origin/$BRANCH"
 else
     log "→ checkout -b $BRANCH"
     git -C "$REPO_DIR" checkout --quiet -b "$BRANCH"

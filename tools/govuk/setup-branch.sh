@@ -37,9 +37,14 @@ if [[ "$current" == "$BRANCH" ]]; then
     exit 0
 fi
 
-if git -C "$REPO_DIR" rev-parse --verify --quiet "$BRANCH" >/dev/null; then
+if git -C "$REPO_DIR" show-ref --verify --quiet "refs/heads/$BRANCH"; then
     git -C "$REPO_DIR" checkout "$BRANCH"
     echo "$REPO: switched to existing branch $BRANCH"
+elif git -C "$REPO_DIR" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    # Without an explicit start point, `checkout -b` would branch from the
+    # current HEAD and silently diverge from the remote branch of the same name.
+    git -C "$REPO_DIR" checkout -b "$BRANCH" --track "origin/$BRANCH"
+    echo "$REPO: switched to $BRANCH, tracking origin/$BRANCH"
 else
     git -C "$REPO_DIR" checkout -b "$BRANCH"
     echo "$REPO: created and switched to $BRANCH"
