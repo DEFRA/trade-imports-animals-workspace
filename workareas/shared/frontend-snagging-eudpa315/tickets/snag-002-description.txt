@@ -4,28 +4,61 @@ Copy as new CSS is off
 
 h2. Diagnosis
 
-The reported symptom is a layout defect, not a font defect. On the notification dashboard the summary-card action row wraps, so "Copy as new" drops onto its own line and reads as broken.
+"Copy as new" on the notification dashboard renders in the browser's default serif (Times) while every action next to it renders in GDS Transport. The cause is a single conflicting declaration in the custom stylesheet.
 
-The dashboard is rendered inside a hard-coded two-thirds grid column. {{src/server/app/shared/layout.njk:57}} sets {{govuk-grid-column-two-thirds}} for every page with no per-page override, so after the layout retrofit the dashboard lost the full-width container it previously had. The filter panel is a fixed 280px, which leaves the results list too narrow at desktop to fit View, Amend, Copy as new and Delete with their separators on one line.
+h3. Where the element is
 
-An earlier investigation attributed the snag to a font-family regression: {{src/client/stylesheets/core/_main.scss:16}} declares {{font-family: inherit}} on {{.app-link-button}}, emitted after {{.govuk-link,a\{font-family:GDS Transport,arial,sans-serif\}}} at equal specificity (compiled bundle bytes 137469 vs 941), so it wins, and no ancestor supplies a family (govuk-frontend 6.4.0 sets font-family per component class only — {{.govuk-summary-card__actions}} sets font-size and font-weight but not family). Verified live at 1440px: {{.app-link-button}} computes {{Times}} while its sibling {{a.govuk-link}} actions in the same {{<ul>}} compute {{"GDS Transport", arial, sans-serif}}.
+{{frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/template.njk:91-106}} renders each summary-card action two ways. Actions carrying an {{href}} render as {{<a class="govuk-link">}}; actions carrying a {{postAction}} render as {{<button type="submit" class="govuk-link app-link-button">}} inside a {{<form class="app-form-inline">}} (CSRF crumb and idempotency key must be POSTed, so it cannot be an anchor).
 
-That font-family finding is real, but it is a separate defect and is not what "Copy as new CSS is off" describes. This subtask covers the layout width only. {{.app-link-button}} and {{.app-form-inline}} are not changed here.
+{{frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/view-model/row/actions.js:19-24}} gives the copy action a {{postAction}}, so on a DRAFT row "Copy as new" is the ONLY {{<button>}} among Resume / Delete anchors — it is visibly the odd one out, which is exactly what "CSS is off" describes. On a SUBMITTED row "Amend" is a button too, so it is affected identically.
+
+h3. Root cause — cascade conflict on font-family
+
+{{frontend:src/client/stylesheets/core/_main.scss:16}} declares {{font-family: inherit}} on {{.app-link-button}}. govuk-frontend 6.4.0 declares {{font-family: GDS Transport, arial, sans-serif}} on {{.govuk-link, a}}. Both selectors are specificity 0-1-0, so source order decides. Verified in the built bundle {{frontend:.public/stylesheets/application.1ee130c.min.css}}:
+
+* byte 941 -> {{.govuk-link,a\{font-family:GDS Transport,arial,sans-serif;...\}}}
+* byte 1080 -> the same rule again
+* byte 137469 -> {{.app-link-button\{background:none;border:none;padding:0;cursor:pointer;font-size:inherit;font-family:inherit;font-weight:inherit;display:inline;vertical-align:baseline;line-height:inherit;color:var(--govuk-link-colour,#1a65a6)\}}}
+
+{{.app-link-button}} is emitted last (application.scss {{@use}} order: {{govuk-frontend}} then {{variables}}/{{helpers}}/{{core}}), so {{font-family: inherit}} wins on the {{<button>}} and defeats {{.govuk-link}}.
+
+h3. Why inherit resolves to serif
+
+govuk-frontend 6.4.0 sets font-family per component class only — there is no global rule to inherit from. Proof: {{grep -o "body\{[^\}]*\}"}} on the built bundle returns exactly {{body\{margin:0;background-color:var(--govuk-body-background-colour,#fff)\}}}, and {{.govuk-template}} emits only background-colour / text-size-adjust / scroll-padding / overflow. The full inventory of {{font-family:GDS Transport}} rules in the bundle (53 of them, captured at {{workareas/shared/frontend-snagging-eudpa315/gdsfont.txt}}) contains {{.govuk-summary-card__title}} but NOT {{.govuk-summary-card}}, {{.govuk-summary-card__title-wrapper}}, {{.govuk-summary-card__actions}} or {{.govuk-summary-card__action}}.
+
+So no ancestor of the button supplies a family, {{inherit}} falls through to the root initial value, and Chrome computes {{Times}}. A live check at 1440px recorded exactly this: {{.app-link-button}} computed {{Times}} while its sibling {{a.govuk-link}} in the same {{<ul>}} computed {{"GDS Transport", arial, sans-serif}}.
+
+h3. Why the other declarations are fine
+
+{{font-size: inherit}}, {{font-weight: inherit}} and {{line-height: inherit}} do NOT conflict, because {{.govuk-link}} sets none of them; the button correctly inherits size 19 and bold from {{.govuk-summary-card__actions}} (the summary-card mixin sets {{govuk-font-size(19)}} and {{govuk-typography-weight-bold}}). {{font-family}} is the only broken declaration. The explicit {{color}} override at {{_main.scss:23}} is correct and load-bearing (govuk sets link colour via {{:link}}, which never matches {{<button>}}) and must stay.
+
+h3. Blast radius
+
+The same defect affects every {{.app-link-button}} in the app, all of which also carry {{.govuk-link}}:
+
+* {{features/commodities/consignment-details/_selected-commodities-table.njk:8}}
+* {{features/commodities/animal-identification/_identification-card.njk:19}}
+* {{features/documents/contracts/remove-action.js:12}}
+
+One stylesheet edit fixes all of them.
+
+h3. Alternative ruled out
+
+A wrapping/width theory — that the action row wraps because {{frontend:src/server/app/shared/layout.njk:57}} hard-codes {{govuk-grid-column-two-thirds}} where the pre-retrofit layout used {{govuk-grid-column-full}}. That width regression is real and worth its own ticket, but it is a whole-page layout change affecting every screen — it does not single out "Copy as new", and fixing it would leave the button still rendering in Times. The font-family conflict is the defect that makes this one element, and only this element, look wrong.
 
 h2. Fix
 
 h3. trade-imports-animals-frontend
 
-* {{src/server/app/shared/layout.njk}} — replace the hard-coded {{govuk-grid-column-two-thirds}} at line 57 with a per-page content width, e.g. {{\{% set contentColumnClasses = contentColumnClasses | default("govuk-grid-column-two-thirds") %\}}} and render {{<div class="\{\{ contentColumnClasses \}\}">}}. Child templates set the variable at top level, the same idiom the pre-retrofit layout used for {{mainClasses}}. The default stays two-thirds so every form page is unchanged.
-* {{src/server/app/sets/live-animals/journeys/linear/features/dashboard/template.njk}} — add {{\{% set contentColumnClasses = "govuk-grid-column-full" %\}}} at the top of the template so the dashboard renders full width again, as it did before the retrofit. No other change to the template — the action markup and {{.app-link-button}} are correct as they stand.
-* {{src/server/app/shared/layout.test.js}} — extend the existing nunjucks render test: assert the layout renders {{govuk-grid-column-two-thirds}} by default, and renders {{govuk-grid-column-full}} when a page sets {{contentColumnClasses}}. This is the narrowest regression guard for the root cause.
-* {{src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js}} — add a desktop-viewport test that the summary-card action row does not wrap: locate the four actions for a submitted notification (the file already has the {{actionFor}} helper at lines 111 and 127) and assert every action's {{boundingBox().y}} is equal, i.e. all four including "Copy as new" sit on one line. Self-contained, raw locators, auto-waiting — no sleeps, no page objects.
+* {{src/client/stylesheets/core/_main.scss}} — edit. Delete the {{font-family: inherit;}} declaration from the {{.app-link-button}} rule (line 16). Change nothing else in that rule: {{background}}, {{border}}, {{padding}}, {{cursor}}, {{font-size: inherit}}, {{font-weight: inherit}}, {{display: inline}}, {{vertical-align: baseline}}, {{line-height: inherit}}, the {{color}} declaration and the {{:hover}} / {{:active}} blocks all stay exactly as they are, as does the existing comment above {{color}}. With the reset gone, govuk-frontend's {{.govuk-link, a \{ font-family: GDS Transport, arial, sans-serif \}}} applies to the button; every call site pairs {{app-link-button}} with {{govuk-link}}, so no site loses its family. Do not add a replacement {{font-family}} and do not add any new custom CSS.
+* {{src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js}} — edit. Add one test to the existing {{dashboard feature — notification rows and actions}} describe block that pins the link-button against its anchor sibling. Start a notification ({{startNotification(page)}}, {{journeyIdFromPage(page)}}, {{page.goto('/')}}) so a DRAFT row renders, then use the file's existing {{actionFor(page, role, action, reference)}} helper to get {{actionFor(page, 'button', 'Copy as new', reference)}} and {{actionFor(page, 'link', 'Delete', reference)}}. Assert with {{expect.poll}} on {{evaluate((el) => getComputedStyle(el).fontFamily)}} that the Copy as new button's computed {{fontFamily}} equals the Delete link's, and separately that it matches {{/GDS Transport/}}. Self-contained, raw locators, auto-waiting — no sleeps, no page objects, no new helper module.
 
 h2. Acceptance criteria
 
-* The notification dashboard renders across the full width of the page container at desktop, not inside a two-thirds column
-* On a desktop viewport, all of a submitted notification's card actions — View, Amend, Copy as new, Delete — render on a single line with their separators, with "Copy as new" neither wrapped onto its own line nor clipped
-* The dashboard filter panel and the results list sit side by side at desktop, with the results list wider than the 280px filter panel
-* Single-question journey pages still render in a two-thirds column — the layout default is unchanged and no existing page moves width unless it opts in
-* Copy as new still posts and still looks identical to the neighbouring View and Delete links (same colour, weight, underline and focus state) — no change to {{.app-link-button}} or {{.app-form-inline}}
-* No new client-side JavaScript is introduced; the page behaves the same with JavaScript disabled
+* On the notification dashboard, the "Copy as new" action renders in the same typeface as the Resume, View and Delete actions in the same card — GDS Transport, not the browser default serif
+* "Copy as new" is visually indistinguishable from its neighbouring actions in font family, size, weight, colour, underline and focus state; only the neighbours' anchor-vs-button semantics differ
+* The "Amend" action on a submitted notification card, which is also a POST-backed link-button, renders in GDS Transport too
+* The "Remove" link-buttons on the selected-commodities table, the animal-identification card and the document contracts list all render in GDS Transport
+* "Copy as new" still POSTs and still creates a new draft — behaviour, CSRF crumb, idempotency key and copyOrigin are unchanged
+* No new custom CSS class or declaration is introduced; the change only removes a declaration that was overriding the govuk-frontend link styles
+* No new client-side JavaScript is introduced; the page behaves identically with JavaScript disabled

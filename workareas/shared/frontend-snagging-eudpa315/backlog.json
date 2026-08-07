@@ -8,7 +8,9 @@
       "id": "snag-000",
       "snagText": "Obligation UUIDs in the api-journey seed are opaque literals",
       "title": "Name the obligation UUIDs in UNLOCKED_FULFILMENTS",
-      "repos": ["tests"],
+      "repos": [
+        "tests"
+      ],
       "parent": "EUDPA-315",
       "ticket": null,
       "branch": "chore/EUDPA-315-name-obligation-ids",
@@ -22,7 +24,9 @@
       "respecFailed": false,
       "diagnosis": "The api-journey seed carried raw obligation UUID literals, so a reader could not tell which obligation any fixture value belonged to without cross-referencing the frontend obligation model by hand.",
       "refutation": "Not triaged through snag-triage — this snag was found and fixed by hand before the workflow existed. Recorded here so the loader does not re-raise it.",
-      "rootCauseFiles": ["tests:flows/api-journey.ts"],
+      "rootCauseFiles": [
+        "tests:flows/api-journey.ts"
+      ],
       "filesToTouch": [
         {
           "repo": "tests",
@@ -47,9 +51,887 @@
       "conflictsWith": [],
       "dependsOn": [],
       "commit": "97ee841",
-      "commits": ["tests:97ee841"],
+      "commits": [
+        "tests:97ee841"
+      ],
       "failure_reason": null,
       "ticketError": null
+    },
+    {
+      "id": "snag-001",
+      "snagText": "Copy as new is broken",
+      "title": "Restore the notification-side write when copying a notification as new",
+      "repos": [
+        "frontend",
+        "backend",
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-317",
+      "branch": "fix/EUDPA-317-copy-as-new-missing-notification",
+      "base": "main",
+      "status": "blocked",
+      "verdict": "needs-decision",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "The diagnosis is correct but incomplete on one point that changes the shape of the gate decision. Copy SEMANTICS are not the same on the two sides. backend:.../notification/NotificationCopyMapper.java:33-85 deliberately RESETS logistical fields on a notification-side copy — transport (portOfEntry, arrivalDate, transporter), consignment contact address, internalReference, totalNoOfAnimals, totalNoOfPackages, species and unweanedAnimals, retaining only typeOfCommodity — each with an \"intentionally omitted ... reset on copy\" comment. The fulfilments-side copy retains EVERYTHING verbatim (NotificationFulfilmentsService.java:103-111 copies source.getFulfilments() wholesale), and so does the stub the current product behaviour is defined against (frontend:.../records/stub/lifecycle/create.js:41-50, structuredClone of source.fulfilment).\n\nConsequence for the gate: under option (a) — POST /notifications/{sourceRef}/copy then PUT the fulfilments — the notification projection lands with arrival date, animal counts and contact address blanked by NotificationCopyMapper while the fulfilments the user actually sees in the journey still hold the source values. The dashboard row and the journey answers disagree until the first successful save re-projects everything from fulfilments (mutate.js:36-46). So option (a) is not a drop-in restoration of pre-retrofit ordering; it either needs the reset mapper bypassed for this path, or the product needs to rule on whether \"copy as new\" resets logistical fields at all. That ruling belongs in the same gate, and the investigator's proposed-changes list does not mention NotificationCopyMapper anywhere.",
+      "refutation": "I tried to break this on all five fronts and could not. Every cited line is accurate.\n\nDEFECT EXISTS. frontend:src/server/app/services/persistence/records/real/lifecycle/create.js:31-46 — real-mode `copy` makes exactly one fetch, POST `${notificationFulfilmentsUrl}/${journeyId}/copy`, and returns marshal() of that response. Contrast `create` at lines 11-29 which POSTs /notifications first (backend mints the ref) then PUTs the fulfilments aggregate at that same ref; the comment at lines 7-10 states the ordering as a rule. backend:.../notificationfulfilments/NotificationFulfilmentsService.java:85-128 confirms copy() mints its own ref via referenceNumberGenerator.generate() and calls only notificationFulfilmentsRepository.insert(copy) — no Notification is written. Real mode is the default (frontend:src/server/app/services/mode.js:1, `process.env.LIVE_ANIMALS_MODE ?? 'real'`) and the stack sets it explicitly (docker/stack/frontend.compose.yml:52). Not already-fixed, not cannot-reproduce.\n\nROOT CAUSE, NOT SYMPTOM. I looked one level down for an escape hatch and there is none. The dashboard list is purely notification-side: read.js:22-48 fetches `${notificationsUrl}?page=...` with no aggregation join, and the comment at 16-21 says so. The save path mutate.js:36-46 POSTs /notifications with `referenceNumber: journeyId` set, which backend NotificationService.java:85-92 (saveOriginOfImport) routes to updateNotification, and updateNotification at 380-384 throws NotFoundException for an unknown reference. I checked whether the retry wrapper rescues it: real/projections/put-projection.js:17-38 retries the identical body MAX_PROJECTION_ATTEMPTS times and then rethrows — there is no 404-to-create fallback, so the first save of a copy is a hard recoverable-error page. transition.js:23-83 confirms finalise/amend/cancelAmend/softDelete each dual-post to `${notificationsUrl}/${journeyId}/...`, all of which 404 for a copy. I also checked for a way to fix this purely in the frontend while keeping the idempotent call: NotificationController.java exposes only POST /notifications, POST /{ref}/copy, /submit, /amend, /cancel-amend, /soft-delete, GET, DELETE — there is NO PUT /notifications/{ref} upsert. So the frontend genuinely cannot create a Notification at a ref the fulfilments copy already minted. The needs-decision framing survives that attack.\n\nMATCHES THE SNAG. \"Copy as new is broken\" — the copy vanishes from the dashboard and dies on first save. That is the reporter's complaint.\n\nVERDICT IS RIGHT, AND FOR THE RIGHT REASON. The idempotency machinery is real and load-bearing: notification-actions/controller.js:26-42 reads a hidden idempotencyKey from the payload, and recoverCopy at 12-24 re-renders the dashboard or notification view with the SAME key preserved on a recoverable 500, so the user's retry dedupes at NotificationFulfilmentsService.java:88-95 (findCopy by idempotency key). The notification-side copy endpoint has no key. So option (a) really does trade retry-safety for the fix, and option (b) really does require a backend change. Two defensible answers in different repos = needs-decision, correctly called.\n\nONE SUBSTANTIVE GAP the investigator missed (see correctedDiagnosis) — copy SEMANTICS diverge between the two aggregates, which adds a third dimension to the gate decision and means option (a) is not the clean \"restore pre-retrofit ordering\" it is billed as.\n\nREPO LIST is complete. frontend + tests under option (a); frontend + backend + tests under option (b). Nothing else consumes the copy path — admin reads notifications but does not copy, and the stub repo is uninvolved.",
+      "rootCauseFiles": [
+        "frontend:src/server/app/services/persistence/records/real/lifecycle/create.js",
+        "frontend:src/server/app/services/persistence/records/real/lifecycle/read.js",
+        "frontend:src/server/app/services/persistence/records/real/lifecycle/mutate.js",
+        "frontend:src/server/app/services/persistence/records/real/lifecycle/transition.js",
+        "backend:src/main/java/uk/gov/defra/trade/imports/animals/notificationfulfilments/NotificationFulfilmentsService.java",
+        "backend:src/main/java/uk/gov/defra/trade/imports/animals/notification/NotificationService.java"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/server/app/services/persistence/records/real/lifecycle/create.js",
+          "action": "edit",
+          "what": "Make real-mode `copy` leave BOTH a notification-fulfilments document and a Notification document at one shared reference. Under gate option (a) this becomes a two-call sequence mirroring `create`: POST /notifications/{sourceRef}/copy for the new reference plus display fields, then PUT /notification-fulfilments/{newRef} with the source's fulfilments read via getFulfilment. Under option (b) this file is unchanged and the backend does the dual write."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/services/persistence/records/real/real.requests.test.js",
+          "action": "edit",
+          "what": "Replace the copy test at lines 358-370, which currently pins the single-call broken behaviour, with one that asserts both wire writes and that the notification-side write targets the SAME reference the copy is returned under. This is the narrowest test that would have caught the snag."
+        },
+        {
+          "repo": "backend",
+          "path": "src/main/java/uk/gov/defra/trade/imports/animals/notificationfulfilments/NotificationFulfilmentsService.java",
+          "action": "edit",
+          "what": "Gate option (b) only: have copy() create the paired Notification at the same minted reference inside the same transaction, so one Idempotency-Key-guarded call leaves both aggregates consistent. Not touched under option (a)."
+        },
+        {
+          "repo": "backend",
+          "path": "src/test/java/uk/gov/defra/trade/imports/animals/notificationfulfilments/NotificationFulfilmentsControllerIT.java",
+          "action": "edit",
+          "what": "Gate option (b) only: integration test proving a copy is retrievable from GET /notifications (dashboard list source) and accepts POST /notifications/{ref}/submit. Create the file if the repo names its fulfilments IT differently — locate the existing *IT beside the controller first."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/pages/notification-dashboard.spec.ts",
+          "action": "edit",
+          "what": "Extend the copy spec at lines 87-106: after copying, return to the dashboard, search the copied reference and assert its card is visible. This is the assertion whose absence let the regression ship."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/pages/notification-view-states.spec.ts",
+          "action": "edit",
+          "what": "Add coverage that a copied notification is editable end-to-end against the real stack: open the copy, change one answer, save, and assert the journey continues rather than landing on the recoverable-error page."
+        }
+      ],
+      "obligations": [
+        "The Playwright leg is mandatory here, not optional — the defect exists only in real mode and the frontend's own vitest and Playwright suites both force LIVE_ANIMALS_MODE=stub (vitest.config.js:12, playwright.config.js:60). A green frontend suite proves nothing about this snag.",
+        "Run mvn verify, never mvn test, if the backend is touched: the Testcontainers *IT classes run under Failsafe at verify and are skipped by test.",
+        "Keep the stub adapter (services/persistence/records/stub/lifecycle/create.js) behaviourally aligned with the real one so the co-located e2e specs stay honest — if real copy grows a second write, the stub must still produce a record that is listable, saveable and submittable.",
+        "Branch name must be identical across every repo the chosen option touches (workspace rule 2); use `tim workspace branch <name>`.",
+        "Do not add migration or rationale comments to the changed adapter code; the why belongs in the ticket and in src/server/app/docs/persistence.md.",
+        "If persistence.md's \"Notification projections\" section (lines 52-57) no longer describes the copy path accurately after the fix, update it in the same increment."
+      ],
+      "copyKeys": [
+        "notificationActions.copy.text",
+        "notificationActions.copy.successTitle",
+        "notificationActions.copy.successBody"
+      ],
+      "specs": [
+        "frontend:src/server/app/services/persistence/records/real/real.requests.test.js",
+        "tests:tests/e2e/pages/notification-dashboard.spec.ts",
+        "tests:tests/e2e/pages/notification-view-states.spec.ts",
+        "backend:src/test/java/uk/gov/defra/trade/imports/animals/notificationfulfilments/NotificationFulfilmentsControllerIT.java"
+      ],
+      "acceptanceCriteria": [
+        "Copying a draft or submitted notification from the dashboard, then returning to the dashboard and searching the copied reference, shows the copied notification as a Draft card.",
+        "Opening a copied notification, changing an answer and saving succeeds — the user proceeds through the journey and never sees the \"Sorry, there is a problem with the service\" page.",
+        "A copied notification can be submitted, and after submission its status shows as Submitted on the dashboard.",
+        "A copied notification can be deleted, and after deletion it no longer appears on the dashboard.",
+        "The copied notification carries the source's answers: its hub shows the same completed sections and the same answer values as the source.",
+        "The copy is created under a new reference number that differs from the source's, and the source notification remains on the dashboard unchanged.",
+        "Whatever retry behaviour the gate selects is stated and tested: either resubmitting the copy form after a recoverable failure yields exactly one copy (option b), or the accepted duplicate-on-retry behaviour is explicitly pinned by a test (option a)."
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-baseline.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test -- src/server/app/services/persistence/records/real/real.requests.test.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-narrow.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-units.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-lint.log 2>&1",
+        "mvn -f ~/git/defra/trade-imports-animals/repos/trade-imports-animals-backend/pom.xml verify > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-backend.log 2>&1",
+        "tim docker dev",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose -- tests/e2e/pages/notification-dashboard.spec.ts > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-001-e2e.log 2>&1",
+        "No red-before-green step. Nothing in the ladder fails on the UNFIXED tree: steps 1 and 3 run under vitest.config.js:12 which pins LIVE_ANIMALS_MODE to 'stub', and playwright.config.js:60 does the same, so the whole frontend suite passes today while real mode is broken. Add an explicit gate: rewrite real.requests.test.js first, run it against unfixed create.js, and record it RED before any production edit.",
+        "Step 7 runs only tests/e2e/pages/notification-dashboard.spec.ts, but the proposed changes also edit tests/e2e/pages/notification-view-states.spec.ts — the spec that covers consequence 2 (save a copied notification without hitting the recoverable-error page). That spec is never executed by the ladder. Add it to the E2E step.",
+        "Nothing exercises consequence 3 at all. transition.js:23-83 dual-posts submit/amend/cancel-amend/soft-delete to ${notificationsUrl}/${journeyId}/..., all of which 404 for a copy today. Add a leg that submits (or amends, or deletes) a copied notification end-to-end — otherwise the fix could restore the dashboard row and still leave every transition broken.",
+        "No step proves the dashboard-list source specifically. The dashboard reads GET /notifications (read.js:22-48). Under option (b) the ladder should name the concrete backend IT class rather than 'create the file if the repo names its fulfilments IT differently' — locate NotificationFulfilmentsControllerIT (or its real name) before writing the ladder, so step 5 is a real assertion and not a placeholder.",
+        "Step 6 'tim docker dev' has no backend-refresh precondition. Under option (b) the Java change needs bounce-backend.sh (or a rebuild) after the stack is up; without it step 7 can run against a stale backend image and give a spurious pass or fail.",
+        "No step covers the copy-semantics divergence flagged in correctedDiagnosis: after copying, assert which fields carried over and which reset, comparing the dashboard row against the journey answers. Under option (a) these disagree until the first save, and no proposed step would catch it."
+      ],
+      "gate": "Which side mints the copied notification's reference number, and where does the dual write live? Option (a) notification-first, mirroring `create`: POST /notifications/{sourceRef}/copy to mint the new reference and copy the display fields, then PUT /notification-fulfilments/{newRef} with the source's fulfilments — frontend-only, consistent with the \"frontend adapter owns the dual write\" convention documented in real/lifecycle/transition.js:6-10, but it drops the Idempotency-Key dedupe, so a retry after a recoverable 500 mints a second copy and the retry-stability contract in notification-actions/controller.test.js:69-84 no longer holds in real mode. Option (b) backend dual write: extend NotificationFulfilmentsService.copy (or add an upsert-at-reference path to POST /notifications) so one idempotent call creates BOTH documents at one reference — preserves the Idempotency-Key retry semantics the retrofit deliberately introduced, but moves the dual write into the backend, against the convention above, and makes this a backend + frontend change. Pick (a) or (b) before implementation; the fix files differ by repo depending on the answer.",
+      "notes": "Real-mode \"Copy as new\" creates only the canonical notification-fulfilments document and never the paired Notification record at the copy's new reference. The copy therefore never appears on the dashboard (which lists from /notifications), and the first save, submit, amend or delete of the copy 404s on the notification side and surfaces the recoverable-error page. Introduced by the EUDPA-288 retrofit (23f2fdb4), which swapped the pre-retrofit POST /notifications/{ref}/copy for POST /notification-fulfilments/{id}/copy without restoring the notification-side write. Invisible to the frontend's own suites because they run in stub mode, where one in-memory map backs both reads. The defect is unambiguous; the fix shape is a design call, because the only idempotent copy endpoint is the fulfilments one and the only reference-minting endpoint the dashboard reads from is the notification one.",
+      "openQuestions": [
+        "Are there already-copied notifications in any deployed environment holding orphaned notification-fulfilments documents with no Notification row? If so a data backfill is needed alongside the code fix, and someone must decide whether to backfill or discard them.",
+        "Should the now-unused backend endpoint POST /notifications/{referenceNumber}/copy (NotificationController.java:55-66) be removed if the gate resolves to option (b), or kept for other consumers? Confirm no other client calls it before deleting.",
+        "The tests-repo smoke spec asserts only the landing page after a copy. Should the strengthened dashboard assertion stay tagged @smoke, given it adds a dashboard round-trip and a search to a path already marked test.slow()?"
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": []
+    },
+    {
+      "id": "snag-002",
+      "snagText": "Copy as new CSS is off",
+      "title": "Stop .app-link-button resetting font-family so link-buttons render in GDS Transport",
+      "repos": [
+        "frontend"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-320",
+      "branch": "fix/EUDPA-320-fix-link-button-font-family",
+      "base": "main",
+      "status": "todo",
+      "verdict": "actionable",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "\"Copy as new\" on the notification dashboard renders in the browser's default serif (Times) while every action next to it renders in GDS Transport. The cause is a single conflicting declaration in the custom stylesheet.\n\nWHERE THE ELEMENT IS\n`frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/template.njk:91-106` renders each summary-card action two ways. Actions carrying an `href` render as `<a class=\"govuk-link\">`; actions carrying a `postAction` render as `<button type=\"submit\" class=\"govuk-link app-link-button\">` inside a `<form class=\"app-form-inline\">` (CSRF crumb + idempotency key must be POSTed, so it cannot be an anchor). `frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/view-model/row/actions.js:19-24` gives the copy action a `postAction`, so on a DRAFT row \"Copy as new\" is the ONLY `<button>` among Resume / Delete anchors — it is visibly the odd one out, which is exactly what \"CSS is off\" describes. (On a SUBMITTED row \"Amend\" is a button too, so it is affected identically.)\n\nROOT CAUSE — cascade conflict on font-family\n`frontend:src/client/stylesheets/core/_main.scss:16` declares `font-family: inherit` on `.app-link-button`. govuk-frontend 6.4.0 declares `font-family: GDS Transport, arial, sans-serif` on `.govuk-link, a`. Both selectors are specificity 0-1-0, so source order decides. Verified in the built bundle `frontend:.public/stylesheets/application.1ee130c.min.css`:\n  - byte 941  → `.govuk-link,a{font-family:GDS Transport,arial,sans-serif;...}`\n  - byte 1080 → the same rule again\n  - byte 137469 → `.app-link-button{background:none;border:none;padding:0;cursor:pointer;font-size:inherit;font-family:inherit;font-weight:inherit;display:inline;vertical-align:baseline;line-height:inherit;color:var(--govuk-link-colour,#1a65a6)}`\n`.app-link-button` is emitted last (application.scss `@use` order: `govuk-frontend` then `variables`/`helpers`/`core`), so `font-family: inherit` wins on the `<button>` and defeats `.govuk-link`.\n\nWHY `inherit` RESOLVES TO SERIF\ngovuk-frontend 6.4.0 sets font-family per component class only — there is no global rule to inherit from. Proof: `grep -o \"body{[^}]*}\"` on the built bundle returns exactly `body{margin:0;background-color:var(--govuk-body-background-colour,#fff)}`, and `.govuk-template` emits only background-colour / text-size-adjust / scroll-padding / overflow. The full inventory of `font-family:GDS Transport` rules in the bundle (53 of them, captured at `~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/gdsfont.txt`) contains `.govuk-summary-card__title` but NOT `.govuk-summary-card`, `.govuk-summary-card__title-wrapper`, `.govuk-summary-card__actions` or `.govuk-summary-card__action`. So no ancestor of the button supplies a family, `inherit` falls through to the root initial value, and Chrome computes `Times`. A previous live check at 1440px recorded exactly this: `.app-link-button` computed `Times` while its sibling `a.govuk-link` in the same `<ul>` computed `\"GDS Transport\", arial, sans-serif`.\n\nWHY THE OTHER DECLARATIONS ARE FINE — `font-size: inherit`, `font-weight: inherit` and `line-height: inherit` do NOT conflict, because `.govuk-link` sets none of them; the button correctly inherits size 19 and bold from `.govuk-summary-card__actions` (bundle byte ~229 of the summary-card mixin sets `govuk-font-size(19)` + `govuk-typography-weight-bold`). `font-family` is the only broken declaration. The explicit `color` override at `_main.scss:23` is correct and load-bearing (govuk sets link colour via `:link`, which never matches `<button>`) and must stay.\n\nBLAST RADIUS — the same defect affects every `.app-link-button` in the app, all of which also carry `.govuk-link`: `features/commodities/consignment-details/_selected-commodities-table.njk:8`, `features/commodities/animal-identification/_identification-card.njk:19`, `features/documents/contracts/remove-action.js:12`. One stylesheet edit fixes all of them.\n\nALTERNATIVE RULED OUT — a wrapping/width theory (that the action row wraps because `frontend:src/server/app/shared/layout.njk:57` hard-codes `govuk-grid-column-two-thirds` where the pre-retrofit layout used `govuk-grid-column-full`). That width regression is real and worth its own ticket, but it is a whole-page layout change affecting every screen — it does not single out \"Copy as new\", and fixing it would leave the button still rendering in Times. The font-family conflict is the defect that makes this one element, and only this element, look wrong.",
+      "refutation": "I attacked this on all five fronts and could not break it. It survives, and I was able to upgrade the evidence from static to live-measured.\n\nFRONT 1 — DOES THE DEFECT EXIST? Yes, verified in source and at runtime.\n`frontend:src/client/stylesheets/core/_main.scss:11-32` contains the `.app-link-button` rule, and line 17 is `font-family: inherit;` — the only `font-family` declaration in the entire app source (`grep -rn \"font-family\" src/client/ src/server/` returns exactly that one hit). The built bundle agrees: `grep -o \"app-link-button{[^}]*}\" .public/stylesheets/application.*.min.css` emits `...font-size:inherit;font-family:inherit;font-weight:inherit;...`.\n\nI then measured it live. The stack is up on :3000, so I loaded a frontend-rendered page (`http://localhost:3000/definitely-not-a-real-page`, 404 via `shared/layout.njk`, so the real `application.css` is the only stylesheet loaded) and injected the exact DOM the dashboard emits — `.govuk-summary-card > .govuk-summary-card__title-wrapper > ul.govuk-summary-card__actions > li.govuk-summary-card__action > form.app-form-inline > button.govuk-link.app-link-button`, alongside a sibling `a.govuk-link`. Computed styles:\n  button → fontFamily `Times`, fontSize 19px, fontWeight 700, lineHeight 25px, color rgb(26,101,166)\n  link   → fontFamily `\"GDS Transport\", arial, sans-serif`, fontSize 19px, fontWeight 700, lineHeight 25px, color rgb(26,101,166)\nFont-family is the ONLY divergent property, exactly as diagnosed. That also independently confirms the investigator's \"the other `inherit` declarations are fine\" claim rather than taking it on trust.\n\nFRONT 2 — ROOT CAUSE OR SYMPTOM? Root cause, and the mechanism checks out one level up and one level down.\nUp: I traced why `inherit` resolves to serif rather than trusting the bundle grep. `govuk-frontend@6.4.0` (`node_modules/govuk-frontend/package.json:4`) applies typography per component class only. `objects/_template.mixin.scss:45-51` gives `<body>` (`.govuk-template__body`) only `margin: 0` + `background-color` — confirmed in the bundle (`govuk-template__body{margin:0;background-color:var(--govuk-body-background-colour,#fff)}`). `core/_global-styles.mixin.scss` adds only `a { @extend %govuk-link }` and `p { @extend %govuk-body-m }` — that is where the bundle's `.govuk-link,a` selector comes from, and it does not touch `body`. `components/summary-list/_mixin.scss:229-231` gives `.govuk-summary-card__actions` `govuk-font-size(19)` + `govuk-typography-weight-bold` but NO family; `:245` gives `.govuk-summary-card__action` only `display`. So no ancestor supplies a family — and my live probe measured `getComputedStyle(document.body).fontFamily === \"Times\"` and `.govuk-summary-card__actions` `=== \"Times\"`, proving it directly rather than by absence-of-grep-hit.\nDown: `.govuk-link`'s family comes from `core/_links.scss` → `_links.mixin.scss:6-11` → `helpers/_links.scss:17-18` `govuk-link-common` → `govuk-typography-common`. Both selectors are 0-1-0, and app CSS is emitted after govuk (byte ordering in gdsfont.txt: `.govuk-link,a` at 941, `.notification-list__*` at 140213), so source order decides and `inherit` wins.\nI also proved the proposed fix is sufficient AND complete, live: I removed `font-family` from the `.app-link-button` CSSOM rule and re-measured. The button then computed `\"GDS Transport\", arial, sans-serif` / 19px / 700 / 25px / rgb(26,101,166) / underline — identical to the anchor on every typographic property. One declaration deleted, defect gone, nothing else needed. No replacement `font-family` is required.\n\nFRONT 3 — DOES IT MATCH THE SNAG? Yes.\n`workareas/shared/frontend-snagging-eudpa315/snags.txt` shows snag-001 \"Copy as new is broken\" (functional) and snag-002 \"Copy as new CSS is off\" (visual) as a pair about the same element. A bold serif sitting between two sans-serif siblings in the same `<ul>` is precisely \"CSS is off\". I hunted for rival visual defects and ruled each out: `.app-form-inline { display: contents }` does not disturb the flex layout; action separators/spacing are supplied by `summary-list/_mixin.scss:118-155` (margin-left/padding-left + border-left) and apply to `<li>`s regardless of their child element, so the row is not running together; and the app's markup is byte-for-byte the shape of govuk's own fixture `summary-list/template-as-a-summary-card-with-actions.html:6-10`. I also checked the investigator's ruled-out width theory is at least real — `shared/layout.njk:57` is indeed `govuk-grid-column-two-thirds` — and agree it does not single out this one element.\nThe \"actionable vs needs-decision\" challenge fails: no target design has been invented. `.app-link-button` exists solely to make a POST button look like the link next to it (introduced by `c64ec822 feat(EUDPA-172): copy as new`, the commit that created `_main.scss`), and every one of its four call sites pairs it with `govuk-link`. Matching the adjacent anchor is the class's own stated intent, found in the repo, not a taste call. The two candidate fixes (delete the declaration vs. set `$govuk-font-family`) are visually identical, so there is no behavioural fork to decide.\n\nFRONT 4 — REPO LIST. `frontend` alone is correct; I found nothing to add.\nI verified all four call sites and all four pair with `govuk-link`, so deleting the declaration cannot orphan any of them: `features/commodities/consignment-details/_selected-commodities-table.njk:8`, `features/commodities/animal-identification/_identification-card.njk:19`, `features/dashboard/template.njk:98`, `features/documents/contracts/remove-action.js:12`.\nFor `tests`: the specs that touch this element use role/name locators (`tests/e2e/pages/notification-view-states.spec.ts:33,57-58`, `page-objects/notification/notification-dashboard-page.ts:170`), which a font-family change cannot affect; text and colour are unchanged so axe outcomes are unchanged. The one real risk was the visual-regression baseline `tests/e2e/visual/origin-of-import.visual.spec.ts:12` (`toHaveScreenshot`, fullPage) — but origin-of-import is not one of the four `.app-link-button` call sites, so the baseline is untouched. `tests` therefore stays out of scope, though see ladder gap 3.\nIncidental, not a fix requirement: `page-objects/notification/notification-view-page.ts:22` still looks for a \"Copy as new\" button on the notification view, but `grep -rni \"copy as new\"` across `frontend:src/server/app` shows it renders only on the dashboard now. That page object is stale — a pre-existing issue for whoever owns snag-006's a11y failures, not this ticket.\n\nFRONT 5 — LADDER HONESTY. Mostly sound, with real gaps listed separately.\nAll seven scripts exist (`package.json:14,21,29,32,37`). Step 4 is a genuine gate — my measurement proves the new test goes red on unfixed code (Times vs GDS Transport). Steps 1, 3, 6 are legitimate build/lint checks. But step 2 is an inspection with no pass/fail criterion, and step 5 (vitest) cannot exercise CSS in either direction, so neither adds verification power.\n\nONE OBSERVATION FOR THE IMPLEMENTOR, not a defect: after the fix the button still computes `display: inline-block` while the sibling anchor computes `inline` (measured live). This is true both before and after the edit, so it is not caused by the change and does not block it — but it means the button is not layout-identical to the link, and the implementor should not chase it as a regression.",
+      "rootCauseFiles": [
+        "frontend:src/client/stylesheets/core/_main.scss"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/client/stylesheets/core/_main.scss",
+          "action": "edit",
+          "what": "Delete the `font-family: inherit;` declaration from the `.app-link-button` rule (line 16). Change nothing else in that rule — `background`, `border`, `padding`, `cursor`, `font-size: inherit`, `font-weight: inherit`, `display: inline`, `vertical-align: baseline`, `line-height: inherit`, the `color` declaration and the `:hover` / `:active` blocks all stay exactly as they are, as does the existing comment above `color`. With the reset gone, govuk-frontend's `.govuk-link, a { font-family: GDS Transport, arial, sans-serif }` applies to the button; every call site pairs `app-link-button` with `govuk-link`, so no site loses its family. Do not add a replacement `font-family` and do not add any new custom CSS."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js",
+          "action": "edit",
+          "what": "Add one test to the existing `dashboard feature — notification rows and actions` describe block that pins the link-button against its anchor sibling. Start a notification (`startNotification(page)`, `journeyIdFromPage(page)`, `page.goto('/')`) so a DRAFT row renders, then use the file's existing `actionFor(page, role, action, reference)` helper to get `actionFor(page, 'button', 'Copy as new', reference)` and `actionFor(page, 'link', 'Delete', reference)`. Assert with `expect.poll` on `evaluate((el) => getComputedStyle(el).fontFamily)` that the Copy as new button's computed `fontFamily` equals the Delete link's, and separately that it matches `/GDS Transport/`. Self-contained, raw locators, auto-waiting — no sleeps, no page objects, no new helper module."
+        }
+      ],
+      "obligations": [],
+      "copyKeys": [],
+      "specs": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js"
+      ],
+      "acceptanceCriteria": [
+        "On the notification dashboard, the \"Copy as new\" action renders in the same typeface as the Resume, View and Delete actions in the same card — GDS Transport, not the browser default serif",
+        "\"Copy as new\" is visually indistinguishable from its neighbouring actions in font family, size, weight, colour, underline and focus state; only the neighbours' anchor-vs-button semantics differ",
+        "The \"Amend\" action on a submitted notification card, which is also a POST-backed link-button, renders in GDS Transport too",
+        "The \"Remove\" link-buttons on the selected-commodities table, the animal-identification card and the document contracts list all render in GDS Transport",
+        "\"Copy as new\" still POSTs and still creates a new draft — behaviour, CSRF crumb, idempotency key and copyOrigin are unchanged",
+        "No new custom CSS class or declaration is introduced; the change only removes a declaration that was overriding the govuk-frontend link styles",
+        "No new client-side JavaScript is introduced; the page behaves identically with JavaScript disabled"
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run build:frontend",
+        "grep -o \"app-link-button{[^}]*}\" ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend/.public/stylesheets/application.*.min.css",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint:scss",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features -- dashboard.e2e.spec.js",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+        "Step 2's grep has no pass/fail criterion — it prints the rule and cannot fail, so it verifies nothing. Make it assertive: redirect the emitted `.app-link-button` rule to a file and confirm the string `font-family` is absent from it, so a botched edit (e.g. deleting `font-size` instead) is actually caught.",
+        "No step confirms the new E2E test is a real gate. The test must be run against the UNFIXED tree first and observed red (button computes `Times`, link computes `\"GDS Transport\", arial, sans-serif`) before the stylesheet edit lands. Without that, a test that silently passes on broken code would be indistinguishable from a fix.",
+        "Nothing verifies the other three `.app-link-button` call sites, so the blast-radius claim that 'one stylesheet edit fixes all of them' is asserted but never demonstrated. Add one computed-font assertion on a non-dashboard call site — the Remove button in `features/commodities/consignment-details/_selected-commodities-table.njk:8` is the cheapest, since an existing features spec already reaches that page.",
+        "No confirmation that the change is inert for the -tests repo's baselined artefacts. The visual-regression baseline `tests/e2e/visual/origin-of-import.visual.spec.ts:12` is a fullPage `toHaveScreenshot`; record the check that origin-of-import contains no `.app-link-button` (it does not), or re-run that spec, so the font change is not left to surface later as an unexplained baseline diff.",
+        "No re-run of the -tests a11y suite, which snag-006 already reports as failing. A font-family change alters text metrics and therefore wrapping, so a baseline a11y run before/after is cheap insurance that this edit does not get blamed for, or hidden by, the existing failures."
+      ],
+      "gate": null,
+      "notes": "On the notification dashboard, \"Copy as new\" is a POST-backed `<button class=\"govuk-link app-link-button\">` rather than an anchor. `.app-link-button` in src/client/stylesheets/core/_main.scss:16 declares `font-family: inherit`, which is emitted after govuk-frontend's `.govuk-link, a { font-family: GDS Transport... }` at equal specificity (bundle bytes 137469 vs 941) and therefore wins. govuk-frontend 6.4.0 sets no global font-family — `body` and `.govuk-template` carry none — so `inherit` falls through to the root initial value and the button computes Times serif while the Resume/View/Delete anchors beside it compute GDS Transport. Fix is to delete the `font-family: inherit` declaration so `.govuk-link` supplies the family, plus a computed-style regression test in the dashboard feature spec. Frontend-only; the same fix repairs the other three `.app-link-button` call sites (commodities table, identification card, document remove action).",
+      "openQuestions": [
+        "Separate defect, not fixed here: src/server/app/shared/layout.njk:57 hard-codes `govuk-grid-column-two-thirds` for every page, where the pre-retrofit layout (workareas/shared/frontend-snagging-eudpa315/old-page-layout.njk:56) used `govuk-grid-column-full`. This narrows the dashboard so its 280px filter panel crowds the results list. It affects every screen, so it needs its own ticket and a decision about which pages opt into full width — it should not be smuggled into this fix.",
+        "A previous triage pass wrote workareas/shared/frontend-snagging-eudpa315/tickets/snag-002-description.txt attributing this snag to that layout width regression and explicitly deferring the font-family finding. This investigation reverses that: the width theory does not explain why \"Copy as new\" specifically looks wrong, and fixing width alone would leave the button in Times. If a Jira subtask already exists carrying the width spec, it needs re-pointing at the stylesheet fix before the build loop picks it up.",
+        "No regression guard is proposed in trade-imports-animals-tests. The frontend owns both the stylesheet and its co-located feature specs, and computed-style assertions belong with the component rather than in the cross-repo E2E suite; the tests repo's notification-dashboard.spec.ts correctly asserts only visibility and behaviour."
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": []
+    },
+    {
+      "id": "snag-003",
+      "snagText": "Your commodities boxes at the task list page is ugly, bad text wrapping and doesn't have the styling from figma",
+      "title": "Fix unreadable text wrapping in the hub \"Your commodities\" totals boxes",
+      "repos": [
+        "frontend",
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-319",
+      "branch": "fix/EUDPA-319-hub-commodity-totals-boxes",
+      "base": "main",
+      "status": "blocked",
+      "verdict": "needs-decision",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "The complaint is about the hub / task list page (\"Overview\", `frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/`). The \"Your commodities\" block at `frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk:9-35` renders the two totals as `govukSummaryList({ card: { title: … }, rows: [{ key, value }] })` — one row per box, the box's explanatory sentence in the summary-list KEY and the bare number in the VALUE.\n\nThat is the wrapping defect, and the mechanism is exact. `govuk-frontend`'s `.govuk-summary-list__key` is fixed at `width: 30%` above the tablet breakpoint (`frontend:node_modules/govuk-frontend/dist/govuk/components/summary-list/_mixin.scss:86-92`) — a viewport media query, not a container query, so it applies however narrow the container is. The container here is doubly narrowed: `shared/layout.njk:57` wraps all page content in `govuk-grid-column-two-thirds`, and `template.njk:11-12`/`23` then splits that again into two `govuk-grid-column-one-half` columns. At a 1280px desktop that leaves roughly 336px per box, ~294px inside `.govuk-summary-card__content` padding, so the 30% key cell is ~88px wide. Into that ~88px go the 42- and 43-character bold sentences \"Total number of animals in this consignment\" / \"Total number of packages in this consignment\" (`copy/copy.en.js:6,8`), which shred into eight-plus one- and two-word lines beside a single-digit value. That is the reported \"bad text wrapping\", and it is a genuine defect regardless of how the design question is answered.\n\nThe \"doesn't have the styling from figma\" half is confirmed against the design source. The Figma export at `~/Desktop/design/02-notification-hub/notification-hub-(posh-tasklist).html:118-133` renders each box as a bespoke `.app-card` div: `<p class=\"app-card__number\">8</p>` then `<p class=\"app-card__label\">Animals</p>` then `<p class=\"app-card__desc\">Total number of animals in this consignment</p>`, stacked full-bleed, styled by inline CSS at lines 9-28 (`background: #f3f2f1`, `padding: 20px`, number `#1d70b8` / bold / `2.25rem` / `line-height: 1`, label `#1d70b8` / bold, desc `#0b0c0c`). Crucially the design's `govuk-grid-row` sits directly in `govuk-main-wrapper` at full page width (line 108-118), not nested in a two-thirds column — so each design box is ~520px wide and its sentence fits on one line. There is nothing in the shipped repo resembling this: `grep -rn \"app-card\\|stat-card\" src` returns nothing, and `src/client/stylesheets/components/_index.scss` registers only notification-list, notifications-pagination, task-list and service-header.\n\nWhy this is not simply actionable: the shipped `govukSummaryList({card:…})` is not an accident, it is the documented execution of a ruling. `workareas/journey-builder/EUDPA-249/figma-digest/journey-map.md:154` lists the `app-card` tiles among \"custom CSS outside the govuk-frontend toolbox\" and states \"The real build should map these to stock equivalents (accessible-autocomplete, govukSummaryCard, cdp-uploader, govukTaskList, govukWarningText)\"; `extract.figma.json:1259-1272` and `figma-digest/gap-register.md:68` corroborate that these two tiles are the bespoke `app-card` component. `.claude/rules/gds.md` reinforces it (\"Stay inside the govuk-frontend toolbox … no custom CSS\"). Reproducing the Figma therefore reverses a recorded ruling and adds a bespoke SCSS partial — a design call, not a mechanical fix. It is also under-determined in a second, wider-blast-radius way: matching the Figma faithfully requires the block to escape `shared/layout.njk:57`'s `govuk-grid-column-two-thirds`, which is the shared layout every page in the journey renders through.\n\nTest-coverage gap, which is part of the defect. Nothing exercises this block in a browser at all. `frontend:.../hub/hub.e2e.spec.js` never asserts the totals block, and its axe test at lines 104-120 runs against `startNotification(page)` — a fresh notification with no commodity lines, where `buildCommodityTotals` returns `null` (`controller.js:142-151`) and the block does not render. `tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts` likewise starts fresh and pins only the six group headings and six task lists. Only `copy/copy.test.js:221-246` covers the block, and purely as a view-model arithmetic check that never renders a pixel.\n\nConstraint any fix must respect: `tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts:8-15` uses `expect(getByRole('heading', {level: 2})).toContainText([six strings])`, which is count-exact. It passes today only because the fresh-notification hub has no \"Your commodities\" h2. Adding or re-levelling any h2 on the fresh hub turns it red.",
+      "refutation": "I tried to break this on all five fronts and could not.\n\nDEFECT EXISTS, MECHANISM IS EXACT. `frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk:9-35` is exactly as described — two `govukSummaryList({card:…})` calls, each in a `govuk-grid-column-one-half`, each with the 42/43-character sentence in `key` and the bare integer in `value` (copy strings confirmed at `frontend:.../hub/copy/copy.en.js:6,8`). I checked the wrapping mechanism harder than the investigator did and it survives: `frontend:node_modules/govuk-frontend/dist/govuk/components/summary-list/_mixin.scss:86-92` sets `.govuk-summary-list__key { width: 30% }` from tablet, and critically `_index.scss:9-15` sets `display: table; table-layout: fixed` on `.govuk-summary-list`. Under `table-layout: fixed` the 30% is honoured strictly — the browser cannot widen the cell to fit min-content, which is the failure mode that would have exonerated the code. Combined with `overflow-wrap: break-word` at `_mixin.scss:78-84`, a ~86-88px cell shreds a 42-char bold sentence. Nothing in `frontend:src/client/stylesheets/` overrides `.govuk-summary-list__key` (grepped: no hits). Container nesting confirmed: `frontend:src/server/app/shared/layout.njk:56-57` wraps all `journeyContent` in `govuk-grid-column-two-thirds`, then `template.njk:12,23` halves it again — the only two `govuk-grid-column-one-half` in the whole of `src`.\n\nNOT ALREADY-FIXED, NOT CANNOT-REPRODUCE. `git -C repos/trade-imports-animals-frontend log` head is 23f2fdb4 with the defect present; no fix branch has landed.\n\nFIGMA HALF CONFIRMED VERBATIM. `~/Desktop/design/02-notification-hub/notification-hub-(posh-tasklist).html:118-133` is the bespoke `.app-card` / `__number` / `__label` / `__desc` stack, styled inline at lines 9-28 (`#f3f2f1`, 20px padding, `#1d70b8` bold 2.25rem number). The design's `govuk-grid-row` sits directly under `<main class=\"govuk-main-wrapper\">` (line 108) with no two-thirds column — so the design box is ~490-520px and the sentence fits one line. That full-width escape is real and does implicate the shared layout. `grep -rn \"app-card\\|stat-card\" src` returns nothing; `src/client/stylesheets/components/_index.scss` registers only service-header, notification-list, notifications-pagination, task-list. `$app-light-grey` is `#f8f8f8` (`variables/_colours.scss:2`) and is genuinely the wrong token — govuk's `light-grey` is black tint-95 (`node_modules/govuk-frontend/dist/govuk/settings/_colours-palette--internal.scss:126`), i.e. the design's #f3f2f1.\n\nVERDICT CHALLENGE — needs-decision survives. This is the front I expected to break it on, since aesthetic snags usually hide an invented target. It does not: the investigator found the target in a real design source rather than inventing one, AND found the counter-ruling. `workareas/journey-builder/EUDPA-249/figma-digest/journey-map.md:154` reads verbatim \"Several designs use custom CSS outside the govuk-frontend toolbox: … app-card species panels … The real build should map these to stock equivalents (accessible-autocomplete, govukSummaryCard, cdp-uploader, govukTaskList, govukWarningText)\". The shipped `govukSummaryCard` is the literal execution of that line, and `.claude/rules/gds.md` plus the user's standing \"stay inside the govuk-frontend toolbox, no custom CSS\" preference reinforce it. Snag words point at the Figma; recorded ruling and standing rules point away from it. That is a genuine two-defensible-options fork, not an actionable dressed up. Downgrading to actionable would let an implementor silently reverse a recorded ruling.\n\nREPO LIST — complete, if anything over-broad. `grep -rn \"Your commodities\\|commodityTotals\"` across `tests/` returns zero hits: nothing in the tests repo asserts this block, so the tests-repo change is additive coverage rather than a forced edit. The constraint the investigator names is real though — `tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts:8-15` uses `toContainText([six strings])` on `getByRole('heading', {level:2})`, and the array form of `toContainText` is count-exact; it passes only because `buildCommodityTotals` returns null on a fresh notification (`controller.js:142-151`, requires non-empty `commodityLines`). The CYA assertions at lines 45-49 are name-scoped and unaffected. No backend involvement. missingRepos is empty.\n\nTWO FACTUAL CORRECTIONS that do not break the diagnosis. (1) The proposed edit to `frontend:.../hub/copy/copy.test.js:221-246` is a no-op — I read those lines and they assert only the `commodityTotals` view-model (`toBeNull`, `toEqual({animals:28, packages:7})`); they never reference `animalsRow`/`packagesRow`, so a copy-key rename does not touch them. (2) The \"filled-state flow at lines 84-102\" premise checks out: `e2e/live-animals-journey.js:178-182` fills `numberOfAnimalsQuantity` and `numberOfPackages` inside `completeAnswerSections`, so the totals block does render on that path — the extension point is valid.",
+      "rootCauseFiles": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk",
+        "frontend:src/server/app/shared/layout.njk",
+        "frontend:src/client/stylesheets/components/_index.scss"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/hub/template.njk",
+          "action": "edit",
+          "what": "Replace the two half-column single-row govukSummaryList cards at lines 9-35. Both gate options stack number, then label, then the explanatory sentence — the sentence must never sit in a 30%-width summary-list key again. Leave the h2 at line 10 and the group h2s at line 38 at their current levels."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/client/stylesheets/components/_stat-card.scss",
+          "action": "create",
+          "what": "OPTION A ONLY (gate answered 'reproduce the Figma'). New bespoke tile partial mirroring ~/Desktop/design/02-notification-hub/notification-hub-(posh-tasklist).html:9-28 in govuk tokens: govuk-colour(\"light-grey\") background, govuk-spacing(4) padding, number 2.25rem / bold / govuk-colour(\"blue\") / line-height 1, bold blue label, black description. Do not reuse $app-light-grey — #f8f8f8 is not #f3f2f1. Must pass npm run lint:scss."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/client/stylesheets/components/_index.scss",
+          "action": "edit",
+          "what": "OPTION A ONLY. Register the new partial alongside the existing notification-list / notifications-pagination / task-list entries at lines 3-5. An unregistered partial never reaches the bundle and the styles silently do not ship."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.en.js",
+          "action": "edit",
+          "what": "Rename animalsRow / packagesRow (lines 6, 8) to description-shaped keys matching the new tile structure. The text is unchanged — the design uses these two sentences verbatim as app-card__desc."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.cy.js",
+          "action": "edit",
+          "what": "Mirror the English rename key-for-key (lines 7, 9); the copy-parity convention test requires structurally identical en/cy modules. Keep the MACHINE-DRAFT banner at line 1 and the existing Welsh strings."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js",
+          "action": "edit",
+          "what": "Update the commodityTotals view-model tests at lines 221-246 for the renamed copy keys, keeping the existing omit-when-empty and blanks-as-zero assertions intact."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js",
+          "action": "edit",
+          "what": "Extend the filled-state flow at lines 84-102 to assert both labels, both aggregate counts, and that each label and description renders on no more than two lines at 1280x800 (boundingBox height against line-height) — the assertion that would have caught this snag. Add an axe run against that filled state; the existing axe test at lines 104-120 uses a fresh notification where the block does not render."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/hub-groups-and-cya-rows.spec.ts",
+          "action": "edit",
+          "what": "Add an integration-level assertion that a notification with commodity lines renders the 'Your commodities' block with both labels and the correct aggregate totals. Keep the existing count-exact six-h2 assertion at lines 8-15 on a fresh notification, where the block is legitimately absent."
+        }
+      ],
+      "obligations": [
+        "No display logic in the model or obligations — all copy stays in the hub feature's copy.en.js / copy.cy.js, both structure-identical (the copy-parity convention test enforces it).",
+        "Do not change shared/layout.njk:57 (the govuk-grid-column-two-thirds wrapper) without treating it as an L2 platform change — it is the layout every journey page renders through.",
+        "Do not re-level any heading on the hub. tests/e2e/features/hub-groups-and-cya-rows.spec.ts:8-15 is a count-exact six-h2 assertion on the fresh hub.",
+        "Any new SCSS partial must be registered in src/client/stylesheets/components/_index.scss and must pass npm run lint:scss.",
+        "Welsh copy edits are key renames only — do not author new Welsh strings; keep the MACHINE-DRAFT banner at copy.cy.js:1.",
+        "Playwright specs stay self-contained with raw auto-waiting locators, no page objects and no sleeps."
+      ],
+      "copyKeys": [
+        "hub.commodityTotals.heading",
+        "hub.commodityTotals.animalsCardTitle",
+        "hub.commodityTotals.animalsRow",
+        "hub.commodityTotals.packagesCardTitle",
+        "hub.commodityTotals.packagesRow"
+      ],
+      "specs": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/hub/copy/copy.test.js",
+        "tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts"
+      ],
+      "acceptanceCriteria": [
+        "On a notification with at least one commodity line, the hub shows a 'Your commodities' block giving the total number of animals and the total number of packages across every commodity line.",
+        "At a 1280x800 desktop viewport, every label and every explanatory sentence in the 'Your commodities' block renders on no more than two lines — no text wraps into a narrow column beside its number.",
+        "Each box reads top to bottom as number, then label, then explanatory sentence — the sentence is never rendered as a summary-list key beside the number.",
+        "At a 360x740 mobile viewport the block still reads number-then-label-then-sentence, with no horizontal overflow of the page body.",
+        "A notification with no commodity lines shows no 'Your commodities' block at all (unchanged behaviour).",
+        "The counts treat blank animal or package entries as zero and sum across all commodity lines (unchanged behaviour).",
+        "Every heading on the hub keeps its current level and type size — a fresh notification still renders exactly six h2 task-group headings.",
+        "The hub rendered with the totals block present has no serious or critical axe violations under wcag2a / wcag2aa.",
+        "English and Welsh copy modules for the hub remain structurally identical.",
+        "If the gate is answered 'reproduce the Figma': the rendered tiles match ~/Desktop/design/02-notification-hub/notification-hub-(posh-tasklist).html — number above the label, label bold in govuk-colour(\"blue\"), sentence beneath in govuk-colour(\"black\"), on a govuk-colour(\"light-grey\") panel with govuk-spacing(4) padding — and the SCSS partial is registered in src/client/stylesheets/components/_index.scss so the styles reach the built bundle."
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals -- src/server/app/sets/live-animals/journeys/linear/features/hub",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features -- src/server/app/sets/live-animals/journeys/linear/features/hub/hub.e2e.spec.js",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features",
+        "tim docker dev",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose -- tests/e2e/features/hub-groups-and-cya-rows.spec.ts",
+        "A red-baseline step. Every one of steps 1-8 passes on today's unfixed code — the only thing that would fail is assertions that do not exist yet. Before editing template.njk, run the extended hub.e2e.spec.js against the UNFIXED template and confirm the wrapping/line-count assertion goes red; a ladder whose first failing state is created by the same commit that fixes it verifies nothing.",
+        "A step (or assertion) that proves the new SCSS partial actually reaches the bundle under Option A. `npm run test:features` does shell to `build:frontend` (package.json:21), so SCSS compiles — but an unregistered partial compiles clean and silently ships nothing, and the proposed boundingBox-height check would still pass without it, because the 42-char sentence wraps to roughly two lines at ~316px with or without the tile CSS. Pin a computed style instead (background-color, the 2.25rem/bold number, the blue) via page.evaluate, or the Option A styling can go missing undetected.",
+        "`npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e` (the `journeys` Playwright project). `e2e/journey-smoke.spec.js:64,71` walks onto the hub after commodity lines are saved, i.e. with the changed block rendered, and the ladder only runs `--project=features`.",
+        "A sub-tablet viewport check. Below 768px the summary list stacks key-above-value and reads correctly today (`summary-list/_index.scss:26-33`); the replacement markup must be shown not to regress the small-screen render, and every proposed assertion is pinned at 1280x800.",
+        "A render-level check of the Welsh copy. The copy keys are renamed in both copy.en.js and copy.cy.js, but nothing in the ladder renders copy.cy.js — copy.test.js only exercises the en view-model arithmetic, so a broken cy key would ship silently."
+      ],
+      "gate": "The Figma stat tile is bespoke CSS (a `.app-card` grey panel with a 2.25rem blue number above a bold blue label above a black sentence — `~/Desktop/design/02-notification-hub/notification-hub-(posh-tasklist).html:9-28`), and the EUDPA-249 design digest already ruled at `workareas/journey-builder/EUDPA-249/figma-digest/journey-map.md:154` that these bespoke `app-card` components \"should be mapped to stock equivalents (… govukSummaryCard …)\" — which is exactly what the shipped code does. So: do we reverse that ruling and reproduce the Figma tile with a new custom SCSS partial (option A), or keep the block inside the govuk-frontend toolbox and re-lay it out with stock components/utility classes so only the wrapping is fixed and it will still not look like the Figma (option B)?",
+      "notes": "The hub's \"Your commodities\" boxes force each box's explanatory sentence into a govuk summary-list KEY cell that is hard-coded to 30% width, inside a half-column nested in the layout's two-thirds column — about 88px for a 42-character sentence, which is the reported shredded wrapping. The Figma design (verified at ~/Desktop/design/02-notification-hub/) instead uses a bespoke full-width `app-card` stat tile: big blue number, bold blue label, black sentence, on a grey panel. Reproducing that needs custom SCSS and reverses the EUDPA-249 digest ruling that these `app-card` components map to stock govukSummaryCard, so what \"fixed\" looks like is a design call. Either way the block currently has zero browser-level test coverage in both repos — the frontend axe test runs on a fresh notification where the block is absent.",
+      "openQuestions": [
+        "Does the 'Your commodities' block break out of shared/layout.njk:57's govuk-grid-column-two-thirds to sit at full page width as it does in the Figma (main-wrapper, ~520px per box) — or stay inside the two-thirds column at ~336px per box? This is the difference between a feature-local template change and an L2 shared-layout change.",
+        "The Figma also puts the task groups under an h2 'Notification tasklist' with the groups themselves as h3 (design HTML lines 116, 135), where the shipped page has the six groups as h2 with no parent heading. Out of scope as the reporter scoped this to the boxes, but it is a second live divergence on the same page.",
+        "extract.figma.json:1291 records an unresolved designer question on exactly these tiles: 'Do the Animals / Packages-boxes stat cards link anywhere (e.g. to commodity details)? In the export they are plain divs, but the blue styling suggests they might be intended as links.' If they should be links, the markup decision changes.",
+        "src/server/app/shared/layout.njk:66 renders .app-journey-strip, which has no SCSS anywhere in src/client/stylesheets — a second unstyled app-* class on the same page. Possibly a related symptom of the same retrofit, not investigated."
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": []
+    },
+    {
+      "id": "snag-004",
+      "snagText": "MoJ date picker is used but doesn't have restricted dates",
+      "title": "Restrict selectable/acceptable dates on the three MoJ date-picker fields",
+      "repos": [
+        "frontend",
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-316",
+      "branch": "fix/EUDPA-316-restrict-date-picker-ranges",
+      "base": "main",
+      "status": "blocked",
+      "verdict": "needs-decision",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "The technical diagnosis is correct as written: `kit.dateField` (frontend:src/server/app/shared/kit.js:158) passes no minDate/maxDate to the MoJ macro, which reads them at template.njk:10-33, and `dateText` (frontend:src/server/app/lib/validate/validators.js:190) applies no bound — so all three pickers are unrestricted in both widget and server, and a fix needs a view leg and a server leg.\n\nThe correction is to the decision being asked for. The investigator frames it as an unruled product choice between \"today-or-later\" and \"strictly future\". The workspace's own trace-mined legacy specs show the analogous IPAFFS rule is a WINDOW THAT PERMITS PAST DATES — CHED-D is \"5 days in the past or 120 days in the future\" (workareas/trace-requirements/ched-d/journey-spec.json:7939, evidenced against legacy `arrival_date_validator.js:43-49` with a per-CHED-type `futureDateLimit` at `:18-22`) and CHED-P is \"30 days in the past or 180 days in the future\" (ched-p/journey-spec.json:16573). Live animals is CHED-A and has no trace file, so the specific numbers are genuinely unknown — which is why needs-decision still stands — but the question to put to product is \"what is the CHED-A arrival/exit/issue window, and can we recover it from the legacy validator's per-type table?\", not a choice between two future-only rules. Both candidate answers the investigator offers are probably wrong, because legacy allows backdating.\n\nThe decision must also settle two things the write-up leaves unasked: whether the bound is enforced at the backend API (backend:.../accompanyingdocument/DocumentUploadRequest.java:27 persists `dateOfIssue` as an unconstrained `LocalDate`), and that the EN and CY hint examples on arrival and exit (\"For example, 27/3/2026\") are already past dates and become self-contradictory under any forward-leaning rule.",
+      "refutation": "I tried to break this on all five fronts and the core defect survives — every cited line checks out — but the ladder is broken and the \"no ruling exists\" framing is materially wrong.\n\nDEFECT CONFIRMED (front 1). `frontend:src/server/app/shared/kit.js:158` — `dateField = (name, { label, hint, value = {}, error } = {})` returns exactly `{ id, name, classes, label, hint, errorMessage, value }`. The MoJ macro at `frontend:node_modules/@ministryofjustice/frontend/moj/components/date-picker/template.njk:10-33` reads `params.minDate/maxDate/excludedDates/excludedDays/leadingZeros/weekStartDay` into `data-*` attributes, all `optional: true`, so absent params emit nothing. `frontend:src/server/app/lib/validate/validators.js:190` `dateText` matches `/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/` + `isValidCalendarDate` with no bound. A repo-wide grep for `minDate|maxDate|excludedDates|data-min-date` across frontend `src/`, `prototypes/` and the whole -tests repo returns zero hits. Exactly three call sites, as stated (port-of-entry.njk:16, documents/template.njk:41, exit-date/template.njk:13). Not already-fixed, not cannot-reproduce.\n\nROOT CAUSE / SNAG MATCH (fronts 2, 3). `kit.dateField` is the correct single choke point for the view leg, and the server leg is genuinely required — the snag says \"doesn't have restricted dates\", and restricting only the calendar would leave typed input unbounded. Both legs are right.\n\nVERDICT `needs-decision` HOLDS, but the framing is wrong and would misdirect the decision-maker. The investigator says \"nothing in the repo rules what the bounds should be\" and poses the choice as \"today-or-later vs strictly future\" — i.e. purely forward-looking. The workspace's own trace-mined legacy specs contradict that. `workareas/trace-requirements/ched-d/journey-spec.json:7939` records the legacy IPAFFS rule \"You cannot enter a date more than 5 days in the past or 120 days in the future\", with evidence cited to `arrival_date_validator.js:43-49` and a per-CHED-type `futureDateLimit` table at `:18-22`; `workareas/trace-requirements/ched-p/journey-spec.json:16573` records \"30 days in the past or 180 days in the future\". Legacy arrival windows explicitly PERMIT past dates. Live animals is CHED-A and has not been traced (only ched-p/ched-d/ched-pp/iuu exist), so the number is unknown here — but the decision is \"recover the CHED-A window from the legacy validator\", not a blank-slate product call between two future-only options. Choosing \"today-or-later\" would ship a rule legacy demonstrably does not have.\n\nBLAST RADIUS IS UNDER-COUNTED (front 4 — repos are right, files are not). Repos frontend+tests are correct and the backend is a judgement call I have not forced (see below), but six affected files are missing from the change list:\n- `frontend:.../features/transport/e2e/arrival-transit.e2e.spec.js:68,279` fills and asserts arrival date `03/01/2026` — ALREADY PAST as of 2026-08-07. This is the arrival-date E2E spec and the investigator never lists it.\n- `tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts:80` asserts `toHaveText('12/12/2026')` on the CYA row — breaks the moment `journey.ts:143` becomes today-relative.\n- `tests:tests/e2e/journeys/persistence/persistence-accompanying-document.spec.ts:29` pins `{ day:'3', month:'1', year:'2026' }`.\n- `frontend:.../check-answers/check-answers.test.js:302,312` asserts `'12/12/2025'` and `'12/12/2026'`; `save-actions.test.js:197` and `change-context.test.js:172` and `documents/controller.test.js:47` use `'12/12/2025'`.\n- Copy hints are themselves stale examples: `transport/copy/copy.en.js:6` and `exit-date/copy/copy.en.js:5` both say \"For example, 27/3/2026\" — a past date being offered as the example for a forward-looking field. The investigator hedged this as \"update the hint if the ruling changes what the user is told\"; under any future-leaning rule both EN and CY hints are wrong today and must change.\n\nBACKEND: `backend:.../accompanyingdocument/DocumentUploadRequest.java:27` declares `LocalDate dateOfIssue` with no `@Past`/`@Future`. By the investigator's own argument (a UI-only bound is bypassable), a Joi-only bound is bypassable at the API. I have not put backend in missingRepos because whether the constraint belongs at the API boundary is itself part of the ruling — but the decision must explicitly settle it rather than leave it unasked.\n\nLADDER IS DISHONEST (front 5) — this is the decisive failure. `playwright.config.js:22-45` defines project `journeys` as `testMatch: '**/journey-smoke.spec.js'` under `testDir: './e2e'`, and project `features` as `testDir: './src/server/app/sets/live-animals/journeys/linear/features'`, `testMatch: '**/*.e2e.spec.js'`. Ladder step 6 runs `test:e2e` = `playwright test --project=journeys` — which matches ONLY journey-smoke. Every frontend E2E spec the investigator proposes editing (exit-date.e2e.spec.js, documents/e2e/upload.e2e.spec.js, and the missed arrival-transit.e2e.spec.js) is in the `features` project and is never executed. Worse, `vitest.config.js:14-18` explicitly excludes `'src/server/app/sets/live-animals/journeys/linear/features/**/*.e2e.spec.js'`, so ladder steps 1-4 do not pick them up either. The result: not one proposed E2E assertion — including the picker-attribute check and the out-of-range rejection cases, the only steps that can fail on unfixed code — is ever run. The ladder would go green on a build where the entire E2E leg was never compiled. Separately, three -tests files are edited and the -tests suite is never invoked at all.",
+      "rootCauseFiles": [
+        "frontend:src/server/app/shared/kit.js",
+        "frontend:src/server/app/lib/validate/validators.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/exit-date/controller.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/documents/view-model/render.js"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/server/app/shared/kit.js",
+          "action": "edit",
+          "what": "Extend `dateField(name, opts)` to accept and pass through `minDate`, `maxDate` (and `excludedDates`/`excludedDays` if the ruling needs them) so the MoJ macro emits the matching data-* attributes. Keep it a pure view-model builder — the bounds are computed by the caller, not by kit."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/lib/validate/validators.js",
+          "action": "edit",
+          "what": "Add a bounded-date validator (e.g. `dateTextInRange(name, { min, max }, messages)`) that layers a min/max comparison on top of the existing `dateText` calendar check, so a typed out-of-range value is rejected server-side. Do not weaken the existing `dateText` behaviour."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/lib/validate/index.js",
+          "action": "edit",
+          "what": "Export the new bounded-date validator alongside `dateText`/`dateParts`."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/lib/validate/calendar.js",
+          "action": "edit",
+          "what": "Add the date-comparison / today-anchor helper the bounded validator needs, beside `isValidCalendarDate`."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/controller.js",
+          "action": "edit",
+          "what": "Pass the ruled exitDate bounds into `kit.dateField` and swap `dateText('exitDate', ...)` for the bounded validator with the new error message."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.en.js",
+          "action": "edit",
+          "what": "Add the out-of-range error message(s); update the hint if the ruling changes what the user is told."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.cy.js",
+          "action": "edit",
+          "what": "Structure-identical Welsh counterpart — the copy-parity convention test fails otherwise."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js",
+          "action": "edit",
+          "what": "Pass the ruled arrivalDateAtPort bounds into `kit.dateField` and swap `dateText('arrivalDateAtPort', ...)` for the bounded validator."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js",
+          "action": "edit",
+          "what": "Add the arrival-date out-of-range error message under `portOfEntry.errors`."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.cy.js",
+          "action": "edit",
+          "what": "Structure-identical Welsh counterpart."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/view-model/render.js",
+          "action": "edit",
+          "what": "Pass the ruled accompanyingDocumentDateOfIssue bounds into `kit.dateField`."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/form",
+          "action": "edit",
+          "what": "Swap the document date-of-issue `dateText` rule for the bounded validator in the documents form schema."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js",
+          "action": "edit",
+          "what": "Add the date-of-issue out-of-range error message."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.cy.js",
+          "action": "edit",
+          "what": "Structure-identical Welsh counterpart."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/docs/validation.md",
+          "action": "edit",
+          "what": "Update the 'Dates and structured values' section to describe the bounded date helper and that `kit.dateField` now carries picker bounds."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/shared/kit.test.js",
+          "action": "create",
+          "what": "Unit-pin that `dateField` emits minDate/maxDate in the view model when given bounds and omits them when not."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/lib/validate/validate.test.js",
+          "action": "edit",
+          "what": "Unit-pin the bounded validator: in-range accepted, below-min rejected, above-max rejected, still-invalid calendar date rejected, blank still optional."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/exit-date.e2e.spec.js",
+          "action": "edit",
+          "what": "Replace the hardcoded 27/3/2026 with a today-relative in-range date and add a case asserting the picker input carries the bound attributes and that an out-of-range typed value produces the inline error."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/e2e/upload.e2e.spec.js",
+          "action": "edit",
+          "what": "Replace the hardcoded 03/01/2026 date of issue with a today-relative in-range date and add the out-of-range rejection case."
+        },
+        {
+          "repo": "tests",
+          "path": "flows/journey.ts",
+          "action": "edit",
+          "what": "Replace the hardcoded '12/12/2026' arrival date with a today-relative in-range date so the shared journey flow does not rot past the new bound."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/port-of-entry-select.spec.ts",
+          "action": "edit",
+          "what": "Replace the hardcoded '12/12/2026' with the today-relative helper."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/pages/arrival-details.spec.ts",
+          "action": "edit",
+          "what": "Add a case covering an out-of-range arrival date producing the inline error, and covering the picker's restriction attributes being present."
+        }
+      ],
+      "obligations": [
+        "Read .claude/skills/frontend-change/SKILL.md and route as a general L2+L4 change: the validator and kit changes are L2 platform, the controller/copy changes are L4 journey. L2 must stay set-agnostic — the concrete bounds are computed in the journey feature and passed in; do not put live-animals date policy into lib/validate or shared/kit.",
+        "Server-side validation is mandatory, not optional. MoJ data-min-date/data-max-date restrict the calendar widget only; the input remains free text, so a fix that adds only the picker attributes leaves the defect fully exploitable by typing.",
+        "Both copy.en.js and copy.cy.js change together and stay structure-identical — the copy-parity convention test enforces it.",
+        "Do not introduce custom CSS or a hand-rolled calendar; stay inside the MoJ date-picker component's documented params (minDate, maxDate, excludedDates, excludedDays, weekStartDay).",
+        "Dates in specs become today-relative helpers, not new hardcoded literals — a fresh literal reintroduces the same rot in a year.",
+        "Run `npm run format` before any commit; the pre-commit hook enforces format + lint + full units."
+      ],
+      "copyKeys": [
+        "exit-date:errors.dateOutOfRange",
+        "transport:portOfEntry.errors.arrivalDateOutOfRange",
+        "documents:errors.dateOfIssueOutOfRange",
+        "exit-date:date.hint",
+        "transport:portOfEntry.arrivalDate.hint",
+        "documents:dateOfIssue.hint"
+      ],
+      "specs": [
+        "frontend:src/server/app/lib/validate/validate.test.js",
+        "frontend:src/server/app/shared/kit.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/exit-date/exit-date.e2e.spec.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/documents/e2e/upload.e2e.spec.js",
+        "tests:tests/e2e/pages/arrival-details.spec.ts"
+      ],
+      "acceptanceCriteria": [
+        "The date-picker input on the exit date, arrival details and add-a-document pages each render with the restriction attributes the ruled range implies (data-min-date and/or data-max-date), so the calendar offers only dates inside that range and dates outside it cannot be clicked.",
+        "Typing a date outside the ruled range into any of the three pickers and submitting the form re-renders the page with a GDS error summary and an inline error against that field, and the answer is not saved.",
+        "Typing a date inside the ruled range still saves and advances exactly as it does today, including the existing 'Enter a real <field> date' behaviour for calendar-invalid input such as 31/2/2026.",
+        "Leaving an optional date blank is still accepted — the range rule does not turn an optional field into a required one.",
+        "The out-of-range error message exists in both English and Welsh copy with identical structure, and the copy-parity convention test passes.",
+        "No spec in either repo depends on a hardcoded absolute date that will fall outside the ruled range as the wall clock advances."
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test -- src/server/app/lib/validate/validate.test.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-validator.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test -- src/server/app/shared/kit.test.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-kit.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-live-animals.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-units.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-lint.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-e2e.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features — THE critical omission. Step 6's `test:e2e` is `playwright test --project=journeys`, and playwright.config.js:24-25 scopes that project to `**/journey-smoke.spec.js` under `./e2e`. All three edited/new frontend E2E specs live in the `features` project (playwright.config.js:43-45). Without this step, zero proposed E2E assertions execute and the ladder passes on unfixed code.",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose — the ladder never runs the -tests repo at all, despite the change list editing tests:flows/journey.ts, tests:tests/e2e/features/port-of-entry-select.spec.ts and tests:tests/e2e/pages/arrival-details.spec.ts.",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck — journey.ts is TypeScript and a today-relative date helper changes its types; nothing in the ladder typechecks the -tests repo.",
+        "A red-first step that fails on the CURRENT tree: assert the rendered `<div class=\"moj-datepicker\">` carries data-min-date/data-max-date on all three pages (exit-date, port-of-entry, documents). Ladder steps 1-5 are vitest/lint and vitest.config.js:14-18 excludes the e2e specs, so as written every step would pass unchanged against the unfixed code.",
+        "Regression coverage for the date literals the change list misses — frontend .../transport/e2e/arrival-transit.e2e.spec.js (03/01/2026, already past), tests:.../hub-groups-and-cya-rows.spec.ts:80 (asserts 12/12/2026), tests:.../persistence-accompanying-document.spec.ts:29, and the check-answers/save-actions/change-context/documents unit tests pinning 12/12/2025."
+      ],
+      "gate": "For each of the three date fields, what range is valid — and does the rule bind the calendar only, or the typed value too? Specifically: (a) arrivalDateAtPort — earliest allowed (today, or tomorrow?) and is there a maximum lead time (e.g. today + 12 months)? (b) exitDate — earliest allowed, and must it be strictly after arrivalDateAtPort, and does the temporary-admission-of-horses stay limit impose a maximum (e.g. arrival + 90 days)? (c) accompanyingDocumentDateOfIssue — is today allowed, is any future date rejected, and is there an earliest allowed issue date? Confirm that out-of-range typed values must be rejected server-side with an inline error (not merely greyed out in the calendar), and supply the GDS error wording for each rejection.",
+      "notes": "All three MoJ date pickers in the live-animals journey are completely unrestricted. `kit.dateField` (shared/kit.js:158) builds the picker params without `minDate`/`maxDate`/`excludedDates`/`excludedDays`, so the macro emits no `data-*` restriction attributes and the calendar offers every date in every year; the paired server validator `dateText` (lib/validate/validators.js:190) only checks that the dd/mm/yyyy string is a real calendar date, so a typed `01/01/1900` is accepted and saved. This affects exit date, arrival date at port of entry, and accompanying-document date of issue. It is not a EUDPA-288 regression — no bound has ever existed in the repo. The fix is blocked on a product call: no source in the workspace rules what each field's valid range is, and the three fields point in different directions in time. Once the ranges are ruled, the fix is a view-layer change at the single `kit.dateField` choke point plus a new bounded-date validator, wired at three call sites with new en/cy error copy, and today-relative dates in the specs on both sides of the workspace.",
+      "openQuestions": [
+        "Should the exit date be validated against the already-answered arrivalDateAtPort (cross-field rule), or independently against today? A cross-field rule needs the arrival answer read at exit-date POST time, which is a larger change than a static bound.",
+        "Is there a documented maximum lead time for a pre-notification (how far in advance an arrival may be declared)? If yes it should also cap the calendar rather than only the server rule.",
+        "Should the picker also exclude weekends or bank holidays at any port? The MoJ component supports excludedDays/excludedDates, but nothing in the repo suggests such a rule exists.",
+        "Does the backend already reject out-of-range dates on submit? If so the frontend messages should match the backend's rule rather than invent a second one — worth checking trade-imports-animals-backend before the frontend rule is fixed."
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": [
+        "snag-005"
+      ]
+    },
+    {
+      "id": "snag-005",
+      "snagText": "The autocomplete/search stuff is clunky af",
+      "title": "Restore enhanced search/autocomplete on the long select and picker lists",
+      "repos": [
+        "frontend",
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-318",
+      "branch": "fix/EUDPA-318-autocomplete-search-ux-regression",
+      "base": "main",
+      "status": "blocked",
+      "verdict": "needs-decision",
+      "confidence": "medium",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "The snag is a known, deliberate regression introduced by the EUDPA-288 retrofit, not an accident.\n\n1. The enhancement was removed on purpose. `git -C repos/trade-imports-animals-frontend show --stat bc285d71` (contained in the retrofit merge 23f2fdb4) is titled \"refactor(EUDPA-288): drop accessible-autocomplete for plain selects; commodity checkboxes (p-236)\". Its message: \"origin country and port of entry keep their server-rendered govukSelects with the enhancement stripped; transit countries becomes a single 31-country govuk checkboxes group; commodity selection renders all eight commodity-species pairs as grouped checkboxes with the whole search/filter/carry/summary apparatus removed. accessible-autocomplete dependency, bundle entry, scss import and all data attributes deleted. … Enhanced search returns as a later round.\" It cites AUTOCOMPLETE-ASSESSMENT.md (not present in any repo or workarea — I searched) and \"Sam's ruling\". The prototype work it reverted is commits 7edced0d (inc-058, country-of-origin canary) and b79c1379 (inc-059, port-of-entry rollout).\n\n2. Current state confirmed by reading the code, not inferred:\n- `grep -rn \"data-select-autocomplete\\|selectAutocomplete\" src webpack.config.js` returns nothing. `webpack.config.js:22-30` has only `application` and `documents` entries; `src/client/javascripts/` contains only `application.js`. `accessible-autocomplete` is absent from `package.json`.\n- frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk:18 renders a bare `govukSelect` over `services/ports`, whose fixture `src/server/app/services/_capture/fixtures/ports-of-entry.json` holds 78 records — an 80-option native dropdown once placeholder + divider are counted. That is the single worst \"clunky\" surface and squarely against GDS guidance for long option lists.\n- frontend:.../features/origin/template.njk:15, .../destination-country/template.njk:13, .../port-of-exit/template.njk:13 and .../addresses/create-address/create-address.njk:68 are the same pattern over the 31-country fixtures (`countries-origin.json`, `countries.json`), i.e. 33 options each.\n- frontend:.../transport/transit-countries/transit-countries.njk:16 is one flat 31-item checkbox group.\n- frontend:.../commodities/search/search.njk is still named and keyed \"search\" (copy.en.js:4 `search:`) but contains no search box at all — just grouped checkboxes (search.njk:19-29). The controller `search.controller.js` has no query handling. A page called \"search\" with nothing to search in is exactly what a snagger would flag.\n\n3. The one genuine free-text search left — the address-book party picker — is also clunky by design and carries a real, untested defect:\n- `_address-picker.njk:8-12` states the intent: \"no client JS anywhere\". Search is a secondary submit button (`_address-picker.njk:86-91`) causing a full-page POST; results are `PAGE_SIZE = 5` (`src/server/app/services/address-book/index.js:26`) over 40 records = 8 pages.\n- Pagination is server-rendered `<a href>` links whose query string is baked at render time from the render-time `selectedId` and `query` (`.../party-picker/view-model/index.js:33-38` → `view-model/pagination/results-href.js:3-13`). Because there is no client JS to sync them, a radio the user ticks — or a query they type — on the current page is silently discarded the moment they click a page link. The hidden `selected` field (`_address-picker.njk:73-75`) is likewise render-time only.\n- No test covers this. `hub-picker.e2e.spec.js:251` (\"carries a later-page selection…\") pages FIRST and ticks SECOND, so it never exercises tick-then-page. `party-picker.controller.test.js:80-95` asserts only that the server bakes the *incoming* `selected` into the hrefs.\n\n4. The fix is two-repo whichever way the gate is answered: the -tests suite has specs written specifically to pin the stripped state — `tests/e2e/features/port-of-entry-select.spec.ts:16` asserts `option` `toHaveCount(80)` under the describe \"Port of entry plain select\", and `tests/e2e/features/country-of-origin-select.spec.ts:13` asserts `toHaveCount(33)` under \"Country of origin plain select\". Restoring the enhancement invalidates both.\n\nWhy this is not actionable: \"clunky af\" does not say which surface, and the only mechanism that would fix it was removed by an explicit written assessment plus a named ruling. Reinstating it without a fresh ruling is re-litigating a closed decision by guesswork, and the scope varies enormously by answer (one webpack entry and two templates, versus five templates plus transit-countries plus the commodity page plus a client-side picker). The picker's lose-your-selection-on-paginate bug is the one sub-item that is unconditionally wrong and could be built today, but it is a fragment of the snag, not the snag.",
+      "refutation": "I attacked this on all five fronts and could not break the core diagnosis. Every load-bearing claim survived direct reading.\n\nVERIFIED (not taken on trust):\n1. The deferral is real. `git -C repos/trade-imports-animals-frontend show --stat bc285d71` reproduces the commit verbatim, including \"accessible-autocomplete dependency, bundle entry, scss import and all data attributes deleted\" and \"Enhanced search returns as a later round.\" The stat confirms deletion of src/client/javascripts/select-autocomplete.js, the package.json entry, 2 lines of application.scss and 3 of webpack.config.js.\n2. Current state matches. `find` shows frontend:src/client/ contains exactly one javascript file, application.js. frontend:webpack.config.js:22-29 has only `application` and `documents` entries. grep for `data-select-autocomplete|selectAutocomplete|accessible-autocomplete` across src, webpack.config.js and package.json returns nothing.\n3. The tests repo genuinely is in scope. tests:tests/e2e/features/port-of-entry-select.spec.ts:6 is describe \"Port of entry plain select\" and :16 asserts `toHaveCount(80)`; tests:tests/e2e/features/country-of-origin-select.spec.ts:3/:13 is \"Country of origin plain select\" / `toHaveCount(33)`. Both go red on any restore. The investigator's repo list is correct.\n4. The picker defect is real. Pagination renders as govukPagination anchors (frontend:_address-picker.njk:64-66) whose hrefs are baked at render time from `selectedId` (frontend:view-model/pagination/index.js:14-19 -> results-href.js:3-13). There is no client JS (confirmed at #2), and the GET handler recovers a selection only from the query string (frontend:party-picker.controller.js:62). A radio ticked on the current page is not in that href, so it is discarded. Untested: frontend:.../addresses/e2e/hub-picker.e2e.spec.js:255-257 clicks \"Page 2\" then \"Page 3\" and only then checks the radio — it pages BEFORE ticking, so tick-then-page is never exercised.\n5. The \"needs a fresh ruling\" argument is stronger than stated. A workspace-wide `find -iname \"*AUTOCOMPLETE*\"` and a `git log --all --diff-filter=D` both come back empty for AUTOCOMPLETE-ASSESSMENT.md. The written rationale is genuinely unrecoverable — only the commit message references it. An implementor cannot reconstruct the ruling from the repo, which is exactly why this must not be actionable.\n\nI ran down two hypotheses of my own and both were refuted by the code, which is why I am holding rather than correcting:\n- I suspected `page` was never passed into pickerViewModel (frontend:party-picker.controller.js:48-53 omits it). It is not a bug — the view model takes `page` from `found.page` (frontend:view-model/index.js:16), which derives from the addressBook.search call at controller.js:33.\n- I suspected the dashboard swallowed zero-result searches, because frontend:dashboard/template.njk:155 reads `{% elif not referenceNumber %}` and the template never references `copy.search.noResults`. It is wired — frontend:dashboard/controller.js:79 folds `none: copy.search.noResults` into `resultsLabel`, and frontend:dashboard/dashboard.e2e.spec.js:198 asserts it visible.\n\nTWO CORRECTIONS the implementor should carry, neither fatal:\n\n(a) One supporting bullet is factually wrong and should be dropped. The diagnosis argues \"A page called 'search' with nothing to search in is exactly what a snagger would flag.\" The snagger cannot see that. The visible H1 is \"What are you importing?\" (frontend:commodities/copy/copy.en.js:5); `search` is only the internal folder and copy key. The proposed \"rename the feature folder/copy key off 'search'\" is internal tidying, not snag-driven, and should not be sold as addressing the report.\n\n(b) A visible search surface is missing from the root-cause list: the dashboard notification filter, frontend:.../features/dashboard/template.njk:38-54 — a GET form with its own heading, input and button, sitting on the landing page. It is the first thing a user would call \"the search\". I checked it for defects and found none (see above), so it adds no build work, but the ruling must state whether it is in or out of \"enhanced search\", otherwise the decision reopens the moment someone looks at the dashboard. A secondary candidate there: the sort form preserves `page` across a sort change (template.njk:62-64), leaving the user on page 5 of a re-sorted list — defensible either way, so it belongs in the same ruling rather than being fixed unilaterally.\n\nVERDICT: needs-decision is right and I am not correcting it. The mechanism was removed by a named ruling plus a written assessment that no longer exists; \"clunky af\" names no surface; and scope swings from two templates to five-plus-commodities-plus-transit depending on the answer. The picker bug is correctly carved out as the one unconditional item.",
+      "rootCauseFiles": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/origin/template.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/destination-country/template.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/port-of-exit/template.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/addresses/create-address/create-address.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.njk",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/view-model/pagination/results-href.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk",
+        "frontend:webpack.config.js"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk",
+          "action": "edit",
+          "what": "UNCONDITIONAL (needed whichever way the gate is answered): stop pagination links silently discarding a radio ticked or a query typed on the current page. Either turn the page links into submit buttons inside the existing form (name=\"action\" value=\"page-N\", so the live radio and q travel with them), or add the client-side sync. Header comment at lines 8-12 states the no-JS design intent and must be updated to match whatever is chosen."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.js",
+          "action": "edit",
+          "what": "UNCONDITIONAL: if pagination becomes a submit, teach post() to recognise the page action and render that page with the live payload q + party, alongside the existing search/save branches (request-params.js:isSearchAction is the seam)."
+        },
+        {
+          "repo": "frontend",
+          "path": "webpack.config.js",
+          "action": "edit",
+          "what": "GATE-DEPENDENT (only if the ruling reinstates the enhancement): add a selectAutocomplete entry alongside the existing documents entry (lines 22-30). Omitting this is the classic silent 404 — the bundle never ships and nothing visibly fails."
+        },
+        {
+          "repo": "frontend",
+          "path": "package.json",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: re-add accessible-autocomplete (was 3.0.1 pre-strip) if the ruling reinstates the enhancement."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/client/javascripts/select-autocomplete.js",
+          "action": "create",
+          "what": "GATE-DEPENDENT: re-create the mount-over-select[data-select-autocomplete] entry deleted by bc285d71 (recoverable verbatim via git show bc285d71^:src/client/javascripts/select-autocomplete.js)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/client/stylesheets/application.scss",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: re-add the accessible-autocomplete styles import removed by bc285d71."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: opt the 80-option port select in via data-select-autocomplete plus the bodyEnd getAssetPath include. Placeholder and divider options must carry value:'' or they leak into the suggestion list (the inc-059 lesson)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/origin/template.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: same opt-in for countryOfOrigin (33 options), if the ruling includes the 31-country selects."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/destination-country/template.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: same opt-in, if the ruling includes it."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/port-of-exit/template.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: same opt-in, if the ruling includes it."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/addresses/create-address/create-address.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: same opt-in for the country select at line 68, if the ruling includes it."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: if the ruling restores commodity search, reinstate the query box and result filtering (search.controller.js and view-model/commodity-groups.js follow). If the ruling keeps the checkbox list, rename the feature folder/copy key off 'search' instead so a page called search actually is one."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.njk",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: only if the ruling puts transit countries back on an enhanced multi-select; the 12-country cap, dedupe and membership rules must survive whatever replaces the checkbox group."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/docs/features.md",
+          "action": "edit",
+          "what": "Document whichever pattern lands — features.md is where the (now-deleted) progressive-enhancement rollout rule used to live, and bc285d71 rewrote it to describe the plain-select state."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/port-of-entry-select.spec.ts",
+          "action": "edit",
+          "what": "GATE-DEPENDENT but forced by any restore: the describe is literally 'Port of entry plain select' and line 16 pins option count 80. Retype for the combobox (post-mount input#portOfEntry over the renamed hidden select) or the spec goes red on a true fix."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/country-of-origin-select.spec.ts",
+          "action": "edit",
+          "what": "GATE-DEPENDENT but forced by any restore: 'Country of origin plain select', line 13 pins option count 33. Same retype."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/notification/arrival-details-page.ts",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: portOfEntry locator and selectPort helper target a native select; they need the combobox form if the enhancement returns."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/notification/origin-of-import-page.ts",
+          "action": "edit",
+          "what": "GATE-DEPENDENT: countryOfOrigin locator and selectCountry helper, same reason."
+        }
+      ],
+      "obligations": [
+        "portOfEntry",
+        "countryOfOrigin",
+        "destinationCountry",
+        "portOfExit",
+        "transitedCountries",
+        "commodityLines",
+        "consignor",
+        "consignee",
+        "importer",
+        "placeOfOrigin",
+        "destination",
+        "contact",
+        "commercialTransporter"
+      ],
+      "copyKeys": [
+        "addresses.picker.search.label",
+        "addresses.picker.search.hint",
+        "addresses.picker.search.button",
+        "addresses.picker.noMatches",
+        "addresses.picker.resultsCaption",
+        "commodities.search.title",
+        "commodities.search.inset",
+        "commodities.search.errors.selectCommodity",
+        "transport.portOfEntry",
+        "transport.transitCountries",
+        "origin.country.label"
+      ],
+      "specs": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/addresses/e2e/hub-picker.e2e.spec.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js",
+        "tests:tests/e2e/features/port-of-entry-select.spec.ts",
+        "tests:tests/e2e/features/country-of-origin-select.spec.ts"
+      ],
+      "acceptanceCriteria": [
+        "UNCONDITIONAL — party picker: on the consignor picker, tick the radio for a record on page 1, then click the 'Page 2' pagination control. Return to page 1: that record is still shown as the selected address, and 'Save and continue' commits it without re-ticking.",
+        "UNCONDITIONAL — party picker: type a new term into the search box WITHOUT pressing Search, then click a pagination control. The typed term is not silently thrown away — either it is applied, or the control cannot be reached without submitting it. The user never loses typed input to a click.",
+        "UNCONDITIONAL — party picker: the existing behaviours still hold — searching resets to page 1, a search that matches nothing shows the empty state with the query preserved, and the error summary anchors to #q when nothing matched and to #party when it did.",
+        "GATE-DEPENDENT (if the enhancement is reinstated) — port of entry: with JavaScript on, the port field is a combobox; typing 'aberdeen' filters the list case-insensitively and typing the code 'GB ABD' surfaces the same suggestion; choosing it and saving persists the CODE, and reopening the page shows the port name back in the combobox.",
+        "GATE-DEPENDENT — no-JS path unchanged: with javaScriptEnabled:false the same page still renders a plain govukSelect, and selecting a port and saving persists the identical value. Progressive enhancement, never a hard dependency.",
+        "GATE-DEPENDENT — the placeholder row ('Select port of entry') and any disabled divider row never appear as suggestions in the enhanced list.",
+        "GATE-DEPENDENT — the enhanced page has no serious or critical axe violations under wcag2a/wcag2aa.",
+        "GATE-DEPENDENT (if the enhancement is NOT reinstated) — the commodities page no longer presents itself as a search: the feature folder, route and copy key do not use the word 'search' when the page offers only checkboxes.",
+        "The client bundle actually ships: the webpack manifest resolves the new entry to a file on disk and the enhancement selector string is present in the built bundle. A missing bundle entry 404s silently and every server-rendered assertion still passes."
+      ],
+      "verification": [
+        "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend show --stat bc285d71   # read the deferral before deciding anything",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals -- src/server/app/sets/live-animals/journeys/linear/features/addresses > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-picker-units.log 2>&1   # narrowest unit leg: the picker controller + view-model",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-live-animals.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-units.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-lint.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features -- src/server/app/sets/live-animals/journeys/linear/features/addresses/e2e/hub-picker.e2e.spec.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-hub-picker-e2e.log 2>&1   # browser leg is genuinely required: the defect is a click on an anchor discarding live form state, invisible to unit tests",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-features.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-e2e.log 2>&1",
+        "tim docker dev   # only needed for the -tests leg below",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-005-tests-repo.log 2>&1   # port-of-entry-select.spec.ts and country-of-origin-select.spec.ts must be green against whatever pattern landed",
+        "A NEW e2e case in frontend:.../addresses/e2e/hub-picker.e2e.spec.js that ticks a radio on page 1, THEN clicks 'Page 2', and asserts the selection survives. This is the critical gap: ladder step 6 runs the existing hub-picker spec and calls the browser leg 'genuinely required', but that spec pages before it ticks (lines 255-257), so it passes on today's broken tree. As written, no step in the entire 10-step ladder fails on the unfixed code for the one item the investigator calls unconditional.",
+        "A red-first baseline for that new spec — run it and confirm it FAILS before the fix lands. A step never observed red proves nothing about the fix.",
+        "A companion case for the query field: type a term, click a page link without pressing Search, and assert the term survives. results-href.js:3-13 bakes the render-time query, so this is the same defect via a second input and would otherwise ship unverified.",
+        "If the gate reinstates the enhancement: a step asserting the selectAutocomplete bundle is actually emitted and mounts (combobox role present in the live DOM). The proposed changes flag the 'classic silent 404' risk on webpack.config.js but no ladder step would ever catch it — the bundle can silently fail to ship and every listed step still passes.",
+        "A Welsh-copy leg. copy.cy.js carries the parallel keys (e.g. dashboard copy.cy.js:14) and copy.test.js enforces en/cy parity, so any copy change to the picker or commodities page needs the cy side; no step exercises it.",
+        "An explicit expected-delta statement for step 10. Running the whole -tests suite is fine, but the ladder never says which specs are expected to change state, so a spec that goes green for the wrong reason (e.g. retyped to match whatever was built) passes unnoticed."
+      ],
+      "gate": "Is this snag the \"later round\" that commit bc285d71 explicitly deferred — i.e. do we reinstate the accessible-autocomplete progressive enhancement (accessible-autocomplete dependency + a `selectAutocomplete` webpack entry + `data-select-autocomplete` opt-in) that EUDPA-288 deliberately deleted, and if so on exactly which surfaces (port of entry 80 options; country of origin / destination country / port of exit / create-address country ~33 options each; transit countries 31 checkboxes; commodity species 8 checkbox groups), AND does the address-book party picker also get client-side enhancement or does it keep its deliberate no-JS POST-search + link-pagination pattern with only its lose-your-selection-on-paginate bug fixed?",
+      "notes": "\"Autocomplete/search is clunky\" is a deliberate EUDPA-288 regression: commit bc285d71 deleted the accessible-autocomplete progressive enhancement (dependency, webpack entry, scss import, all data attributes) from country-of-origin and port-of-entry, flattened transit countries to 31 checkboxes, and ripped the search/filter apparatus out of commodity selection — leaving an 80-option native dropdown at port-of-entry and a \"search\" page with no search box. The commit itself says \"Enhanced search returns as a later round\". The only remaining free-text search, the address-book party picker, is a no-JS POST search over 5-row pages and silently drops a radio ticked (or a query typed) on the current page when the user clicks a pagination link, because the hrefs are baked at render time. Restoring anything invalidates two -tests specs that were written to pin the plain-select state, so the fix spans frontend and tests. Needs a product ruling on which surfaces get the enhancement back before it can be built.",
+      "openQuestions": [
+        "AUTOCOMPLETE-ASSESSMENT.md — cited by commit bc285d71 as the basis for stripping the enhancement — does not exist in any of the three repos or in workareas/. Whoever answers the gate needs it, or needs to accept it is lost and rule afresh.",
+        "Which of the six long-list surfaces are in scope: port of entry (80 options, the worst offender), country of origin / destination country / port of exit / create-address country (33 each), transit countries (31 checkboxes with a 12-country cap), commodity species (8 grouped checkboxes)? These have very different urgency and the 8-checkbox commodity page arguably needs nothing.",
+        "Does the address-book party picker get client-side enhancement, or does it keep the explicit no-JS design recorded at _address-picker.njk:8-12? If it keeps it, is PAGE_SIZE 5 over 40 records (8 pages, services/address-book/index.js:26) still the right page size, or should the page show more rows so paging is rarer?",
+        "If the enhancement returns, the two -tests specs are named 'plain select' and pin exact option counts. Should they be retyped for the combobox, or deleted as superseded by the frontend's own colocated specs (they carry a @duplicated-in-frontend tag already)?",
+        "The commodities feature is still called 'search' (folder, controller, copy key) but has no search box. If the ruling does not restore commodity search, is renaming it in scope for this snag or a separate tidy-up?"
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": [
+        "snag-004"
+      ]
+    },
+    {
+      "id": "snag-006",
+      "snagText": "A11y tests failing from -tests repo",
+      "title": "Resolve frontend/-tests branch drift that breaks every notification-URL page object",
+      "repos": [
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-321",
+      "branch": "fix/EUDPA-321-a11y-route-base-drift",
+      "base": "main",
+      "status": "blocked",
+      "verdict": "needs-decision",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": false,
+      "respecFailed": false,
+      "diagnosis": "The complaint reproduces, but it is NOT an accessibility defect and it is NOT specific to the a11y suite.\n\nWHAT I RAN. `npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose:a11y` against the running workspace stack. Log: /Users/samfarrington/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-006-a11y-run.log — 12 tests, 7 passed, 1 skipped, 4 failed (10.1m).\n\nTHE 4 FAILURES CONTAIN ZERO AXE VIOLATIONS. Every failure is a navigation/URL-parse failure that happens BEFORE any scan runs:\n- tests/a11y/notification-journey-error-state.spec.ts, notification-journey-filled-state.spec.ts, notification-journey-initial-state.spec.ts all die with `Error: No journey id in notification URL: http://localhost:3000/live-animals/notifications/GBN-AG-26-.../import-type` thrown at trade-imports-animals-tests/page-objects/base/base-page.ts:87.\n- tests/a11y/notification-view-states.spec.ts times out at 300000ms waiting for `getByRole('heading', { name: 'Check your answers', level: 1 })` in page-objects/notification/notification-view-page.ts:47, then the fixture reports `No accessibility scans were run` (fixtures/a11y.ts:78) — i.e. it never reached a scannable page either.\nThe 7 that PASS are exactly the ones that never construct or parse a notification URL (notification-dashboard-views x2, notification-dashboard-viewports, and all four tests/a11y/admin/* specs). So axe found no WCAG 2.2 AA violation anywhere it was actually able to run.\n\nROOT CAUSE — cross-repo branch drift (CLAUDE.md load-bearing rule 2), not an app defect:\n- The stack is serving `defradigital/trade-imports-animals-frontend:spike-trace-to-requirements` (verified: `docker ps --format \"{{.Image}}\"`; image created 2026-08-05). That build mounts the journey under a set prefix — confirmed inside the container and on the branch: trade-imports-animals-frontend `spike/trace-to-requirements`:src/server/router.js:9 `export const DEFAULT_SET_BASE = '/live-animals'` and :23 `routes: { prefix: '/live-animals' }`. The container also carries a whole `src/server/app/sets/plant-products/` tree, so it is the plant-products multi-set build.\n- The -tests checkout is on `fix/EUDPA-319-hub-commodity-totals-boxes` (HEAD 1baf8c4, cut from main). Its page objects have no set-prefix awareness at all: trade-imports-animals-tests/page-objects/base/base-page.ts:81 `return \\`/notifications/${journeyId}${suffix}\\`` and :85 `pathname.match(/^\\/notifications\\/([^/]+)/)`. `grep -rn \"live-animals\"` across page-objects/, flows/, utils/ and config/ returns nothing.\n- Meanwhile the frontend checkout in repos/ is on `fix/EUDPA-320-fix-link-button-font-family` at 23f2fdb4 (main lineage) whose src/server/router.js registers `liveAnimals` with NO prefix — i.e. the local source and the running container are different applications.\n\nNOT A11Y-SPECIFIC — control run. I ran one ordinary E2E spec that uses the same helper: `npm --prefix .../trade-imports-animals-tests run _test_docker_compose -- tests/e2e/features/reference-strip.spec.ts`. Log: workareas/shared/frontend-snagging-eudpa315/logs/snag-006-e2e-control.log — it fails with the identical `No journey id in notification URL: http://localhost:3000/live-animals/notifications/GBN-AG-26-PMVPXW/import-type` at base-page.ts:87 via flows/journey.ts:32 (`Journey.startNotification`). `startNotification()` is used by ~20 specs under tests/e2e/, so the whole suite is broken the same way — the snag reads as a11y-only only because a11y is the lane that was run.\n\nTHE FIX FOR THE PREFIXED BUILD ALREADY EXISTS ON A SIBLING BRANCH. trade-imports-animals-tests `spike/trace-to-requirements` has page-objects/base/sets.ts (`SET_BASES = { liveAnimals: '/live-animals', plantProducts: '/plant-products' }`) and a base-page.ts that takes `setBase: string = SET_BASES.liveAnimals` and builds/parses `${this.setBase}/notifications/...`. But `git diff --stat main spike/trace-to-requirements -- page-objects flows utils config` is 66 files / +2330 −108, including a full plant-products page-object set and a `flows/` split — that is the plant-products programme merge, not something to smuggle in under a snag.\n\nWHY THIS IS needs-decision, not actionable: the task brief says this batch snags the EUDPA-288 retrofit at frontend main 23f2fdb4, which is the UN-prefixed build. If that is right, no file in any repo is wrong — the stack is — and I cannot prove the a11y suite is green against main without rebuilding the shared stack, which five sibling snag agents are mid-run against. Which of those two worlds is the intended target is a human call, and it changes the fix from \"no code at all\" to \"merge a 66-file restructure\".\n\nSIDE FINDING THE PARENT NEEDS: every other snag in this batch (EUDPA-316 date picker, -317 copy-as-new, -318 autocomplete, -319 hub totals, -320 link-button font) is being investigated against this same `spike-trace-to-requirements` frontend image, not against 23f2fdb4. Their diagnoses may be describing plant-products-branch code.",
+      "refutation": "I tried hard to break this and could not. Every load-bearing fact re-verified, and the one genuinely unproven claim I found I then proved FOR the investigator by experiment.\n\nVERIFIED INDEPENDENTLY\n1. The mechanism. `docker ps` confirms the stack serves `defradigital/trade-imports-animals-frontend:spike-trace-to-requirements`, and `docker exec ... ls /home/node/src/server/app/sets` returns `live-animals` + `plant-products` — it is the two-set prefixed build. The local checkout is main-lineage: frontend `fix/EUDPA-320-fix-link-button-font-family`, and frontend:src/server/router.js:7,20 registers `liveAnimals` from `./app/routes.js` with NO prefix, and frontend:src/server/app/sets/ contains only `live-animals`. So local source and running container are different applications, exactly as claimed.\n2. The break point. tests:page-objects/base/base-page.ts:81 `return \\`/notifications/${journeyId}${suffix}\\`` and :85 `pathname.match(/^\\/notifications\\/([^/]+)/)` are set-prefix-blind, throwing at :87. `tim workspace status --json` puts tests on `fix/EUDPA-319-hub-commodity-totals-boxes` (main lineage).\n3. Not a11y-specific. tests:playwright.docker-compose.config.ts:8-9 pins `e2e: 'http://localhost:3000'` — the suite has no stack of its own, it runs against whatever the shared workspace stack is serving. The pre-existing control log logs/snag-006-refute-e2e-import-type.log shows `tests/e2e/features/import-type-routing.spec.ts` dying with the identical `No journey id in notification URL: http://localhost:3000/live-animals/notifications/GBN-AG-26-KMW1G5/import-type` at base-page.ts:87. Confirmed.\n\nTHE HOLE I FOUND, AND CLOSED\nThe diagnosis's headline claim — \"it is NOT an accessibility defect\" — was asserted, not evidenced. All four failures die BEFORE any scan (three at base-page.ts:87, one at notification-view-page.ts:47 then `No accessibility scans were run` at fixtures/a11y.ts:78). \"axe never ran\" is not the same as \"axe would find nothing\", so those pages could still have carried real WCAG violations and the ladder's step 7 \"expect 12 passed, 0 failed\" was a guess.\n\nI settled it. I cut a git worktree of tests `spike/trace-to-requirements` (the branch whose page objects match the running image), symlinked node_modules, and ran all six live-animals a11y specs against the untouched running stack — no reseed, no stack rebuild, siblings undisturbed. Logs: workareas/shared/frontend-snagging-eudpa315/logs/snag-006-refute-a11y-spike.log and snag-006-refute-a11y-view.log. Result: 6 of 6 green (3 journey-state specs 45.3s; view-states + dashboard-views + 1 pre-existing skip 7.3s). Zero axe violations on the pages that had never been scanned. So the investigator's conclusion is now proven rather than inferred — there is no accessibility defect anywhere in the live-animals suite, on the very build Sam is looking at.\n\nWHY needs-decision SURVIVES, AND IS ACTUALLY FIRMER THAN THE INVESTIGATOR ARGUED\nMy run collapses one arm of the gate to zero work: against the prefixed build, the matching tests branch is already 100% green, so if \"the prefixed build\" is the target there is no snag fix at all — only a workspace alignment (`tim workspace branch`), not a 66-file port. The other arm (rebuild the stack from local repos/ so the un-prefixed main build is served) is still untested by anyone, and testing it means rebuilding a stack five sibling agents are mid-run against. Which world EUDPA-315 is snagging is a human call about programme sequencing, and it swings the outcome between \"no code\" and \"back-port set-base awareness onto main-lineage tests\". That is a decision, not an implementable fix. `actionable` would be wrong.\n\nA CONCRETE FLAW IN THE PROPOSED CHANGE (not enough to break the verdict, but the implementor must not copy it verbatim)\nThe proposed guard `tests:tests/e2e/features/route-base-parity.spec.ts` would not fire in the lane the snag names. package.json:28 defines `test:docker-compose:a11y` as `--grep '@a11y'`, and e2e feature specs carry no such tag (verified: `grep -n \"@a11y\" tests/e2e/features/reference-strip.spec.ts` returns nothing). Ladder step 4 invokes the guard by explicit path so it appears to work, but the real invocation in step 7 would silently skip it and the a11y lane would still emit its wall of identical `No journey id` failures. The guard must be tagged so it runs in BOTH lanes (or live in a global setup / the a11y fixture), otherwise it solves the problem only for the lane that was never the complaint.\n\nThe `tests` repo list is correct — my run rules the frontend out as a source of a11y defect, so no frontend change is implied.",
+      "rootCauseFiles": [
+        "tests:page-objects/base/base-page.ts",
+        "tests:flows/journey.ts",
+        "tests:page-objects/notification/notification-view-page.ts"
+      ],
+      "filesToTouch": [
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/route-base-parity.spec.ts",
+          "action": "create",
+          "what": "Fail-fast guard that is right under EITHER branch of the gate: navigate to the frontend root, follow the redirect, and assert the landed pathname matches the notification route base the page objects build URLs from. Fails with a message naming expected vs observed base, so a build/branch mismatch is reported once, in one spec, instead of as ~24 identical 'No journey id in notification URL' failures spread across the a11y and E2E lanes."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/base/sets.ts",
+          "action": "create",
+          "what": "ONLY if the gate answers 'the prefixed build'. Port from tests `spike/trace-to-requirements`: the SET_BASES constant that names each set's route base."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/base/base-page.ts",
+          "action": "edit",
+          "what": "ONLY if the gate answers 'the prefixed build'. Port the setBase-aware NotificationPage from tests `spike/trace-to-requirements`: expectedUrl(), journeyIdFromUrl() and currentJourneyUrl() build and match `${setBase}/notifications/...` instead of the hardcoded `/notifications/...` at lines 81, 85 and 94."
+        }
+      ],
+      "obligations": [],
+      "copyKeys": [],
+      "specs": [
+        "tests:tests/e2e/features/route-base-parity.spec.ts",
+        "tests:tests/a11y/notification-journey-initial-state.spec.ts",
+        "tests:tests/a11y/notification-view-states.spec.ts"
+      ],
+      "acceptanceCriteria": [
+        "`npm --prefix <tests repo> run test:docker-compose:a11y` reports 0 failed across all 12 a11y tests.",
+        "Every notification-journey a11y test runs at least one axe scan on every page named in its test.step list — no test ends with the fixture error 'No accessibility scans were run'.",
+        "Any failure the a11y suite does report names an axe rule id, an impact and a page path (the formatViolations output from utils/a11y-utils.ts), not a URL-parse error or a heading-visibility timeout.",
+        "When the frontend build under test mounts the journey at a route base the page objects do not expect, exactly one spec fails, and its message names both the expected and the observed base — the a11y and E2E lanes do not each produce a wall of 'No journey id in notification URL'.",
+        "The plain E2E lane and the a11y lane agree on navigation health: `tests/e2e/features/reference-strip.spec.ts` passes against the same stack that the a11y suite passes against."
+      ],
+      "verification": [
+        "docker ps --filter name=trade-imports-animals-trade-imports-animals-frontend-1 --format \"{{.Image}}\"   # record which frontend build the stack is actually serving; this is the fact the whole snag turns on",
+        "git -C ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend log --oneline -1   # confirm the local source the stack should be built from",
+        "tim docker dev   # rebuild the stack from local repos/ so the frontend under test is the same code as the checkout (only after the gate is answered; five sibling agents share this stack)",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run _test_docker_compose -- tests/e2e/features/route-base-parity.spec.ts --reporter=list   # the new guard: green means build and page objects agree on the route base",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run _test_docker_compose -- tests/e2e/features/reference-strip.spec.ts --reporter=list   # navigation control; must be green before an a11y result means anything",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run _test_docker_compose -- tests/a11y/notification-journey-initial-state.spec.ts --reporter=list   # narrowest test that would have caught this snag",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose:a11y   # full a11y suite: expect 12 passed, 0 failed",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint",
+        "Run the live-animals a11y specs from a tests checkout whose page objects match the RUNNING prefixed build (e.g. a git worktree of tests spike/trace-to-requirements, node_modules symlinked, no reseed). This is the only step that proves 'no WCAG violation' rather than assuming it, and it needs no stack rebuild so it cannot disturb sibling agents. I ran it: 6/6 green — logs/snag-006-refute-a11y-spike.log and logs/snag-006-refute-a11y-view.log.",
+        "Tag the proposed route-base-parity guard so it is selected by BOTH lane greps, then prove it by running `test:docker-compose:a11y` and confirming the guard actually appears in the run. As proposed (untagged, under tests/e2e/features/) package.json:28's `--grep '@a11y'` excludes it, so ladder step 7 would never execute the guard it depends on.",
+        "Re-assert the served route base AFTER `tim docker dev` and before trusting any downstream step — repeat the step-1 `docker ps` image check plus an actual request showing the notification path no longer carries a set prefix. Otherwise steps 4-7 may be grading the 43-hour-old container that was never replaced.",
+        "Add a step that can actually FAIL in the 'main build' arm. As written, once the stack is rebuilt un-prefixed the entire ladder (steps 4-9) goes green with zero code changed, so it verifies nothing about a fix — it only re-measures the environment. Pin the arm with an explicit expected-vs-observed route-base assertion recorded before and after the rebuild.",
+        "Run the non-a11y lane (`test:docker-compose`) to completion, not just the single reference-strip control. ~20 specs reach Journey.startNotification via flows/journey.ts:32, and a green a11y suite in isolation would leave the broader regression unmeasured in whichever world the gate selects."
+      ],
+      "gate": "Which frontend build is this snagging batch supposed to run against — frontend `main` @ 23f2fdb4 (un-prefixed `/notifications/...`, which the -tests checkout already matches), or the set-prefixed `spike/trace-to-requirements` build the workspace stack is currently serving (`/live-animals/notifications/...`)? If it is `main`, the fix is environmental — rebuild the stack from local `repos/` (`tim docker dev`) and no repo change is needed, and every other snag in this batch also needs re-validating because they were all investigated against the wrong build. If it is the prefixed build, the fix is to land the set-base awareness that already exists on tests `spike/trace-to-requirements` onto the snagging branch — but that branch is a 66-file multi-set restructure (plant-products page objects, flows split into `flows/live-animals/` + `flows/plant-products/`), which is the plant-products merge, not a snag fix.",
+      "notes": "The a11y suite is red, but not for an accessibility reason: 4 of 12 tests die on `No journey id in notification URL: .../live-animals/notifications/...` (base-page.ts:87) or on a heading timeout, all before a single axe scan runs, and the 7 that pass report zero WCAG 2.2 AA violations. The workspace stack is serving the frontend's `spike/trace-to-requirements` image, which mounts the journey under a `/live-animals` route prefix (router.js:23), while the -tests checkout is on main lineage and hardcodes the un-prefixed `/notifications/...` shape. A control run of an ordinary E2E spec (reference-strip.spec.ts) fails identically, so this is cross-repo branch drift affecting the whole suite, not an a11y defect. Whether the fix is environmental (rebuild the stack from local repos/ so it matches the tests checkout) or a code port (land the set-base page objects that already exist on tests `spike/trace-to-requirements`) depends on which frontend build this snagging batch is meant to target — a call a human has to make.",
+      "openQuestions": [
+        "Which frontend build should this whole snagging batch run against — main @ 23f2fdb4, or the spike/trace-to-requirements plant-products build the stack is currently serving? Every other snag in the batch was investigated against the latter.",
+        "Was the stack deliberately brought up with `-b spike/trace-to-requirements` (workspace branch parity picking up the frontend's identically-named branch image), or did it pick that tag up by accident? If deliberate, the -tests checkout should have been on `spike/trace-to-requirements` too and the drift is a checkout mistake, not a code defect.",
+        "Should the tests repo carry a permanent build-vs-page-object route-base guard, or is that only worth it while the multi-set work is unmerged?",
+        "The frontend's own colocated axe specs scan with tags ['wcag2a','wcag2aa'] (e.g. hub.e2e.spec.js:110) while the -tests suite scans the full WCAG 2.2 AA set including wcag22aa/target-size (fixtures/a11y.ts:13). Should the frontend's specs be raised to the same ruleset so target-size regressions are caught in the repo that owns the markup rather than only in the cross-repo lane?",
+        "tests/a11y/notification-dashboard-views.spec.ts:48 (the pagination scan) was SKIPPED in this run — is that intentional, or a seed-data shortfall left by the reseed?"
+      ],
+      "dependsOn": [],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": []
     }
   ]
 }

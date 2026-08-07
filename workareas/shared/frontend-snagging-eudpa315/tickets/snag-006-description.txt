@@ -1,0 +1,65 @@
+h2. Snag as reported
+
+A11y tests failing from -tests repo
+
+h2. Diagnosis
+
+The complaint reproduces, but it is NOT an accessibility defect and it is NOT specific to the a11y suite.
+
+h3. What I ran
+
+{{npm --prefix repos/trade-imports-animals-tests run test:docker-compose:a11y}} against the running workspace stack. Log: {{workareas/shared/frontend-snagging-eudpa315/logs/snag-006-a11y-run.log}} — 12 tests, 7 passed, 1 skipped, 4 failed (10.1m).
+
+h3. The 4 failures contain zero axe violations
+
+Every failure is a navigation/URL-parse failure that happens BEFORE any scan runs:
+
+* {{tests/a11y/notification-journey-error-state.spec.ts}}, {{notification-journey-filled-state.spec.ts}} and {{notification-journey-initial-state.spec.ts}} all die with {{Error: No journey id in notification URL: http://localhost:3000/live-animals/notifications/GBN-AG-26-.../import-type}} thrown at {{page-objects/base/base-page.ts:87}}.
+* {{tests/a11y/notification-view-states.spec.ts}} times out at 300000ms waiting for {{getByRole('heading', \{ name: 'Check your answers', level: 1 \})}} in {{page-objects/notification/notification-view-page.ts:47}}, then the fixture reports {{No accessibility scans were run}} ({{fixtures/a11y.ts:78}}) — i.e. it never reached a scannable page either.
+
+The 7 that PASS are exactly the ones that never construct or parse a notification URL (notification-dashboard-views x2, notification-dashboard-viewports, and all four {{tests/a11y/admin/*}} specs). So axe found no WCAG 2.2 AA violation anywhere it was actually able to run.
+
+h3. Root cause — cross-repo branch drift (CLAUDE.md load-bearing rule 2), not an app defect
+
+* The stack is serving {{defradigital/trade-imports-animals-frontend:spike-trace-to-requirements}} (verified: {{docker ps --format "\{\{.Image\}\}"}}; image created 2026-08-05). That build mounts the journey under a set prefix — confirmed inside the container and on the branch: trade-imports-animals-frontend {{spike/trace-to-requirements}}:{{src/server/router.js:9}} {{export const DEFAULT_SET_BASE = '/live-animals'}} and {{:23}} {{routes: \{ prefix: '/live-animals' \}}}. The container also carries a whole {{src/server/app/sets/plant-products/}} tree, so it is the plant-products multi-set build.
+* The -tests checkout is on {{fix/EUDPA-319-hub-commodity-totals-boxes}} (HEAD 1baf8c4, cut from main). Its page objects have no set-prefix awareness at all: trade-imports-animals-tests {{page-objects/base/base-page.ts:81}} {{return `/notifications/$\{journeyId\}$\{suffix\}`}} and {{:85}} {{pathname.match(/^\/notifications\/(\[^/\]+)/)}}. {{grep -rn "live-animals"}} across {{page-objects/}}, {{flows/}}, {{utils/}} and {{config/}} returns nothing.
+* Meanwhile the frontend checkout in {{repos/}} is on {{fix/EUDPA-320-fix-link-button-font-family}} at 23f2fdb4 (main lineage) whose {{src/server/router.js}} registers {{liveAnimals}} with NO prefix — i.e. the local source and the running container are different applications.
+
+h3. Not a11y-specific — control run
+
+I ran one ordinary E2E spec that uses the same helper: {{npm --prefix .../trade-imports-animals-tests run _test_docker_compose -- tests/e2e/features/reference-strip.spec.ts}}. Log: {{workareas/shared/frontend-snagging-eudpa315/logs/snag-006-e2e-control.log}} — it fails with the identical {{No journey id in notification URL: http://localhost:3000/live-animals/notifications/GBN-AG-26-PMVPXW/import-type}} at {{base-page.ts:87}} via {{flows/journey.ts:32}} ({{Journey.startNotification}}). {{startNotification()}} is used by ~20 specs under {{tests/e2e/}}, so the whole suite is broken the same way — the snag reads as a11y-only only because a11y is the lane that was run.
+
+h3. The fix for the prefixed build already exists on a sibling branch
+
+trade-imports-animals-tests {{spike/trace-to-requirements}} has {{page-objects/base/sets.ts}} ({{SET_BASES = \{ liveAnimals: '/live-animals', plantProducts: '/plant-products' \}}}) and a {{base-page.ts}} that takes {{setBase: string = SET_BASES.liveAnimals}} and builds/parses {{$\{this.setBase\}/notifications/...}}. But {{git diff --stat main spike/trace-to-requirements -- page-objects flows utils config}} is 66 files / +2330 −108, including a full plant-products page-object set and a {{flows/}} split — that is the plant-products programme merge, not something to smuggle in under a snag.
+
+h3. Why this is needs-decision, not actionable
+
+The task brief says this batch snags the EUDPA-288 retrofit at frontend main 23f2fdb4, which is the UN-prefixed build. If that is right, no file in any repo is wrong — the stack is — and the a11y suite cannot be proven green against main without rebuilding the shared stack, which five sibling snag agents are mid-run against. Which of those two worlds is the intended target is a human call, and it changes the fix from "no code at all" to "merge a 66-file restructure".
+
+h3. Side finding
+
+Every other snag in this batch (EUDPA-316 date picker, -317 copy-as-new, -318 autocomplete, -319 hub totals, -320 link-button font) is being investigated against this same {{spike-trace-to-requirements}} frontend image, not against 23f2fdb4. Their diagnoses may be describing plant-products-branch code.
+
+h2. Fix
+
+h3. trade-imports-animals-tests
+
+* CREATE {{tests/e2e/features/route-base-parity.spec.ts}} — fail-fast guard that is right under EITHER branch of the gate: navigate to the frontend root, follow the redirect, and assert the landed pathname matches the notification route base the page objects build URLs from. Fails with a message naming expected vs observed base, so a build/branch mismatch is reported once, in one spec, instead of as ~24 identical "No journey id in notification URL" failures spread across the a11y and E2E lanes.
+* CREATE {{page-objects/base/sets.ts}} — ONLY if the gate answers "the prefixed build". Port from tests {{spike/trace-to-requirements}}: the {{SET_BASES}} constant that names each set's route base.
+* EDIT {{page-objects/base/base-page.ts}} — ONLY if the gate answers "the prefixed build". Port the setBase-aware {{NotificationPage}} from tests {{spike/trace-to-requirements}}: {{expectedUrl()}}, {{journeyIdFromUrl()}} and {{currentJourneyUrl()}} build and match {{$\{setBase\}/notifications/...}} instead of the hardcoded {{/notifications/...}} at lines 81, 85 and 94.
+
+h2. Acceptance criteria
+
+* {{npm --prefix <tests repo> run test:docker-compose:a11y}} reports 0 failed across all 12 a11y tests.
+* Every notification-journey a11y test runs at least one axe scan on every page named in its {{test.step}} list — no test ends with the fixture error "No accessibility scans were run".
+* Any failure the a11y suite does report names an axe rule id, an impact and a page path (the {{formatViolations}} output from {{utils/a11y-utils.ts}}), not a URL-parse error or a heading-visibility timeout.
+* When the frontend build under test mounts the journey at a route base the page objects do not expect, exactly one spec fails, and its message names both the expected and the observed base — the a11y and E2E lanes do not each produce a wall of "No journey id in notification URL".
+* The plain E2E lane and the a11y lane agree on navigation health: {{tests/e2e/features/reference-strip.spec.ts}} passes against the same stack that the a11y suite passes against.
+
+h2. Decision needed
+
+Which frontend build is this snagging batch supposed to run against — frontend {{main}} @ 23f2fdb4 (un-prefixed {{/notifications/...}}, which the -tests checkout already matches), or the set-prefixed {{spike/trace-to-requirements}} build the workspace stack is currently serving ({{/live-animals/notifications/...}})?
+
+* If it is {{main}}, the fix is environmental — rebuild the stack from local {{repos/}} ({{tim docker dev}}) and no repo change is needed, and every other snag in this batch also needs re-validating because they were all investigated against the wrong build.
+* If it is the prefixed build, the fix is to land the set-base awareness that already exists on tests {{spike/trace-to-requirements}} onto the snagging branch — but that branch is a 66-file multi-set restructure (plant-products page objects, flows split into {{flows/live-animals/}} + {{flows/plant-products/}}), which is the plant-products merge, not a snag fix.

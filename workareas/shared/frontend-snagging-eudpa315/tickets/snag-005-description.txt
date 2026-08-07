@@ -1,87 +1,85 @@
 h2. Snag as reported
 
-The autocomplete/search stuff is clunky af
+"The autocomplete/search stuff is clunky af"
 
 h2. Diagnosis
 
-The snag is about search UI that EXISTS and behaves badly, not about its absence. Two shipped surfaces are the likely referents, and the investigator missed both.
+The snag is a known, deliberate regression introduced by the EUDPA-288 retrofit, not an accident.
 
-*A. Notification dashboard search* — {{frontend:.../features/dashboard/template.njk:40-54}} — a Search box that only matches a complete reference number, case-sensitively. Stub: {{frontend:src/server/app/services/persistence/records/stub/lifecycle/read.js:25}} ({{journey.id === referenceNumber}}). Real: {{backend:.../notification/NotificationService.java:130-140}} via {{NotificationRepository.findByReferenceNumberAndStatusIn}} ({{NotificationRepository.java:17}}), documented as exact match at {{NotificationController.java:139}}. Typing part of a reference returns "No notifications found" — pinned at {{tests:tests/e2e/features/notification-dashboard-search.spec.ts:45-60}}. Fixing this reaches into the backend.
+*1. The enhancement was removed on purpose.*
 
-*B. Address-book party picker* — {{frontend:.../features/addresses/party-picker/_address-picker.njk:77-91}} — free-text {{q}} plus a secondary Search submit and a radio table paginated at {{PAGE_SIZE = 5}} over ~40 records ({{frontend:src/server/app/services/address-book/index.js:26}}), i.e. 8 pages. Every search and every page turn is a full page reload with selection smuggled through hidden fields and query strings ({{party-picker.controller.js:94-97}}, {{view-model/pagination/results-href.js}}). Shared by all five parties plus contact ({{addresses/parties.js:15-63}}). Pinned at {{tests:page-objects/notification/party-picker-page.ts:21-26}} and {{tests:tests/e2e/features/addresses-picker.spec.ts}}.
+* {{git -C repos/trade-imports-animals-frontend show --stat bc285d71}} (contained in the retrofit merge 23f2fdb4) is titled "refactor(EUDPA-288): drop accessible-autocomplete for plain selects; commodity checkboxes (p-236)".
+* Its message: "origin country and port of entry keep their server-rendered govukSelects with the enhancement stripped; transit countries becomes a single 31-country govuk checkboxes group; commodity selection renders all eight commodity-species pairs as grouped checkboxes with the whole search/filter/carry/summary apparatus removed. accessible-autocomplete dependency, bundle entry, scss import and all data attributes deleted. ... Enhanced search returns as a later round."
+* It cites AUTOCOMPLETE-ASSESSMENT.md (not present in any repo or workarea — searched) and "Sam's ruling".
+* The prototype work it reverted is commits 7edced0d (inc-058, country-of-origin canary) and b79c1379 (inc-059, port-of-entry rollout).
 
-*C. Long selects have no type-ahead* — the investigator's original finding. It is real and verified, but it is a separate concern that re-opens the deliberate EUDPA-288 ruling in {{bc285d71}} ("Enhanced search returns as a later round"). It is the third item on the decision list, not the whole diagnosis.
+*2. Current state confirmed by reading the code, not inferred.*
 
-The gate question for Sam is which surface — dashboard search matching, party-picker round-tripping, or long-select type-ahead — and only the third one is a reversal of a settled decision.
+* {{grep -rn "data-select-autocomplete\|selectAutocomplete" src webpack.config.js}} returns nothing. {{webpack.config.js:22-30}} has only {{application}} and {{documents}} entries; {{src/client/javascripts/}} contains only {{application.js}}. {{accessible-autocomplete}} is absent from {{package.json}}.
+* frontend:{{src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk:18}} renders a bare {{govukSelect}} over {{services/ports}}, whose fixture {{src/server/app/services/_capture/fixtures/ports-of-entry.json}} holds 78 records — an 80-option native dropdown once placeholder + divider are counted. That is the single worst "clunky" surface and squarely against GDS guidance for long option lists.
+* frontend:{{.../features/origin/template.njk:15}}, {{.../destination-country/template.njk:13}}, {{.../port-of-exit/template.njk:13}} and {{.../addresses/create-address/create-address.njk:68}} are the same pattern over the 31-country fixtures ({{countries-origin.json}}, {{countries.json}}), i.e. 33 options each.
+* frontend:{{.../transport/transit-countries/transit-countries.njk:16}} is one flat 31-item checkbox group.
+* frontend:{{.../commodities/search/search.njk}} is still named and keyed "search" ({{copy.en.js:4}} {{search:}}) but contains no search box at all — just grouped checkboxes ({{search.njk:19-29}}). The controller {{search.controller.js}} has no query handling. A page called "search" with nothing to search in is exactly what a snagger would flag.
+
+*3. The one genuine free-text search left — the address-book party picker — is also clunky by design and carries a real, untested defect.*
+
+* {{_address-picker.njk:8-12}} states the intent: "no client JS anywhere". Search is a secondary submit button ({{_address-picker.njk:86-91}}) causing a full-page POST; results are {{PAGE_SIZE = 5}} ({{src/server/app/services/address-book/index.js:26}}) over 40 records = 8 pages.
+* Pagination is server-rendered {{<a href>}} links whose query string is baked at render time from the render-time {{selectedId}} and {{query}} ({{.../party-picker/view-model/index.js:33-38}} to {{view-model/pagination/results-href.js:3-13}}). Because there is no client JS to sync them, a radio the user ticks — or a query they type — on the current page is silently discarded the moment they click a page link. The hidden {{selected}} field ({{_address-picker.njk:73-75}}) is likewise render-time only.
+* No test covers this. {{hub-picker.e2e.spec.js:251}} ("carries a later-page selection...") pages FIRST and ticks SECOND, so it never exercises tick-then-page. {{party-picker.controller.test.js:80-95}} asserts only that the server bakes the *incoming* {{selected}} into the hrefs.
+
+*4. The fix is two-repo whichever way the gate is answered.*
+
+* The -tests suite has specs written specifically to pin the stripped state — {{tests/e2e/features/port-of-entry-select.spec.ts:16}} asserts {{option}} {{toHaveCount(80)}} under the describe "Port of entry plain select", and {{tests/e2e/features/country-of-origin-select.spec.ts:13}} asserts {{toHaveCount(33)}} under "Country of origin plain select". Restoring the enhancement invalidates both.
+
+*Why this is not actionable as reported.*
+
+"clunky af" does not say which surface, and the only mechanism that would fix it was removed by an explicit written assessment plus a named ruling. Reinstating it without a fresh ruling is re-litigating a closed decision by guesswork, and the scope varies enormously by answer (one webpack entry and two templates, versus five templates plus transit-countries plus the commodity page plus a client-side picker). The picker's lose-your-selection-on-paginate bug is the one sub-item that is unconditionally wrong and could be built today, but it is a fragment of the snag, not the snag.
 
 h2. Fix
 
-h3. trade-imports-animals-frontend
+*Repo: trade-imports-animals-frontend*
 
-* {{package.json}} — add the chosen search/autocomplete dependency (pre-288 was {{accessible-autocomplete@3.0.1}}). Skipped entirely if the gate picks mechanism (3) server-rendered search or (4) restructure.
-* {{webpack.config.js}} — re-add the client-JS entry (pre-288 name: {{selectAutocomplete}}). LOAD-BEARING: the frontend-change recipe warns that browser JS without a webpack entry makes the script include 404 silently and the enhancement never mounts, with no test failure.
-* {{src/client/javascripts/select-autocomplete.js}} (create) — mount the enhancement over every opted-in select. Restore from {{git show 7edced0d:src/client/javascripts/select-autocomplete.js}} rather than re-inventing.
-* {{src/client/stylesheets/application.scss}} — import the component stylesheet so the mounted control is styled (its absence was one of the four things {{bc285d71}} deleted).
-* {{src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk}} — opt the {{portOfEntry}} select in and ship the bundle via a {{bodyEnd}} block with {{ super() }} plus {{getAssetPath}}. Placeholder and disabled divider rows must carry {{value:''}} or they leak into the suggestion list. Option text is already {{Name (CODE)}}, which gives search-by-name-or-code for free.
-* {{src/server/app/sets/live-animals/journeys/linear/features/origin/template.njk}} — same opt-in for {{countryOfOrigin}}. In scope for gate options (b) and (d).
-* {{src/server/app/sets/live-animals/journeys/linear/features/port-of-exit/template.njk}} — same opt-in for {{portOfExit}}. Never enhanced pre-288 — new scope, only if the gate picks (b) or (d).
-* {{src/server/app/sets/live-animals/journeys/linear/features/destination-country/template.njk}} — same opt-in for {{destinationCountry}}. Never enhanced pre-288 — new scope, only if the gate picks (b) or (d).
-* {{src/server/app/sets/live-animals/journeys/linear/features/addresses/create-address/create-address.njk}} — address country select. Only if the gate picks (b) or (d).
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/animal-identification/_identification-card.njk}} — permanent-address country select inside the identification card. Only if the gate picks (b) or (d). Note this is a repeated partial — ids must stay unique per card.
-* {{src/server/app/sets/live-animals/journeys/linear/features/transport/private-transporter-details/private-transporter-details.njk}} — transporter address country select. Only if the gate picks (b) or (d).
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.njk}} — add the chosen filter affordance to the commodity/species selection page. Only if the gate picks (c) or (d). {{git show bc285d71^:src/server/live-animals/features/commodities/search/search.njk}} is the pre-288 shape for reference — do not restore it wholesale, it round-trips the page per search, per filter and per remove.
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.controller.js}} — handle the search/filter action and carry the in-flight selection across round-trips, if the commodity page gains server-rendered search. Selection must still commit only on Save and continue — never a half-created entry in the store.
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.en.js}} — reinstate the search copy keys under {{search.*}} (label, hint, button, noMatches, selectedCount, remove, removeAria and the typeFilter block if the per-commodity type filter returns). GDS plain English.
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/copy/copy.cy.js}} — structure-identical Welsh copy. The copy-parity convention test fails if en and cy diverge in shape.
-* {{src/server/app/sets/live-animals/docs/features.md}} — replace the 'Server-rendered selection controls' section (written by {{bc285d71}}) with an accurate description of whatever lands. If client JS returns, restore the progressive-enhancement rules it deleted — reuse one webpack entry across templates, {{value:''}} on placeholder/divider rows, and the E2E rule that an enhanced select must be targeted via {{input#<id>}} because {{getByRole('combobox')}} races hydration against the raw select.
-* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/e2e/search.e2e.spec.js}} — lines 54 and 57-58 assert the ABSENCE of any textbox and of a Search button. Replace with assertions on the new affordance, keeping the existing intent: eight pairs render, canonical selection order persists, error summary links to and focuses the first checkbox, no serious/critical axe violations.
-* {{src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js}} — retype every port-of-entry interaction for the new control and add legs for name search and code search, plus a {{javaScriptEnabled:false}} leg proving the no-JS select still submits.
-* {{src/server/app/sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js}} — retype country-of-origin interactions if origin is in the chosen scope.
-* {{e2e/live-animals-journey.js}} — shared journey helpers ({{answerCountryOfOrigin}}, {{selectSpecies}}, port selection) used across every co-located spec — retype them once here rather than per spec.
+Unconditional (needed whichever way the gate is answered):
 
-h3. trade-imports-animals-tests
+* {{src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/_address-picker.njk}} — stop pagination links silently discarding a radio ticked or a query typed on the current page. Either turn the page links into submit buttons inside the existing form (name="action" value="page-N", so the live radio and q travel with them), or add the client-side sync. The header comment at lines 8-12 states the no-JS design intent and must be updated to match whatever is chosen.
+* {{src/server/app/sets/live-animals/journeys/linear/features/addresses/party-picker/party-picker.controller.js}} — if pagination becomes a submit, teach {{post()}} to recognise the page action and render that page with the live payload {{q}} + {{party}}, alongside the existing search/save branches ({{request-params.js:isSearchAction}} is the seam).
 
-* {{tests/e2e/features/port-of-entry-select.spec.ts}} — titled 'Port of entry plain select'; asserts {{toHaveRole('combobox')}} on {{select#portOfEntry}} and exactly 80 options. Rewrite for the new control, preserving the intent: correct options render, the CODE is what gets submitted, and it persists across a save and reopen.
-* {{tests/e2e/features/country-of-origin-select.spec.ts}} — titled 'Country of origin plain select'; asserts 33 options and that selecting France submits 'FR'. Same rewrite, same preserved intent.
-* {{page-objects/notification/arrival-details-page.ts}} — line 14 locates {{select#portOfEntry}} and line 18 calls {{selectOption(\{label\})}}. Under the pre-288 enhancement the hidden select is renamed {{#portOfEntry-select}} and the visible control is {{input#portOfEntry}}, so both break. Fix here once so every consuming spec follows.
-* {{page-objects/notification/origin-of-import-page.ts}} — same treatment for {{countryOfOrigin}} / {{selectCountry}}.
-* {{page-objects/notification/commodity-selection-page.ts}} — add a locator for the commodity filter/search control if the commodity page is in scope; the existing {{species(name)}} checkbox locator stays.
-* {{tests/a11y/notification-journey-initial-state.spec.ts}} — axe sweep over the journey in its initial state — must cover the new control, not the select it replaced.
-* {{tests/a11y/notification-journey-filled-state.spec.ts}} — axe sweep with answers filled in — same.
+Gate-dependent (only if the ruling reinstates the enhancement):
 
-h3. trade-imports-animals-backend
+* {{webpack.config.js}} — add a {{selectAutocomplete}} entry alongside the existing {{documents}} entry (lines 22-30). Omitting this is the classic silent 404 — the bundle never ships and nothing visibly fails.
+* {{package.json}} — re-add {{accessible-autocomplete}} (was 3.0.1 pre-strip).
+* {{src/client/javascripts/select-autocomplete.js}} (create) — re-create the mount-over-{{select&#91;data-select-autocomplete&#93;}} entry deleted by bc285d71 (recoverable verbatim via {{git show bc285d71^:src/client/javascripts/select-autocomplete.js}}).
+* {{src/client/stylesheets/application.scss}} — re-add the accessible-autocomplete styles import removed by bc285d71.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.njk}} — opt the 80-option port select in via {{data-select-autocomplete}} plus the {{bodyEnd}} {{getAssetPath}} include. Placeholder and divider options must carry {{value:''}} or they leak into the suggestion list (the inc-059 lesson).
+* {{src/server/app/sets/live-animals/journeys/linear/features/origin/template.njk}} — same opt-in for {{countryOfOrigin}} (33 options), if the ruling includes the 31-country selects.
+* {{src/server/app/sets/live-animals/journeys/linear/features/destination-country/template.njk}} — same opt-in, if the ruling includes it.
+* {{src/server/app/sets/live-animals/journeys/linear/features/port-of-exit/template.njk}} — same opt-in, if the ruling includes it.
+* {{src/server/app/sets/live-animals/journeys/linear/features/addresses/create-address/create-address.njk}} — same opt-in for the country select at line 68, if the ruling includes it.
+* {{src/server/app/sets/live-animals/journeys/linear/features/commodities/search/search.njk}} — if the ruling restores commodity search, reinstate the query box and result filtering ({{search.controller.js}} and {{view-model/commodity-groups.js}} follow). If the ruling keeps the checkbox list, rename the feature folder/copy key off 'search' instead so a page called search actually is one.
+* {{src/server/app/sets/live-animals/journeys/linear/features/transport/transit-countries/transit-countries.njk}} — only if the ruling puts transit countries back on an enhanced multi-select; the 12-country cap, dedupe and membership rules must survive whatever replaces the checkbox group.
+* {{src/server/app/sets/live-animals/docs/features.md}} — document whichever pattern lands. features.md is where the (now-deleted) progressive-enhancement rollout rule used to live, and bc285d71 rewrote it to describe the plain-select state.
 
-Only in scope if the gate picks surface A (dashboard search matching). Reference-number lookup is exact-match at {{NotificationService.java:130-140}} / {{NotificationRepository.java:17}}; partial or case-insensitive matching is a repository and service change plus its contract documentation at {{NotificationController.java:139}}.
+*Repo: trade-imports-animals-tests*
+
+Gate-dependent, but forced by any restore:
+
+* {{tests/e2e/features/port-of-entry-select.spec.ts}} — the describe is literally 'Port of entry plain select' and line 16 pins option count 80. Retype for the combobox (post-mount {{input#portOfEntry}} over the renamed hidden select) or the spec goes red on a true fix.
+* {{tests/e2e/features/country-of-origin-select.spec.ts}} — 'Country of origin plain select', line 13 pins option count 33. Same retype.
+* {{page-objects/notification/arrival-details-page.ts}} — {{portOfEntry}} locator and {{selectPort}} helper target a native select; they need the combobox form if the enhancement returns.
+* {{page-objects/notification/origin-of-import-page.ts}} — {{countryOfOrigin}} locator and {{selectCountry}} helper, same reason.
 
 h2. Acceptance criteria
 
-* On the arrival-details page a user can reach 'Aberdeen Harbour' by typing part of its NAME ('aberdeen') without scrolling an 80-item list, and can equally reach it by typing its CODE ('GB ABD').
-* The value submitted and persisted for port of entry is still the code 'GB ABD' — reopening the page after a save shows Aberdeen Harbour selected, exactly as {{tests/e2e/features/port-of-entry-select.spec.ts}} asserts today.
-* With JavaScript disabled, every enhanced control still renders as a working server-rendered govuk control and still submits and persists its value — the journey completes end to end with no client JS.
-* The placeholder row ('Select port of entry' / 'Select a country') and any disabled divider row never appear as selectable suggestions in the filtered list.
-* On the commodity selection page a user can narrow the visible species without leaving the page or losing species already ticked; ticking a species, narrowing again, then clearing the filter shows the earlier tick still set.
-* Commodity selection still writes to the store only on 'Save and continue' — narrowing or clearing the filter never creates, removes or reorders a commodity line.
-* Submitting the commodity page with nothing selected still renders the 'Select a commodity' error summary, and clicking that link focuses the first species control.
-* Every changed page has no serious or critical axe violations under wcag2a plus wcag2aa, in both the empty and the error state.
-* Each enhanced control still exposes an accessible name matching its visible label ('Port of entry', 'Country of origin') to assistive technology.
-* No spec anywhere asserts the ABSENCE of a search affordance — the two assertions at {{commodities/e2e/search.e2e.spec.js:54}} and {{:57}} are gone, and the two tests-repo specs are no longer named 'plain select'.
+* UNCONDITIONAL — party picker: on the consignor picker, tick the radio for a record on page 1, then click the 'Page 2' pagination control. Return to page 1: that record is still shown as the selected address, and 'Save and continue' commits it without re-ticking.
+* UNCONDITIONAL — party picker: type a new term into the search box WITHOUT pressing Search, then click a pagination control. The typed term is not silently thrown away — either it is applied, or the control cannot be reached without submitting it. The user never loses typed input to a click.
+* UNCONDITIONAL — party picker: the existing behaviours still hold — searching resets to page 1, a search that matches nothing shows the empty state with the query preserved, and the error summary anchors to #q when nothing matched and to #party when it did.
+* GATE-DEPENDENT (if the enhancement is reinstated) — port of entry: with JavaScript on, the port field is a combobox; typing 'aberdeen' filters the list case-insensitively and typing the code 'GB ABD' surfaces the same suggestion; choosing it and saving persists the CODE, and reopening the page shows the port name back in the combobox.
+* GATE-DEPENDENT — no-JS path unchanged: with {{javaScriptEnabled:false}} the same page still renders a plain govukSelect, and selecting a port and saving persists the identical value. Progressive enhancement, never a hard dependency.
+* GATE-DEPENDENT — the placeholder row ('Select port of entry') and any disabled divider row never appear as suggestions in the enhanced list.
+* GATE-DEPENDENT — the enhanced page has no serious or critical axe violations under wcag2a/wcag2aa.
+* GATE-DEPENDENT (if the enhancement is NOT reinstated) — the commodities page no longer presents itself as a search: the feature folder, route and copy key do not use the word 'search' when the page offers only checkboxes.
+* The client bundle actually ships: the webpack manifest resolves the new entry to a file on disk and the enhancement selector string is present in the built bundle. A missing bundle entry 404s silently and every server-rendered assertion still passes.
 
 h2. Decision needed
 
-Which long-list controls get a search affordance, and which mechanism?
-
-Pick a *scope*:
-
-* (a) port of entry only (80 options, the worst offender)
-* (b) all six ports/countries selects
-* (c) the commodity selection page only
-* (d) all of the above
-
-AND a *mechanism*:
-
-* (1) restore the pre-288 {{accessible-autocomplete@3.0.1}} progressive enhancement exactly as built in {{7edced0d}}/{{b79c1379}} — proven here, works with JS off, but is a third-party control outside the govuk toolbox and was ruled out once already. If this is the pick, what changed?
-* (2) a different client-side component, e.g. MOJ Frontend's {{multi-select}}/{{filter}}, already a dependency
-* (3) a server-rendered search page with no client JS — what the commodity page was pre-288: a Search button and a full round-trip per keystroke-batch
-* (4) restructure instead of enhance — e.g. split ports by region, or add a commodity-category step before the species checkboxes, so no list is ever long enough to need searching
-
-Also needed: does {{AUTOCOMPLETE-ASSESSMENT.md}} still stand, and if it ruled the enhancement out on accessibility grounds, does that ruling now apply to whatever replaces it?
+Is this snag the "later round" that commit bc285d71 explicitly deferred — i.e. do we reinstate the accessible-autocomplete progressive enhancement (accessible-autocomplete dependency + a {{selectAutocomplete}} webpack entry + {{data-select-autocomplete}} opt-in) that EUDPA-288 deliberately deleted, and if so on exactly which surfaces (port of entry 80 options; country of origin / destination country / port of exit / create-address country ~33 options each; transit countries 31 checkboxes; commodity species 8 checkbox groups), AND does the address-book party picker also get client-side enhancement or does it keep its deliberate no-JS POST-search + link-pagination pattern with only its lose-your-selection-on-paginate bug fixed?
