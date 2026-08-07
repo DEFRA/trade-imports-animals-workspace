@@ -72,19 +72,33 @@ Parse `EUDPA-XXXXX` from the branch name (e.g.
 
 For each repo, ensure it's on `feature/{run-id}-npm-dependency-upgrades`:
 
+Check locally **and** on the remote. `branch --list` only lists local
+branches, so a branch a colleague already pushed looks absent, and creating
+it below would diverge from theirs.
+
 ```bash
-# Check (separate Bash calls — no pipes)
+# Check local (separate Bash calls — no pipes)
 git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} branch --list "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 ```bash
-# Create if missing
-git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
+# Check remote
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} branch --remotes --list "origin/feature/{run-id}-npm-dependency-upgrades"
 ```
 
 ```bash
-# Switch if exists
+# Switch if it exists locally
 git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout "feature/{run-id}-npm-dependency-upgrades"
+```
+
+```bash
+# Exists only on the remote — create it tracking origin, never bare
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades" --track "origin/feature/{run-id}-npm-dependency-upgrades"
+```
+
+```bash
+# Missing in both — create it fresh
+git -C ~/git/defra/trade-imports-animals-workspace/repos/{repo-name} checkout -b "feature/{run-id}-npm-dependency-upgrades"
 ```
 
 All repos must be on the feature branch before continuing.

@@ -235,8 +235,14 @@ current_branch=$(git -C "$WORKSPACE" rev-parse --abbrev-ref HEAD)
 # switch, then restore it over the branch's older copy.
 shared_tmp=$(mktemp -d -t "share-review-$TICKET")
 mv "$shared_dir" "$shared_tmp/payload"
-if git -C "$WORKSPACE" rev-parse --verify --quiet "$BRANCH" > /dev/null; then
+if git -C "$WORKSPACE" show-ref --verify --quiet "refs/heads/$BRANCH"; then
     git -C "$WORKSPACE" checkout "$BRANCH"
+elif git -C "$WORKSPACE" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+    # A colleague already shared this review. Branching from the current
+    # HEAD instead would diverge from their handoff branch, and the push
+    # below is not forced — it would be rejected after the artefacts are
+    # already committed, leaving the workspace on the handoff branch.
+    git -C "$WORKSPACE" checkout -b "$BRANCH" --track "origin/$BRANCH"
 else
     git -C "$WORKSPACE" checkout -b "$BRANCH"
 fi
