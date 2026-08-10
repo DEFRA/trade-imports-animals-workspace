@@ -192,7 +192,7 @@
       "ticket": "EUDPA-320",
       "branch": "fix/EUDPA-320-fix-link-button-font-family",
       "base": "main",
-      "status": "todo",
+      "status": "done",
       "verdict": "actionable",
       "confidence": "high",
       "refuted": false,
@@ -221,7 +221,7 @@
           "repo": "frontend",
           "path": "src/server/app/sets/live-animals/journeys/linear/features/commodities/e2e/consignment-details.e2e.spec.js",
           "action": "edit",
-          "what": "Add one computed-font assertion on the Remove link-button in the selected-commodities table (`_selected-commodities-table.njk:8`), matching the dashboard assertion's shape: `expect.poll` on `getComputedStyle(el).fontFamily` matching /GDS Transport/. This is the step that demonstrates the blast-radius claim — that a single stylesheet edit repairs every `.app-link-button` call site — rather than leaving it asserted. Reuse whatever navigation the spec already does to reach the table; do not add a new fixture or helper."
+          "what": "WITHDRAWN AT JUDGE TRIAGE — leave this file UNCHANGED. The original instruction was to add a computed-font assertion on the Remove link-button in the selected-commodities table to demonstrate the blast radius. It cannot serve as a gate: that button sits inside `.govuk-table`, which the built bundle gives `font-family:GDS Transport,arial,sans-serif`, so `font-family: inherit` on `.app-link-button` already resolved to GDS Transport there before the fix. Such a test passes identically before and after and misreports coverage. If it has already been added, delete it. See the SECOND CALL SITE paragraph in notes."
         }
       ],
       "obligations": [],
@@ -254,17 +254,20 @@
         "NOT executable steps — context for judging whether a green run means anything. Both concern the -tests repo and are deliberately outside this increment: (1) the visual-regression baseline tests/e2e/visual/origin-of-import.visual.spec.ts:12 is a fullPage toHaveScreenshot, but origin-of-import contains no .app-link-button, so this change should be inert for it; (2) the -tests a11y suite is already failing per snag-006 / EUDPA-321, so a before-and-after run there would measure against a known-broken baseline and prove nothing until that gate is answered."
       ],
       "gate": null,
-      "notes": "On the notification dashboard, \"Copy as new\" is a POST-backed `<button class=\"govuk-link app-link-button\">` rather than an anchor. `.app-link-button` in src/client/stylesheets/core/_main.scss:16 declares `font-family: inherit`, which is emitted after govuk-frontend's `.govuk-link, a { font-family: GDS Transport... }` at equal specificity (bundle bytes 137469 vs 941) and therefore wins. govuk-frontend 6.4.0 sets no global font-family — `body` and `.govuk-template` carry none — so `inherit` falls through to the root initial value and the button computes Times serif while the Resume/View/Delete anchors beside it compute GDS Transport. Fix is to delete the `font-family: inherit` declaration so `.govuk-link` supplies the family, plus a computed-style regression test in the dashboard feature spec. Frontend-only; the same fix repairs the other three `.app-link-button` call sites (commodities table, identification card, document remove action).\n\nIMPLEMENTOR — PROVE THE TEST IS A REAL GATE. Write the computed-style assertion FIRST and run it against the UNFIXED stylesheet, confirming it FAILS with the button computing `Times` and the sibling link computing `\"GDS Transport\", arial, sans-serif`. Record that red run in the log. Only then delete the declaration. A test that passes before the fix proves nothing, and this snag is precisely the kind that a weak assertion would sail past.\n\nSECOND CALL SITE. The claim that one stylesheet edit repairs all four call sites is currently asserted, not demonstrated. Add one computed-font assertion on a non-dashboard call site — the Remove button in `features/commodities/consignment-details/_selected-commodities-table.njk:8`, reached by the existing `features/commodities/e2e/consignment-details.e2e.spec.js`.",
+      "notes": "On the notification dashboard, \"Copy as new\" is a POST-backed `<button class=\"govuk-link app-link-button\">` rather than an anchor. `.app-link-button` in src/client/stylesheets/core/_main.scss:16 declares `font-family: inherit`, which is emitted after govuk-frontend's `.govuk-link, a { font-family: GDS Transport... }` at equal specificity (bundle bytes 137469 vs 941) and therefore wins. govuk-frontend 6.4.0 sets no global font-family — `body` and `.govuk-template` carry none — so `inherit` falls through to the root initial value and the button computes Times serif while the Resume/View/Delete anchors beside it compute GDS Transport. Fix is to delete the `font-family: inherit` declaration so `.govuk-link` supplies the family, plus a computed-style regression test in the dashboard feature spec. Frontend-only; the same fix repairs the other three `.app-link-button` call sites (commodities table, identification card, document remove action).\n\nIMPLEMENTOR — PROVE THE TEST IS A REAL GATE. Write the computed-style assertion FIRST and run it against the UNFIXED stylesheet, confirming it FAILS with the button computing `Times` and the sibling link computing `\"GDS Transport\", arial, sans-serif`. Record that red run in the log. Only then delete the declaration. A test that passes before the fix proves nothing, and this snag is precisely the kind that a weak assertion would sail past.\n\nSECOND CALL SITE — WITHDRAWN AT JUDGE TRIAGE, DO NOT REINSTATE. The original instruction was to add a computed-font assertion on a non-dashboard call site to demonstrate the blast radius. That demonstration is impossible, and the blast-radius claim above is wrong: only the dashboard button was ever affected. The other three call sites all sit inside a govuk component that declares its own family — the commodities Remove button is inside `.govuk-table`, the identification-card Remove is inside `.govuk-summary-list`, and both selectors carry `font-family:GDS Transport,arial,sans-serif` in the built bundle — so `font-family: inherit` on `.app-link-button` resolved to GDS Transport at those sites all along. Only `.govuk-summary-card__actions` supplies no family, which is why the dashboard button alone computed Times. Any assertion added at a non-dashboard call site passes identically before and after the fix and is therefore not a regression gate. `dashboard.e2e.spec.js` holds the single genuine gate, proven red pre-fix in logs/snag-002-red-dashboard.txt.",
       "openQuestions": [
         "Separate defect, not fixed here: src/server/app/shared/layout.njk:57 hard-codes `govuk-grid-column-two-thirds` for every page, where the pre-retrofit layout (workareas/shared/frontend-snagging-eudpa315/old-page-layout.njk:56) used `govuk-grid-column-full`. This narrows the dashboard so its 280px filter panel crowds the results list. It affects every screen, so it needs its own ticket and a decision about which pages opt into full width — it should not be smuggled into this fix.",
         "A previous triage pass wrote workareas/shared/frontend-snagging-eudpa315/tickets/snag-002-description.txt attributing this snag to that layout width regression and explicitly deferring the font-family finding. This investigation reverses that: the width theory does not explain why \"Copy as new\" specifically looks wrong, and fixing width alone would leave the button in Times. If a Jira subtask already exists carrying the width spec, it needs re-pointing at the stylesheet fix before the build loop picks it up.",
         "No regression guard is proposed in trade-imports-animals-tests. The frontend owns both the stylesheet and its co-located feature specs, and computed-style assertions belong with the component rather than in the cross-repo E2E suite; the tests repo's notification-dashboard.spec.ts correctly asserts only visibility and behaviour."
       ],
       "dependsOn": [],
-      "commit": null,
+      "commit": "e4fa8be8",
       "failure_reason": null,
       "ticketError": null,
-      "conflictsWith": []
+      "conflictsWith": [],
+      "commits": [
+        "frontend:e4fa8be8"
+      ]
     },
     {
       "id": "snag-003",
