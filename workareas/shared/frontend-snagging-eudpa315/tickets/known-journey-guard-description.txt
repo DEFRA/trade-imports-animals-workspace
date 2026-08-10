@@ -1,0 +1,51 @@
+h2. Symptom
+
+"Copy as new" on the notifications dashboard appears to do nothing but refresh the page. No error, no message, no log.
+
+h2. Mechanism
+
+{{engine/journey.js}} gates five operations on {{isKnownJourney(request, journeyId)}}, which is {{session.knownJourneyIds(request).includes(journeyId)}}: the load path (line 65), {{amendJourney}}, {{cancelAmendJourney}}, {{copyJourney}} and {{softDeleteJourney}}.
+
+When the check fails, {{copyJourney}} returns {{undefined}} and {{notification-actions/controller.js:39-41}} falls through to {{h.redirect(dashboardPath())}}. Redirecting from the dashboard to the dashboard is indistinguishable from a refresh.
+
+The dashboard meanwhile lists everything. {{engine/journey.js:89-95}} passes {{journeyIds}} into {{records.list(...)}}, but the real implementation at {{services/persistence/records/real/lifecycle/read.js:22-26}} destructures only {{page}}, {{sort}} and {{referenceNumber}} — {{journeyIds}} is accepted and discarded. So every notification in the database is listed, and any of them that you have not opened in this session silently fails to copy.
+
+h2. Why the guard is not authorisation
+
+* The Notification model carries NO owner: no user, no organisation, no createdBy. There is nothing to scope by.
+* The load path does not gate on the session — it ADDS to it ({{journey.js:65-67}} calls {{session.addKnownJourney}} when the id is absent). Viewing a notification adopts it.
+
+So the predicate that silently blocks a copy is one that merely viewing freely grants. It is a session breadcrumb trail of what you have looked at, left over from when session state was the source of truth before real persistence, and it now asks only "did you open this page in this session?".
+
+Prediction that follows, and worth confirming first: View then Copy works, because viewing adopts the journey; Copy straight from a dashboard row does not.
+
+h2. Scope of this ticket
+
+Dig properly, design, review the design, then implement. Specifically:
+
+* Establish what {{knownJourneyIds}} is actually for today, and whether any consumer still depends on it as a correctness or safety property rather than as a breadcrumb.
+* Decide what the five gated operations should do when there is no ownership model. Consistency with the load path and with the unscoped list is the goal; inventing a scoping rule is NOT — real scoping belongs with the authorisation layer and a genuine owner on the notification.
+* Whatever the guard does, a failed operation must not look like a refresh. A silent redirect on an impossible action is its own defect.
+
+h2. The test gap is the bigger finding
+
+A user found this, not the suite, on a defect reachable in two clicks from the dashboard. Establish WHY, and fix that — not just the behaviour.
+
+The likely shape: every test creates its own journey first, so the journey is always in the session by construction and {{isKnownJourney}} is never false in any test. A suite that can only reach the true branch of a predicate will never see the false one. If that is the cause, the missing coverage is not one test for copy — it is the whole class of "acting on a notification this session did not create", which is the normal case for any real user returning to the service.
+
+Note this was ALSO missed by the snagging triage, which diagnosed "Copy as new is broken" as a missing backend write and specified a fix for that instead. That fix (EUDPA-317) is real and worth keeping, but it does not make the button work. Record why the investigation stopped at the backend rather than following the frontend guard, so the triage prompts can be improved.
+
+Required: a test that fails on today's code for the reported symptom — copy a notification not created in this session — and passes after the fix. Add equivalent coverage for amend, cancel-amend and soft-delete, since they share the guard.
+
+h2. Explicitly not in scope
+
+Do not implement per-user or per-organisation scoping. There is no identity on the notification to scope by, and inventing one here would pre-empt the authorisation work.
+
+h2. Acceptance criteria
+
+* Copying a notification listed on the dashboard works, whether or not it was opened in this session.
+* Amend, cancel-amend and soft-delete behave consistently with copy and with the load path.
+* An operation that genuinely cannot proceed reports it to the user rather than redirecting silently.
+* No session-derived predicate is presented as, or relied upon as, an access control.
+* Existing behaviour for a journey created in the current session is unchanged.
+* Both repos' suites green, including the E2E journey.
