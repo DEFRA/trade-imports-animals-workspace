@@ -448,7 +448,7 @@
     {
       "id": "snag-004",
       "snagText": "MoJ date picker is used but doesn't have restricted dates",
-      "title": "Restrict selectable/acceptable dates on the three MoJ date-picker fields",
+      "title": "Restrict arrivalDateAtPort to 1 week before today through 6 months after today, in the picker and on the server",
       "repos": [
         "frontend",
         "tests"
@@ -457,154 +457,158 @@
       "ticket": "EUDPA-316",
       "branch": "fix/EUDPA-316-restrict-date-picker-ranges",
       "base": "main",
-      "status": "blocked",
+      "status": "todo",
       "verdict": "needs-decision",
       "confidence": "high",
       "refuted": false,
       "refuterFailed": false,
-      "respecced": false,
+      "respecced": true,
       "respecFailed": false,
-      "diagnosis": "The technical diagnosis is correct as written: `kit.dateField` (frontend:src/server/app/shared/kit.js:158) passes no minDate/maxDate to the MoJ macro, which reads them at template.njk:10-33, and `dateText` (frontend:src/server/app/lib/validate/validators.js:190) applies no bound — so all three pickers are unrestricted in both widget and server, and a fix needs a view leg and a server leg.\n\nThe correction is to the decision being asked for. The investigator frames it as an unruled product choice between \"today-or-later\" and \"strictly future\". The workspace's own trace-mined legacy specs show the analogous IPAFFS rule is a WINDOW THAT PERMITS PAST DATES — CHED-D is \"5 days in the past or 120 days in the future\" (workareas/trace-requirements/ched-d/journey-spec.json:7939, evidenced against legacy `arrival_date_validator.js:43-49` with a per-CHED-type `futureDateLimit` at `:18-22`) and CHED-P is \"30 days in the past or 180 days in the future\" (ched-p/journey-spec.json:16573). Live animals is CHED-A and has no trace file, so the specific numbers are genuinely unknown — which is why needs-decision still stands — but the question to put to product is \"what is the CHED-A arrival/exit/issue window, and can we recover it from the legacy validator's per-type table?\", not a choice between two future-only rules. Both candidate answers the investigator offers are probably wrong, because legacy allows backdating.\n\nThe decision must also settle two things the write-up leaves unasked: whether the bound is enforced at the backend API (backend:.../accompanyingdocument/DocumentUploadRequest.java:27 persists `dateOfIssue` as an unconstrained `LocalDate`), and that the EN and CY hint examples on arrival and exit (\"For example, 27/3/2026\") are already past dates and become self-contradictory under any forward-leaning rule.",
+      "diagnosis": "`kit.dateField` builds the MoJ picker view model with no `minDate`/`maxDate`, and the paired server rule `dateText` applies no bound, so the arrival-date field accepts and saves any real calendar date — `01/01/1900` included — in both the calendar widget and typed input. EUDPA-309 specifies the window (1 week before today to 6 months after today) and requires server-side rejection with an error summary and inline message; nothing in the tree implements either half. The MoJ control swap EUDPA-309 also covers has already landed, so only the restriction is outstanding.",
       "refutation": "I tried to break this on all five fronts and the core defect survives — every cited line checks out — but the ladder is broken and the \"no ruling exists\" framing is materially wrong.\n\nDEFECT CONFIRMED (front 1). `frontend:src/server/app/shared/kit.js:158` — `dateField = (name, { label, hint, value = {}, error } = {})` returns exactly `{ id, name, classes, label, hint, errorMessage, value }`. The MoJ macro at `frontend:node_modules/@ministryofjustice/frontend/moj/components/date-picker/template.njk:10-33` reads `params.minDate/maxDate/excludedDates/excludedDays/leadingZeros/weekStartDay` into `data-*` attributes, all `optional: true`, so absent params emit nothing. `frontend:src/server/app/lib/validate/validators.js:190` `dateText` matches `/^(\\d{1,2})\\/(\\d{1,2})\\/(\\d{4})$/` + `isValidCalendarDate` with no bound. A repo-wide grep for `minDate|maxDate|excludedDates|data-min-date` across frontend `src/`, `prototypes/` and the whole -tests repo returns zero hits. Exactly three call sites, as stated (port-of-entry.njk:16, documents/template.njk:41, exit-date/template.njk:13). Not already-fixed, not cannot-reproduce.\n\nROOT CAUSE / SNAG MATCH (fronts 2, 3). `kit.dateField` is the correct single choke point for the view leg, and the server leg is genuinely required — the snag says \"doesn't have restricted dates\", and restricting only the calendar would leave typed input unbounded. Both legs are right.\n\nVERDICT `needs-decision` HOLDS, but the framing is wrong and would misdirect the decision-maker. The investigator says \"nothing in the repo rules what the bounds should be\" and poses the choice as \"today-or-later vs strictly future\" — i.e. purely forward-looking. The workspace's own trace-mined legacy specs contradict that. `workareas/trace-requirements/ched-d/journey-spec.json:7939` records the legacy IPAFFS rule \"You cannot enter a date more than 5 days in the past or 120 days in the future\", with evidence cited to `arrival_date_validator.js:43-49` and a per-CHED-type `futureDateLimit` table at `:18-22`; `workareas/trace-requirements/ched-p/journey-spec.json:16573` records \"30 days in the past or 180 days in the future\". Legacy arrival windows explicitly PERMIT past dates. Live animals is CHED-A and has not been traced (only ched-p/ched-d/ched-pp/iuu exist), so the number is unknown here — but the decision is \"recover the CHED-A window from the legacy validator\", not a blank-slate product call between two future-only options. Choosing \"today-or-later\" would ship a rule legacy demonstrably does not have.\n\nBLAST RADIUS IS UNDER-COUNTED (front 4 — repos are right, files are not). Repos frontend+tests are correct and the backend is a judgement call I have not forced (see below), but six affected files are missing from the change list:\n- `frontend:.../features/transport/e2e/arrival-transit.e2e.spec.js:68,279` fills and asserts arrival date `03/01/2026` — ALREADY PAST as of 2026-08-07. This is the arrival-date E2E spec and the investigator never lists it.\n- `tests:tests/e2e/features/hub-groups-and-cya-rows.spec.ts:80` asserts `toHaveText('12/12/2026')` on the CYA row — breaks the moment `journey.ts:143` becomes today-relative.\n- `tests:tests/e2e/journeys/persistence/persistence-accompanying-document.spec.ts:29` pins `{ day:'3', month:'1', year:'2026' }`.\n- `frontend:.../check-answers/check-answers.test.js:302,312` asserts `'12/12/2025'` and `'12/12/2026'`; `save-actions.test.js:197` and `change-context.test.js:172` and `documents/controller.test.js:47` use `'12/12/2025'`.\n- Copy hints are themselves stale examples: `transport/copy/copy.en.js:6` and `exit-date/copy/copy.en.js:5` both say \"For example, 27/3/2026\" — a past date being offered as the example for a forward-looking field. The investigator hedged this as \"update the hint if the ruling changes what the user is told\"; under any future-leaning rule both EN and CY hints are wrong today and must change.\n\nBACKEND: `backend:.../accompanyingdocument/DocumentUploadRequest.java:27` declares `LocalDate dateOfIssue` with no `@Past`/`@Future`. By the investigator's own argument (a UI-only bound is bypassable), a Joi-only bound is bypassable at the API. I have not put backend in missingRepos because whether the constraint belongs at the API boundary is itself part of the ruling — but the decision must explicitly settle it rather than leave it unasked.\n\nLADDER IS DISHONEST (front 5) — this is the decisive failure. `playwright.config.js:22-45` defines project `journeys` as `testMatch: '**/journey-smoke.spec.js'` under `testDir: './e2e'`, and project `features` as `testDir: './src/server/app/sets/live-animals/journeys/linear/features'`, `testMatch: '**/*.e2e.spec.js'`. Ladder step 6 runs `test:e2e` = `playwright test --project=journeys` — which matches ONLY journey-smoke. Every frontend E2E spec the investigator proposes editing (exit-date.e2e.spec.js, documents/e2e/upload.e2e.spec.js, and the missed arrival-transit.e2e.spec.js) is in the `features` project and is never executed. Worse, `vitest.config.js:14-18` explicitly excludes `'src/server/app/sets/live-animals/journeys/linear/features/**/*.e2e.spec.js'`, so ladder steps 1-4 do not pick them up either. The result: not one proposed E2E assertion — including the picker-attribute check and the out-of-range rejection cases, the only steps that can fail on unfixed code — is ever run. The ladder would go green on a build where the entire E2E leg was never compiled. Separately, three -tests files are edited and the -tests suite is never invoked at all.",
       "rootCauseFiles": [
         "frontend:src/server/app/shared/kit.js",
         "frontend:src/server/app/lib/validate/validators.js",
-        "frontend:src/server/app/sets/live-animals/journeys/linear/features/exit-date/controller.js",
-        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js",
-        "frontend:src/server/app/sets/live-animals/journeys/linear/features/documents/view-model/render.js"
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js"
       ],
       "filesToTouch": [
         {
           "repo": "frontend",
-          "path": "src/server/app/shared/kit.js",
+          "path": "src/server/app/lib/validate/calendar.js",
           "action": "edit",
-          "what": "Extend `dateField(name, opts)` to accept and pass through `minDate`, `maxDate` (and `excludedDates`/`excludedDays` if the ruling needs them) so the MoJ macro emits the matching data-* attributes. Keep it a pure view-model builder — the bounds are computed by the caller, not by kit."
+          "what": "Add pure UTC day primitives beside `isRealDate`, all set-agnostic and free of any live-animals knowledge: `startOfUtcDay(date)` (midnight UTC), `addUtcDays(date, days)`, `addUtcMonths(date, months)` clamped to the last day of the target month (31/8 + 6 months is 28/2 or 29/2, never 3/3), `parseDateText(raw)` returning a UTC Date or null for a d/m/yyyy or dd/mm/yyyy string that is a real calendar date, and `formatDateText(date)` returning `d/m/yyyy` with no leading zeros — the format the MoJ picker itself emits via `formattedDateFromDate` when `leadingZeros` is unset. Reuse `parseDateText` inside the existing `dateText` path rather than leaving the regex duplicated."
         },
         {
           "repo": "frontend",
           "path": "src/server/app/lib/validate/validators.js",
           "action": "edit",
-          "what": "Add a bounded-date validator (e.g. `dateTextInRange(name, { min, max }, messages)`) that layers a min/max comparison on top of the existing `dateText` calendar check, so a typed out-of-range value is rejected server-side. Do not weaken the existing `dateText` behaviour."
+          "what": "Add `dateTextInRange(name, { min, max, invalidMessage, rangeMessage })` modelled on the existing `integerInRange` idiom: blank passes (the range rule must not turn an optional field into a required one), a value that is not a real d/m/yyyy calendar date fails with `invalidMessage`, and a real date outside the inclusive `[min, max]` Date bounds fails with `rangeMessage`. `min`/`max` are `Date` objects supplied by the caller — no clock read and no date policy inside L2. Leave `dateText` behaviour untouched; exit-date and documents keep using it."
         },
         {
           "repo": "frontend",
           "path": "src/server/app/lib/validate/index.js",
           "action": "edit",
-          "what": "Export the new bounded-date validator alongside `dateText`/`dateParts`."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/lib/validate/calendar.js",
-          "action": "edit",
-          "what": "Add the date-comparison / today-anchor helper the bounded validator needs, beside `isValidCalendarDate`."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/controller.js",
-          "action": "edit",
-          "what": "Pass the ruled exitDate bounds into `kit.dateField` and swap `dateText('exitDate', ...)` for the bounded validator with the new error message."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.en.js",
-          "action": "edit",
-          "what": "Add the out-of-range error message(s); update the hint if the ruling changes what the user is told."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/copy/copy.cy.js",
-          "action": "edit",
-          "what": "Structure-identical Welsh counterpart — the copy-parity convention test fails otherwise."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js",
-          "action": "edit",
-          "what": "Pass the ruled arrivalDateAtPort bounds into `kit.dateField` and swap `dateText('arrivalDateAtPort', ...)` for the bounded validator."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js",
-          "action": "edit",
-          "what": "Add the arrival-date out-of-range error message under `portOfEntry.errors`."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.cy.js",
-          "action": "edit",
-          "what": "Structure-identical Welsh counterpart."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/view-model/render.js",
-          "action": "edit",
-          "what": "Pass the ruled accompanyingDocumentDateOfIssue bounds into `kit.dateField`."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/form",
-          "action": "edit",
-          "what": "Swap the document date-of-issue `dateText` rule for the bounded validator in the documents form schema."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.en.js",
-          "action": "edit",
-          "what": "Add the date-of-issue out-of-range error message."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/copy/copy.cy.js",
-          "action": "edit",
-          "what": "Structure-identical Welsh counterpart."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/docs/validation.md",
-          "action": "edit",
-          "what": "Update the 'Dates and structured values' section to describe the bounded date helper and that `kit.dateField` now carries picker bounds."
-        },
-        {
-          "repo": "frontend",
-          "path": "src/server/app/shared/kit.test.js",
-          "action": "create",
-          "what": "Unit-pin that `dateField` emits minDate/maxDate in the view model when given bounds and omits them when not."
+          "what": "Export `dateTextInRange` alongside `dateText` and `dateParts`."
         },
         {
           "repo": "frontend",
           "path": "src/server/app/lib/validate/validate.test.js",
           "action": "edit",
-          "what": "Unit-pin the bounded validator: in-range accepted, below-min rejected, above-max rejected, still-invalid calendar date rejected, blank still optional."
+          "what": "Add a `#dateTextInRange` describe beside the existing `#dateText` one, following its style: blank accepted; the exact min and max boundary dates accepted (inclusive); one day below min and one day above max rejected with `rangeMessage`; a calendar-impossible value such as `31/2/2026` rejected with `invalidMessage` rather than the range message; bounds passed as fixed `Date` literals so the test never reads the clock."
         },
         {
           "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/exit-date/exit-date.e2e.spec.js",
+          "path": "src/server/app/shared/kit.js",
           "action": "edit",
-          "what": "Replace the hardcoded 27/3/2026 with a today-relative in-range date and add a case asserting the picker input carries the bound attributes and that an out-of-range typed value produces the inline error."
+          "what": "Extend `dateField(name, { label, hint, value, error, minDate, maxDate })` to carry `minDate` and `maxDate` straight into the returned view model so `mojDatePicker` emits `data-min-date`/`data-max-date` on the wrapper div. Stay a pure view-model builder: no clock read, no date arithmetic, no live-animals policy. When the bounds are absent the returned object must be unchanged from today so the exit-date and documents pickers stay unrestricted per the ruling."
         },
         {
           "repo": "frontend",
-          "path": "src/server/app/sets/live-animals/journeys/linear/features/documents/e2e/upload.e2e.spec.js",
+          "path": "src/server/app/shared/kit.test.js",
+          "action": "create",
+          "what": "New L2 unit spec for `dateField`: given `minDate`/`maxDate` the view model carries them verbatim; given neither, both keys are absent (or undefined) so the macro emits no restriction attributes. This is the file that pins the ruling's 'exit date and date of issue get NO restriction' half."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.js",
+          "action": "create",
+          "what": "New L4 module holding the live-animals arrival-date policy — the only place the 7-day/6-month numbers appear. Export named constants (`DAYS_BEFORE = 7`, `MONTHS_AHEAD = 6`) and `arrivalWindow(now = new Date())` returning `{ min, max, minText, maxText }`, where `min = addUtcDays(startOfUtcDay(now), -7)`, `max = addUtcMonths(startOfUtcDay(now), 6)`, and the two `*Text` values are `formatDateText` of each. Bounds are inclusive. Imports only from `lib/validate/calendar.js`; contains no copy."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.test.js",
+          "action": "create",
+          "what": "Pin `arrivalWindow` against injected fixed `now` values: min is exactly 7 days before, max is exactly 6 months after, both at UTC midnight; `minText`/`maxText` format as `d/m/yyyy` without leading zeros; and the end-of-month clamp case — `now = 31 August 2026` gives a max of 28 February 2027, not 3 March 2027."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.js",
           "action": "edit",
-          "what": "Replace the hardcoded 03/01/2026 date of issue with a today-relative in-range date and add the out-of-range rejection case."
+          "what": "Call `arrivalWindow()` ONCE per request in each of `get` and `post` and thread the same window into both legs, so the widget bounds and the server bounds can never disagree across a midnight boundary. Pass `minDate: window.minText` / `maxDate: window.maxText` into `kit.dateField('arrivalDateAtPort', …)`; resolve the hint as `copy.arrivalDate.hint(window.minText, window.maxText)`. Change `fields()` to `fields(window)` and swap `dateText('arrivalDateAtPort', copy.errors.arrivalDateInvalid)` for `dateTextInRange('arrivalDateAtPort', { min: window.min, max: window.max, invalidMessage: copy.errors.arrivalDateInvalid, rangeMessage: copy.errors.arrivalDateOutOfRange(window.minText, window.maxText) })`. Nothing else on the page changes; `kit.readDate` and the committed `{ day, month, year }` shape stay exactly as they are, satisfying EUDPA-309's unchanged-stored-shape AC."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.test.js",
+          "action": "edit",
+          "what": "Add a describe covering the window, using `driveHandler` exactly as the existing cases do. GET: the `arrivalDate` view-model entry carries `minDate` and `maxDate` matching `arrivalWindow()` (this assertion fails on today's code — both are currently undefined). POST a date one day before min and one day after max: 400, `errors.arrivalDateAtPort` equals the out-of-range message, and `result.after` equals `result.before` so nothing is committed. POST each boundary date: accepted and committed. POST `31/2/2026`: still the existing 'Enter a real arrival date' message, not the range message. POST a blank arrival date: unchanged from today's behaviour."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.en.js",
+          "action": "edit",
+          "what": "Under `portOfEntry`, replace the rotting literal hint 'The expected date of arrival at the port of entry. For example, 27/3/2026' — 27/3/2026 is now itself out of the allowed window — with a function of the two boundary dates: `hint: (earliest, latest) => `The expected date of arrival at the port of entry. Enter a date between ${earliest} and ${latest}.``. Add `errors.arrivalDateOutOfRange: (earliest, latest) => `Arrival date at port of entry must be between ${earliest} and ${latest}``. Boundary dates arrive pre-formatted as d/m/yyyy — the same shape the field accepts — so a user can copy one straight into the input. Leave `errors.arrivalDateInvalid` alone. Copy functions are already the house idiom here (`transitCountries.errors.maxCountries`, `transportersSelect.optionHint`)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.cy.js",
+          "action": "edit",
+          "what": "Structure-identical Welsh counterpart, or `copy-parity.test.js` fails: `portOfEntry.arrivalDate.hint` becomes the same two-argument function ('Y dyddiad cyrraedd disgwyliedig yn y porthladd mynediad. Rhowch ddyddiad rhwng {earliest} a {latest}.') and `portOfEntry.errors.arrivalDateOutOfRange` is added ('Rhaid i\\'r dyddiad cyrraedd yn y porthladd mynediad fod rhwng {earliest} a {latest}'), dropping the 27/3/2026 example from the Welsh hint too."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js",
+          "action": "edit",
+          "what": "Add interpolation tests beside the existing `maxCountries` and `optionHint` ones for `portOfEntry.arrivalDate.hint` and `portOfEntry.errors.arrivalDateOutOfRange`. The existing leaf test already calls functions with `('sample', 'sample')` so it needs no change. Update the `GET /port-of-entry` case, which currently asserts only `arrivalDate.label.text`, to also assert the hint text resolves through the copy function."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js",
+          "action": "edit",
+          "what": "Replace the two `03/01/2026` literals at lines 68 and 279 — now out of window, which breaks five tests in this file — with the today-relative in-window constant exported from `e2e/live-animals-journey.js`. Update the line 102 `toHaveAccessibleDescription(copy.portOfEntry.arrivalDate.hint)` assertion to call the hint function with the bounds from `arrivalWindow()`. Add to the 'arrival details validation' describe: (a) the picker wrapper carries `data-min-date` and `data-max-date` equal to `arrivalWindow().minText`/`maxText`; (b) typing one day before min, submitting, and getting the out-of-range message in the error summary, which links to and focuses the arrival input with the rejected value preserved and the other answers intact — matching the existing impossible-date case's shape; (c) the same for one day after max; (d) a `test.use({ javaScriptEnabled: false })` case proving the field is still an editable text input that accepts a typed in-window date and saves, pinning the ruling's no-JS degradation requirement against a future implementor reaching for `readonly` or `type=date`."
+        },
+        {
+          "repo": "frontend",
+          "path": "e2e/live-animals-journey.js",
+          "action": "edit",
+          "what": "Export a today-relative in-window arrival date constant (today + 1 month, formatted d/m/yyyy via the `lib/validate/calendar.js` helpers) and use it at the arrival-details fill on line 240 in place of the `values.arrivalDateAtPort` fixture parts, which are the hardcoded 12/12/2026 from `flow/fixtures/happy-path.json` and fall out of the window on 2026-12-19. Leave `happy-path.json` itself unchanged — its other consumers (`dispatch.test.js`, `gates.test.js`, `seeds.js`, the flow suites) seed answers directly and never pass through the validator. `journey-smoke.spec.js` makes no assertion on the arrival date, so nothing downstream needs the value."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/contract.test.js",
+          "action": "edit",
+          "what": "The `port-of-entry` step at line 110 POSTs `arrivalDateAtPort: '12/12/2026'` through the real handler, so it starts failing on 2026-12-19. Replace it with a date computed today-relative and in window (today + 1 month via the `lib/validate/calendar.js` helpers)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/docs/validation.md",
+          "action": "edit",
+          "what": "In 'Dates and structured values' (lines 50-54), record that `dateTextInRange` layers inclusive Date bounds on top of the `dateText` calendar check with the caller supplying the bounds, that `kit.dateField()` now carries optional `minDate`/`maxDate` through to the MoJ picker's `data-*` attributes, and that a picker bound is never sufficient on its own because the input stays free text — the server rule is the enforcement."
+        },
+        {
+          "repo": "tests",
+          "path": "utils/date-utils.ts",
+          "action": "edit",
+          "what": "Add `getRelativeDatePickerValue(options: RelativeDateTimeOptions = {}): string` returning `dd/mm/yyyy` by joining the parts from the existing `getRelativeDateInput`, so specs can produce an in-window arrival date without a new literal. Reuse the existing helpers rather than adding a second date implementation."
         },
         {
           "repo": "tests",
           "path": "flows/journey.ts",
           "action": "edit",
-          "what": "Replace the hardcoded '12/12/2026' arrival date with a today-relative in-range date so the shared journey flow does not rot past the new bound."
+          "what": "Replace the hardcoded `'12/12/2026'` at line 143 in `fillArrivalDetails` with `getRelativeDatePickerValue({ monthOffset: 1 })` so the shared journey flow stays inside the window as the clock advances. Also correct the stale comment at lines 150-153, which claims arrival details is 'enforced-at-continue' — `ENFORCED_AT_CONTINUE` in `bridge/obligation-source.js:31-34` holds only `countryOfOrigin` and `commoditySelection`."
         },
         {
           "repo": "tests",
           "path": "tests/e2e/features/port-of-entry-select.spec.ts",
           "action": "edit",
-          "what": "Replace the hardcoded '12/12/2026' with the today-relative helper."
+          "what": "Replace the hardcoded `'12/12/2026'` at line 20 with the same `getRelativeDatePickerValue({ monthOffset: 1 })` helper call."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/hub-groups-and-cya-rows.spec.ts",
+          "action": "edit",
+          "what": "Line 80 asserts the CYA row text is `'12/12/2026'`, the literal `flows/journey.ts` currently fills. Assert against the same `getRelativeDatePickerValue({ monthOffset: 1 })` value so the fill and the assertion share one source."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/notification/arrival-details-page.ts",
+          "action": "edit",
+          "what": "Add a `datePicker` getter returning `this.page.locator('.moj-datepicker')` so a spec can assert the `data-min-date`/`data-max-date` attributes, and an `arrivalDate` getter for `input[name=\"arrivalDateAtPort\"]` so assertions reuse the locator `fillArrivalDate` already writes to."
         },
         {
           "repo": "tests",
           "path": "tests/e2e/pages/arrival-details.spec.ts",
           "action": "edit",
-          "what": "Add a case covering an out-of-range arrival date producing the inline error, and covering the picker's restriction attributes being present."
+          "what": "Add two cases to the existing describe: the picker wrapper carries `data-min-date` and `data-max-date` matching 1 week before and 6 months after today (built from `getRelativeDatePickerValue({ dayOffset: -7 })` and `({ monthOffset: 6 })`, formatted to match the app's no-leading-zeros `d/m/yyyy` output); and filling an out-of-window date, submitting, and getting the 'There is a problem' summary with the inline out-of-range message while staying on the Arrival details page. Both fail on today's code."
         }
       ],
       "obligations": [
@@ -616,49 +620,45 @@
         "Run `npm run format` before any commit; the pre-commit hook enforces format + lint + full units."
       ],
       "copyKeys": [
-        "exit-date:errors.dateOutOfRange",
-        "transport:portOfEntry.errors.arrivalDateOutOfRange",
-        "documents:errors.dateOfIssueOutOfRange",
-        "exit-date:date.hint",
         "transport:portOfEntry.arrivalDate.hint",
-        "documents:dateOfIssue.hint"
+        "transport:portOfEntry.errors.arrivalDateOutOfRange"
       ],
       "specs": [
-        "frontend:src/server/app/lib/validate/validate.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/port-of-entry.controller.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/port-of-entry/arrival-window.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/copy/copy.test.js",
         "frontend:src/server/app/shared/kit.test.js",
-        "frontend:src/server/app/sets/live-animals/journeys/linear/features/exit-date/exit-date.e2e.spec.js",
-        "frontend:src/server/app/sets/live-animals/journeys/linear/features/documents/e2e/upload.e2e.spec.js",
+        "frontend:src/server/app/lib/validate/validate.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/transport/e2e/arrival-transit.e2e.spec.js",
         "tests:tests/e2e/pages/arrival-details.spec.ts"
       ],
       "acceptanceCriteria": [
-        "The date-picker input on the exit date, arrival details and add-a-document pages each render with the restriction attributes the ruled range implies (data-min-date and/or data-max-date), so the calendar offers only dates inside that range and dates outside it cannot be clicked.",
-        "Typing a date outside the ruled range into any of the three pickers and submitting the form re-renders the page with a GDS error summary and an inline error against that field, and the answer is not saved.",
-        "Typing a date inside the ruled range still saves and advances exactly as it does today, including the existing 'Enter a real <field> date' behaviour for calendar-invalid input such as 31/2/2026.",
-        "Leaving an optional date blank is still accepted — the range rule does not turn an optional field into a required one.",
-        "The out-of-range error message exists in both English and Welsh copy with identical structure, and the copy-parity convention test passes.",
-        "No spec in either repo depends on a hardcoded absolute date that will fall outside the ruled range as the wall clock advances."
+        "The arrival-date picker on the Arrival details page renders with `data-min-date` set to 1 week before today and `data-max-date` set to 6 months after today, so the calendar offers only dates inside that window and dates outside it cannot be clicked.",
+        "Typing a date earlier than 1 week before today, or later than 6 months after today, into the arrival-date field and submitting re-renders the Arrival details page with a GDS error summary and an inline error against the arrival-date field; the rejected value is preserved in the input, the other answers on the page are preserved, and nothing is committed.",
+        "The boundary dates themselves — exactly 1 week before today and exactly 6 months after today — are accepted, so the window is inclusive at both ends.",
+        "A calendar-impossible arrival date such as 31/2/2026 still produces the existing 'Enter a real arrival date' message, not the out-of-range message.",
+        "A blank arrival date behaves exactly as it does today — the range rule does not turn the optional field into a required one.",
+        "With JavaScript disabled the arrival-date field is still an editable text input, and a typed in-window date saves and advances.",
+        "The stored arrival-date answer keeps its existing `{ day, month, year }` shape — `kit.readDate` and the committed value are unchanged.",
+        "The exit-date and add-a-document date-of-issue pickers are unchanged: their view models carry no `minDate`/`maxDate`, they still emit no restriction attributes, and they still accept any valid calendar date.",
+        "The out-of-range message and the reworded hint exist in both `copy.en.js` and `copy.cy.js` with identical structure, and `copy-parity.test.js` and `copy-convention.test.js` pass.",
+        "The arrival-date hint no longer offers an example date the field would reject; it states the allowed window instead.",
+        "No spec, fixture or test payload in either repo that passes an arrival date through the validator holds a hardcoded absolute date — every one is today-relative, so none rots as the wall clock advances."
       ],
       "verification": [
-        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test -- src/server/app/lib/validate/validate.test.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-validator.log 2>&1",
-        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test -- src/server/app/shared/kit.test.js > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-kit.log 2>&1",
         "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-live-animals.log 2>&1",
         "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-units.log 2>&1",
         "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-lint.log 2>&1",
-        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-e2e.log 2>&1",
-        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features — THE critical omission. Step 6's `test:e2e` is `playwright test --project=journeys`, and playwright.config.js:24-25 scopes that project to `**/journey-smoke.spec.js` under `./e2e`. All three edited/new frontend E2E specs live in the `features` project (playwright.config.js:43-45). Without this step, zero proposed E2E assertions execute and the ladder passes on unfixed code.",
-        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose — the ladder never runs the -tests repo at all, despite the change list editing tests:flows/journey.ts, tests:tests/e2e/features/port-of-entry-select.spec.ts and tests:tests/e2e/pages/arrival-details.spec.ts.",
-        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck — journey.ts is TypeScript and a today-relative date helper changes its types; nothing in the ladder typechecks the -tests repo.",
-        "A red-first step that fails on the CURRENT tree: assert the rendered `<div class=\"moj-datepicker\">` carries data-min-date/data-max-date on all three pages (exit-date, port-of-entry, documents). Ladder steps 1-5 are vitest/lint and vitest.config.js:14-18 excludes the e2e specs, so as written every step would pass unchanged against the unfixed code.",
-        "Regression coverage for the date literals the change list misses — frontend .../transport/e2e/arrival-transit.e2e.spec.js (03/01/2026, already past), tests:.../hub-groups-and-cya-rows.spec.ts:80 (asserts 12/12/2026), tests:.../persistence-accompanying-document.spec.ts:29, and the check-answers/save-actions/change-context/documents unit tests pinning 12/12/2025."
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-features.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-journey-smoke.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-tests-typecheck.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-tests-lint.log 2>&1",
+        "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-stack.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-004-tests-e2e.log 2>&1"
       ],
-      "gate": "For each of the three date fields, what range is valid — and does the rule bind the calendar only, or the typed value too? Specifically: (a) arrivalDateAtPort — earliest allowed (today, or tomorrow?) and is there a maximum lead time (e.g. today + 12 months)? (b) exitDate — earliest allowed, and must it be strictly after arrivalDateAtPort, and does the temporary-admission-of-horses stay limit impose a maximum (e.g. arrival + 90 days)? (c) accompanyingDocumentDateOfIssue — is today allowed, is any future date rejected, and is there an earliest allowed issue date? Confirm that out-of-range typed values must be rejected server-side with an inline error (not merely greyed out in the calendar), and supply the GDS error wording for each rejection.",
-      "notes": "All three MoJ date pickers in the live-animals journey are completely unrestricted. `kit.dateField` (shared/kit.js:158) builds the picker params without `minDate`/`maxDate`/`excludedDates`/`excludedDays`, so the macro emits no `data-*` restriction attributes and the calendar offers every date in every year; the paired server validator `dateText` (lib/validate/validators.js:190) only checks that the dd/mm/yyyy string is a real calendar date, so a typed `01/01/1900` is accepted and saved. This affects exit date, arrival date at port of entry, and accompanying-document date of issue. It is not a EUDPA-288 regression — no bound has ever existed in the repo. The fix is blocked on a product call: no source in the workspace rules what each field's valid range is, and the three fields point in different directions in time. Once the ranges are ruled, the fix is a view-layer change at the single `kit.dateField` choke point plus a new bounded-date validator, wired at three call sites with new en/cy error copy, and today-relative dates in the specs on both sides of the workspace.",
-      "openQuestions": [
-        "Should the exit date be validated against the already-answered arrivalDateAtPort (cross-field rule), or independently against today? A cross-field rule needs the arrival answer read at exit-date POST time, which is a larger change than a static bound.",
-        "Is there a documented maximum lead time for a pre-notification (how far in advance an arrival may be declared)? If yes it should also cap the calendar rather than only the server rule.",
-        "Should the picker also exclude weekends or bank holidays at any port? The MoJ component supports excludedDays/excludedDates, but nothing in the repo suggests such a rule exists.",
-        "Does the backend already reject out-of-range dates on submit? If so the frontend messages should match the backend's rule rather than invent a second one — worth checking trade-imports-animals-backend before the frontend rule is fixed."
-      ],
+      "gate": null,
+      "notes": "All three MoJ date pickers in the live-animals journey are completely unrestricted. `kit.dateField` (shared/kit.js:158) builds the picker params without `minDate`/`maxDate`/`excludedDates`/`excludedDays`, so the macro emits no `data-*` restriction attributes and the calendar offers every date in every year; the paired server validator `dateText` (lib/validate/validators.js:190) only checks that the dd/mm/yyyy string is a real calendar date, so a typed `01/01/1900` is accepted and saved. This affects exit date, arrival date at port of entry, and accompanying-document date of issue. It is not a EUDPA-288 regression — no bound has ever existed in the repo. The fix is blocked on a product call: no source in the workspace rules what each field's valid range is, and the three fields point in different directions in time. Once the ranges are ruled, the fix is a view-layer change at the single `kit.dateField` choke point plus a new bounded-date validator, wired at three call sites with new en/cy error copy, and today-relative dates in the specs on both sides of the workspace.\n\nRED-FIRST ANCHORS. Three rungs fail on today's tree and pass once the change lands, so the ladder cannot go green on unfixed code:\n- Rung 1 (`test:live-animals`, seconds): the new `port-of-entry.controller.test.js` GET case asserts `result.view.context.arrivalDate.minDate` equals `arrivalWindow().minText`. Today `kit.dateField` returns no such key, so it is undefined and the assertion fails. The out-of-range POST cases fail the same way — today they commit and redirect instead of returning 400.\n- Rung 4 (`test:features`): the new attribute case asserts `.moj-datepicker` carries `data-min-date`; today the macro emits nothing because all its params are `optional: true`.\n- Rung 9 (`test:docker-compose`): the new `arrival-details.spec.ts` out-of-window case expects 'There is a problem'; today the page saves and advances.\nRung 4 is also a regression tripwire independent of the new cases: `arrival-transit.e2e.spec.js` currently fills `03/01/2026`, which is already outside the new window, so five existing tests in that file go red the moment the server rule lands and stay red until the literal is replaced.\n\nWHY THE OLD LADDER WAS DISHONEST, AND WHAT CHANGED. `playwright.config.js:24-25` scopes the `journeys` project to `**/journey-smoke.spec.js`, so `test:e2e` never ran a single feature spec, and `vitest.config.js` excludes `**/*.e2e.spec.js` so the unit rungs did not pick them up either. `package.json` already ships `test:features` for the `features` project (`playwright.config.js:43-45`); the new ladder runs it at rung 4 and keeps `test:e2e` at rung 5 to guard the `live-animals-journey.js` driver edit. The tests repo, which the old ladder never invoked at all despite editing three of its files, now gets typecheck, lint and the full docker-compose suite.\n\nDECISIONS I MADE (headless — recorded, not deferred):\n1. Bounds are inclusive at both ends. 'earliest is 1 week before today, latest is 6 months after today' reads inclusive, and an exclusive reading would silently cost the user a day at each end.\n2. Comparison is at whole-day granularity anchored on UTC midnight, matching the existing `isRealDate` UTC construction in `calendar.js` and the `TZ=UTC` that every vitest script already sets.\n3. `addUtcMonths` clamps to the last day of the target month. Without it, 31 August + 6 months overflows through JS date rollover to 3 March instead of 28 February, silently widening the window by three days twice a year. Pinned by an explicit case in `arrival-window.test.js`.\n4. Error wording: 'Arrival date at port of entry must be between {earliest} and {latest}', with the boundary dates rendered d/m/yyyy — the same shape the field accepts, so the user can copy one straight in. Neither the ruling nor EUDPA-309 supplied wording; this follows the GDS pattern of naming the field and stating the rule, and matches the existing `numberBetween(min, max)` idiom in `shared/copy.en.js`.\n5. The hint changes. Its current example, 27/3/2026, is now itself out of window — offering a user an example the field rejects is a defect the restriction directly creates, not scope creep. Replacing it with the live window also removes a literal that would otherwise rot again. Welsh mirrors the English structure; the Welsh phrasing is mine and is worth a native-speaker check before merge, but it blocks nothing.\n6. The window is computed once per request handler and threaded into both `fields()` and `render()`. Two independent clock reads could straddle midnight and hand the user a calendar and a server rule that disagree.\n7. Frontend only. The ruling's 'server-side' means the Node server — EUDPA-309's tech notes name the frontend schema, its ACs say nothing about the API, and the one backend date field in the earlier diagnosis (`DocumentUploadRequest.dateOfIssue`) is document date of issue, which the ruling explicitly exempts. No backend change.\n\nSCOPE DROPPED FROM THE OLD SPEC, per the ruling: the exit-date controller and its copy pair, the documents view-model `render.js`, the documents form schema and its copy pair, `exit-date.e2e.spec.js`, `documents/e2e/upload.e2e.spec.js`, and `tests:persistence-accompanying-document.spec.ts`. Also dropped, because they never pass through the arrival validator: the `12/12/2025` literals in `check-answers.test.js`, `save-actions.test.js`, `change-context.test.js` and `documents/controller.test.js` (document date of issue), and the seeded `12/12/2026` answers in `dispatch.test.js`, `gates.test.js`, `seeds.js`, `indexed.test.js`, `task-rows.test.js` and `notification-mapper.test.js` (written straight into state, never validated).\n\nCONFLICT CLEARED. `conflictsWith: [\"snag-005\"]` no longer bites — snag-005 was ruled SUPERSEDED on 2026-08-10 and will not be built. Its overlap was `port-of-entry.njk` and `port-of-entry-select.spec.ts`; this increment does not touch the njk at all, since `mojDatePicker(arrivalDate)` forwards the whole view-model object and picks up the new bounds without a template edit.\n\nTICKET HYGIENE FOR THE PARENT (not a build step). EUDPA-316 delivers the last two unmet ACs of EUDPA-309, which is Ready for Dev against Hamid Jemei and still describes pre-EUDPA-288 paths. Someone should link EUDPA-316 to EUDPA-309 and either close EUDPA-309 or strip its already-delivered ACs, or Hamid will pick up a ticket whose first three ACs are already in main.",
+      "openQuestions": [],
       "dependsOn": [],
       "commit": null,
       "failure_reason": null,
