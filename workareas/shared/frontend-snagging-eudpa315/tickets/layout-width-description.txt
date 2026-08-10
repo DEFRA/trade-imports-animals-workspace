@@ -1,0 +1,30 @@
+h2. What is wrong
+
+Every page in the live-animals frontend renders inside {{govuk-grid-column-two-thirds}}, because {{src/server/app/shared/layout.njk:57}} hard-codes it for all pages. Before the obligations model retrofit the shared layout used {{govuk-grid-column-full}} — see {{git show 23f2fdb4^:src/server/common/templates/layouts/page.njk}}.
+
+The notification dashboard is the page where this hurts most. It carries a 280px filter panel pinned at desktop ({{_notification-list.scss:112-115}}) inside the narrowed column, which leaves roughly 320px for the results list and about 162px for each summary card's actions.
+
+h2. Evidence
+
+Measured on the running stack at a 1440px viewport:
+
+* {{.govuk-grid-column-two-thirds}} 660px -> {{.notification-list__layout}} 630px -> {{.notification-list__filters}} 280px -> {{.notification-list__main}} 320px -> {{.govuk-summary-card__actions}} 162px.
+* The four card actions wrap onto three lines: View at y=679 and Amend at y=677, "Copy as new" at y=713, Delete at y=750.
+
+h2. Why this is its own ticket
+
+This surfaced while investigating "Copy as new CSS is off" (EUDPA-320), and was deliberately excluded from that fix. That snag turned out to be a font-family cascade bug, fixed by a one-line stylesheet change. The width problem is real but separate, and it is NOT a defect confined to the dashboard — {{layout.njk}} is shared, so any change affects every screen in the service.
+
+Two-thirds is also the GOV.UK default reading width and is correct for form pages. Reverting the shared layout wholesale would be wrong.
+
+h2. The decision this needs
+
+Which pages should opt into full width, and how is that expressed — a per-page flag consumed by {{layout.njk}}, a distinct layout for list/dashboard pages, or something else? The dashboard is the obvious first candidate; the task list may be another.
+
+h2. Acceptance criteria
+
+* Pages that need full width can opt into it without changing the default for form pages, which stay at two-thirds.
+* On the notification dashboard at a desktop viewport, a submitted notification's four card actions — View, Amend, Copy as new, Delete — render without wrapping onto multiple lines.
+* The mechanism for opting in is documented alongside the layout, so a new page author can tell which to choose.
+* No custom CSS outside the govuk-frontend grid classes is introduced to achieve it.
+* Form pages are visually unchanged.
