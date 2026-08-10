@@ -179,7 +179,8 @@
       "commit": null,
       "failure_reason": null,
       "ticketError": null,
-      "conflictsWith": []
+      "conflictsWith": [],
+      "ruling": "RULED 2026-08-10 (Sam: look at what main did before the rewrite). Pre-retrofit, src/server/notification-copy/controller.js made ONE call — notificationClient.copy -> POST /notifications/{ref}/copy — and the backend returned the new notification with its reference already minted. There was no frontend dual write and no Idempotency-Key header. So option (b), a backend-owned single idempotent call, RESTORES the original architecture; option (a) would invent a frontend dual write that never existed here. The action-path endpoint shape is pre-existing rather than newly introduced, though the REST guide would prefer a noun if it is being touched anyway. The only genuinely new decision is whether to keep the retrofit's Idempotency-Key retry semantics: keep them, they are strictly better than the original."
     },
     {
       "id": "snag-002",
@@ -404,7 +405,8 @@
       "commit": null,
       "failure_reason": null,
       "ticketError": null,
-      "conflictsWith": []
+      "conflictsWith": [],
+      "ruling": "RULED 2026-08-10 (Sam): stay as close to the govuk-frontend toolbox as possible, but minimal custom CSS IS permitted where the toolbox genuinely cannot express it. Reference the prototype code in ~/git/defra/defra-design/GB-notification-service — it needs productionising, not copying verbatim. This softens rather than reverses the EUDPA-249 stock-components ruling: the constraint is now minimal CSS, not no CSS. The spec still needs rewriting before this can be built, because its filesToTouch are written conditionally on this gate."
     },
     {
       "id": "snag-004",
@@ -640,7 +642,7 @@
       "ticket": "EUDPA-318",
       "branch": "fix/EUDPA-318-autocomplete-search-ux-regression",
       "base": "main",
-      "status": "blocked",
+      "status": "superseded",
       "verdict": "needs-decision",
       "confidence": "medium",
       "refuted": false,
@@ -851,7 +853,8 @@
       "ticketError": null,
       "conflictsWith": [
         "snag-004"
-      ]
+      ],
+      "ruling": "RULED 2026-08-10: SUPERSEDED — do not build. What autocomplete is for is answered by EUDPA-124 (Story, Ready for Dev, under EUDPA-119): a trader searches Port of Entry by name or code, 2+ characters, case-insensitive, results showing name and code. HOW to build it is EUDPA-271 (In Dev, Hamid Jemei): a spike for a filterable type-ahead select, single and multi-select, no-JS fallback, WCAG 2.2 AA, which explicitly builds no production component. EUDPA-318 duplicates both and should be closed and linked to them rather than implemented."
     },
     {
       "id": "snag-006",
@@ -864,7 +867,7 @@
       "ticket": "EUDPA-321",
       "branch": "fix/EUDPA-321-a11y-route-base-drift",
       "base": "main",
-      "status": "blocked",
+      "status": "done",
       "verdict": "needs-decision",
       "confidence": "high",
       "refuted": false,
@@ -941,7 +944,8 @@
       "commit": null,
       "failure_reason": null,
       "ticketError": null,
-      "conflictsWith": []
+      "conflictsWith": [],
+      "ruling": "RULED 2026-08-10 (Sam): target frontend main. The fix is environmental — rebuild the stack from local repos/ with tim docker dev, done 2026-08-10 with every container healthy. No repo change is needed; the tests checkout already matches main's un-prefixed /notifications/... routes. Do NOT pull the 66-file multi-set restructure from tests spike/trace-to-requirements into snagging."
     }
   ]
 }
