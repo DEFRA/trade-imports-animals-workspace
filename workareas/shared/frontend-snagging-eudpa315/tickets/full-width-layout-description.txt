@@ -1,0 +1,42 @@
+h2. What and why
+
+Every page in the live-animals frontend renders inside {{govuk-grid-column-two-thirds}}, hard-coded at {{src/server/app/shared/layout.njk:57}}. Before the obligations retrofit the shared layout used {{govuk-grid-column-full}}.
+
+It hurts most on the notification dashboard, which carries a 280px filter panel pinned at desktop inside the narrowed column. Measured at 1440px: the column is 660px, leaving ~320px for the results list and ~162px per summary-card action, and the four card actions wrap onto three lines.
+
+h2. The ruling — binding
+
+Sam, 2026-08-10: apply full width across everything and lead with CONSISTENCY. There is to be NO per-page opt-in mechanism. The original gate asked which pages opt in; the answer is that the question was wrong.
+
+Do not design an opt-in flag, a per-page override, or a second layout. One width, applied service-wide.
+
+h2. Known facts, verified against origin/main
+
+* {{shared/layout.njk:57}} is the ONLY {{govuk-grid-column-two-thirds}} in {{src}}. The change itself is one class.
+* The hub's two {{govuk-grid-column-one-half}} columns ({{features/hub/template.njk:11,18}}) sit INSIDE the content area and are not affected by the outer width.
+* Exactly one visual-regression baseline exists: {{tests/e2e/visual/origin-of-import.visual.spec.ts}}, a fullPage {{toHaveScreenshot}} on a FORM page — so it will change and its baseline needs regenerating, not suppressing.
+* The dashboard filter panel is pinned at 280px at desktop by {{_notification-list.scss:112-115}}, which is what makes the narrow column bite.
+
+h2. What the dig must establish
+
+The code change is trivial; the consequences are not. Work out, with evidence:
+
+* What every page type actually looks like at full width — form pages, the task list, check-answers, the dashboard, confirmation pages. Line length on prose and form pages is the real risk: two-thirds is the GOV.UK default because it caps measure for readability.
+* Whether anything in the SCSS assumes the two-thirds container width — fixed pixel widths, percentage columns, media queries keyed to the old inner width. {{_notification-list.scss}} is the obvious suspect.
+* Whether any component that was comfortable at 660px becomes awkward at full width — summary lists, tables, the commodity stat cards just landed on the hub.
+* Whether the frontend's own feature specs or the tests repo assert on layout, position or wrapping anywhere.
+
+h2. Explicitly not in scope
+
+* No per-page opt-in, per the ruling.
+* Do not restyle components to compensate. If a component looks wrong at full width, report it — a follow-up ticket is the right answer, not widening the change.
+* Do not touch the hub's internal one-half columns.
+
+h2. Acceptance criteria
+
+* Every page renders at full container width; no page renders in a two-thirds column.
+* No opt-in mechanism, flag or second layout is introduced.
+* On the notification dashboard at desktop, a submitted notification's four card actions render on one line without wrapping.
+* The {{origin-of-import}} visual baseline is regenerated deliberately and the change in it is described, not silently accepted.
+* Both repos' suites green, including the full E2E.
+* Any component that reads badly at full width is reported with a recommendation, not fixed here.

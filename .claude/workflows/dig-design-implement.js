@@ -18,12 +18,16 @@ export const meta = {
 // Configuration. args does not reach the script in this runtime — FALLBACK is
 // the only switch that works.
 // ---------------------------------------------------------------------------
+// `repoDir` is workspace-relative and overrides the `repo` lookup. Point it at a
+// WORKTREE when other agents are working in the normal checkout — a branch switch
+// under a running review agent changes the files it is reading mid-flight.
 const FALLBACK = {
-  ticket: 'EUDPA-325',
-  branch: 'fix/EUDPA-325-known-journey-guard',
+  ticket: 'EUDPA-322',
+  branch: 'fix/EUDPA-322-full-width-layout',
   repo: 'frontend',
+  repoDir: 'repos/trade-imports-animals-frontend-eudpa-322',
   workarea: 'frontend-snagging-eudpa315',
-  descriptionFile: 'tickets/known-journey-guard-description.txt',
+  descriptionFile: 'tickets/full-width-layout-description.txt',
 }
 const CFG = typeof args === 'object' && args && args.ticket ? { ...FALLBACK, ...args } : FALLBACK
 
@@ -38,7 +42,7 @@ const REPO_PATH = {
   backend: 'repos/trade-imports-animals-backend',
   tests: 'repos/trade-imports-animals-tests',
 }
-const repoPath = REPO_PATH[CFG.repo]
+const repoPath = CFG.repoDir ?? REPO_PATH[CFG.repo]
 
 const GUARDRAILS = `
 GUARD RAILS (mandatory, every step):
