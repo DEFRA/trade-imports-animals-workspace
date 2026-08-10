@@ -30,26 +30,57 @@ handover time — not recalled.
 | Commodities boxes ugly | EUDPA-319 | **Merged** `e54b22c5` |
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 
-## In flight — three PRs, land together or not at all
+## In flight — EUDPA-317, "Copy as new is broken"
 
-**EUDPA-317, "Copy as new is broken".** Branch
-`fix/EUDPA-317-copy-as-new-missing-notification` in **all three** repos.
+Branch `fix/EUDPA-317-copy-as-new-missing-notification` in all three repos. Full
+E2E **160 passed** locally with all three on that branch.
 
-- backend#74 — backend owns the write, both aggregates in one idempotent call
-- frontend#191 — session guard removed, `?actionUnavailable=` banner, dead
-  `?copied=1` deleted
-- tests#106 — content carries over, actions on session-foreign rows, banner
+**The plan changed after a Slack exchange with Paul Hodgson on 2026-08-10.**
 
-Full E2E **160 passed** locally with all three repos on that branch. A merge of
-any one alone leaves the button broken in a different way.
+- **backend#74 — PARKED, do not merge.** Superseded by **EUDPA-323** (Paul, In
+  Dev): `Notification` and `NotificationFulfilments` collapse into a single
+  Mongo collection behind a single write/delete API, per the EUDPA-312 spike.
+  That removes the dual-write problem rather than fixing it, so this PR's fix
+  has nothing left to fix. Agreed with Paul to leave it alone. Close it once
+  EUDPA-323 lands, after checking nothing in it is lost.
+- **frontend#191 and tests#106 — rebase onto EUDPA-323 when it lands.** Paul
+  expected a PR out 2026-08-10 or the morning after. These two carry the work
+  that actually makes the button work.
+
+**Note the review's suggested merge order is now inverted.** It said land
+backend#74 on its own merit and hold the other two. In fact backend#74 is the
+one being dropped.
+
+**Carry-across:** frontend#191 updates `src/server/app/docs/persistence.md` to
+describe a canonical-then-projection write order. That is wrong under
+EUDPA-323, where there is no projection. Rewrite it during the rebase.
 
 **This was originally split across EUDPA-317 and EUDPA-325 and that was wrong.**
-One reported defect became two branch pairs that had never been tested together.
-EUDPA-325 is now CLOSED and folded in; PRs frontend#192 and tests#107 closed.
-Do not re-split it.
+One reported defect became two branch pairs never tested together. EUDPA-325 is
+CLOSED and folded in; PRs frontend#192 and tests#107 closed. Do not re-split it.
 
-`review` skill was running against these branches at handover; its findings had
-not landed. **Verify anything it reports before relaying it.**
+### Review outcome — CONCERNS, 42 items (1 Critical, 8 Major, 33 Minor)
+
+Index: `workareas/reviews/EUDPA-317/review-index.md` plus three per-repo files.
+
+**Critical:** removing `isKnownJourney` leaves no check on any mutating action.
+Verified independently: there is no org/user scoping anywhere in the backend
+main source (zero hits for owner/orgId), and the Notification model has no owner
+field — so there was never per-user scoping to lose, and the old guard was
+bypassable anyway because `currentJourney` auto-adopts any loadable reference.
+
+The part that stands regardless: the rewritten `engine/journey.test.js` now
+CERTIFIES unscoped mutation as intended behaviour. That is the same failure that
+caused this ticket — five tests asserting the silent redirect was correct — in
+the opposite direction. Needs Sam's ruling, and a scoping ticket against the
+auth work either way.
+
+**Also flagged:** AC 4 uncovered (the delete spec deletes a fresh draft, not a
+copy); `toContentDto` hand-lists 12 fields with no drift guard where sibling
+mappers use MapStruct with `unmappedTargetPolicy=ERROR`; `createCopyAtReference`
+is public with no `@Transactional` while its Javadoc asserts atomicity. Several
+of these live in backend#74 and may evaporate with EUDPA-323 — check before
+spending time on them.
 
 ## Waiting
 
