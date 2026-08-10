@@ -1,0 +1,57 @@
+h2. What and why
+
+Remove the "What are you importing?" page from the live-animals journey entirely. This repo is live-animals specific, so the question has one possible answer and asking it is noise. The import-type decision moves upstream; nothing in this repo makes or stores it.
+
+h2. The good news — the obligation constraint is already met
+
+{{importType}} is NOT an obligation and does NOT reach the end result. {{flow/flow.js:30}} declares {{FLOW_ONLY_KEYS = \['importType', 'declaration'\]}}, and the bridge is explicit that the manifest never carries it — see {{bridge/scope.js:34}} ("The manifest does not carry importType / declaration"), {{scope.js:125}} ("importType/declaration are ABSENT here") and {{status/completeness/leaf.js:27}} ("pre-flow filters like importType have no fulfilment").
+
+So "nothing on the end result should carry this selection" needs no work — it is already true. No fulfilment migration, no schema change, no data backfill.
+
+{{FLOW_ONLY_KEYS}} itself must SURVIVE as {{\['declaration'\]}}. This removes one user of the flow-only mechanism, not the mechanism.
+
+h2. The real work is the entry seam
+
+The page is currently the journey's entry surface, so deleting it re-points where a new run begins:
+
+* {{flow/entry-guard.js:26-27}} — {{isEntrySurface}} matches the import-type slug and its children.
+* {{flow/entry-guard.js:61}} — {{entryGuardTarget}} returns its path.
+* {{features/dashboard/controller.js:132}} — the create-POST redirects straight to it.
+* {{flow/flow.js:35}} — it is the second page of the start section, after the dashboard.
+
+All four must move to whatever becomes the first real page, in one edit. Splitting them leaves a journey that either cannot be entered or enters at the wrong page.
+
+h2. Blast radius
+
+Measured against {{origin/main}}:
+
+* ~14 non-test source files in the frontend, including the five-file {{features/import-type-filter/}} directory to delete wholesale, plus registration in {{features/index.js}} and the value in {{flow/fixtures/happy-path.json}}.
+* ~21 frontend spec files.
+* ~16 files in {{trade-imports-animals-tests}}.
+
+Prior scoping of the related move measured ~64 files against an original estimate of 8 — assume the larger number. Nine in-src E2E specs are known to drive the filter inline via {{input\[name="importType"\]}} rather than through the {{e2e/live-animals-journey.js}} helper, so fixing the helper alone will not be enough.
+
+h2. No litter
+
+Beyond code, these mention the page or the key and would rot:
+
+* {{bridge/scope.js}} — four comment references using importType as the worked example of a flow-only key. {{declaration}} is still a valid example; re-point rather than delete the explanation.
+* {{bridge/status/completeness/leaf.js:27}} — same.
+* {{sets/live-animals/docs/journey-flow-and-gates.md:14}} — states FLOW_ONLY_KEYS contains importType and declaration.
+* {{sets/live-animals/docs/add-a-section.md:237}} — lists FLOW_ONLY_KEYS among the things a new section touches.
+
+h2. Decision reversed — record it
+
+Scoping on 2026-08-06 ruled that a two-option picker would live in THIS repo at {{/}}, replacing DEFAULT_SET_BASE, and explicitly ruled OUT {{trade-imports-ins-frontend}} on cross-app auth cost. That is now reversed: the decision is made upstream and no picker is built here. The former plan's T1 (picker at root) and T4 (harmonise dashboards) are dead; only its T2 (seam plus deletion) and T3 (drop importType from FLOW_ONLY_KEYS) survive in spirit.
+
+That scoping's SCOPE.md is NOT recoverable — it was never committed and exists on no branch. This ticket supersedes it.
+
+h2. Acceptance criteria
+
+* The "What are you importing?" page is gone: no feature directory, no registration, no route, no copy keys in either language.
+* Starting a new notification from the dashboard lands on the first real journey page, with no interstitial.
+* Deep-linking into the journey still hits the entry guard and is redirected to the correct first page.
+* {{FLOW_ONLY_KEYS}} is {{\['declaration'\]}} and the flow-only projection still works for declaration.
+* No fulfilment, manifest or stored notification changes shape — importType was never on them and still is not.
+* No reference to importType or the import-type page survives anywhere in {{src}}, {{e2e}} or the tests repo, including comments, docs and fixtures.
+* Both repos' suites are green, and the E2E journey completes without selecting an import type.
