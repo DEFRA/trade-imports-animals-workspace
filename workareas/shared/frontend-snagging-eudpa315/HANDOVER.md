@@ -100,39 +100,30 @@ calendar, the input stays free text. `exitDate` and
 swapping the arrival input to the MOJ picker. Read the code first and scope to
 the restriction only — do not redo a control swap that has landed.
 
-### Full-width layout (EUDPA-322) — half done, and there is a trap
+### Full-width layout (EUDPA-322) — half done
 
 **Done and pushed** on `fix/EUDPA-322-full-width-layout`: `layout.njk:57` is now
 `govuk-grid-column-full`, plus a `layout.test.js` guard asserting it. Units 1459
 passed. Ruling was: full width everywhere, consistency first, no opt-in.
 
-**Outstanding:** the tests-repo visual baseline. Not started.
+**Outstanding:** the tests-repo visual baseline (`origin-of-import.visual.spec.ts`,
+a fullPage screenshot on a form page — it WILL change and needs regenerating
+deliberately, not suppressing).
 
-**THE TRAP — read before running any E2E or baseline for this ticket.** The
-change is in a WORKTREE at `repos/trade-imports-animals-frontend-eudpa-322`. The
-stack builds and bind-mounts the CANONICAL checkout
-`repos/trade-imports-animals-frontend`, which is on another branch still reading
-`two-thirds`. The tests repo drives `localhost:3000` — the stack's frontend. So
-regenerating baselines as-is captures the UN-widened layout and commits
-byte-plausible screenshots of the wrong thing while reporting the ACs green.
-Nobody reviewing the images could tell.
-
-Resolution: `scripts/stack/run-stack.sh -d -e frontend` and serve the worktree
-natively on :3000 with `frontend.compose.yml`'s env transposed
-`host.docker.internal` → `localhost`. Gate it mechanically first —
-`curl -sL http://localhost:3000/this-route-does-not-exist` renders the 404 page,
-which extends the shared layout, so assert the served HTML has
-`govuk-grid-column-full` once and `two-thirds` zero times **before** touching
-`--update-snapshots`. Baselines go on a same-named branch in its own worktree.
+**To finish it:** `tim workspace branch fix/EUDPA-322-full-width-layout` to put
+the repos on it, cut the same-named branch in the tests repo, `tim docker dev`,
+then regenerate. **Confirm the stack is actually serving the change before you
+touch `--update-snapshots`** — `curl -sL http://localhost:3000/this-route-does-not-exist`
+renders the 404 page, which extends the shared layout, so the served HTML should
+contain `govuk-grid-column-full` once and `two-thirds` zero times. A baseline
+regenerated from the wrong build is byte-plausible and unreviewable.
 
 **Reported, not fixed** (the ticket bans restyling): ten proportional
 `govuk-!-width-*` overrides across six files now scale against a full-width
 container. Listed in the ticket comment.
 
-**Generalisable lesson:** a worktree protects other agents' checkouts but
-detaches you from the stack. If work in a worktree needs the stack, you must
-either serve it natively or accept that every stack-driven check is testing
-something else.
+**Do not use worktrees.** This work was briefly done in one and it detached the
+change from the stack, which bind-mounts `repos/<repo>`. Branches only.
 
 ### Notifications search — untriaged
 Reported: searching for text within a known reference returns nothing.
@@ -176,6 +167,8 @@ All three repos on `fix/EUDPA-317-copy-as-new-missing-notification`, everything
 else on `main`. Stack built from that source and healthy. Workspace repo on
 `chore/EUDPA-315-snagging-workflow`, pushed.
 
-There is a stray git worktree at `repos/trade-imports-animals-tests-eudpa-325`
-holding the now-closed branch. Its commits are merged into the EUDPA-317 branch;
-it can be removed with `git worktree remove`.
+**Branches, not worktrees.** Both worktrees this session created have been
+removed. Use `git checkout` or `tim workspace branch <name>`. A worktree
+detaches the work from the stack's bind-mount of `repos/<repo>` and hides it
+from `git status` in the canonical checkout — both bit this session. The two
+worktrees remaining under `workareas/` belong to older programmes; leave them.
