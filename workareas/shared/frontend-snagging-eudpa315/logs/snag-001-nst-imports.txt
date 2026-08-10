@@ -1,0 +1,137 @@
+3:import static org.assertj.core.api.Assertions.assertThat;
+4:import static org.assertj.core.api.Assertions.assertThatThrownBy;
+5:import static org.mockito.ArgumentMatchers.any;
+6:import static org.mockito.ArgumentMatchers.anyList;
+7:import static org.mockito.ArgumentMatchers.eq;
+8:import static org.mockito.Mockito.doThrow;
+9:import static org.mockito.Mockito.inOrder;
+10:import static org.mockito.Mockito.lenient;
+11:import static org.mockito.Mockito.mock;
+12:import static org.mockito.Mockito.never;
+13:import static org.mockito.Mockito.times;
+14:import static org.mockito.Mockito.verify;
+15:import static org.mockito.Mockito.when;
+16:import static uk.gov.defra.trade.imports.animals.notification.NotificationStatus.AMEND;
+17:import static uk.gov.defra.trade.imports.animals.notification.NotificationStatus.DRAFT;
+18:import static uk.gov.defra.trade.imports.animals.notification.NotificationStatus.SUBMITTED;
+19:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.consignees;
+20:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.consignments;
+21:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.consignors;
+22:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.destinations;
+23:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.importers;
+24:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.placesOfOrigin;
+25:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.species;
+26:import static uk.gov.defra.trade.imports.animals.utils.NotificationTestData.transporters;
+28:import java.time.Duration;
+29:import java.time.LocalDate;
+30:import java.time.LocalDateTime;
+31:import java.time.Month;
+32:import java.util.Collections;
+33:import java.util.List;
+34:import java.util.Optional;
+35:import org.springframework.data.domain.Page;
+36:import org.springframework.data.domain.PageImpl;
+37:import org.springframework.data.domain.PageRequest;
+38:import org.springframework.data.domain.Pageable;
+39:import org.springframework.data.domain.Sort;
+40:import net.javacrumbs.shedlock.core.DefaultLockingTaskExecutor;
+41:import net.javacrumbs.shedlock.core.LockProvider;
+42:import net.javacrumbs.shedlock.core.SimpleLock;
+43:import org.junit.jupiter.api.BeforeEach;
+44:import org.mapstruct.factory.Mappers;
+45:import org.junit.jupiter.api.Nested;
+46:import org.junit.jupiter.api.Test;
+47:import org.junit.jupiter.api.extension.ExtendWith;
+48:import org.mockito.ArgumentCaptor;
+49:import org.mockito.InOrder;
+50:import org.mockito.InjectMocks;
+51:import org.mockito.Mock;
+52:import org.mockito.junit.jupiter.MockitoExtension;
+53:import org.springframework.dao.DuplicateKeyException;
+54:import org.springframework.data.domain.Sort.Direction;
+55:import uk.gov.defra.trade.imports.animals.accompanyingdocument.AccompanyingDocument;
+56:import uk.gov.defra.trade.imports.animals.accompanyingdocument.DocumentService;
+57:import uk.gov.defra.trade.imports.animals.accompanyingdocument.DocumentType;
+58:import uk.gov.defra.trade.imports.animals.accompanyingdocument.ScanStatus;
+59:import uk.gov.defra.trade.imports.animals.audit.Audit;
+60:import uk.gov.defra.trade.imports.animals.audit.AuditRepository;
+61:import uk.gov.defra.trade.imports.animals.audit.Result;
+62:import uk.gov.defra.trade.imports.animals.configuration.NotificationTtlConfig;
+63:import uk.gov.defra.trade.imports.animals.exceptions.BadRequestException;
+64:import uk.gov.defra.trade.imports.animals.exceptions.NotFoundException;
+65:import uk.gov.defra.trade.imports.animals.exceptions.OutboxWriteException;
+66:import uk.gov.defra.trade.imports.animals.outbox.OutboxEventType;
+67:import uk.gov.defra.trade.imports.animals.outbox.OutboxService;
+196:            assertThatThrownBy(() -> notificationService.saveOriginOfImport(notificationDto))
+320:                eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class)))
+329:                .findAllByStatusIn(eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class));
+348:                eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class)))
+361:                .findAllByStatusIn(eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class));
+375:                eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class)))
+391:            // Regression: notifications in AMEND were silently excluded from the
+392:            // dashboard before AMEND was added to the allow-list (EUDPA-171).
+395:                .status(AMEND)
+402:                eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class)))
+409:                .containsExactly(AMEND);
+417:                eq(List.of(DRAFT, SUBMITTED, AMEND)), any(Pageable.class)))
+422:            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+424:                eq(List.of(DRAFT, SUBMITTED, AMEND)), pageableCaptor.capture());
+437:                "GBN-AG-26-ABC123", List.of(DRAFT, SUBMITTED, AMEND)))
+454:                "GBN-AG-26-ZZZZZZ", List.of(DRAFT, SUBMITTED, AMEND)))
+469:                "GBN-AG-26-ABC123", List.of(DRAFT, SUBMITTED, AMEND)))
+475:                "GBN-AG-26-ABC123", List.of(DRAFT, SUBMITTED, AMEND));
+534:            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+571:            ArgumentCaptor<Audit> auditCaptor = ArgumentCaptor.forClass(Audit.class);
+582:        void deleteByReferenceNumbers_shouldThrowNotFoundException_whenOneIsMissing() {
+597:            assertThatThrownBy(
+599:                .isInstanceOf(NotFoundException.class)
+606:            ArgumentCaptor<Audit> auditCaptor = ArgumentCaptor.forClass(Audit.class);
+625:            assertThatThrownBy(
+627:                .isInstanceOf(NotFoundException.class)
+751:            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+841:            assertThatThrownBy(
+847:        void submitNotification_shouldThrowNotFoundException_whenReferenceNumberUnknown() {
+854:            assertThatThrownBy(
+856:                .isInstanceOf(NotFoundException.class)
+882:            assertThatThrownBy(
+898:            String referenceNumber = "GBN-AG-26-AMEND1";
+902:                .status(AMEND)
+935:            assertThatThrownBy(
+937:                .isInstanceOf(BadRequestException.class)
+959:            assertThatThrownBy(
+961:                .isInstanceOf(BadRequestException.class)
+999:            assertThat(result.getStatus()).isEqualTo(AMEND);
+1003:            verify(outboxService).appendEvent(notification, OutboxEventType.NOTIFICATION_SUBMISSION_AMENDED, "trace-amd-1", null);
+1053:            inOrder.verify(outboxService).appendEvent(notification, OutboxEventType.NOTIFICATION_SUBMISSION_AMENDED, "trace-amd-2", null);
+1070:            assertThatThrownBy(
+1072:                .isInstanceOf(BadRequestException.class)
+1087:                .status(AMEND)
+1094:            assertThatThrownBy(
+1096:                .isInstanceOf(BadRequestException.class)
+1097:                .hasMessageContaining("AMEND");
+1104:        void amendNotification_shouldThrowNotFoundException_whenReferenceNumberUnknown() {
+1111:            assertThatThrownBy(
+1113:                .isInstanceOf(NotFoundException.class)
+1137:            assertThatThrownBy(
+1168:            assertThatThrownBy(
+1187:                .status(AMEND)
+1222:            assertThatThrownBy(() -> notificationService.cancelAmendNotification(referenceNumber))
+1223:                .isInstanceOf(BadRequestException.class)
+1235:                .status(AMEND)
+1243:            assertThatThrownBy(() -> notificationService.cancelAmendNotification(referenceNumber))
+1244:                .isInstanceOf(BadRequestException.class)
+1257:            assertThatThrownBy(
+1259:                .isInstanceOf(NotFoundException.class);
+1341:        void findByRef_shouldThrowNotFoundException_whenReferenceNumberUnknown() {
+1348:            assertThatThrownBy(() -> notificationService.findByRef(referenceNumber))
+1349:                .isInstanceOf(NotFoundException.class)
+1509:            // Regression: AMEND notifications were rejected by softDelete's
+1510:            // status guard before AMEND was added to the allow-list (EUDPA-171).
+1511:            // The AMEND view page renders a Delete button (AC4) that reaches here.
+1516:                .status(AMEND)
+1532:        void softDeleteNotification_shouldThrowBadRequestException_whenAlreadyDeleted() {
+1545:            assertThatThrownBy(() -> notificationService.softDeleteNotification(referenceNumber))
+1546:                .isInstanceOf(BadRequestException.class)
+1553:        void softDeleteNotification_shouldThrowNotFoundException_whenReferenceNumberUnknown() {
+1560:            assertThatThrownBy(() -> notificationService.softDeleteNotification(referenceNumber))
+1561:                .isInstanceOf(NotFoundException.class)

@@ -70,7 +70,7 @@
       "ticket": "EUDPA-317",
       "branch": "fix/EUDPA-317-copy-as-new-missing-notification",
       "base": "main",
-      "status": "todo",
+      "status": "done",
       "verdict": "needs-decision",
       "confidence": "high",
       "refuted": false,
@@ -221,11 +221,16 @@
         "Should the strengthened dashboard assertion stay tagged @smoke, given it adds a dashboard round-trip and a search to a path already marked test.slow()?"
       ],
       "dependsOn": [],
-      "commit": null,
+      "commit": "3703e11",
       "failure_reason": null,
       "ticketError": null,
       "conflictsWith": [],
-      "ruling": "RULED 2026-08-10 (Sam: look at what main did before the rewrite). Pre-retrofit, src/server/notification-copy/controller.js made ONE call — notificationClient.copy -> POST /notifications/{ref}/copy — and the backend returned the new notification with its reference already minted. There was no frontend dual write and no Idempotency-Key header. So option (b), a backend-owned single idempotent call, RESTORES the original architecture; option (a) would invent a frontend dual write that never existed here. The action-path endpoint shape is pre-existing rather than newly introduced, though the REST guide would prefer a noun if it is being touched anyway. The only genuinely new decision is whether to keep the retrofit's Idempotency-Key retry semantics: keep them, they are strictly better than the original."
+      "ruling": "RULED 2026-08-10 (Sam: look at what main did before the rewrite). Pre-retrofit, src/server/notification-copy/controller.js made ONE call — notificationClient.copy -> POST /notifications/{ref}/copy — and the backend returned the new notification with its reference already minted. There was no frontend dual write and no Idempotency-Key header. So option (b), a backend-owned single idempotent call, RESTORES the original architecture; option (a) would invent a frontend dual write that never existed here. The action-path endpoint shape is pre-existing rather than newly introduced, though the REST guide would prefer a noun if it is being touched anyway. The only genuinely new decision is whether to keep the retrofit's Idempotency-Key retry semantics: keep them, they are strictly better than the original.",
+      "commits": [
+        "backend:3703e11",
+        "tests:b3fd25d",
+        "frontend:28482ef4"
+      ]
     },
     {
       "id": "snag-002",
@@ -329,7 +334,7 @@
       "ticket": "EUDPA-319",
       "branch": "fix/EUDPA-319-hub-commodity-totals-boxes",
       "base": "main",
-      "status": "todo",
+      "status": "done",
       "verdict": "needs-decision",
       "confidence": "high",
       "refuted": false,
@@ -431,11 +436,14 @@
       "notes": "The hub's \"Your commodities\" boxes force each box's explanatory sentence into a govuk summary-list KEY cell that is hard-coded to 30% width, inside a half-column nested in the layout's two-thirds column — about 88px for a 42-character sentence, which is the reported shredded wrapping. The Figma design (verified at ~/Desktop/design/02-notification-hub/) instead uses a bespoke full-width `app-card` stat tile: big blue number, bold blue label, black sentence, on a grey panel. Reproducing that needs custom SCSS and reverses the EUDPA-249 digest ruling that these `app-card` components map to stock govukSummaryCard, so what \"fixed\" looks like is a design call. Either way the block currently has zero browser-level test coverage in both repos — the frontend axe test runs on a fresh notification where the block is absent.\n\nRED-BASELINE PROTOCOL — how to read the ladder. Step 1 is the green baseline: if it is red, stop, the tree is broken and the failures are not yours. Step 2 is the red baseline and is the load-bearing one: write the new hub.e2e.spec.js assertions FIRST, with template.njk, the SCSS partial and the copy files still untouched, and run step 2. It MUST fail — the reading-order assertion fails because today's DOM order is sentence-then-number, the caption line-count assertion fails at roughly eight lines in the 88px summary-list key, and the computed-token assertion fails because no `.app-commodity-total` element exists. Only then implement. Steps 3-11 all run green after the change. A ladder whose first failing state is created by the same edit that fixes it verifies nothing, so do not skip step 2 or merge it into the implementation pass.\n\nStep 7 is deliberately a repeat of step 2 — same command, opposite expected outcome. Step 11 is a regression guard only: nothing in the tests repo asserts this block (its count-exact six-h2 test runs on a fresh notification, where the block is legitimately absent), and the repo's only visual baseline is origin-of-import, so no snapshot moves.\n\nDESIGN CALLS MADE HERE, all four settled by the ruling's own terms (\"productionising, not copying verbatim\") rather than left open. Flagging them so a reviewer can escalate any one without re-opening the gate.\n\n(1) SINGLE-TONE PANEL, not the prototype's two-tone split. The prototype (application.scss:1915-1933) uses a #e5e6e7 top block and a #f3f2f1 bottom block. #f3f2f1 is govuk light-grey under the old brand; #e5e6e7 corresponds to no point on the govuk palette at all — black's tints run #cecece (tint-80) then #f3f3f3 (tint-95), with nothing between. Reproducing the split therefore requires a raw hex, which is the one thing the \"minimal custom CSS\" constraint is aimed at. The whole card is a single `govuk-colour(\"light-grey\")` panel instead. This also matches the earlier Figma export at ~/Desktop/design/02-notification-hub/, which is single-tone. If the reviewer wants the two-tone split back it is a one-line addition of a non-palette grey — a deliberate, separately-arguable exception, not something to smuggle in here.\n\n(2) STAYS INSIDE govuk-grid-column-two-thirds. The prototype escapes to `govuk-grid-column-full` inside a 960px `app-notification-hub` wrapper; the shipped block sits inside `shared/layout.njk:57`, the two-thirds column that every page in the journey renders through. Changing that is an L2 platform change affecting the whole journey, and the ruling authorised custom CSS for the tile, not a shared-layout change. It is also unnecessary: at roughly 316px of column, minus govuk-spacing(4) padding either side, the 43-character sentence at the 19-point step wraps to two lines rather than eight, which is the defect fixed. AC 3 pins two lines rather than one for exactly this reason.\n\n(3) NOT LINKS. extract.figma.json:1291 recorded a designer's open question about whether these tiles link to commodity details. The prototype the ruling names as the reference renders them as plain `<section>`/`<p>` panels, so the question is answered: static panels.\n\n(4) TASKLIST HEADING RESTRUCTURE IS OUT OF SCOPE. The prototype also introduces an h2 'Notification tasklist' with the six groups demoted to h3, where the shipped page has the six groups as h2 with no parent. That is a second live divergence on the same page, the reporter scoped this snag to the boxes, and it would turn the count-exact six-h2 assertion in the tests repo red. Leave it; raise it separately if wanted.\n\nDROPPED FROM THE PRE-RULING FILE LIST, with reasons. `copy.test.js` — the refutation's finding is confirmed: lines 221-246 assert only the `commodityTotals` view-model (`toBeNull`, `toEqual({animals:28, packages:7})`) and never reference the renamed keys, so the proposed edit was a no-op. `tests/e2e/features/hub-groups-and-cya-rows.spec.ts` — a `grep` for the copy strings and for `commodityTotals` across the tests repo returns nothing; there is no forced edit, and adding filled-state coverage there would duplicate the frontend spec (the totals are computed from frontend session state, not from the backend, so the colocated spec is the right home). The tests-repo suite is still run at step 11 as a regression guard.\n\nRESIDUAL COVERAGE LIMITATION, not a blocker and not fixable in this increment. Nothing renders copy.cy.js: `shared/copy.js` defaults to `en` and there is no locale wiring (no cookie, no language toggle), so a broken Welsh key cannot be caught by a browser test. `src/server/app/copy-parity.test.js` — which runs inside `npm test`, step 6 — is the guard, and since this change renames keys without authoring strings, structural parity is the whole of what needs guarding.\n\nTICKET/BRANCH unchanged: EUDPA-319 on fix/EUDPA-319-hub-commodity-totals-boxes off main. Run `sonar analyze --staged` before committing, per the workspace rule.",
       "openQuestions": [],
       "dependsOn": [],
-      "commit": null,
+      "commit": "c454f5dc",
       "failure_reason": null,
       "ticketError": null,
       "conflictsWith": [],
-      "ruling": "RULED 2026-08-10 (Sam): stay as close to the govuk-frontend toolbox as possible, but minimal custom CSS IS permitted where the toolbox genuinely cannot express it. Reference the prototype code in ~/git/defra/defra-design/GB-notification-service — it needs productionising, not copying verbatim. This softens rather than reverses the EUDPA-249 stock-components ruling: the constraint is now minimal CSS, not no CSS. The spec still needs rewriting before this can be built, because its filesToTouch are written conditionally on this gate."
+      "ruling": "RULED 2026-08-10 (Sam): stay as close to the govuk-frontend toolbox as possible, but minimal custom CSS IS permitted where the toolbox genuinely cannot express it. Reference the prototype code in ~/git/defra/defra-design/GB-notification-service — it needs productionising, not copying verbatim. This softens rather than reverses the EUDPA-249 stock-components ruling: the constraint is now minimal CSS, not no CSS. The spec still needs rewriting before this can be built, because its filesToTouch are written conditionally on this gate.",
+      "commits": [
+        "frontend:c454f5dc"
+      ]
     },
     {
       "id": "snag-004",

@@ -1,0 +1,97 @@
+1362:        private Notification fullSource() {
+1363-            return Notification.builder()
+1364-                .referenceNumber(SOURCE_REF)
+1365-                .status(SUBMITTED)
+1366-                .created(LocalDateTime.of(2026, Month.JANUARY, 2, 9, 30))
+1367-                .submittedBaseline(NotificationContentSnapshot.builder()
+1368-                    .origin(new Origin("GB", "true", "BASELINE-REF"))
+1369-                    .build())
+1370-                .origin(new Origin("DE", "yes", "INTERNAL-REF"))
+1371-                .commodity(Commodity.builder()
+1372-                    .name("Live bovine animals")
+1373-                    .commodityComplement(List.of(
+1374-                        new CommodityComplement("LIVE", 10, 5, List.of(species()))))
+1375-                    .build())
+1376-                .reasonForImport("internalMarket")
+1377-                .additionalDetails(new AdditionalDetails("Breeding", "yes"))
+1378-                .placeOfOrigin(placesOfOrigin().getFirst())
+1379-                .consignor(consignors().getFirst())
+1380-                .consignee(consignees().getFirst())
+1381-                .importer(importers().getFirst())
+1382-                .destination(destinations().getFirst())
+1383-                .consignment(consignments().getFirst())
+1384-                .cphNumber("12/345/6789")
+1385-                .transport(Transport.builder()
+1386-                    .portOfEntry("GBDVR")
+1387-                    .arrivalDate(LocalDate.of(2026, Month.MAY, 1))
+1388-                    .transporter(transporters().getFirst())
+1389-                    .build())
+1390-                .build();
+1391-        }
+1392-
+--
+1404:            Notification copy = saveCopyOf(fullSource());
+1405-
+1406-            assertThat(copy.getReferenceNumber()).isEqualTo(COPY_REF);
+1407-            assertThat(copy.getStatus()).isEqualTo(DRAFT);
+1408-            assertThat(copy.getCreated()).isAfter(LocalDateTime.of(2026, Month.JANUARY, 2, 9, 30));
+1409-            assertThat(copy.getUpdated()).isNotNull();
+1410-            verify(referenceNumberGenerator, never()).generate();
+1411-        }
+1412-
+1413-        @Test
+1414-        void createCopyAtReference_shouldCarryTheSourceContentVerbatim() {
+1415:            Notification source = fullSource();
+1416-
+1417-            Notification copy = saveCopyOf(source);
+1418-
+1419-            assertThat(copy.getOrigin()).isEqualTo(new Origin("DE", "yes", "INTERNAL-REF"));
+1420-            assertThat(copy.getCommodity()).isEqualTo(source.getCommodity());
+1421-            assertThat(copy.getCommodity().getCommodityComplement().getFirst())
+1422-                .isEqualTo(new CommodityComplement("LIVE", 10, 5, List.of(species())));
+1423-            assertThat(copy.getReasonForImport()).isEqualTo("internalMarket");
+1424-            assertThat(copy.getAdditionalDetails())
+1425-                .isEqualTo(new AdditionalDetails("Breeding", "yes"));
+1426-            assertThat(copy.getPlaceOfOrigin()).isEqualTo(placesOfOrigin().getFirst());
+1427-            assertThat(copy.getConsignor()).isEqualTo(consignors().getFirst());
+1428-            assertThat(copy.getConsignee()).isEqualTo(consignees().getFirst());
+1429-            assertThat(copy.getImporter()).isEqualTo(importers().getFirst());
+1430-            assertThat(copy.getDestination()).isEqualTo(destinations().getFirst());
+1431-            assertThat(copy.getConsignment()).isEqualTo(consignments().getFirst());
+1432-            assertThat(copy.getCphNumber()).isEqualTo("12/345/6789");
+1433-            assertThat(copy.getTransport()).isEqualTo(source.getTransport());
+1434-        }
+1435-
+1436-        @Test
+1437-        void createCopyAtReference_shouldLeaveTheSubmittedBaselineUnset() {
+1438:            Notification copy = saveCopyOf(fullSource());
+1439-
+1440-            assertThat(copy.getSubmittedBaseline()).isNull();
+1441-        }
+1442-
+1443-        @Test
+1444-        void createCopyAtReference_shouldWriteAnEmptyDraft_whenTheSourceReferenceIsUnknown() {
+1445-            Notification copy = saveCopyOf(null);
+1446-
+1447-            assertThat(copy.getReferenceNumber()).isEqualTo(COPY_REF);
+1448-            assertThat(copy.getStatus()).isEqualTo(DRAFT);
+1449-            assertThat(copy.getOrigin()).isNull();
+1450-            assertThat(copy.getCommodity()).isNull();
+1451-            assertThat(copy.getTransport()).isNull();
+1452-            assertThat(copy.getSubmittedBaseline()).isNull();
+1453-        }
+1454-    }
+1455-
+1456-    @Nested
+1457-    class SoftDeleteNotification {
+1458-
+1459-        @Test
+1460-        void softDeleteNotification_shouldSetStatusToDeletedAndSave_whenDraft() {
+1461-            // Given
+1462-            String referenceNumber = "GBN-AG-26-ABC123";
+1463-            Notification notification = Notification.builder()
+1464-                .id("notif-id-001")
+1465-                .referenceNumber(referenceNumber)
+1466-                .status(DRAFT)
+1467-                .build();
+1468-
