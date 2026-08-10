@@ -10,7 +10,7 @@ export const meta = {
 // ---------------------------------------------------------------------------
 // Configuration. `args` is unreliable here, so FALLBACK is the real switch.
 // ---------------------------------------------------------------------------
-const FALLBACK = { workarea: 'frontend-snagging-eudpa315', increments: ['snag-001', 'snag-003'] }
+const FALLBACK = { workarea: 'frontend-snagging-eudpa315', increments: ['snag-004'] }
 const CFG = typeof args === 'object' && args && args.increments ? { ...FALLBACK, ...args } : FALLBACK
 
 const ABS = '/Users/samfarrington/git/defra/trade-imports-animals'
