@@ -87,7 +87,7 @@ spending time on them.
 | Work | Ticket | Next step |
 |---|---|---|
 | Date restrictions | EUDPA-316 | `snag-004` is `todo` and buildable — run the build loop |
-| Full-width layout | EUDPA-322 | Needs a decision: which pages opt in. Not started |
+| Full-width layout | EUDPA-322 | **Half done** — production change pushed, visual baseline outstanding. See below |
 | Remove "What are you importing?" | EUDPA-324 | Scoped, not started. Big — see below |
 | Notifications search | none yet | **Untriaged.** In `snags.txt`, no ticket |
 
@@ -99,6 +99,40 @@ calendar, the input stays free text. `exitDate` and
 **Coordination risk:** EUDPA-309 is Ready for Dev against Hamid and covers
 swapping the arrival input to the MOJ picker. Read the code first and scope to
 the restriction only — do not redo a control swap that has landed.
+
+### Full-width layout (EUDPA-322) — half done, and there is a trap
+
+**Done and pushed** on `fix/EUDPA-322-full-width-layout`: `layout.njk:57` is now
+`govuk-grid-column-full`, plus a `layout.test.js` guard asserting it. Units 1459
+passed. Ruling was: full width everywhere, consistency first, no opt-in.
+
+**Outstanding:** the tests-repo visual baseline. Not started.
+
+**THE TRAP — read before running any E2E or baseline for this ticket.** The
+change is in a WORKTREE at `repos/trade-imports-animals-frontend-eudpa-322`. The
+stack builds and bind-mounts the CANONICAL checkout
+`repos/trade-imports-animals-frontend`, which is on another branch still reading
+`two-thirds`. The tests repo drives `localhost:3000` — the stack's frontend. So
+regenerating baselines as-is captures the UN-widened layout and commits
+byte-plausible screenshots of the wrong thing while reporting the ACs green.
+Nobody reviewing the images could tell.
+
+Resolution: `scripts/stack/run-stack.sh -d -e frontend` and serve the worktree
+natively on :3000 with `frontend.compose.yml`'s env transposed
+`host.docker.internal` → `localhost`. Gate it mechanically first —
+`curl -sL http://localhost:3000/this-route-does-not-exist` renders the 404 page,
+which extends the shared layout, so assert the served HTML has
+`govuk-grid-column-full` once and `two-thirds` zero times **before** touching
+`--update-snapshots`. Baselines go on a same-named branch in its own worktree.
+
+**Reported, not fixed** (the ticket bans restyling): ten proportional
+`govuk-!-width-*` overrides across six files now scale against a full-width
+container. Listed in the ticket comment.
+
+**Generalisable lesson:** a worktree protects other agents' checkouts but
+detaches you from the stack. If work in a worktree needs the stack, you must
+either serve it natively or accept that every stack-driven check is testing
+something else.
 
 ### Notifications search — untriaged
 Reported: searching for text within a known reference returns nothing.
