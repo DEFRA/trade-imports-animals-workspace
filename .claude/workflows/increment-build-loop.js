@@ -20,11 +20,12 @@ export const meta = {
 // Configuration. `args` plumbing is unreliable in this runtime, so FALLBACK is
 // the real switch: edit it, or pass { increments: [...] } as args.
 // ---------------------------------------------------------------------------
-// `workarea` and `scope` default to plant-products, so an invocation that names
-// only increments behaves exactly as it always did. Point them elsewhere to run
-// another programme's backlog through the same loop — e.g.
-// { workarea: 'frontend-snagging-eudpa315', scope: 'snagging', increments: ['snag-001'] }.
-const FALLBACK = { workarea: 'plant-products-ched-pp', scope: 'plant-products', increments: ['pp-053'] }
+// `workarea` and `scope` select the programme. This branch points at the EUDPA-315
+// snagging backlog; plant-products is the other caller and runs with
+// { workarea: 'plant-products-ched-pp', scope: 'plant-products', increments: ['pp-0NN'] }.
+// Because args cannot be relied on, the fallback must name the programme you
+// actually want — a stale one here sends the loop at a backlog that may not exist.
+const FALLBACK = { workarea: 'frontend-snagging-eudpa315', scope: 'snagging', increments: ['snag-002'] }
 const CFG = typeof args === 'object' && args && args.increments ? { ...FALLBACK, ...args } : FALLBACK
 
 const ABS = '/Users/samfarrington/git/defra/trade-imports-animals'
@@ -172,6 +173,8 @@ THE INCREMENT — read it in full before anything else:
 Run this Bash command and read the output: \`jq '.increments[] | select(.id=="${id}")' ${WORKAREA_TILDE}/backlog.json\`
 That object is your complete specification: filesToTouch (paths + action + what), obligations, flowChanges,
 schemaFields, copyKeys, specs, acceptanceCriteria, verification (the ladder, in order), notes, openQuestions.
+If it carries \`ladderGaps\`, those are known weaknesses in the ladder written as prose, not as steps — they are
+context for judging whether a green run means anything, and must never be executed as commands.
 It is self-contained BY DESIGN — if you find yourself needing information that is not in it, that is a defect
 worth reporting in your summary, not a reason to improvise.
 Supporting context, read what your increment cites: ${WORKAREA}/frontend-plan/SIBLING-SET-PLAN.md (cited by

@@ -575,7 +575,13 @@ const increments = done.map((r) => ({
   copyKeys: r.diag.copyKeys ?? [],
   specs: r.diag.specs ?? [],
   acceptanceCriteria: r.diag.acceptanceCriteria ?? [],
-  verification: [...(r.diag.verification ?? []), ...(r.missingFromLadder ?? [])],
+  // missingFromLadder is CRITIQUE, not steps. Concatenating it into the ladder
+  // produced an array of seven commands followed by five paragraphs of prose,
+  // which the verifier is told to run in order and cannot. The gaps are real and
+  // worth keeping — they just have to be turned into commands by someone who
+  // writes specs (the re-specifier, or a human) rather than executed as they stand.
+  verification: r.diag.verification ?? [],
+  ladderGaps: r.respecced ? [] : r.missingFromLadder ?? [],
   gate: r.verdict === 'needs-decision' ? r.diag.gate ?? 'Design decision required — see the ticket.' : null,
   notes: r.diag.summary,
   openQuestions: r.diag.openQuestions ?? [],
