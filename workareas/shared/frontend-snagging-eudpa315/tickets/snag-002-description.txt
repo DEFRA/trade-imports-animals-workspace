@@ -32,15 +32,16 @@ h3. Why the other declarations are fine
 
 {{font-size: inherit}}, {{font-weight: inherit}} and {{line-height: inherit}} do NOT conflict, because {{.govuk-link}} sets none of them; the button correctly inherits size 19 and bold from {{.govuk-summary-card__actions}} (the summary-card mixin sets {{govuk-font-size(19)}} and {{govuk-typography-weight-bold}}). {{font-family}} is the only broken declaration. The explicit {{color}} override at {{_main.scss:23}} is correct and load-bearing (govuk sets link colour via {{:link}}, which never matches {{<button>}}) and must stay.
 
-h3. Blast radius
+h3. Blast radius — narrower than it looks
 
-The same defect affects every {{.app-link-button}} in the app, all of which also carry {{.govuk-link}}:
+CORRECTED after implementation. There are four {{.app-link-button}} call sites, all of which also carry {{.govuk-link}}, but only the dashboard one was ever broken. {{font-family: inherit}} only falls through to the browser default where no ancestor supplies a family:
 
-* {{features/commodities/consignment-details/_selected-commodities-table.njk:8}}
-* {{features/commodities/animal-identification/_identification-card.njk:19}}
-* {{features/documents/contracts/remove-action.js:12}}
+* {{features/dashboard/template.njk:98}} — inside {{.govuk-summary-card__actions}}, which sets font-size and font-weight but NO font-family. *Broken* — this is the reported defect.
+* {{features/commodities/consignment-details/_selected-commodities-table.njk:8}} — rendered into a {{govukTable}} cell; {{.govuk-table}} sets {{font-family: GDS Transport, arial, sans-serif}}. Never broken.
+* {{features/commodities/animal-identification/_identification-card.njk:19}} — inside {{.govuk-summary-list}}, which sets the same family. Never broken.
+* {{features/documents/contracts/remove-action.js:12}} — rendered into a {{govukTable}} cell via {{documents/view-model/rows.js:27}}. Never broken.
 
-One stylesheet edit fixes all of them.
+The single stylesheet edit remains correct and safe for all four, but it only CHANGES the dashboard. A regression test on any of the other three passes identically before and after the fix, so none was added — one was written during implementation and removed for exactly that reason.
 
 h3. Alternative ruled out
 
@@ -58,7 +59,7 @@ h2. Acceptance criteria
 * On the notification dashboard, the "Copy as new" action renders in the same typeface as the Resume, View and Delete actions in the same card — GDS Transport, not the browser default serif
 * "Copy as new" is visually indistinguishable from its neighbouring actions in font family, size, weight, colour, underline and focus state; only the neighbours' anchor-vs-button semantics differ
 * The "Amend" action on a submitted notification card, which is also a POST-backed link-button, renders in GDS Transport too
-* The "Remove" link-buttons on the selected-commodities table, the animal-identification card and the document contracts list all render in GDS Transport
+* The "Remove" link-buttons on the selected-commodities table, the animal-identification card and the documents list are UNAFFECTED — they already rendered in GDS Transport, inherited from their table or summary-list container, and must continue to
 * "Copy as new" still POSTs and still creates a new draft — behaviour, CSRF crumb, idempotency key and copyOrigin are unchanged
 * No new custom CSS class or declaration is introduced; the change only removes a declaration that was overriding the govuk-frontend link styles
 * No new client-side JavaScript is introduced; the page behaves identically with JavaScript disabled
