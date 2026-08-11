@@ -19,6 +19,19 @@ handover time — not recalled.
 - **`args` does not reach a workflow script in this runtime.** The `FALLBACK`
   const at the top of each is the only switch that works. Getting this wrong
   already caused one run to build an already-merged increment.
+- **Editing `FALLBACK` is necessary but NOT sufficient. You must also launch by
+  `scriptPath`, never by `name`.** `Workflow({name: 'increment-build-loop'})`
+  resolves a registry snapshot taken at session start, so it runs the script as
+  it was when the session opened and silently ignores your edit. This is the
+  same trap as the bullet above and it has now fired twice: on 2026-08-10 it
+  rebuilt already-merged `snag-003` and ran a full review pass over parked
+  `snag-001` — 57 agents, ~4.7M tokens, nothing committed, nothing wanted. The
+  edit was in the file; the executed copy still had the old value. Always:
+
+      Workflow({ scriptPath: '<abs>/.claude/workflows/increment-build-loop.js' })
+
+  and before trusting the run, `grep -n "const FALLBACK"` the snapshot the tool
+  reports back. Do not tell anyone what the loop is building until you have.
 - Only one workflow at a time — they all write `backlog.json` and will race.
 
 ## Done

@@ -25,7 +25,7 @@ export const meta = {
 // { workarea: 'plant-products-ched-pp', scope: 'plant-products', increments: ['pp-0NN'] }.
 // Because args cannot be relied on, the fallback must name the programme you
 // actually want — a stale one here sends the loop at a backlog that may not exist.
-const FALLBACK = { workarea: 'frontend-snagging-eudpa315', scope: 'snagging', increments: ['snag-003', 'snag-001'] }
+const FALLBACK = { workarea: 'frontend-snagging-eudpa315', scope: 'snagging', increments: ['snag-004'] }
 const CFG = typeof args === 'object' && args && args.increments ? { ...FALLBACK, ...args } : FALLBACK
 
 const ABS = '/Users/samfarrington/git/defra/trade-imports-animals'
