@@ -139,6 +139,40 @@ suite by construction. The tests repo carries the matching anchor in
 `utils/date-utils.ts` — if the two ever diverge, they will disagree for one hour
 a day for half the year.
 
+**CI IS UTC, SO IT CANNOT SEE A TIMEZONE BUG. This is the one to remember.**
+Mid-review the date helpers were re-expressed with date-fns (Sam's call — it is
+already a dependency, and `addMonths` brings month-end clamping for free). But
+`startOfDay` and `format` normalise to LOCAL time, and that was waved through
+on the claim that "the app runs UTC and vitest forces `TZ=UTC`". The claim was
+false: `test:features` sets no `TZ`, so the Playwright drivers run on the
+developer's clock. Under BST a midnight-UTC date became 23:00 the day before
+and 12 September rendered as 11 September.
+
+**The broken version passed the full CI suite.** GitHub runners are UTC, so the
+entire class of defect is invisible there. It was caught only by running the
+features suite on a BST machine. Two consequences worth keeping:
+- `TZ=UTC` on every vitest script makes the unit suite structurally blind to
+  this. The features suite is the only guard, and only because it does NOT set
+  `TZ`. If someone adds `TZ=UTC` there for determinism, the guard is gone.
+- date-fns now survives only where it is timezone-safe: `addDays`/`addMonths`
+  preserve wall-clock time so midnight-UTC dates stay midnight UTC. Day starts
+  and formatting go through the UTC accessors. `calendar.js` states the
+  invariant at the top — do not reintroduce `startOfDay` or `format` there.
+
+**Review outcome: PASS WITH NOTES, all 23 items resolved.** 3 Major (all
+test-quality), 20 Minor. 18 fixed, 2 declined on Sam's rulings (dates stay
+numeric because the numeric form is what the field accepts and doubles as the
+format cue; date-fns adopted), 3 dropped as timezone fussing. Files under
+`workareas/reviews/EUDPA-316/`.
+
+**Two tests here proved nothing until forced to fail, and both were mine.** The
+dashboard's expected display date was produced by the same function that
+rendered the cell it asserted against. And the "rejected date is not saved"
+test re-entered via `journey.toArrivalDetails()`, which starts a NEW
+notification — so the field was empty whether or not the value saved. It now
+returns through the overview and pins the URL as unchanged. Assume a new
+assertion is vacuous until you have watched it go red.
+
 **Coordination:** EUDPA-309 is Ready for Dev against Hamid and its first ACs are
 already in `main` (the MOJ picker swap landed before this work). EUDPA-316
 delivers its remaining two. Someone should link them and either close EUDPA-309
