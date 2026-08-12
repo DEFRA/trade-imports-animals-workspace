@@ -1,0 +1,137 @@
+commit 3703e11cfb546a99d9bf3ef4f38eeecaf54f387e
+Author: samfarrington <sam@torviewconsulting.com>
+Date:   Mon Aug 10 12:41:18 2026 +0100
+
+    fix(snagging): Copy as new: the backend writes both aggregates in one idempotent call
+    
+    Copying a notification created only the canonical notification-fulfilments
+    document, never the paired Notification at the copy's new reference, so the
+    copy was missing from the dashboard and the first save, submit, amend or
+    delete 404'd onto the recoverable-error page.
+    
+    NotificationFulfilmentsService.copy now calls
+    NotificationService.createCopyAtReference inside its existing transaction,
+    writing the paired Notification at the copy's reference and only on the
+    non-dedupe path, so an idempotent replay still yields exactly one of each.
+    The copied Notification carries the source's content verbatim, and a
+    fulfilments document with no paired Notification still yields an empty DRAFT
+    so the copy stays listable and self-heals on first save.
+    
+    The half-writing POST /notifications/{ref}/copy endpoint,
+    NotificationService.copyNotification and NotificationCopyMapper are deleted
+    along with their tests; the tests repo's unused notification API client
+    copyNotification goes with them and gains getNotification.
+    
+    E2E specs now assert both aggregates: the dashboard shows the copy as a Draft
+    card mirroring the source, a copy can be edited, saved and submitted
+    end-to-end, and the promoted-lifecycle spec checks the notification side of
+    copy and its replay. The frontend keeps its single Idempotency-Key call;
+    only persistence.md changes, to record copy as the exception to the
+    canonical-then-projection write order.
+    
+    Increment: snag-001 (EUDPA-317, parent EUDPA-315)
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+diff --git a/src/test/java/uk/gov/defra/trade/imports/animals/integration/NotificationFulfilmentsIT.java b/src/test/java/uk/gov/defra/trade/imports/animals/integration/NotificationFulfilmentsIT.java
+index e160ef6..d06965d 100644
+--- a/src/test/java/uk/gov/defra/trade/imports/animals/integration/NotificationFulfilmentsIT.java
++++ b/src/test/java/uk/gov/defra/trade/imports/animals/integration/NotificationFulfilmentsIT.java
+@@ -418,6 +418,73 @@ class NotificationFulfilmentsIT extends IntegrationBase {
+         assertThat(persisted.getSubmittedFulfilments()).isNull();
+         assertThat(persisted.getIdempotencyKey()).isEqualTo("copy-" + sourceStatus);
+         assertThat(notificationFulfilmentsRepository.count()).isEqualTo(2);
++        assertThat(notificationRepository.findByReferenceNumber(copy.getId()))
++            .get()
++            .extracting(Notification::getStatus)
++            .isEqualTo(NotificationStatus.DRAFT);
++    }
++
++    @Test
++    void copy_shouldCreateTheNotificationAtTheCopyReference() {
++        NotificationFulfilments source = stored(
++            DIRECT_PUT_REF,
++            NotificationFulfilmentsStatus.SUBMITTED,
++            LocalDateTime.of(2026, 7, 24, 10, 0),
++            LocalDateTime.of(2026, 7, 24, 11, 0));
++        notificationFulfilmentsRepository.insert(source);
++        notificationRepository.save(sourceNotification(DIRECT_PUT_REF));
++
++        NotificationFulfilments copy = copyFulfilment(DIRECT_PUT_REF, "copy-with-notification");
++
++        Optional<Notification> copied = notificationRepository.findByReferenceNumber(copy.getId());
++        assertThat(copied).isPresent();
++        Notification notification = copied.orElseThrow();
++        assertThat(notification.getStatus()).isEqualTo(NotificationStatus.DRAFT);
++        assertThat(notification.getOrigin()).isEqualTo(new Origin("FR", "yes", "INTERNAL-REF-1"));
++        assertThat(notification.getCommodity().getName()).isEqualTo("Live bovine animals");
++        assertThat(notification.getTransport().getArrivalDate())
++            .isEqualTo(LocalDate.of(2026, 9, 1));
++        assertThat(notification.getConsignor().getName()).isEqualTo("Consignor Ltd");
++        assertThat(notification.getConsignee().getName()).isEqualTo("Consignee Ltd");
++        assertThat(notification.getCphNumber()).isEqualTo("12/345/6789");
++        assertThat(notification.getCreated()).isNotNull();
++        assertThat(notification.getSubmittedBaseline()).isNull();
++
++        webClient("NoAuth")
++            .get().uri("/notifications")
++            .exchange()
++            .expectStatus().isOk()
++            .expectBody()
++            .jsonPath("$.content[*].referenceNumber")
++            .value(Matchers.hasItem(copy.getId()));
++    }
++
++    @Test
++    void copy_shouldNotCreateASecondNotificationOnIdempotentReplay() {
++        NotificationFulfilments source = createFulfilment();
++        notificationRepository.save(sourceNotification(source.getId()));
++
++        NotificationFulfilments first = copyFulfilment(source.getId(), "replayed-key");
++        long afterFirstCopy = notificationRepository.count();
++        NotificationFulfilments replay = copyFulfilment(source.getId(), "replayed-key");
++
++        assertThat(replay.getId()).isEqualTo(first.getId());
++        assertThat(afterFirstCopy).isEqualTo(2);
++        assertThat(notificationRepository.count()).isEqualTo(afterFirstCopy);
++        assertThat(notificationFulfilmentsRepository.count()).isEqualTo(2);
++    }
++
++    @Test
++    void copy_shouldStillCreateADraftNotificationWhenTheSourceHasNone() {
++        NotificationFulfilments source = createFulfilment();
++
++        NotificationFulfilments copy = copyFulfilment(source.getId(), "orphan-source");
++
++        Optional<Notification> copied = notificationRepository.findByReferenceNumber(copy.getId());
++        assertThat(copied).isPresent();
++        assertThat(copied.orElseThrow().getStatus()).isEqualTo(NotificationStatus.DRAFT);
++        assertThat(copied.orElseThrow().getOrigin()).isNull();
++        assertThat(notificationRepository.count()).isEqualTo(1);
+     }
+ 
+     @Test
+@@ -547,6 +614,23 @@ class NotificationFulfilmentsIT extends IntegrationBase {
+             .build();
+     }
+ 
++    private Notification sourceNotification(String referenceNumber) {
++        return Notification.builder()
++            .referenceNumber(referenceNumber)
++            .status(NotificationStatus.SUBMITTED)
++            .created(LocalDateTime.of(2026, 7, 24, 10, 0))
++            .origin(new Origin("FR", "yes", "INTERNAL-REF-1"))
++            .commodity(Commodity.builder().name("Live bovine animals").build())
++            .consignor(Operator.builder().name("Consignor Ltd").build())
++            .consignee(Operator.builder().name("Consignee Ltd").build())
++            .cphNumber("12/345/6789")
++            .transport(Transport.builder()
++                .portOfEntry("GBABD")
++                .arrivalDate(LocalDate.of(2026, 9, 1))
++                .build())
++            .build();
++    }
++
+     private NotificationFulfilments createFulfilmentWithId(String id) {
+         return webClient("NoAuth")
+             .put().uri(FULFILMENT_ENDPOINT + "/{id}", id)

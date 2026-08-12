@@ -1,0 +1,217 @@
+commit b3fd25d1657d3f0b13afd073312abc09917548c1
+Author: samfarrington <sam@torviewconsulting.com>
+Date:   Mon Aug 10 12:41:23 2026 +0100
+
+    fix(snagging): Copy as new: the backend writes both aggregates in one idempotent call
+    
+    Copying a notification created only the canonical notification-fulfilments
+    document, never the paired Notification at the copy's new reference, so the
+    copy was missing from the dashboard and the first save, submit, amend or
+    delete 404'd onto the recoverable-error page.
+    
+    NotificationFulfilmentsService.copy now calls
+    NotificationService.createCopyAtReference inside its existing transaction,
+    writing the paired Notification at the copy's reference and only on the
+    non-dedupe path, so an idempotent replay still yields exactly one of each.
+    The copied Notification carries the source's content verbatim, and a
+    fulfilments document with no paired Notification still yields an empty DRAFT
+    so the copy stays listable and self-heals on first save.
+    
+    The half-writing POST /notifications/{ref}/copy endpoint,
+    NotificationService.copyNotification and NotificationCopyMapper are deleted
+    along with their tests; the tests repo's unused notification API client
+    copyNotification goes with them and gains getNotification.
+    
+    E2E specs now assert both aggregates: the dashboard shows the copy as a Draft
+    card mirroring the source, a copy can be edited, saved and submitted
+    end-to-end, and the promoted-lifecycle spec checks the notification side of
+    copy and its replay. The frontend keeps its single Idempotency-Key call;
+    only persistence.md changes, to record copy as the exception to the
+    canonical-then-projection write order.
+    
+    Increment: snag-001 (EUDPA-317, parent EUDPA-315)
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+diff --git a/adapters/http/notification-api-client.ts b/adapters/http/notification-api-client.ts
+index 6bcfa42..1bb72c7 100644
+--- a/adapters/http/notification-api-client.ts
++++ b/adapters/http/notification-api-client.ts
+@@ -14,7 +14,8 @@ const OUTBOX_LOCK_RETRY_BASE_MS = 500;
+ /**
+  * HTTP client for the spike's dual persistence surface. Every write path that
+  * needs to reflect in admin (which reads notifications) requires both a
+- * notification-fulfilments call and a notification call.
++ * notification-fulfilments call and a notification call — except copy, which is a
++ * single call to /notification-fulfilments/{id}/copy that writes both aggregates.
+  *
+  * Methods suffixed *NotificationFulfilments hit /notification-fulfilments/{id}/…;
+  * methods suffixed *Notification hit /notifications/{id}/…
+@@ -72,6 +73,10 @@ export class NotificationApiClient {
+     return this.rest.post<Notification>('/notifications', body);
+   }
+ 
++  async getNotification(id: string): Promise<Notification> {
++    return this.rest.get<Notification>(`/notifications/${id}`);
++  }
++
+   /**
+    * Whole-record update of an existing notification. `referenceNumber` in the
+    * body is required — main's `saveOriginOfImport` delegates to
+@@ -94,10 +99,6 @@ export class NotificationApiClient {
+     return this.rest.post<Notification>(`/notifications/${id}/cancel-amend`);
+   }
+ 
+-  async copyNotification(id: string): Promise<Notification> {
+-    return this.rest.post<Notification>(`/notifications/${id}/copy`);
+-  }
+-
+   async softDeleteNotification(id: string): Promise<Notification> {
+     return this.rest.post<Notification>(`/notifications/${id}/soft-delete`);
+   }
+diff --git a/tests/e2e/features/promoted-lifecycle.spec.ts b/tests/e2e/features/promoted-lifecycle.spec.ts
+index 5336bd4..5d0ed24 100644
+--- a/tests/e2e/features/promoted-lifecycle.spec.ts
++++ b/tests/e2e/features/promoted-lifecycle.spec.ts
+@@ -16,6 +16,24 @@ test.describe('Promoted lifecycle across both aggregates', { tag: ['@compose', '
+     expect(draft.id).toBe(id);
+     expect(draft.status).toBe(notificationFulfilmentsStatuses.draft);
+ 
++    await notificationApi.saveNotification(id, {
++      origin: { countryCode: 'FR', requiresRegionCode: 'yes', internalReference: 'INTERNAL-REF-1' },
++      commodity: {
++        name: 'Live bovine animals',
++        commodityComplement: [
++          {
++            typeOfCommodity: 'LIVE',
++            totalNoOfAnimals: 10,
++            totalNoOfPackages: 5,
++            species: [{ value: '1148346', text: 'Bos taurus', noOfAnimals: 10, noOfPackages: 5 }],
++          },
++        ],
++      },
++      transport: { portOfEntry: 'GBFXT', arrivalDate: '2026-09-01' },
++      consignor: { name: 'Consignor Ltd', address: { addressLine1: '1 Farm Road', city: 'Hamburg', country: 'DE' } },
++      consignee: { name: 'Consignee Ltd', address: { addressLine1: '2 Market Street', city: 'Leeds', country: 'GB' } },
++    });
++
+     // Submit both sides.
+     const submittedNotificationFulfilments = await notificationApi.submitNotificationFulfilments(id);
+     const submittedNotification = await notificationApi.submitNotification(id);
+@@ -35,16 +53,28 @@ test.describe('Promoted lifecycle across both aggregates', { tag: ['@compose', '
+     expect(cancelledNotificationFulfilments.status).toBe(notificationFulfilmentsStatuses.submitted);
+     expect(cancelledNotification.status).toBe(notificationStatuses.submitted);
+ 
+-    // NotificationFulfilments copy carries an idempotency key; the notification
+-    // copy on main has no equivalent (POST /notifications/{id}/copy takes no key),
+-    // so this spec only exercises the notification-fulfilments side of copy.
++    // One Idempotency-Key-guarded call writes both aggregates at the copy's reference.
+     const key = randomUUID();
++    const source = await notificationApi.getNotification(id);
+     const copiedNotificationFulfilments = await notificationApi.copyNotificationFulfilments(id, key);
+-    const repeatedCopy = await notificationApi.copyNotificationFulfilments(id, key);
+     expect(copiedNotificationFulfilments.id).not.toBe(id);
+-    expect(repeatedCopy.id).toBe(copiedNotificationFulfilments.id);
+     expect(copiedNotificationFulfilments.status).toBe(notificationFulfilmentsStatuses.draft);
+ 
++    const copiedNotification = await notificationApi.getNotification(copiedNotificationFulfilments.id);
++    expect(copiedNotification.referenceNumber).toBe(copiedNotificationFulfilments.id);
++    expect(copiedNotification.status).toBe(notificationStatuses.draft);
++    expect(copiedNotification.origin).toEqual(source.origin);
++    expect(copiedNotification.commodity).toEqual(source.commodity);
++    expect(copiedNotification.transport).toEqual(source.transport);
++    expect(copiedNotification.consignor).toEqual(source.consignor);
++    expect(copiedNotification.consignee).toEqual(source.consignee);
++    expect(copiedNotification.origin?.internalReference).toBe('INTERNAL-REF-1');
++    expect(copiedNotification.transport?.arrivalDate).toBeTruthy();
++
++    const repeatedCopy = await notificationApi.copyNotificationFulfilments(id, key);
++    expect(repeatedCopy.id).toBe(copiedNotificationFulfilments.id);
++    expect(await notificationApi.getNotification(repeatedCopy.id)).toEqual(copiedNotification);
++
+     // Soft-delete both sides; both are idempotent.
+     const deletedNotificationFulfilments = await notificationApi.softDeleteNotificationFulfilments(id);
+     const deletedNotification = await notificationApi.softDeleteNotification(id);
+diff --git a/tests/e2e/pages/notification-dashboard.spec.ts b/tests/e2e/pages/notification-dashboard.spec.ts
+index 7b1c2ea..e7a178c 100644
+--- a/tests/e2e/pages/notification-dashboard.spec.ts
++++ b/tests/e2e/pages/notification-dashboard.spec.ts
+@@ -102,6 +102,30 @@ test.describe('Import notification service dashboard', { tag: '@integration' },
+         )?.[0];
+         expect(copiedReferenceNumber).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
+         expect(copiedReferenceNumber).not.toEqual(originalReferenceNumber);
++
++        await pages.notificationDashboard.open();
++        await pages.notificationDashboard.searchForReference(originalReferenceNumber);
++        const sourceCard = pages.notificationDashboard.notificationCardDetails(0);
++        await expect(sourceCard.heading).toContainText(originalReferenceNumber);
++        const [commodity, origin, consignor, consignee, arrival] = await Promise.all([
++          sourceCard.commodity.textContent(),
++          sourceCard.origin.textContent(),
++          sourceCard.consignor.textContent(),
++          sourceCard.consignee.textContent(),
++          sourceCard.arrivalAtDestination.textContent(),
++        ]);
++        await expect(sourceCard.status).toContainText('Submitted');
++
++        await pages.notificationDashboard.open();
++        await pages.notificationDashboard.searchForReference(copiedReferenceNumber);
++        const copyCard = pages.notificationDashboard.notificationCardDetails(0);
++        await expect(copyCard.heading).toContainText(copiedReferenceNumber);
++        await expect(copyCard.status).toContainText('Draft');
++        await expect(copyCard.commodity).toHaveText(commodity);
++        await expect(copyCard.origin).toHaveText(origin);
++        await expect(copyCard.consignor).toHaveText(consignor);
++        await expect(copyCard.consignee).toHaveText(consignee);
++        await expect(copyCard.arrivalAtDestination).toHaveText(arrival);
+       },
+     );
+   });
+diff --git a/tests/e2e/pages/notification-view-states.spec.ts b/tests/e2e/pages/notification-view-states.spec.ts
+index c7086dc..96f874c 100644
+--- a/tests/e2e/pages/notification-view-states.spec.ts
++++ b/tests/e2e/pages/notification-view-states.spec.ts
+@@ -77,4 +77,43 @@ test.describe('Notification view states', { tag: ['@integration', '@duplicated-i
+       await expect(pages.notificationView.summaryCard('Cow (0102) — Bos taurus')).toBeVisible();
+     });
+   });
++
++  test.describe('COPY OF SUBMITTED', () => {
++    test('saves an edited answer and submits the copy end to end', async ({ journey, journeyContext, pages }) => {
++      test.slow();
++      await journey.submitNotification();
++      const originalReferenceNumber = journeyContext.journeyId;
++
++      await pages.notificationView.open(originalReferenceNumber);
++      await pages.notificationView.btnCopyAsNew.click();
++      await pages.overview.heading.waitFor();
++
++      const copiedReferenceNumber = (await pages.notificationView.referenceNumberCaption.textContent())?.match(
++        /GBN-AG-\d{2}-[0-9A-Z]{6}/,
++      )?.[0];
++      expect(copiedReferenceNumber).toMatch(/^GBN-AG-\d{2}-[0-9A-Z]{6}$/);
++      expect(copiedReferenceNumber).not.toEqual(originalReferenceNumber);
++
++      await pages.overview.task('Where is this consignment coming from?').click();
++      await pages.originOfImport.heading.waitFor();
++      await pages.originOfImport.internalReference.fill('Imports789GB');
++      await pages.originOfImport.saveAndContinue.click();
++      await pages.overview.heading.waitFor();
++      await expect(pages.page.getByText('Sorry, there is a problem with the service')).toHaveCount(0);
++
++      await pages.overview.task('Check and submit').click();
++      await pages.notificationView.heading.waitFor();
++      await expect(pages.notificationView.journeyStrip).toContainText(copiedReferenceNumber);
++      await pages.notificationView.continueButton.click();
++      await pages.declaration.heading.waitFor();
++      await pages.declaration.confirmation.check();
++      await pages.declaration.continueButton.click();
++
++      await expect(pages.page.getByRole('heading', { name: 'Import notification submitted' })).toBeVisible();
++      await expect(pages.page.getByText('Sorry, there is a problem with the service')).toHaveCount(0);
++
++      await pages.notificationView.open(copiedReferenceNumber);
++      await expect(pages.notificationView.journeyStrip.locator('.govuk-tag')).toHaveText('Submitted');
++    });
++  });
+ });

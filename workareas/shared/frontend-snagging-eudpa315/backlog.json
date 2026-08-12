@@ -459,7 +459,7 @@
       "ticket": "EUDPA-316",
       "branch": "fix/EUDPA-316-restrict-date-picker-ranges",
       "base": "main",
-      "status": "todo",
+      "status": "done",
       "verdict": "needs-decision",
       "confidence": "high",
       "refuted": false,
@@ -662,13 +662,17 @@
       "notes": "All three MoJ date pickers in the live-animals journey are completely unrestricted. `kit.dateField` (shared/kit.js:158) builds the picker params without `minDate`/`maxDate`/`excludedDates`/`excludedDays`, so the macro emits no `data-*` restriction attributes and the calendar offers every date in every year; the paired server validator `dateText` (lib/validate/validators.js:190) only checks that the dd/mm/yyyy string is a real calendar date, so a typed `01/01/1900` is accepted and saved. This affects exit date, arrival date at port of entry, and accompanying-document date of issue. It is not a EUDPA-288 regression — no bound has ever existed in the repo. The fix is blocked on a product call: no source in the workspace rules what each field's valid range is, and the three fields point in different directions in time. Once the ranges are ruled, the fix is a view-layer change at the single `kit.dateField` choke point plus a new bounded-date validator, wired at three call sites with new en/cy error copy, and today-relative dates in the specs on both sides of the workspace.\n\nRED-FIRST ANCHORS. Three rungs fail on today's tree and pass once the change lands, so the ladder cannot go green on unfixed code:\n- Rung 1 (`test:live-animals`, seconds): the new `port-of-entry.controller.test.js` GET case asserts `result.view.context.arrivalDate.minDate` equals `arrivalWindow().minText`. Today `kit.dateField` returns no such key, so it is undefined and the assertion fails. The out-of-range POST cases fail the same way — today they commit and redirect instead of returning 400.\n- Rung 4 (`test:features`): the new attribute case asserts `.moj-datepicker` carries `data-min-date`; today the macro emits nothing because all its params are `optional: true`.\n- Rung 9 (`test:docker-compose`): the new `arrival-details.spec.ts` out-of-window case expects 'There is a problem'; today the page saves and advances.\nRung 4 is also a regression tripwire independent of the new cases: `arrival-transit.e2e.spec.js` currently fills `03/01/2026`, which is already outside the new window, so five existing tests in that file go red the moment the server rule lands and stay red until the literal is replaced.\n\nWHY THE OLD LADDER WAS DISHONEST, AND WHAT CHANGED. `playwright.config.js:24-25` scopes the `journeys` project to `**/journey-smoke.spec.js`, so `test:e2e` never ran a single feature spec, and `vitest.config.js` excludes `**/*.e2e.spec.js` so the unit rungs did not pick them up either. `package.json` already ships `test:features` for the `features` project (`playwright.config.js:43-45`); the new ladder runs it at rung 4 and keeps `test:e2e` at rung 5 to guard the `live-animals-journey.js` driver edit. The tests repo, which the old ladder never invoked at all despite editing three of its files, now gets typecheck, lint and the full docker-compose suite.\n\nDECISIONS I MADE (headless — recorded, not deferred):\n1. Bounds are inclusive at both ends. 'earliest is 1 week before today, latest is 6 months after today' reads inclusive, and an exclusive reading would silently cost the user a day at each end.\n2. Comparison is at whole-day granularity anchored on UTC midnight, matching the existing `isRealDate` UTC construction in `calendar.js` and the `TZ=UTC` that every vitest script already sets.\n3. `addUtcMonths` clamps to the last day of the target month. Without it, 31 August + 6 months overflows through JS date rollover to 3 March instead of 28 February, silently widening the window by three days twice a year. Pinned by an explicit case in `arrival-window.test.js`.\n4. Error wording: 'Arrival date at port of entry must be between {earliest} and {latest}', with the boundary dates rendered d/m/yyyy — the same shape the field accepts, so the user can copy one straight in. Neither the ruling nor EUDPA-309 supplied wording; this follows the GDS pattern of naming the field and stating the rule, and matches the existing `numberBetween(min, max)` idiom in `shared/copy.en.js`.\n5. The hint changes. Its current example, 27/3/2026, is now itself out of window — offering a user an example the field rejects is a defect the restriction directly creates, not scope creep. Replacing it with the live window also removes a literal that would otherwise rot again. Welsh mirrors the English structure; the Welsh phrasing is mine and is worth a native-speaker check before merge, but it blocks nothing.\n6. The window is computed once per request handler and threaded into both `fields()` and `render()`. Two independent clock reads could straddle midnight and hand the user a calendar and a server rule that disagree.\n7. Frontend only. The ruling's 'server-side' means the Node server — EUDPA-309's tech notes name the frontend schema, its ACs say nothing about the API, and the one backend date field in the earlier diagnosis (`DocumentUploadRequest.dateOfIssue`) is document date of issue, which the ruling explicitly exempts. No backend change.\n\nSCOPE DROPPED FROM THE OLD SPEC, per the ruling: the exit-date controller and its copy pair, the documents view-model `render.js`, the documents form schema and its copy pair, `exit-date.e2e.spec.js`, `documents/e2e/upload.e2e.spec.js`, and `tests:persistence-accompanying-document.spec.ts`. Also dropped, because they never pass through the arrival validator: the `12/12/2025` literals in `check-answers.test.js`, `save-actions.test.js`, `change-context.test.js` and `documents/controller.test.js` (document date of issue), and the seeded `12/12/2026` answers in `dispatch.test.js`, `gates.test.js`, `seeds.js`, `indexed.test.js`, `task-rows.test.js` and `notification-mapper.test.js` (written straight into state, never validated).\n\nCONFLICT CLEARED. `conflictsWith: [\"snag-005\"]` no longer bites — snag-005 was ruled SUPERSEDED on 2026-08-10 and will not be built. Its overlap was `port-of-entry.njk` and `port-of-entry-select.spec.ts`; this increment does not touch the njk at all, since `mojDatePicker(arrivalDate)` forwards the whole view-model object and picks up the new bounds without a template edit.\n\nTICKET HYGIENE FOR THE PARENT (not a build step). EUDPA-316 delivers the last two unmet ACs of EUDPA-309, which is Ready for Dev against Hamid Jemei and still describes pre-EUDPA-288 paths. Someone should link EUDPA-316 to EUDPA-309 and either close EUDPA-309 or strip its already-delivered ACs, or Hamid will pick up a ticket whose first three ACs are already in main.",
       "openQuestions": [],
       "dependsOn": [],
-      "commit": null,
+      "commit": "96047210",
       "failure_reason": null,
       "ticketError": null,
       "conflictsWith": [
         "snag-005"
       ],
-      "ruling": "RULED 2026-08-10 (Sam) — CORRECTED, supersedes the earlier reading of this gate. APPLY the arrival-date restriction: the field that HAS a ticket specifying it is precisely the one to restrict. Per EUDPA-309, arrivalDateAtPort accepts earliest 1 week before today and latest 6 months after today; an out-of-range value typed manually must be REJECTED server-side with an error summary and an inline message, not merely greyed out in the calendar; the control degrades to a usable text input with JavaScript off; the stored date shape is unchanged. exitDate and accompanyingDocumentDateOfIssue get NO restriction for now — both accept any valid date, and no validation is to be added for them. This increment is therefore real work, not a no-op. COORDINATION RISK the re-specifier must resolve before specifying: EUDPA-309 is Ready for Dev and assigned to Hamid Jemei, and covers replacing the arrival date input with the MOJ picker. This snag says the MOJ picker is already in use but unrestricted. Establish from the code which is true today, and scope this increment to the restriction ONLY — do not re-do the control swap if it has already landed, and do not duplicate work sitting in someone else's ticket."
+      "ruling": "RULED 2026-08-10 (Sam) — CORRECTED, supersedes the earlier reading of this gate. APPLY the arrival-date restriction: the field that HAS a ticket specifying it is precisely the one to restrict. Per EUDPA-309, arrivalDateAtPort accepts earliest 1 week before today and latest 6 months after today; an out-of-range value typed manually must be REJECTED server-side with an error summary and an inline message, not merely greyed out in the calendar; the control degrades to a usable text input with JavaScript off; the stored date shape is unchanged. exitDate and accompanyingDocumentDateOfIssue get NO restriction for now — both accept any valid date, and no validation is to be added for them. This increment is therefore real work, not a no-op. COORDINATION RISK the re-specifier must resolve before specifying: EUDPA-309 is Ready for Dev and assigned to Hamid Jemei, and covers replacing the arrival date input with the MOJ picker. This snag says the MOJ picker is already in use but unrestricted. Establish from the code which is true today, and scope this increment to the restriction ONLY — do not re-do the control swap if it has already landed, and do not duplicate work sitting in someone else's ticket.",
+      "commits": [
+        "frontend:96047210",
+        "tests:8368423"
+      ]
     },
     {
       "id": "snag-005",
@@ -986,6 +990,219 @@
       "ticketError": null,
       "conflictsWith": [],
       "ruling": "RULED 2026-08-10 (Sam): target frontend main. The fix is environmental — rebuild the stack from local repos/ with tim docker dev, done 2026-08-10 with every container healthy. No repo change is needed; the tests checkout already matches main's un-prefixed /notifications/... routes. Do NOT pull the 66-file multi-set restructure from tests spike/trace-to-requirements into snagging."
+    },
+    {
+      "id": "snag-007",
+      "snagText": "Remove the \"What are you importing?\" page — the import type is decided upstream (not a reported snag; carried in from EUDPA-324)",
+      "title": "Delete the import-type filter page and re-point the journey entry seam at the origin page",
+      "repos": [
+        "frontend",
+        "tests"
+      ],
+      "parent": "EUDPA-315",
+      "ticket": "EUDPA-324",
+      "branch": "chore/EUDPA-324-remove-import-type-page",
+      "base": "main",
+      "status": "todo",
+      "verdict": "confirmed",
+      "confidence": "high",
+      "refuted": false,
+      "refuterFailed": false,
+      "respecced": true,
+      "respecFailed": false,
+      "diagnosis": "The live-animals repo serves exactly one import type, so the \"What are you importing?\" filter asks a question with one possible answer. It is not an obligation and never reaches the manifest (`FLOW_ONLY_KEYS` in `flow/flow.js:30`), so removing it needs no data work. The whole cost is the journey entry seam: the page is currently the entry surface, the sole opener of the opening run, and the target the dashboard create-POST and the deep-link guard both redirect to.",
+      "rootCauseFiles": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/flow/run.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/flow/flow.js"
+      ],
+      "notes": "RULED 2026-08-12 (Sam): the first page when creating a notification becomes the ORIGIN page (\"Where is this consignment coming from?\"). The import-type selection moving upstream is explicitly not this increment's problem — do not build a picker anywhere, and do not add a compensating default.\n\nTHE TICKET'S SEAM LIST IS INCOMPLETE — THIS IS THE ONE THING THAT WILL SINK A NAIVE BUILD. EUDPA-324 names four seam points (`isEntrySurface`, `entryGuardTarget`, the dashboard create-POST redirect, the flow page order). There is a FIFTH, and it is the load-bearing one:\n\n`beginOpeningRun` (`flow/run-state.js:9`) has EXACTLY ONE caller in the whole tree — `features/import-type-filter/controller.js:99`, on the POST of the page being deleted. Verified with a repo-wide grep against origin/main. Delete the page without moving that call and the opening run never begins for any journey. Nothing throws; the failure is silent and behavioural:\n- `kit.js:91-94` `runTarget` returns null when `inOpeningRun` is false, so `nextTarget` silently falls back to `nextInSection`. The user is walked through the journey in raw section order instead of `RUN_STEPS` order, and `RUN_STEPS`' gate-skipping (`flowPageTarget` returns null for a failed gate) is bypassed — so pages that should be skipped are shown.\n- `entry-guard.js:55` `hasEnteredThroughFilter` is 'the opening run state exists at all'. With no opener it is always false, so the deep-link guard stops trusting legitimate entries and leans entirely on `hasCommittedNotificationAnswers`.\nWhatever becomes the entry — the origin page — must call `beginOpeningRun` where the filter did. Its unit tests will not catch this; the journey E2E will.\n\nSECOND TRAP, same file. `guardedJourneyPath` (`entry-guard.js:25-27`) deliberately EXCLUDES the entry surface from guarding, so the guard never redirects to the page you are already on. Re-point `isEntrySurface` at the origin slug in the same edit as `entryGuardTarget`, or a fresh journey deep-linked to origin redirects to origin forever.\n\nWHAT NEEDS NO WORK, so nobody spends time proving it again: `importType` is not an obligation and is absent from the manifest — `bridge/scope.js:34`, `scope.js:125` and `status/completeness/leaf.js:27` all say so explicitly. No fulfilment migration, no schema change, no backfill. `FLOW_ONLY_KEYS` SURVIVES as `['declaration']`; this removes one user of the mechanism, not the mechanism.\n\nBLAST RADIUS, measured against origin/main with `git grep -l -i 'importtype|import-type'`: 38 files in frontend (src + e2e), 16 in tests. 54 total, against the ticket's ~51 estimate. Nine in-src E2E specs drive the filter inline via `input[name=\"importType\"]` rather than through the `e2e/live-animals-journey.js` helper, so fixing the helper alone will not be enough.\n\nRED-FIRST ANCHORS. These fail on today's tree and pass once the seam moves, so the ladder cannot go green on an unbuilt change:\n- Rung 1: `flow/opening-run.test.js` and `flow/run.test.js` assert the run starts at the import-type step; `entry-guard`'s specs assert the guard target is the filter path. All fail the moment the seam moves.\n- Rung 4/5: a journey E2E that creates a notification and expects to land on \"Where is this consignment coming from?\" fails today — today it lands on \"What are you importing?\".\n- The opening-run regression above needs its OWN assertion, because every rung can pass without it: create a notification, answer origin, and assert the next page is the commodities page (run order) rather than the hub. If that test passes before the `beginOpeningRun` call is moved, it is not testing what it claims.\n\nDO NOT LEAVE LITTER. `bridge/scope.js` uses importType as the worked example of a flow-only key in four comments, as does `status/completeness/leaf.js:27` — re-point these at `declaration`, which is still valid, rather than deleting the explanation. `docs/journey-flow-and-gates.md:14` and `docs/add-a-section.md:237` both name importType in FLOW_ONLY_KEYS.\n\nBRANCH HYGIENE: cut `chore/EUDPA-324-remove-import-type-page` from CURRENT origin/main in BOTH repos, same name in both. main moved to 0f30d8b2 on 2026-08-12 (EUDPA-322 layout), and snag-004's branch was cut from 23f2fdb4 and is three merges behind — do not repeat that here.",
+      "filesToTouch": [
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/import-type-filter/",
+          "action": "delete",
+          "what": "Delete the whole feature directory: controller.js, page.js, template.njk, copy/copy.en.js, copy/copy.cy.js, copy/copy.test.js and import-type-filter.e2e.spec.js. Before deleting controller.js, note that line 99 is the sole `beginOpeningRun` call in the tree — that call MOVES, it does not disappear."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/index.js",
+          "action": "edit",
+          "what": "Drop the `importTypeFilter` import (line 2), its `meta` entry (line 34) and its `routes` spread (line 59)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/flow/entry-guard.js",
+          "action": "edit",
+          "what": "Re-point the seam at the origin page in ONE edit: `isEntrySurface` (lines 25-27) matches the origin slug and its children; `entryGuardTarget` (line 61) returns the origin path. Delete `IMPORT_TYPE_KEY` and the `userEntered` special-case (lines 11, 34-36) — with the key gone from the journey there is no flow-only answer to exclude. Keep the `hasEnteredThroughFilter` check but rename it to say what it now means (entered through the journey entry, not through a filter)."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/origin/controller.js",
+          "action": "edit",
+          "what": "Take over opening the run: call `beginOpeningRun(request, h, request.params.journeyId)` on POST where the filter's controller did, so `inOpeningRun` is true for the rest of the journey and `RUN_STEPS` sequencing with its gate-skipping still applies. This is the single most important edit in the increment."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/origin/controller.test.js",
+          "action": "edit",
+          "what": "Pin the moved call: POSTing a valid origin answer begins the opening run, so a subsequent read of `inOpeningRun` for that journey is true. Write this test FIRST and watch it fail — on today's tree the origin controller does not open the run, so a test that passes before the controller edit is asserting nothing. This is the only rung that catches the seam's silent failure mode cheaply; everything else needs the full journey."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/flow/run-state.js",
+          "action": "edit",
+          "what": "Rename `hasEnteredThroughFilter` to a name that survives the filter's deletion (the state is 'the opening run has begun'). Update the comment, which refers to the filter. Behaviour unchanged."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/flow/run.js",
+          "action": "edit",
+          "what": "Remove the import-type step from `RUN_STEPS` (line 24) and its import (line 2). The origin step becomes the first."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/flow/flow.js",
+          "action": "edit",
+          "what": "`FLOW_ONLY_KEYS` becomes `['declaration']`. The `start` section becomes `pages: [dashboardPage]`; drop the `importTypeFilterPage` import and entry."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/features/dashboard/controller.js",
+          "action": "edit",
+          "what": "The create-POST at line 133 redirects to the origin page instead of the filter; drop the import at line 17."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/bridge/scope.js",
+          "action": "edit",
+          "what": "Four comments use importType as the worked example of a flow-only key (including lines 34 and 125). Re-point them at `declaration` — the explanation is still needed, only the example is dead."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/bridge/status/completeness/leaf.js",
+          "action": "edit",
+          "what": "Line 27 says 'pre-flow filters like importType have no fulfilment'. Same treatment — re-point at declaration."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/bridge/obligation-source.js",
+          "action": "edit",
+          "what": "Line 53 comment refers to the 'pre-journey import-type filter'. Reword; the declaration half of the sentence still stands."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/journeys/linear/flow/fixtures/happy-path.json",
+          "action": "edit",
+          "what": "Drop the `importType` value. Check every consumer of this fixture still passes — it seeds several unit suites."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/docs/journey-flow-and-gates.md",
+          "action": "edit",
+          "what": "Line 14 states FLOW_ONLY_KEYS holds importType and declaration. Correct it, and correct any description of the opening run beginning at the filter — the origin page now opens the run."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/sets/live-animals/docs/add-a-section.md",
+          "action": "edit",
+          "what": "Line 237 lists FLOW_ONLY_KEYS among what a new section touches, naming importType. Correct the example."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/**/*.test.js",
+          "action": "edit",
+          "what": "Frontend unit/spec files carrying importType, from the origin/main grep: bridge/scope.test.js, contract.test.js, engine/journey.test.js, engine/write/flow-only-session.test.js, flow/unrecognised-answer-keys.test.js, services/persistence/session/real.test.js, services/persistence/session/session.test.js, features/journey-strip.test.js, features/request-view.parity.test.js, flow/opening-run.test.js, flow/run.test.js. The flow-only ones must keep testing the MECHANISM via `declaration` rather than being deleted — the mechanism survives."
+        },
+        {
+          "repo": "frontend",
+          "path": "src/server/app/**/*.e2e.spec.js",
+          "action": "edit",
+          "what": "Nine in-src E2E specs drive the filter inline via `input[name=\"importType\"]` instead of the journey helper: contact, cph-number, dashboard, declaration, destination-country, exit-date, import-purpose, import-reason, origin, port-of-exit. Each must stop selecting an import type. Do not paper over these by fixing only the helper."
+        },
+        {
+          "repo": "frontend",
+          "path": "e2e/live-animals-journey.js",
+          "action": "edit",
+          "what": "Remove the import-type step from the shared journey driver so the helper enters at origin."
+        },
+        {
+          "repo": "tests",
+          "path": "page-objects/notification/import-type-page.ts",
+          "action": "delete",
+          "what": "Delete the page object and its registration in `page-objects/factory.ts`."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/e2e/features/import-type-routing.spec.ts",
+          "action": "delete",
+          "what": "The spec exists solely to prove routing through the filter. It goes wholesale — but read it first and re-home any assertion about the ENTRY seam itself (which still matters) onto the origin page."
+        },
+        {
+          "repo": "tests",
+          "path": "flows/journey.ts",
+          "action": "edit",
+          "what": "Drop the import-type step so the shared flow enters at origin. This is the single change that unblocks most of the specs below."
+        },
+        {
+          "repo": "tests",
+          "path": "tests/**/*.spec.ts",
+          "action": "edit",
+          "what": "Remaining tests-repo specs naming importType, from the origin/main grep: a11y/notification-journey-filled-state, a11y/notification-journey-initial-state, e2e/features/additional-details-scope, animal-identifiers-cap, animal-identifiers-conditional, auth, cph-scope, hub-groups-and-cya-rows, reference-strip, e2e/pages/notification-dashboard, notification-dashboard-pagination, plus page-objects/notification/commodity-selection-page.ts."
+        }
+      ],
+      "obligations": [
+        "Read .claude/skills/frontend-change/SKILL.md and route as a journey-flow maintenance change — this is guard-railed maintenance of the flow and entry guard, not an additive element.",
+        "The entry seam moves in ONE edit: isEntrySurface, entryGuardTarget, the dashboard create-POST redirect, the flow page order, AND the beginOpeningRun call. Splitting them leaves a journey that cannot be entered, enters at the wrong page, or silently loses opening-run sequencing.",
+        "FLOW_ONLY_KEYS survives as ['declaration']. Do not delete the flow-only mechanism along with its last live-animals user, and keep its tests alive against declaration.",
+        "No compensating default: do not write an importType value anywhere to keep old code paths alive. The key is gone.",
+        "Both copy.en.js and copy.cy.js for the deleted feature go together — copy-parity and copy-convention tests enforce structure.",
+        "Cut the branch from CURRENT origin/main in both repos, same branch name in both.",
+        "Run `npm run format` before any commit; the pre-commit hook enforces format + lint + full units."
+      ],
+      "copyKeys": [],
+      "specs": [
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/origin/controller.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/flow/opening-run.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/flow/run.test.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/dashboard/dashboard.e2e.spec.js",
+        "frontend:src/server/app/sets/live-animals/journeys/linear/features/origin/origin.e2e.spec.js",
+        "frontend:src/server/app/contract.test.js",
+        "tests:flows/journey.ts",
+        "tests:tests/e2e/pages/notification-dashboard.spec.ts"
+      ],
+      "acceptanceCriteria": [
+        "The \"What are you importing?\" page is gone: no feature directory, no registration in features/index.js, no route, and no copy keys in either language.",
+        "Starting a new notification from the dashboard lands directly on \"Where is this consignment coming from?\", with no interstitial.",
+        "Deep-linking into a fresh journey still hits the entry guard and is redirected to the origin page — and visiting the origin page itself is NOT redirected, so there is no loop.",
+        "The opening run still sequences: after answering origin, a new notification advances through RUN_STEPS order, not raw section order, and pages whose gate fails are still skipped.",
+        "FLOW_ONLY_KEYS is ['declaration'] and the flow-only projection still works for declaration, with tests still covering the mechanism.",
+        "No fulfilment, manifest or stored notification changes shape — importType was never on them and still is not.",
+        "No reference to importType or the import-type page survives anywhere in src, e2e or the tests repo, including comments, docs and fixtures.",
+        "Both repos' suites are green, and the E2E journey completes without selecting an import type."
+      ],
+      "verification": [
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:live-animals > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-live-animals.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend test > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-units.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-lint.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:features > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-features.log 2>&1",
+        "PORT=3050 npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-frontend run test:e2e > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-journey-smoke.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run typecheck > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-tests-typecheck.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run lint > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-tests-lint.log 2>&1",
+        "~/git/defra/trade-imports-animals/scripts/stack/run-stack.sh -d > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-stack.log 2>&1",
+        "npm --prefix ~/git/defra/trade-imports-animals/repos/trade-imports-animals-tests run test:docker-compose > ~/git/defra/trade-imports-animals/workareas/shared/frontend-snagging-eudpa315/logs/snag-007-tests-e2e.log 2>&1"
+      ],
+      "gate": null,
+      "openQuestions": [],
+      "dependsOn": [
+        "snag-004"
+      ],
+      "commit": null,
+      "failure_reason": null,
+      "ticketError": null,
+      "conflictsWith": [],
+      "ruling": "RULED 2026-08-12 (Sam): the first page when creating a notification becomes the origin page. Build a backlog increment for it. The import-type selection moving upstream is out of scope — do not build a picker and do not compensate for its absence."
     }
   ],
   "spinOffTickets": [

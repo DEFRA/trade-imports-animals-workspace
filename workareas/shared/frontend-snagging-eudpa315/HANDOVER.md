@@ -42,6 +42,8 @@ handover time — not recalled.
 | Copy as new CSS is off | EUDPA-320 | **Merged** `30efd515` |
 | Commodities boxes ugly | EUDPA-319 | **Merged** `e54b22c5` |
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
+| Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
+| Date picker unrestricted | EUDPA-316 | **In review** — frontend#196, tests#111. See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -99,19 +101,51 @@ spending time on them.
 
 | Work | Ticket | Next step |
 |---|---|---|
-| Date restrictions | EUDPA-316 | `snag-004` is `todo` and buildable — the only thing left not started |
-| Layout surfaces | EUDPA-322 | **Done, 8/8 green, awaiting merge.** frontend#193; tests#108 closed as a no-op. See below |
-| Remove "What are you importing?" | EUDPA-324 | Scoped, not started. Big — see below |
-| Notifications search | none yet | **Untriaged.** In `snags.txt`, no ticket |
+| Remove "What are you importing?" | EUDPA-324 | `snag-007` is `todo` and fully specified. Big — see below |
+| Notifications search | none, and none wanted | **Ruled WON'T FIX** 2026-08-10 (Sam). Settled — do not re-triage |
 
-### Date restrictions (EUDPA-316)
-Ruled: restrict `arrivalDateAtPort` to 1 week back / 6 months ahead, **in the
-picker and server-side** — `data-min-date`/`data-max-date` only bind the
-calendar, the input stays free text. `exitDate` and
-`accompanyingDocumentDateOfIssue` get **no** restriction.
-**Coordination risk:** EUDPA-309 is Ready for Dev against Hamid and covers
-swapping the arrival input to the MOJ picker. Read the code first and scope to
-the restriction only — do not redo a control swap that has landed.
+### Date restrictions (EUDPA-316) — built, in review
+
+Built 2026-08-12. **frontend#196** (`96047210`) and **tests#111** (`8368423`),
+both on `fix/EUDPA-316-restrict-date-picker-ranges`, both merged up to current
+`main` before the PRs were raised. `exitDate` and
+`accompanyingDocumentDateOfIssue` are untouched, per the ruling.
+
+Post-merge locally: units 1493 passed, `test:features` 272 passed (the baseline
+before this work was 262), lint clean.
+
+**The red-first anchor was proven, not assumed — and this is the part worth
+copying.** The implementor replaced the spec's `03/01/2026` literal in the same
+pass that landed the rule, so the five tests the respec expected to go red never
+got the chance. Green logs were therefore equally consistent with "rule wired"
+and "rule not wired". The check that settles it: restore the old out-of-window
+literal onto the committed tree, re-run the spec, and read the failure SHAPE —
+
+    heading "There is a problem"
+    link "Arrival date at port of entry must be between 5/8/2026 and 12/2/2027"
+      -> #arrivalDateAtPort
+    paragraph "Error: Arrival date at port of entry must be between …"
+
+Two tests went red, not five: the rewritten spec funnels its valid fill through
+one helper. The count in a respec is an estimate; the failure shape is the
+evidence.
+
+**A timezone defect the review caught that unit tests could not.** The window
+was first anchored on `startOfUtcDay`, but the service's civil day is
+Europe/London, so between 00:00 and 00:59 during BST the whole window computed
+one day short at BOTH ends. Now `startOfDayInZone(now, 'Europe/London')`. Every
+vitest script sets `TZ=UTC`, which makes this class of bug invisible to the unit
+suite by construction. The tests repo carries the matching anchor in
+`utils/date-utils.ts` — if the two ever diverge, they will disagree for one hour
+a day for half the year.
+
+**Coordination:** EUDPA-309 is Ready for Dev against Hamid and its first ACs are
+already in `main` (the MOJ picker swap landed before this work). EUDPA-316
+delivers its remaining two. Someone should link them and either close EUDPA-309
+or strip its delivered ACs, or Hamid picks up a ticket that is mostly done.
+
+The Welsh error copy and hint are the author's phrasing and want a
+native-speaker check before merge. Blocks nothing.
 
 ### Layout surfaces (EUDPA-322) — done, in review
 
@@ -223,9 +257,14 @@ bind mount, so saving a spec under `src/server/app/.../*.e2e.spec.js` restarts
 the server and scatters `ERR_CONNECTION_RESET` across unrelated specs. Cost one
 full suite run. Only `e2e/` helpers are safe to touch mid-run.
 
-### Notifications search — untriaged
-Reported: searching for text within a known reference returns nothing.
-Preliminary dig (not a triage): the frontend just trims and forwards the term;
+### Notifications search — ruled WON'T FIX, not open
+Sam ruled this on 2026-08-10 and it was deliberately never raised as a ticket.
+The line lives as a comment at the foot of `snags.txt` so the loader does not
+re-report it. The behaviour is accepted as-is for now. **It is not a pending
+product decision** — earlier drafts of this handover said it was, wrongly.
+
+The dig that informed the ruling, kept for whenever it is revisited: the
+frontend just trims and forwards the term;
 the backend repository has **only** exact-equality queries on
 `referenceNumber` — no `Containing`, `Like` or regex. So a substring search
 returns nothing by construction. But the field is labelled **"Keyword or
@@ -240,8 +279,41 @@ Scoped in `tickets/import-type-riprout-description.txt`. Key findings:
 on the end result carries this" needs **no work**. `FLOW_ONLY_KEYS` survives as
 `['declaration']`. The real work is the entry seam — `isEntrySurface`,
 `entryGuardTarget`, the dashboard create-POST redirect and the flow page order
-all point at that page and must move in one edit. ~51 files. Nine in-src E2E
-specs drive the filter inline and bypass the journey helper.
+all point at that page and must move in one edit. Nine in-src E2E specs drive
+the filter inline and bypass the journey helper.
+
+**Now `snag-007` in `backlog.json`**, `todo`, `dependsOn: ["snag-004"]`, fully
+specified. Ruled 2026-08-12 (Sam): the first page on creating a notification
+becomes the **origin page**. The import-type selection moving upstream is
+explicitly out of scope — build no picker and add no compensating default.
+
+**THE TICKET'S SEAM LIST IS INCOMPLETE. There is a fifth point and it is the
+load-bearing one.** `beginOpeningRun` (`flow/run-state.js:9`) has exactly ONE
+caller in the tree — `import-type-filter/controller.js:99`, on the POST of the
+page being deleted. Verified by repo-wide grep against `origin/main`. Delete the
+page without moving that call and the opening run never begins for any journey.
+Nothing throws. It fails silently and behaviourally:
+
+- `kit.js:91` — `runTarget` returns null when `inOpeningRun` is false, so
+  `nextTarget` falls back to `nextInSection`. Users get raw section order
+  instead of `RUN_STEPS` order, and the gate-skipping in `flowPageTarget` is
+  bypassed, so pages that should be skipped are shown.
+- `entry-guard.js:55` — `hasEnteredThroughFilter` really means "has the opening
+  run begun". With no opener it is always false, so the deep-link guard stops
+  trusting legitimate entries.
+
+The origin controller must take that call over, and `origin/controller.test.js`
+must pin it — written first, watched to fail, because on today's tree a passing
+version of that test asserts nothing.
+
+**Second trap, same file.** `guardedJourneyPath` (`entry-guard.js:25-27`)
+deliberately excludes the entry surface from guarding so it never redirects to
+the page you are on. Re-point `isEntrySurface` at the origin slug in the SAME
+edit as `entryGuardTarget`, or a fresh journey deep-linked to origin redirects
+to origin forever.
+
+Blast radius re-measured against `origin/main`: 38 frontend files, 16 in tests,
+54 total.
 
 ## Standing lessons from this session
 

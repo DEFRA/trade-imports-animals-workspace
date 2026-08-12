@@ -1,0 +1,50 @@
+commit 28482ef4046137c6db060be72f5633d19f312976
+Author: samfarrington <sam@torviewconsulting.com>
+Date:   Mon Aug 10 12:41:30 2026 +0100
+
+    fix(snagging): Copy as new: the backend writes both aggregates in one idempotent call
+    
+    Copying a notification created only the canonical notification-fulfilments
+    document, never the paired Notification at the copy's new reference, so the
+    copy was missing from the dashboard and the first save, submit, amend or
+    delete 404'd onto the recoverable-error page.
+    
+    NotificationFulfilmentsService.copy now calls
+    NotificationService.createCopyAtReference inside its existing transaction,
+    writing the paired Notification at the copy's reference and only on the
+    non-dedupe path, so an idempotent replay still yields exactly one of each.
+    The copied Notification carries the source's content verbatim, and a
+    fulfilments document with no paired Notification still yields an empty DRAFT
+    so the copy stays listable and self-heals on first save.
+    
+    The half-writing POST /notifications/{ref}/copy endpoint,
+    NotificationService.copyNotification and NotificationCopyMapper are deleted
+    along with their tests; the tests repo's unused notification API client
+    copyNotification goes with them and gains getNotification.
+    
+    E2E specs now assert both aggregates: the dashboard shows the copy as a Draft
+    card mirroring the source, a copy can be edited, saved and submitted
+    end-to-end, and the promoted-lifecycle spec checks the notification side of
+    copy and its replay. The frontend keeps its single Idempotency-Key call;
+    only persistence.md changes, to record copy as the exception to the
+    canonical-then-projection write order.
+    
+    Increment: snag-001 (EUDPA-317, parent EUDPA-315)
+    
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+diff --git a/src/server/app/docs/persistence.md b/src/server/app/docs/persistence.md
+index d05d67b9..eb4e7e8e 100644
+--- a/src/server/app/docs/persistence.md
++++ b/src/server/app/docs/persistence.md
+@@ -56,6 +56,10 @@ notification projections through
+ [`src/server/app/services/persistence/records/notification-mapper/`](../services/persistence/records/notification-mapper/).
+ The projections are downstream views, not resume sources.
+ 
++Copy is the exception to writing canonical fulfilment first and then deriving the
++projection: the backend writes both aggregates inside one `Idempotency-Key`-guarded
++call, so the adapter makes a single request.
++
+ ## Boot wiring
+ 
+ [`src/server/app/routes.js`](../routes.js) passes the mode-selected records and

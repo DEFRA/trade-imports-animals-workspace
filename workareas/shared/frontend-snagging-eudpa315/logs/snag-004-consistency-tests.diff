@@ -1,0 +1,176 @@
+diff --git a/flows/journey.ts b/flows/journey.ts
+index a34d27b..a73f20f 100644
+--- a/flows/journey.ts
++++ b/flows/journey.ts
+@@ -1,5 +1,6 @@
+ import type { PageObjects } from '@page-objects';
+ import type { JourneyOptions } from '@domain/constants/journey-options';
++import { getRelativeDatePickerValue } from '@utils/date-utils';
+ 
+ export type JourneyContext = {
+   journeyId?: string;
+@@ -9,6 +10,9 @@ export type JourneyContext = {
+ 
+ const COUNTRY = 'France';
+ const PORT = 'Aberdeen Harbour (GB ABD)';
++// Inside the arrival-date window (1 week back to 6 months ahead) wherever the
++// wall clock happens to be.
++export const ARRIVAL_DATE = getRelativeDatePickerValue({ monthOffset: 1 });
+ 
+ export class Journey {
+   constructor(
+@@ -140,7 +144,7 @@ export class Journey {
+   }
+ 
+   async fillArrivalDetails(means: string = 'Road Vehicle'): Promise<void> {
+-    await this.pages.arrivalDetails.fillArrivalDate('12/12/2026');
++    await this.pages.arrivalDetails.fillArrivalDate(ARRIVAL_DATE);
+     await this.pages.arrivalDetails.selectPort(PORT);
+     await this.pages.page.getByRole('radio', { name: means, exact: true }).check();
+     await this.pages.arrivalDetails.transportIdentification.fill('FR-892-LK');
+@@ -148,9 +152,9 @@ export class Journey {
+   }
+ 
+   // Re-navigate from the hub to the transporter-type page within an already
+-  // unlocked journey. Arrival details is enforced-at-continue, so it must be
+-  // filled to save through; a road vehicle keeps transited countries in scope,
+-  // which is answered on the way.
++  // unlocked journey. Arrival details is filled so the page saves through; a
++  // road vehicle keeps transited countries in scope, which is answered on the
++  // way.
+   async reachTransporterFromHub(): Promise<void> {
+     await this.pages.overview.task('Arrival details').click();
+     await this.pages.arrivalDetails.heading.waitFor();
+diff --git a/page-objects/notification/arrival-details-page.ts b/page-objects/notification/arrival-details-page.ts
+index e76c935..a85e781 100644
+--- a/page-objects/notification/arrival-details-page.ts
++++ b/page-objects/notification/arrival-details-page.ts
+@@ -30,8 +30,16 @@ export class ArrivalDetailsPage extends NotificationPage {
+     return this.page.getByLabel('Transport document reference');
+   }
+ 
++  get arrivalDate(): Locator {
++    return this.page.locator('input[name="arrivalDateAtPort"]');
++  }
++
++  get datePicker(): Locator {
++    return this.page.locator('.moj-datepicker');
++  }
++
+   async fillArrivalDate(date: string): Promise<void> {
+-    await this.page.locator('input[name="arrivalDateAtPort"]').fill(date);
++    await this.arrivalDate.fill(date);
+   }
+ 
+   get saveAndContinue(): Locator {
+diff --git a/tests/e2e/features/hub-groups-and-cya-rows.spec.ts b/tests/e2e/features/hub-groups-and-cya-rows.spec.ts
+index da1becf..a292e37 100644
+--- a/tests/e2e/features/hub-groups-and-cya-rows.spec.ts
++++ b/tests/e2e/features/hub-groups-and-cya-rows.spec.ts
+@@ -1,5 +1,6 @@
+ import type { Locator } from '@playwright/test';
+ import { test, expect } from '@fixtures';
++import { ARRIVAL_DATE } from '@flows/journey';
+ 
+ test.describe('Hub groups and check-your-answers rows', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+   test('the hub groups its tasks under the six numbered group headings', async ({ journey, pages }) => {
+@@ -77,7 +78,7 @@ test.describe('Hub groups and check-your-answers rows', { tag: ['@integration',
+ 
+     const arrivalDetails = pages.notificationView.summaryCard('Arrival details');
+     await expect(value(arrivalDetails, 'Port of entry')).toHaveText('Aberdeen Harbour (GB ABD)');
+-    await expect(value(arrivalDetails, 'Arrival date at port of entry')).toHaveText('12/12/2026');
++    await expect(value(arrivalDetails, 'Arrival date at port of entry')).toHaveText(ARRIVAL_DATE);
+     await expect(value(arrivalDetails, 'Means of transport')).toHaveText('Road Vehicle');
+     await expect(value(arrivalDetails, 'Countries that the consignment will travel through')).toHaveText('Belgium, France');
+     await expect(value(arrivalDetails, 'Transport identification')).toHaveText('FR-892-LK');
+diff --git a/tests/e2e/features/port-of-entry-select.spec.ts b/tests/e2e/features/port-of-entry-select.spec.ts
+index dbe3414..f0d5467 100644
+--- a/tests/e2e/features/port-of-entry-select.spec.ts
++++ b/tests/e2e/features/port-of-entry-select.spec.ts
+@@ -1,4 +1,5 @@
+ import { test, expect } from '@fixtures';
++import { getRelativeDatePickerValue } from '@utils/date-utils';
+ 
+ const PORT_OPTION = 'Aberdeen Harbour (GB ABD)';
+ const PORT_CODE = 'GB ABD';
+@@ -17,7 +18,7 @@ test.describe('Port of entry plain select', { tag: ['@integration', '@duplicated
+ 
+     await pages.arrivalDetails.selectPort(PORT_OPTION);
+     await expect(select).toHaveValue(PORT_CODE);
+-    await pages.arrivalDetails.fillArrivalDate('12/12/2026');
++    await pages.arrivalDetails.fillArrivalDate(getRelativeDatePickerValue({ monthOffset: 1 }));
+     await pages.arrivalDetails.saveAndContinue.click();
+     await expect(pages.page.getByRole('heading', { name: 'What type of transporter will move the animals?' })).toBeVisible();
+ 
+diff --git a/tests/e2e/pages/arrival-details.spec.ts b/tests/e2e/pages/arrival-details.spec.ts
+index 726eaff..c0a23ca 100644
+--- a/tests/e2e/pages/arrival-details.spec.ts
++++ b/tests/e2e/pages/arrival-details.spec.ts
+@@ -1,4 +1,8 @@
+ import { test, expect } from '@fixtures';
++import { getRelativeAppDateText, getRelativeDatePickerValue } from '@utils/date-utils';
++
++const EARLIEST_ALLOWED = getRelativeAppDateText({ dayOffset: -7 });
++const LATEST_ALLOWED = getRelativeAppDateText({ monthOffset: 6 });
+ 
+ test.describe('Arrival details page', { tag: ['@integration', '@duplicated-in-frontend'] }, () => {
+   test.beforeEach(async ({ journey }) => {
+@@ -31,4 +35,21 @@ test.describe('Arrival details page', { tag: ['@integration', '@duplicated-in-fr
+ 
+     await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toBeVisible();
+   });
++
++  test('restricts the date picker to one week back and six months ahead', async ({ pages }) => {
++    await expect(pages.arrivalDetails.datePicker).toHaveAttribute('data-min-date', EARLIEST_ALLOWED);
++    await expect(pages.arrivalDetails.datePicker).toHaveAttribute('data-max-date', LATEST_ALLOWED);
++  });
++
++  test('rejects a typed arrival date outside the allowed window', async ({ journey, pages }) => {
++    await journey.fillArrivalDetails();
++    await pages.arrivalDetails.fillArrivalDate(getRelativeDatePickerValue({ yearOffset: -1 }));
++    await pages.arrivalDetails.saveAndContinue.click();
++
++    await expect(pages.page.getByRole('heading', { name: 'There is a problem' })).toBeVisible();
++    await expect(
++      pages.page.getByText(`Arrival date at port of entry must be between ${EARLIEST_ALLOWED} and ${LATEST_ALLOWED}`).first(),
++    ).toBeVisible();
++    await expect(pages.arrivalDetails.heading).toBeVisible();
++  });
+ });
+diff --git a/utils/date-utils.ts b/utils/date-utils.ts
+index 164a777..1f05a67 100644
+--- a/utils/date-utils.ts
++++ b/utils/date-utils.ts
+@@ -93,6 +93,32 @@ export function getRelativeDateInput(options: RelativeDateTimeOptions = {}): Dat
+   return toDateInput(getRelativeDate(options));
+ }
+ 
++/**
++ * Gets a date-picker value relative to now, in the `dd/mm/yyyy` shape the
++ * arrival-date and date-of-issue inputs accept.
++ */
++export function getRelativeDatePickerValue(options: RelativeDateTimeOptions = {}): string {
++  const { day, month, year } = getRelativeDateInput(options);
++  return `${day}/${month}/${year}`;
++}
++
++/**
++ * Gets a date relative to now in the `d/m/yyyy` shape the app itself renders —
++ * no leading zeros, and month arithmetic clamped to the last day of the target
++ * month, matching the frontend's arrival-window calculation. Use this when
++ * asserting against app output such as the date picker's `data-min-date`.
++ */
++export function getRelativeAppDateText({ dayOffset = 0, monthOffset = 0 }: RelativeDateTimeOptions = {}): string {
++  const now = new Date();
++  const targetMonth = now.getMonth() + monthOffset;
++  // Day 0 of the following month is the last day of the target month.
++  const lastDayOfTargetMonth = new Date(now.getFullYear(), targetMonth + 1, 0).getDate();
++  const clamped = new Date(now.getFullYear(), targetMonth, Math.min(now.getDate(), lastDayOfTargetMonth));
++  clamped.setDate(clamped.getDate() + dayOffset);
++
++  return `${clamped.getDate()}/${clamped.getMonth() + 1}/${clamped.getFullYear()}`;
++}
++
+ /**
+  * Formats a Date for display using en-GB locale and optional format options.
+  */
