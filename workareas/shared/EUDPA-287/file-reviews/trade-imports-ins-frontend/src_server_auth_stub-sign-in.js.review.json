@@ -1,0 +1,30 @@
+{
+  "file": "src/server/auth/stub-sign-in.js",
+  "repo": "trade-imports-ins-frontend",
+  "commit": "2a1886372d12abf6b4a5b32db1f6a12dbb6cf368",
+  "pr": 18,
+  "mode": "FRESH",
+  "reviewed_at": "2026-08-12T14:31:58Z",
+  "verdict": "NEEDS_ATTENTION",
+  "verdict_reason": "Missing inject/unit coverage for the new auth stub route is Major; empty organisationId via ?? is a Minor edge case",
+  "todos": [
+    {
+      "id": 1,
+      "line": 40,
+      "severity": "Major",
+      "category": "testing",
+      "issue": "New /auth/stub-sign-in route has no colocated stub-sign-in.test.js; session creation, default vs query organisationId, cookie set, and getSafeRedirect behaviour are only exercised indirectly by Playwright e2e",
+      "fix": "Add a Vitest controller-style test that enables AUTH_STUB_MODE, server.inject()s GET /auth/stub-sign-in with and without organisationId/redirect, and asserts cache session fields, cookieAuth, and Location",
+      "best_practice": "node/testing/frontend.md"
+    },
+    {
+      "id": 2,
+      "line": 54,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "organisationId uses ?? so an empty query string (?organisationId=) writes an empty organisationId into the session, unlike the real OIDC path which rejects missing org (D23)",
+      "fix": "Treat blank organisationId as absent (e.g. request.query.organisationId || DEFAULT_STUB_USER.organisationId) or reject empty values before cache.set"
+    }
+  ],
+  "reconciled_at": "2026-08-12T15:02:09Z"
+}

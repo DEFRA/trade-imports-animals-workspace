@@ -1,0 +1,121 @@
+{
+  "ticket": "EUDPA-287",
+  "repo": "trade-imports-ins-frontend",
+  "items": [
+    {
+      "id": 1,
+      "line": 54,
+      "severity": "Major",
+      "category": "missing-assertion",
+      "issue": "AC4 e2e asserts Name cell and column headers but never the Address or Country cell values, so a regression that blanks or mis-maps those columns would still pass.",
+      "fix": "Also assert table cells for stub address line '1 Stub Way, Stubton, ST1 1UB' and country 'United Kingdom'.",
+      "best_practice": "playwright/BEST_PRACTICES.md",
+      "file": "src/server/address-book/e2e/list.e2e.spec.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "line": 57,
+      "severity": "Major",
+      "category": "missing-test",
+      "issue": "AC8 entry from the list is untested: both list cases only assert 'Add a new address' is visible, and no suite clicks it to reach /address-book/add (add.e2e navigates via goto).",
+      "fix": "Click the Add control and expect navigation to /address-book/add (and the Add address details heading).",
+      "best_practice": "playwright/BEST_PRACTICES.md",
+      "file": "src/server/address-book/e2e/list.e2e.spec.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "line": 40,
+      "severity": "Major",
+      "category": "testing",
+      "issue": "New /auth/stub-sign-in route has no colocated stub-sign-in.test.js; session creation, default vs query organisationId, cookie set, and getSafeRedirect behaviour are only exercised indirectly by Playwright e2e",
+      "fix": "Add a Vitest controller-style test that enables AUTH_STUB_MODE, server.inject()s GET /auth/stub-sign-in with and without organisationId/redirect, and asserts cache session fields, cookieAuth, and Location",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/auth/stub-sign-in.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "line": 54,
+      "severity": "Minor",
+      "category": "correctness",
+      "issue": "organisationId uses ?? so an empty query string (?organisationId=) writes an empty organisationId into the session, unlike the real OIDC path which rejects missing org (D23)",
+      "fix": "Treat blank organisationId as absent (e.g. request.query.organisationId || DEFAULT_STUB_USER.organisationId) or reject empty values before cache.set",
+      "file": "src/server/auth/stub-sign-in.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "line": 43,
+      "severity": "Minor",
+      "category": "error-handling",
+      "issue": "throwOnError (and the create/update 400 branches) attach error.status and error.body but omit error.statusText required by the fetch-client error shape",
+      "fix": "Set error.statusText = response.statusText wherever a non-OK response is turned into a thrown Error; ideally fold the 400 branches into throwOnError so there is one construction path",
+      "best_practice": "node/hapi.md",
+      "file": "src/server/common/clients/address-book-client.real.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 6,
+      "line": 53,
+      "severity": "Major",
+      "category": "stub-parity",
+      "issue": "listAddresses ignores q and countryCode that the real client and list controller pass, so stub-mode search never filters and the no-results empty state cannot appear",
+      "fix": "Accept { page, q, countryCode } and filter the in-memory store (name/address/email/postcode match for q; exact countryCode) before paginating",
+      "file": "src/server/common/clients/address-book-client.stub.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 7,
+      "line": 9,
+      "severity": "Major",
+      "category": "testing",
+      "issue": "isAuthStubMode is untested, including the production safety gate that must keep AUTH_STUB_MODE from enabling stub sign-in when isProduction is true",
+      "fix": "Extend mode.test.js to cover isAuthStubMode for stubMode×isProduction combinations (true/false), asserting false whenever isProduction is true",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/common/services/mode.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 8,
+      "line": 12,
+      "severity": "Minor",
+      "category": "test-mocking",
+      "issue": "mockConfigGet is declared with vi.fn() and closed over by vi.mock(), but sibling tests and the BP require vi.hoisted() for mocks referenced inside a mock factory",
+      "fix": "Replace with: const mockConfigGet = vi.hoisted(() => vi.fn())",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/common/services/mode.test.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    },
+    {
+      "id": 9,
+      "line": 24,
+      "severity": "Major",
+      "category": "missing-test",
+      "issue": "New auth.stubMode branches (skip Bell registration; redirectTo /auth/stub-sign-in) are untested in auth.test.js, which still only covers the real OIDC path",
+      "fix": "Extend auth.test.js: when isAuthStubMode is true, assert register skips getOidcConfig/defra-id strategy; assert redirectTo returns /auth/stub-sign-in?redirect=...",
+      "best_practice": "node/testing/frontend.md",
+      "file": "src/server/plugins/auth.js",
+      "disposition": null,
+      "status": null,
+      "notes": null
+    }
+  ]
+}
