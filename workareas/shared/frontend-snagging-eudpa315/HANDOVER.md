@@ -100,8 +100,7 @@ spending time on them.
 | Work | Ticket | Next step |
 |---|---|---|
 | Date restrictions | EUDPA-316 | `snag-004` is `todo` and buildable — the only thing left not started |
-| Layout surfaces | EUDPA-322 | **Done, in review.** frontend#193 + tests#108. See below |
-| Dashboard display pass | none yet | Amending-card wrap + the sidebar's remaining custom CSS. See below |
+| Layout surfaces | EUDPA-322 | **Done, 8/8 green, awaiting merge.** frontend#193; tests#108 closed as a no-op. See below |
 | Remove "What are you importing?" | EUDPA-324 | Scoped, not started. Big — see below |
 | Notifications search | none yet | **Untriaged.** In `snags.txt`, no ticket |
 
@@ -116,20 +115,38 @@ the restriction only — do not redo a control swap that has landed.
 
 ### Layout surfaces (EUDPA-322) — done, in review
 
-**frontend#193** (`576df6bd`) and **tests#108** (`41f8e2d`), both on
-`fix/EUDPA-322-full-width-layout`. Land together.
+**frontend#193** (`8dd47c62`) on `fix/EUDPA-322-full-width-layout`. **tests#108
+is CLOSED** — it ended up changing zero files (regenerate + revert cancelled
+exactly), so there was nothing to merge.
 
 **The ruling changed twice — do not act on the older two.** First a per-page
 opt-in (rejected: "which pages get full width" has no principled answer). Then
 full width everywhere (rejected on looking at it: form pages became a narrow
 column of inputs in a wide empty page). Landed as **two archetypes**: forms keep
 the reading measure, display surfaces take the container. `SURFACES` in
-`shared/kit.js`; `kit.base` takes `surface`, defaulting to `form`; the
-notification list is the only display surface.
+`shared/kit.js`; the notification list is the only display surface and declares
+it with `surfaceClass('display')`.
 
-Because forms are now pixel-identical to pre-ticket, tests#108 is a **revert** of
-the baselines regenerated for the abandoned version — proved by the visual spec
-passing against the originals.
+**Display pages cannot go through `kit.base`.** It forces breadcrumbs off for
+anything without a journey, which would strip the dashboard's own. That is why
+`surfaceClass` is exported separately, and why `base` has no `surface` option —
+one was added, had zero callers for exactly this reason, and was removed.
+
+Because forms are pixel-identical to pre-ticket, the visual baseline needed no
+change at all — proved by the spec passing against the originals unmodified.
+
+**Why two-thirds was wrong for the dashboard, in GDS terms.** GDS does not say
+"use two-thirds". `docs/best-practices/gds/styles.md` says ~75 characters per
+line, and two-thirds is the arithmetic that satisfies it at 19px. The rule
+governs lines of readable text; a card grid and a filter panel have none, so
+full width costs nothing there. Useful if anyone challenges the split.
+
+**The sidebar is `one-third` / `two-thirds`** — the shape the GDS styles guide
+gives as its own grid example. Three were tried on the running stack:
+`one-quarter` starved the panel at ~218px (heading and field label both
+wrapped); a hand-rolled 280px flex pin worked but was bespoke; `one-third` gives
+300px, costs the results column ~40px, and deletes the flex layout, the fixed
+width and the desktop media query.
 
 **Three defects fixed on the way, all found by looking rather than by tests:**
 - Card fields left a fifth of the card blank: the grid declared four columns
@@ -142,27 +159,64 @@ passing against the originals.
   content width so its own `flex-wrap` never fired.
 
 **Sam ruled tolerance-based layout tests are not worth having** — they encode a
-design opinion as a magic number and argue with you about it. Geometry
-assertions were pulled back, not extended. What survives is the binary
-horizontal-overflow check and the one pre-existing wrap check the ACs name.
+design opinion as a magic number and argue with you about it. All geometry
+assertions are gone. What survives is one binary horizontal-overflow check
+(`scrollWidth > clientWidth`, nothing to calibrate) which found the 769px bug.
 Don't reintroduce pixel-tolerance assertions.
 
-### Dashboard display pass — not started
+**Card action wrapping is accepted, not a defect.**
+`govuk-summary-card__actions` is `flex-wrap: wrap` by design.
 
-Two known items, both deliberately left:
+**Three rounds of cuts, after Sam asked whether everything justified itself.**
+Worth knowing what accumulated while the design moved twice: `base`'s unused
+`surface` option and its three tests; overflow assertions on hub, confirmation
+and check-answers (form pages, byte-identical to main under the split); a
+four-actions test the one above it already covered; all the pixel-geometry
+helpers; and `e2e/live-animals-layout.js`, a shared module left with one
+consumer once the first cut landed — now inlined.
 
-- **The amending card's four actions wrap** (Resume, Copy as new, Cancel
-  amendment, Delete). Present on `main` and never detected, because no check
-  existed. "Cancel amendment" is much longer than the submitted card's labels.
-  This is the original snag surviving on a different status.
-- **The filter sidebar is the last custom CSS block** — `__layout`, `__filters`
-  (280px), `__main`, `__toolbar`, `__sort-form`, `__search-form`. GOV.UK has no
-  sidebar-filter pattern, but `__filters`/`__main` could plausibly become
-  `govuk-grid-column-one-quarter` / `three-quarters`.
+There is no separate dashboard pass outstanding — both things once parked for
+one are settled. The sidebar is native, and card action wrapping is accepted.
+What custom CSS is left (`__toolbar`, `__results`, `__sort-form`,
+`__search-form`, the panel's background, the `<dl>` reset) is genuinely
+app-specific; GOV.UK has no filter-sidebar pattern.
 
 **Do not use worktrees.** This work was briefly done in one and it detached the
 change from the stack, which bind-mounts `repos/<repo>`. Branches only. A second
 stray worktree was found holding the tests-repo branch and removed.
+
+### A stale branch-tagged image will fail someone else's PR
+
+Cost most of an afternoon on EUDPA-322 and is still live for other branches.
+
+`run-stack.sh` prefers a branch-tagged image over `:latest`, probing **Dockerhub**
+— `docker manifest inspect defradigital/<image>:<sanitised-branch>` — not git. So
+a branch that exists in a peer repo pins CI to whenever that branch's image was
+last built, however old.
+
+What happened: backend `674b2ac2` (EUDPA-304) started emitting `NotificationEdited`
+on every page save, so every outbox count in the admin specs went up by exactly
+18 (the journey saves ~18 pages). Ian shipped the matching spec fix as tests
+`9dc1033` the same minute. But a `fix/EUDPA-322-full-width-layout` branch existed
+in the tests repo, so E2E used its image — built a week earlier, one commit
+before the fix. Pre-fix specs, post-fix backend, on a PR that touched only CSS.
+
+Two traps inside the trap:
+
+- **Deleting the git branch makes it worse.** The tag survives; you have only
+  removed the thing that could refresh it. Recreate the branch from `main` and
+  re-publish (`gh workflow run publish-branch.yml --ref <branch>`; it is
+  pull_request/workflow_dispatch only, a bare push publishes nothing). Prove the
+  overwrite with a manifest fingerprint rather than assuming it.
+- **A `workflow_dispatch` E2E run will not update the PR's check.**
+  `report-e2e-status` is gated on the trigger being `pull_request`. Close and
+  reopen the PR to fire `reopened` — no empty commit needed. Note the workflow's
+  concurrency group is keyed on branch with `cancel-in-progress`, so a second
+  dispatch kills the first.
+
+How to spot it: the same tests image passing then failing with nothing changed
+on the branch. Compare a green run and a red one — if the image tag is identical
+and the branch head has not moved, the variable is a peer repo's `:latest`.
 
 **Editing `src/` mid-E2E invalidates the run.** The frontend hot-reloads from the
 bind mount, so saving a spec under `src/server/app/.../*.e2e.spec.js` restarts
