@@ -7,79 +7,86 @@ Paste the block below to the next orchestrator.
 Pick up the EUDPA-315 frontend snagging session. Read in order:
 
 1. `~/git/defra/trade-imports-animals-workspace/workareas/shared/frontend-snagging-eudpa315/HANDOVER.md`
-2. `~/git/defra/trade-imports-animals-workspace/workareas/shared/frontend-snagging-eudpa315/backlog.json` — the `snag-004` entry only, it is the next build
+2. The `snag-007` entry in `backlog.json` in that directory — it is the next build
 
 RAILS — every one of these cost real time in previous sessions.
 
-- BRANCHES, NEVER WORKTREES. `git checkout` or `tim workspace branch <name>`. A worktree detaches work from the stack, which bind-mounts `repos/<repo>`, and hides it from `git status`. Two stray worktrees have been found and removed across two sessions; check `git worktree list` before you start.
-- `args` never reaches a workflow script. The `FALLBACK` const is the switch — AND you must launch by `scriptPath`, never by `name`. `Workflow({name})` runs a registry snapshot taken at session start and silently ignores your edit. That has now caused two wrong-target runs, the second burning 57 agents and ~4.7M tokens rebuilding an already-merged increment. After launching, grep the snapshot path the tool reports back and confirm your value is in it before telling anyone what is building.
-- One workflow at a time — they all write `backlog.json` and will race.
-- npm lockfile work needs `npx npm@11.6.2`, not local npm. The wrong npm produces a lockfile `npm ci` rejects, and it passes `npm ci --dry-run` locally, so CI is the only place it shows.
-- DO NOT EDIT ANYTHING UNDER `src/` WHILE AN E2E RUN IS IN FLIGHT. The frontend hot-reloads from the bind mount, so saving a spec restarts the server and scatters `ERR_CONNECTION_RESET` across unrelated specs. It looks exactly like a real regression. Cost a full suite run.
+- BRANCHES, NEVER WORKTREES. A worktree detaches work from the stack, which bind-mounts `repos/<repo>`, and hides it from `git status`. Run `git worktree list` in each repo before you start. The two under `workareas/` belong to older programmes — leave them.
+- `args` never reaches a workflow script. The `FALLBACK` const is the switch — AND you must launch by `scriptPath`, never by `name`. `Workflow({name})` runs a registry snapshot taken at session start and silently ignores your edit. That has caused two wrong-target runs, the worse one burning 57 agents and ~4.7M tokens rebuilding an already-merged increment. After launching, grep the snapshot path the tool reports back and confirm your value is in it before telling anyone what is building.
+- One workflow at a time — they all write `backlog.json` and will race. If you need to add a backlog entry while one runs, stage it to a separate file and merge it in after.
+- npm lockfile work needs `npx npm@11.6.2`. The wrong npm produces a lockfile `npm ci` rejects, and it passes `npm ci --dry-run` locally, so CI is the only place it shows.
+- Do not edit anything under `src/` while an E2E run is in flight. The frontend hot-reloads from the bind mount, so saving a spec restarts the server and scatters `ERR_CONNECTION_RESET` across unrelated specs. It looks exactly like a real regression.
 
-JOB 1 — the arrival-date restriction. This is the only unstarted item and nothing blocks it.
+JOB 1 — remove "What are you importing?". The only unstarted item; nothing blocks it.
 
-EUDPA-316, `snag-004` in `backlog.json`, status `todo`, `respecced: true`, `openQuestions: []`. It is fully specified — read the entry rather than re-deriving it.
+EUDPA-324, `snag-007`, status `todo`, `respecced: true`, `openQuestions: []`. Fully specified — read the entry rather than re-deriving it. The ticket is In Dev and assigned to Sam.
 
-Restrict `arrivalDateAtPort` to 1 week back / 6 months ahead, **in the picker AND server-side**. `data-min-date`/`data-max-date` only bind the calendar; the input stays free text, so a server rule is required too.
+RULED 2026-08-12 (Sam): the first page when creating a notification becomes the **origin page** ("Where is this consignment coming from?"). The import-type selection moving upstream is explicitly OUT OF SCOPE — build no picker anywhere, and add no compensating default. Do not reopen either question.
 
-Already verified, treat as established:
-- The MOJ picker swap has LANDED. `port-of-entry.njk:16` already uses `mojDatePicker`. EUDPA-309 is Ready for Dev against Hamid and covers that swap — do not redo it. Scope to the restriction only.
-- The MOJ macro takes `minDate`/`maxDate` as `dd/mm/yyyy` strings and maps them to `data-min-date`/`data-max-date`. Confirmed in the installed template.
-- `kit.dateField` (`shared/kit.js`) builds the picker view model and currently passes no bounds.
-- `dateText` (`lib/validate/validators.js:190`) validates the string is a real calendar date and applies no bound. `integerInRange` in the same file is the house idiom for a range validator — follow it.
-- `fields()` in `port-of-entry.controller.js` is called per request, so computing the window there is drift-free.
+THE TICKET'S SEAM LIST IS INCOMPLETE, AND THE MISSING PIECE IS THE ONE THAT WILL SINK YOU. EUDPA-324 names four seam points (`isEntrySurface`, `entryGuardTarget`, the dashboard create-POST redirect, the flow page order). There is a fifth:
 
-The respec's own decisions, already made: bounds inclusive; UTC whole-day comparison; `addUtcMonths` clamps to the last day of the target month (31 Aug + 6 months is 28/29 Feb, not 3 Mar); the window computed ONCE per request and threaded into both `fields()` and `render()` so the calendar and the server rule cannot straddle midnight and disagree; frontend only, no backend change.
+`beginOpeningRun` (`flow/run-state.js:9`) has EXACTLY ONE caller in the whole tree — `import-type-filter/controller.js:99`, on the POST of the page being deleted. Verified by repo-wide grep against `origin/main`. Delete the page without moving that call and the opening run never begins for any journey. Nothing throws. It fails silently and behaviourally:
 
-Red-first anchor the respec identifies: `arrival-transit.e2e.spec.js` fills `03/01/2026`, already outside the new window, so five existing tests go red the moment the server rule lands and stay red until the literal is replaced. If they do not go red, the rule is not wired.
+- `kit.js:91` — `runTarget` returns null when `inOpeningRun` is false, so `nextTarget` falls back to `nextInSection`. Users get raw section order instead of `RUN_STEPS` order, and the gate-skipping in `flowPageTarget` is bypassed, so pages that should be skipped are shown.
+- `entry-guard.js:55` — `hasEnteredThroughFilter` really means "has the opening run begun". With no opener it is always false, so the deep-link guard stops trusting legitimate entries.
 
-The Welsh error copy in the respec is the author's own phrasing and wants a native-speaker check before merge. It blocks nothing.
+The origin controller must take that call over, and `origin/controller.test.js` must pin it — written FIRST and watched to fail, because on today's tree a passing version of that test asserts nothing.
 
-JOB 2 — copy-as-new is BLOCKED ON PAUL. Check before touching.
+SECOND TRAP, same file. `guardedJourneyPath` (`entry-guard.js:25-27`) deliberately excludes the entry surface from guarding so it never redirects to the page you are on. Re-point `isEntrySurface` at the origin slug in the SAME edit as `entryGuardTarget`, or a fresh journey deep-linked to origin redirects to origin forever.
 
-Paul Hodgson is delivering EUDPA-323: `Notification` and `NotificationFulfilments` collapse into one Mongo collection. His branch `feat/EUDPA-323-fold-aggregates` exists and his PR is **frontend#195**, currently red on cross-repo drift within his own branch set.
+WHAT NEEDS NO WORK, so nobody spends time proving it again: `importType` is not an obligation and never reaches the manifest — `bridge/scope.js:34`, `scope.js:125` and `status/completeness/leaf.js:27` all say so explicitly. No fulfilment migration, no schema change, no backfill. `FLOW_ONLY_KEYS` SURVIVES as `['declaration']` — this removes one user of the mechanism, not the mechanism, and its tests must stay alive against `declaration`.
 
-- **backend#74 — PARKED. Do not merge or polish.** Close it once EUDPA-323 lands, having checked nothing in it is lost.
-- **frontend#191 and tests#106 rebase ON TOP of EUDPA-323** when it lands.
-- On rebase: `frontend#191` edits `src/server/app/docs/persistence.md` to describe a canonical-then-projection write order. Wrong under a single record. Rewrite it.
+Blast radius, measured against `origin/main`: 38 frontend files, 16 in tests, 54 total. Nine in-src E2E specs drive the filter inline via `input[name="importType"]` rather than through the `e2e/live-animals-journey.js` helper, so fixing the helper alone will not be enough.
 
-**RAISE THIS WITH PAUL — it is the one thing here that is time-critical.** His branch retains `NotificationCopyMapper` with its reset rules intact while now also copying the opaque `fulfilments` blob verbatim. That means a copied notification would carry full answers in `fulfilments` but null `transport`, `consignment`, `internalReference`, animal counts and species in the typed fields — on the SAME document. The journey would show a complete copy; the dashboard would show blanks. That is a divergence inside one record, which is precisely what EUDPA-323's own acceptance criteria promise to remove. It also silently reverses EUDPA-317's ruled gate answer (copy verbatim, AC 5). Verified by reading his branch, not inferred. Both gate answers are now recorded on EUDPA-317 (comment 902441) so the ruling is at least written down.
+Cut `chore/EUDPA-324-remove-import-type-page` from CURRENT `origin/main` in BOTH repos, same name in both. `main` moved twice today.
 
-Prior review analysis is banked at `workareas/shared/frontend-snagging-eudpa315/reviews/EUDPA-317/`. 62 findings, 14 adversarially confirmed, 44 refuted, 4 unverified. **Re-triage against Paul's shape before spending time on any of it** — much of the backend surface it covers is being deleted. The refutations are the valuable half: they record which findings are house idiom mistaken for defect.
+JOB 2 — copy-as-new is BLOCKED ON PAUL. Sam's instruction: ignore it until Paul is done.
 
-JOB 3 — the rest, in rough priority order.
+He is delivering EUDPA-323 (single Mongo collection), PR frontend#195 / backend#76. `backend#74` is PARKED — close it once EUDPA-323 lands, having checked nothing is lost. `frontend#191` and `tests#106` rebase on top. On rebase, `frontend#191` edits `docs/persistence.md` to describe a canonical-then-projection write order, which is wrong under a single record — rewrite it.
 
-- **EUDPA-324, remove "What are you importing?"** — scoped, not started, ~51 files. See `tickets/import-type-riprout-description.txt`. The real work is the entry seam: `isEntrySurface`, `entryGuardTarget`, the dashboard create-POST redirect and the flow page order all point at that page and must move in one edit.
-- **Notifications search** — untriaged, in `snags.txt`, no ticket. Searching for text within a known reference returns nothing because the backend repository has only exact-equality queries on `referenceNumber`. But the field is labelled "Keyword or reference" with a "Search" button. Two honest options of very different sizes: make matching match the label, or make the label match the behaviour. **That is a product decision — do not pick one.**
-- **frontend#194 is stuck in the stale-image trap** (see below) and is one republish from green. Fixing it is a two-minute favour to someone else.
+There is a verified divergence in Paul's branch, drafted and NOT sent, at `workareas/.../paul-copy-divergence.md`: `NotificationCopyMapper.toCopyDto` keeps its reset rules while copying `fulfilments` verbatim, so a copy carries every answer in `fulfilments` and nulls in the typed fields on the SAME document — the journey shows a complete copy, the dashboard shows blanks. Verified at backend `1066cfac`. Re-verify against his current head before raising it; he is committing daily.
+
+Prior review analysis is banked at `workareas/reviews/EUDPA-317/` — 62 findings, 14 confirmed, 44 refuted. Re-triage against Paul's shape first; much of the backend surface is being deleted. The refutations are the valuable half.
+
+JOB 3 — the rest.
+
+- **Notifications search — SETTLED, do not re-triage.** Ruled WON'T FIX 2026-08-10 (Sam) and deliberately never raised as a ticket. It lives as a comment at the foot of `snags.txt` so the loader cannot re-report it. Earlier handovers wrongly called it an open product decision; it is not.
+- `dashboard-one-third.png` is still untracked at the workspace root — Sam's to bin or keep.
 
 WHAT LANDED THIS SESSION
 
-EUDPA-322 layout surfaces, merged as `0f30d8b2`. Pages are now one of two archetypes: forms keep the GOV.UK reading measure, display surfaces take the full container. `SURFACES` in `shared/kit.js`; the notification list is the only display surface and declares it via `surfaceClass('display')`, because it cannot use `kit.base` — that forces breadcrumbs off without a journey and would strip the dashboard's own. Sidebar is `govuk-grid-column-one-third` / `two-thirds`. Card fields, value alignment and a 769px horizontal overflow all fixed.
+EUDPA-316, the arrival-date restriction, merged as frontend `6cbdd3be` and tests `3f013932`. `arrivalDateAtPort` is restricted to 1 week back / 6 months ahead, inclusive, in the picker AND on the server. `exitDate` and `accompanyingDocumentDateOfIssue` are untouched per the ruling. The full `review` skill ran against it: PASS WITH NOTES, 23 items, all resolved — 18 fixed, 2 declined on Sam's rulings, 3 dropped.
 
-STANDING RULES — several of these were violated this session and corrected. Do not repeat them.
+STANDING RULES — several were violated across these sessions and corrected.
 
-- **Do not pile explanatory comments into the code.** Code near-bare. Rationale belongs in the commit message, the ticket and `docs/` — not in the source. I wrote roughly a dozen justification blocks and Sam had to review them out. Default to remove.
-- **Do not spray `govuk-!-` override classes.** Four overrides repeated across eight elements is a component rebuilt out of utilities. If a pattern repeats, state it once in the component's stylesheet. Note govuk-frontend styles by CLASS, not element — a bare `<dt>`/`<dd>` inherits nothing and renders in Times, so something must style it; the only question is where.
-- **Never say "pre-existing", "not mine" or "separate issue".** If it is in the file you are touching, fix it. Sam is explicit and repeated about this.
-- **Do not invent parallel workstreams.** No "this belongs to a follow-up pass", no proposing tickets for things you could just do. This is a snagging pass — fix it.
-- **No tolerance-based layout tests.** Pixel geometry plus a magic tolerance encodes a design opinion and then argues with you. Visual baselines for appearance; binary checks (horizontal overflow) are fine. Card action wrapping is accepted behaviour, not a defect.
-- Run E2E locally: `npm run test:docker-compose` in the tests repo against a `tim docker dev` stack. Do not wait for CI.
-- Red-first or a test proves nothing. Two hand-written tests in an earlier session passed with AND without the fix.
-- This codebase encodes bugs as expected behaviour. A test agreeing with you is not evidence.
-- Hard-refresh the browser, and rebuild assets. The manifest serves an unhashed `application.css` with a 7-day cache, so a working fix looks broken — and a stale bundle against new markup produces layouts that exist nowhere in the code.
-- Reference work by headline, not ticket number, when reporting to Sam.
-- Do not claim something is verified unless you ran it.
+- **Do not pile explanatory comments into the code.** Rationale belongs in the commit message, the ticket and `docs/`. Roughly a dozen justification blocks had to be reviewed out. Default to remove.
+- **Do not spray `govuk-!-` overrides.** Four repeated across eight elements is a component rebuilt from utilities. State a repeated pattern once in the component's stylesheet. Note govuk styles by CLASS, not element — a bare `<dt>`/`<dd>` renders in Times, so something must style it; the only question is where.
+- **Never say "pre-existing", "not mine" or "separate issue".** In the file you're touching? Fix it.
+- **Do not invent parallel workstreams.** No "belongs to a follow-up pass", no proposing tickets for things you could just do.
+- **No tolerance-based layout tests.** Visual baselines for appearance; binary checks like horizontal overflow are fine. Card action wrapping is accepted behaviour.
+- Run E2E locally — `npm run test:docker-compose` against a `tim docker dev` stack. Don't wait for CI.
+- **Red-first or a test proves nothing.** This codebase encodes bugs as expected behaviour; a test agreeing with you is not evidence.
+- Rebuild assets and hard-refresh. The unhashed `application.css` has a 7-day cache, and a stale bundle against new markup produces layouts that exist nowhere in the code.
+- Reference work by headline, not ticket number. Don't claim something is verified unless you ran it.
+- Sam makes the product and style calls. Where something is relatively obvious, make the call and flag it rather than gating on him — but genuine trade-offs go to him.
 
-THE CI TRAP, because it will bite again
+ASSUME YOUR OWN NEW TESTS ARE VACUOUS UNTIL YOU HAVE WATCHED THEM FAIL.
 
-A branch-tagged Docker image in a peer repo pins E2E to whenever that image was last built. `run-stack.sh` probes **Dockerhub** (`docker manifest inspect defradigital/<image>:<sanitised-branch>`), not git, so the tag outlives the branch and ages while `main` moves.
+Two written this session passed while proving nothing. One built its expected value by calling the same production function that rendered the cell it asserted against, so a format regression moved both sides together. The other re-entered a page via `journey.toArrivalDetails()` to check a rejected value had not saved — but that helper starts a NEW notification, so the field was empty either way. The fix pins the URL as unchanged across the round trip. Neither was caught by reading; both were caught by forcing a failure.
 
-This session: backend `674b2ac2` started emitting `NotificationEdited` on every page save, so outbox counts went up by exactly 18. Tests main got the matching fix (`9dc1033`) the same minute — but a week-old branch-tagged tests image meant a CSS-only PR ran pre-fix specs against a post-fix backend, and it surfaced as that PR being broken.
+CI IS UTC, SO IT CANNOT SEE A TIMEZONE BUG.
 
-Two counter-intuitive parts:
-- **Deleting the git branch makes it worse.** The tag survives; you have removed the only thing that could refresh it. Recreate the branch from `main` and re-publish (`gh workflow run publish-branch.yml --ref <branch>` — it is pull_request/workflow_dispatch only, a bare push publishes nothing). Prove the overwrite with a manifest fingerprint.
-- **A `workflow_dispatch` E2E run does not update the PR's check.** `report-e2e-status` is gated on a `pull_request` trigger. Close and reopen the PR to fire `reopened`. The workflow's concurrency group is keyed on branch with `cancel-in-progress`, so a second dispatch kills the first.
+A broken version of the date helpers passed the FULL CI suite and was caught only by running the features suite locally under BST. date-fns' `startOfDay` and `format` normalise to LOCAL time; `test:features` sets no `TZ`, so the Playwright drivers run on the developer's clock, and a midnight-UTC date became 23:00 the previous day — 12 September rendered as 11 September. GitHub runners are UTC, so it could not surface there.
 
-Diagnostic: the same tests image passing then failing, with the branch head unmoved, means the variable is a peer repo's `:latest`.
+- `TZ=UTC` on every vitest script makes the unit suite blind to this by construction. The features suite is the only guard, and only because it does NOT set `TZ`. If someone adds it there for determinism, the guard disappears.
+- `calendar.js` states its invariant at the top: every Date is midnight UTC regardless of process timezone. date-fns survives only where it is timezone-safe — `addDays`/`addMonths` preserve wall-clock time. Do not reintroduce `startOfDay` or `format` there.
+- The service container runs UTC while users keep London days, so `startOfDayInZone(now, 'Europe/London')` in `arrival-window.js` is load-bearing, not ceremony. Removing it reintroduces a one-hour-a-day window error for half the year.
+
+THE CI TRAP, because it will bite again.
+
+A branch-tagged Docker image in a peer repo pins E2E to whenever that image was last built. `run-stack.sh` probes Dockerhub (`docker manifest inspect defradigital/<image>:<sanitised-branch>`), not git, so the tag outlives the branch and ages while `main` moves.
+
+- Deleting the git branch makes it worse — the tag survives and nothing can refresh it. Recreate from `main` and re-publish (`gh workflow run publish-branch.yml --ref <branch>`; pull_request/workflow_dispatch only, a bare push publishes nothing). Prove the overwrite with a manifest fingerprint.
+- A `workflow_dispatch` E2E run won't update the PR check — `report-e2e-status` is gated on a `pull_request` trigger. Close and reopen the PR. Concurrency is keyed on branch with `cancel-in-progress`, so a second dispatch kills the first. **A `gh run rerun --failed` DOES update the check**, because it keeps the original event — use that for a flake.
+- Diagnostic: the same tests image passing then failing, with the branch head unmoved, means the variable is a peer repo's `:latest`.
+- Not every red is a defect. One E2E failure this session was a Docker Hub registry timeout pulling a peer image, so the stack never came up and nothing was tested. Read the failure before diagnosing the branch.

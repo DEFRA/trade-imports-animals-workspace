@@ -43,7 +43,7 @@ handover time — not recalled.
 | Commodities boxes ugly | EUDPA-319 | **Merged** `e54b22c5` |
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
-| Date picker unrestricted | EUDPA-316 | **In review** — frontend#196, tests#111. See below |
+| Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -104,11 +104,13 @@ spending time on them.
 | Remove "What are you importing?" | EUDPA-324 | `snag-007` is `todo` and fully specified. Big — see below |
 | Notifications search | none, and none wanted | **Ruled WON'T FIX** 2026-08-10 (Sam). Settled — do not re-triage |
 
-### Date restrictions (EUDPA-316) — built, in review
+### Date restrictions (EUDPA-316) — MERGED
 
-Built 2026-08-12. **frontend#196** (`96047210`) and **tests#111** (`8368423`),
-both on `fix/EUDPA-316-restrict-date-picker-ranges`, both merged up to current
-`main` before the PRs were raised. `exitDate` and
+Built and merged 2026-08-12. **frontend `6cbdd3be`** (PR #196) and **tests
+`3f013932`** (PR #111), squashed from
+`fix/EUDPA-316-restrict-date-picker-ranges`. The full `review` skill ran against
+them: PASS WITH NOTES, 23 items, all resolved — 18 fixed, 2 declined on Sam's
+rulings (dates stay numeric; date-fns adopted), 3 dropped as timezone fussing. `exitDate` and
 `accompanyingDocumentDateOfIssue` are untouched, per the ruling.
 
 Post-merge locally: units 1493 passed, `test:features` 272 passed (the baseline
