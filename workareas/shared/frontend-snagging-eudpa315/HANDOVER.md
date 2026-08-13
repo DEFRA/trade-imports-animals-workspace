@@ -44,7 +44,7 @@ handover time — not recalled.
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
 | Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
-| Remove "What are you importing?" | EUDPA-324 | **In review** — frontend#198 (`e1f22908`, `aa8e859d`, `e00d0a58`), tests#113 (`24411ff`). See below |
+| Remove "What are you importing?" | EUDPA-324 | **In review, CI fully green** — frontend#198 (`e1f22908`, `aa8e859d`, `e00d0a58`), tests#113 (`24411ff`). See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -359,9 +359,13 @@ rejects a lockfile written by a different npm.
 
 ### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, in review
 
-Branch `chore/EUDPA-324-remove-import-type-page` in frontend (`e1f22908`) and
-tests (`24411ff`), both cut from that day's `origin/main`. One decision is
-outstanding before this is finished — see the cancel link below.
+Branch `chore/EUDPA-324-remove-import-type-page` in frontend and tests, both cut
+from that day's `origin/main`. Raised as **frontend#198** and **tests#113**, and
+**every check on both is green** — frontend all seven (PR checks, Security audit,
+Playwright suites, SonarCloud, E2E Tests, Lighthouse CI, publish), tests all three.
+Nothing is outstanding; both are ready to merge, and they must merge TOGETHER —
+neither passes alone, because the frontend stops serving the page these specs
+drive.
 
 The seam moved in one edit and all five points landed: `beginOpeningRun` now has
 exactly one caller, `origin/controller.js:171`, behind `shouldOpenRun`;
