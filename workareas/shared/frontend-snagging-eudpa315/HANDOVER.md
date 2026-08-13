@@ -44,7 +44,7 @@ handover time — not recalled.
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
 | Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
-| Remove "What are you importing?" | EUDPA-324 | **In review** — frontend#198 (`e1f22908` + `aa8e859d`), tests#113 (`24411ff`). See below |
+| Remove "What are you importing?" | EUDPA-324 | **In review** — frontend#198 (`e1f22908`, `aa8e859d`, `e00d0a58`), tests#113 (`24411ff`). See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -325,15 +325,37 @@ cut, and the audit fails locally on that byte-identical lockfile. Other open PRs
 show green only because their runs predate the advisory; they go red on their
 next push.
 
-**There is no clean upgrade.** `@lhci/cli` is already on its latest (0.15.1) and
-pins `lighthouse` at exactly `12.6.1`; the first non-vulnerable lighthouse is
-`13.4.1`. `npm audit fix --force` proposes `@lhci/cli@0.12.0` — a downgrade AND
-breaking. Real options: an `overrides` entry forcing `lighthouse@13.4.1` (a major
-bump under Lighthouse CI, so that workflow must be verified, not assumed), or wait
-for upstream. **Not** an audit exception or `--omit=dev` — that hides it rather
-than fixing it, and weakening a security gate is Sam's call, not an agent's.
-`main` is not branch-protected, so it does not block merge. Wants its own ticket;
-the `npm-upgrade` skill is the right shape for it.
+**FIXED 2026-08-13 by upgrading, in `e00d0a58` on the EUDPA-324 branch.**
+`extract-zip` has no fixed release at all, so the fix is to leave it behind rather
+than pin it: `@puppeteer/browsers` 3.x drops it for `modern-tar`, and
+`lighthouse@13.4.1` is the first release depending on a `puppeteer-core` that uses
+it. Because `@lhci/cli` (already on its latest, 0.15.1) and `@lhci/utils` both pin
+lighthouse at exactly `12.6.1`, the version has to be lifted with an `overrides`
+entry — the mechanism that block already used for `ws`. `puppeteer` went
+`25.4.0` → `25.6.0` alongside it so the tree settles on ONE pairing: a single
+`lighthouse@13.4.1`, `puppeteer-core@25.6.0` and `@puppeteer/browsers@3.2.0`, all
+deduped, with `extract-zip` absent entirely. Audit reports 0 vulnerabilities.
+
+Rejected: `npm audit fix --force` proposes `@lhci/cli@0.12.0`, a downgrade AND
+breaking. Also rejected an audit exception or `--omit=dev` — that hides the
+finding rather than fixing it, and weakening a security gate is Sam's call.
+
+**The override's real risk is lhci driving a major-bumped lighthouse, so it was
+proved, not assumed.** `npm run lighthouse` was run against a local workspace
+stack: autorun completed over 32 URLs with assertions checked and reports written,
+exercising `lighthouserc.cjs`'s `puppeteerScript` auth path — the exact seam where
+an lhci/lighthouse/puppeteer mismatch surfaces. CI's own Security audit then
+passed.
+
+**Sam's call: it rides on the snag-fix branch, not a separate PR.** It was briefly
+raised as its own PR (#199, closed) on `chore/EUDPA-315-extract-zip-advisory`,
+now deleted. That branch's publish job had already built a branch-tagged image, so
+an orphaned tag remains on Dockerhub — harmless, because the name is dead in every
+repo and nothing will probe for it, but it is the same mechanism as the stale-image
+trap below.
+
+Lockfile regenerated with `npm@11.6.2` per `packageManager`, since `npm ci`
+rejects a lockfile written by a different npm.
 
 ### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, in review
 
