@@ -44,7 +44,7 @@ handover time — not recalled.
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
 | Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
-| Remove "What are you importing?" | EUDPA-324 | **In review, CI fully green** — frontend#198 (`e1f22908`, `aa8e859d`, `e00d0a58`), tests#113 (`24411ff`). See below |
+| Remove "What are you importing?" | EUDPA-324 | **Merged** frontend `32f6106c` (#198), tests `3d97369` (#113). `main` green in both. See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -357,15 +357,23 @@ trap below.
 Lockfile regenerated with `npm@11.6.2` per `packageManager`, since `npm ci`
 rejects a lockfile written by a different npm.
 
-### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, in review
+### Remove "What are you importing?" (EUDPA-324) — MERGED 2026-08-13
 
-Branch `chore/EUDPA-324-remove-import-type-page` in frontend and tests, both cut
-from that day's `origin/main`. Raised as **frontend#198** and **tests#113**, and
-**every check on both is green** — frontend all seven (PR checks, Security audit,
-Playwright suites, SonarCloud, E2E Tests, Lighthouse CI, publish), tests all three.
-Nothing is outstanding; both are ready to merge, and they must merge TOGETHER —
-neither passes alone, because the frontend stops serving the page these specs
-drive.
+**frontend `32f6106c`** (#198, squashed from three commits) and **tests
+`3d97369`** (#113). Every check passed on both before merge — frontend all seven
+(PR checks, Security audit, Playwright suites, SonarCloud, E2E Tests, Lighthouse
+CI, publish), tests all three — and `main` is green post-merge in both repos:
+frontend E2E Tests and Lighthouse CI success, both `:latest` images published.
+
+**They were merged seven seconds apart, deliberately.** Neither repo passes alone
+— the frontend stops serving the page the tests-repo specs drive — so between the
+two merges `main` is briefly inconsistent, and any E2E run starting in that window
+would fail for that reason rather than a defect. Nothing got caught in it. If a
+cross-repo pair like this ever does go red on `main`, check the run's start time
+against both merge timestamps before diagnosing anything.
+
+EUDPA-324 itself is still In Dev in Jira and assigned to Sam — moving it is his
+call, not done here.
 
 The seam moved in one edit and all five points landed: `beginOpeningRun` now has
 exactly one caller, `origin/controller.js:171`, behind `shouldOpenRun`;
