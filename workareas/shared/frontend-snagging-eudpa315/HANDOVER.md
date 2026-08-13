@@ -44,7 +44,7 @@ handover time — not recalled.
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
 | Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
-| Remove "What are you importing?" | EUDPA-324 | **Built, unpushed** — frontend `e1f22908` + `aa8e859d`, tests `24411ff`. See below |
+| Remove "What are you importing?" | EUDPA-324 | **In review** — frontend#198 (`e1f22908` + `aa8e859d`), tests#113 (`24411ff`). See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -310,7 +310,32 @@ says. Two honest options, very different sizes: make matching match the label
 (backend work, and "keyword" implies more than one field), or make the label
 match the behaviour. **That is a product decision — do not pick one.**
 
-### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, not pushed
+### A repo-wide npm audit failure landed 2026-08-13 — not anyone's branch
+
+`GHSA-jmr9-qjv8-65gv` (extract-zip unvalidated symlink path traversal) was
+published today and fails `npm run security-audit` (`npm audit --audit-level=high`)
+in the FRONTEND repo. Six high findings, one root, all through a dev-only chain:
+`@lhci/cli` → `lighthouse` → `puppeteer-core` → `@puppeteer/browsers` →
+`extract-zip`.
+
+**It is time-based, not branch-based, so do not go looking for the commit that
+caused it.** EUDPA-324's branch has an empty diff against `origin/main` for
+`package.json` and `package-lock.json`, `main` had moved zero commits since the
+cut, and the audit fails locally on that byte-identical lockfile. Other open PRs
+show green only because their runs predate the advisory; they go red on their
+next push.
+
+**There is no clean upgrade.** `@lhci/cli` is already on its latest (0.15.1) and
+pins `lighthouse` at exactly `12.6.1`; the first non-vulnerable lighthouse is
+`13.4.1`. `npm audit fix --force` proposes `@lhci/cli@0.12.0` — a downgrade AND
+breaking. Real options: an `overrides` entry forcing `lighthouse@13.4.1` (a major
+bump under Lighthouse CI, so that workflow must be verified, not assumed), or wait
+for upstream. **Not** an audit exception or `--omit=dev` — that hides it rather
+than fixing it, and weakening a security gate is Sam's call, not an agent's.
+`main` is not branch-protected, so it does not block merge. Wants its own ticket;
+the `npm-upgrade` skill is the right shape for it.
+
+### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, in review
 
 Branch `chore/EUDPA-324-remove-import-type-page` in frontend (`e1f22908`) and
 tests (`24411ff`), both cut from that day's `origin/main`. One decision is
