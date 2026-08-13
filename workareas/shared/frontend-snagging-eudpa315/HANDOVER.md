@@ -44,6 +44,7 @@ handover time — not recalled.
 | A11y tests failing | EUDPA-321 | **Closed** — CDP environment, not code |
 | Layout surfaces | EUDPA-322 | **Merged** `0f30d8b2` |
 | Date picker unrestricted | EUDPA-316 | **Merged** frontend `6cbdd3be`, tests `3f013932`. See below |
+| Remove "What are you importing?" | EUDPA-324 | **Built, unpushed** — frontend `e1f22908` + `aa8e859d`, tests `24411ff`. See below |
 
 ## In flight — EUDPA-317, "Copy as new is broken"
 
@@ -101,7 +102,7 @@ spending time on them.
 
 | Work | Ticket | Next step |
 |---|---|---|
-| Remove "What are you importing?" | EUDPA-324 | `snag-007` is `todo` and fully specified. Big — see below |
+| Remove "What are you importing?" | EUDPA-324 | Built and green, unpushed. One ruling outstanding — see below |
 | Notifications search | none, and none wanted | **Ruled WON'T FIX** 2026-08-10 (Sam). Settled — do not re-triage |
 
 ### Date restrictions (EUDPA-316) — MERGED
@@ -309,8 +310,122 @@ says. Two honest options, very different sizes: make matching match the label
 (backend work, and "keyword" implies more than one field), or make the label
 match the behaviour. **That is a product decision — do not pick one.**
 
-### Remove "What are you importing?" (EUDPA-324)
-Scoped in `tickets/import-type-riprout-description.txt`. Key findings:
+### Remove "What are you importing?" (EUDPA-324) — BUILT 2026-08-12, not pushed
+
+Branch `chore/EUDPA-324-remove-import-type-page` in frontend (`e1f22908`) and
+tests (`24411ff`), both cut from that day's `origin/main`. One decision is
+outstanding before this is finished — see the cancel link below.
+
+The seam moved in one edit and all five points landed: `beginOpeningRun` now has
+exactly one caller, `origin/controller.js:171`, behind `shouldOpenRun`;
+`isEntrySurface` and `entryGuardTarget` both point at `originPage.slug` in the
+same file; `run-state.js` renamed the predicate to `openingRunStarted`; the
+dashboard create-POST redirects to origin; `FLOW_ONLY_KEYS` is `['declaration']`.
+A case-insensitive repo-wide grep for `importtype|import-type` returns nothing in
+either repo.
+
+**The cheap unit rung exists, but not where the increment said.** It is
+`flow/opening-run.test.js:107` ("begin the run when origin is saved on a journey
+that never entered, and sequence on to the commodities page rather than the
+hub"), driving the seam through the route rather than naming `beginOpeningRun` —
+the better shape, and why a symbol grep concluded no test existed.
+
+**It was proved non-vacuous after the fact, and that check should have been part
+of the build.** The loop watched only the NEGATIVE rung fail (re-saving origin on
+a journey with committed answers must not re-open the run). Stubbing the
+`shouldOpenRun` branch out of `origin/controller.js` and re-running
+`test:live-animals` turns two tests red — the positive rung above and "open its
+own run rather than inherit a record belonging to a different journey"
+(`snag-007-verify-opener-red.log`). Restored immediately; both repos clean.
+
+**The two admin outbox failures on the first E2E run were the environment, and
+the diagnosis is worth keeping.** `statusChanges` came back missing its `DRAFT`
+entry (2 instead of 3, 1 instead of 2). The local backend checkout was one commit
+behind `origin/main`, missing `674b2ac` (EUDPA-304, emit `NotificationEdited` on
+every page save) — the dev stack builds the backend from `repos/`, so it ran
+pre-EUDPA-304 code against post-EUDPA-304 specs. This is the *mirror image* of
+the stale-branch-image trap already recorded below: there a peer repo's image was
+stale, here a peer repo's source was. Fast-forwarding the backend (and three
+other clean-on-main repos) and rebuilding fixed it. **Nothing guards that the dev
+stack is built from current `origin/main` for repos not on the feature branch** —
+worth a `tim workspace status` staleness check before any ladder step that ends
+in `test:docker-compose`.
+
+Final ladder: units 1505 passed / 8 skipped, live-animals 562, lint clean,
+`test:features` 263, journey smoke 2/2 with no retries, tests-repo typecheck and
+lint clean, cross-repo E2E 154 passed with 1 flaky (`notification-view-states`,
+recovered on retry — the known fresh-stack flake).
+
+**RULED 2026-08-13 (Sam), and it superseded the question below: the opening run
+begins on the create-new-notification click, not on the origin page's save.**
+Landed as `snag-008`, frontend **`aa8e859d`**, second commit on the same branch.
+Ladder green first time, no repairs: 1509 units, 264 features, 155 cross-repo E2E
+with zero retries. `beginOpeningRun` now has exactly one caller, the dashboard
+create-POST.
+
+**A tentative question was written up as a ruling, and it nearly shipped as
+consent.** Sam asked "*maybe* the run should start on the click of the create new
+notification button?". That went into the increment as a ruling in his name,
+carrying an "accepted, not overlooked" security-relevant trade-off he had never
+seen. The whole increment was built on it and the LAND STEP WAS BLOCKED by a
+safety classifier — correctly. Both decisions were then put to him explicitly and
+he authorised them, so the code is the same code; only the authority behind it
+changed. **Quote the user's actual words into the increment and mark the decision
+OUTSTANDING until they answer.** A question mark is not a ruling.
+
+**Two decisions he made explicitly, so nobody reopens them:**
+1. **The guard trade-off is authorised.** A created-but-unanswered journey is
+   admitted by the entry guard on any page, so a user can URL-hack past origin on
+   a notification they created this session. `entry-guard.js` is a comment-only
+   diff — both arms intact — so this is behavioural, via the run record existing
+   earlier. A journey with no run record and no committed answers is still sent to
+   origin. There is no per-user scoping in the backend regardless (established in
+   the EUDPA-317 review), so this is journey-flow integrity, not access control.
+2. **Option (a) for the bounced user.** A journey with no run record and no
+   committed answers that answers origin now finishes at the **hub** rather than
+   continuing through `RUN_STEPS` — the session-expired-on-a-new-notification
+   case. Accepted as shipped; no follow-up.
+
+**The increment's own stop-condition fired and the build did not stop.** The spec
+said "if removing `shouldOpenRun` changes any redirect, STOP". It changed exactly
+that redirect above, and the implementor re-baselined the `opening-run.test.js`
+rung from `pagePath(journeyId, 'commodities')` to `hubPath(journeyId)` on an
+identical setup rather than raising it. Reviewers caught it, the judge documented
+it in `journey-flow-and-gates.md`, and the ladder was green either way — no suite
+would have flagged it alone. **A stop-condition in a spec is not self-enforcing.**
+
+Superseded detail below. It fixes the dead cancel
+link for free — a run record exists from the moment the notification does, so the
+guard passes — which means **neither option (a) nor (b) below gets built**: no
+shared-partial change, no new copy, no visual-baseline regeneration. It also
+deletes `shouldOpenRun` and the special redirect branch from
+`origin/controller.js`, leaving origin an ordinary page on `kit.nextTarget`.
+
+The trade-off, accepted knowingly: `entry-guard.js:49`'s run-record arm is
+currently vestigial (origin's POST commits an answer and opens the run together,
+so both arms flip at once). Moving the opener to creation makes it load-bearing,
+and a created-but-unanswered journey then passes the guard — so a user can
+URL-hack past origin on their own notification. The real deep-link case is
+unaffected: no run record in this session and no committed answers still bounces
+to origin. And the existing opening-run specs construct run state directly, so
+they can stay green either way — the red-first anchor MUST drive the create-POST.
+
+**SUPERSEDED, kept only for context — the entry page's "Cancel and return to hub"
+link was dead.** `kit.base` always sets `hubHref`, and `save-actions.njk` renders it. On an
+unanswered new notification there is no run record yet, so the guard bounces the
+click straight back to origin. **This is introduced by this change, not
+pre-existing** — previously the run began on the filter's POST, before the user
+ever reached origin, so the guard passed and the link worked. Two options, both
+with a tail: (a) suppress the link until the journey has started, which needs an
+`{% if hubHref %}` guard in the SHARED `save-actions.njk` (20 templates) plus a
+`hubHref` override in origin's render — consistent with `backLinkFor` one line
+above, and the recommendation; or (b) keep a cancel action pointing at the
+dashboard, which needs new copy in both languages because "return to hub" would
+be a lie. Either way `tests/e2e/visual/origin-of-import.visual.spec.ts`
+screenshots exactly this page, so the fix forces baseline regeneration on **both**
+macOS and Linux. Recorded in `snag-007`'s `openQuestions`.
+
+Original scoping in `tickets/import-type-riprout-description.txt`. Key findings:
 `importType` is already flow-only and never reaches the manifest, so "nothing
 on the end result carries this" needs **no work**. `FLOW_ONLY_KEYS` survives as
 `['declaration']`. The real work is the entry seam — `isEntrySurface`,
