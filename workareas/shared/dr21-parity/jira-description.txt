@@ -1,0 +1,103 @@
+h2. Goal
+
+Bring the live-animals frontend into line with the designer prototype's *Design release 2.1*, and produce a banded, directly-executable backlog of the differences.
+
+Parity target is {{app/views/design-release-2.1/}} in the {{GB-notification-service}} prototype. Germinal products are *in scope* — they are why {{consignment-details}} and {{animal-identification-details}} are the two most-changed DR2.1 pages.
+
+h2. Status: analysis complete, backlog ready for refinement
+
+*97 verified backlog items.* Every one was raised from a captured artefact, carries {{file:line}} evidence on both sides, and survived an independent verifier whose instruction was to refute it.
+
+Capture refs: frontend {{main}} at {{32f6106c}}, prototype at {{7da4f70}}, Playwright {{1.61.0}}.
+
+h3. The deliverable is canonical state, not a document
+
+{{workareas/journey-builder/EUDPA-328/backlog.json}} — in the shape the build loop already consumes.
+
+{code}
+tools/journey-builder/backlog-counts.sh EUDPA-328
+tools/journey-builder/next-increment.sh EUDPA-328 --claim
+tools/journey-builder/backlog-set-status.sh EUDPA-328 inc-012 done
+{code}
+
+The implementor is the {{frontend-change}} skill, invoked with the increment's {{type}} as its mode — one increment per invocation, running its own verification ladder. {{verify-increment.sh}} does *not* apply: it targets the prototype, and these increments target the real frontend at {{src/server/app}}.
+
+Milestones: *M0* cross-cutting chrome (10, do first — touches every page), *M1* buildable now (25), *M2* born blocked on a design ruling (41, {{gate: "sam"}}), *M3* born blocked on backend work (21, {{gate: "backend"}}). Clearing a gate is a status flip.
+
+Human-readable views of the same data: {{workareas/shared/dr21-parity/BACKLOG.md}} and a filterable page at https://claude.ai/code/artifact/f089a914-2ae2-4732-9f60-f3ec12bf9734
+
+Decisions log: {{workareas/shared/dr21-parity/DECISIONS.md}}
+
+h3. The backlog
+
+|| Band || Items || What it means ||
+| Frontend-only | 27 | Buildable now, no dependencies |
+| Needs a design decision | 49 | Blocked on a ruling, not on code |
+| Needs backend work | 21 | Blocked on API or persistence changes |
+
+|| Domain || Items ||
+| Germinal products | 18 |
+| Commodities | 13 |
+| Addresses | 13 |
+| Dashboard | 11 |
+| Templates | 9 |
+| Transport | 9 |
+| Notification spine | 8 |
+| Documents | 5 |
+| General / service-wide | 11 |
+
+|| Increment type || Count ||
+| add-page | 10 |
+| add-section | 11 |
+| add-collection | 4 |
+| add-field | 19 |
+| obligation-change | 13 |
+| flow-change | 14 |
+| copy-change | 26 |
+
+Every item is expressed in the vocabulary the {{frontend-change}} skill already understands, so the backlog is directly executable rather than needing translation.
+
+h3. How it was produced
+
+Both sides were captured as Playwright traces, mined into comparable page models using one shared extractor, diffed mechanically, and every finding was then adversarially verified against the captured artefacts.
+
+* *Frontend side needed no capture harness.* Its own {{features}} Playwright project renders every page; the models were recovered from those traces. 264 tests, all green, 1.4 minutes.
+* *Prototype side* needed a DR2.1 walker, written in Phase 1 and now living in the workspace. 26 specs, all green, 2.7 minutes — the repeatable command for refreshing the corpus when the designers move.
+* *Corpus*: 103 page models (33 frontend, 70 prototype), 29 paired screens, 468 mechanical deltas, plus 4 frontend-only and 23 prototype-only screens.
+
+h3. Quality controls that fired
+
+* *93 deltas were deliberately not raised* as findings, each with a recorded reason, so the decision is visible rather than implicit.
+* *60 of the 97 findings were materially corrected* by the verification stage — scope narrowed or claims amended against the source.
+* *1 finding was refuted and dropped*: a prototype back link that exists only to escape the prototype chooser. A delta, not work.
+* Two capture defects were caught and fixed before any diffing. Trace DOM dumps arrive JSON-encoded, which silently emptied every {{govuk-*}} class selector while leaving models looking healthy. And the prototype builds {{notification-hub}} and {{review-notification}} from bespoke {{app-*}} markup rather than govuk-frontend components, which would have read as "the prototype has no task list at all" on the two most important screens in the service. Both sides were re-captured after the fix.
+
+h3. Work already in flight
+
+The port-of-entry typeahead is tagged in the backlog as in progress on {{feature/EUDPA-124-port-of-entry-type-ahead}} rather than dropped, so it is visible without being scheduled twice.
+
+h3. Prototype defects found, for the designers
+
+Not frontend work — worth raising with the design team:
+
+* {{renderDeleteNotificationPage}} hardcodes a {{design-release-2/}} view path, the only one in {{routes.js}}, so {{design-release-2.1/delete-notification.html}} is never rendered. The files are byte-identical today, so the DR2.1 copy could be edited indefinitely with no effect.
+* {{view-template}}'s primary button reads "Save and continue" but the POST only writes the template name and redirects back to {{/templates}}.
+* On a germinal-only consignment the per-panel change link still reads "Change number of animals" ({{changeCountLabel}} hardcoded).
+
+h2. Acceptance criteria
+
+# (done) Every DR2.1 page, germinals included, has a spec that renders it in a clean default state.
+# (done) Both sides captured from pinned commits, recorded in the capture manifest.
+# (done) Every captured screen mined into a page model in the shared schema.
+# (done) Every paired screen diffed, each finding carrying {{file:line}} evidence on both sides.
+# (done) Every finding independently checked by a verifier trying to refute it; refuted findings reported as dropped.
+# (done) Backlog expresses each finding as a {{frontend-change}} increment type.
+# (done) Every item banded frontend-only / needs-backend / needs-design-decision.
+# (done) Work in flight tagged rather than dropped.
+# Remaining: the 49 design decisions need rulings before that band can be scheduled.
+
+h2. Open questions
+
+* Which bands are in scope for *this* ticket versus follow-ups? Germinal products alone is a commodity domain the frontend does not model at all.
+* Does the four-destination service navigation (templates, address book) belong here or to the address-book programme already in flight?
+* Where should the DR2.1 walker live long-term if the designers later want to own it?
