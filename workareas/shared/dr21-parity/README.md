@@ -7,6 +7,9 @@ release 2.1.
 `file:line` evidence on both sides, and survived an independent verifier whose
 instruction was to refute it.
 
+**Picking this up?** Start at [`HANDOVER.md`](HANDOVER.md) — it has a prompt for Sam
+returning to it and one for a fresh agent starting cold.
+
 ## The deliverable is the backlog JSON
 
 `workareas/journey-builder/EUDPA-328/backlog.json` — canonical state, in the shape the

@@ -111,6 +111,25 @@ trace during Phase 0.
 The prototype side was never affected — it captures via `page.content()`, which is raw
 HTML. But anything else built on `trace ... eval --filename` needs the same decode.
 
+**Tracked build-loop backlogs in git.**
+`workareas/*` ignored the canonical deliverable, so it could not be committed. A
+`backlog.json` is the executable definition of a body of work and should outlive the run
+that produced it, so the ignore now admits `workareas/journey-builder/*/backlog.json` and
+nothing else under a run directory. This picked up EUDPA-249's and EUDPA-288's backlogs
+too, which is the right outcome.
+
+**Excluded 76MB of test output and 16MB of screenshots from the commit.**
+`workareas/shared/dr21-parity/.gitignore` keeps the models and the raw HTML — those are
+the evidence findings cite — and drops screenshots, Playwright run output and the two
+`node_modules` symlinks. No finding cites a screenshot.
+
+**Decision walker built at `tools/parity/`, not folded into an existing skill.**
+49 items are gated on Sam and the loop cannot pass them. The walker is three small
+scripts over the same backlog JSON. It is deliberately separate for now because the
+right home is the generalised walker in
+`workareas/shared/build-loop-amalgamation/DESIGN.md` §4, and that touches four working
+skills — not something to do while landing this.
+
 ## Still needs a human
 
 - `workareas/shared/design-release-2-parity/` is a duplicate of `prior/`. `rm -rf` was
