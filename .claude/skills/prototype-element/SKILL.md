@@ -1,9 +1,19 @@
 ---
 name: prototype-element
-description: Add one already-agreed element — a field, page, collection or service — to the live-animals prototype (prototypes/standalone/live-animals in trade-imports-animals-frontend), one TDD increment at a time. Four modes parameterised by element type; each follows the vendored docs/add-a-{field,page,collection}.md recipe (or docs/services.md) verbatim rather than restating it. The value-add over the docs is the baseline-guard read (run the unit suite first so buildDispatch + contract.test go red and name the next edit), the required-field blast-radius reseed, the boot-replication rule, ≤3-self-repair discipline and one E2E leg — then one commit and stop. Use when the user asks to add a field/page/collection/service to the prototype (triggers: "add a field to the prototype", "add a page", "add a collection", "add a service", "prototype-element add-{field,page,collection,service}"). NOT for producing or regenerating the spec/backlog, NOT for a serial multi-increment build loop, and NOT for growing the engine — those are journey-builder.
+description: RETIRED PENDING A DECISION — its target no longer exists. prototypes/standalone/live-animals was promoted into src/server/app and deleted, so every recipe path and the test:prototype script this skill calls are gone; it cannot run. For a single change to the live-animals frontend use frontend-change instead. Formerly - add one already-agreed element — a field, page, collection or service — to the live-animals prototype, one TDD increment at a time. Four modes parameterised by element type; each follows the vendored docs/add-a-{field,page,collection}.md recipe (or docs/services.md) verbatim rather than restating it. The value-add over the docs is the baseline-guard read (run the unit suite first so buildDispatch + contract.test go red and name the next edit), the required-field blast-radius reseed, the boot-replication rule, ≤3-self-repair discipline and one E2E leg — then one commit and stop. Use when the user asks to add a field/page/collection/service to the prototype (triggers: "add a field to the prototype", "add a page", "add a collection", "add a service", "prototype-element add-{field,page,collection,service}"). NOT for producing or regenerating the spec/backlog, NOT for a serial multi-increment build loop, and NOT for growing the engine — those are journey-builder.
 ---
 
 # prototype-element
+
+> **This skill cannot run.** Its target, `prototypes/standalone/live-animals`,
+> was promoted into `src/server/app` and deleted. Every `docs/add-a-*.md` path
+> below and the `npm run test:prototype` script are gone. Only
+> `obligations-v2-spike` remains under `prototypes/standalone/`.
+>
+> Two ways out, and the choice is Sam's: repoint it at `obligations-v2-spike`
+> as a target profile in `tools/journey-builder/targets.json`, or delete it and
+> let `frontend-change` cover single changes to the promoted code. Everything
+> below describes the retired shape and is kept only until that call is made.
 
 Author ONE increment against the live-animals prototype and stop: read the
 baseline-guard output, follow the vendored `docs/add-a-*.md` recipe verbatim,

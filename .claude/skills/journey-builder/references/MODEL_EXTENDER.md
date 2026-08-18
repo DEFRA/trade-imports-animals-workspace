@@ -10,8 +10,13 @@ names the growth (e.g. `cross-frame-conditionality`, `sibling-at-least-one`).
 
 ## Where things are
 - Backlog entry: `~/git/defra/.../workareas/journey-builder/<run-id>/backlog.json`
-- Worktree / prototype / spec: as in INCREMENT_IMPLEMENTOR.md (read it first —
-  same commit/rollback/verify tooling and rules apply).
+- Worktree (ALL edits happen here, never in `repos/`):
+  `~/git/defra/trade-imports-animals-workspace/workareas/journey-builder/<run-id>/frontend-worktree/`
+- Target scope and spec dir come from the run's target profile
+  (`tools/journey-builder/targets.json`) — do not hardcode a path.
+- Verify with `tools/journey-builder/verify-increment.sh <run-id>`, then
+  `commit-increment.sh` on green or `rollback-increment.sh` after three failed
+  self-repair attempts. Never force green by weakening tests.
 - The spec already PROPOSES vocabulary for each gap (e.g.
   `activatedBy: { obligation, frame: "enclosing" | "anyItem", ... }`). Grep
   `modelGap` in `spec/journey-spec.json` to see every obligation waiting on

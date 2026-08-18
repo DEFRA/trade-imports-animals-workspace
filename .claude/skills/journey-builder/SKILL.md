@@ -1,16 +1,24 @@
 ---
 name: journey-builder
-description: Build the real live-animals journey prototype (prototypes/standalone/live-animals in trade-imports-animals-frontend) on the obligations-v2 page-owned-spine model. Digest mode distils the requirement sources — Confluence "Live Animals Data Fields V4", the src/server skeleton journey, the interaction-design canvas — into a canonical machine-readable spec (journey-spec.json + conflicts.json) reviewed at a spec gate. Backlog mode derives ordered increments from the spec; build mode runs the serial implementor loop (one INCREMENT_IMPLEMENTOR subagent per increment, parent re-verifies, commit-or-rollback), halting at model-extension gates and milestone walk-throughs. Use when the user asks to digest journey requirements, regenerate the backlog, run/resume the build loop, or verify the prototype (triggers: "digest journey requirements", "journey spec", "journey-builder", "build the live-animals prototype", "run the loop"). NOT for the car-insurance spike itself or for generic ticket work.
+description: Run the serial build loop over a canonical backlog against whichever codebase the run's target profile names (tools/journey-builder/targets.json — currently the live-animals set in trade-imports-animals-frontend). Digest mode distils the requirement sources — Confluence "Live Animals Data Fields V4", the src/server skeleton journey, the interaction-design canvas — into a canonical machine-readable spec (journey-spec.json + conflicts.json) reviewed at a spec gate. Backlog mode derives ordered increments from the spec; build mode pops one increment at a time, invokes the target's implementor skill (frontend-change for the frontend target), re-verifies in the parent, and commits or rolls back, halting at model-extension gates and milestone walk-throughs. Use when the user asks to digest journey requirements, regenerate the backlog, run/resume the build loop, or verify a target (triggers: "digest journey requirements", "journey spec", "journey-builder", "run the loop", "build the backlog"). NOT for a single already-agreed change to the frontend — that is frontend-change on its own. NOT for the car-insurance spike or generic ticket work.
 ---
 
 # journey-builder
 
-Run-id: the EUDPA ticket (currently **EUDPA-249** — no separate ticket for
-this programme). State lives in
-`workareas/journey-builder/<run-id>/`; the canonical spec lives in the
-frontend **worktree** at
-`<workarea>/frontend-worktree/prototypes/standalone/live-animals/spec/`
-(branch `spike/<run-id>-live-animals-spec`) — never write into
+Run-id: the EUDPA ticket (**EUDPA-328** is the live run; EUDPA-249 was the
+original prototype programme). State lives in
+`workareas/journey-builder/<run-id>/`.
+
+**The target is data.** `tools/journey-builder/targets.json` declares each
+target — repo, scope, spec dir, implementor skill, paths to stage, and the npm
+script for each rung of the verification ladder. A run picks one from
+`--target`, the backlog's `target` field, `.digest-meta.json`, or the default.
+Never hardcode a path in a script or a persona: the last time the target moved,
+four scripts broke at once.
+
+The canonical spec lives in the frontend **worktree** at
+`<workarea>/frontend-worktree/<target scope>/spec/` (branch
+`spike/<run-id>-live-animals-spec`) — never write into
 `repos/trade-imports-animals-frontend` directly: other agents work in that
 checkout.
 
@@ -45,9 +53,10 @@ Programme plan: `~/.claude/plans/so-in-the-frontend-reflective-yeti.md`.
 one increment per page in section order (add-page / add-collection),
 model-extension increments (`gate: "sam"`, born blocked) before the first
 page needing each modelGap, then the car-domain removal tail
-(remove-car-section per baseline section + repoint-test-fixtures) — the
-vendored baseline ships the car domain to keep the engine-test net green;
-see `prototypes/standalone/live-animals/PROVENANCE.md`. Idempotent —
+(remove-car-section per baseline section + repoint-test-fixtures) — that tail
+belongs to the original prototype programme, whose vendored baseline shipped
+the car domain to keep the engine-test net green; it does not apply to a
+promoted target. Idempotent —
 re-running preserves statuses. Inspect with `backlog-counts.sh` /
 `jq` over the file.
 
@@ -59,11 +68,10 @@ Serial by design — increments edit shared files (registry, flow, hub, CYA).
    first runnable todo (deps done) and marks it inprogress; exit 3 = dry.
 2. If the increment has `gate: "sam"` or closes a milestone → STOP, present
    to Sam (model-extension design panel / milestone walk-through).
-3. Spawn ONE `general-purpose` Task subagent:
-   "Follow ~/git/defra/trade-imports-animals-workspace/.claude/skills/journey-builder/references/INCREMENT_IMPLEMENTOR.md
-   for run-id EUDPA-X, increment <id>." The persona owns the touch-lists
-   (vendored `docs/add-a-{page,field,collection}.md`), the enforcedAt
-   semantics, the never-author-gates rule (T11), and commit/rollback.
+3. Invoke the target's `implementorSkill` with the increment's `type` as its
+   mode — for `live-animals-frontend` that is `frontend-change`, which already
+   owns the repo's own recipe docs, the obligation and flow guard rails, and
+   its own verification ladder. One increment per invocation.
 4. Parent re-verifies: `tools/journey-builder/verify-increment.sh EUDPA-X`
    — never trust the worker's green. Mismatch → rollback + failed.
 5. Loop to 1. Halt early on 3 consecutive failures (systemic signal).
@@ -72,8 +80,10 @@ Serial by design — increments edit shared files (registry, flow, hub, CYA).
 
 ## Mode: verify
 
-`tools/journey-builder/verify-increment.sh EUDPA-X [--e2e]` — unit suite +
-prettier + eslint over the prototype (log at `<workarea>/.verify.log`).
+`tools/journey-builder/verify-increment.sh EUDPA-X [--e2e]` — runs the rungs
+the target profile declares (unit, format, lint, and with `--e2e` the target's
+end-to-end suite). A target that omits a rung skips it. Log at
+`<workarea>/.verify.log`.
 
 ## Tools
 
