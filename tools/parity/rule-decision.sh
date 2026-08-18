@@ -67,23 +67,34 @@ if [[ "$RULING" == "note" ]]; then
 fi
 
 case "$RULING" in
-    accept)    new_status="todo";    clear_gate=true  ;;
-    reject)    new_status="dropped"; clear_gate=false ;;
-    defer)     new_status="blocked"; clear_gate=false ;;
-    falsified) new_status="dropped"; clear_gate=false ;;
+    accept)    new_status="todo";    clear_gate=true;  strip_deps=false ;;
+    reject)    new_status="dropped"; clear_gate=false; strip_deps=false ;;
+    defer)     new_status="blocked"; clear_gate=false; strip_deps=false ;;
+    falsified) new_status="dropped"; clear_gate=false; strip_deps=true  ;;
 esac
 
+# A withdrawn item can still be named in another item's dependsOn, and the build
+# loop only treats a dependency as satisfied when it reaches "done". Left alone,
+# a dependent would be unpoppable forever. Strip the id and note every item it
+# touched, so the removal is visible rather than silent.
 jq --arg id "$INC_ID" \
    --arg status "$new_status" \
    --arg ruling "$RULING" \
    --arg note "$NOTE" \
    --arg at "$ruled_at" \
-   --argjson clear "$clear_gate" '
+   --argjson clear "$clear_gate" \
+   --argjson strip "$strip_deps" '
     .increments |= map(
         if .id == $id then
             .status = $status
             | .decision = { ruling: $ruling, note: $note, ruledAt: $at }
             | if $clear then .gate = null else . end
+        elif $strip and ((.dependsOn // []) | index($id)) then
+            .dependsOn = ((.dependsOn // []) - [$id])
+            | .notes = ((.notes // []) + [{
+                note: ("Dependency \($id) removed: it was withdrawn as falsified, and the loop never treats a dropped dependency as satisfied. Check this item still stands on its own before building it."),
+                at: $at
+            }])
         else . end
     )' "$target" > "$tmp"
 
@@ -91,3 +102,10 @@ mv "$tmp" "$target"
 
 echo "$INC_ID: $RULING -> status=$new_status$( [[ "$clear_gate" == true ]] && echo ", gate cleared" )"
 echo "  $NOTE"
+
+if [[ "$strip_deps" == true ]]; then
+    freed=$(jq -r --arg id "$INC_ID" '
+        [ .increments[] | select((.notes // []) | map(.note | contains("Dependency \($id) removed")) | any) | .id ]
+        | join(", ")' "$target")
+    [[ -n "$freed" ]] && echo "  dependency on $INC_ID removed from: $freed"
+fi
