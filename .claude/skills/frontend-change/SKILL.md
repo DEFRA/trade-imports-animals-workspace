@@ -1,6 +1,6 @@
 ---
 name: frontend-change
-description: 'Make a change to the live-animals frontend (src/server/app in trade-imports-animals-frontend) by following the repo''s own recipe docs as strict scripts — add a field, page, section (feature group + flow section + task row), or collection; maintain obligations (gates, requires/applyTo, scope, cardinality) or journey flow (page order, task rows, entry guards); or a routed general change. One increment, full verification ladder, then stop (triggers: "add a field to the frontend", "add a page to the frontend", "add a section to the frontend", "add a collection to the frontend", "change an obligation", "change the journey flow", "change the frontend", "frontend-change add-field|add-page|add-section|add-collection"). NOT for the prototype (use prototype-element / journey-builder), NOT for the tests repo''s E2E suite, NOT for planning a Jira ticket (use the ticket skill).'
+description: 'Make a change to the live-animals frontend (src/server/app in trade-imports-animals-frontend) by following the repo''s own recipe docs as strict scripts — add a field, page, section (feature group + flow section + task row), or collection; maintain obligations (gates, requires/applyTo, scope, cardinality) or journey flow (page order, task rows, entry guards); or a routed general change. One increment, full verification ladder, then stop (triggers: "add a field to the frontend", "add a page to the frontend", "add a section to the frontend", "add a collection to the frontend", "change an obligation", "change the journey flow", "change the frontend", "frontend-change add-field|add-page|add-section|add-collection"). NOT for a multi-increment run over a backlog (use journey-builder, which invokes this skill per increment), NOT for the tests repo''s E2E suite, NOT for planning a Jira ticket (use the ticket skill).'
 ---
 
 Make one change to the live-animals frontend by following the recipe the repo
@@ -58,9 +58,10 @@ All recipe/guide paths below are inside
 | "change the journey flow" (page order, task rows, entry guards, section gating) | Flow-maintenance guard rails below + `sets/live-animals/docs/journey-flow-and-gates.md`, `docs/flow-and-gates.md` |
 | "change the frontend" (anything else) | Step 1 routing below — pick the guide(s) for the layer you are touching |
 
-NOT for `prototypes/` work (`prototype-element`, `journey-builder`), NOT for the
-tests repo (`trade-imports-animals-tests` owns the workspace E2E suite), NOT for
-ticket planning (`ticket`).
+NOT for a multi-increment run over a backlog — that is `journey-builder`, which
+invokes this skill once per increment. NOT for the tests repo
+(`trade-imports-animals-tests` owns the workspace E2E suite), NOT for ticket
+planning (`ticket`).
 
 ## Step 1: Route and read
 
