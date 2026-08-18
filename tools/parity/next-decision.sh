@@ -53,6 +53,10 @@ jq -r '
     "\(.id)  [\(.domain)]  \(.type)\n" +
     "\n\(.title)\n" +
     "\n" + (.detail // "") + "\n" +
+    (if ((.notes // []) | length) > 0 then
+        "\nSINCE THE CORPUS WAS CAPTURED:\n"
+        + ((.notes | map("  - \(.note)  [\(.at)]")) | join("\n")) + "\n"
+     else "" end) +
     "\nFrontend:  \(.evidence.frontend)" +
     "\nPrototype: \(.evidence.prototype)" +
     "\nScreens:   \((.screens // []) | join(", "))" +
