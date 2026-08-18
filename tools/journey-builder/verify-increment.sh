@@ -1,29 +1,33 @@
 #!/bin/bash
-# Verify the live-animals prototype in the worktree: unit tests (+ lint,
-# + prettier-check on the prototype dir). Exit code is the loop's signal.
-# Output is written to a log; only the tail is echoed.
+# Verify the target in the worktree: unit tests, format check, lint. Exit code
+# is the loop's signal. Output goes to a log; only the tail is echoed.
 #
-# --e2e adds the full Playwright suite (npm run test:prototype): the demo
-# journeys AND the persistence-parity compare against Mongo. Parity needs the
-# workspace stack up (scripts/stack/run-stack.sh); the suite says so and exits
-# fast if it is down.
+# --e2e adds the target's end-to-end suite. The frontend's fit suites self-host
+# in stub mode and bind their own port, so no workspace stack is needed.
+#
+# What runs at each rung comes from the target profile (targets.json), not from
+# this script. A target that omits a rung skips it.
 #
 # Usage:
-#   verify-increment.sh EUDPA-X [--e2e]
+#   verify-increment.sh EUDPA-X [--e2e] [--target <id>]
 
 set -e
 
 WORKSPACE="$HOME/git/defra/trade-imports-animals-workspace"
+source "$WORKSPACE/tools/journey-builder/target-profile.sh"
 
-RUN_ID=""; E2E=false
+RUN_ID=""; E2E=false; TARGET_FLAG=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         EUDPA-*) RUN_ID="$1"; shift ;;
         --e2e) E2E=true; shift ;;
+        --target) TARGET_FLAG="$2"; shift 2 ;;
         *) echo "Unknown arg: $1" >&2; exit 1 ;;
     esac
 done
-[[ -z "$RUN_ID" ]] && { echo "Usage: $0 EUDPA-X [--e2e]" >&2; exit 1; }
+[[ -z "$RUN_ID" ]] && { echo "Usage: $0 EUDPA-X [--e2e] [--target <id>]" >&2; exit 1; }
+
+load_target "$RUN_ID" "$TARGET_FLAG"
 
 WORKAREA="$WORKSPACE/workareas/journey-builder/$RUN_ID"
 meta="$WORKAREA/.digest-meta.json"
@@ -34,20 +38,22 @@ log="$WORKAREA/.verify.log"
 
 fail() { tail -30 "$log"; echo "VERIFY FAIL: $1 (full log: $log)"; exit 1; }
 
-echo "== verify $(date -u +%H:%M:%SZ) ==" > "$log"
+run_rung() {
+    local label="$1" script="$2"
+    [[ -z "$script" ]] && return 0
+    npm run --prefix "$worktree" "$script" >> "$log" 2>&1 || fail "$label"
+}
 
-npm run --prefix "$worktree" test:live-animals >> "$log" 2>&1 || fail "unit tests"
-# eslint v9 flat config + prettier globs resolve from cwd, so run these from
-# the worktree root, not by passing an absolute path from wherever the caller sits.
-( cd "$worktree" && ./node_modules/.bin/prettier --check "prototypes/standalone/live-animals/**/*.{js,json,md}" ) >> "$log" 2>&1 || fail "prettier"
-( cd "$worktree" && ./node_modules/.bin/eslint "prototypes/standalone/live-animals" ) >> "$log" 2>&1 || fail "eslint"
+echo "== verify $(date -u +%H:%M:%SZ) target=$TARGET_ID ==" > "$log"
+
+run_rung "unit tests" "$TARGET_VERIFY_UNIT"
+run_rung "format" "$TARGET_VERIFY_FORMAT"
+run_rung "lint" "$TARGET_VERIFY_LINT"
 
 if [[ "$E2E" == true ]]; then
-    # The WHOLE suite, unfiltered: both Playwright projects — the demo journeys
-    # (stub server) and the persistence-parity compare against Mongo (real-mode
-    # server, needs the workspace stack up). A filename filter here would skip
-    # parity, which is how a persistence bug once hid behind two green suites.
-    npm run --prefix "$worktree" test:prototype >> "$log" 2>&1 || fail "e2e"
+    # The whole suite, unfiltered. A filename filter here is how a persistence
+    # bug once hid behind two green suites.
+    run_rung "e2e" "$TARGET_VERIFY_E2E"
 fi
 
 grep -E "Test Files|Tests " "$log" | head -4

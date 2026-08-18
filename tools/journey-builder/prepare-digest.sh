@@ -14,26 +14,30 @@
 set -e
 
 WORKSPACE="$HOME/git/defra/trade-imports-animals-workspace"
-FRONTEND_REPO="$WORKSPACE/repos/trade-imports-animals-frontend"
+source "$WORKSPACE/tools/journey-builder/target-profile.sh"
 CONFLUENCE_PAGE_ID="6497338582"
 CANVAS_FILE="Notes from chat with interaction design.canvas"
 
-RUN_ID=""; REFETCH=false; AS_JSON=false
+RUN_ID=""; REFETCH=false; AS_JSON=false; TARGET_FLAG=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         EUDPA-*) RUN_ID="$1"; shift ;;
         --refetch) REFETCH=true; shift ;;
         --json) AS_JSON=true; shift ;;
+        --target) TARGET_FLAG="$2"; shift 2 ;;
         *) echo "Unknown arg: $1" >&2; exit 1 ;;
     esac
 done
-[[ -z "$RUN_ID" ]] && { echo "Usage: $0 EUDPA-XXXXX [--refetch] [--json]" >&2; exit 1; }
+[[ -z "$RUN_ID" ]] && { echo "Usage: $0 EUDPA-XXXXX [--refetch] [--json] [--target <id>]" >&2; exit 1; }
+
+load_target "$RUN_ID" "$TARGET_FLAG"
+FRONTEND_REPO="$TARGET_REPO"
 
 WORKAREA="$WORKSPACE/workareas/journey-builder/$RUN_ID"
 SOURCES_DIR="$WORKAREA/.sources"
 WORKTREE="$WORKAREA/frontend-worktree"
 SPEC_BRANCH="spike/$RUN_ID-live-animals-spec"
-SPEC_DIR="$WORKTREE/prototypes/standalone/live-animals/spec"
+SPEC_DIR="$WORKTREE/$TARGET_SPEC_DIR"
 
 mkdir -p "$SOURCES_DIR"
 

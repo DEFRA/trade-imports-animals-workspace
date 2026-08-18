@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "Build-loop targets. The loop scripts know nothing about any particular",
+    "codebase; a target profile tells them where to work, what to stage and how",
+    "to verify. Adding a target is a data edit, not a script change.",
+    "",
+    "A run picks its target from, in order: an explicit --target flag, the",
+    "backlog's top-level \"target\" field, .digest-meta.json, then the default",
+    "below. See target-profile.sh.",
+    "",
+    "verify.* are npm script names run in the target repo. Omit one to skip that",
+    "rung of the ladder."
+  ],
+
+  "default": "live-animals-frontend",
+
+  "targets": {
+    "live-animals-frontend": {
+      "description": "The live-animals set in the real frontend, where the prototype was promoted to.",
+      "repo": "repos/trade-imports-animals-frontend",
+      "scope": "src/server/app/sets/live-animals",
+      "specDir": "src/server/app/sets/live-animals/spec",
+      "implementorSkill": "frontend-change",
+      "commitPaths": [
+        "src/server/app",
+        "package.json"
+      ],
+      "verify": {
+        "unit": "test:live-animals",
+        "format": "format:check",
+        "lint": "lint",
+        "e2e": "test:fit:features"
+      }
+    }
+  }
+}
