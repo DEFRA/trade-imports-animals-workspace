@@ -168,15 +168,16 @@ npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-ani
 ```
 
 ```bash
-PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit:features
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit:features
 ```
 
 ```bash
-PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit
+npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit
 ```
 
 The Playwright suites self-host the app (stub mode) — no workspace stack
-needed. `PORT=3050` avoids colliding with a running stack on :3000. Run
+needed. They bind :3050 by default, so a running stack on :3000 is left
+alone; set `PORT` only if you need a different one. Run
 `npm --prefix ... run format` before any commit — the pre-commit hook enforces
 format + lint + full units and will reject otherwise.
 
