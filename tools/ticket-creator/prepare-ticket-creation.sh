@@ -121,7 +121,11 @@ jq -n \
 
 echo "Prepared ticket-creation prereqs at $OUTPUT_DIR/"
 echo "  - epics.txt          ($EPIC_COUNT active epics from board $BOARD_ID)"
-echo "  - capabilities.txt   ($CAP_COUNT capability codes from page $CAP_PAGE_ID)"
+if [[ -n "$PARSE_ERROR" ]]; then
+    echo "  - capabilities.txt   NOT REFRESHED — still holds $CAP_COUNT codes from a previous run"
+else
+    echo "  - capabilities.txt   ($CAP_COUNT capability codes from page $CAP_PAGE_ID)"
+fi
 echo "  - meta.json"
 if [[ -n "$STALE_WARNING" ]]; then
     echo
