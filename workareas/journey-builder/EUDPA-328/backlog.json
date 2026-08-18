@@ -1969,7 +1969,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "'Which does not exist today' is now only half-true. A persisted, org-scoped party store has shipped in trade-imports-address-book: OperatorController.java:44 is /organisation/{orgId}/addresses with create at :187. What it lacks is exactly the typing this finding needs - AddressRequest.java:103-108 declares both type and role as @Null ('is not a supported field'), and the record carries no approval number or approval status. Verified directly. The gap stands otherwise: the only transporter list the frontend owns is still the two-record commercial-only stub at services/address-book/stub/commercial-transporter.js:1-23. Rewrite the store clause to 'an org-scoped store exists; type, role, approval number and approval status do not'. See also inc-097, which hits the same wall from the write side.",
+          "at": "2026-08-18T14:03:35Z"
+        }
+      ]
     },
     {
       "id": "inc-078",
@@ -1994,7 +2000,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Cheaper than the detail claims. 'Delivering this needs a write path to a transporter/address-book store, not just a page' is wrong as written: the write path already exists and is role-generic. services/address-book/index.js:36-45 is addParty(role, record), and commercialTransporter is already a declared role in BY_ROLE at :18. Verified directly. It is an in-process Map at :21, not persistence, so this increment is a page plus a role registration, not a new store. The gap itself stands - features/addresses/parties.js:18-57 declares only placeOfOrigin, consignor, consignee, importer, destination and contact, and transporters-select.controller.js:22-28 is unchanged.",
+          "at": "2026-08-18T14:03:28Z"
+        }
+      ]
     },
     {
       "id": "inc-079",
@@ -2046,7 +2058,13 @@
       "dependsOn": [],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "NEEDS SAM'S RULING, and its falsifier is arguably already satisfied - do not build without deciding. The clause reads 'the backend already exposing notification status-transition events with timestamps', and that is true today: outbox/StatusChange.java:10-15 is {NotificationStatus status; Instant dateChanged; Actor actor;}, carried on OutboxEvent.java:43 and exposed at NotificationController.java:181-191 (GET /notifications/{ref}/outbox-events, chronological). Verified directly. This predates the EUDPA-323 refactor - it came in with 8b6bd0b (EUDPA-281) - so it is an authoring miss, not drift. Not withdrawn, because a gap survives the literal falsifier: that endpoint is per-reference, so a cross-notification 'changed in the past 24 hours' view still needs a new query, and NotificationService.findAll:139-163 has no time-window predicate. The falsifier should be reworded to 'a cross-notification recent-status-change query'. Also: read.js:23-31 is stale, list() is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:03:21Z"
+        }
+      ]
     },
     {
       "id": "inc-081",
@@ -2090,7 +2108,13 @@
       "dependsOn": [],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked against backend main after the EUDPA-323 refactor: falsifier has not fired on either limb. NotificationStatus.java:3-5 is still DRAFT, SUBMITTED, AMEND, DELETED; NotificationBase.java:18-52 has no action or delay field; NotificationController.java:147-153 accepts only page, sort and referenceNumber. Citation drift only: read.js:23-31 is now real/lifecycle/read.js:20-46, query params assembled at :25-34. The substance of that citation is unchanged.",
+          "at": "2026-08-18T14:04:07Z"
+        }
+      ]
     },
     {
       "id": "inc-083",
@@ -2116,7 +2140,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked against backend main after the EUDPA-323 refactor: falsifier has not fired. NotificationPageResponse.java:11-17 returns content, page, size, numberOfElements, totalElements and totalPages only, and NotificationService.findAll:139-163 performs no aggregation. Frontend evidence holds verbatim at dashboard/template.njk:27-35. Citation drift only: read.js:23-31 is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:04:12Z"
+        }
+      ]
     },
     {
       "id": "inc-084",
@@ -2143,7 +2173,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked against backend main after the EUDPA-323 refactor: falsifier has not fired. NotificationController.java:147-153 carries no date-range, commodity-type or status parameter. The frontend filter aside is still one referenceNumber input plus a Search button at dashboard/template.njk:38-56. Citation drift only: read.js:23-31 is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:04:18Z"
+        }
+      ]
     },
     {
       "id": "inc-085",
@@ -2169,7 +2205,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked against backend main after the EUDPA-323 refactor: falsifier has not fired and the point is now sharper. NotificationController.java:147-153 still accepts only page, sort and referenceNumber - no status parameter - and NotificationService.java:140-141 hard-codes List.of(DRAFT, SUBMITTED, AMEND) server-side via NotificationRepository.java:24 findAllViewByStatusIn. NotificationPageResponse.java:11-17 returns one totalElements, not per-status totals. Worth adding to the ruling: because NotificationStatus.java:3-5 has no COMPLETED value at all, DR2.1's Completed tab has no source status to count, which is a modelling question as well as a query one. Citation drift: read.js:23-31 is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:03:49Z"
+        }
+      ]
     },
     {
       "id": "inc-086",
@@ -2223,7 +2265,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Backend citation is dead. NotificationFulfilmentsController.java was deleted by backend 2d914d1 (EUDPA-323); there is no notificationfulfilments package. The opaque payload is now folded onto the aggregate as Notification.java:50 and served from a single NotificationController.java:33 (/notifications) at :155-166 (GET /{referenceNumber}/fulfilments). The gap itself stands - the falsifier has not fired, there is still no template resource in the backend, and the frontend's real/index.js:11-23 still exposes only create/load/list/has/replaceFulfilment/finalise/amend/cancelAmend/copy/softDelete/clear. Rewrite the backend half of the evidence before ruling.",
+          "at": "2026-08-18T14:03:04Z"
+        }
+      ]
     },
     {
       "id": "inc-088",
@@ -2325,7 +2373,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked against backend main after the EUDPA-323 refactor: falsifier has not fired, and referenceNumber is still exact-match, not free text. NotificationController.java:150 takes an optional referenceNumber; NotificationService.java:144-155 trims it and calls NotificationRepository.java:21-22 findViewByReferenceNumberAndStatusIn, a derived equality query - no regex, no party or commodity fields. The over-promising-label point stands: dashboard copy still says 'Keyword or reference' at dashboard/copy/copy.en.js:11. Citation drift only: read.js:23-31 is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:04:24Z"
+        }
+      ]
     },
     {
       "id": "inc-092",
@@ -2428,7 +2482,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Needs re-scoping from three backend rows to one. Backend 2d914d1 repointed the list at a projection: NotificationPageResponse.java:11-17 returns List<NotificationView>, and NotificationView.java:12-21 carries commodity, which reaches CommodityComplement.java:15-17 - typeOfCommodity, totalNoOfAnimals, totalNoOfPackages. Verified directly. So the quantity and the commodity-category label are ALREADY on the wire and are frontend-only work; the frontend drops them at real/marshal/list-item.js:13 and dashboard/view-model/row/index.js:10-29. Only the inspection flag genuinely needs backend - nothing in the backend mentions inspection. Also: the read.js:23-31 citation in the detail is stale, list() is now real/lifecycle/read.js:20-46.",
+          "at": "2026-08-18T14:03:12Z"
+        }
+      ]
     },
     {
       "id": "inc-096",
@@ -2477,7 +2537,13 @@
       ],
       "status": "blocked",
       "commit": null,
-      "failure_reason": null
+      "failure_reason": null,
+      "notes": [
+        {
+          "note": "Re-checked after the EUDPA-323 refactor: falsifier has not fired. No addParty call anywhere under features/transport - only addressBook.parties (transporters-select.controller.js:25) and addressBook.party (:98); private-transporter-details.controller.js:140-154 builds the record and :156-159 commits it to journey answers via state.commit. A constraint worth carrying into the ruling: DR2.1's address-book write is typed (category: 'transporter'), and the shipped address-book API rejects that outright - AddressRequest.java:103-108 declares type and role @Null. So persisting a transporter as a typed address-book record is not expressible against the current API. Same wall as inc-077, from the write side.",
+          "at": "2026-08-18T14:04:01Z"
+        }
+      ]
     }
   ]
 }
