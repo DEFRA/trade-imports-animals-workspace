@@ -1,0 +1,75 @@
+{
+  "run_id": "EUDPA-328",
+  "target": "live-animals-frontend",
+  "note": "Candidate findings, NOT backlog increments. These are prototype capabilities the corpus never saw, surfaced when the designers pushed 7661d29 and 491b392 (address book) after the capture at 7da4f70. They carry prototype-side evidence only. Each still needs the treatment every backlog increment had - a frontend-side page model, a both-sides diff, a type and band, and an adversarial verifier whose instruction is to refute it - before it earns a place in backlog.json. Do not let the build loop near this file.",
+  "capturedAgainst": {
+    "prototype": "491b392",
+    "corpusCapturedAt": "7da4f70"
+  },
+  "candidates": [
+    {
+      "id": "cand-001",
+      "domain": "addresses",
+      "title": "The prototype can add an address from inside the journey; the frontend can only pick from the book",
+      "detail": "New consignment-add-address.html (145 lines), GET and POST registered per address section at routes.js:10910-10911 as ${section.path}/add-address. UK postcode-style typeahead lookup with a manual fallback, across four new partials (consignment-uk-add-address-fields, consignment-uk-manual-address-fields, consignment-uk-contact-fields, consignment-manual-address-fields). Actions are 'Save and select' and 'Save and return to address page'. The captured picker only had a footer button off to the global address book.",
+      "evidence": { "prototype": "GB-notification-service/app/views/design-release-2.1/consignment-add-address.html" },
+      "verified": false
+    },
+    {
+      "id": "cand-002",
+      "domain": "addresses",
+      "title": "Addresses carry a 'uses' tagging model the frontend has no concept of",
+      "detail": "New consignment-address-use-groups.js (origin-and-sender vs destination-and-receiver, plus a section-to-group map) and address-book-branch-uses.js (branch address split out of address-book-destination-uses.js). The add-address page renders a 'What can this address be used for?' checkbox group scoped to the section you arrived from, and consignment-add-address-uses.js pre-ticks the matching use. address-book-add-categories.js gained a Branch category and renamed the other two.",
+      "evidence": { "prototype": "GB-notification-service/app/data/consignment-address-use-groups.js" },
+      "verified": false
+    },
+    {
+      "id": "cand-003",
+      "domain": "addresses",
+      "title": "Place of origin uses a country typeahead where the other four pickers use address search",
+      "detail": "isPlaceOfOriginPage swaps the address search for a country typeahead - 'Enter a country' / 'Enter each country that the consignment will travel through' (consignment-address-select.html:80-136). Rows carry data-address-country and country-search.js dispatches app-country-search:change to re-filter. Picker behaviour is no longer uniform across the five roles; the corpus saw one shape. Overlaps inc-060, which is scoped to the single picker.",
+      "evidence": { "prototype": "GB-notification-service/app/views/design-release-2.1/consignment-address-select.html:80" },
+      "verified": false
+    },
+    {
+      "id": "cand-004",
+      "domain": "addresses",
+      "title": "The address book is journey-scoped, reachable inside a notification with a return path",
+      "detail": "buildAddressBookHref (routes.js:6232) and routes.js:8298-8299 resolve /address-book under ${journeyBasePath}, and journey-form-actions.html derives its cancel href from journeyBasePath. The captured prototype treated the address book as a global page. Bears directly on the 'who owns the address book' question inc-039 raises, and on the EUDPA-58 address-book programme.",
+      "evidence": { "prototype": "GB-notification-service/app/routes.js:6232" },
+      "verified": false
+    },
+    {
+      "id": "cand-005",
+      "domain": "addresses",
+      "title": "The addresses hub shows a success banner after an add or select round trip",
+      "detail": "roles-and-addresses.html:30-38 renders a govukNotificationBanner after returning from an add or select. No finding covers hub feedback messaging at all.",
+      "evidence": { "prototype": "GB-notification-service/app/views/design-release-2.1/roles-and-addresses.html:30-38" },
+      "verified": false
+    },
+    {
+      "id": "cand-006",
+      "domain": "spine",
+      "title": "Journey form actions split hub-return copy from overview-return copy",
+      "detail": "journey-form-actions.html gained hubText and cancelText. cph-number, permanent-address, permanent-address-animals, contact-address-for-consignment and the picker all now pass 'Save and return to hub' / 'Cancel and return to hub' while the partial default stays 'return to overview'. Separately consignment-address-sections.js:72 reworded the hub's CPH section heading to 'County parish holding (CPH) number' - adjacent to inc-030 but a different string.",
+      "evidence": { "prototype": "GB-notification-service/app/views/partials/design-release-2.1/journey-form-actions.html" },
+      "verified": false
+    },
+    {
+      "id": "cand-007",
+      "domain": "addresses",
+      "title": "The address picker offers named save actions and a cancel link, not a single continue",
+      "detail": "The picker's single 'Save and continue' became named action=continue / action=hub buttons plus a Cancel link (consignment-address-select.html:238-257). The frontend picker has one submit.",
+      "evidence": { "prototype": "GB-notification-service/app/views/design-release-2.1/consignment-address-select.html:238-257" },
+      "verified": false
+    },
+    {
+      "id": "cand-008",
+      "domain": "addresses",
+      "title": "A second one-click copy shortcut, 'same as place of origin', for consignor or exporter",
+      "detail": "consignment-address-sections.js canUseSameAsPlaceOfOrigin, roles-and-addresses.html:95-102, routes.js:2124/2144/10928, with scroll preservation in roles-and-addresses.js. inc-025 names only the consignee variant, so this is either a scope widening of inc-025 or a candidate in its own right - decide which before either is built.",
+      "evidence": { "prototype": "GB-notification-service/app/views/design-release-2.1/roles-and-addresses.html:95-102" },
+      "verified": false
+    }
+  ]
+}
