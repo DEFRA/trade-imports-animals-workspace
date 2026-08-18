@@ -1,8 +1,8 @@
 SHELL         := /bin/bash
-REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway trade-imports-address-book trade-imports-ins-frontend
+REPOS         := trade-imports-animals-frontend trade-imports-animals-backend trade-imports-animals-tests trade-imports-animals-admin trade-imports-stub trade-imports-reference-data trade-imports-defra-id-stub trade-imports-dynamics-gateway trade-imports-address-book trade-imports-ins-frontend trade-imports-ins-backend
 REPOS_DIR     := repos
 NODE_REPOS    := trade-imports-animals-frontend trade-imports-animals-tests trade-imports-animals-admin trade-imports-defra-id-stub trade-imports-ins-frontend
-JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway trade-imports-address-book
+JAVA_REPOS    := trade-imports-animals-backend trade-imports-stub trade-imports-reference-data trade-imports-dynamics-gateway trade-imports-address-book trade-imports-ins-backend
 CANONICAL_PATH := $(HOME)/git/defra/trade-imports-animals-workspace
 WORKSPACE_ROOT := $(abspath .)
 
@@ -207,4 +207,7 @@ start-gateway: ## Start dynamics gateway from source
 
 start-address-book: ## Start address book API from source (requires Java 25 + MongoDB on :27017)
 	SPRING_PROFILES_ACTIVE=local PORT=8089 mvn -f $(REPOS_DIR)/trade-imports-address-book/pom.xml spring-boot:run
+
+start-ins-backend: ## Start ins-backend API from source (requires Java 25 + MongoDB on :27017)
+	SPRING_PROFILES_ACTIVE=local PORT=8090 mvn -f $(REPOS_DIR)/trade-imports-ins-backend/pom.xml spring-boot:run
 

@@ -34,7 +34,7 @@ name anchor. `run-stack.sh` `-f`-stacks all of them automatically.
 | `infrastructure.compose.yml` | `floci`, `floci-init`, `redis`, `cdp-uploader` | `infrastructure` |
 | `infrastructure.compose.yml` | `mssql`, `servicebus-emulator` (Azure Service Bus emulator the dynamics-gateway talks to), `toxiproxy` (sits in front of servicebus-emulator; lets you sever/restore the gateway's ASB connection for DLQ testing) | `servicebus` |
 | `stubs.compose.yml` | `trade-imports-defra-id-stub`, `trade-imports-stub` | `stubs` |
-| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data`, `trade-imports-address-book` | `backend` |
+| `backend.compose.yml` | `trade-imports-animals-backend`, `trade-imports-dynamics-gateway`, `trade-imports-reference-data`, `trade-imports-address-book`, `trade-imports-ins-backend` | `backend` |
 | `frontend.compose.yml` | `trade-imports-animals-frontend`, `trade-imports-animals-admin`, `trade-imports-ins-frontend` | `frontend` |
 | `dev.compose.yml` (--dev only) | build/target/volumes overlay for the 8 repo-backed services | — |
 
@@ -55,13 +55,13 @@ compose freely.
 
 ## `--exclude` (`-e`) labels
 
-Repeatable. Valid: `frontend`, `backend`, `admin`, `ins-frontend`, `stub`, `reference-data`, `address-book`, `gateway`.
+Repeatable. Valid: `frontend`, `backend`, `admin`, `ins-frontend`, `stub`, `reference-data`, `address-book`, `gateway`, `ins-backend`.
 Excluded services skip the Dockerhub probe and stay out of the stack — start
 them yourself; the rest of the stack reaches them via
 `host.docker.internal:<port>`.
 
 Ports for host-side runs: frontend 3000, admin 3001, ins-frontend 3002, backend 8085, stub 8087,
-reference-data 8086, address-book 8089, gateway 8088.
+reference-data 8086, address-book 8089, gateway 8088, ins-backend 8090.
 
 ## `--profile` semantics (strict)
 
