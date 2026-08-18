@@ -37,7 +37,7 @@ unfamiliar:
 - **L3** `app/sets/live-animals/obligations/` — the set's manifest and section
   data. No display copy, no journey knowledge.
 - **L4** `app/sets/live-animals/journeys/linear/` — features (pages, views,
-  copy, colocated `*.e2e.spec.js`) and the journey's flow data.
+  copy, colocated `*.fit.spec.js`) and the journey's flow data.
 
 Dependency-cruiser enforces this (`npm run lint:arch`). If your change fights a
 rule, the change is in the wrong layer — stop and reconsider before touching
@@ -168,11 +168,11 @@ npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-ani
 ```
 
 ```bash
-PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:features
+PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit:features
 ```
 
 ```bash
-PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:e2e
+PORT=3050 npm --prefix ~/git/defra/trade-imports-animals-workspace/repos/trade-imports-animals-frontend run test:fit
 ```
 
 The Playwright suites self-host the app (stub mode) — no workspace stack
