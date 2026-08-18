@@ -637,6 +637,10 @@
         {
           "note": "Pointer moved AND the finding now understates the gap. The 'same as consignee' submit-button-as-link is still there and the frontend still has no copy action, but the designers rewrote the block to add a SECOND one-click shortcut - 'same as place of origin', for consignor-or-exporter (consignment-address-sections.js canUseSameAsPlaceOfOrigin, roles-and-addresses.html:95-102, routes.js:2124/2144/10928). This finding names only the consignee variant, so scope it to both before ruling. Corrected pointers: roles-and-addresses.html:93-112 was 83-92, consignee button now :103-110, guard at :93; routes.js:2133 action id, :2161 copyConsigneeAddressToSection, :10935 POST handler.",
           "at": "2026-08-18T14:23:37Z"
+        },
+        {
+          "note": "RESCOPED (delegated by Sam, 2026-08-18): this increment now covers BOTH one-click copy shortcuts - 'same as consignee' for importer and place-of-destination, and 'same as place of origin' for consignor-or-exporter. Reasoning: they are the same mechanism (a submit button styled as a link on the hub, copying id/name/address/country into the target section), the same frontend absence (nothing named sameAs exists under features/addresses), and they would edit the same files. Splitting them would create two increments over identical files joined by an artificial same-file dependency - the exact trap that made inc-044 unpoppable behind inc-014. Build them together or not at all. cand-008 in deferred.json is superseded by this rescope.",
+          "at": "2026-08-18T18:15:23Z"
         }
       ]
     },
@@ -1569,6 +1573,10 @@
         {
           "note": "Falsifier did not fire; pointer moved and the block roughly doubled. Verified directly: grep for pagination in consignment-address-select.html on origin/main returns nothing, and consignment-address-search.js gained country-filter logic but still has no no-JS fallback - the search button is still type=button. Corrected: consignment-address-select.html:80-165, was 70-98. The isPlaceOfOriginPage branch starts at :80, the default search block is :138-160, 'Select an address' h2 at :163, 'Showing X out of Y results' at :165. Scope note: place-of-origin now uses a country typeahead where the other four pickers use address search, so picker behaviour is no longer uniform - the corpus saw one picker, there are now two shapes.",
           "at": "2026-08-18T14:23:57Z"
+        },
+        {
+          "note": "RESCOPED (delegated by Sam, 2026-08-18): this increment stays scoped to the FOUR address-search pickers - consignee, consignor-or-exporter, importer, place-of-destination - and does NOT cover place of origin's new country typeahead. Reasoning: the country typeahead arrived in the address-book push that is still in flight, it has prototype-side evidence only, and it is already recorded as cand-003 in deferred.json. Folding unverified prototype work into a verified increment would mix two standards of evidence in one item, which is the thing this backlog exists to avoid. The ruling this finding asks for - adopt the JS filter and lose the no-JS baseline, or keep pagination - is unchanged for those four.",
+          "at": "2026-08-18T18:15:32Z"
         }
       ]
     },
