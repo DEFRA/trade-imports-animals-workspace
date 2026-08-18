@@ -21,17 +21,24 @@ forms exist on older tickets but should not be used on new work.
 | `technicalImprovement` | 8 | Tech debt — refactor, dependency upgrade, code-quality clean-up. Pairs with the tech-debt modifier (priority `Lowest`). |
 | `UCD` | 1 | User-centred design work — research, design artefact, prototype. |
 
-### Capability-tracking family — `CAP-*` and `CORE-CAP-*`
+### Capability-tracking family — `CAP-*` and `COMMON-CAP-*`
 
 Stories that belong to a Capability (CAP) work-stream carry a label
-of the form `CAP-<area>.<sub>` or `CORE-CAP-<area>.<sub>`. These
-codes are defined in the [EUDP Import Notification Capability Map][cap-map]
-on Confluence (page id `6468764101`), not in this catalogue.
+of the form `CAP-<area>.<sub>` or `COMMON-CAP-<area>.<sub>`, the
+latter marking a cross-cutting capability. A `CAP-H.<sub>` holding
+series covers the Notification Hub. These codes are defined in the
+[EUDP Import Notification Capability Map][cap-map] on Confluence
+(page id `6468764101`), not in this catalogue.
 
 The active set is pulled fresh on each session by
 `tools/ticket-creator/prepare-ticket-creation.sh` and Read at
-session start from `workareas/ticket-creation/.prereqs/capabilities.txt`.
-Pick from that list — don't coin new codes from this skill.
+session start from `workareas/ticket-creation/.prereqs/capabilities.txt`,
+one `CODE — Name [STATUS]` per line. Pick from that list — don't coin
+new codes from this skill.
+
+If that file is missing or the script reported an `ERROR:`, the map has
+drifted from its canonical shape — run
+`tools/ticket-creator/check-capabilities.sh` rather than guessing a code.
 
 [cap-map]: https://eaflood.atlassian.net/wiki/spaces/EUDP/pages/6468764101
 

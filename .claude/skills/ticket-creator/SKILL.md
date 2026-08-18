@@ -36,14 +36,21 @@ capability codes under `workareas/ticket-creation/.prereqs/`. Surface
 any `WARNING:` line from the output to the user (e.g. stale capability
 map suggests running `tools/confluence/sync-docs.sh`).
 
+If it exits non-zero with an `ERROR:` line, the capability map has
+drifted from its canonical row shape and `capabilities.txt` was
+deliberately left unchanged rather than written short. Tell the user
+to run `tools/ticket-creator/check-capabilities.sh`, which names the
+offending rows. Do not offer a capability picker from a stale file.
+
 Then Read these references so they sit in context for the whole
 session:
 
 - `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/.prereqs/epics.txt`
   — fresh `KEY — summary` for each open epic on board 13780.
 - `~/git/defra/trade-imports-animals-workspace/workareas/ticket-creation/.prereqs/capabilities.txt`
-  — `CAP-X.X — Name` for each capability defined in the EUDP capability
-  map.
+  — `CAP-X.X — Name [STATUS]` for each capability defined in the EUDP
+  capability map. The `[STATUS]` suffix is omitted where a capability
+  has no status recorded.
 - `~/git/defra/trade-imports-animals-workspace/docs/best-practices/gds/writing.md`
   — GDS plain-English rules for ticket prose.
 - `~/git/defra/trade-imports-animals-workspace/docs/best-practices/jira/ticket-conventions.md`
