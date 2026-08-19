@@ -50,6 +50,11 @@ blocked on backend work (`gate: "backend"`). Clearing a gate is a status flip fr
 | [`PHASE-0.md`](PHASE-0.md) | Sizing: what coverage existed on each side |
 | [`PHASE-1.md`](PHASE-1.md) | Building the DR2.1 walker, and the corpus it produced |
 
+**Maintaining and extending it:** [`ROADMAP.md`](ROADMAP.md) — the big picture of turning
+DR2.1-only tooling into point-at-any-prototype tooling (what's built, what's pending, the agent/tim
+architecture). [`RECONCILE-PLAN.md`](RECONCILE-PLAN.md) — how to refresh a worked backlog after the
+prototype drifts, without losing human work.
+
 ## Capture manifest
 
 | | |

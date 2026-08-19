@@ -91,6 +91,54 @@ Page before section before field before copy, within a screen; increments on dif
 screens are independent. That is a real ordering rather than an invented one, and it
 leaves the loop free to be parallelised later without re-deriving the graph.
 
+## 2026-08-19 — reconcile (re-raising increments after drift)
+
+**Built `reconcile` in `compare/`, not in `tim`, for now.** Sam asked to build it and to make
+it deterministic and tested. The core (`parity-lib.reconcile`) is a pure function with no
+filesystem or clock coupling, so lifting it to `tim parity reconcile` later is a thin adapter with
+no logic change. Building it in the existing pipeline avoided front-running the whole report-v2
+`tim parity` migration to land one command. Full contract in `RECONCILE-PLAN.md`.
+
+**Identity is a recomputed content key; `inc` ids are append-only.** `build-increments` numbers
+`inc-nnn` positionally, so a regeneration renumbers and drops the human overlay. reconcile instead
+matches fresh findings to live increments by a content-derived key (screens + type + both evidence
+paths, line refs stripped), keeps every existing id, and mints new ones as `inc-{max+1}`. Keys are
+recomputed from current content each run, never read from a stored field, so a hand-edited citation
+re-keys correctly.
+
+**The key needed a line-order ordinal — found by running it, not by reasoning.** The first real
+dry run flagged 6 `needsHuman` collisions: three pairs of distinct findings citing the *same file*
+on the same screens/type (dashboard "At a glance" vs the tabs; two germinal fields; typeahead vs
+means-of-transport), which a paths-only key collapses into one. Fix: within a co-located group,
+order by start line and fold the ordinal into the key. It survives drift (the group shifts
+together, order holds) but keeps the two apart. After the fix the same corpus reconciles to 96
+carry / 1 suppressed / 0 needsHuman, deterministically (two `--json` runs byte-identical).
+
+**Carry preserves the whole human overlay; only evidence line-refs refresh.** Status, decision,
+gate, notes, commit and dependsOn are never rewritten on a carry — only `evidence.*` line numbers,
+plus one appended note when a ref actually moved. `dependsOn` is computed only for *new*
+increments; an inversion (an existing increment that a new one should precede) is reported under
+`graph.warnings`, never applied, so no human dep edit is clobbered.
+
+**Tombstones suppress re-raise — verified on live data.** The one `dropped` increment (`inc-014`)
+whose gap the differ still finds was reported as `suppressed`, not re-minted. That is the whole
+point of recording a reject instead of deleting it.
+
+**`build-increments.js` refactored to share `parity-lib`.** The increment-shaping logic now lives
+in one place, so the generator and reconcile mint increments through the same code path — two
+copies would drift, the exact failure mode this corpus is built to avoid. Behaviour preserved.
+
+**Left the `build-increments` OUT_DIR path bug alone — deliberately.** It writes to
+`~/git/defra/trade-imports-animals/workareas/...` (missing `-workspace`), so a regeneration would
+*not* overwrite the live backlog at the real path. Fixing it would arm a full regeneration to
+clobber the hand-edited backlog — the very thing reconcile exists to prevent. Flagged, not fixed.
+Refresh a worked backlog with `reconcile`, never `build-increments`.
+
+**Tests use Node's built-in `node:test`.** `compare/` has no `node_modules`; the built-in runner
+is zero-dependency and deterministic. `npm test` (27 tests), `npm run check` (syntax), `npm run
+reconcile -- EUDPA-328` (dry run) — node is wrapped in npm scripts because it is not on the
+Bash allowlist.
+
 ## Near-miss worth knowing about
 
 **`trace snapshot -- eval --filename` writes the JSON-serialised result, not raw text.**

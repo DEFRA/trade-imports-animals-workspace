@@ -6,6 +6,17 @@ second is for a **fresh orchestrator agent** picking the work up cold.
 Everything described here is committed on `feat/EUDPA-328-dr21-parity` (`9cac173`) in the
 workspace repo. Nothing is pushed.
 
+> **Update 2026-08-19 — read [`ROADMAP.md`](ROADMAP.md) first; parts of this handover are stale.**
+> Since `9cac173`: (1) the **dead-prototype bug (stream a) is fixed** — the build loop's target is
+> now data (`tools/journey-builder/targets.json` → the real frontend), committed at
+> `1806d2c`; the surviving mentions of the old path are comments/docs only. (2) A **`reconcile`
+> tool** now refreshes a worked backlog after the prototype drifts, without losing human work —
+> design in [`RECONCILE-PLAN.md`](RECONCILE-PLAN.md), status + the wider multi-prototype plan in
+> [`ROADMAP.md`](ROADMAP.md). (3) A **report-v2 rebuild** is planned
+> ([`REPORT-V2-PLAN.md`](REPORT-V2-PLAN.md)). Current backlog split:
+> `tools/journey-builder/backlog-counts.sh EUDPA-328`. The "three streams" below are the original
+> framing; the live to-do list is the pending section of `ROADMAP.md`.
+
 ---
 
 ## Prompt 1 — Sam, picking this back up
