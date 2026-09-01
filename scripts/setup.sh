@@ -56,4 +56,5 @@ clone_if_missing trade-imports-defra-id-stub
 clone_if_missing trade-imports-dynamics-gateway
 clone_if_missing trade-imports-address-book
 clone_if_missing trade-imports-ins-frontend
+clone_if_missing trade-imports-ins-backend
 echo "Done."
